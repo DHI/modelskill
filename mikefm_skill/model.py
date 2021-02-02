@@ -51,7 +51,8 @@ class ModelResult:
         return ex
 
     def _extract_point_observation(self, observation, item):
-        elemids, _ = self.dfs.get_2d_interpolant(np.array([observation.x, observation.y]), n_nearest=1)
+        xy = np.atleast_2d([observation.x, observation.y])
+        elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
         ds_model.items[0].name = self.name
         return ModelResultPoint(observation, ds_model)
