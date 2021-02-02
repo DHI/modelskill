@@ -1,2 +1,2 @@
 # mikefm-skill
-Compare results from MIKE FM simulations with measurements
+Compare results from MIKE FM simulations with observations
