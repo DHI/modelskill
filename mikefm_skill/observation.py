@@ -1,4 +1,5 @@
 import numpy as np
+from shapely.geometry import Point
 from mikeio import Dfs0
 
 class PointObservation:
@@ -25,3 +26,11 @@ class PointObservation:
     def __repr__(self):
         out = f"PointObservation: {self.name}"
         return out
+
+    @property
+    def geo(self) -> Point:
+        if self.z is None:
+            return Point(self.x, self.y)
+        else:
+            return Point(self.x, self.y, self.z)
+        
