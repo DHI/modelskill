@@ -1,10 +1,12 @@
 import numpy as np
+import warnings
 from mikeio import Dfs0, Dfsu
+from mikefm_skill.observation import PointObservation
 
 class ModelResult:
     filename = None
     dfs = None
-    observations = None
+    observations = []
 
     def __init__(self, filename):
         self.filename = filename
@@ -17,10 +19,14 @@ class ModelResult:
         return str.join("\n", out)
 
     def add_observation(self, observation):
-        pass
+        ok = self._validate_observation(observation)
+        if ok:
+            self.observations.append(observation)
+        else:
+            warnings.warn('Could not add observation')
 
-    def is_observation_in_domain(self, observation):
-        pass
+    def _validate_observation(self, observation):
+        return self.dfs.contains([observation.x, observation.y])
 
-    def extract(self, observation):
+    def extract(self):
         pass
