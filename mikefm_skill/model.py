@@ -70,7 +70,7 @@ class ModelResultPoint:
     obs_name = "Observation"
     mod_df = None
     df = None
-    stats = None
+    #stats = None
 
     @property
     def residual(self):
@@ -91,6 +91,17 @@ class ModelResultPoint:
         df = mod_ds.interp_time(obs_ds.time).to_dataframe()
         df[self.obs_name] = obs_ds.data[0]
         return df
+
+    def remove_bias(self, correct='Model'):
+        bias = self.residual.mean()
+        if correct == 'Model':
+            self.mod_df[self.mod_name] = self.mod_df.values - bias
+            self.df[self.mod_name] = self.df[self.mod_name].values - bias
+        elif correct == 'Observation':
+            self.df[self.obs_name] = self.df[self.obs_name].values + bias
+        else:
+            raise ValueError(f"Unknown correct={correct}. Only know 'Model' and 'Observation'")
+
 
     def plot_timeseries(self, figsize=None):
         fig, ax = plt.subplots(1,1,figsize=figsize)
@@ -162,8 +173,12 @@ class ModelResultPoint:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
 
+    def residual_hist(self, bins=None):
+        return plt.hist(self.residual, bins=bins)
+
     def statistics(self):
         resi = self.residual
         bias = resi.mean()
-        #rmse = 
-        pass
+        uresi = resi - bias
+        rmse = np.sqrt(np.mean(uresi**2))
+        return bias, rmse
