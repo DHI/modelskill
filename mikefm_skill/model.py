@@ -77,9 +77,15 @@ class ModelResultPoint:
 
     @property
     def residual(self):
-        obs = self.df[self.obs_name].values 
-        mod = self.df[self.mod_name].values
-        return mod - obs
+        return self.mod - self.obs
+    
+    @property
+    def obs(self):
+        return self.df[self.obs_name].values 
+
+    @property
+    def mod(self):
+        return self.df[self.mod_name].values
 
     def __init__(self, observation, modeldata):
         self.observation = observation #deepcopy(observation)
