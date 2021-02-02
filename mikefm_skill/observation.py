@@ -4,8 +4,9 @@ from shapely.geometry import Point
 import pandas as pd
 from mikeio import Dfs0
 
+
 class PointObservation:
-    
+
     name = None
     filename = None
     dfs = None
@@ -45,7 +46,7 @@ class PointObservation:
         if self.z is None:
             return Point(self.x, self.y)
         else:
-            return Point(self.x, self.y, self.z)        
+            return Point(self.x, self.y, self.z)
 
     def __init__(self, filename, x, y, z=None, item=0, name=None):
         self.filename = filename
@@ -55,12 +56,12 @@ class PointObservation:
         self.z = z
 
         if name is None:
-            name = os.path.basename(filename).split('.')[0]
+            name = os.path.basename(filename).split(".")[0]
         self.name = name
 
         self.item_number = self._get_item_number(item)
 
-        self.read()        
+        self.read()
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
@@ -86,7 +87,7 @@ class PointObservation:
         self.ds = ds
 
     def subset_time(self, start=None, end=None):
-        idx = np.where(np.logical_and(self.time>=start, self.time<=end))
+        idx = np.where(np.logical_and(self.time >= start, self.time <= end))
         self.ds = self.ds.isel(idx[0], axis=0)
 
     def to_dataframe(self):
