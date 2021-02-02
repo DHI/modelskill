@@ -5,4 +5,11 @@
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true
+	"cSpell.ignoreWords": [
+        "dropna",
+        "mikefm",
+        "pydatetime",
+        "skill",
+        "to"
+    ]
 }
