@@ -58,10 +58,12 @@ class ModelResult:
         return ModelResultPoint(observation, ds_model)
 
     def plot_observation_positions(self, figsize=None):
+        xn = self.dfs.node_coordinates[:,0]
+        offset_x = 0.02*(max(xn) - min(xn))
         ax = self.dfs.plot(plot_type='outline_only', figsize=figsize)
         for obs in self.observations:
             ax.scatter(x=obs.x, y=obs.y, marker='x')
-            ax.annotate(obs.name, (obs.x, obs.y))
+            ax.annotate(obs.name, (obs.x + offset_x, obs.y))
 
 
 # TODO: find better name
