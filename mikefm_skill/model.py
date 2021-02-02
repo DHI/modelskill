@@ -100,8 +100,8 @@ class ModelResultPoint:
 
     def scatter(self, xlabel=None, ylabel=None, binsize=None, nbins=100, backend='matplotlib', title="", **kwargs):    
 
-        x = self.df.iloc[:,0] # TODO
-        y = self.df.iloc[:,1] # TODO
+        x = self.df[self.obs_name].values
+        y = self.df[self.mod_name].values
 
         if xlabel is None:
             xlabel = "Observation"
@@ -117,12 +117,12 @@ class ModelResultPoint:
         else:
             nbins = int((xmax - xmin) / binsize)
 
-        xq = np.quantile(x,q=np.linspace(0,1,num=nbins))
-        yq = np.quantile(y,q=np.linspace(0,1,num=nbins))
+        xq = np.quantile(x,q=np.linspace(0, 1, num=nbins))
+        yq = np.quantile(y,q=np.linspace(0, 1, num=nbins))
 
         if backend == 'matplotlib':
             plt.plot([xmin,xmax],[ymin,ymax], label='1:1')
-            plt.plot(xq,yq,label='QQ',c='gray')
+            plt.plot(xq, yq,label='QQ',c='gray')
             plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
             plt.legend()
             plt.xlabel(xlabel)
@@ -137,8 +137,8 @@ class ModelResultPoint:
             import bokeh.models as bhm
             #bh.output_notebook()
 
-            p = bh.figure(x_axis_label='obs', y_axis_label='model',title=title)
-            p.hexbin(x,y,size=binsize)
+            p = bh.figure(x_axis_label='obs', y_axis_label='model', title=title)
+            p.hexbin(x, y, size=binsize)
             p.scatter(xq, yq, legend_label="Q-Q", color='gray')
             
             linvals = np.linspace(np.min([x,y]), np.max([x,y]))
