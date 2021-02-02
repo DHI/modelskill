@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 import warnings
 import matplotlib.pyplot as plt
 #from copy import deepcopy
@@ -50,7 +51,7 @@ class ModelResult:
         return ex
 
     def _extract_point_observation(self, observation, item):
-        elemids, _ = self.dfs.get_2d_interpolant([observation.x, observation.y], n_nearest=1)
+        elemids, _ = self.dfs.get_2d_interpolant(np.array([observation.x, observation.y]), n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
         ds_model.items[0].name = self.name
         return ModelResultPoint(observation, ds_model)
@@ -108,8 +109,69 @@ class ModelResultPoint:
         self.df[self.obs_name].plot(marker='.', linestyle = 'None', ax=ax)
         ax.legend([self.mod_name, self.obs_name]);
 
-    def scatter(self):
-        pass
+    def scatter(self, xlabel=None, ylabel=None, binsize=None, nbins=100, backend='matplotlib', title="", **kwargs):    
+
+        x = self.df.iloc[:,0] # TODO
+        y = self.df.iloc[:,1] # TODO
+
+        if xlabel is None:
+            xlabel = "Observation"
+
+        if ylabel is None:
+            ylabel = "Model"
+
+        xmin, xmax = x.min(), x.max()
+        ymin, ymax = y.min(), y.max()
+
+        if binsize is None:
+            binsize = (xmax - xmin) / nbins
+        else:
+            nbins = int((xmax - xmin) / binsize)
+
+        xq = np.quantile(x,q=np.linspace(0,1,num=nbins))
+        yq = np.quantile(y,q=np.linspace(0,1,num=nbins))
+
+        if backend == 'matplotlib':
+            plt.plot([xmin,xmax],[ymin,ymax], label='1:1')
+            plt.plot(xq,yq,label='QQ',c='gray')
+            plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
+            plt.legend()
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            plt.axis('equal')
+            cbar = plt.colorbar()
+            cbar.set_label('# points')
+            plt.title(title)
+        
+        elif backend == 'bokeh':
+            import bokeh.plotting as bh
+            import bokeh.models as bhm
+            #bh.output_notebook()
+
+            p = bh.figure(x_axis_label='obs', y_axis_label='model',title=title)
+            p.hexbin(x,y,size=binsize)
+            p.scatter(xq, yq, legend_label="Q-Q", color='gray')
+            
+            linvals = np.linspace(np.min([x,y]), np.max([x,y]))
+            p.line(linvals, linvals, legend_label="1:1")
+            #mder = bhm.Label(x=10, y=500, x_units='screen', y_units='screen',
+            #                text=f"MdEr: {MdEr(x,y):.2f}")
+            #rmse = bhm.Label(x=10, y=480, x_units='screen', y_units='screen',
+            #                text=f"RMSE: {RMSE(x,y):.2f}")
+            #stder = bhm.Label(x=10, y=460, x_units='screen', y_units='screen',
+            #                text=f"StdEr: {StdEr(x,y):.2f}")
+            #N = bhm.Label(x=10, y=440, x_units='screen', y_units='screen',
+            #                text=f"N: {len(x)}")
+
+            #p.add_layout(mder)
+            #p.add_layout(rmse)
+            #p.add_layout(stder)
+            #p.add_layout(N)
+            bh.show(p)
+
+        else:
+            raise ValueError(f"Plotting backend: {backend} not supported")
+
 
     def residual_hist(self, bins=None):
         return plt.hist(self.residual, bins=bins)
