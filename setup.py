@@ -9,7 +9,7 @@ with open("LICENSE") as fh:
 setuptools.setup(
     name="mikefm_skill",
     version='0.1.dev',
-    install_requires=["numpy", "pandas", "scipy", "mikeio"],
+    install_requires=["numpy", "pandas", "scipy", "mikeio", "shapely"],
     extras_require={
         "dev": [
             "pytest",
