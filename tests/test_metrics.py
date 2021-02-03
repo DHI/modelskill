@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from mikefm_skill.metrics import bias, mean_absolute_error, nash_sutcliffe_efficiency, root_mean_squared_error, corr_coef, scatter_index
+from mikefm_skill.metrics import bias, mean_absolute_error, nash_sutcliffe_efficiency, root_mean_squared_error, corr_coef, scatter_index, r2
 
 
 def test_nse_optimal():
@@ -57,3 +57,12 @@ def test_scatter_index():
     si = scatter_index(obs,mod)
 
     assert si >= 0.0
+
+def test_r2():
+
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    res = r2(obs,mod)
+    assert np.isscalar(res)
+    assert 0.0 <= res <= 1.0
