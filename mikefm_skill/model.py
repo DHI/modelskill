@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
-import matplotlib.pyplot as plt
 #from copy import deepcopy
 from mikeio import Dfs0, Dfsu
 from mikefm_skill.observation import PointObservation
