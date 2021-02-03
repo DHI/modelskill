@@ -48,7 +48,7 @@ class PointObservation:
         else:
             return Point(self.x, self.y, self.z)
 
-    def __init__(self, filename, x, y, z=None, item=0, name=None):
+    def __init__(self, filename, x:float, y:float, z:float=None, item=0, name=None):
         self.filename = filename
         self.dfs = Dfs0(filename)
         self.x = x

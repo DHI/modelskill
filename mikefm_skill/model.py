@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
 #from copy import deepcopy
@@ -10,13 +11,16 @@ class ModelResult:
     name = None
     filename = None
     dfs = None
-    observations = []
-    items = []
+    observations = None
+    items = None
 
     def __init__(self, filename, name=None):
         # TODO: add "start" as user may wish to disregard start from comparison
         self.filename = filename
         self.dfs = Dfsu(filename)
+
+        self.observations = []
+        self.items = []
 
         if name is None:
             name = os.path.basename(filename).split(".")[0]
@@ -43,11 +47,11 @@ class ModelResult:
     def extract(self):
         """extract model result in observation positions
         """
-        ex = []
-        for j, obs in enumerate(self.observations):
-            mrp = self._extract_point_observation(obs, self.items[j])
-            ex.append(mrp)
-        return ex
+        res = ModelResultCollection()
+        for obs, item in zip(self.observations, self.items):
+            mrp = self._extract_point_observation(obs, item)
+            res.add_result(mrp)
+        return res
 
     def _extract_point_observation(self, observation, item):
         xy = np.atleast_2d([observation.x, observation.y])
@@ -75,10 +79,20 @@ class ModelResultPoint:
     #stats = None
 
     @property
+    def name(self):
+        return self.observation.name
+
+    @property
     def residual(self):
-        obs = self.df[self.obs_name].values 
-        mod = self.df[self.mod_name].values
-        return mod - obs
+        return self.mod - self.obs
+    
+    @property
+    def obs(self):
+        return self.df[self.obs_name].values 
+
+    @property
+    def mod(self):
+        return self.df[self.mod_name].values
 
     def __init__(self, observation, modeldata):
         self.observation = observation #deepcopy(observation)
@@ -184,3 +198,37 @@ class ModelResultPoint:
         uresi = resi - bias
         rmse = np.sqrt(np.mean(uresi**2))
         return bias, rmse
+
+
+class ModelResultCollection:
+
+    results = []
+
+    def __getitem__(self, x):
+        return self.results[x]
+
+
+    def add_result(self, modelresult):
+
+        self.results.append(modelresult)
+
+    def skill(self, metric):
+
+        scores = [metric(mr.obs, mr.mod) for mr in self.results]
+
+        return np.average(scores)
+
+    def skill_report(self, metrics:list) -> pd.DataFrame:
+
+        res = {}
+        for mr in self.results:
+            tmp = {}
+            for metric in metrics:
+                tmp[metric.__name__] =  metric(mr.obs, mr.mod)
+            res[mr.name] = tmp
+        
+        return pd.DataFrame(res).T
+             
+
+
+        
