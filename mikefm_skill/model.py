@@ -1,14 +1,24 @@
 import os
 import numpy as np
 import pandas as pd
+from enum import Enum
 import matplotlib.pyplot as plt
 import warnings
 #from copy import deepcopy
 from mikeio import Dfs0, Dfsu
 from mikefm_skill.observation import PointObservation
+from mikefm_skill.metrics import root_mean_squared_error as RMSE 
+from mikefm_skill.metrics import mean_absolute_error as MAE
+
+
+class ModelResultType(Enum):
+    dfsu = 0
+    dfs2 = 1
+    dfs0 = 2
 
 class ModelResult:
     name = None
+    type = None
     filename = None
     dfs = None
     observations = None
@@ -17,7 +27,18 @@ class ModelResult:
     def __init__(self, filename, name=None):
         # TODO: add "start" as user may wish to disregard start from comparison
         self.filename = filename
-        self.dfs = Dfsu(filename)
+        ext = os.path.splitext(filename)[-1]
+        if ext == '.dfsu':
+            self.dfs = Dfsu(filename)
+            self.type = ModelResultType.dfsu
+        #elif ext == '.dfs2':
+        #    self.dfs = Dfs2(filename)
+        #    self.type = ModelResultType.dfs2
+        elif ext == '.dfs0':
+            self.dfs = Dfs0(filename)
+            self.type = ModelResultType.dfs0
+        else:
+            raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
 
         self.observations = []
         self.items = []
@@ -29,7 +50,7 @@ class ModelResult:
     def __repr__(self):
         #return self.dfs
         out = []
-        out.append("ModelResult")
+        out.append("<mikefm_skill.ModelResult>")
         out.append(self.filename)
         return str.join("\n", out)
 
@@ -42,7 +63,14 @@ class ModelResult:
             warnings.warn('Could not add observation')
 
     def _validate_observation(self, observation):
-        return self.dfs.contains([observation.x, observation.y])
+        ok = False
+        if self.type == ModelResultType.dfsu:
+            ok = self.dfs.contains([observation.x, observation.y])
+        elif self.type == ModelResultType.dfs0:
+            # TODO: add check on name
+            ok = True
+        
+        return ok
 
     def extract(self):
         """extract model result in observation positions
@@ -54,13 +82,30 @@ class ModelResult:
         return res
 
     def _extract_point_observation(self, observation, item):
+        ds_model = None
+        if self.type == ModelResultType.dfsu:
+            ds_model = self._extract_point_dfsu(observation, item)
+        elif self.type == ModelResultType.dfs0:
+            ds_model = self._extract_point_dfs0(observation, item)
+
+        return ModelResultPoint(observation, ds_model)
+
+    def _extract_point_dfsu(self, observation, item):
         xy = np.atleast_2d([observation.x, observation.y])
         elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
         ds_model.items[0].name = self.name
-        return ModelResultPoint(observation, ds_model)
+        return ds_model
+
+    def _extract_point_dfs0(self, observation, item):
+        ds_model = self.dfs.read(items=[item])
+        ds_model.items[0].name = self.name
+        return ds_model
 
     def plot_observation_positions(self, figsize=None):
+        if self.type == ModelResultType.dfs0:
+            warnings.warn("Plotting observations is only supported for dfsu ModelResults")
+            return
         xn = self.dfs.node_coordinates[:,0]
         offset_x = 0.02*(max(xn) - min(xn))
         ax = self.dfs.plot(plot_type='outline_only', figsize=figsize)
@@ -199,6 +244,8 @@ class ModelResultPoint:
         rmse = np.sqrt(np.mean(uresi**2))
         return bias, rmse
 
+    def skill(self, metric=RMSE):
+        return metric(self.obs, self.mod)
 
 class ModelResultCollection:
 
@@ -212,13 +259,13 @@ class ModelResultCollection:
 
         self.results.append(modelresult)
 
-    def skill(self, metric):
+    def skill(self, metric=RMSE):
 
         scores = [metric(mr.obs, mr.mod) for mr in self.results]
 
         return np.average(scores)
 
-    def skill_report(self, metrics:list) -> pd.DataFrame:
+    def skill_report(self, metrics:list=[RMSE, MAE]) -> pd.DataFrame:
 
         res = {}
         for mr in self.results:
