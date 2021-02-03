@@ -7,9 +7,11 @@ def mean_absolute_error(obs: np.ndarray, model: np.ndarray, weights: np.ndarray=
     error = np.average(np.abs(obs - model), weights=weights)
     return error
 
-def root_mean_squared_error(obs: np.ndarray, model: np.ndarray, weights: np.ndarray=None):
+def root_mean_squared_error(obs: np.ndarray, model: np.ndarray, weights: np.ndarray=None, unbiased: bool=False):
     """Root Mean Squared Error (RMSE)"""
     residual = obs - model
+    if unbiased:
+        residual = residual - residual.mean()
     error = np.sqrt(np.average(residual**2, weights=weights))
 
     return error
