@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from mikefm_skill.metrics import mean_absolute_error, nash_sutcliffe_efficiency, root_mean_squared_error
+from mikefm_skill.metrics import bias, mean_absolute_error, nash_sutcliffe_efficiency, root_mean_squared_error, corr_coef, scatter_index
 
 
 def test_nse_optimal():
@@ -18,6 +18,12 @@ def test_nse_suboptimal():
 
     assert nash_sutcliffe_efficiency(obs, mod) == 0.0
 
+def test_bias():
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    assert bias(obs, mod) == 1.0
+
 def test_rmse():
     obs = np.arange(100)
     mod = obs + 1.0
@@ -33,3 +39,21 @@ def test_mae():
     mae = mean_absolute_error(obs,mod)
 
     assert mae == 1.0
+
+def test_corr_coef():
+
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    r = corr_coef(obs,mod)
+
+    assert -1.0 <= r <= 1.0
+
+def test_scatter_index():
+
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    si = scatter_index(obs,mod)
+
+    assert si >= 0.0

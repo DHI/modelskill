@@ -1,3 +1,4 @@
+import mikefm_skill.metrics as mtr
 import os
 import numpy as np
 import pandas as pd
@@ -265,7 +266,10 @@ class ModelResultCollection:
 
         return np.average(scores)
 
-    def skill_report(self, metrics:list=[RMSE, MAE]) -> pd.DataFrame:
+    def skill_report(self, metrics:list = None) -> pd.DataFrame:
+
+        if metrics is None:
+            metrics = [mtr.bias, mtr.rmse, mtr.corr_coef, mtr.scatter_index ]
 
         res = {}
         for mr in self.results:
