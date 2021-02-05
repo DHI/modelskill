@@ -7,7 +7,7 @@ from mikefm_skill.metrics import root_mean_squared_error, mean_absolute_error
 @pytest.fixture
 def klagshamn():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
-    return PointObservation(fn, 0.36684415E+06, 0.61542916E+07, name="Klagshamn") #lon=12.89106996, lat=55.5165157
+    return PointObservation(fn, item=0, x=0.36684415E+06, y=0.61542916E+07, name="Klagshamn") #lon=12.89106996, lat=55.5165157
 
 @pytest.fixture
 def drogden():
@@ -18,7 +18,7 @@ def drogden():
     # (355568.6130331255, 6156863.0187071245)
 
     fn = "tests/testdata/dmi_30357_Drogden_Fyr.dfs0"
-    return PointObservation(fn, 355568.0, 6156863.0)
+    return PointObservation(fn, item=0,x=355568.0, y=6156863.0)
 
 @pytest.fixture
 def oresund_2d():
