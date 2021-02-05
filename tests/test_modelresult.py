@@ -2,7 +2,6 @@ import pytest
 
 from mikefm_skill.model import ModelResult
 from mikefm_skill.observation import PointObservation
-from mikefm_skill.metrics import root_mean_squared_error, mean_absolute_error
 
 
 @pytest.fixture
@@ -41,19 +40,4 @@ def test_extract(oresund_2d, klagshamn, drogden):
     mr.add_observation(drogden, item=0)
     collection = mr.extract()
     collection[0].name == "Klagshamn"
-
-
-def test_total_skill(oresund_2d, klagshamn, drogden):
-    mr = ModelResult(oresund_2d)
-
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
-    collection = mr.extract()
-
-    assert collection.skill(metric=root_mean_squared_error) > 0.0
-    report = collection.skill_report(
-        metrics=[root_mean_squared_error, mean_absolute_error]
-    )
-
-    print(report)
 
