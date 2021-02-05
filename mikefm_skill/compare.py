@@ -1,18 +1,10 @@
-import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import warnings
 from copy import deepcopy
 
 from mikeio import Dfs0
 import mikefm_skill.metrics as mtr
-
-# from .observation import PointObservation
-
-
-class TimeSeriesComparer:
-    pass
 
 
 # TODO: add more ModelResults
@@ -47,7 +39,6 @@ class PointComparer:
         self.observation.df = self.observation.df[
             modeldata.start_time : modeldata.end_time
         ]
-        # self.observation.subset_time(start=modeldata.start_time, end=modeldata.end_time)
         self.df = self._model2obs_interp(self.observation, modeldata)
 
     def _model2obs_interp(self, obs, mod_ds):
