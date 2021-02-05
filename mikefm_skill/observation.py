@@ -8,38 +8,35 @@ from mikeio import Dfs0
 class PointObservation:
 
     name = None
-    filename = None
-    dfs = None
-
     x = None
     y = None
     z = None
-    item_number = None
-    ds = None
-
+    
+    df = None
+    
     @property
     def time(self):
-        return self.ds.time
+        return self.df.index
 
     @property
     def start_time(self):
         """First time instance (as datetime)
         """
-        return self.ds.time[0].to_pydatetime()
+        return self.time[0].to_pydatetime()
 
     @property
     def end_time(self):
         """Last time instance (as datetime)
         """
-        return self.ds.time[-1].to_pydatetime()
+        return self.time[-1].to_pydatetime()
 
     @property
     def values(self):
-        return self.ds.data[0]
+        return self.df.values
 
     @property
     def n(self):
-        return len(self.time)
+        return len(self.df)
 
     @property
     def geo(self) -> Point:
@@ -48,47 +45,60 @@ class PointObservation:
         else:
             return Point(self.x, self.y, self.z)
 
-    def __init__(self, filename, x:float, y:float, z:float=None, item=0, name=None):
-        self.filename = filename
-        self.dfs = Dfs0(filename)
+    def __init__(self, filename, item: int=0, x:float=None, y:float=None, z:float=None, name=None):
+
         self.x = x
         self.y = y
         self.z = z
-
-        if name is None:
-            name = os.path.basename(filename).split(".")[0]
         self.name = name
 
-        self.item_number = self._get_item_number(item)
+        if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
+            raise NotImplementedError()
+        else:
+            if name is None:
+                self.name = os.path.basename(filename).split(".")[0]
 
-        self.read()
+            ext = os.path.splitext(filename)[-1]
+            if ext == '.dfs0':
+                self.df = self._read_dfs0(Dfs0(filename), item)
+            else:
+                raise NotImplementedError()
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
         return out
 
-    def _get_item_number(self, item):
-        item_lookup = {item.name: i for i, item in enumerate(self.dfs.items)}
+    @staticmethod
+    def from_dataframe(df):
+        pass
+
+    @staticmethod
+    def from_dfs0(dfs, item_number):
+        pass
+
+    @staticmethod
+    def _get_dfs_item_number(dfs, item):
+        item_lookup = {item.name: i for i, item in enumerate(dfs.items)}
 
         if isinstance(item, str):
             i = item_lookup[item]
-        elif isinstance(item, int) and item < self.dfs.n_items:
+        elif isinstance(item, int) and item < dfs.n_items:
             i = item
         else:
-            raise ValueError(f"item {item} could not be found in {self.filename}")
+            raise ValueError(f"item {item} could not be found")
 
         return i
 
-    def read(self):
-        """Read data from file
+    @staticmethod
+    def _read_dfs0(dfs, item):
+        """Read data from dfs0 file
         """
-        ds = self.dfs.read(items=self.item_number)
-        ds.dropna()
-        self.ds = ds
+        item_number = PointObservation._get_dfs_item_number(dfs, item)
+        df = dfs.read(items=item_number).to_dataframe()
+        df.dropna(inplace=True)
+        return df
 
     def subset_time(self, start=None, end=None):
-        idx = np.where(np.logical_and(self.time >= start, self.time <= end))
-        self.ds = self.ds.isel(idx[0], axis=0)
+        #idx = np.where(np.logical_and(self.time >= start, self.time <= end))
+        self.df = self.df[start:end]
 
-    def to_dataframe(self):
-        return self.ds.to_dataframe()

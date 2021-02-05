@@ -1,21 +1,20 @@
-import mikefm_skill.metrics as mtr
 import os
 import numpy as np
 import pandas as pd
-from enum import Enum
 import matplotlib.pyplot as plt
 import warnings
-#from copy import deepcopy
+from enum import Enum
+from copy import deepcopy
+
 from mikeio import Dfs0, Dfsu
 from mikefm_skill.observation import PointObservation
-from mikefm_skill.metrics import root_mean_squared_error as RMSE 
-from mikefm_skill.metrics import mean_absolute_error as MAE
+import mikefm_skill.metrics as mtr
 
 
 class ModelResultType(Enum):
-    dfsu = 0
-    dfs2 = 1
-    dfs0 = 2
+    dfs0 = 0
+    dfsu = 1
+    dfs2 = 2
 
 class ModelResult:
     name = None
@@ -115,7 +114,8 @@ class ModelResult:
             ax.annotate(obs.name, (obs.x + offset_x, obs.y))
 
 
-# TODO: find better name
+# TODO: find better name: PointComparer
+# TODO: add more ModelResults
 class ModelResultPoint:
     observation = None
     mod_name = None
@@ -141,18 +141,19 @@ class ModelResultPoint:
         return self.df[self.mod_name].values
 
     def __init__(self, observation, modeldata):
-        self.observation = observation #deepcopy(observation)
+        self.observation = deepcopy(observation)
         self.mod_df = modeldata.to_dataframe()
         self.mod_name = self.mod_df.columns[0]
         self.observation.subset_time(start=modeldata.start_time, end=modeldata.end_time)
-        self.df = self._model2obs_interp(self.observation.ds, modeldata)
+        self.df = self._model2obs_interp(self.observation, modeldata)
 
-    def _model2obs_interp(self, obs_ds, mod_ds):
+    def _model2obs_interp(self, obs, mod_ds):
         """interpolate model to measurement time
         """        
-        df = mod_ds.interp_time(obs_ds.time).to_dataframe()
-        df[self.obs_name] = obs_ds.data[0]
+        df = mod_ds.interp_time(obs.time).to_dataframe()
+        df[self.obs_name] = obs.values
         return df
+
 
     def remove_bias(self, correct='Model'):
         bias = self.residual.mean()
@@ -245,7 +246,7 @@ class ModelResultPoint:
         rmse = np.sqrt(np.mean(uresi**2))
         return bias, rmse
 
-    def skill(self, metric=RMSE):
+    def skill(self, metric=mtr.rmse):
         return metric(self.obs, self.mod)
 
 class ModelResultCollection:
@@ -260,7 +261,7 @@ class ModelResultCollection:
 
         self.results.append(modelresult)
 
-    def skill(self, metric=RMSE):
+    def skill(self, metric=mtr.rmse):
 
         scores = [metric(mr.obs, mr.mod) for mr in self.results]
 
