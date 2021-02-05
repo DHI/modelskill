@@ -95,3 +95,31 @@ class PointObservation(Observation):
         df = dfs.read(items=item).to_dataframe()
         df.dropna(inplace=True)
         return df
+
+
+class TrackObservation(Observation):
+    def __init__(
+        self, filename, item: int = 2, name=None,
+    ):
+        if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
+            raise NotImplementedError()
+        else:
+            if name is None:
+                name = os.path.basename(filename).split(".")[0]
+
+            ext = os.path.splitext(filename)[-1]
+            if ext == ".dfs0":
+                items = [0, 1, item]
+                self.df = self._read_dfs0(Dfs0(filename), items)
+            else:
+                raise NotImplementedError()
+
+        super().__init__(name)
+
+    @staticmethod
+    def _read_dfs0(dfs, items):
+        """Read track data from dfs0 file
+        """
+        df = dfs.read(items=items).to_dataframe()
+        df.dropna(inplace=True)
+        return df
