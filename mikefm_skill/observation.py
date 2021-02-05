@@ -98,6 +98,18 @@ class PointObservation(Observation):
 
 
 class TrackObservation(Observation):
+    @property
+    def x(self):
+        return self.df.iloc[:, 0].values
+
+    @property
+    def y(self):
+        return self.df.iloc[:, 1].values
+
+    @property
+    def values(self):
+        return self.df.iloc[:, 2].values
+
     def __init__(
         self, filename, item: int = 2, name=None,
     ):
