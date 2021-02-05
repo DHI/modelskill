@@ -6,9 +6,11 @@ Compare results from MIKE FM simulations with observations
 ```
 >>> from mikefm_skill.model import ModelResult
 >>> from mikefm_skill.observation import PointObservation
->>> mr = ModelResult("../tests/testdata/Oresund2D.dfsu")
->>> mr.add_observation(PointObservation("../tests/testdata/smhi_2095_klagshamn.dfs0", item=0, x=0.36684415E+06, y=0.61542916E+07, name="Klagshamn") , item=0)
->>> mr.add_observation(PointObservation("../tests/testdata/dmi_30357_Drogden_Fyr.dfs0",item=0, x=355568.0, y=6156863.0), item=0)
+>>> mr = ModelResult("Oresund2D.dfsu")
+>>> klagshamn = PointObservation("smhi_2095_klagshamn.dfs0", item=0, x=366844.0, y=6154291.0, name="Klagshamn")
+>>> drogden = PointObservation("dmi_30357_Drogden_Fyr.dfs0", item=0, x=355568.0, y=6156863.0)
+>>> mr.add_observation(klagshamn, item=0)
+>>> mr.add_observation(drogden, item=0)
 >>> collection = mr.extract()
 >>> report = collection.skill_report()
                        bias  rmse  corr_coef  scatter_index
