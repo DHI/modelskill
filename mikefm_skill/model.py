@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import pandas as pd
 import warnings
 from enum import Enum
 
@@ -23,7 +22,7 @@ class ModelResult:
     observations = None
     items = None
 
-    def __init__(self, filename, name=None):
+    def __init__(self, filename: str, name: str = None):
         # TODO: add "start" as user may wish to disregard start from comparison
         self.filename = filename
         ext = os.path.splitext(filename)[-1]
@@ -54,6 +53,15 @@ class ModelResult:
         return str.join("\n", out)
 
     def add_observation(self, observation, item):
+        """Add an observation to this ModelResult
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.PointObservation>
+            Observation object for later comparison
+        item : str, integer
+            ModelResult item name or number corresponding to the observation
+        """
         ok = self._validate_observation(observation)
         if ok:
             self.observations.append(observation)
@@ -73,7 +81,7 @@ class ModelResult:
 
     # TODO: rename to compare() ?
     def extract(self):
-        """extract model result in observation positions
+        """extract model result in all observation positions
         """
         cc = ComparisonCollection()
         for obs, item in zip(self.observations, self.items):
@@ -82,6 +90,20 @@ class ModelResult:
         return cc
 
     def compare_point_observation(self, observation, item):
+        """Compare this ModelResult with an observation
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.PointObservation>
+            Observation to be compared
+        item : str, integer
+            ModelResult item name or number
+
+        Returns
+        -------
+        <mikefm_skill.PointComparer>
+            A comparer object for further analysis or plotting
+        """
         ds_model = None
         if self.type == ModelResultType.dfsu:
             ds_model = self._extract_point_dfsu(observation, item)
@@ -103,6 +125,13 @@ class ModelResult:
         return ds_model
 
     def plot_observation_positions(self, figsize=None):
+        """Plot oberservation points on a map showing the model domain
+
+        Parameters
+        ----------
+        figsize : (float, float), optional
+            figure size, by default None
+        """
         if self.type == ModelResultType.dfs0:
             warnings.warn(
                 "Plotting observations is only supported for dfsu ModelResults"
