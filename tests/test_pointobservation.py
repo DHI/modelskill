@@ -10,7 +10,5 @@ def klagshamn():
 
 
 def test_coordinates(klagshamn):
-    o1 = PointObservation(
-        klagshamn, item=0, x=0.36684415e06, y=0.61542916e07
-    )  # lon=12.89106996, lat=55.5165157
+    o1 = PointObservation(klagshamn, item=0, x=366844, y=6154291, name="Klagshamn")
     assert isinstance(o1.geo, Point)
