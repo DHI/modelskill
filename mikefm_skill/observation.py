@@ -11,9 +11,9 @@ class PointObservation:
     x = None
     y = None
     z = None
-    
+
     df = None
-    
+
     @property
     def time(self):
         return self.df.index
@@ -45,7 +45,15 @@ class PointObservation:
         else:
             return Point(self.x, self.y, self.z)
 
-    def __init__(self, filename, item: int=0, x:float=None, y:float=None, z:float=None, name=None):
+    def __init__(
+        self,
+        filename,
+        item: int = 0,
+        x: float = None,
+        y: float = None,
+        z: float = None,
+        name=None,
+    ):
 
         self.x = x
         self.y = y
@@ -59,7 +67,7 @@ class PointObservation:
                 self.name = os.path.basename(filename).split(".")[0]
 
             ext = os.path.splitext(filename)[-1]
-            if ext == '.dfs0':
+            if ext == ".dfs0":
                 self.df = self._read_dfs0(Dfs0(filename), item)
             else:
                 raise NotImplementedError()
@@ -77,28 +85,9 @@ class PointObservation:
         pass
 
     @staticmethod
-    def _get_dfs_item_number(dfs, item):
-        item_lookup = {item.name: i for i, item in enumerate(dfs.items)}
-
-        if isinstance(item, str):
-            i = item_lookup[item]
-        elif isinstance(item, int) and item < dfs.n_items:
-            i = item
-        else:
-            raise ValueError(f"item {item} could not be found")
-
-        return i
-
-    @staticmethod
     def _read_dfs0(dfs, item):
         """Read data from dfs0 file
         """
-        item_number = PointObservation._get_dfs_item_number(dfs, item)
-        df = dfs.read(items=item_number).to_dataframe()
+        df = dfs.read(items=item).to_dataframe()
         df.dropna(inplace=True)
         return df
-
-    def subset_time(self, start=None, end=None):
-        #idx = np.where(np.logical_and(self.time >= start, self.time <= end))
-        self.df = self.df[start:end]
-
