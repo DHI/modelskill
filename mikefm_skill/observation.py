@@ -1,17 +1,11 @@
 import os
-import numpy as np
 from shapely.geometry import Point
 import pandas as pd
 from mikeio import Dfs0
 
 
-class PointObservation:
-
+class Observation:
     name = None
-    x = None
-    y = None
-    z = None
-
     df = None
 
     @property
@@ -20,14 +14,12 @@ class PointObservation:
 
     @property
     def start_time(self):
-        """First time instance (as datetime)
-        """
+        """First time instance (as datetime)"""
         return self.time[0].to_pydatetime()
 
     @property
     def end_time(self):
-        """Last time instance (as datetime)
-        """
+        """Last time instance (as datetime)"""
         return self.time[-1].to_pydatetime()
 
     @property
@@ -36,10 +28,22 @@ class PointObservation:
 
     @property
     def n(self):
+        """Number of observations"""
         return len(self.df)
+
+    def __init__(self, name: str = None):
+        self.name = name
+
+
+class PointObservation(Observation):
+
+    x = None
+    y = None
+    z = None
 
     @property
     def geo(self) -> Point:
+        """Coordinates of observation"""
         if self.z is None:
             return Point(self.x, self.y)
         else:
@@ -54,23 +58,23 @@ class PointObservation:
         z: float = None,
         name=None,
     ):
-
         self.x = x
         self.y = y
         self.z = z
-        self.name = name
 
         if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
             raise NotImplementedError()
         else:
             if name is None:
-                self.name = os.path.basename(filename).split(".")[0]
+                name = os.path.basename(filename).split(".")[0]
 
             ext = os.path.splitext(filename)[-1]
             if ext == ".dfs0":
                 self.df = self._read_dfs0(Dfs0(filename), item)
             else:
                 raise NotImplementedError()
+
+        super().__init__(name)
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
