@@ -110,9 +110,7 @@ class TrackObservation(Observation):
     def values(self):
         return self.df.iloc[:, 2].values
 
-    def __init__(
-        self, filename, item: int = 2, name=None,
-    ):
+    def __init__(self, filename, item: int = 2, name=None):
         if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
             raise NotImplementedError()
         else:
@@ -127,6 +125,10 @@ class TrackObservation(Observation):
                 raise NotImplementedError()
 
         super().__init__(name)
+
+    def __repr__(self):
+        out = f"TrackObservation: {self.name}, n={self.n}"
+        return out
 
     @staticmethod
     def _read_dfs0(dfs, items):
