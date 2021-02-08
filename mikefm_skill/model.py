@@ -4,7 +4,7 @@ import warnings
 from enum import Enum
 
 from mikeio import Dfs0, Dfsu
-from .observation import PointObservation
+from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, ComparisonCollection
 
 
@@ -21,6 +21,7 @@ class ModelResult:
     dfs = None
     observations = None
     items = None
+    start = None  # TODO: add start time
 
     def __init__(self, filename: str, name: str = None):
         # TODO: add "start" as user may wish to disregard start from comparison
@@ -72,7 +73,10 @@ class ModelResult:
     def _validate_observation(self, observation):
         ok = False
         if self.type == ModelResultType.dfsu:
-            ok = self.dfs.contains([observation.x, observation.y])
+            if isinstance(observation, PointObservation):
+                ok = self.dfs.contains([observation.x, observation.y])
+            elif isinstance(observation, TrackObservation):
+                ok = True
         elif self.type == ModelResultType.dfs0:
             # TODO: add check on name
             ok = True
@@ -81,16 +85,22 @@ class ModelResult:
 
     # TODO: rename to compare() ?
     def extract(self):
-        """extract model result in all observation positions
-        """
+        """extract model result in all observations"""
         cc = ComparisonCollection()
         for obs, item in zip(self.observations, self.items):
-            comparison = self.compare_point_observation(obs, item)
+            if isinstance(obs, PointObservation):
+                comparison = self.compare_point_observation(obs, item)
+            elif isinstance(obs, TrackObservation):
+                comparison = self.compare_track_observation(obs, item)
+            else:
+                warnings.warn("Only point and track observation are supported!")
+                continue
+
             cc.add_comparison(comparison)
         return cc
 
     def compare_point_observation(self, observation, item):
-        """Compare this ModelResult with an observation
+        """Compare this ModelResult with a point observation
 
         Parameters
         ----------
@@ -104,6 +114,7 @@ class ModelResult:
         <mikefm_skill.PointComparer>
             A comparer object for further analysis or plotting
         """
+        assert isinstance(observation, PointObservation)
         ds_model = None
         if self.type == ModelResultType.dfsu:
             ds_model = self._extract_point_dfsu(observation, item)
@@ -112,7 +123,8 @@ class ModelResult:
 
         return PointComparer(observation, ds_model)
 
-    def _extract_point_dfsu(self, observation, item):
+    def _extract_point_dfsu(self, observation: PointObservation, item):
+        assert isinstance(observation, PointObservation)
         xy = np.atleast_2d([observation.x, observation.y])
         elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
@@ -122,6 +134,37 @@ class ModelResult:
     def _extract_point_dfs0(self, observation, item):
         ds_model = self.dfs.read(items=[item])
         ds_model.items[0].name = self.name
+        return ds_model
+
+    def compare_track_observation(self, observation, item):
+        """Compare this ModelResult with a track observation
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.TrackObservation>
+            Track observation to be compared
+        item : str, integer
+            ModelResult item name or number
+
+        Returns
+        -------
+        <mikefm_skill.TrackComparer>
+            A comparer object for further analysis or plotting
+        """
+        assert isinstance(observation, TrackObservation)
+        ds_model = None
+        if self.type == ModelResultType.dfsu:
+            ds_model = self._extract_track_dfsu(observation, item)
+        elif self.type == ModelResultType.dfs0:
+            raise NotImplementedError()
+            # ds_model = self._extract_track_dfs0(observation, item)
+
+        return PointComparer(observation, ds_model)
+
+    def _extract_track_dfsu(self, observation: TrackObservation, item):
+        assert isinstance(observation, TrackObservation)
+        ds_model = self.dfs.extract_track(track=observation.df, items=[item])
+        ds_model.items[-1].name = self.name
         return ds_model
 
     def plot_observation_positions(self, figsize=None):
@@ -141,5 +184,8 @@ class ModelResult:
         offset_x = 0.02 * (max(xn) - min(xn))
         ax = self.dfs.plot(plot_type="outline_only", figsize=figsize)
         for obs in self.observations:
-            ax.scatter(x=obs.x, y=obs.y, marker="x")
-            ax.annotate(obs.name, (obs.x + offset_x, obs.y))
+            if isinstance(obs, PointObservation):
+                ax.scatter(x=obs.x, y=obs.y, marker="x")
+                ax.annotate(obs.name, (obs.x + offset_x, obs.y))
+            elif isinstance(obs, TrackObservation):
+                ax.scatter(x=obs.x, y=obs.y, marker=".")

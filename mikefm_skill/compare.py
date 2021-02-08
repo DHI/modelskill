@@ -7,14 +7,12 @@ from mikeio import Dfs0
 import mikefm_skill.metrics as mtr
 
 
-# TODO: add more ModelResults
-class PointComparer:
+class BaseComparer:
     observation = None
     mod_name = None
     obs_name = "Observation"
     mod_df = None
     df = None
-    # stats = None
 
     @property
     def name(self):
@@ -35,18 +33,7 @@ class PointComparer:
     def __init__(self, observation, modeldata):
         self.observation = deepcopy(observation)
         self.mod_df = modeldata.to_dataframe()
-        self.mod_name = self.mod_df.columns[0]
-        self.observation.df = self.observation.df[
-            modeldata.start_time : modeldata.end_time
-        ]
-        self.df = self._model2obs_interp(self.observation, modeldata)
-
-    def _model2obs_interp(self, obs, mod_ds):
-        """interpolate model to measurement time
-        """
-        df = mod_ds.interp_time(obs.time).to_dataframe()
-        df[self.obs_name] = obs.values
-        return df
+        self.mod_name = self.mod_df.columns[-1]
 
     def remove_bias(self, correct="Model"):
         bias = self.residual.mean()
@@ -60,15 +47,6 @@ class PointComparer:
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
             )
         return bias
-
-    def plot_timeseries(self, title=None, figsize=None):
-        fig, ax = plt.subplots(1, 1, figsize=figsize)
-        self.mod_df.plot(ax=ax)
-        self.df[self.obs_name].plot(marker=".", linestyle="None", ax=ax)
-        ax.legend([self.mod_name, self.obs_name])
-        if title is None:
-            title = self.name
-        plt.title(title)
 
     def scatter(
         self,
@@ -160,9 +138,46 @@ class PointComparer:
         return metric(self.obs, self.mod)
 
 
-class ComparisonCollection:
+# TODO: add more ModelResults
+class PointComparer(BaseComparer):
+    def __init__(self, observation, modeldata):
+        super().__init__(observation, modeldata)
+        self.observation.df = self.observation.df[
+            modeldata.start_time : modeldata.end_time
+        ]
+        self.df = self._model2obs_interp(self.observation, modeldata)
 
-    comparisons = []
+    def _model2obs_interp(self, obs, mod_ds):
+        """interpolate model to measurement time"""
+        df = mod_ds.interp_time(obs.time).to_dataframe()
+        df[self.obs_name] = obs.values
+        return df
+
+    def plot_timeseries(self, title=None, figsize=None):
+        fig, ax = plt.subplots(1, 1, figsize=figsize)
+        self.mod_df.plot(ax=ax)
+        self.df[self.obs_name].plot(marker=".", linestyle="None", ax=ax)
+        ax.legend([self.mod_name, self.obs_name])
+        if title is None:
+            title = self.name
+        plt.title(title)
+
+
+class TrackComparer(BaseComparer):
+    def __init__(self, observation, modeldata):
+        super().__init__(observation, modeldata)
+        self.observation.df = self.observation.df[
+            modeldata.start_time : modeldata.end_time
+        ]
+        self.df = modeldata.to_dataframe()
+        self.df[self.obs_name] = observation.df.iloc[:, -1].values
+        self.df.dropna(inplace=True)
+        # TODO: add check
+
+
+class ComparisonCollection:
+    def __init__(self):
+        self.comparisons = []
 
     def __getitem__(self, x):
         return self.comparisons[x]
