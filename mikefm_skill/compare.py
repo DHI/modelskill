@@ -40,9 +40,9 @@ class BaseComparer:
         bias = self.residual.mean()
         if correct == "Model":
             self.mod_df[self.mod_name] = self.mod_df.values - bias
-            self.df[self.mod_name] = self.df[self.mod_name].values - bias
+            self.df[self.mod_name] = self.mod - bias
         elif correct == "Observation":
-            self.df[self.obs_name] = self.df[self.obs_name].values + bias
+            self.df[self.obs_name] = self.obs + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
@@ -60,8 +60,8 @@ class BaseComparer:
         **kwargs,
     ):
 
-        x = self.df[self.obs_name].values
-        y = self.df[self.mod_name].values
+        x = self.obs
+        y = self.mod
 
         if xlabel is None:
             xlabel = "Observation"
