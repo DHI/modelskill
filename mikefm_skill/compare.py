@@ -64,16 +64,18 @@ class BaseComparer:
         y = self.mod
 
         if xlabel is None:
-            xlabel = "Observation"
+            xlabel = f"Observation, {self.observation._unit_text()}"
 
         if ylabel is None:
-            ylabel = "Model"
+            ylabel = f"Model, {self.observation._unit_text()}"
 
         if title is None:
-            title = self.name
+            title = f"{self.mod_name} vs {self.name}"
 
         xmin, xmax = x.min(), x.max()
         ymin, ymax = y.min(), y.max()
+        xymin = min([xmin, ymin])
+        xymax = max([xmax, ymax])
 
         if binsize is None:
             binsize = (xmax - xmin) / nbins
@@ -84,13 +86,15 @@ class BaseComparer:
         yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
 
         if backend == "matplotlib":
-            plt.plot([xmin, xmax], [ymin, ymax], label="1:1")
+            plt.plot([xymin, xymax], [xymin, xymax], label="1:1")
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
             plt.legend()
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
-            plt.axis("equal")
+            plt.axis("square")
+            plt.xlim([xymin, xymax])
+            plt.ylim([xymin, xymax])            
             cbar = plt.colorbar()
             cbar.set_label("# points")
             plt.title(title)
@@ -125,8 +129,10 @@ class BaseComparer:
         else:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
-    def residual_hist(self, bins=None):
-        return plt.hist(self.residual, bins=bins)
+    def residual_hist(self, bins=100):
+        plt.hist(self.residual, bins=bins)
+        plt.title(f"Residuals, {self.name}")
+        plt.xlabel(f"Residuals of {self.observation._unit_text()}")
 
     def statistics(self):
         resi = self.residual
@@ -159,6 +165,7 @@ class PointComparer(BaseComparer):
         fig, ax = plt.subplots(1, 1, figsize=figsize)
         self.mod_df.plot(ax=ax)
         self.df[self.obs_name].plot(marker=".", linestyle="None", ax=ax)
+        ax.set_ylabel(self.observation._unit_text())
         ax.legend([self.mod_name, self.obs_name])
         if title is None:
             title = self.name
