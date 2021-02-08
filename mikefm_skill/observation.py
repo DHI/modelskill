@@ -8,6 +8,21 @@ class Observation:
     name = None
     df = None
     itemInfo = None
+    color = "#d62728"
+
+    # DHI: darkblue: #004165,
+    #      midblue:  #0098DB,
+    #      gray:     #8B8D8E,
+    #      lightblue:#63CEFF,
+    # DHI secondary
+    #      yellow:   #FADC41,
+    #      orange:   #FF8849
+    #      lightblue2:#C1E2E5
+    #      green:    #61C250
+    #      purple:   #93509E
+    #      darkgray: #51626F
+
+    # matplotlib: red=#d62728
 
     @property
     def time(self):
@@ -45,7 +60,7 @@ class Observation:
 
     def hist(self, bins=100, **kwargs):
         """plot histogram"""
-        ax = self.df.iloc[:, -1].hist(bins=bins, **kwargs)
+        ax = self.df.iloc[:, -1].hist(bins=bins, color=self.color, **kwargs)
         ax.set_title(self.name)
         ax.set_xlabel(self._unit_text())
         return ax
@@ -115,7 +130,7 @@ class PointObservation(Observation):
 
     def plot(self, **kwargs):
         """plot timeseries"""
-        ax = self.df.plot(marker=".", linestyle="None", **kwargs)
+        ax = self.df.plot(marker=".", color=self.color, linestyle="None", **kwargs)
         ax.set_title(self.name)
         ax.set_ylabel(self._unit_text())
         return ax

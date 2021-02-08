@@ -10,6 +10,8 @@ from mikefm_skill.observation import PointObservation, TrackObservation
 
 class BaseComparer:
     observation = None
+    mod_color = "#004165"
+    resi_color = "#8B8D8E"
     mod_name = None
     obs_name = "Observation"
     mod_df = None
@@ -55,6 +57,7 @@ class BaseComparer:
         ylabel=None,
         binsize=None,
         nbins=100,
+        show_points=None,
         backend="matplotlib",
         title=None,
         **kwargs,
@@ -71,6 +74,9 @@ class BaseComparer:
 
         if title is None:
             title = f"{self.mod_name} vs {self.name}"
+
+        if show_points is None:
+            show_points = len(x) < 1e4
 
         xmin, xmax = x.min(), x.max()
         ymin, ymax = y.min(), y.max()
@@ -94,9 +100,11 @@ class BaseComparer:
             plt.ylabel(ylabel)
             plt.axis("square")
             plt.xlim([xymin, xymax])
-            plt.ylim([xymin, xymax])            
+            plt.ylim([xymin, xymax])
             cbar = plt.colorbar()
             cbar.set_label("# points")
+            if show_points:
+                plt.scatter(x, y, c="0.25", s=10, alpha=0.2, marker=".", label=None)
             plt.title(title)
 
         elif backend == "bokeh":
@@ -130,9 +138,18 @@ class BaseComparer:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
     def residual_hist(self, bins=100):
-        plt.hist(self.residual, bins=bins)
+        plt.hist(self.residual, bins=bins, color=self.resi_color)
         plt.title(f"Residuals, {self.name}")
         plt.xlabel(f"Residuals of {self.observation._unit_text()}")
+
+    def hist(self, bins=100):
+        ax = self.df.iloc[:, -2].hist(bins=bins, color=self.mod_color, alpha=0.5)
+        self.df.iloc[:, -1].hist(
+            bins=bins, color=self.observation.color, alpha=0.5, ax=ax
+        )
+        ax.legend([self.mod_name, self.obs_name])
+        plt.title(f"{self.mod_name} vs {self.name}")
+        plt.xlabel(f"{self.observation._unit_text()}")
 
     def statistics(self):
         resi = self.residual
@@ -164,7 +181,9 @@ class PointComparer(BaseComparer):
     def plot_timeseries(self, title=None, figsize=None):
         fig, ax = plt.subplots(1, 1, figsize=figsize)
         self.mod_df.plot(ax=ax)
-        self.df[self.obs_name].plot(marker=".", linestyle="None", ax=ax)
+        self.df[self.obs_name].plot(
+            marker=".", color=self.observation.color, linestyle="None", ax=ax
+        )
         ax.set_ylabel(self.observation._unit_text())
         ax.legend([self.mod_name, self.obs_name])
         if title is None:
