@@ -1,12 +1,11 @@
 import os
 import numpy as np
-import pandas as pd
 import warnings
 from enum import Enum
 
 from mikeio import Dfs0, Dfsu
-from .observation import PointObservation
-from .compare import PointComparer, ComparisonCollection
+from .observation import PointObservation, TrackObservation
+from .compare import PointComparer, TrackComparer, ComparisonCollection
 
 
 class ModelResultType(Enum):
@@ -22,8 +21,9 @@ class ModelResult:
     dfs = None
     observations = None
     items = None
+    start = None  # TODO: add start time
 
-    def __init__(self, filename, name=None):
+    def __init__(self, filename: str, name: str = None):
         # TODO: add "start" as user may wish to disregard start from comparison
         self.filename = filename
         ext = os.path.splitext(filename)[-1]
@@ -54,6 +54,15 @@ class ModelResult:
         return str.join("\n", out)
 
     def add_observation(self, observation, item):
+        """Add an observation to this ModelResult
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.PointObservation>
+            Observation object for later comparison
+        item : str, integer
+            ModelResult item name or number corresponding to the observation
+        """
         ok = self._validate_observation(observation)
         if ok:
             self.observations.append(observation)
@@ -61,10 +70,13 @@ class ModelResult:
         else:
             warnings.warn("Could not add observation")
 
-    def _validate_observation(self, observation):
+    def _validate_observation(self, observation) -> bool:
         ok = False
         if self.type == ModelResultType.dfsu:
-            ok = self.dfs.contains([observation.x, observation.y])
+            if isinstance(observation, PointObservation):
+                ok = self.dfs.contains([observation.x, observation.y])
+            elif isinstance(observation, TrackObservation):
+                ok = True
         elif self.type == ModelResultType.dfs0:
             # TODO: add check on name
             ok = True
@@ -72,16 +84,37 @@ class ModelResult:
         return ok
 
     # TODO: rename to compare() ?
-    def extract(self):
-        """extract model result in observation positions
-        """
+    def extract(self) -> ComparisonCollection:
+        """extract model result in all observations"""
         cc = ComparisonCollection()
         for obs, item in zip(self.observations, self.items):
-            comparison = self.compare_point_observation(obs, item)
+            if isinstance(obs, PointObservation):
+                comparison = self.compare_point_observation(obs, item)
+            elif isinstance(obs, TrackObservation):
+                comparison = self.compare_track_observation(obs, item)
+            else:
+                warnings.warn("Only point and track observation are supported!")
+                continue
+
             cc.add_comparison(comparison)
         return cc
 
-    def compare_point_observation(self, observation, item):
+    def compare_point_observation(self, observation, item) -> PointComparer:
+        """Compare this ModelResult with a point observation
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.PointObservation>
+            Observation to be compared
+        item : str, integer
+            ModelResult item name or number
+
+        Returns
+        -------
+        <mikefm_skill.PointComparer>
+            A comparer object for further analysis or plotting
+        """
+        assert isinstance(observation, PointObservation)
         ds_model = None
         if self.type == ModelResultType.dfsu:
             ds_model = self._extract_point_dfsu(observation, item)
@@ -90,7 +123,8 @@ class ModelResult:
 
         return PointComparer(observation, ds_model)
 
-    def _extract_point_dfsu(self, observation, item):
+    def _extract_point_dfsu(self, observation: PointObservation, item):
+        assert isinstance(observation, PointObservation)
         xy = np.atleast_2d([observation.x, observation.y])
         elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
@@ -102,7 +136,45 @@ class ModelResult:
         ds_model.items[0].name = self.name
         return ds_model
 
+    def compare_track_observation(self, observation, item) -> TrackComparer:
+        """Compare this ModelResult with a track observation
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.TrackObservation>
+            Track observation to be compared
+        item : str, integer
+            ModelResult item name or number
+
+        Returns
+        -------
+        <mikefm_skill.TrackComparer>
+            A comparer object for further analysis or plotting
+        """
+        assert isinstance(observation, TrackObservation)
+        ds_model = None
+        if self.type == ModelResultType.dfsu:
+            ds_model = self._extract_track_dfsu(observation, item)
+        elif self.type == ModelResultType.dfs0:
+            raise NotImplementedError()
+            # ds_model = self._extract_track_dfs0(observation, item)
+
+        return TrackComparer(observation, ds_model)
+
+    def _extract_track_dfsu(self, observation: TrackObservation, item):
+        assert isinstance(observation, TrackObservation)
+        ds_model = self.dfs.extract_track(track=observation.df, items=[item])
+        ds_model.items[-1].name = self.name
+        return ds_model
+
     def plot_observation_positions(self, figsize=None):
+        """Plot oberservation points on a map showing the model domain
+
+        Parameters
+        ----------
+        figsize : (float, float), optional
+            figure size, by default None
+        """
         if self.type == ModelResultType.dfs0:
             warnings.warn(
                 "Plotting observations is only supported for dfsu ModelResults"
@@ -112,5 +184,8 @@ class ModelResult:
         offset_x = 0.02 * (max(xn) - min(xn))
         ax = self.dfs.plot(plot_type="outline_only", figsize=figsize)
         for obs in self.observations:
-            ax.scatter(x=obs.x, y=obs.y, marker="x")
-            ax.annotate(obs.name, (obs.x + offset_x, obs.y))
+            if isinstance(obs, PointObservation):
+                ax.scatter(x=obs.x, y=obs.y, marker="x")
+                ax.annotate(obs.name, (obs.x + offset_x, obs.y))
+            elif isinstance(obs, TrackObservation):
+                ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")

@@ -1,28 +1,21 @@
-import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import warnings
 from copy import deepcopy
 
 from mikeio import Dfs0
 import mikefm_skill.metrics as mtr
-
-# from .observation import PointObservation
-
-
-class TimeSeriesComparer:
-    pass
+from mikefm_skill.observation import PointObservation, TrackObservation
 
 
-# TODO: add more ModelResults
-class PointComparer:
+class BaseComparer:
     observation = None
+    mod_color = "#004165"
+    resi_color = "#8B8D8E"
     mod_name = None
     obs_name = "Observation"
     mod_df = None
     df = None
-    # stats = None
 
     @property
     def name(self):
@@ -43,41 +36,20 @@ class PointComparer:
     def __init__(self, observation, modeldata):
         self.observation = deepcopy(observation)
         self.mod_df = modeldata.to_dataframe()
-        self.mod_name = self.mod_df.columns[0]
-        self.observation.df = self.observation.df[
-            modeldata.start_time : modeldata.end_time
-        ]
-        # self.observation.subset_time(start=modeldata.start_time, end=modeldata.end_time)
-        self.df = self._model2obs_interp(self.observation, modeldata)
-
-    def _model2obs_interp(self, obs, mod_ds):
-        """interpolate model to measurement time
-        """
-        df = mod_ds.interp_time(obs.time).to_dataframe()
-        df[self.obs_name] = obs.values
-        return df
+        self.mod_name = self.mod_df.columns[-1]
 
     def remove_bias(self, correct="Model"):
         bias = self.residual.mean()
         if correct == "Model":
             self.mod_df[self.mod_name] = self.mod_df.values - bias
-            self.df[self.mod_name] = self.df[self.mod_name].values - bias
+            self.df[self.mod_name] = self.mod - bias
         elif correct == "Observation":
-            self.df[self.obs_name] = self.df[self.obs_name].values + bias
+            self.df[self.obs_name] = self.obs + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
             )
         return bias
-
-    def plot_timeseries(self, title=None, figsize=None):
-        fig, ax = plt.subplots(1, 1, figsize=figsize)
-        self.mod_df.plot(ax=ax)
-        self.df[self.obs_name].plot(marker=".", linestyle="None", ax=ax)
-        ax.legend([self.mod_name, self.obs_name])
-        if title is None:
-            title = self.name
-        plt.title(title)
 
     def scatter(
         self,
@@ -85,25 +57,31 @@ class PointComparer:
         ylabel=None,
         binsize=None,
         nbins=100,
+        show_points=None,
         backend="matplotlib",
         title=None,
         **kwargs,
     ):
 
-        x = self.df[self.obs_name].values
-        y = self.df[self.mod_name].values
+        x = self.obs
+        y = self.mod
 
         if xlabel is None:
-            xlabel = "Observation"
+            xlabel = f"Observation, {self.observation._unit_text()}"
 
         if ylabel is None:
-            ylabel = "Model"
+            ylabel = f"Model, {self.observation._unit_text()}"
 
         if title is None:
-            title = self.name
+            title = f"{self.mod_name} vs {self.name}"
+
+        if show_points is None:
+            show_points = len(x) < 1e4
 
         xmin, xmax = x.min(), x.max()
         ymin, ymax = y.min(), y.max()
+        xymin = min([xmin, ymin])
+        xymax = max([xmax, ymax])
 
         if binsize is None:
             binsize = (xmax - xmin) / nbins
@@ -114,15 +92,19 @@ class PointComparer:
         yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
 
         if backend == "matplotlib":
-            plt.plot([xmin, xmax], [ymin, ymax], label="1:1")
+            plt.plot([xymin, xymax], [xymin, xymax], label="1:1")
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
             plt.legend()
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
-            plt.axis("equal")
+            plt.axis("square")
+            plt.xlim([xymin, xymax])
+            plt.ylim([xymin, xymax])
             cbar = plt.colorbar()
             cbar.set_label("# points")
+            if show_points:
+                plt.scatter(x, y, c="0.25", s=10, alpha=0.2, marker=".", label=None)
             plt.title(title)
 
         elif backend == "bokeh":
@@ -155,8 +137,19 @@ class PointComparer:
         else:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
-    def residual_hist(self, bins=None):
-        return plt.hist(self.residual, bins=bins)
+    def residual_hist(self, bins=100):
+        plt.hist(self.residual, bins=bins, color=self.resi_color)
+        plt.title(f"Residuals, {self.name}")
+        plt.xlabel(f"Residuals of {self.observation._unit_text()}")
+
+    def hist(self, bins=100):
+        ax = self.df.iloc[:, -2].hist(bins=bins, color=self.mod_color, alpha=0.5)
+        self.df.iloc[:, -1].hist(
+            bins=bins, color=self.observation.color, alpha=0.5, ax=ax
+        )
+        ax.legend([self.mod_name, self.obs_name])
+        plt.title(f"{self.mod_name} vs {self.name}")
+        plt.xlabel(f"{self.observation._unit_text()}")
 
     def statistics(self):
         resi = self.residual
@@ -169,9 +162,51 @@ class PointComparer:
         return metric(self.obs, self.mod)
 
 
-class ComparisonCollection:
+# TODO: add more ModelResults
+class PointComparer(BaseComparer):
+    def __init__(self, observation, modeldata):
+        super().__init__(observation, modeldata)
+        assert isinstance(observation, PointObservation)
+        self.observation.df = self.observation.df[
+            modeldata.start_time : modeldata.end_time
+        ]
+        self.df = self._model2obs_interp(self.observation, modeldata)
 
-    comparisons = []
+    def _model2obs_interp(self, obs, mod_ds):
+        """interpolate model to measurement time"""
+        df = mod_ds.interp_time(obs.time).to_dataframe()
+        df[self.obs_name] = obs.values
+        return df
+
+    def plot_timeseries(self, title=None, figsize=None):
+        fig, ax = plt.subplots(1, 1, figsize=figsize)
+        self.mod_df.plot(ax=ax)
+        self.df[self.obs_name].plot(
+            marker=".", color=self.observation.color, linestyle="None", ax=ax
+        )
+        ax.set_ylabel(self.observation._unit_text())
+        ax.legend([self.mod_name, self.obs_name])
+        if title is None:
+            title = self.name
+        plt.title(title)
+
+
+class TrackComparer(BaseComparer):
+    def __init__(self, observation, modeldata):
+        super().__init__(observation, modeldata)
+        assert isinstance(observation, TrackObservation)
+        self.observation.df = self.observation.df[
+            modeldata.start_time : modeldata.end_time
+        ]
+        self.df = modeldata.to_dataframe()
+        self.df[self.obs_name] = observation.df.iloc[:, -1].values
+        self.df.dropna(inplace=True)
+        # TODO: add check
+
+
+class ComparisonCollection:
+    def __init__(self):
+        self.comparisons = []
 
     def __getitem__(self, x):
         return self.comparisons[x]

@@ -8,7 +8,7 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="mikefm_skill",
-    version='0.1.dev',
+    version="0.1.dev",
     install_requires=["numpy", "pandas", "scipy", "mikeio", "shapely"],
     extras_require={
         "dev": [
@@ -21,8 +21,8 @@ setuptools.setup(
         ],
         "test": ["pytest", "matplotlib"],
     },
-    author="Henrik Andersson",
-    author_email="jan@dhigroup.com",
+    author="Jesper Sandvig Mariegaard",
+    author_email="jem@dhigroup.com",
     description="Compare results from MIKE FM simulations with observations.",
     platform="windows_x64",
     license=license,

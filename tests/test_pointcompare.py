@@ -18,18 +18,12 @@ def drogden():
 
 
 @pytest.fixture
-def oresund_2d():
-    return "tests/testdata/Oresund2D.dfsu"
+def modelresult_oresund_2d():
+    return ModelResult("tests/testdata/Oresund2D.dfsu")
 
 
-def test_dfs_object(oresund_2d):
-    mr = ModelResult(oresund_2d)
-
-    assert mr.dfs.is_2d
-
-
-def test_total_skill(oresund_2d, klagshamn, drogden):
-    mr = ModelResult(oresund_2d)
+def test_total_skill(modelresult_oresund_2d, klagshamn, drogden):
+    mr = modelresult_oresund_2d
 
     mr.add_observation(klagshamn, item=0)
     mr.add_observation(drogden, item=0)
