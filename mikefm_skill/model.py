@@ -5,7 +5,7 @@ from enum import Enum
 
 from mikeio import Dfs0, Dfsu
 from .observation import PointObservation, TrackObservation
-from .compare import PointComparer, ComparisonCollection
+from .compare import PointComparer, TrackComparer, ComparisonCollection
 
 
 class ModelResultType(Enum):
@@ -70,7 +70,7 @@ class ModelResult:
         else:
             warnings.warn("Could not add observation")
 
-    def _validate_observation(self, observation):
+    def _validate_observation(self, observation) -> bool:
         ok = False
         if self.type == ModelResultType.dfsu:
             if isinstance(observation, PointObservation):
@@ -84,7 +84,7 @@ class ModelResult:
         return ok
 
     # TODO: rename to compare() ?
-    def extract(self):
+    def extract(self) -> ComparisonCollection:
         """extract model result in all observations"""
         cc = ComparisonCollection()
         for obs, item in zip(self.observations, self.items):
@@ -99,7 +99,7 @@ class ModelResult:
             cc.add_comparison(comparison)
         return cc
 
-    def compare_point_observation(self, observation, item):
+    def compare_point_observation(self, observation, item) -> PointComparer:
         """Compare this ModelResult with a point observation
 
         Parameters
@@ -136,7 +136,7 @@ class ModelResult:
         ds_model.items[0].name = self.name
         return ds_model
 
-    def compare_track_observation(self, observation, item):
+    def compare_track_observation(self, observation, item) -> TrackComparer:
         """Compare this ModelResult with a track observation
 
         Parameters
@@ -159,7 +159,7 @@ class ModelResult:
             raise NotImplementedError()
             # ds_model = self._extract_track_dfs0(observation, item)
 
-        return PointComparer(observation, ds_model)
+        return TrackComparer(observation, ds_model)
 
     def _extract_track_dfsu(self, observation: TrackObservation, item):
         assert isinstance(observation, TrackObservation)
