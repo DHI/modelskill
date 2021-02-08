@@ -33,10 +33,19 @@ class BaseComparer:
     def mod(self):
         return self.df[self.mod_name].values
 
-    def __init__(self, observation, modeldata):
+    def __init__(self, observation, modeldata, metric=mtr.rmse):
         self.observation = deepcopy(observation)
         self.mod_df = modeldata.to_dataframe()
         self.mod_name = self.mod_df.columns[-1]
+        self.metric = mtr.rmse
+
+    def __repr__(self):
+
+        out = []
+        out.append(f"<{type(self).__name__}>")
+        out.append(f"Observation: {self.observation.name}")
+        out.append(f"{self.metric.__name__}: {self.skill():.3f}")
+        return str.join("\n", out)
 
     def remove_bias(self, correct="Model"):
         bias = self.residual.mean()
@@ -158,7 +167,11 @@ class BaseComparer:
         rmse = np.sqrt(np.mean(uresi ** 2))
         return bias, rmse
 
-    def skill(self, metric=mtr.rmse):
+    def skill(self, metric=None):
+
+        if metric is None:
+            metric = self.metric
+
         return metric(self.obs, self.mod)
 
 
@@ -179,10 +192,12 @@ class PointComparer(BaseComparer):
         return df
 
     def plot_timeseries(self, title=None, figsize=None):
-        fig, ax = plt.subplots(1, 1, figsize=figsize)
-        self.mod_df.plot(ax=ax)
-        self.df[self.obs_name].plot(
-            marker=".", color=self.observation.color, linestyle="None", ax=ax
+        ax = self.mod_df.plot(figsize=figsize)
+        ax.scatter(
+            self.df.index,
+            self.df[[self.obs_name]],
+            marker=".",
+            color=self.observation.color,
         )
         ax.set_ylabel(self.observation._unit_text())
         ax.legend([self.mod_name, self.obs_name])
