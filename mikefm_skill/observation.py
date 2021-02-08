@@ -35,16 +35,20 @@ class Observation:
     def __init__(self, name: str = None):
         self.name = name
 
+    def _unit_text(self):
+        if self.itemInfo is None:
+            return ""
+        txt = f"{self.itemInfo.type.display_name}"
+        if self.itemInfo.type != eum.EUMType.Undefined:
+            txt = f"{txt} [{self.itemInfo.unit.display_name}]"
+        return txt
+
     def hist(self, bins=100, **kwargs):
+        """plot histogram"""
         ax = self.df.iloc[:, -1].hist(bins=bins, **kwargs)
-        # ax = ax[0]
         ax.set_title(self.name)
-        if self.itemInfo is not None:
-            txt = f"{self.itemInfo.type.display_name}"
-            if self.itemInfo.type != eum.EUMType.Undefined:
-                txt = f"{txt} [{self.itemInfo.unit.display_name}]"
-            ax.set_xlabel(txt)
-        return
+        ax.set_xlabel(self._unit_text())
+        return ax
 
 
 class PointObservation(Observation):
@@ -110,14 +114,11 @@ class PointObservation(Observation):
         return df, dfs.items[item]
 
     def plot(self, **kwargs):
+        """plot timeseries"""
         ax = self.df.plot(marker=".", linestyle="None", **kwargs)
         ax.set_title(self.name)
-        if self.itemInfo is not None:
-            txt = f"{self.itemInfo.type.display_name}"
-            if self.itemInfo.type != eum.EUMType.Undefined:
-                txt = f"{txt} [{self.itemInfo.unit.display_name}]"
-            ax.set_ylabel(txt)
-        return
+        ax.set_ylabel(self._unit_text())
+        return ax
 
 
 class TrackObservation(Observation):
