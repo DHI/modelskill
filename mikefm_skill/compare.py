@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from mikeio import Dfs0
 import mikefm_skill.metrics as mtr
+from mikefm_skill.observation import PointObservation, TrackObservation
 
 
 class BaseComparer:
@@ -142,6 +143,7 @@ class BaseComparer:
 class PointComparer(BaseComparer):
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
+        assert isinstance(observation, PointObservation)
         self.observation.df = self.observation.df[
             modeldata.start_time : modeldata.end_time
         ]
@@ -166,6 +168,7 @@ class PointComparer(BaseComparer):
 class TrackComparer(BaseComparer):
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
+        assert isinstance(observation, TrackObservation)
         self.observation.df = self.observation.df[
             modeldata.start_time : modeldata.end_time
         ]
