@@ -1,12 +1,13 @@
 import os
 from shapely.geometry import Point
 import pandas as pd
-from mikeio import Dfs0
+from mikeio import Dfs0, eum
 
 
 class Observation:
     name = None
     df = None
+    itemInfo = None
 
     @property
     def time(self):
@@ -33,6 +34,17 @@ class Observation:
 
     def __init__(self, name: str = None):
         self.name = name
+
+    def hist(self, bins=100, **kwargs):
+        ax = self.df.iloc[:, -1].hist(bins=bins, **kwargs)
+        # ax = ax[0]
+        ax.set_title(self.name)
+        if self.itemInfo is not None:
+            txt = f"{self.itemInfo.type.display_name}"
+            if self.itemInfo.type != eum.EUMType.Undefined:
+                txt = f"{txt} [{self.itemInfo.unit.display_name}]"
+            ax.set_xlabel(txt)
+        return
 
 
 class PointObservation(Observation):
@@ -70,7 +82,8 @@ class PointObservation(Observation):
 
             ext = os.path.splitext(filename)[-1]
             if ext == ".dfs0":
-                self.df = self._read_dfs0(Dfs0(filename), item)
+                df, itemInfo = self._read_dfs0(Dfs0(filename), item)
+                self.df, self.itemInfo = df, itemInfo
             else:
                 raise NotImplementedError()
 
@@ -94,7 +107,17 @@ class PointObservation(Observation):
         """
         df = dfs.read(items=item).to_dataframe()
         df.dropna(inplace=True)
-        return df
+        return df, dfs.items[item]
+
+    def plot(self, **kwargs):
+        ax = self.df.plot(marker=".", linestyle="None", **kwargs)
+        ax.set_title(self.name)
+        if self.itemInfo is not None:
+            txt = f"{self.itemInfo.type.display_name}"
+            if self.itemInfo.type != eum.EUMType.Undefined:
+                txt = f"{txt} [{self.itemInfo.unit.display_name}]"
+            ax.set_ylabel(txt)
+        return
 
 
 class TrackObservation(Observation):
@@ -120,7 +143,8 @@ class TrackObservation(Observation):
             ext = os.path.splitext(filename)[-1]
             if ext == ".dfs0":
                 items = [0, 1, item]
-                self.df = self._read_dfs0(Dfs0(filename), items)
+                df, itemInfo = self._read_dfs0(Dfs0(filename), items)
+                self.df, self.itemInfo = df, itemInfo
             else:
                 raise NotImplementedError()
 
@@ -136,4 +160,4 @@ class TrackObservation(Observation):
         """
         df = dfs.read(items=items).to_dataframe()
         df.dropna(inplace=True)
-        return df
+        return df, dfs.items[items[-1]]
