@@ -1,3 +1,4 @@
+from matplotlib import markers
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -191,7 +192,7 @@ class PointComparer(BaseComparer):
         df[self.obs_name] = obs.values
         return df
 
-    def plot_timeseries(self, title=None, figsize=None, backend="matplotlib"):
+    def plot_timeseries(self, title=None, figsize=None, backend="matplotlib", **kwargs):
 
         if backend == "matplotlib":
             ax = self.mod_df.plot(figsize=figsize)
@@ -206,6 +207,33 @@ class PointComparer(BaseComparer):
             if title is None:
                 title = self.name
             plt.title(title)
+
+        elif backend == "plotly":
+            import plotly.graph_objects as go
+
+            fig = go.Figure(
+                [
+                    go.Scatter(
+                        x=self.mod_df.index,
+                        y=self.mod_df.iloc[:, 0],
+                        name=self.mod_name,
+                        line=dict(color=self.mod_color),
+                    ),
+                    go.Scatter(
+                        x=self.df.index,
+                        y=self.df[self.obs_name],
+                        name=self.obs_name,
+                        mode="markers",
+                        marker=dict(color=self.observation.color),
+                    ),
+                ]
+            )
+
+            fig.update_layout(
+                title=title, yaxis_title=self.observation._unit_text(), **kwargs
+            )
+
+            fig.show()
         else:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
