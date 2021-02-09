@@ -68,7 +68,7 @@ def test_extract(hd_oresund_2d, klagshamn, drogden):
     mr.add_observation(klagshamn, item=0)
     mr.add_observation(drogden, item=0)
     collection = mr.extract()
-    collection[0].name == "Klagshamn"
+    collection["Klagshamn"].name == "Klagshamn"
 
 
 def test_plot_positions(sw_dutch_coast, Hm0_EPL, Hm0_HKNA):

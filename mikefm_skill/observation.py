@@ -122,8 +122,7 @@ class PointObservation(Observation):
 
     @staticmethod
     def _read_dfs0(dfs, item):
-        """Read data from dfs0 file
-        """
+        """Read data from dfs0 file"""
         df = dfs.read(items=item).to_dataframe()
         df.dropna(inplace=True)
         return df, dfs.items[item]
@@ -172,8 +171,7 @@ class TrackObservation(Observation):
 
     @staticmethod
     def _read_dfs0(dfs, items):
-        """Read track data from dfs0 file
-        """
+        """Read track data from dfs0 file"""
         df = dfs.read(items=items).to_dataframe()
         df.dropna(inplace=True)
         return df, dfs.items[items[-1]]

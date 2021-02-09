@@ -191,19 +191,23 @@ class PointComparer(BaseComparer):
         df[self.obs_name] = obs.values
         return df
 
-    def plot_timeseries(self, title=None, figsize=None):
-        ax = self.mod_df.plot(figsize=figsize)
-        ax.scatter(
-            self.df.index,
-            self.df[[self.obs_name]],
-            marker=".",
-            color=self.observation.color,
-        )
-        ax.set_ylabel(self.observation._unit_text())
-        ax.legend([self.mod_name, self.obs_name])
-        if title is None:
-            title = self.name
-        plt.title(title)
+    def plot_timeseries(self, title=None, figsize=None, backend="matplotlib"):
+
+        if backend == "matplotlib":
+            ax = self.mod_df.plot(figsize=figsize)
+            ax.scatter(
+                self.df.index,
+                self.df[[self.obs_name]],
+                marker=".",
+                color=self.observation.color,
+            )
+            ax.set_ylabel(self.observation._unit_text())
+            ax.legend([self.mod_name, self.obs_name])
+            if title is None:
+                title = self.name
+            plt.title(title)
+        else:
+            raise ValueError(f"Plotting backend: {backend} not supported")
 
 
 class TrackComparer(BaseComparer):
@@ -221,18 +225,25 @@ class TrackComparer(BaseComparer):
 
 class ComparisonCollection:
     def __init__(self):
-        self.comparisons = []
+        self.comparisons = {}
+
+    def __repr__(self):
+        out = []
+        out.append(f"<{type(self).__name__}>")
+        for key, value in self.comparisons.items():
+            out.append(f"{type(value).__name__}: {key}")
+        return str.join("\n", out)
 
     def __getitem__(self, x):
         return self.comparisons[x]
 
     def add_comparison(self, comparison):
 
-        self.comparisons.append(comparison)
+        self.comparisons[comparison.name] = comparison
 
     def skill(self, metric=mtr.rmse):
 
-        scores = [metric(mr.obs, mr.mod) for mr in self.comparisons]
+        scores = [metric(mr.obs, mr.mod) for mr in self.comparisons.values()]
 
         return np.average(scores)
 
@@ -242,10 +253,10 @@ class ComparisonCollection:
             metrics = [mtr.bias, mtr.rmse, mtr.corr_coef, mtr.scatter_index]
 
         res = {}
-        for mr in self.comparisons:
+        for cmp in self.comparisons.values():
             tmp = {}
             for metric in metrics:
-                tmp[metric.__name__] = metric(mr.obs, mr.mod)
-            res[mr.name] = tmp
+                tmp[metric.__name__] = metric(cmp.obs, cmp.mod)
+            res[cmp.name] = tmp
 
         return pd.DataFrame(res).T

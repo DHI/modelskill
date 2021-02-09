@@ -39,8 +39,7 @@ class ModelResult:
         else:
             raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
 
-        self.observations = []
-        self.items = []
+        self.observations = {}
 
         if name is None:
             name = os.path.basename(filename).split(".")[0]
@@ -65,8 +64,9 @@ class ModelResult:
         """
         ok = self._validate_observation(observation)
         if ok:
-            self.observations.append(observation)
-            self.items.append(item)
+            observation.model_variable = item
+            self.observations[observation.name] = observation
+            # self.items.append(item)
         else:
             warnings.warn("Could not add observation")
 
@@ -87,11 +87,12 @@ class ModelResult:
     def extract(self) -> ComparisonCollection:
         """extract model result in all observations"""
         cc = ComparisonCollection()
-        for obs, item in zip(self.observations, self.items):
+        # for obs, item in zip(self.observations, self.items):
+        for obs in self.observations.values():
             if isinstance(obs, PointObservation):
-                comparison = self.compare_point_observation(obs, item)
+                comparison = self.compare_point_observation(obs, obs.model_variable)
             elif isinstance(obs, TrackObservation):
-                comparison = self.compare_track_observation(obs, item)
+                comparison = self.compare_track_observation(obs, obs.model_variable)
             else:
                 warnings.warn("Only point and track observation are supported!")
                 continue
