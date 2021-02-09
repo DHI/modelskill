@@ -25,3 +25,9 @@ dmi_30357_Drogden_Fyr  0.26  0.28       0.51           0.53
 ### Scatter plot
 
 ![scatter](images/scatter.png)
+
+### Timeseries plot
+
+Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
+
+![timeseries](images/plotly_timeseries.png)
