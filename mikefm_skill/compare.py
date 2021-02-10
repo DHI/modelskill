@@ -70,7 +70,7 @@ class BaseComparer:
         show_points=None,
         backend="matplotlib",
         title=None,
-        figsize=None,
+        figsize=(8, 8),
         xlim=None,
         ylim=None,
         **kwargs,
@@ -98,10 +98,9 @@ class BaseComparer:
 
         if xlim is None:
             xlim = [xymin, xymax]
-        
+
         if ylim is None:
             ylim = [xymin, xymax]
-
 
         if binsize is None:
             binsize = (xmax - xmin) / nbins
@@ -112,6 +111,7 @@ class BaseComparer:
         yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
 
         if backend == "matplotlib":
+
             plt.figure(figsize=figsize)
             plt.plot([xymin, xymax], [xymin, xymax], label="1:1", c="blue")
             plt.plot(xq, yq, label="QQ", c="gray")
@@ -122,7 +122,7 @@ class BaseComparer:
             plt.axis("square")
             plt.xlim(xlim)
             plt.ylim(ylim)
-            cbar = plt.colorbar()
+            cbar = plt.colorbar(shrink=0.6, pad=0.01)
             cbar.set_label("# points")
             if show_points:
                 plt.scatter(x, y, c="0.25", s=10, alpha=0.2, marker=".", label=None)
