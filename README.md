@@ -2,6 +2,17 @@
 Compare results from MIKE FM simulations with observations
 
 
+## Example notebooks
+
+See examples of use in these notebooks
+
+* [basic.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/basic.ipynb)
+* [skill.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/skill.ipynb)
+* [timeseries_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/timeseries_compare.ipynb)
+* [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/SW_DutchCoast.ipynb)
+* [Calibration.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/Calibration.ipynb)
+
+
 ## Usage
 ```python
 >>> from mikefm_skill.model import ModelResult
