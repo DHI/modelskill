@@ -1,4 +1,4 @@
-from mikefm_skill.compare import unit_display_name
+from mikefm_skill.observation import unit_display_name
 
 
 def test_units_display_name():

@@ -11,4 +11,4 @@ def klagshamn():
 
 def test_coordinates(klagshamn):
     o1 = PointObservation(klagshamn, item=0, x=366844, y=6154291, name="Klagshamn")
-    assert isinstance(o1.geo, Point)
+    assert isinstance(o1.geometry, Point)
