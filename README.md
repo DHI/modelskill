@@ -2,6 +2,10 @@
 Compare results from MIKE FM simulations with observations
 
 
+## Installation
+
+    > pip install https://github.com/DHI/mikefm-skill/archive/master.zip
+
 ## Example notebooks
 
 See examples of use in these notebooks
