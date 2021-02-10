@@ -9,17 +9,16 @@ with open("LICENSE") as fh:
 setuptools.setup(
     name="mikefm_skill",
     version="0.1.dev",
-    install_requires=["numpy", "pandas", "scipy", "mikeio", "shapely"],
+    install_requires=["numpy", "pandas", "mikeio >= 0.6", "matplotlib"],
     extras_require={
         "dev": [
             "pytest",
             "black",
-            "sphinx",
-            "sphinx-rtd-theme",
-            "matplotlib",
+            "shapely",
+            "plotly >= 4.5",
             "jupyterlab",
         ],
-        "test": ["pytest", "matplotlib"],
+        "test": ["pytest", "shapely"],
     },
     author="Jesper Sandvig Mariegaard",
     author_email="jem@dhigroup.com",
