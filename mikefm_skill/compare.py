@@ -71,6 +71,8 @@ class BaseComparer:
         backend="matplotlib",
         title=None,
         figsize=None,
+        xlim=None,
+        ylim=None,
         **kwargs,
     ):
 
@@ -94,6 +96,13 @@ class BaseComparer:
         xymin = min([xmin, ymin])
         xymax = max([xmax, ymax])
 
+        if xlim is None:
+            xlim = [xymin, xymax]
+        
+        if ylim is None:
+            ylim = [xymin, xymax]
+
+
         if binsize is None:
             binsize = (xmax - xmin) / nbins
         else:
@@ -111,8 +120,8 @@ class BaseComparer:
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             plt.axis("square")
-            plt.xlim([xymin, xymax])
-            plt.ylim([xymin, xymax])
+            plt.xlim(xlim)
+            plt.ylim(ylim)
             cbar = plt.colorbar()
             cbar.set_label("# points")
             if show_points:
@@ -177,8 +186,8 @@ class BaseComparer:
             )
 
             fig = go.Figure(data=data, layout=layout)
-            fig.update_xaxes(range=[xymin, xymax])
-            fig.update_yaxes(range=[xymin, xymax])
+            fig.update_xaxes(range=xlim)
+            fig.update_yaxes(range=ylim)
             fig.show()
 
         else:
