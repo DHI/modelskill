@@ -70,6 +70,7 @@ class BaseComparer:
         show_points=None,
         backend="matplotlib",
         title=None,
+        figsize=None,
         **kwargs,
     ):
 
@@ -102,6 +103,7 @@ class BaseComparer:
         yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
 
         if backend == "matplotlib":
+            plt.figure(figsize=figsize)
             plt.plot([xymin, xymax], [xymin, xymax], label="1:1", c="blue")
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)

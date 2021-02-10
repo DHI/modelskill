@@ -1,5 +1,5 @@
 import os
-from shapely.geometry import Point
+from shapely.geometry import Point, LineString
 import pandas as pd
 from mikeio import Dfs0, eum
 
@@ -55,7 +55,8 @@ class Observation:
             return ""
         txt = f"{self.itemInfo.type.display_name}"
         if self.itemInfo.type != eum.EUMType.Undefined:
-            txt = f"{txt} [{self.itemInfo.unit.display_name}]"
+            unit = self.itemInfo.unit.display_name
+            txt = f"{txt} [{unit_display_name(unit)}]"
         return txt
 
     def hist(self, bins=100, **kwargs):
@@ -73,7 +74,7 @@ class PointObservation(Observation):
     z = None
 
     @property
-    def geo(self) -> Point:
+    def geometry(self) -> Point:
         """Coordinates of observation"""
         if self.z is None:
             return Point(self.x, self.y)
@@ -137,6 +138,11 @@ class PointObservation(Observation):
 
 class TrackObservation(Observation):
     @property
+    def geometry(self) -> LineString:
+        """Coordinates of observation"""
+        return LineString(zip(self.x, self.y))
+
+    @property
     def x(self):
         return self.df.iloc[:, 0].values
 
@@ -175,3 +181,17 @@ class TrackObservation(Observation):
         df = dfs.read(items=items).to_dataframe()
         df.dropna(inplace=True)
         return df, dfs.items[items[-1]]
+
+
+def unit_display_name(name: str) -> str:
+    """Display name
+
+    Examples
+    --------
+    >>> unit_display_name("meter")
+    m
+    """
+
+    res = name.replace("meter", "m").replace("_per_", "/").replace("sec", "s")
+
+    return res
