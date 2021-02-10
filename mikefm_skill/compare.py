@@ -66,7 +66,7 @@ class BaseComparer:
         xlabel=None,
         ylabel=None,
         binsize=None,
-        nbins=100,
+        nbins=20,
         show_points=None,
         backend="matplotlib",
         title=None,
@@ -102,7 +102,7 @@ class BaseComparer:
         yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
 
         if backend == "matplotlib":
-            plt.plot([xymin, xymax], [xymin, xymax], label="1:1")
+            plt.plot([xymin, xymax], [xymin, xymax], label="1:1", c="blue")
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
             plt.legend()
@@ -121,30 +121,66 @@ class BaseComparer:
             import bokeh.plotting as bh
             import bokeh.models as bhm
 
-            # bh.output_notebook()
-
-            p = bh.figure(x_axis_label="obs", y_axis_label="model", title=title)
+            p = bh.figure(x_axis_label=xlabel, y_axis_label=ylabel, title=title)
             p.hexbin(x, y, size=binsize)
-            p.scatter(xq, yq, legend_label="Q-Q", color="gray")
+            p.line(xq, yq, legend_label="Q-Q", color="gray", line_width=2)
 
             linvals = np.linspace(np.min([x, y]), np.max([x, y]))
-            p.line(linvals, linvals, legend_label="1:1")
-            # mder = bhm.Label(x=10, y=500, x_units='screen', y_units='screen',
-            #                text=f"MdEr: {MdEr(x,y):.2f}")
-            # rmse = bhm.Label(x=10, y=480, x_units='screen', y_units='screen',
-            #                text=f"RMSE: {RMSE(x,y):.2f}")
-            # stder = bhm.Label(x=10, y=460, x_units='screen', y_units='screen',
-            #                text=f"StdEr: {StdEr(x,y):.2f}")
-            # N = bhm.Label(x=10, y=440, x_units='screen', y_units='screen',
-            #                text=f"N: {len(x)}")
+            p.line(linvals, linvals, legend_label="1:1", line_width=2, color="blue")
 
-            # p.add_layout(mder)
-            # p.add_layout(rmse)
-            # p.add_layout(stder)
-            # p.add_layout(N)
             bh.show(p)
+        elif backend == "plotly":
+            import plotly.graph_objects as go
+
+            linvals = np.linspace(np.min([x, y]), np.max([x, y]))
+
+            data = [
+                go.Scatter(x=linvals, y=linvals, name="1:1", line=dict(color="blue")),
+                go.Scatter(x=xq, y=yq, name="Q-Q", line=dict(color="gray")),
+                go.Histogram2d(
+                    x=x,
+                    y=y,
+                    xbins=dict(size=binsize),
+                    ybins=dict(size=binsize),
+                    colorscale=[
+                        [0.0, "rgba(0,0,0,0)"],
+                        [0.1, "purple"],
+                        [0.5, "green"],
+                        [1.0, "yellow"],
+                    ],
+                ),
+            ]
+
+            if show_points:
+                data.append(
+                    go.Scatter(
+                        x=x,
+                        y=y,
+                        mode="markers",
+                        name="Data",
+                        marker=dict(color="black"),
+                    )
+                )
+
+            defaults = {"width": 600, "height": 600}
+            defaults = {**defaults, **kwargs}
+
+            layout = layout = go.Layout(
+                legend=dict(x=0.01, y=0.99),
+                yaxis=dict(scaleanchor="x", scaleratio=1),
+                title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
+                yaxis_title=ylabel,
+                xaxis_title=xlabel,
+                **defaults,
+            )
+
+            fig = go.Figure(data=data, layout=layout)
+            fig.update_xaxes(range=[xymin, xymax])
+            fig.update_yaxes(range=[xymin, xymax])
+            fig.show()
 
         else:
+
             raise ValueError(f"Plotting backend: {backend} not supported")
 
     def residual_hist(self, bins=100):
