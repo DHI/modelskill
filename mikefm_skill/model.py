@@ -191,3 +191,25 @@ class ModelResult:
             elif isinstance(obs, TrackObservation):
                 ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
         return ax
+
+
+class ModelResultCollection:
+    def __init__(self, modelresults=None):
+        self.modelresults = {}
+        if modelresults is not None:
+            for mr in modelresults:
+                self.add_modelresult(mr)
+
+    def __repr__(self):
+        out = []
+        out.append(f"<{type(self).__name__}>")
+        for key, value in self.modelresults.items():
+            out.append(f"{type(value).__name__}: {key}")
+        return str.join("\n", out)
+
+    def __getitem__(self, x):
+        return self.modelresults[x]
+
+    def add_modelresult(self, modelresults):
+        self.modelresults[modelresults.name] = modelresults
+
