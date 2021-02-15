@@ -184,9 +184,10 @@ class ModelResult:
         xn = self.dfs.node_coordinates[:, 0]
         offset_x = 0.02 * (max(xn) - min(xn))
         ax = self.dfs.plot(plot_type="outline_only", figsize=figsize)
-        for obs in self.observations:
+        for obs in self.observations.values():
             if isinstance(obs, PointObservation):
                 ax.scatter(x=obs.x, y=obs.y, marker="x")
                 ax.annotate(obs.name, (obs.x + offset_x, obs.y))
             elif isinstance(obs, TrackObservation):
                 ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
+        return ax
