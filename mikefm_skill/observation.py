@@ -1,5 +1,5 @@
 import os
-from shapely.geometry import Point, LineString
+from shapely.geometry import Point, MultiPoint
 import pandas as pd
 from mikeio import Dfs0, eum
 
@@ -138,9 +138,9 @@ class PointObservation(Observation):
 
 class TrackObservation(Observation):
     @property
-    def geometry(self) -> LineString:
+    def geometry(self) -> MultiPoint:
         """Coordinates of observation"""
-        return LineString(zip(self.x, self.y))
+        return MultiPoint(self.df.iloc[:, 0:2].values)
 
     @property
     def x(self):
