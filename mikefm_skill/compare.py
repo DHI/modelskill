@@ -107,13 +107,24 @@ class BaseComparer:
         return bias
 
     def _get_mod_id(self, model):
-        mod_id = 0
-        if self.n_models > 1 and model is str:
+        if model is None or self.n_models <= 1:
+            return 0
+        elif isinstance(model, str):
             if model in self.mod_names:
                 mod_id = self.mod_names.index(model)
-        if self.n_models > 1 and model is int:
+            else:
+                raise ValueError(
+                    f"model {model} could not be found in {self.mod_names}"
+                )
+        elif isinstance(model, int):
             if model >= 0 and model < self.n_models:
                 mod_id = model
+            else:
+                raise ValueError(
+                    f"model id was {model} - must be within 0 and {self.n_models-1}"
+                )
+        else:
+            raise ValueError("model must be None, str or int")
         return mod_id
 
     def scatter(
