@@ -3,9 +3,9 @@ import numpy as np
 import warnings
 from enum import Enum
 
-from mikeio import Dfs0, Dfsu
+from mikeio import Dfs0, Dfsu, Dataset
 from .observation import PointObservation, TrackObservation
-from .compare import PointComparer, TrackComparer, ComparisonCollection
+from .compare import PointComparer, TrackComparer, ComparisonCollection, BaseComparer
 
 
 class ModelResultType(Enum):
@@ -87,18 +87,35 @@ class ModelResult:
     def extract(self) -> ComparisonCollection:
         """extract model result in all observations"""
         cc = ComparisonCollection()
-        # for obs, item in zip(self.observations, self.items):
         for obs in self.observations.values():
-            if isinstance(obs, PointObservation):
-                comparison = self.compare_point_observation(obs, obs.model_variable)
-            elif isinstance(obs, TrackObservation):
-                comparison = self.compare_track_observation(obs, obs.model_variable)
-            else:
-                warnings.warn("Only point and track observation are supported!")
-                continue
-
-            cc.add_comparison(comparison)
+            comparison = self.compare_observation(obs, obs.model_variable)
+            if comparison is not None:
+                cc.add_comparison(comparison)
         return cc
+
+    def compare_observation(self, observation, item) -> BaseComparer:
+        """Compare this ModelResult with an observation
+
+        Parameters
+        ----------
+        observation : <PointObservation> or <TrackObservation>
+            Observation to be compared
+        item : str, integer
+            ModelResult item name or number
+
+        Returns
+        -------
+        <mikefm_skill.BaseComparer>
+            A comparer object for further analysis or plotting
+        """
+        if isinstance(observation, PointObservation):
+            comparison = self.compare_point_observation(observation, item)
+        elif isinstance(observation, TrackObservation):
+            comparison = self.compare_track_observation(observation, item)
+        else:
+            warnings.warn("Only point and track observation are supported!")
+            comparison = None
+        return comparison
 
     def compare_point_observation(self, observation, item) -> PointComparer:
         """Compare this ModelResult with a point observation
@@ -115,14 +132,17 @@ class ModelResult:
         <mikefm_skill.PointComparer>
             A comparer object for further analysis or plotting
         """
+        ds_model = self._extract_point(observation, item)
+        return PointComparer(observation, ds_model)
+
+    def _extract_point(self, observation: PointObservation, item) -> Dataset:
         assert isinstance(observation, PointObservation)
         ds_model = None
         if self.type == ModelResultType.dfsu:
             ds_model = self._extract_point_dfsu(observation, item)
         elif self.type == ModelResultType.dfs0:
             ds_model = self._extract_point_dfs0(observation, item)
-
-        return PointComparer(observation, ds_model)
+        return ds_model
 
     def _extract_point_dfsu(self, observation: PointObservation, item):
         assert isinstance(observation, PointObservation)
@@ -152,6 +172,10 @@ class ModelResult:
         <mikefm_skill.TrackComparer>
             A comparer object for further analysis or plotting
         """
+        ds_model = self._extract_track(observation, item)
+        return TrackComparer(observation, ds_model)
+
+    def _extract_track(self, observation: TrackObservation, item) -> Dataset:
         assert isinstance(observation, TrackObservation)
         ds_model = None
         if self.type == ModelResultType.dfsu:
@@ -159,8 +183,7 @@ class ModelResult:
         elif self.type == ModelResultType.dfs0:
             raise NotImplementedError()
             # ds_model = self._extract_track_dfs0(observation, item)
-
-        return TrackComparer(observation, ds_model)
+        return ds_model
 
     def _extract_track_dfsu(self, observation: TrackObservation, item):
         assert isinstance(observation, TrackObservation)
@@ -194,11 +217,29 @@ class ModelResult:
 
 
 class ModelResultCollection:
+    """Collection of ModelResult with same "topology" 
+    e.g. several "runs" of the same model. For calibration. 
+    Future: different type of models (local vs regional etc)
+    """
+
+    _mr0 = None
+
+    @property
+    def names(self):
+        return list(self.modelresults.keys())
+
+    @property
+    def observations(self):
+        return self._mr0.observations
+
+    # has_same_topology = False
+
     def __init__(self, modelresults=None):
         self.modelresults = {}
         if modelresults is not None:
             for mr in modelresults:
                 self.add_modelresult(mr)
+        self._mr0 = self.modelresults[self.names[0]]
 
     def __repr__(self):
         out = []
@@ -213,3 +254,110 @@ class ModelResultCollection:
     def add_modelresult(self, modelresults):
         self.modelresults[modelresults.name] = modelresults
 
+    def add_observation(self, observation, item):
+        """Add an observation to all ModelResults in collection
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.PointObservation>
+            Observation object for later comparison
+        item : str, integer
+            ModelResult item name or number corresponding to the observation
+        """
+        for mr in self.modelresults.values():
+            mr.add_observation(observation, item)
+
+    def compare_observation(self, observation, item) -> BaseComparer:
+        """Compare all ModelResults in collection with an observation
+
+        Parameters
+        ----------
+        observation : <PointObservation> or <TrackObservation>
+            Observation to be compared
+        item : str, integer
+            ModelResult item name or number
+
+        Returns
+        -------
+        <mikefm_skill.BaseComparer>
+            A comparer object for further analysis or plotting
+        """
+        if isinstance(observation, PointObservation):
+            comparison = self.compare_point_observation(observation, item)
+        elif isinstance(observation, TrackObservation):
+            comparison = self.compare_track_observation(observation, item)
+        else:
+            warnings.warn("Only point and track observation are supported!")
+            comparison = None
+        return comparison
+
+    def compare_point_observation(self, observation, item) -> PointComparer:
+        """Compare all ModelResults in collection with a point observation
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.PointObservation>
+            Observation to be compared
+        item : str, integer
+            ModelResult item name or number
+
+        Returns
+        -------
+        <mikefm_skill.PointComparer>
+            A comparer object for further analysis or plotting
+        """
+        assert isinstance(observation, PointObservation)
+        ds_model = []
+        for mr in self.modelresults.values():
+            ds_model.append(mr._extract_point(observation, item))
+
+        return PointComparer(observation, ds_model)
+
+    def compare_track_observation(self, observation, item) -> TrackComparer:
+        """Compare all ModelResults in collection with a track observation
+
+        Parameters
+        ----------
+        observation : <mikefm_skill.TrackObservation>
+            Observation to be compared
+        item : str, integer
+            ModelResult item name or number
+
+        Returns
+        -------
+        <mikefm_skill.TrackComparer>
+            A comparer object for further analysis or plotting
+        """
+        assert isinstance(observation, TrackObservation)
+        ds_model = []
+        for mr in self.modelresults.values():
+            ds_model.append(mr._extract_track(observation, item))
+
+        return TrackComparer(observation, ds_model)
+
+    def extract(self) -> ComparisonCollection:
+        """extract model result in all observations"""
+        cc = ComparisonCollection()
+
+        for obs in self.observations.values():
+            comparison = self.compare_observation(obs, obs.model_variable)
+            if comparison is not None:
+                cc.add_comparison(comparison)
+
+        # for mr in self.modelresults.values():
+        #     for obs in mr.observations.values():
+        #         comparison = mr.compare_observation(obs, obs.model_variable)
+        #         if comparison is not None:
+        #             comparison.name = comparison.name + "_" + mr.name
+        #             cc.add_comparison(comparison)
+        return cc
+
+    def plot_observation_positions(self, figsize=None):
+        """Plot observation points on a map showing the first model domain
+
+        Parameters
+        ----------
+        figsize : (float, float), optional
+            figure size, by default None
+        """
+        self._mr0.plot_observation_positions(figsize=figsize)
