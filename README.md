@@ -1,6 +1,31 @@
 # mikefm-skill
 Compare results from [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) simulations with observations
 
+## Purpose/objective/scope
+
+[mikefm-skill](https://github.com/DHI/mikefm-skill) is a python package 
+
+* Score MIKE FM models
+    - Single-number evaluation (aggregation) - e.g. cost function for calibration
+    - Spatial aggregation 
+* Compare different model runs
+* Exploratory data analysis - interactive plotting with [plotly](https://plotly.com/python/)
+* Report/publication-ready figures with [matplotlib](https://matplotlib.org/)
+* Balance between general and specific
+    - Handle circular variables such as wave direction
+    - Handle vector variables such as u- and v-
+
+## Use cases
+
+[mikefm-skill](https://github.com/DHI/mikefm-skill) wants to your companion 
+
+* Model setup - exploratory phase
+    - Explore timeseries, histogram and scatter plots of model and observation
+    - Assess quality of observations (find outliers)     
+* Model calibration
+    - x
+* Model validation and reporting - communicate your final results
+    - Prepare figures for report or html 
 
 ## Installation
 
@@ -15,6 +40,14 @@ See examples of use in these notebooks
 * [timeseries_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/timeseries_compare.ipynb)
 * [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/SW_DutchCoast.ipynb)
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/Multi_model_comparison.ipynb)
+
+
+## Design
+
+* ModelResult
+* Observation
+* Comparer 
+* ComparisonCollection
 
 
 ## Usage
