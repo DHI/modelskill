@@ -251,8 +251,9 @@ class ModelResultCollection:
     def __getitem__(self, x):
         return self.modelresults[x]
 
-    def add_modelresult(self, modelresults):
-        self.modelresults[modelresults.name] = modelresults
+    def add_modelresult(self, modelresult):
+        assert isinstance(modelresult, ModelResult)
+        self.modelresults[modelresult.name] = modelresult
 
     def add_observation(self, observation, item):
         """Add an observation to all ModelResults in collection
@@ -331,6 +332,7 @@ class ModelResultCollection:
         assert isinstance(observation, TrackObservation)
         ds_model = []
         for mr in self.modelresults.values():
+            assert isinstance(mr, ModelResult)
             ds_model.append(mr._extract_track(observation, item))
 
         return TrackComparer(observation, ds_model)
