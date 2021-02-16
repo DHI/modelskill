@@ -62,6 +62,12 @@ def test_ModelResultType0():
     assert mr.type == ModelResultType.dfs0
 
 
+def test_compare_point_observation(hd_oresund_2d, klagshamn, drogden):
+    mr = ModelResult(hd_oresund_2d)
+
+    cmp = mr.compare_point_observation(klagshamn, item=0)
+
+
 def test_extract(hd_oresund_2d, klagshamn, drogden):
     mr = ModelResult(hd_oresund_2d)
 
