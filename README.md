@@ -6,18 +6,21 @@ Compare results from [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21
 [mikefm-skill](https://github.com/DHI/mikefm-skill) is a python package 
 
 * Score MIKE FM models
+    - Provide a wide range of common evaluation metrics: 
     - Single-number evaluation (aggregation) - e.g. cost function for calibration
     - Spatial aggregation 
-* Compare different model runs
+* Compare different model runs (calibration) or different models (validation)
 * Exploratory data analysis - interactive plotting with [plotly](https://plotly.com/python/)
 * Report/publication-ready figures with [matplotlib](https://matplotlib.org/)
-* Balance between general and specific
+* Balance between general and specific needs
+    - Primarily support dfs files (using [mikeio](https://github.com/DHI/mikeio))
     - Handle circular variables such as wave direction
-    - Handle vector variables such as u- and v-
+    - Handle vector variables such as u- and v-components of current
+    - Tidal analysis
 
 ## Use cases
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) wants to your companion 
+[mikefm-skill](https://github.com/DHI/mikefm-skill) wants to be your companion during the different phases of a MIKE FM modelling workflow.
 
 * Model setup - exploratory phase
     - Explore timeseries, histogram and scatter plots of model and observation
@@ -42,12 +45,15 @@ See examples of use in these notebooks
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/Multi_model_comparison.ipynb)
 
 
-## Design
+## Design (principles)
 
-* ModelResult
-* Observation
-* Comparer 
-* ComparisonCollection
+[mikefm-skill](https://github.com/DHI/mikefm-skill) is build around a few basic concepts:
+
+* Observation: 
+* ModelResult: defined by a MIKE FM output (.dfsu or .dfs0 file), observations can be added to a ModelResult 
+* Metric: can measure the "distance" between a model result and an observation (e.g. bias and rmse)
+* Comparer: 
+* ComparisonCollection: 
 
 
 ## Usage
