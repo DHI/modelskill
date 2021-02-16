@@ -52,7 +52,7 @@ class ModelResult:
         out.append(self.filename)
         return str.join("\n", out)
 
-    def add_observation(self, observation, item):
+    def add_observation(self, observation, item, weight=1.0):
         """Add an observation to this ModelResult
 
         Parameters
@@ -61,10 +61,13 @@ class ModelResult:
             Observation object for later comparison
         item : str, integer
             ModelResult item name or number corresponding to the observation
+        weight: float
+            Relative weight used in compound skill calculation, default 1.0
         """
         ok = self._validate_observation(observation)
         if ok:
             observation.model_variable = item
+            observation.weight = weight
             self.observations[observation.name] = observation
             # self.items.append(item)
         else:
@@ -217,8 +220,8 @@ class ModelResult:
 
 
 class ModelResultCollection:
-    """Collection of ModelResult with same "topology" 
-    e.g. several "runs" of the same model. For calibration. 
+    """Collection of ModelResult with same "topology"
+    e.g. several "runs" of the same model. For calibration.
     Future: different type of models (local vs regional etc)
     """
 

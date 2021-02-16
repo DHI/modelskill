@@ -415,13 +415,15 @@ class ComparisonCollection:
 
         self.comparisons[comparison.name] = comparison
 
-    def skill(self, metric=mtr.rmse):
-
-        scores = [metric(mr.obs, mr.mod) for mr in self.comparisons.values()]
-
-        return np.average(scores)
+    def compound_skill(self, metric=mtr.rmse):
+        """Compound skill (possibly weighted)"""
+        cmps = self.comparisons.values()
+        scores = [metric(mr.obs, mr.mod) for mr in cmps]
+        weights = [c.observation.weight for c in cmps]
+        return np.average(scores, weights=weights)
 
     def skill_report(self, model=None, metrics: list = None) -> pd.DataFrame:
+        """Skill for each observation, weights are not taken into account"""
 
         if metrics is None:
             metrics = [mtr.bias, mtr.rmse, mtr.corr_coef, mtr.scatter_index]
