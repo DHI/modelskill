@@ -374,12 +374,15 @@ class TrackComparer(BaseComparer):
         for j, data in enumerate(modeldata):
             df = data.to_dataframe()
             if j == 0:
-                df[self.obs_name] = observation.df.iloc[:, -1].values
-                self.df = df
+                df[self.obs_name] = observation.df.iloc[:, -1]
+                cols = list(df.columns)
+                cols = list((*cols[0:2], *cols[:1:-1]))
+                self.df = df[cols]
             else:
+
                 self.df[self.mod_names[j]] = df[self.mod_names[j]]
 
-        self.df = df.dropna()
+        self.df = self.df.dropna()
         # TODO: add check
 
 
