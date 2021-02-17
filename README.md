@@ -46,3 +46,16 @@ dmi_30357_Drogden_Fyr  0.26  0.28       0.51           0.53
 Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
 
 ![timeseries](images/plotly_timeseries.png)
+
+## Automated reporting
+
+With a few lines of code, it will be possible to generate an automated report.
+
+```python
+from mikefm_skill.report import Reporter
+
+rep = Reporter(mr)
+rep.markdown()
+```
+
+[Very basic first example report](notebooks/HKZN_local/HKZN_local.md)
