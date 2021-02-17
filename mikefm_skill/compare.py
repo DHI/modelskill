@@ -182,6 +182,11 @@ class BaseComparer:
 
         # linear fit
         reg = linregress(x, y)
+        if reg.intercept < 0:
+            sign = ""
+        else:
+            sign = "+"
+        reglabel = f"Fit: y={reg.slope:.2f}x{sign}{reg.intercept:.2f}"
 
         if backend == "matplotlib":
 
@@ -192,7 +197,7 @@ class BaseComparer:
                 x,
                 reg.intercept + reg.slope * x,
                 "r",
-                label=f"Fit: y={reg.slope:.2f}x+{reg.intercept:.2f}",
+                label=reglabel,
             )
             if show_hist:
                 plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
@@ -231,7 +236,7 @@ class BaseComparer:
                 go.Scatter(
                     x=x,
                     y=reg.intercept + reg.slope * x,
-                    name=f"Fit: y={reg.slope:.2f}x+{reg.intercept:.2f}",
+                    name=reglabel,
                     mode="lines",
                     line=dict(color="red"),
                 ),
