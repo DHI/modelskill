@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
+from scipy.stats import linregress
 
 from mikeio import Dfs0, Dataset
 import mikefm_skill.metrics as mtr
@@ -135,6 +136,7 @@ class BaseComparer:
         binsize=None,
         nbins=20,
         show_points=None,
+        show_hist=True,
         backend="matplotlib",
         title=None,
         figsize=(8, 8),
@@ -178,20 +180,31 @@ class BaseComparer:
         xq = np.quantile(x, q=np.linspace(0, 1, num=nbins))
         yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
 
+        # linear fit
+        reg = linregress(x, y)
+
         if backend == "matplotlib":
 
             plt.figure(figsize=figsize)
-            plt.plot([xymin, xymax], [xymin, xymax], label="1:1", c="blue")
+            plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
             plt.plot(xq, yq, label="QQ", c="gray")
-            plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
+            plt.plot(
+                x,
+                reg.intercept + reg.slope * x,
+                "r",
+                label=f"Fit: y={reg.slope:.2f}x+{reg.intercept:.2f}",
+            )
+            if show_hist:
+                plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
             plt.legend()
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             plt.axis("square")
             plt.xlim(xlim)
             plt.ylim(ylim)
-            cbar = plt.colorbar(shrink=0.6, pad=0.01)
-            cbar.set_label("# points")
+            if show_hist:
+                cbar = plt.colorbar(shrink=0.6, pad=0.01)
+                cbar.set_label("# points")
             if show_points:
                 plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
             plt.title(title)
@@ -201,10 +214,11 @@ class BaseComparer:
             import bokeh.models as bhm
 
             p = bh.figure(x_axis_label=xlabel, y_axis_label=ylabel, title=title)
-            p.hexbin(x, y, size=binsize)
+            if show_hist:
+                p.hexbin(x, y, size=binsize)
             p.line(xq, yq, legend_label="Q-Q", color="gray", line_width=2)
 
-            linvals = np.linspace(np.min([x, y]), np.max([x, y]))
+            linvals = np.linspace(np.min([xlim, ylim]), np.max([xlim, ylim]), num=2)
             p.line(linvals, linvals, legend_label="1:1", line_width=2, color="blue")
 
             bh.show(p)
@@ -214,21 +228,36 @@ class BaseComparer:
             linvals = np.linspace(np.min([x, y]), np.max([x, y]))
 
             data = [
-                go.Scatter(x=linvals, y=linvals, name="1:1", line=dict(color="blue")),
-                go.Scatter(x=xq, y=yq, name="Q-Q", line=dict(color="gray")),
-                go.Histogram2d(
+                go.Scatter(
                     x=x,
-                    y=y,
-                    xbins=dict(size=binsize),
-                    ybins=dict(size=binsize),
-                    colorscale=[
-                        [0.0, "rgba(0,0,0,0)"],
-                        [0.1, "purple"],
-                        [0.5, "green"],
-                        [1.0, "yellow"],
-                    ],
+                    y=reg.intercept + reg.slope * x,
+                    name=f"Fit: y={reg.slope:.2f}x+{reg.intercept:.2f}",
+                    mode="lines",
+                    line=dict(color="red"),
+                ),
+                go.Scatter(
+                    x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
+                ),
+                go.Scatter(
+                    x=xq, y=yq, name="Q-Q", mode="lines", line=dict(color="gray")
                 ),
             ]
+
+            if show_hist:
+                data.append(
+                    go.Histogram2d(
+                        x=x,
+                        y=y,
+                        xbins=dict(size=binsize),
+                        ybins=dict(size=binsize),
+                        colorscale=[
+                            [0.0, "rgba(0,0,0,0)"],
+                            [0.1, "purple"],
+                            [0.5, "green"],
+                            [1.0, "yellow"],
+                        ],
+                    )
+                )
 
             if show_points:
                 data.append(
@@ -256,7 +285,7 @@ class BaseComparer:
             fig = go.Figure(data=data, layout=layout)
             fig.update_xaxes(range=xlim)
             fig.update_yaxes(range=ylim)
-            fig.show()
+            fig.show()  # Should this be here
 
         else:
 
