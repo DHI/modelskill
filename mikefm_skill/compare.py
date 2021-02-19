@@ -346,7 +346,9 @@ class PointComparer(BaseComparer):
         df[self.obs_name] = obs.values
         return df.iloc[:, ::-1]
 
-    def plot_timeseries(self, title=None, figsize=None, backend="matplotlib", **kwargs):
+    def plot_timeseries(
+        self, title=None, ylim=None, figsize=None, backend="matplotlib", **kwargs
+    ):
 
         mod_df = self.mod_data[self.mod_names[0]]
         if title is None:
@@ -366,7 +368,7 @@ class PointComparer(BaseComparer):
             )
             ax.set_ylabel(self.observation._unit_text())
             ax.legend([*self.mod_names, self.obs_name])
-
+            ax.set_ylim(ylim)
             plt.title(title)
             return ax
 
@@ -402,6 +404,7 @@ class PointComparer(BaseComparer):
             fig.update_layout(
                 title=title, yaxis_title=self.observation._unit_text(), **kwargs
             )
+            fig.update_yaxes(range=ylim)
 
             fig.show()
         else:
