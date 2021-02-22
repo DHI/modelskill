@@ -3,7 +3,7 @@ Compare results from [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21
 
 ## Purpose
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) is a object-oriented python package for scoring MIKE FM models
+[mikefm-skill](https://github.com/DHI/mikefm-skill) is a python package for scoring MIKE FM models
 
 * Compare different model runs (calibration) or different models (validation)
 * Exploratory data analysis - interactive plotting with [plotly](https://plotly.com/python/)
@@ -36,14 +36,14 @@ See examples of use in these notebooks
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/Multi_model_comparison.ipynb)
 
 
-## Design (principles)
+## Design principles
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) is build around a few basic concepts:
+[mikefm-skill](https://github.com/DHI/mikefm-skill) is an object-oriented package built around a few basic concepts:
 
 * ModelResult: defined by a MIKE FM output (.dfsu or .dfs0 file), observations can be added to a ModelResult 
 * Observation: e.g. point or track observation
 * Metric: can measure the "distance" between a model result and an observation (e.g. bias and rmse)
-* Comparer: 
+* Comparer: contains observations and model data interpolated to observation positions and times, can plot and show statistics
 
 
 ## Workflow
