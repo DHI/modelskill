@@ -1,34 +1,25 @@
 # mikefm-skill
-Compare results from [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) simulations with observations
+Compare results from [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) simulations with observations. 
 
-## Purpose/objective/scope
+## Purpose
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) is a python package 
+[mikefm-skill](https://github.com/DHI/mikefm-skill) is a object-oriented python package for scoring MIKE FM models
 
-* Score MIKE FM models
-    - Provide a wide range of common evaluation metrics: 
-    - Single-number evaluation (aggregation) - e.g. cost function for calibration
-    - Spatial aggregation 
 * Compare different model runs (calibration) or different models (validation)
 * Exploratory data analysis - interactive plotting with [plotly](https://plotly.com/python/)
-* Report/publication-ready figures with [matplotlib](https://matplotlib.org/)
+* Publication-ready figures with [matplotlib](https://matplotlib.org/)
 * Balance between general and specific needs
-    - Primarily support dfs files (using [mikeio](https://github.com/DHI/mikeio))
-    - Handle circular variables such as wave direction
-    - Handle vector variables such as u- and v-components of current
-    - Tidal analysis
+
+Read more about the [vision and scope](vision.md).
+
 
 ## Use cases
 
 [mikefm-skill](https://github.com/DHI/mikefm-skill) wants to be your companion during the different phases of a MIKE FM modelling workflow.
 
-* Model setup - exploratory phase
-    - Explore timeseries, histogram and scatter plots of model and observation
-    - Assess quality of observations (find outliers)     
+* Model setup - exploratory phase   
 * Model calibration
-    - x
 * Model validation and reporting - communicate your final results
-    - Prepare figures for report or html 
 
 ## Installation
 
@@ -49,14 +40,24 @@ See examples of use in these notebooks
 
 [mikefm-skill](https://github.com/DHI/mikefm-skill) is build around a few basic concepts:
 
-* Observation: 
 * ModelResult: defined by a MIKE FM output (.dfsu or .dfs0 file), observations can be added to a ModelResult 
+* Observation: e.g. point or track observation
 * Metric: can measure the "distance" between a model result and an observation (e.g. bias and rmse)
 * Comparer: 
-* ComparisonCollection: 
+
+
+## Workflow
+
+1. Define ModelResults
+2. Define Observations
+3. Associate observations with ModelResults
+4. Compare (extract ModelResults at observation positions)
+5. Do plotting, statistics, reporting using the ComparerCollection
+
 
 
 ## Usage
+
 ```python
 >>> from mikefm_skill.model import ModelResult
 >>> from mikefm_skill.observation import PointObservation

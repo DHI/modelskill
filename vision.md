@@ -13,11 +13,12 @@ We want [mikefm-skill](https://github.com/DHI/mikefm-skill) to make it
 * Easy to compare your model with other models (and climatology)
 * Easy to use a wide range of common evaluation metrics 
 * Easy to create common plots such as time series, scatter and taylor diagrams
-* Easy to do aggregations - assess for all observation, geographic areas, monthly
+* Easy to do aggregations - assess for all observations, geographic areas, monthly, ...
+* Fast to make comparisons (optimized code)
 * Difficult to make mistakes by verifying input 
 * Trustworthy by having >95% test coverage 
-* Easy to install 
-* Easy to get started by providing notebook examples and documentation
+* Easy to install (from pypi and conda)
+* Easy to get started by providing many notebook examples and documentation
 
 
 ## Scope 
@@ -26,7 +27,10 @@ We want [mikefm-skill](https://github.com/DHI/mikefm-skill) to make it
 
 * It should be general enough to cover >90% of MIKE FM simulations
 * But specific enough to be *useful*
-
+    - Primarily support dfs files (using [mikeio](https://github.com/DHI/mikeio))
+    - Handle circular variables such as wave direction
+    - Handle vector variables such as u- and v-components of current
+    - Tidal analysis
 
 
 
