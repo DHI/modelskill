@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
 from scipy.stats import linregress
+from scipy import odr
 
 from mikeio import Dfs0, Dataset
 import mikefm_skill.metrics as mtr
@@ -142,6 +143,7 @@ class BaseComparer:
         figsize=(8, 8),
         xlim=None,
         ylim=None,
+        reg_method="ols",
         **kwargs,
     ):
         mod_id = self._get_mod_id(model)
@@ -181,12 +183,27 @@ class BaseComparer:
         yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
 
         # linear fit
-        reg = linregress(x, y)
-        if reg.intercept < 0:
+        if reg_method == "ols":
+            reg = linregress(x, y)
+            intercept = reg.intercept
+            slope = reg.slope
+        elif reg_method == "odr":
+            data = odr.Data(x, y)
+            odr_obj = odr.ODR(data, odr.unilinear)
+            output = odr_obj.run()
+
+            intercept = output.beta[1]
+            slope = output.beta[0]
+        else:
+            raise NotImplementedError(
+                f"Regression method: {reg_method} not implemented, select 'ols' or 'odr'"
+            )
+
+        if intercept < 0:
             sign = ""
         else:
             sign = "+"
-        reglabel = f"Fit: y={reg.slope:.2f}x{sign}{reg.intercept:.2f}"
+        reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
 
         if backend == "matplotlib":
 
@@ -195,7 +212,7 @@ class BaseComparer:
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.plot(
                 x,
-                reg.intercept + reg.slope * x,
+                intercept + slope * x,
                 "r",
                 label=reglabel,
             )
@@ -214,19 +231,6 @@ class BaseComparer:
                 plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
             plt.title(title)
 
-        elif backend == "bokeh":
-            import bokeh.plotting as bh
-            import bokeh.models as bhm
-
-            p = bh.figure(x_axis_label=xlabel, y_axis_label=ylabel, title=title)
-            if show_hist:
-                p.hexbin(x, y, size=binsize)
-            p.line(xq, yq, legend_label="Q-Q", color="gray", line_width=2)
-
-            linvals = np.linspace(np.min([xlim, ylim]), np.max([xlim, ylim]), num=2)
-            p.line(linvals, linvals, legend_label="1:1", line_width=2, color="blue")
-
-            bh.show(p)
         elif backend == "plotly":
             import plotly.graph_objects as go
 
@@ -235,7 +239,7 @@ class BaseComparer:
             data = [
                 go.Scatter(
                     x=x,
-                    y=reg.intercept + reg.slope * x,
+                    y=intercept + slope * x,
                     name=reglabel,
                     mode="lines",
                     line=dict(color="red"),
