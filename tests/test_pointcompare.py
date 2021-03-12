@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 
 from mikefm_skill.model import ModelResult
 from mikefm_skill.observation import PointObservation
@@ -20,6 +21,21 @@ def drogden():
 @pytest.fixture
 def modelresult_oresund_2d():
     return ModelResult("tests/testdata/Oresund2D.dfsu")
+
+
+def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
+    o1 = PointObservation(
+        "tests/testdata/eq_ts_with_gaps.dfs0",
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn",
+    )
+    mr = modelresult_oresund_2d
+    mr.add_observation(o1, item=0)
+    c = mr.extract()
+    s = c["Klagshamn"].skill()
+    assert not np.isnan(s)
 
 
 def test_compound_skill(modelresult_oresund_2d, klagshamn, drogden):
