@@ -31,6 +31,26 @@ class BaseComparer:
     _mod_end = datetime(1, 1, 1)
 
     @property
+    def n(self):
+        return len(self.df)
+
+    @property
+    def start(self):
+        return self.df.index[0].to_pydatetime()
+
+    @property
+    def end(self):
+        return self.df.index[-1].to_pydatetime()
+
+    @property
+    def x(self):
+        return self.observation.x
+
+    @property
+    def y(self):
+        return self.observation.y
+
+    @property
     def name(self):
         return self.observation.name
 
@@ -211,10 +231,7 @@ class BaseComparer:
             plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.plot(
-                x,
-                intercept + slope * x,
-                "r",
-                label=reglabel,
+                x, intercept + slope * x, "r", label=reglabel,
             )
             if show_hist:
                 plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
@@ -416,6 +433,14 @@ class PointComparer(BaseComparer):
 
 
 class TrackComparer(BaseComparer):
+    @property
+    def x(self):
+        return self.df.iloc[:, 0]
+
+    @property
+    def y(self):
+        return self.df.iloc[:, 1]
+
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
@@ -439,6 +464,74 @@ class TrackComparer(BaseComparer):
 
 
 class ComparisonCollection:
+    _all_df = None
+    _mod_names = []
+    _obs_names = []
+    _start = datetime(2900, 1, 1)
+    _end = datetime(1, 1, 1)
+    _n_points = 0
+
+    @property
+    def n_points(self):
+        return self._n_points
+
+    @property
+    def start(self):
+        return self._start
+
+    @property
+    def end(self):
+        return self._end
+
+    @property
+    def n_comparisons(self):
+        return len(self.comparisons)
+
+    @property
+    def n_models(self):
+        return len(self._mod_names)
+
+    @property
+    def n_observations(self):
+        return len(self._obs_names)
+
+    @property
+    def all_df(self):
+        if self._all_df is None:
+            self._construct_all_df()
+        return self._all_df
+
+    def _construct_all_df(self):
+        # TODO: var_name
+        if self.n_comparisons == 0:
+            return
+
+        cols = ["mod_name", "obs_name", "x", "y", "mod_val", "obs_val"]
+        res = pd.DataFrame(
+            {
+                "mod_name": pd.Series([], dtype="str"),
+                "obs_name": pd.Series([], dtype="str"),
+                "x": pd.Series([], dtype="float"),
+                "y": pd.Series([], dtype="float"),
+                "mod_val": pd.Series([], dtype="float"),
+                "obs_val": pd.Series([], dtype="float"),
+            }
+        )
+
+        for cmp in self.comparisons.values():
+            for j in range(cmp.n_models):
+                mod_name = cmp.mod_names[j]
+                df = cmp.df[[mod_name]].copy()
+                df.columns = ["mod_val"]
+                df["mod_name"] = mod_name
+                df["obs_name"] = cmp.observation.name
+                df["x"] = cmp.x
+                df["y"] = cmp.y
+                df["obs_val"] = cmp.obs
+                res = res.append(df[cols])
+
+        self._all_df = res
+
     def __init__(self):
         self.comparisons = {}
 
@@ -455,6 +548,17 @@ class ComparisonCollection:
     def add_comparison(self, comparison):
 
         self.comparisons[comparison.name] = comparison
+        self._obs_names.append(comparison.observation.name)
+        for mod_name in comparison.mod_names:
+            if mod_name not in self._mod_names:
+                self._mod_names.append(mod_name)
+        self._n_points = self._n_points + comparison.n
+        if comparison.start < self.start:
+            self._start = comparison.start
+        if comparison.end > self.end:
+            self._end = comparison.end
+
+        self._all_df = None
 
     def compound_skill(self, metric=mtr.rmse):
         """Compound skill (possibly weighted)"""
@@ -462,6 +566,71 @@ class ComparisonCollection:
         scores = [metric(mr.obs, mr.mod) for mr in cmps]
         weights = [c.observation.weight for c in cmps]
         return np.average(scores, weights=weights)
+
+    def skill_df(
+        self,
+        df=None,
+        model=None,
+        observation=None,
+        start=None,
+        end=None,
+        metrics: list = None,
+    ) -> pd.DataFrame:
+
+        if metrics is None:
+            metrics = [mtr.bias, mtr.rmse, mtr.corr_coef, mtr.scatter_index]
+
+        if df is None:
+            df = self.sel_df(model=model, observation=observation, start=start, end=end)
+        mod_names = df.mod_name.unique()
+        obs_names = df.obs_name.unique()
+
+        res = {}
+        j = 0
+        for mod_name in mod_names:
+            for obs_name in obs_names:
+                dfsub = df[
+                    np.logical_and(df.mod_name == mod_name, df.obs_name == obs_name)
+                ]
+                tmp = {}
+                tmp["model"] = mod_name
+                tmp["observation"] = obs_name
+                tmp["n"] = len(dfsub)
+                for metric in metrics:
+                    tmp[metric.__name__] = metric(
+                        dfsub.obs_val.values, dfsub.mod_val.values
+                    )
+                res[j] = tmp
+                j = j + 1
+        res = pd.DataFrame(res).T
+
+        if len(mod_names) == 1:
+            res.index = res.observation
+            res.drop(columns=["observation", "model"], inplace=True)
+        elif len(obs_names) == 1:
+            res.index = res.model
+            res.drop(columns=["observation", "model"], inplace=True)
+
+        return res
+
+    def sel_df(self, model=None, observation=None, start=None, end=None):
+        # TODO: area
+        df = self.all_df
+        if model is not None:
+            model = [model] if isinstance(model, str) else model
+            df = df[df.mod_name.isin(model)]
+        if observation is not None:
+            observation = [observation] if isinstance(observation, str) else observation
+            df = df[df.obs_name.isin(observation)]
+        if (start is not None) or (start is not None):
+            if start is None:
+                df = df.loc[:end]
+            elif end is None:
+                df = df.loc[start:]
+            else:
+                df = df.loc[start:end]
+
+        return df
 
     def skill_report(self, model=None, metrics: list = None) -> pd.DataFrame:
         """Skill for each observation, weights are not taken into account"""
