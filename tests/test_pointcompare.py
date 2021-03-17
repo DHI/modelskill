@@ -68,3 +68,48 @@ def test_compound_weighted_skill(modelresult_oresund_2d, klagshamn, drogden):
     weighted_skill = cw.compound_skill()
 
     assert unweighted_skill != weighted_skill
+
+
+def test_misc_properties(klagshamn, drogden):
+
+    mr = ModelResult("tests/testdata/Oresund2D.dfsu")
+
+    mr.add_observation(klagshamn, item=0)
+    mr.add_observation(drogden, item=0)
+
+    c = mr.extract()
+
+    assert len(c) == 2
+    assert c.n_comparisons == 2
+
+    assert c.n_models == 1
+    assert c._mod_names == [
+        "Oresund2D"
+    ]  # TODO this fails when all tests are run, something is spilling over from another test !!
+
+    ck = c["Klagshamn"]
+    assert ck.name == "Klagshamn"
+
+    assert ck.n > 0
+
+    assert ck.start.year == 2018  # intersection of observation and model times
+    assert ck.end.year == 2018
+
+    assert ck.x == 366844
+
+
+def test_skill_df(klagshamn, drogden):
+
+    mr = ModelResult("tests/testdata/Oresund2D.dfsu")
+
+    mr.add_observation(klagshamn, item=0)
+    mr.add_observation(drogden, item=0)
+
+    c = mr.extract()
+
+    df = c.skill_df()
+    assert df.loc["Klagshamn"].n == 167
+
+    # Filtered skill_df
+    df = c.skill_df(observation="Klagshamn")
+    assert df.loc["Klagshamn"].n == 167

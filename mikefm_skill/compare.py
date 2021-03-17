@@ -17,7 +17,6 @@ from mikefm_skill.observation import PointObservation, TrackObservation
 class BaseComparer:
     # observation = None
     obs_name = "Observation"
-    mod_names = None
     mod_colors = ["#004165", "#63CEFF", "#8B8D8E", "#0098DB", "#93509E", "#61C250"]
     resi_color = "#8B8D8E"
     #      darkblue: #004165
@@ -33,27 +32,27 @@ class BaseComparer:
     _mod_end = datetime(1, 1, 1)
 
     @property
-    def n(self):
+    def n(self) -> int:
         return len(self.df)
 
     @property
-    def start(self):
+    def start(self) -> datetime:
         return self.df.index[0].to_pydatetime()
 
     @property
-    def end(self):
+    def end(self) -> datetime:
         return self.df.index[-1].to_pydatetime()
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self.observation.x
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self.observation.y
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.observation.name
 
     @property
@@ -62,20 +61,23 @@ class BaseComparer:
         return self.mod - np.vstack(self.obs)
 
     @property
-    def obs(self):
+    def obs(self) -> np.ndarray:
         return self.df[self.obs_name].values
 
     @property
-    def mod(self):
+    def mod(self) -> np.ndarray:
         return self.df[self.mod_names].values
 
     @property
-    def n_models(self):
+    def n_models(self) -> int:
         return len(self.mod_names)
+
+    @property
+    def mod_names(self) -> List[str]:
+        return list(self.mod_data.keys())
 
     def __init__(self, observation, modeldata=None, metric=mtr.rmse):
         self.observation = deepcopy(observation)
-        self.mod_names = []
         self.mod_data = {}
 
         if modeldata is not None:
@@ -98,7 +100,6 @@ class BaseComparer:
             raise ValueError("Unknown modeldata type (mikeio.Dataset or pd.DataFrame)")
         mod_name = mod_df.columns[-1]
         self.mod_data[mod_name] = mod_df
-        self.mod_names.append(mod_name)
 
         if mod_df.index[0] < self._mod_start:
             self._mod_start = mod_df.index[0].to_pydatetime()
@@ -494,11 +495,7 @@ class ComparisonCollection(Mapping):
 
     @property
     def n_models(self) -> int:
-        return len(self._mod_names)
-
-    @property
-    def n_observations(self) -> int:
-        return len(self._obs_names)
+        return len(set(self._mod_names))  # TODO why are there duplicates here
 
     @property
     def all_df(self) -> pd.DataFrame:
@@ -558,7 +555,6 @@ class ComparisonCollection(Mapping):
     def add_comparison(self, comparison: BaseComparer):
 
         self.comparisons[comparison.name] = comparison
-        self._obs_names.append(comparison.observation.name)
         for mod_name in comparison.mod_names:
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
@@ -596,12 +592,9 @@ class ComparisonCollection(Mapping):
         obs_names = df.obs_name.unique()
 
         rows = []
-        # j = 0
         for mod_name in mod_names:
             for obs_name in obs_names:
-                dfsub = df[
-                    np.logical_and(df.mod_name == mod_name, df.obs_name == obs_name)
-                ]
+                dfsub = df[(df.mod_name == mod_name) & (df.obs_name == obs_name)]
                 row = {}
                 row["model"] = mod_name
                 row["observation"] = obs_name
@@ -611,8 +604,7 @@ class ComparisonCollection(Mapping):
                         dfsub.obs_val.values, dfsub.mod_val.values
                     )
                 rows.append(row)
-                # j = j + 1
-        res = pd.DataFrame(rows).T
+        res = pd.DataFrame(rows)
 
         if len(mod_names) == 1:
             res.index = res.observation
