@@ -2,17 +2,31 @@ import numpy as np
 
 
 def bias(obs, model) -> float:
-    "Bias (model - obs)"
+    """Bias (model - obs)"""
     return np.mean(model - obs)
+
+
+def mae(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
+    """Mean Absolute Error (MAE)"""
+    return mean_absolute_error(obs, model, weights)
 
 
 def mean_absolute_error(
     obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None
 ) -> float:
     """Mean Absolute Error (MAE)"""
-
     error = np.average(np.abs(model - obs), weights=weights)
     return error
+
+
+def mape(obs: np.ndarray, model: np.ndarray) -> float:
+    """Mean Absolute Percentage Error (MAPE)"""
+    return mean_absolute_percentage_error(obs, model)
+
+
+def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
+    """Mean Absolute Percentage Error (MAPE)"""
+    return np.mean(np.abs((obs - model) / obs)) * 100
 
 
 def rmse(
@@ -21,6 +35,7 @@ def rmse(
     weights: np.ndarray = None,
     unbiased: bool = False,
 ) -> float:
+    """Root Mean Squared Error (RMSE)"""
     return root_mean_squared_error(obs, model, weights, unbiased)
 
 
@@ -46,13 +61,23 @@ def nash_sutcliffe_efficiency(obs, model) -> float:
     return error
 
 
-def corr_coef(obs, model) -> float:
+def cc(obs: np.ndarray, model: np.ndarray) -> float:
+    """Correlation coefficient (CC)"""
+    return corr_coef(obs, model)
 
+
+def corr_coef(obs, model) -> float:
+    """Correlation coefficient (CC)"""
     return np.corrcoef(obs, model)[0, 1]
 
 
-def scatter_index(obs, model) -> float:
+def si(obs: np.ndarray, model: np.ndarray) -> float:
+    """Scatter index (SI)"""
+    return scatter_index(obs, model)
 
+
+def scatter_index(obs, model) -> float:
+    """Scatter index (SI)"""
     return np.sqrt(
         np.sum(((model - model.mean()) - (obs - obs.mean())) ** 2) / np.sum(obs ** 2)
     )
