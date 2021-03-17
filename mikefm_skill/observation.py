@@ -5,9 +5,9 @@ from mikeio import Dfs0, eum
 
 
 class Observation:
-    name = None
-    df = None
-    itemInfo = None
+    # name = None
+    # df = None
+    # itemInfo = None
     color = "#d62728"
 
     # DHI: darkblue: #004165,

@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+from typing import List
 from matplotlib import markers
 import numpy as np
 import pandas as pd
@@ -13,7 +15,7 @@ from mikefm_skill.observation import PointObservation, TrackObservation
 
 
 class BaseComparer:
-    observation = None
+    # observation = None
     obs_name = "Observation"
     mod_names = None
     mod_colors = ["#004165", "#63CEFF", "#8B8D8E", "#0098DB", "#93509E", "#61C250"]
@@ -231,7 +233,10 @@ class BaseComparer:
             plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.plot(
-                x, intercept + slope * x, "r", label=reglabel,
+                x,
+                intercept + slope * x,
+                "r",
+                label=reglabel,
             )
             if show_hist:
                 plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
@@ -463,40 +468,40 @@ class TrackComparer(BaseComparer):
         # TODO: add check
 
 
-class ComparisonCollection:
+class ComparisonCollection(Mapping):
     _all_df = None
-    _mod_names = []
-    _obs_names = []
+    _mod_names: List[str] = []
+    _obs_names: List[str] = []
     _start = datetime(2900, 1, 1)
     _end = datetime(1, 1, 1)
     _n_points = 0
 
     @property
-    def n_points(self):
+    def n_points(self) -> int:
         return self._n_points
 
     @property
-    def start(self):
+    def start(self) -> datetime:
         return self._start
 
     @property
-    def end(self):
+    def end(self) -> datetime:
         return self._end
 
     @property
-    def n_comparisons(self):
+    def n_comparisons(self) -> int:
         return len(self.comparisons)
 
     @property
-    def n_models(self):
+    def n_models(self) -> int:
         return len(self._mod_names)
 
     @property
-    def n_observations(self):
+    def n_observations(self) -> int:
         return len(self._obs_names)
 
     @property
-    def all_df(self):
+    def all_df(self) -> pd.DataFrame:
         if self._all_df is None:
             self._construct_all_df()
         return self._all_df
@@ -506,17 +511,16 @@ class ComparisonCollection:
         if self.n_comparisons == 0:
             return
 
-        cols = ["mod_name", "obs_name", "x", "y", "mod_val", "obs_val"]
-        res = pd.DataFrame(
-            {
-                "mod_name": pd.Series([], dtype="str"),
-                "obs_name": pd.Series([], dtype="str"),
-                "x": pd.Series([], dtype="float"),
-                "y": pd.Series([], dtype="float"),
-                "mod_val": pd.Series([], dtype="float"),
-                "obs_val": pd.Series([], dtype="float"),
-            }
-        )
+        template = {
+            "mod_name": pd.Series([], dtype="str"),
+            "obs_name": pd.Series([], dtype="str"),
+            "x": pd.Series([], dtype="float"),
+            "y": pd.Series([], dtype="float"),
+            "mod_val": pd.Series([], dtype="float"),
+            "obs_val": pd.Series([], dtype="float"),
+        }
+        cols = template.keys()
+        res = pd.DataFrame(template)
 
         for cmp in self.comparisons.values():
             for j in range(cmp.n_models):
@@ -545,7 +549,13 @@ class ComparisonCollection:
     def __getitem__(self, x):
         return self.comparisons[x]
 
-    def add_comparison(self, comparison):
+    def __len__(self) -> int:
+        return len(self.comparisons)
+
+    def __iter__(self):
+        return iter(self.comparisons)
+
+    def add_comparison(self, comparison: BaseComparer):
 
         self.comparisons[comparison.name] = comparison
         self._obs_names.append(comparison.observation.name)
@@ -560,7 +570,7 @@ class ComparisonCollection:
 
         self._all_df = None
 
-    def compound_skill(self, metric=mtr.rmse):
+    def compound_skill(self, metric=mtr.rmse) -> float:
         """Compound skill (possibly weighted)"""
         cmps = self.comparisons.values()
         scores = [metric(mr.obs, mr.mod) for mr in cmps]
@@ -585,24 +595,24 @@ class ComparisonCollection:
         mod_names = df.mod_name.unique()
         obs_names = df.obs_name.unique()
 
-        res = {}
-        j = 0
+        rows = []
+        # j = 0
         for mod_name in mod_names:
             for obs_name in obs_names:
                 dfsub = df[
                     np.logical_and(df.mod_name == mod_name, df.obs_name == obs_name)
                 ]
-                tmp = {}
-                tmp["model"] = mod_name
-                tmp["observation"] = obs_name
-                tmp["n"] = len(dfsub)
+                row = {}
+                row["model"] = mod_name
+                row["observation"] = obs_name
+                row["n"] = len(dfsub)
                 for metric in metrics:
-                    tmp[metric.__name__] = metric(
+                    row[metric.__name__] = metric(
                         dfsub.obs_val.values, dfsub.mod_val.values
                     )
-                res[j] = tmp
-                j = j + 1
-        res = pd.DataFrame(res).T
+                rows.append(row)
+                # j = j + 1
+        res = pd.DataFrame(rows).T
 
         if len(mod_names) == 1:
             res.index = res.observation

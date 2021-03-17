@@ -1,4 +1,5 @@
 import os
+from typing import Union
 import numpy as np
 import warnings
 from enum import Enum
@@ -15,13 +16,13 @@ class ModelResultType(Enum):
 
 
 class ModelResult:
-    name = None
-    type = None
-    filename = None
-    dfs = None
-    observations = None
-    items = None
-    start = None  # TODO: add start time
+    # name = None
+    # type = None
+    # filename = None
+    # dfs = None
+    # observations = None
+    # items = None
+    # start = None  # TODO: add start time
 
     def __init__(self, filename: str, name: str = None):
         # TODO: add "start" as user may wish to disregard start from comparison
@@ -96,7 +97,9 @@ class ModelResult:
                 cc.add_comparison(comparison)
         return cc
 
-    def compare_observation(self, observation, item) -> BaseComparer:
+    def compare_observation(
+        self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
+    ) -> BaseComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -116,8 +119,8 @@ class ModelResult:
         elif isinstance(observation, TrackObservation):
             comparison = self.compare_track_observation(observation, item)
         else:
-            warnings.warn("Only point and track observation are supported!")
-            comparison = None
+            raise ValueError("Only point and track observation are supported!")
+
         return comparison
 
     def compare_point_observation(self, observation, item) -> PointComparer:
@@ -271,7 +274,9 @@ class ModelResultCollection:
         for mr in self.modelresults.values():
             mr.add_observation(observation, item)
 
-    def compare_observation(self, observation, item) -> BaseComparer:
+    def compare_observation(
+        self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
+    ) -> BaseComparer:
         """Compare all ModelResults in collection with an observation
 
         Parameters
@@ -291,8 +296,8 @@ class ModelResultCollection:
         elif isinstance(observation, TrackObservation):
             comparison = self.compare_track_observation(observation, item)
         else:
-            warnings.warn("Only point and track observation are supported!")
-            comparison = None
+            raise ValueError("Only point and track observation are supported!")
+
         return comparison
 
     def compare_point_observation(self, observation, item) -> PointComparer:
