@@ -471,8 +471,8 @@ class TrackComparer(BaseComparer):
 
 class ComparisonCollection(Mapping):
     _all_df = None
-    _mod_names: List[str] = []
-    _obs_names: List[str] = []
+    _mod_names: List[str]
+    _obs_names: List[str]
     _start = datetime(2900, 1, 1)
     _end = datetime(1, 1, 1)
     _n_points = 0
@@ -535,6 +535,8 @@ class ComparisonCollection(Mapping):
 
     def __init__(self):
         self.comparisons = {}
+        self._mod_names = []
+        self._obs_names = []
 
     def __repr__(self):
         out = []
