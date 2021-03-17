@@ -234,10 +234,7 @@ class BaseComparer:
             plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.plot(
-                x,
-                intercept + slope * x,
-                "r",
-                label=reglabel,
+                x, intercept + slope * x, "r", label=reglabel,
             )
             if show_hist:
                 plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
@@ -531,7 +528,7 @@ class ComparisonCollection(Mapping):
                 df["obs_val"] = cmp.obs
                 res = res.append(df[cols])
 
-        self._all_df = res
+        self._all_df = res.sort_index()
 
     def __init__(self):
         self.comparisons = {}
@@ -586,7 +583,7 @@ class ComparisonCollection(Mapping):
     ) -> pd.DataFrame:
 
         if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.corr_coef, mtr.scatter_index]
+            metrics = [mtr.bias, mtr.rmse, mtr.mape, mtr.cc, mtr.si, mtr.r2]
 
         if df is None:
             df = self.sel_df(model=model, observation=observation, start=start, end=end)
@@ -626,13 +623,8 @@ class ComparisonCollection(Mapping):
         if observation is not None:
             observation = [observation] if isinstance(observation, str) else observation
             df = df[df.obs_name.isin(observation)]
-        if (start is not None) or (start is not None):
-            if start is None:
-                df = df.loc[:end]
-            elif end is None:
-                df = df.loc[start:]
-            else:
-                df = df.loc[start:end]
+        if (start is not None) or (end is not None):
+            df = df.loc[start:end]
 
         return df
 
