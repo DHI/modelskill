@@ -59,8 +59,8 @@ See examples of use in these notebooks
 ## Usage
 
 ```python
->>> from mikefm_skill.model import ModelResult
->>> from mikefm_skill.observation import PointObservation
+>>> from fmskill.model import ModelResult
+>>> from fmskill.observation import PointObservation
 >>> mr = ModelResult("Oresund2D.dfsu")
 >>> klagshamn = PointObservation("smhi_2095_klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 >>> drogden = PointObservation("dmi_30357_Drogden_Fyr.dfs0", item=0, x=355568, y=6156863)
@@ -92,7 +92,7 @@ Timeseries plots can either be static and report-friendly ([matplotlib](https://
 With a few lines of code, it will be possible to generate an automated report.
 
 ```python
-from mikefm_skill.report import Reporter
+from fmskill.report import Reporter
 
 rep = Reporter(mr)
 rep.markdown()

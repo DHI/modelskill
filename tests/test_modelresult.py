@@ -1,7 +1,7 @@
 import pytest
 
-from mikefm_skill.model import ModelResult, ModelResultType
-from mikefm_skill.observation import PointObservation
+from fmskill.model import ModelResult, ModelResultType
+from fmskill.observation import PointObservation
 
 
 @pytest.fixture

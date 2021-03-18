@@ -1,7 +1,7 @@
 import pytest
 
 from shapely.geometry import Point
-from mikefm_skill.observation import PointObservation
+from fmskill.observation import PointObservation
 
 
 @pytest.fixture

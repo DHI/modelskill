@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from mikefm_skill.metrics import (
+from fmskill.metrics import (
     bias,
     mean_absolute_error,
     mean_absolute_percentage_error,

@@ -1,8 +1,8 @@
 import pytest
 
-from mikefm_skill.model import ModelResult, ModelResultCollection
-from mikefm_skill.observation import PointObservation
-from mikefm_skill.metrics import root_mean_squared_error, mean_absolute_error
+from fmskill.model import ModelResult, ModelResultCollection
+from fmskill.observation import PointObservation
+from fmskill.metrics import root_mean_squared_error, mean_absolute_error
 
 
 @pytest.fixture

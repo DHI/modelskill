@@ -7,7 +7,7 @@ with open("LICENSE") as fh:
     license = fh.read()
 
 setuptools.setup(
-    name="mikefm_skill",
+    name="fmskill",
     version="0.1.dev",
     install_requires=["numpy", "pandas", "mikeio >= 0.6", "matplotlib"],
     extras_require={

@@ -1,6 +1,6 @@
 import pytest
 
-from mikefm_skill.observation import TrackObservation
+from fmskill.observation import TrackObservation
 
 
 @pytest.fixture
