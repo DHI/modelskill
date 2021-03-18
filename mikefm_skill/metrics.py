@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 
 
@@ -26,6 +27,10 @@ def mape(obs: np.ndarray, model: np.ndarray) -> float:
 
 def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
     """Mean Absolute Percentage Error (MAPE)"""
+    if np.any(obs == 0.0):
+        warnings.warn("Observation is zero, consider to use another metric than MAPE")
+        return np.nan  # TODO is it better to return a large value +inf than NaN?
+
     return np.mean(np.abs((obs - model) / obs)) * 100
 
 
