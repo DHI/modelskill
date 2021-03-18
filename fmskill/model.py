@@ -49,7 +49,7 @@ class ModelResult:
     def __repr__(self):
         # return self.dfs
         out = []
-        out.append("<mikefm_skill.ModelResult>")
+        out.append("<fmskill.ModelResult>")
         out.append(self.filename)
         return str.join("\n", out)
 
@@ -58,7 +58,7 @@ class ModelResult:
 
         Parameters
         ----------
-        observation : <mikefm_skill.PointObservation>
+        observation : <fmskill.PointObservation>
             Observation object for later comparison
         item : str, integer
             ModelResult item name or number corresponding to the observation
@@ -111,7 +111,7 @@ class ModelResult:
 
         Returns
         -------
-        <mikefm_skill.BaseComparer>
+        <fmskill.BaseComparer>
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, PointObservation):
@@ -128,14 +128,14 @@ class ModelResult:
 
         Parameters
         ----------
-        observation : <mikefm_skill.PointObservation>
+        observation : <fmskill.PointObservation>
             Observation to be compared
         item : str, integer
             ModelResult item name or number
 
         Returns
         -------
-        <mikefm_skill.PointComparer>
+        <fmskill.PointComparer>
             A comparer object for further analysis or plotting
         """
         ds_model = self._extract_point(observation, item)
@@ -168,14 +168,14 @@ class ModelResult:
 
         Parameters
         ----------
-        observation : <mikefm_skill.TrackObservation>
+        observation : <fmskill.TrackObservation>
             Track observation to be compared
         item : str, integer
             ModelResult item name or number
 
         Returns
         -------
-        <mikefm_skill.TrackComparer>
+        <fmskill.TrackComparer>
             A comparer object for further analysis or plotting
         """
         ds_model = self._extract_track(observation, item)
@@ -266,7 +266,7 @@ class ModelResultCollection:
 
         Parameters
         ----------
-        observation : <mikefm_skill.PointObservation>
+        observation : <fmskill.PointObservation>
             Observation object for later comparison
         item : str, integer
             ModelResult item name or number corresponding to the observation
@@ -288,7 +288,7 @@ class ModelResultCollection:
 
         Returns
         -------
-        <mikefm_skill.BaseComparer>
+        <fmskill.BaseComparer>
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, PointObservation):
@@ -305,14 +305,14 @@ class ModelResultCollection:
 
         Parameters
         ----------
-        observation : <mikefm_skill.PointObservation>
+        observation : <fmskill.PointObservation>
             Observation to be compared
         item : str, integer
             ModelResult item name or number
 
         Returns
         -------
-        <mikefm_skill.PointComparer>
+        <fmskill.PointComparer>
             A comparer object for further analysis or plotting
         """
         assert isinstance(observation, PointObservation)
@@ -327,14 +327,14 @@ class ModelResultCollection:
 
         Parameters
         ----------
-        observation : <mikefm_skill.TrackObservation>
+        observation : <fmskill.TrackObservation>
             Observation to be compared
         item : str, integer
             ModelResult item name or number
 
         Returns
         -------
-        <mikefm_skill.TrackComparer>
+        <fmskill.TrackComparer>
             A comparer object for further analysis or plotting
         """
         assert isinstance(observation, TrackObservation)

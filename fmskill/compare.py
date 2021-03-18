@@ -10,8 +10,8 @@ from scipy.stats import linregress
 from scipy import odr
 
 from mikeio import Dfs0, Dataset
-import mikefm_skill.metrics as mtr
-from mikefm_skill.observation import PointObservation, TrackObservation
+import fmskill.metrics as mtr
+from fmskill.observation import PointObservation, TrackObservation
 
 
 class BaseComparer:

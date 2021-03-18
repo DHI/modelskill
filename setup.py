@@ -27,7 +27,7 @@ setuptools.setup(
     license=license,
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/DHI/mikefm-skill",
+    url="https://github.com/DHI/fmskill",
     packages=setuptools.find_packages(),
     include_package_data=True,
     classifiers=[

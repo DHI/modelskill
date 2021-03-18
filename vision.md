@@ -1,11 +1,11 @@
 # Vision
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) wishes to be your modelling assistant. It should useful enough for you to use every time you do a MIKE 21/3 simulation. 
+[fmskill](https://github.com/DHI/fmskill) wishes to be your modelling assistant. It should useful enough for you to use every time you do a MIKE 21/3 simulation. 
 
 
 ## Objective
 
-We want [mikefm-skill](https://github.com/DHI/mikefm-skill) to make it
+We want [fmskill](https://github.com/DHI/fmskill) to make it
 
 * Easy to assess the skill of a model by comparing with measurements
 * Easy to assess model skill also when result is split on several files (2d, 3d, yearly, ...)
@@ -23,7 +23,7 @@ We want [mikefm-skill](https://github.com/DHI/mikefm-skill) to make it
 
 ## Scope 
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) wants to balance general and specific needs: 
+[fmskill](https://github.com/DHI/fmskill) wants to balance general and specific needs: 
 
 * It should be general enough to cover >90% of MIKE FM simulations
 * But specific enough to be *useful*
@@ -36,7 +36,7 @@ We want [mikefm-skill](https://github.com/DHI/mikefm-skill) to make it
 
 ## Limitations
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) does **not** wish to cover 
+[fmskill](https://github.com/DHI/fmskill) does **not** wish to cover 
 
 * Extreme value analysis
 * Forecast skill assessments

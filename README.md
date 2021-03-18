@@ -1,9 +1,9 @@
-# mikefm-skill
+# fmskill
 Compare results from [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) simulations with observations. 
 
 ## Purpose
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) is a python package for scoring MIKE FM models
+[fmskill](https://github.com/DHI/fmskill) is a python package for scoring MIKE FM models
 
 * Compare different model runs (calibration) or different models (validation)
 * Exploratory data analysis - interactive plotting with [plotly](https://plotly.com/python/)
@@ -15,7 +15,7 @@ Read more about the [vision and scope](vision.md).
 
 ## Use cases
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) wants to be your companion during the different phases of a MIKE FM modelling workflow.
+[fmskill](https://github.com/DHI/fmskill) wants to be your companion during the different phases of a MIKE FM modelling workflow.
 
 * Model setup - exploratory phase   
 * Model calibration
@@ -23,22 +23,22 @@ Read more about the [vision and scope](vision.md).
 
 ## Installation
 
-    > pip install https://github.com/DHI/mikefm-skill/archive/master.zip
+    > pip install https://github.com/DHI/fmskill/archive/master.zip
 
 ## Example notebooks
 
 See examples of use in these notebooks
 
-* [basic.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/basic.ipynb)
-* [skill.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/skill.ipynb)
-* [timeseries_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/timeseries_compare.ipynb)
-* [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/SW_DutchCoast.ipynb)
-* [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/mikefm-skill/blob/main/notebooks/Multi_model_comparison.ipynb)
+* [basic.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/basic.ipynb)
+* [skill.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/skill.ipynb)
+* [timeseries_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/timeseries_compare.ipynb)
+* [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/SW_DutchCoast.ipynb)
+* [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_model_comparison.ipynb)
 
 
 ## Design principles
 
-[mikefm-skill](https://github.com/DHI/mikefm-skill) is an object-oriented package built around a few basic concepts:
+[fmskill](https://github.com/DHI/fmskill) is an object-oriented package built around a few basic concepts:
 
 * ModelResult: defined by a MIKE FM output (.dfsu or .dfs0 file), observations can be added to a ModelResult 
 * Observation: e.g. point or track observation
