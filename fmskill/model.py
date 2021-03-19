@@ -218,7 +218,7 @@ class ModelResult:
                 ax.scatter(x=obs.x, y=obs.y, marker="x")
                 ax.annotate(obs.name, (obs.x + offset_x, obs.y))
             elif isinstance(obs, TrackObservation):
-                if obs.n < 10000:
+                if obs.n_points < 10000:
                     ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
                 else:
                     print("Too many points to plot")

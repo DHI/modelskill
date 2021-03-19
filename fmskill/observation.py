@@ -43,7 +43,7 @@ class Observation:
         return self.df.values
 
     @property
-    def n(self):
+    def n_points(self):
         """Number of observations"""
         return len(self.df)
 
