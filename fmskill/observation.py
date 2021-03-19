@@ -1,3 +1,11 @@
+"""
+The `observation` module contains different types of Observation classes for
+fixed locations (PointObservation), or locations moving in space (TrackObservation).
+
+Examples
+--------
+>>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+"""
 import os
 from shapely.geometry import Point, MultiPoint
 import pandas as pd
@@ -68,6 +76,12 @@ class Observation:
 
 
 class PointObservation(Observation):
+    """Class for observations of fixed locations
+
+    Examples
+    --------
+    >>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+    """
 
     x = None
     y = None
@@ -137,6 +151,49 @@ class PointObservation(Observation):
 
 
 class TrackObservation(Observation):
+    """Class for observation with locations moving in space, e.g. satellite altimetry
+
+    The data needs in addition to the datetime of each single observation point also, x and y coordinates.
+
+    Examples
+    --------
+    >>> o1 = TrackObservation("track.dfs0", item=2, name="c2")
+    >>> df = pd.DataFrame(
+    ...         {
+    ...             "t": pd.date_range("2010-01-01", freq="10s", periods=n),
+    ...             "x": np.linspace(0, 10, n),
+    ...             "y": np.linspace(45000, 45100, n),
+    ...             "swh": [0.1, 0.3, 0.4, 0.5, 0.3],
+    ...         }
+    ... )
+    >>> df = df.set_index("t")
+    >>> df
+                        x        y  swh
+    t
+    2010-01-01 00:00:00   0.0  45000.0  0.1
+    2010-01-01 00:00:10   2.5  45025.0  0.3
+    2010-01-01 00:00:20   5.0  45050.0  0.4
+    2010-01-01 00:00:30   7.5  45075.0  0.5
+    2010-01-01 00:00:40  10.0  45100.0  0.3
+    >>> t1 = TrackObservation(df, name="fake")
+    >>> t1.n
+    5
+    >>> t1.values
+    array([0.1, 0.3, 0.4, 0.5, 0.3])
+    >>> t1.time
+    DatetimeIndex(['2010-01-01 00:00:00', '2010-01-01 00:00:10',
+               '2010-01-01 00:00:20', '2010-01-01 00:00:30',
+               '2010-01-01 00:00:40'],
+              dtype='datetime64[ns]', name='t', freq=None)
+
+    >>> t1.x
+    array([ 0. ,  2.5,  5. ,  7.5, 10. ])
+    >>> t1.y
+    array([45000., 45025., 45050., 45075., 45100.])
+
+
+    """
+
     @property
     def geometry(self) -> MultiPoint:
         """Coordinates of observation"""
