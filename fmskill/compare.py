@@ -17,8 +17,10 @@ from fmskill.observation import PointObservation, TrackObservation
 class BaseComparer:
     # observation = None
     obs_name = "Observation"
-    mod_colors = ["#004165", "#63CEFF", "#8B8D8E", "#0098DB", "#93509E", "#61C250"]
-    resi_color = "#8B8D8E"
+    _mod_names: List[str]
+    _mod_colors = ["#004165", "#63CEFF", "#8B8D8E", "#0098DB", "#93509E", "#61C250"]
+    _resi_color = "#8B8D8E"
+    _obs_unit_text = ""
     #      darkblue: #004165
     #      midblue:  #0098DB,
     #      gray:     #8B8D8E,
@@ -75,7 +77,7 @@ class BaseComparer:
 
     @property
     def mod_names(self) -> List[str]:
-        return list(self.mod_data.keys())
+        return self._mod_names  # list(self.mod_data.keys())
 
     @property
     def all_df(self) -> pd.DataFrame:
@@ -114,6 +116,7 @@ class BaseComparer:
 
     def __init__(self, observation, modeldata=None, metric=mtr.rmse):
         self.observation = deepcopy(observation)
+        self._obs_unit_text = self.observation._unit_text()
         self.mod_data = {}
 
         if modeldata is not None:
@@ -136,6 +139,7 @@ class BaseComparer:
             raise ValueError("Unknown modeldata type (mikeio.Dataset or pd.DataFrame)")
         mod_name = mod_df.columns[-1]
         self.mod_data[mod_name] = mod_df
+        self._mod_names = list(self.mod_data.keys())
 
         if mod_df.index[0] < self._mod_start:
             self._mod_start = mod_df.index[0].to_pydatetime()
@@ -230,6 +234,8 @@ class BaseComparer:
     def scatter(
         self,
         model=None,
+        start=None,
+        end=None,
         xlabel=None,
         ylabel=None,
         binsize=None,
@@ -245,15 +251,17 @@ class BaseComparer:
         **kwargs,
     ):
         mod_id = self._get_mod_id(model)
+        mod_name = self._mod_names[mod_id]
 
-        x = self.obs
-        y = self.mod[:, mod_id]
+        df = self.sel_df(model=mod_name, start=start, end=end)
+        x = df.obs_val
+        y = df.mod_val
 
         if xlabel is None:
-            xlabel = f"Observation, {self.observation._unit_text()}"
+            xlabel = f"Observation, {self._obs_unit_text}"
 
         if ylabel is None:
-            ylabel = f"Model, {self.observation._unit_text()}"
+            ylabel = f"Model, {self._obs_unit_text}"
 
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
@@ -415,21 +423,23 @@ class SingleObsComparer(BaseComparer):
         return bias
 
     def residual_hist(self, bins=100):
-        plt.hist(self.residual, bins=bins, color=self.resi_color)
+        plt.hist(self.residual, bins=bins, color=self._resi_color)
         plt.title(f"Residuals, {self.name}")
-        plt.xlabel(f"Residuals of {self.observation._unit_text()}")
+        plt.xlabel(f"Residuals of {self._obs_unit_text}")
 
     def hist(self, model=None, bins=100):
         mod_id = self._get_mod_id(model)
         mod_name = self.mod_names[mod_id]
 
-        ax = self.df[mod_name].hist(bins=bins, color=self.mod_colors[mod_id], alpha=0.5)
+        ax = self.df[mod_name].hist(
+            bins=bins, color=self._mod_colors[mod_id], alpha=0.5
+        )
         self.df[self.obs_name].hist(
             bins=bins, color=self.observation.color, alpha=0.5, ax=ax
         )
         ax.legend([mod_name, self.obs_name])
         plt.title(f"{mod_name} vs {self.name}")
-        plt.xlabel(f"{self.observation._unit_text()}")
+        plt.xlabel(f"{self._obs_unit_text}")
 
     def skill(self, model=None, metric=None):
 
@@ -476,7 +486,7 @@ class PointComparer(SingleObsComparer):
             _, ax = plt.subplots(figsize=figsize)
             for j in range(self.n_models):
                 key = self.mod_names[j]
-                self.mod_data[key].plot(ax=ax, color=self.mod_colors[j])
+                self.mod_data[key].plot(ax=ax, color=self._mod_colors[j])
 
             ax.scatter(
                 self.df.index,
@@ -484,7 +494,7 @@ class PointComparer(SingleObsComparer):
                 marker=".",
                 color=self.observation.color,
             )
-            ax.set_ylabel(self.observation._unit_text())
+            ax.set_ylabel(self._obs_unit_text)
             ax.legend([*self.mod_names, self.obs_name])
             ax.set_ylim(ylim)
             plt.title(title)
@@ -502,7 +512,7 @@ class PointComparer(SingleObsComparer):
                         x=mod_df.index,
                         y=mod_df.iloc[:, 0],
                         name=key,
-                        line=dict(color=self.mod_colors[j]),
+                        line=dict(color=self._mod_colors[j]),
                     )
                 )
 
@@ -519,9 +529,7 @@ class PointComparer(SingleObsComparer):
                 ]
             )
 
-            fig.update_layout(
-                title=title, yaxis_title=self.observation._unit_text(), **kwargs
-            )
+            fig.update_layout(title=title, yaxis_title=self._obs_unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
 
             fig.show()
@@ -562,11 +570,13 @@ class TrackComparer(SingleObsComparer):
 
 class ComparisonCollection(Mapping, BaseComparer):
     _obs_names: List[str]
-
-    _mod_names: List[str]
     _start = datetime(2900, 1, 1)
     _end = datetime(1, 1, 1)
     _n_points = 0
+
+    @property
+    def name(self) -> str:
+        return "Observations"
 
     @property
     def n_points(self) -> int:
@@ -587,10 +597,6 @@ class ComparisonCollection(Mapping, BaseComparer):
     @property
     def n_comparisons(self) -> int:
         return len(self.comparisons)
-
-    @property
-    def n_models(self) -> int:
-        return len(set(self._mod_names))  # TODO why are there duplicates here
 
     def _construct_all_df(self):
         # TODO: var_name
@@ -643,6 +649,7 @@ class ComparisonCollection(Mapping, BaseComparer):
             self._start = comparison.start
         if comparison.end > self.end:
             self._end = comparison.end
+        self._obs_unit_text = comparison.observation._unit_text()
 
         self._all_df = None
 
