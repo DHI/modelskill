@@ -187,8 +187,8 @@ class ModelResult:
         if self.type == ModelResultType.dfsu:
             ds_model = self._extract_track_dfsu(observation, item)
         elif self.type == ModelResultType.dfs0:
-            raise NotImplementedError()
-            # ds_model = self._extract_track_dfs0(observation, item)
+            ds_model = self.dfs.read(items=[0, 1, item])
+            ds_model.items[-1].name = self.name
         return ds_model
 
     def _extract_track_dfsu(self, observation: TrackObservation, item):
@@ -218,7 +218,11 @@ class ModelResult:
                 ax.scatter(x=obs.x, y=obs.y, marker="x")
                 ax.annotate(obs.name, (obs.x + offset_x, obs.y))
             elif isinstance(obs, TrackObservation):
-                ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
+                if obs.n < 10000:
+                    ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
+                else:
+                    print("Too many points to plot")
+                    # TODO: group by lonlat bin
         return ax
 
 
