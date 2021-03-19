@@ -1,20 +1,23 @@
 # Vision
 
-[fmskill](https://github.com/DHI/fmskill) wishes to be your modelling assistant. It should useful enough for you to use every time you do a MIKE 21/3 simulation. 
+[fmskill](https://github.com/DHI/fmskill) wishes to be your modelling assistant. It should be useful enough for you to use every time you do a MIKE 21/3 simulation. 
 
 
 ## Objective
 
-We want [fmskill](https://github.com/DHI/fmskill) to make it
+We want [fmskill](https://github.com/DHI/fmskill) to make it easy to 
 
-* Easy to assess the skill of a model by comparing with measurements
-* Easy to assess model skill also when result is split on several files (2d, 3d, yearly, ...)
-* Easy to compare the skill of different calibration runs
-* Easy to compare your model with other models (and climatology)
-* Easy to use a wide range of common evaluation metrics 
-* Easy to create common plots such as time series, scatter and taylor diagrams
-* Easy to do aggregations - assess for all observations, geographic areas, monthly, ...
-* Fast to make comparisons (optimized code)
+* assess the skill of a model by comparing with *measurements*
+* assess model skill also when result is split on *several files* (2d, 3d, yearly, ...)
+* compare the skill of different *calibration* runs
+* compare your model with *other models*
+* use a wide range of common evaluation *metrics* 
+* create common *plots* such as time series, scatter and taylor diagrams
+* do *aggregations* - assess for all observations, geographic areas, monthly, ...
+* make *fast* comparisons (optimized code)
+
+And it should be 
+
 * Difficult to make mistakes by verifying input 
 * Trustworthy by having >95% test coverage 
 * Easy to install (from pypi and conda)
