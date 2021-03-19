@@ -155,8 +155,9 @@ class TrackObservation(Observation):
         return self.df.iloc[:, 2].values
 
     def __init__(self, filename, item: int = 2, name=None):
-        if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
-            raise NotImplementedError()
+        if isinstance(filename, pd.DataFrame):  # or isinstance(filename, pd.Series):
+            df = filename
+            self.df = df.iloc[:, [0, 1, item]]
         else:
             if name is None:
                 name = os.path.basename(filename).split(".")[0]
