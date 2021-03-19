@@ -174,7 +174,7 @@ class TrackObservation(Observation):
         super().__init__(name)
 
     def __repr__(self):
-        out = f"TrackObservation: {self.name}, n={self.n}"
+        out = f"TrackObservation: {self.name}, n={self.n_points}"
         return out
 
     @staticmethod
