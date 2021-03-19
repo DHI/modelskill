@@ -1,3 +1,15 @@
+"""The `compare` module contains different types of comparer classes for
+fixed locations (PointComparer), or locations moving in space (TrackComparer).
+
+These Comparers are constructed by extracting data from the combination of observation and model results
+
+Examples
+--------
+>>> mr = ModelResult("Oresund2D.dfsu")
+>>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+>>> mr.add_observation(o1, item=0)
+>>> comparer = mr.extract()
+"""
 from collections.abc import Mapping
 from typing import List
 from matplotlib import markers
@@ -15,6 +27,8 @@ from fmskill.observation import PointObservation, TrackObservation
 
 
 class BaseComparer:
+    """Abstract base class for all comparers, only used to inherit from, not to be used directly"""
+
     # observation = None
     obs_name = "Observation"
     mod_colors = ["#004165", "#63CEFF", "#8B8D8E", "#0098DB", "#93509E", "#61C250"]
@@ -76,14 +90,12 @@ class BaseComparer:
     def mod_names(self) -> List[str]:
         return list(self.mod_data.keys())
 
-    def __init__(self, observation, modeldata=None, metric=mtr.rmse):
+    def __init__(self, observation, modeldata=None):
         self.observation = deepcopy(observation)
         self.mod_data = {}
 
         if modeldata is not None:
             self.add_modeldata(modeldata)
-
-        self.metric = mtr.rmse
 
     def add_modeldata(self, modeldata):
         if isinstance(modeldata, list):
@@ -234,7 +246,10 @@ class BaseComparer:
             plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
             plt.plot(xq, yq, label="QQ", c="gray")
             plt.plot(
-                x, intercept + slope * x, "r", label=reglabel,
+                x,
+                intercept + slope * x,
+                "r",
+                label=reglabel,
             )
             if show_hist:
                 plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
@@ -342,12 +357,23 @@ class BaseComparer:
         mod_id = self._get_mod_id(model)
 
         if metric is None:
-            metric = self.metric
+            metric = mtr.rmse
 
         return metric(self.obs, self.mod[:, mod_id])
 
 
 class PointComparer(BaseComparer):
+    """
+    Comparer for observations from fixed locations
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu")
+    >>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> mr.add_observation(o1, item=0)
+    >>> comparer = mr.extract()
+    """
+
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
         assert isinstance(observation, PointObservation)
@@ -467,6 +493,20 @@ class TrackComparer(BaseComparer):
 
 
 class ComparisonCollection(Mapping):
+    """
+    Collection of comparers, constructed by calling the `ModelResult.extract` method.
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu")
+    >>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o2 = PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
+    >>> mr.add_observation(o1, item=0)
+    >>> mr.add_observation(o2, item=0)
+    >>> comparer = mr.extract()
+
+    """
+
     _all_df = None
     _mod_names: List[str]
     _obs_names: List[str]
