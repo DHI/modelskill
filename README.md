@@ -31,7 +31,8 @@ See examples of use in these notebooks
 
 * [basic.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/basic.ipynb)
 * [skill.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/skill.ipynb)
-* [timeseries_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/timeseries_compare.ipynb)
+* [Timeseries_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/timeseries_compare.ipynb)
+* [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Track_comparison.ipynb)
 * [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/SW_DutchCoast.ipynb)
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_model_comparison.ipynb)
 
