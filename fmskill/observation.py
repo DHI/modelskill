@@ -158,6 +158,7 @@ class TrackObservation(Observation):
         if isinstance(filename, pd.DataFrame):  # or isinstance(filename, pd.Series):
             df = filename
             self.df = df.iloc[:, [0, 1, item]]
+            self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         else:
             if name is None:
                 name = os.path.basename(filename).split(".")[0]
