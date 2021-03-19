@@ -92,13 +92,15 @@ class ModelResult:
         """extract model result in all observations"""
         cc = ComparisonCollection()
         for obs in self.observations.values():
-            comparison = self.compare_observation(obs, obs.model_variable)
+            comparison = self._compare_observation(obs, obs.model_variable)
             if comparison is not None:
                 cc.add_comparison(comparison)
         return cc
 
-    def compare_observation(
-        self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
+    def _compare_observation(
+        self,
+        observation: Union[PointObservation, TrackObservation],
+        item: Union[int, str],
     ) -> BaseComparer:
         """Compare this ModelResult with an observation
 
@@ -115,15 +117,15 @@ class ModelResult:
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, PointObservation):
-            comparison = self.compare_point_observation(observation, item)
+            comparison = self._compare_point_observation(observation, item)
         elif isinstance(observation, TrackObservation):
-            comparison = self.compare_track_observation(observation, item)
+            comparison = self._compare_track_observation(observation, item)
         else:
             raise ValueError("Only point and track observation are supported!")
 
         return comparison
 
-    def compare_point_observation(self, observation, item) -> PointComparer:
+    def _compare_point_observation(self, observation, item) -> PointComparer:
         """Compare this ModelResult with a point observation
 
         Parameters
@@ -163,7 +165,7 @@ class ModelResult:
         ds_model.items[0].name = self.name
         return ds_model
 
-    def compare_track_observation(self, observation, item) -> TrackComparer:
+    def _compare_track_observation(self, observation, item) -> TrackComparer:
         """Compare this ModelResult with a track observation
 
         Parameters
@@ -278,7 +280,7 @@ class ModelResultCollection:
         for mr in self.modelresults.values():
             mr.add_observation(observation, item)
 
-    def compare_observation(
+    def _compare_observation(
         self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
     ) -> BaseComparer:
         """Compare all ModelResults in collection with an observation
@@ -296,15 +298,15 @@ class ModelResultCollection:
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, PointObservation):
-            comparison = self.compare_point_observation(observation, item)
+            comparison = self._compare_point_observation(observation, item)
         elif isinstance(observation, TrackObservation):
-            comparison = self.compare_track_observation(observation, item)
+            comparison = self._compare_track_observation(observation, item)
         else:
             raise ValueError("Only point and track observation are supported!")
 
         return comparison
 
-    def compare_point_observation(self, observation, item) -> PointComparer:
+    def _compare_point_observation(self, observation, item) -> PointComparer:
         """Compare all ModelResults in collection with a point observation
 
         Parameters
@@ -326,7 +328,7 @@ class ModelResultCollection:
 
         return PointComparer(observation, ds_model)
 
-    def compare_track_observation(self, observation, item) -> TrackComparer:
+    def _compare_track_observation(self, observation, item) -> TrackComparer:
         """Compare all ModelResults in collection with a track observation
 
         Parameters
@@ -354,7 +356,7 @@ class ModelResultCollection:
         cc = ComparisonCollection()
 
         for obs in self.observations.values():
-            comparison = self.compare_observation(obs, obs.model_variable)
+            comparison = self._compare_observation(obs, obs.model_variable)
             if comparison is not None:
                 cc.add_comparison(comparison)
 
