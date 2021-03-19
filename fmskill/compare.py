@@ -27,12 +27,13 @@ class BaseComparer:
     #      purple:   #93509E
     mod_data = None
     df = None
+    _all_df = None
 
     _mod_start = datetime(2900, 1, 1)
     _mod_end = datetime(1, 1, 1)
 
     @property
-    def n(self) -> int:
+    def n_points(self) -> int:
         return len(self.df)
 
     @property
@@ -76,6 +77,41 @@ class BaseComparer:
     def mod_names(self) -> List[str]:
         return list(self.mod_data.keys())
 
+    @property
+    def all_df(self) -> pd.DataFrame:
+        if self._all_df is None:
+            self._construct_all_df()
+        return self._all_df
+
+    def _all_df_template(self):
+        template = {
+            "mod_name": pd.Series([], dtype="str"),
+            "obs_name": pd.Series([], dtype="str"),
+            "x": pd.Series([], dtype="float"),
+            "y": pd.Series([], dtype="float"),
+            "mod_val": pd.Series([], dtype="float"),
+            "obs_val": pd.Series([], dtype="float"),
+        }
+        res = pd.DataFrame(template)
+        return res
+
+    def _construct_all_df(self):
+        # TODO: var_name
+        res = self._all_df_template()
+        cols = res.keys()
+        for j in range(self.n_models):
+            mod_name = self.mod_names[j]
+            df = self.df[[mod_name]].copy()
+            df.columns = ["mod_val"]
+            df["mod_name"] = mod_name
+            df["obs_name"] = self.observation.name
+            df["x"] = self.x
+            df["y"] = self.y
+            df["obs_val"] = self.obs
+            res = res.append(df[cols])
+
+        self._all_df = res.sort_index()
+
     def __init__(self, observation, modeldata=None, metric=mtr.rmse):
         self.observation = deepcopy(observation)
         self.mod_data = {}
@@ -114,23 +150,6 @@ class BaseComparer:
         # out.append(f"{self.metric.__name__}: {self.skill():.3f}")
         return str.join("\n", out)
 
-    def remove_bias(self, correct="Model"):
-        bias = self.residual.mean(axis=0)
-        if correct == "Model":
-            for j in range(self.n_models):
-                mod_name = self.mod_names[j]
-                mod_df = self.mod_data[mod_name]
-                mod_df[mod_name] = mod_df.values - bias[j]
-            self.df[self.mod_names] = self.mod - bias
-        elif correct == "Observation":
-            # what if multiple models?
-            self.df[self.obs_name] = self.obs + bias
-        else:
-            raise ValueError(
-                f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
-            )
-        return bias
-
     def _get_mod_id(self, model):
         if model is None or self.n_models <= 1:
             return 0
@@ -151,6 +170,62 @@ class BaseComparer:
         else:
             raise ValueError("model must be None, str or int")
         return mod_id
+
+    def skill_df(
+        self,
+        df=None,
+        model=None,
+        observation=None,
+        start=None,
+        end=None,
+        metrics: list = None,
+    ) -> pd.DataFrame:
+
+        if metrics is None:
+            metrics = [mtr.bias, mtr.rmse, mtr.mape, mtr.cc, mtr.si, mtr.r2]
+
+        if df is None:
+            df = self.sel_df(model=model, observation=observation, start=start, end=end)
+        mod_names = df.mod_name.unique()
+        obs_names = df.obs_name.unique()
+
+        rows = []
+        for mod_name in mod_names:
+            for obs_name in obs_names:
+                dfsub = df[(df.mod_name == mod_name) & (df.obs_name == obs_name)]
+                row = {}
+                row["model"] = mod_name
+                row["observation"] = obs_name
+                row["n"] = len(dfsub)
+                for metric in metrics:
+                    row[metric.__name__] = metric(
+                        dfsub.obs_val.values, dfsub.mod_val.values
+                    )
+                rows.append(row)
+        res = pd.DataFrame(rows)
+
+        if len(mod_names) == 1:
+            res.index = res.observation
+            res.drop(columns=["observation", "model"], inplace=True)
+        elif len(obs_names) == 1:
+            res.index = res.model
+            res.drop(columns=["observation", "model"], inplace=True)
+
+        return res
+
+    def sel_df(self, model=None, observation=None, start=None, end=None):
+        # TODO: area
+        df = self.all_df
+        if model is not None:
+            model = [model] if isinstance(model, str) else model
+            df = df[df.mod_name.isin(model)]
+        if observation is not None:
+            observation = [observation] if isinstance(observation, str) else observation
+            df = df[df.obs_name.isin(observation)]
+        if (start is not None) or (end is not None):
+            df = df.loc[start:end]
+
+        return df
 
     def scatter(
         self,
@@ -320,6 +395,25 @@ class BaseComparer:
 
             raise ValueError(f"Plotting backend: {backend} not supported")
 
+
+class SingleObsComparer(BaseComparer):
+    def remove_bias(self, correct="Model"):
+        bias = self.residual.mean(axis=0)
+        if correct == "Model":
+            for j in range(self.n_models):
+                mod_name = self.mod_names[j]
+                mod_df = self.mod_data[mod_name]
+                mod_df[mod_name] = mod_df.values - bias[j]
+            self.df[self.mod_names] = self.mod - bias
+        elif correct == "Observation":
+            # what if multiple models?
+            self.df[self.obs_name] = self.obs + bias
+        else:
+            raise ValueError(
+                f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
+            )
+        return bias
+
     def residual_hist(self, bins=100):
         plt.hist(self.residual, bins=bins, color=self.resi_color)
         plt.title(f"Residuals, {self.name}")
@@ -347,7 +441,7 @@ class BaseComparer:
         return metric(self.obs, self.mod[:, mod_id])
 
 
-class PointComparer(BaseComparer):
+class PointComparer(SingleObsComparer):
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
         assert isinstance(observation, PointObservation)
@@ -435,7 +529,7 @@ class PointComparer(BaseComparer):
             raise ValueError(f"Plotting backend: {backend} not supported")
 
 
-class TrackComparer(BaseComparer):
+class TrackComparer(SingleObsComparer):
     @property
     def x(self):
         return self.df.iloc[:, 0]
@@ -466,10 +560,10 @@ class TrackComparer(BaseComparer):
         # TODO: add check
 
 
-class ComparisonCollection(Mapping):
-    _all_df = None
-    _mod_names: List[str]
+class ComparisonCollection(Mapping, BaseComparer):
     _obs_names: List[str]
+
+    _mod_names: List[str]
     _start = datetime(2900, 1, 1)
     _end = datetime(1, 1, 1)
     _n_points = 0
@@ -487,6 +581,10 @@ class ComparisonCollection(Mapping):
         return self._end
 
     @property
+    def n_observations(self) -> int:
+        return self.n_comparisons
+
+    @property
     def n_comparisons(self) -> int:
         return len(self.comparisons)
 
@@ -494,28 +592,10 @@ class ComparisonCollection(Mapping):
     def n_models(self) -> int:
         return len(set(self._mod_names))  # TODO why are there duplicates here
 
-    @property
-    def all_df(self) -> pd.DataFrame:
-        if self._all_df is None:
-            self._construct_all_df()
-        return self._all_df
-
     def _construct_all_df(self):
         # TODO: var_name
-        if self.n_comparisons == 0:
-            return
-
-        template = {
-            "mod_name": pd.Series([], dtype="str"),
-            "obs_name": pd.Series([], dtype="str"),
-            "x": pd.Series([], dtype="float"),
-            "y": pd.Series([], dtype="float"),
-            "mod_val": pd.Series([], dtype="float"),
-            "obs_val": pd.Series([], dtype="float"),
-        }
-        cols = template.keys()
-        res = pd.DataFrame(template)
-
+        res = self._all_df_template()
+        cols = res.keys()
         for cmp in self.comparisons.values():
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
@@ -543,7 +623,7 @@ class ComparisonCollection(Mapping):
         return str.join("\n", out)
 
     def __getitem__(self, x):
-        return self.comparisons[x]
+        return self.comparisons[self._get_obs_name(x)]
 
     def __len__(self) -> int:
         return len(self.comparisons)
@@ -551,13 +631,14 @@ class ComparisonCollection(Mapping):
     def __iter__(self):
         return iter(self.comparisons)
 
-    def add_comparison(self, comparison: BaseComparer):
+    def add_comparison(self, comparison: SingleObsComparer):
 
         self.comparisons[comparison.name] = comparison
         for mod_name in comparison.mod_names:
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
-        self._n_points = self._n_points + comparison.n
+        self._obs_names.append(comparison.observation.name)
+        self._n_points = self._n_points + comparison.n_points
         if comparison.start < self.start:
             self._start = comparison.start
         if comparison.end > self.end:
@@ -568,78 +649,44 @@ class ComparisonCollection(Mapping):
     def compound_skill(self, metric=mtr.rmse) -> float:
         """Compound skill (possibly weighted)"""
         cmps = self.comparisons.values()
-        scores = [metric(mr.obs, mr.mod) for mr in cmps]
+        scores = [metric(c.obs, c.mod) for c in cmps]
         weights = [c.observation.weight for c in cmps]
         return np.average(scores, weights=weights)
 
-    def skill_df(
-        self,
-        df=None,
-        model=None,
-        observation=None,
-        start=None,
-        end=None,
-        metrics: list = None,
-    ) -> pd.DataFrame:
+    def _get_obs_id(self, obs):
+        if obs is None or self.n_models <= 1:
+            return 0
+        elif isinstance(obs, str):
+            if obs in self._obs_names:
+                obs_id = self._obs_names.index(obs)
+            else:
+                raise ValueError(f"obs {obs} could not be found in {self._obs_names}")
+        elif isinstance(obs, int):
+            if obs >= 0 and obs < self.n_observations:
+                obs_id = obs
+            else:
+                raise ValueError(
+                    f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
+                )
+        else:
+            raise ValueError("observation must be None, str or int")
+        return obs_id
 
-        if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.mape, mtr.cc, mtr.si, mtr.r2]
-
-        if df is None:
-            df = self.sel_df(model=model, observation=observation, start=start, end=end)
-        mod_names = df.mod_name.unique()
-        obs_names = df.obs_name.unique()
-
-        rows = []
-        for mod_name in mod_names:
-            for obs_name in obs_names:
-                dfsub = df[(df.mod_name == mod_name) & (df.obs_name == obs_name)]
-                row = {}
-                row["model"] = mod_name
-                row["observation"] = obs_name
-                row["n"] = len(dfsub)
-                for metric in metrics:
-                    row[metric.__name__] = metric(
-                        dfsub.obs_val.values, dfsub.mod_val.values
-                    )
-                rows.append(row)
-        res = pd.DataFrame(rows)
-
-        if len(mod_names) == 1:
-            res.index = res.observation
-            res.drop(columns=["observation", "model"], inplace=True)
-        elif len(obs_names) == 1:
-            res.index = res.model
-            res.drop(columns=["observation", "model"], inplace=True)
-
-        return res
-
-    def sel_df(self, model=None, observation=None, start=None, end=None):
-        # TODO: area
-        df = self.all_df
-        if model is not None:
-            model = [model] if isinstance(model, str) else model
-            df = df[df.mod_name.isin(model)]
-        if observation is not None:
-            observation = [observation] if isinstance(observation, str) else observation
-            df = df[df.obs_name.isin(observation)]
-        if (start is not None) or (end is not None):
-            df = df.loc[start:end]
-
-        return df
-
-    def skill_report(self, model=None, metrics: list = None) -> pd.DataFrame:
-        """Skill for each observation, weights are not taken into account"""
-
-        if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.corr_coef, mtr.scatter_index]
-
-        res = {}
-        for cmp in self.comparisons.values():
-            mod_id = cmp._get_mod_id(model)
-            tmp = {}
-            for metric in metrics:
-                tmp[metric.__name__] = metric(cmp.obs, cmp.mod[:, mod_id])
-            res[cmp.name] = tmp
-
-        return pd.DataFrame(res).T
+    def _get_obs_name(self, obs):
+        if obs is None or self.n_models <= 1:
+            return self._obs_names[0]
+        elif isinstance(obs, str):
+            if obs in self._obs_names:
+                obs_name = obs
+            else:
+                raise ValueError(f"obs {obs} could not be found in {self._obs_names}")
+        elif isinstance(obs, int):
+            if obs >= 0 and obs < self.n_observations:
+                obs_name = self._obs_names[obs]
+            else:
+                raise ValueError(
+                    f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
+                )
+        else:
+            raise ValueError("observation must be None, str or int")
+        return obs_name
