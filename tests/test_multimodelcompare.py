@@ -52,9 +52,9 @@ def test_add_observation(mrc, o1):
     assert len(mrc.observations) == 1
 
 
-def test_compare_point_observation(mrc, o1):
-    mrc.compare_point_observation(o1, item=0)
-    assert True
+# def test_compare_point_observation(mrc, o1):
+#    mrc.compare_point_observation(o1, item=0)
+#    assert True
 
 
 def test_extract(mrc_o1o2):
