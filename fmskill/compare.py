@@ -278,18 +278,61 @@ class BaseComparer:
             if self._area_is_bbox(area):
                 x0, y0, x1, y1 = area
                 df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
+            elif self._area_is_polygon(area):
+                polygon = np.array(area)
+                xy = np.column_stack((df.x.values, df.y.values))
+                mask = self._inside_polygon(polygon, xy)
+                df = df[mask]
             else:
-                raise ValueError("area only supports bbox (x0,y0,x1,y1)")
+                raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
         return df
 
     def _area_is_bbox(self, area):
         is_bbox = False
         if area is not None:
             if not np.isscalar(area):
-                if len(area) == 4:
+                area = np.array(area)
+                if (area.ndim == 1) & (len(area) == 4):
                     if np.all(np.isreal(area)):
                         is_bbox = True
         return is_bbox
+
+    def _area_is_polygon(self, area):
+        if area is None:
+            return False
+        if np.isscalar(area):
+            return False
+        if not np.all(np.isreal(area)):
+            return False
+        polygon = np.array(area)
+        if polygon.ndim > 2:
+            return False
+
+        if polygon.ndim == 1:
+            if len(polygon) <= 7:
+                return False
+            x0, y0 = polygon[0:2]
+            x1, y1 = polygon[-2:]
+        if polygon.ndim == 2:
+            if polygon.shape[0] <= 3:
+                return False
+            if polygon.shape[1] != 2:
+                return False
+            x0, y0 = polygon[0, :]
+            x1, y1 = polygon[-1, :]
+
+        if (x0 != x1) | (y0 != y1):
+            # start point must equal end point
+            return False
+
+        return True
+
+    def _inside_polygon(self, polygon, xy):
+        import matplotlib.path as mp
+
+        if polygon.ndim == 1:
+            polygon = np.column_stack((polygon[0::2], polygon[1::2]))
+        return mp.Path(polygon).contains_points(xy)
 
     def scatter(
         self,
