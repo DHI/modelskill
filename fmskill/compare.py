@@ -101,8 +101,8 @@ class BaseComparer:
 
     def _all_df_template(self):
         template = {
-            "mod_name": pd.Series([], dtype="str"),
-            "obs_name": pd.Series([], dtype="str"),
+            "mod_name": pd.Series([], dtype="category"),
+            "obs_name": pd.Series([], dtype="category"),
             "x": pd.Series([], dtype="float"),
             "y": pd.Series([], dtype="float"),
             "mod_val": pd.Series([], dtype="float"),
@@ -691,6 +691,39 @@ class ComparisonCollection(Mapping, BaseComparer):
         self._obs_unit_text = comparison.observation._unit_text()
 
         self._all_df = None
+
+    def mean_skill(
+        self,
+        df=None,
+        model=None,
+        observation=None,
+        start=None,
+        end=None,
+        metrics: list = None,
+        weights=None,
+    ) -> pd.DataFrame:
+
+        if metrics is None:
+            metrics = [mtr.bias, mtr.rmse, mtr.mape, mtr.cc, mtr.si, mtr.r2]
+
+        if df is None:
+            df = self.sel_df(model=model, observation=observation, start=start, end=end)
+        mod_names = df.mod_name.unique()
+        obs_names = df.obs_name.unique()
+
+        # TODO: weights
+
+        rows = []
+        for mod_name in mod_names:
+            dfsub = df[(df.mod_name == mod_name) & (df.obs_name.isin(obs_names))]
+            row = {}
+            row["n"] = len(dfsub)
+            for metric in metrics:
+                row[metric.__name__] = metric(
+                    dfsub.obs_val.values, dfsub.mod_val.values
+                )
+            rows.append(row)
+        return pd.DataFrame(rows, index=mod_names)
 
     def compound_skill(self, metric=mtr.rmse) -> float:
         """Compound skill (possibly weighted)"""
