@@ -34,4 +34,4 @@ def test_from_df():
     df = df.set_index("t")
 
     t1 = TrackObservation(df, name="fake")
-    assert t1.n == 5
+    assert t1.n_points == n
