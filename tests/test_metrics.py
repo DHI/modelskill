@@ -7,7 +7,7 @@ from fmskill.metrics import (
     mean_absolute_percentage_error,
     nash_sutcliffe_efficiency,
     root_mean_squared_error,
-    corr_coef,
+    corrcoef,
     scatter_index,
     r2,
 )
@@ -54,12 +54,12 @@ def test_mae():
     assert mae == 1.0
 
 
-def test_corr_coef():
+def test_corrcoef():
 
     obs = np.arange(100)
     mod = obs + 1.0
 
-    r = corr_coef(obs, mod)
+    r = corrcoef(obs, mod)
 
     assert -1.0 <= r <= 1.0
 
