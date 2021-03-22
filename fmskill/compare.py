@@ -31,6 +31,7 @@ class BaseComparer:
 
     # observation = None
     obs_name = "Observation"
+    _obs_names: List[str]
     _mod_names: List[str]
     _mod_colors = ["#004165", "#63CEFF", "#8B8D8E", "#0098DB", "#93509E", "#61C250"]
     _resi_color = "#8B8D8E"
@@ -132,6 +133,7 @@ class BaseComparer:
         self.observation = deepcopy(observation)
         self._obs_unit_text = self.observation._unit_text()
         self.mod_data = {}
+        self._obs_names = [observation.name]
 
         if modeldata is not None:
             self.add_modeldata(modeldata)
@@ -166,6 +168,31 @@ class BaseComparer:
         # out.append(f"{self.metric.__name__}: {self.skill():.3f}")
         return str.join("\n", out)
 
+    def _get_obs_name(self, obs):
+        return self._obs_names[self._get_obs_id(obs)]
+
+    def _get_obs_id(self, obs):
+        if obs is None or self.n_observations <= 1:
+            return 0
+        elif isinstance(obs, str):
+            if obs in self._obs_names:
+                obs_id = self._obs_names.index(obs)
+            else:
+                raise ValueError(f"obs {obs} could not be found in {self._obs_names}")
+        elif isinstance(obs, int):
+            if obs >= 0 and obs < self.n_observations:
+                obs_id = obs
+            else:
+                raise ValueError(
+                    f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
+                )
+        else:
+            raise ValueError("observation must be None, str or int")
+        return obs_id
+
+    def _get_mod_name(self, model):
+        return self._mod_names[self._get_mod_id(model)]
+
     def _get_mod_id(self, model):
         if model is None or self.n_models <= 1:
             return 0
@@ -194,14 +221,17 @@ class BaseComparer:
         observation=None,
         start=None,
         end=None,
+        area=None,
         metrics: list = None,
     ) -> pd.DataFrame:
 
         if metrics is None:
             metrics = [mtr.bias, mtr.rmse, mtr.mape, mtr.cc, mtr.si, mtr.r2]
 
-        if df is None:
-            df = self.sel_df(model=model, observation=observation, start=start, end=end)
+        df = self.sel_df(
+            df, model=model, observation=observation, start=start, end=end, area=area
+        )
+
         mod_names = df.mod_name.unique()
         obs_names = df.obs_name.unique()
 
@@ -229,25 +259,46 @@ class BaseComparer:
 
         return res
 
-    def sel_df(self, model=None, observation=None, start=None, end=None):
-        # TODO: area
-        df = self.all_df
+    def sel_df(
+        self, df=None, model=None, observation=None, start=None, end=None, area=None
+    ):
+        if df is None:
+            df = self.all_df
         if model is not None:
-            model = [model] if isinstance(model, str) else model
-            df = df[df.mod_name.isin(model)]
+            models = [model] if np.isscalar(model) else model
+            models = [self._get_mod_name(m) for m in models]
+            df = df[df.mod_name.isin(models)]
         if observation is not None:
-            observation = [observation] if isinstance(observation, str) else observation
+            observation = [observation] if np.isscalar(observation) else observation
+            observation = [self._get_obs_name(o) for o in observation]
             df = df[df.obs_name.isin(observation)]
         if (start is not None) or (end is not None):
             df = df.loc[start:end]
-
+        if area is not None:
+            if self._area_is_bbox(area):
+                x0, y0, x1, y1 = area
+                df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
+            else:
+                raise ValueError("area only supports bbox (x0,y0,x1,y1)")
         return df
+
+    def _area_is_bbox(self, area):
+        is_bbox = False
+        if area is not None:
+            if not np.isscalar(area):
+                if len(area) == 4:
+                    if np.all(np.isreal(area)):
+                        is_bbox = True
+        return is_bbox
 
     def scatter(
         self,
+        df=None,
         model=None,
+        observation=None,
         start=None,
         end=None,
+        area=None,
         xlabel=None,
         ylabel=None,
         binsize=None,
@@ -265,7 +316,12 @@ class BaseComparer:
         mod_id = self._get_mod_id(model)
         mod_name = self._mod_names[mod_id]
 
-        df = self.sel_df(model=mod_name, start=start, end=end)
+        df = self.sel_df(
+            df, model=mod_name, observation=observation, start=start, end=end, area=area
+        )
+        if len(df) == 0:
+            raise Exception("No data found in selection")
+
         x = df.obs_val
         y = df.mod_val
 
@@ -607,8 +663,6 @@ class ComparisonCollection(Mapping, BaseComparer):
     """
 
     _all_df = None
-    _mod_names: List[str]
-    _obs_names: List[str]
     _start = datetime(2900, 1, 1)
     _end = datetime(1, 1, 1)
     _n_points = 0
@@ -699,6 +753,7 @@ class ComparisonCollection(Mapping, BaseComparer):
         observation=None,
         start=None,
         end=None,
+        area=None,
         metrics: list = None,
         weights=None,
     ) -> pd.DataFrame:
@@ -707,7 +762,9 @@ class ComparisonCollection(Mapping, BaseComparer):
             metrics = [mtr.bias, mtr.rmse, mtr.mape, mtr.cc, mtr.si, mtr.r2]
 
         if df is None:
-            df = self.sel_df(model=model, observation=observation, start=start, end=end)
+            df = self.sel_df(
+                model=model, observation=observation, start=start, end=end, area=area
+            )
         mod_names = df.mod_name.unique()
         obs_names = df.obs_name.unique()
 
@@ -731,41 +788,3 @@ class ComparisonCollection(Mapping, BaseComparer):
         scores = [metric(c.obs, c.mod) for c in cmps]
         weights = [c.observation.weight for c in cmps]
         return np.average(scores, weights=weights)
-
-    def _get_obs_id(self, obs):
-        if obs is None or self.n_models <= 1:
-            return 0
-        elif isinstance(obs, str):
-            if obs in self._obs_names:
-                obs_id = self._obs_names.index(obs)
-            else:
-                raise ValueError(f"obs {obs} could not be found in {self._obs_names}")
-        elif isinstance(obs, int):
-            if obs >= 0 and obs < self.n_observations:
-                obs_id = obs
-            else:
-                raise ValueError(
-                    f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
-                )
-        else:
-            raise ValueError("observation must be None, str or int")
-        return obs_id
-
-    def _get_obs_name(self, obs):
-        if obs is None or self.n_models <= 1:
-            return self._obs_names[0]
-        elif isinstance(obs, str):
-            if obs in self._obs_names:
-                obs_name = obs
-            else:
-                raise ValueError(f"obs {obs} could not be found in {self._obs_names}")
-        elif isinstance(obs, int):
-            if obs >= 0 and obs < self.n_observations:
-                obs_name = self._obs_names[obs]
-            else:
-                raise ValueError(
-                    f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
-                )
-        else:
-            raise ValueError("observation must be None, str or int")
-        return obs_name
