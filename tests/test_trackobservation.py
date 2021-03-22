@@ -12,8 +12,8 @@ def c2():
 
 def test_read(c2):
     o1 = TrackObservation(c2, item=2, name="c2")
-    assert o1.n == 298
-    assert len(o1.x) == o1.n
+    assert o1.n_points == 298
+    assert len(o1.x) == o1.n_points
     assert o1.name == "c2"
     assert pytest.approx(o1.values.max()) == 17.67
 
@@ -34,4 +34,4 @@ def test_from_df():
     df = df.set_index("t")
 
     t1 = TrackObservation(df, name="fake")
-    assert t1.n == 5
+    assert t1.n_points == n

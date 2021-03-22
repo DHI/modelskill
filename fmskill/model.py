@@ -87,17 +87,16 @@ class ModelResult:
 
         return ok
 
-    # TODO: rename to compare() ?
     def extract(self) -> ComparisonCollection:
         """extract model result in all observations"""
         cc = ComparisonCollection()
         for obs in self.observations.values():
-            comparison = self._compare_observation(obs, obs.model_variable)
+            comparison = self._extract_observation(obs, obs.model_variable)
             if comparison is not None:
                 cc.add_comparison(comparison)
         return cc
 
-    def _compare_observation(
+    def _extract_observation(
         self,
         observation: Union[PointObservation, TrackObservation],
         item: Union[int, str],
@@ -117,31 +116,15 @@ class ModelResult:
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, PointObservation):
-            comparison = self._compare_point_observation(observation, item)
+            ds_model = self._extract_point(observation, item)
+            comparison = PointComparer(observation, ds_model)
         elif isinstance(observation, TrackObservation):
-            comparison = self._compare_track_observation(observation, item)
+            ds_model = self._extract_track(observation, item)
+            comparison = TrackComparer(observation, ds_model)
         else:
             raise ValueError("Only point and track observation are supported!")
 
         return comparison
-
-    def _compare_point_observation(self, observation, item) -> PointComparer:
-        """Compare this ModelResult with a point observation
-
-        Parameters
-        ----------
-        observation : <fmskill.PointObservation>
-            Observation to be compared
-        item : str, integer
-            ModelResult item name or number
-
-        Returns
-        -------
-        <fmskill.PointComparer>
-            A comparer object for further analysis or plotting
-        """
-        ds_model = self._extract_point(observation, item)
-        return PointComparer(observation, ds_model)
 
     def _extract_point(self, observation: PointObservation, item) -> Dataset:
         assert isinstance(observation, PointObservation)
@@ -164,24 +147,6 @@ class ModelResult:
         ds_model = self.dfs.read(items=[item])
         ds_model.items[0].name = self.name
         return ds_model
-
-    def _compare_track_observation(self, observation, item) -> TrackComparer:
-        """Compare this ModelResult with a track observation
-
-        Parameters
-        ----------
-        observation : <fmskill.TrackObservation>
-            Track observation to be compared
-        item : str, integer
-            ModelResult item name or number
-
-        Returns
-        -------
-        <fmskill.TrackComparer>
-            A comparer object for further analysis or plotting
-        """
-        ds_model = self._extract_track(observation, item)
-        return TrackComparer(observation, ds_model)
 
     def _extract_track(self, observation: TrackObservation, item) -> Dataset:
         assert isinstance(observation, TrackObservation)
@@ -220,7 +185,7 @@ class ModelResult:
                 ax.scatter(x=obs.x, y=obs.y, marker="x")
                 ax.annotate(obs.name, (obs.x + offset_x, obs.y))
             elif isinstance(obs, TrackObservation):
-                if obs.n < 10000:
+                if obs.n_points < 10000:
                     ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
                 else:
                     print("Too many points to plot")
@@ -280,7 +245,7 @@ class ModelResultCollection:
         for mr in self.modelresults.values():
             mr.add_observation(observation, item)
 
-    def _compare_observation(
+    def _extract_observation(
         self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
     ) -> BaseComparer:
         """Compare all ModelResults in collection with an observation
@@ -356,7 +321,7 @@ class ModelResultCollection:
         cc = ComparisonCollection()
 
         for obs in self.observations.values():
-            comparison = self._compare_observation(obs, obs.model_variable)
+            comparison = self._extract_observation(obs, obs.model_variable)
             if comparison is not None:
                 cc.add_comparison(comparison)
 

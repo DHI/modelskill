@@ -46,9 +46,7 @@ def test_compound_skill(modelresult_oresund_2d, klagshamn, drogden):
     collection = mr.extract()
 
     assert collection.compound_skill(metric=root_mean_squared_error) > 0.0
-    report = collection.skill_report(
-        metrics=[root_mean_squared_error, mean_absolute_error]
-    )
+    report = collection.skill_df(metrics=[root_mean_squared_error, mean_absolute_error])
 
 
 def test_compound_weighted_skill(modelresult_oresund_2d, klagshamn, drogden):
@@ -90,7 +88,7 @@ def test_misc_properties(klagshamn, drogden):
     ck = c["Klagshamn"]
     assert ck.name == "Klagshamn"
 
-    assert ck.n > 0
+    assert ck.n_points > 0
 
     assert ck.start.year == 2018  # intersection of observation and model times
     assert ck.end.year == 2018

@@ -4,7 +4,7 @@ fixed locations (PointObservation), or locations moving in space (TrackObservati
 
 Examples
 --------
->>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+>>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
 import os
 from shapely.geometry import Point, MultiPoint
@@ -51,7 +51,7 @@ class Observation:
         return self.df.values
 
     @property
-    def n(self):
+    def n_points(self):
         """Number of observations"""
         return len(self.df)
 
@@ -80,7 +80,7 @@ class PointObservation(Observation):
 
     Examples
     --------
-    >>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     """
 
     x = None
@@ -176,7 +176,7 @@ class TrackObservation(Observation):
     2010-01-01 00:00:30   7.5  45075.0  0.5
     2010-01-01 00:00:40  10.0  45100.0  0.3
     >>> t1 = TrackObservation(df, name="fake")
-    >>> t1.n
+    >>> t1.n_points
     5
     >>> t1.values
     array([0.1, 0.3, 0.4, 0.5, 0.3])
@@ -231,7 +231,7 @@ class TrackObservation(Observation):
         super().__init__(name)
 
     def __repr__(self):
-        out = f"TrackObservation: {self.name}, n={self.n}"
+        out = f"TrackObservation: {self.name}, n={self.n_points}"
         return out
 
     @staticmethod
