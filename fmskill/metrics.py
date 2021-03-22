@@ -76,7 +76,7 @@ def corrcoef(obs, model, weights=None) -> float:
     if weights is None:
         return np.corrcoef(obs, model)[0, 1]
     else:
-        C = np.cov(obs, model, fweight=weights)
+        C = np.cov(obs, model, fweights=weights)
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
 
