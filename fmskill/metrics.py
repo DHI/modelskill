@@ -66,14 +66,18 @@ def nash_sutcliffe_efficiency(obs, model) -> float:
     return error
 
 
-def cc(obs: np.ndarray, model: np.ndarray) -> float:
+def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
     """Correlation coefficient (CC)"""
-    return corr_coef(obs, model)
+    return corrcoef(obs, model)
 
 
-def corr_coef(obs, model) -> float:
+def corrcoef(obs, model, weights=None) -> float:
     """Correlation coefficient (CC)"""
-    return np.corrcoef(obs, model)[0, 1]
+    if weights is None:
+        return np.corrcoef(obs, model)[0, 1]
+    else:
+        C = np.cov(obs, model, fweight=weights)
+        return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
 
 def si(obs: np.ndarray, model: np.ndarray) -> float:
