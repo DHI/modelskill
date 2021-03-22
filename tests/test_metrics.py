@@ -41,8 +41,13 @@ def test_rmse():
     mod = obs + 1.0
 
     rmse = root_mean_squared_error(obs, mod)
-
     assert rmse == 1.0
+
+    rmse = root_mean_squared_error(obs, mod, weights=obs)
+    assert rmse == 1.0
+
+    rmse = root_mean_squared_error(obs, mod, unbiased=True)
+    assert rmse == 0.0
 
 
 def test_mae():
@@ -60,7 +65,9 @@ def test_corrcoef():
     mod = obs + 1.0
 
     r = corrcoef(obs, mod)
+    assert -1.0 <= r <= 1.0
 
+    r = corrcoef(obs, mod, weights=obs)
     assert -1.0 <= r <= 1.0
 
 
