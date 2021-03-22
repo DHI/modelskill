@@ -341,4 +341,4 @@ class ModelResultCollection:
         figsize : (float, float), optional
             figure size, by default None
         """
-        self._mr0.plot_observation_positions(figsize=figsize)
+        return self._mr0.plot_observation_positions(figsize=figsize)
