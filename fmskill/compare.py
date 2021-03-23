@@ -33,7 +33,27 @@ class BaseComparer:
     obs_name = "Observation"
     _obs_names: List[str]
     _mod_names: List[str]
-    _mod_colors = ["#004165", "#63CEFF", "#8B8D8E", "#0098DB", "#93509E", "#61C250"]
+    _mod_colors = [
+        "#004165",
+        "#63CEFF",
+        "#8B8D8E",
+        "#0098DB",
+        "#93509E",
+        "#61C250",
+        "#a6cee3",
+        "#1f78b4",
+        "#b2df8a",
+        "#33a02c",
+        "#fb9a99",
+        "#e31a1c",
+        "#fdbf6f",
+        "#ff7f00",
+        "#cab2d6",
+        "#003f5c",
+        "#2f4b7c",
+        "#665191",
+    ]
+
     _resi_color = "#8B8D8E"
     _obs_unit_text = ""
     #      darkblue: #004165
@@ -226,7 +246,7 @@ class BaseComparer:
     ) -> pd.DataFrame:
 
         if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.mape, mtr.cc, mtr.si, mtr.r2]
+            metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
         df = self.sel_df(
             df, model=model, observation=observation, start=start, end=end, area=area
@@ -802,32 +822,67 @@ class ComparisonCollection(Mapping, BaseComparer):
     ) -> pd.DataFrame:
 
         if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.mape, mtr.cc, mtr.si, mtr.r2]
+            metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
-        if df is None:
-            df = self.sel_df(
-                model=model, observation=observation, start=start, end=end, area=area
-            )
+        df = self.sel_df(
+            df, model=model, observation=observation, start=start, end=end, area=area
+        )
         mod_names = df.mod_name.unique()
         obs_names = df.obs_name.unique()
+        n_obs = len(obs_names)
+        n_metrics = len(metrics)
 
-        # TODO: weights
+        weights = self._parse_weights(weights, n_obs)
+        has_weights = False if (weights is None) else True
 
         rows = []
         for mod_name in mod_names:
-            dfsub = df[(df.mod_name == mod_name) & (df.obs_name.isin(obs_names))]
             row = {}
-            row["n"] = len(dfsub)
-            for metric in metrics:
-                row[metric.__name__] = metric(
-                    dfsub.obs_val.values, dfsub.mod_val.values
-                )
+            tmp = np.zeros((n_obs, n_metrics + 1))
+            tmp_n = np.ones(n_obs)
+            for obs_id, obs_name in enumerate(obs_names):
+                dfsub = df[(df.mod_name == mod_name) & (df.obs_name == obs_name)]
+                if len(dfsub) > 0:
+                    tmp_n[obs_id] = len(dfsub)
+                    for j, metric in enumerate(metrics):
+                        tmp[obs_id, j] = metric(
+                            dfsub.obs_val.values, dfsub.mod_val.values
+                        )
+            if not has_weights:
+                weights = tmp_n
+
+            tot_weight = np.sum(
+                weights[tmp_n > 0]
+            )  # this may be different for different moels
+            for j, metric in enumerate(metrics):
+                row[metric.__name__] = np.inner(tmp[:, j], weights) / tot_weight
             rows.append(row)
+
         return pd.DataFrame(rows, index=mod_names)
+
+    def _parse_weights(self, weights, n_obs):
+        if weights is None:
+            weights = np.ones(n_obs)  # equal weight to all
+        else:
+            if isinstance(weights, int):
+                weights = np.ones(n_obs)  # equal weight to all
+            elif isinstance(weights, str):
+                if weights.lower() == "equal":
+                    weights = np.ones(n_obs)  # equal weight to all
+                elif "points" in weights.lower():
+                    weights = None  # no weight => use n_points
+            elif not np.isscalar(weights):
+                if not len(weights) == n_obs:
+                    raise ValueError(
+                        "weights must have length equal to number of observations"
+                    )
+        return weights
 
     def compound_skill(self, metric=mtr.rmse) -> float:
         """Compound skill (possibly weighted)"""
         cmps = self.comparisons.values()
+
         scores = [metric(c.obs, c.mod) for c in cmps]
         weights = [c.observation.weight for c in cmps]
+
         return np.average(scores, weights=weights)
