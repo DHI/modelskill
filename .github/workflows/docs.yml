@@ -11,13 +11,21 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v1
-    # Standard drop-in approach that should work for most people.
-    - uses: ammaraskar/sphinx-action@master
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
       with:
-        docs-folder: "docs/"
-    # Publish built docs to gh-pages branch.
-    # ===============================
+        python-version: 3.8
+        
+    - name: Install fmskill
+      run: |
+        pip install .[dev]
+    
+    - name: Sphinx Build
+      run: |
+        cd docs
+        make html
+    
     - name: Commit documentation changes
       run: |
         git clone https://github.com/DHI/fmskill.git --branch gh-pages --single-branch gh-pages
