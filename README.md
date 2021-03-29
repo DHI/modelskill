@@ -53,29 +53,51 @@ See examples of use in these notebooks
 2. Define **Observations**
 3. **Associate** observations with ModelResults
 4. **Extract** ModelResults at observation positions
-5. Do plotting, statistics, reporting using the **ComparerCollection**
+5. Do plotting, statistics, reporting using a **Comparer**
 
 
 ## Usage
 
+First, define model results and observations:
+
 ```python
 >>> from fmskill.model import ModelResult
->>> from fmskill.observation import PointObservation
->>> mr = ModelResult("Oresund2D.dfsu")
->>> klagshamn = PointObservation("smhi_2095_klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
->>> drogden = PointObservation("dmi_30357_Drogden_Fyr.dfs0", item=0, x=355568, y=6156863)
->>> mr.add_observation(klagshamn, item=0)
->>> mr.add_observation(drogden, item=0)
+>>> from fmskill.observation import PointObservation, TrackObservation
+>>> mr = ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local")
+>>> HKNA = PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
+>>> EPL = PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
+>>> c2 = TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+```
+
+Then, associate observations with model results, and extract data at observation points:
+
+```python
+>>> mr.add_observation(HKNA, item=0)
+>>> mr.add_observation(EPL, item=0)
+>>> mr.add_observation(c2, item=0)
 >>> comparer = mr.extract()
->>> comparer.skill_df()
-                       bias  rmse  corr_coef  scatter_index
-Klagshamn              0.18  0.19       0.84           0.32
-dmi_30357_Drogden_Fyr  0.26  0.28       0.51           0.53
+```
+
+With the comparer, all sorts of skill assessments and plots can be made:
+
+```python
+>>> comparer.skill_df().round(2)
+               n  bias  rmse  urmse   mae    cc    si    r2
+observation                                                
+HKNA         385 -0.20  0.35   0.29  0.25  0.97  0.09  0.99
+EPL           66 -0.08  0.22   0.20  0.18  0.97  0.07  0.99
+c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 ```
 
 ### Overview of observation locations
 
+```python
+mr.plot_observation_positions(figsize=(7,7))
+```
+
 ![map](images/map.png)
+
+
 
 ### Scatter plot
 
@@ -89,7 +111,12 @@ comparer.scatter()
 
 Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
 
+```python
+cc["HKNA"].plot_timeseries(width=1000,backend="plotly")
+```
+
 ![timeseries](images/plotly_timeseries.png)
+
 
 ## Automated reporting
 
