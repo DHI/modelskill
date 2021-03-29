@@ -66,8 +66,8 @@ See examples of use in these notebooks
 >>> drogden = PointObservation("dmi_30357_Drogden_Fyr.dfs0", item=0, x=355568, y=6156863)
 >>> mr.add_observation(klagshamn, item=0)
 >>> mr.add_observation(drogden, item=0)
->>> collection = mr.extract()
->>> collection.skill_df()
+>>> comparer = mr.extract()
+>>> comparer.skill_df()
                        bias  rmse  corr_coef  scatter_index
 Klagshamn              0.18  0.19       0.84           0.32
 dmi_30357_Drogden_Fyr  0.26  0.28       0.51           0.53
@@ -78,6 +78,10 @@ dmi_30357_Drogden_Fyr  0.26  0.28       0.51           0.53
 ![map](images/map.png)
 
 ### Scatter plot
+
+```python
+comparer.scatter()
+```
 
 ![scatter](images/scatter.png)
 
