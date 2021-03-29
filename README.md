@@ -112,7 +112,7 @@ comparer.scatter()
 Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
 
 ```python
-cc["HKNA"].plot_timeseries(width=1000,backend="plotly")
+comparer["HKNA"].plot_timeseries(width=1000,backend="plotly")
 ```
 
 ![timeseries](images/plotly_timeseries.png)
