@@ -49,12 +49,11 @@ See examples of use in these notebooks
 
 ## Workflow
 
-1. Define ModelResults
-2. Define Observations
-3. Associate observations with ModelResults
-4. Compare (extract ModelResults at observation positions)
-5. Do plotting, statistics, reporting using the ComparerCollection
-
+1. Define **ModelResults**
+2. Define **Observations**
+3. **Associate** observations with ModelResults
+4. **Extract** ModelResults at observation positions
+5. Do plotting, statistics, reporting using the **ComparerCollection**
 
 
 ## Usage
@@ -68,7 +67,7 @@ See examples of use in these notebooks
 >>> mr.add_observation(klagshamn, item=0)
 >>> mr.add_observation(drogden, item=0)
 >>> collection = mr.extract()
->>> collection.skill_report()
+>>> collection.skill_df()
                        bias  rmse  corr_coef  scatter_index
 Klagshamn              0.18  0.19       0.84           0.32
 dmi_30357_Drogden_Fyr  0.26  0.28       0.51           0.53
