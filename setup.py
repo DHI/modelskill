@@ -13,6 +13,8 @@ setuptools.setup(
     extras_require={
         "dev": [
             "pytest",
+            "sphinx",
+            "sphinx-rtd-theme",
             "black",
             "shapely",
             "plotly >= 4.5",
