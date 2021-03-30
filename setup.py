@@ -26,7 +26,7 @@ setuptools.setup(
     author_email="jem@dhigroup.com",
     description="Compare results from MIKE FM simulations with observations.",
     platform="windows_x64",
-    license=license,
+    license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/DHI/fmskill",
