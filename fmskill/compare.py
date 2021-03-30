@@ -71,14 +71,17 @@ class BaseComparer:
 
     @property
     def n_points(self) -> int:
+        """number of compared points"""
         return len(self.df)
 
     @property
     def start(self) -> datetime:
+        """start datetime of compared data"""
         return self.df.index[0].to_pydatetime()
 
     @property
     def end(self) -> datetime:
+        """end datetime of compared data"""
         return self.df.index[-1].to_pydatetime()
 
     @property
@@ -91,6 +94,7 @@ class BaseComparer:
 
     @property
     def name(self) -> str:
+        """name of comparer (=observation)"""
         return self.observation.name
 
     @property
@@ -459,7 +463,7 @@ class BaseComparer:
             plt.xlim(xlim)
             plt.ylim(ylim)
             if show_hist:
-                cbar = plt.colorbar(shrink=0.6, pad=0.01)
+                cbar = plt.colorbar(fraction=0.046, pad=0.04)
                 cbar.set_label("# points")
             if show_points:
                 plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
