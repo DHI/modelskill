@@ -79,7 +79,7 @@ c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 mr.plot_observation_positions(figsize=(7,7))
 ```
 
-![map](images/map.png)
+![map](https://raw.githubusercontent.com/DHI/fmskill/main/images/map.png)
 
 
 
@@ -89,7 +89,7 @@ mr.plot_observation_positions(figsize=(7,7))
 comparer.scatter()
 ```
 
-![scatter](images/scatter.png)
+![scatter](https://raw.githubusercontent.com/DHI/fmskill/main/images/scatter.png)
 
 ### Timeseries plot
 
@@ -99,7 +99,7 @@ Timeseries plots can either be static and report-friendly ([matplotlib](https://
 comparer["HKNA"].plot_timeseries(width=1000, backend="plotly")
 ```
 
-![timeseries](images/plotly_timeseries.png)
+![timeseries](https://raw.githubusercontent.com/DHI/fmskill/main/images/plotly_timeseries.png)
 
 
 ## Automated reporting
@@ -113,4 +113,4 @@ rep = Reporter(mr)
 rep.markdown()
 ```
 
-[Very basic first example report](notebooks/HKZN_local/HKZN_local.md)
+[Very basic first example report](https://github.com/DHI/fmskill/blob/main/notebooks/HKZN_local/HKZN_local.md)
