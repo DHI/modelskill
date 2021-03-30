@@ -1,10 +1,7 @@
 .. _organization:
 
-Getting started
+xxx
 ###############
-
-Workflow
-
 
 
 
