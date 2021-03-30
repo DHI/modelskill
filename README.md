@@ -1,7 +1,7 @@
 # fmskill: Compare MIKE FM results with observations.
 [fmskill](https://github.com/DHI/fmskill) is a python package for scoring [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) models. 
 
-Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/fmskill/discussions) or report [issues](https://github.com/DHI/fmskill/issues).
+Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/fmskill/discussions),[report an issue](https://github.com/DHI/fmskill/issues) or browse the [API documentation](https://dhi.github.io/fmskill/api.html).
 
 
 ## Use cases
@@ -14,7 +14,12 @@ Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html
 
 ## Installation
 
+    > pip install fmskill
+
+Or the development version:
+
     > pip install https://github.com/DHI/fmskill/archive/master.zip
+
 
 ## Example notebooks
 
