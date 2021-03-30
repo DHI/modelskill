@@ -33,7 +33,7 @@ Compare
 	:members:
 	:inherited-members:
 
-.. autoclass:: fmskill.compare.ComparisonCollection
+.. autoclass:: fmskill.compare.ComparerCollection
 	:members:
 	:inherited-members:
 

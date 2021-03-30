@@ -238,7 +238,7 @@ class BaseComparer:
             raise ValueError("model must be None, str or int")
         return mod_id
 
-    def skill_df(
+    def skill(
         self,
         df=None,
         model=None,
@@ -576,14 +576,14 @@ class SingleObsComparer(BaseComparer):
         plt.title(f"{mod_name} vs {self.name}")
         plt.xlabel(f"{self._obs_unit_text}")
 
-    def skill(self, model=None, metric=None):
+    # def skill(self, model=None, metric=None):
 
-        mod_id = self._get_mod_id(model)
+    #     mod_id = self._get_mod_id(model)
 
-        if metric is None:
-            metric = mtr.rmse
+    #     if metric is None:
+    #         metric = mtr.rmse
 
-        return metric(self.obs, self.mod[:, mod_id])
+    #     return metric(self.obs, self.mod[:, mod_id])
 
 
 class PointComparer(SingleObsComparer):
@@ -714,7 +714,7 @@ class TrackComparer(SingleObsComparer):
         # TODO: add check
 
 
-class ComparisonCollection(Mapping, BaseComparer):
+class ComparerCollection(Mapping, BaseComparer):
     """
     Collection of comparers, constructed by calling the `ModelResult.extract` method.
 

@@ -6,7 +6,7 @@ from enum import Enum
 
 from mikeio import Dfs0, Dfsu, Dataset
 from .observation import PointObservation, TrackObservation
-from .compare import PointComparer, TrackComparer, ComparisonCollection, BaseComparer
+from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 
 
 class ModelResultType(Enum):
@@ -87,9 +87,9 @@ class ModelResult:
 
         return ok
 
-    def extract(self) -> ComparisonCollection:
+    def extract(self) -> ComparerCollection:
         """extract model result in all observations"""
-        cc = ComparisonCollection()
+        cc = ComparerCollection()
         for obs in self.observations.values():
             comparison = self._extract_observation(obs, obs.model_variable)
             if comparison is not None:
@@ -316,9 +316,9 @@ class ModelResultCollection:
 
         return TrackComparer(observation, ds_model)
 
-    def extract(self) -> ComparisonCollection:
+    def extract(self) -> ComparerCollection:
         """extract model result in all observations"""
-        cc = ComparisonCollection()
+        cc = ComparerCollection()
 
         for obs in self.observations.values():
             comparison = self._extract_observation(obs, obs.model_variable)

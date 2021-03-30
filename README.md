@@ -65,7 +65,7 @@ Then, associate observations with model results, and extract data at observation
 With the comparer, all sorts of skill assessments and plots can be made:
 
 ```python
->>> comparer.skill_df().round(2)
+>>> comparer.skill().round(2)
                n  bias  rmse  urmse   mae    cc    si    r2
 observation                                                
 HKNA         385 -0.20  0.35   0.29  0.25  0.97  0.09  0.99

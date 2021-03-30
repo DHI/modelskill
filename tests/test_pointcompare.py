@@ -35,7 +35,7 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
     mr.add_observation(o1, item=0)
     c = mr.extract()
     s = c["Klagshamn"].skill()
-    assert not np.isnan(s)
+    assert not np.any(np.isnan(s))
 
 
 def test_compound_skill(modelresult_oresund_2d, klagshamn, drogden):
@@ -46,7 +46,7 @@ def test_compound_skill(modelresult_oresund_2d, klagshamn, drogden):
     collection = mr.extract()
 
     assert collection.compound_skill(metric=root_mean_squared_error) > 0.0
-    report = collection.skill_df(metrics=[root_mean_squared_error, mean_absolute_error])
+    report = collection.skill(metrics=[root_mean_squared_error, mean_absolute_error])
 
 
 def test_compound_weighted_skill(modelresult_oresund_2d, klagshamn, drogden):
@@ -96,7 +96,7 @@ def test_misc_properties(klagshamn, drogden):
     assert ck.x == 366844
 
 
-def test_skill_df(klagshamn, drogden):
+def test_skill(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
@@ -105,9 +105,9 @@ def test_skill_df(klagshamn, drogden):
 
     c = mr.extract()
 
-    df = c.skill_df()
+    df = c.skill()
     assert df.loc["Klagshamn"].n == 167
 
-    # Filtered skill_df
-    df = c.skill_df(observation="Klagshamn")
+    # Filtered skill
+    df = c.skill(observation="Klagshamn")
     assert df.loc["Klagshamn"].n == 167
