@@ -10,7 +10,7 @@ fmskill: Assess the skill of your MIKE FM model
 
 Compare results from MIKE FM simulations with observations. `fmskill` wants to be your companion during the different phases of a MIKE FM modelling workflow.
 
-This package aims to provide examples and algorithms for XX. It is simple to install and deploy operationally and is accessible to everyone (open-source).
+This package is simple to install and deploy operationally and is accessible to everyone as open-source.
 
 .. toctree::
    :maxdepth: 2
