@@ -1,6 +1,6 @@
 # fmskill: Compare MIKE FM results with observations.
  ![Python version](https://img.shields.io/pypi/pyversions/fmskill.svg) 
-![Python package](https://github.com/DHI/fmskill/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/fmskill.svg)](https://badge.fury.io/py/fmskill)
+![Python package](https://github.com/DHI/fmskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/fmskill.svg)](https://badge.fury.io/py/fmskill)
 
 [fmskill](https://github.com/DHI/fmskill) is a python package for scoring [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) models. 
 
