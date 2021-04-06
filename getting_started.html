@@ -201,8 +201,8 @@ The data will be read later.</p>
 <p>The next step is to define the measurements to be used for the skill assessment.
 Two types of observation are available:</p>
 <ul class="simple">
-<li><p>PointObservation</p></li>
-<li><p>TrackObservation</p></li>
+<li><p><a class="reference external" href="api.html#fmskill.observation.PointObservation">PointObservation</a></p></li>
+<li><p><a class="reference external" href="api.html#fmskill.observation.TrackObservation">TrackObservation</a></p></li>
 </ul>
 <p>Let’s assume that we have one point observation and one track observation:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fmskill</span> <span class="kn">import</span> <span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span>
@@ -213,8 +213,7 @@ Two types of observation are available:</p>
 <p>In this case both observations are provided as .dfs0 files but pandas
 dataframes are also supported in case data are stored in another file format.</p>
 <p>Both PointObservation and TrackObservation need the path of the data file,
-the item number (or item name) and a name.</p>
-<p>A PointObservation further needs to be initialized with it’s x-, y-position.</p>
+the item number (or item name) and a name. A PointObservation further needs to be initialized with it’s x-, y-position.</p>
 </div>
 <div class="section" id="associate-observations-with-modelresults">
 <h3>3. Associate observations with ModelResults<a class="headerlink" href="#associate-observations-with-modelresults" title="Permalink to this headline">¶</a></h3>
