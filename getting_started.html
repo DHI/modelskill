@@ -186,7 +186,7 @@
 <h3>1. Define ModelResults<a class="headerlink" href="#define-modelresults" title="Permalink to this headline">¶</a></h3>
 <p>The result of a MIKE 21/3 simulation is stored in one or more dfs files.
 The most common formats are .dfsu for distributed data and .dfs0 for
-time series point data. A fmskill <em>ModelResult</em> is defined by the
+time series point data. A fmskill <a class="reference external" href="api.html#fmskill.model.ModelResult">ModelResult</a> is defined by the
 result file path and a name:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fmskill</span> <span class="kn">import</span> <span class="n">ModelResult</span>
 <span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;HKZN_local_2017.dfsu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKZN_local&quot;</span><span class="p">)</span>
@@ -195,6 +195,7 @@ result file path and a name:</p>
 <p>Currently, ModelResult supports .dfs0 and .dfsu files.
 Only the file header is read when the ModelResult object is created.
 The data will be read later.</p>
+<p>Note: multiple models can be assessed using the <a class="reference external" href="api.html#fmskill.model.ModelResultCollection">ModelResultCollection</a>.</p>
 </div>
 <div class="section" id="define-observations">
 <h3>2. Define Observations<a class="headerlink" href="#define-observations" title="Permalink to this headline">¶</a></h3>
@@ -204,7 +205,7 @@ Two types of observation are available:</p>
 <li><p><a class="reference external" href="api.html#fmskill.observation.PointObservation">PointObservation</a></p></li>
 <li><p><a class="reference external" href="api.html#fmskill.observation.TrackObservation">TrackObservation</a></p></li>
 </ul>
-<p>Let’s assume that we have one point observation and one track observation:</p>
+<p>Let’s assume that we have one PointObservation and one TrackObservation:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fmskill</span> <span class="kn">import</span> <span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span>
 <span class="n">HKNA</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;HKNA_Hm0.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">4.2420</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">52.6887</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKNA&quot;</span><span class="p">)</span>
 <span class="n">c2</span> <span class="o">=</span> <span class="n">TrackObservation</span><span class="p">(</span><span class="s2">&quot;Alti_c2_Dutch.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
@@ -218,7 +219,7 @@ the item number (or item name) and a name. A PointObservation further needs to b
 <div class="section" id="associate-observations-with-modelresults">
 <h3>3. Associate observations with ModelResults<a class="headerlink" href="#associate-observations-with-modelresults" title="Permalink to this headline">¶</a></h3>
 <p>The observations are associated with a model result one by one using the
-<code class="docutils literal notranslate"><span class="pre">add_observation()</span></code> method like this:</p>
+<a class="reference external" href="api.html#fmskill.model.ModelResult.add_observation">add_observation()</a> method like this:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mr</span><span class="o">.</span><span class="n">add_observation</span><span class="p">(</span><span class="n">HKNA</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">mr</span><span class="o">.</span><span class="n">add_observation</span><span class="p">(</span><span class="n">c2</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
@@ -228,11 +229,11 @@ the item number (or item name) and a name. A PointObservation further needs to b
 <h3>4. Extract ModelResults at observation positions<a class="headerlink" href="#extract-modelresults-at-observation-positions" title="Permalink to this headline">¶</a></h3>
 <p>Once the observations have been associated with the model results,
 its very simple to do the extraction which interpolates the model results
-in space and time to the observation points:</p>
+in space and time to the observation points using the <a class="reference external" href="api.html#fmskill.model.ModelResult.extract">extract()</a> method:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>The extract method returns a ComparerCollection for further analysis and plotting.</p>
+<p>The extract method returns a <a class="reference external" href="api.html#fmskill.compare.ComparerCollection">ComparerCollection</a> for further analysis and plotting.</p>
 </div>
 <div class="section" id="do-analysis-plotting-etc-with-a-comparer">
 <h3>5. Do analysis, plotting, etc with a Comparer<a class="headerlink" href="#do-analysis-plotting-etc-with-a-comparer" title="Permalink to this headline">¶</a></h3>
@@ -241,8 +242,8 @@ It holds the matched observation and model data and has methods
 for plotting and skill assessment.</p>
 <p>The primary comparer methods are:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">skill()</span></code> which returns a pandas dataframe with the skill scores</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">scatter()</span></code> which shows a scatter density plot of the data</p></li>
+<li><p><a class="reference external" href="api.html#fmskill.compare.ComparerCollection.skill">skill()</a> which returns a pandas dataframe with the skill scores</p></li>
+<li><p><a class="reference external" href="api.html#fmskill.compare.ComparerCollection.scatter">scatter()</a> which shows a scatter density plot of the data</p></li>
 </ul>
 <div class="section" id="filtering">
 <h4>Filtering<a class="headerlink" href="#filtering" title="Permalink to this headline">¶</a></h4>

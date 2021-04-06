@@ -20,7 +20,7 @@ The typical fmskill workflow consists of these five steps:
 
 The result of a MIKE 21/3 simulation is stored in one or more dfs files. 
 The most common formats are .dfsu for distributed data and .dfs0 for 
-time series point data. A fmskill *ModelResult* is defined by the 
+time series point data. A fmskill `ModelResult <api.html#fmskill.model.ModelResult>`_ is defined by the 
 result file path and a name:
 
 .. code-block:: python
@@ -32,6 +32,8 @@ Currently, ModelResult supports .dfs0 and .dfsu files.
 Only the file header is read when the ModelResult object is created. 
 The data will be read later. 
 
+Note: multiple models can be assessed using the `ModelResultCollection <api.html#fmskill.model.ModelResultCollection>`_. 
+
 
 2. Define Observations
 ======================
@@ -42,7 +44,7 @@ Two types of observation are available:
 * `PointObservation <api.html#fmskill.observation.PointObservation>`_
 * `TrackObservation <api.html#fmskill.observation.TrackObservation>`_
 
-Let's assume that we have one point observation and one track observation: 
+Let's assume that we have one PointObservation and one TrackObservation: 
 
 .. code-block:: python
 
@@ -63,7 +65,7 @@ the item number (or item name) and a name. A PointObservation further needs to b
 ===========================================
 
 The observations are associated with a model result one by one using the 
-``add_observation()`` method like this:
+`add_observation() <api.html#fmskill.model.ModelResult.add_observation>`_ method like this:
 
 
 .. code-block:: python
@@ -79,13 +81,13 @@ The observations are associated with a model result one by one using the
 
 Once the observations have been associated with the model results, 
 its very simple to do the extraction which interpolates the model results 
-in space and time to the observation points: 
+in space and time to the observation points using the `extract() <api.html#fmskill.model.ModelResult.extract>`_ method: 
 
 .. code-block:: python
 
    cc = mr.extract()
 
-The extract method returns a ComparerCollection for further analysis and plotting. 
+The extract method returns a `ComparerCollection <api.html#fmskill.compare.ComparerCollection>`_ for further analysis and plotting. 
 
 
 5. Do analysis, plotting, etc with a Comparer
@@ -97,8 +99,8 @@ for plotting and skill assessment.
 
 The primary comparer methods are:
 
-* ``skill()`` which returns a pandas dataframe with the skill scores
-* ``scatter()`` which shows a scatter density plot of the data
+* `skill() <api.html#fmskill.compare.ComparerCollection.skill>`_ which returns a pandas dataframe with the skill scores
+* `scatter() <api.html#fmskill.compare.ComparerCollection.scatter>`_ which shows a scatter density plot of the data
 
 
 Filtering
