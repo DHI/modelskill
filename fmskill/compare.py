@@ -272,6 +272,26 @@ class BaseComparer:
         -------
         pd.DataFrame
             skill assessment as a dataframe
+
+        See also
+        --------
+        sel_df
+            a method for filtering/selecting data
+
+        Examples
+        --------
+        >>> cc = mr.extract()
+        >>> cc.skill().round(2)
+                       n  bias  rmse  urmse   mae    cc    si    r2
+        observation                                                
+        HKNA         385 -0.20  0.35   0.29  0.25  0.97  0.09  0.99
+        EPL           66 -0.08  0.22   0.20  0.18  0.97  0.07  0.99
+        c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
+
+        >>> cc.skill(observation='c2', start='2017-10-28').round(2)
+                       n  bias  rmse  urmse   mae    cc    si    r2
+        observation                                               
+        c2            41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
 
         if metrics is None:
