@@ -538,7 +538,12 @@ class BaseComparer:
         mod_name = self._mod_names[mod_id]
 
         df = self.sel_df(
-            df, model=mod_name, observation=observation, start=start, end=end, area=area
+            df=df,
+            model=mod_name,
+            observation=observation,
+            start=start,
+            end=end,
+            area=area,
         )
         if len(df) == 0:
             raise Exception("No data found in selection")
