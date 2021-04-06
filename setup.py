@@ -18,7 +18,6 @@ setuptools.setup(
             "black",
             "shapely",
             "plotly >= 4.5",
-            "jupyterlab",
         ],
         "test": ["pytest", "shapely"],
     },
