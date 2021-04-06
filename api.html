@@ -186,7 +186,7 @@
 
 <dl class="py method">
 <dt id="fmskill.model.ModelResult.extract">
-<code class="sig-name descname"><span class="pre">extract</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fmskill.compare.ComparisonCollection" title="fmskill.compare.ComparisonCollection"><span class="pre">fmskill.compare.ComparisonCollection</span></a><a class="headerlink" href="#fmskill.model.ModelResult.extract" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">extract</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fmskill.compare.ComparerCollection" title="fmskill.compare.ComparerCollection"><span class="pre">fmskill.compare.ComparerCollection</span></a><a class="headerlink" href="#fmskill.model.ModelResult.extract" title="Permalink to this definition">¶</a></dt>
 <dd><p>extract model result in all observations</p>
 </dd></dl>
 
@@ -225,7 +225,7 @@ Future: different type of models (local vs regional etc)</p>
 
 <dl class="py method">
 <dt id="fmskill.model.ModelResultCollection.extract">
-<code class="sig-name descname"><span class="pre">extract</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fmskill.compare.ComparisonCollection" title="fmskill.compare.ComparisonCollection"><span class="pre">fmskill.compare.ComparisonCollection</span></a><a class="headerlink" href="#fmskill.model.ModelResultCollection.extract" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">extract</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fmskill.compare.ComparerCollection" title="fmskill.compare.ComparerCollection"><span class="pre">fmskill.compare.ComparerCollection</span></a><a class="headerlink" href="#fmskill.model.ModelResultCollection.extract" title="Permalink to this definition">¶</a></dt>
 <dd><p>extract model result in all observations</p>
 </dd></dl>
 
@@ -379,16 +379,64 @@ Future: different type of models (local vs regional etc)</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 </pre></div>
 </div>
+<dl class="py method">
+<dt id="fmskill.compare.PointComparer.end">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">end</span></code><a class="headerlink" href="#fmskill.compare.PointComparer.end" title="Permalink to this definition">¶</a></dt>
+<dd><p>end datetime of compared data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.PointComparer.n_points">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">n_points</span></code><a class="headerlink" href="#fmskill.compare.PointComparer.n_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>number of compared points</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.PointComparer.name">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">name</span></code><a class="headerlink" href="#fmskill.compare.PointComparer.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of comparer (=observation)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.PointComparer.start">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">start</span></code><a class="headerlink" href="#fmskill.compare.PointComparer.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>start datetime of compared data</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt id="fmskill.compare.TrackComparer">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fmskill.compare.</span></code><code class="sig-name descname"><span class="pre">TrackComparer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modeldata</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.compare.TrackComparer" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="py method">
+<dt id="fmskill.compare.TrackComparer.end">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">end</span></code><a class="headerlink" href="#fmskill.compare.TrackComparer.end" title="Permalink to this definition">¶</a></dt>
+<dd><p>end datetime of compared data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.TrackComparer.n_points">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">n_points</span></code><a class="headerlink" href="#fmskill.compare.TrackComparer.n_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>number of compared points</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.TrackComparer.name">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">name</span></code><a class="headerlink" href="#fmskill.compare.TrackComparer.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of comparer (=observation)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.TrackComparer.start">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">start</span></code><a class="headerlink" href="#fmskill.compare.TrackComparer.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>start datetime of compared data</p>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="py class">
-<dt id="fmskill.compare.ComparisonCollection">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fmskill.compare.</span></code><code class="sig-name descname"><span class="pre">ComparisonCollection</span></code><a class="headerlink" href="#fmskill.compare.ComparisonCollection" title="Permalink to this definition">¶</a></dt>
+<dt id="fmskill.compare.ComparerCollection">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">fmskill.compare.</span></code><code class="sig-name descname"><span class="pre">ComparerCollection</span></code><a class="headerlink" href="#fmskill.compare.ComparerCollection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Collection of comparers, constructed by calling the <cite>ModelResult.extract</cite> method.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">)</span>
@@ -400,29 +448,53 @@ Future: different type of models (local vs regional etc)</p>
 </pre></div>
 </div>
 <dl class="py method">
-<dt id="fmskill.compare.ComparisonCollection.compound_skill">
-<code class="sig-name descname"><span class="pre">compound_skill</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">metric=&lt;function</span> <span class="pre">rmse&gt;</span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">float</span><a class="headerlink" href="#fmskill.compare.ComparisonCollection.compound_skill" title="Permalink to this definition">¶</a></dt>
+<dt id="fmskill.compare.ComparerCollection.compound_skill">
+<code class="sig-name descname"><span class="pre">compound_skill</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">metric=&lt;function</span> <span class="pre">rmse&gt;</span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">float</span><a class="headerlink" href="#fmskill.compare.ComparerCollection.compound_skill" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compound skill (possibly weighted)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="fmskill.compare.ComparisonCollection.get">
-<code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">k</span></em><span class="optional">[</span>, <em class="sig-param"><span class="pre">d</span></em><span class="optional">]</span><span class="sig-paren">)</span> &#x2192; <span class="pre">D[k]</span> <span class="pre">if</span> <span class="pre">k</span> <span class="pre">in</span> <span class="pre">D,</span> <span class="pre">else</span> <span class="pre">d.</span>&#160; <span class="pre">d</span> <span class="pre">defaults</span> <span class="pre">to</span> <span class="pre">None.</span><a class="headerlink" href="#fmskill.compare.ComparisonCollection.get" title="Permalink to this definition">¶</a></dt>
+<dt id="fmskill.compare.ComparerCollection.end">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">end</span></code><a class="headerlink" href="#fmskill.compare.ComparerCollection.end" title="Permalink to this definition">¶</a></dt>
+<dd><p>end datetime of compared data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.ComparerCollection.get">
+<code class="sig-name descname"><span class="pre">get</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">k</span></em><span class="optional">[</span>, <em class="sig-param"><span class="pre">d</span></em><span class="optional">]</span><span class="sig-paren">)</span> &#x2192; <span class="pre">D[k]</span> <span class="pre">if</span> <span class="pre">k</span> <span class="pre">in</span> <span class="pre">D,</span> <span class="pre">else</span> <span class="pre">d.</span>&#160; <span class="pre">d</span> <span class="pre">defaults</span> <span class="pre">to</span> <span class="pre">None.</span><a class="headerlink" href="#fmskill.compare.ComparerCollection.get" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt id="fmskill.compare.ComparisonCollection.items">
-<code class="sig-name descname"><span class="pre">items</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D’s</span> <span class="pre">items</span><a class="headerlink" href="#fmskill.compare.ComparisonCollection.items" title="Permalink to this definition">¶</a></dt>
+<dt id="fmskill.compare.ComparerCollection.items">
+<code class="sig-name descname"><span class="pre">items</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D’s</span> <span class="pre">items</span><a class="headerlink" href="#fmskill.compare.ComparerCollection.items" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt id="fmskill.compare.ComparisonCollection.keys">
-<code class="sig-name descname"><span class="pre">keys</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D’s</span> <span class="pre">keys</span><a class="headerlink" href="#fmskill.compare.ComparisonCollection.keys" title="Permalink to this definition">¶</a></dt>
+<dt id="fmskill.compare.ComparerCollection.keys">
+<code class="sig-name descname"><span class="pre">keys</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D’s</span> <span class="pre">keys</span><a class="headerlink" href="#fmskill.compare.ComparerCollection.keys" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt id="fmskill.compare.ComparisonCollection.values">
-<code class="sig-name descname"><span class="pre">values</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">an</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D’s</span> <span class="pre">values</span><a class="headerlink" href="#fmskill.compare.ComparisonCollection.values" title="Permalink to this definition">¶</a></dt>
+<dt id="fmskill.compare.ComparerCollection.n_points">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">n_points</span></code><a class="headerlink" href="#fmskill.compare.ComparerCollection.n_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>number of compared points</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.ComparerCollection.name">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">name</span></code><a class="headerlink" href="#fmskill.compare.ComparerCollection.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of comparer (=observation)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.ComparerCollection.start">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">start</span></code><a class="headerlink" href="#fmskill.compare.ComparerCollection.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>start datetime of compared data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.ComparerCollection.values">
+<code class="sig-name descname"><span class="pre">values</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <span class="pre">an</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D’s</span> <span class="pre">values</span><a class="headerlink" href="#fmskill.compare.ComparerCollection.values" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

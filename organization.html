@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>fmskill: Assess the skill of your MIKE FM model &mdash; fmskill 0.1 documentation</title>
+  <title>xxx &mdash; fmskill 0.1 documentation</title>
   
 
   
@@ -37,8 +37,7 @@
 
     
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Getting started" href="getting_started.html" /> 
+    <link rel="search" title="Search" href="search.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -52,7 +51,7 @@
           
 
           
-            <a href="#" class="icon icon-home"> fmskill
+            <a href="index.html" class="icon icon-home"> fmskill
           
 
           
@@ -104,7 +103,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">fmskill</a>
+          <a href="index.html">fmskill</a>
         
       </nav>
 
@@ -135,15 +134,15 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>fmskill: Assess the skill of your MIKE FM model</li>
+      <li>xxx</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/organization.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -156,12 +155,17 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="fmskill-assess-the-skill-of-your-mike-fm-model">
-<h1>fmskill: Assess the skill of your MIKE FM model<a class="headerlink" href="#fmskill-assess-the-skill-of-your-mike-fm-model" title="Permalink to this headline">¶</a></h1>
-<img alt="https://raw.githubusercontent.com/DHI/fmskill/main/images/scatter.png" src="https://raw.githubusercontent.com/DHI/fmskill/main/images/scatter.png" />
-<p>Compare results from MIKE FM simulations with observations. <cite>fmskill</cite> would like to be your companion during the different phases of a MIKE FM modelling workflow.</p>
-<p>This package is simple to install and deploy operationally and is accessible to everyone as open-source.</p>
-<div class="toctree-wrapper compound">
+  <div class="section" id="xxx">
+<span id="organization"></span><h1>xxx<a class="headerlink" href="#xxx" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="core-concepts">
+<h2>Core concepts<a class="headerlink" href="#core-concepts" title="Permalink to this headline">¶</a></h2>
+<p>fmskill is an object-oriented package built around a few basic concepts:</p>
+<ul class="simple">
+<li><p>ModelResult: defined by a MIKE FM output (.dfsu or .dfs0 file), observations can be added to a ModelResult</p></li>
+<li><p>Observation: e.g. point or track observation</p></li>
+<li><p>Metric: can measure the “distance” between a model result and an observation (e.g. bias and rmse)</p></li>
+<li><p>Comparer: contains observations and model data interpolated to observation positions and times, can plot and show statistics</p></li>
+</ul>
 </div>
 </div>
 
@@ -170,9 +174,6 @@
            
           </div>
           <footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="getting_started.html" class="btn btn-neutral float-right" title="Getting started" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
 
   <hr/>
 

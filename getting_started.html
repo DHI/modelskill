@@ -187,12 +187,37 @@
 </div>
 <div class="section" id="associate-observations-with-modelresults">
 <h3>Associate observations with ModelResults<a class="headerlink" href="#associate-observations-with-modelresults" title="Permalink to this headline">¶</a></h3>
+<p>The observations are associated with a model result one by one using the
+<code class="docutils literal notranslate"><span class="pre">add_observation()</span></code> method like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mr</span><span class="o">.</span><span class="n">add_observation</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="extract-modelresults-at-observation-positions">
 <h3>Extract ModelResults at observation positions<a class="headerlink" href="#extract-modelresults-at-observation-positions" title="Permalink to this headline">¶</a></h3>
+<p>Once the observations have been associated with the model results,
+its very simple to do the extraction which interpolates the model results
+in space and time to the observation points:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="do-analysis-plotting-etc-with-a-comparer">
 <h3>Do analysis, plotting, etc with a Comparer<a class="headerlink" href="#do-analysis-plotting-etc-with-a-comparer" title="Permalink to this headline">¶</a></h3>
+<p>The object returned by the <code class="docutils literal notranslate"><span class="pre">extract()</span></code> method is a Comparer.
+It holds the matched observation and model data and has methods for plotting and skill assessment.
+The primary methods are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">skill()</span></code> which returns a pandas dataframe with the skill scores</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scatter()</span></code> which shows a scatter density plot of the data</p></li>
+</ul>
+<p>Both methods allow filtering of the data in several ways:</p>
+<ul class="simple">
+<li><p>on <code class="docutils literal notranslate"><span class="pre">observation</span></code> by specifying name or id of one or more observations</p></li>
+<li><p>on <code class="docutils literal notranslate"><span class="pre">model</span></code> (if more than one is compared) by giving name or id</p></li>
+<li><p>temporal using the <code class="docutils literal notranslate"><span class="pre">start</span></code> and <code class="docutils literal notranslate"><span class="pre">end</span></code> arguments</p></li>
+<li><p>spatial using the <code class="docutils literal notranslate"><span class="pre">area</span></code> argument given as a bounding box or a polygon</p></li>
+</ul>
 </div>
 </div>
 </div>

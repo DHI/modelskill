@@ -51,7 +51,7 @@ By developing `fmskill` on GitHub along with a completely open discussion, we be
 Reproducible
 ------------
 
-By providing the historical versions of `fmskill`` on PyPI it is possible to reproduce the behaviour of an older existing system, based on an older version.
+By providing the historical versions of `fmskill` on PyPI it is possible to reproduce the behaviour of an older existing system, based on an older version.
 
 Install specific version::
 
