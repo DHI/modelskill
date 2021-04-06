@@ -16,6 +16,16 @@ class ModelResultType(Enum):
 
 
 class ModelResult:
+    """
+    The result from a MIKE FM simulation (either dfsu or dfs0)
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu") 
+
+    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund") 
+    """
+
     # name = None
     # type = None
     # filename = None
@@ -58,7 +68,7 @@ class ModelResult:
 
         Parameters
         ----------
-        observation : <fmskill.PointObservation>
+        observation : <fmskill.Observation>
             Observation object for later comparison
         item : str, integer
             ModelResult item name or number corresponding to the observation
@@ -194,9 +204,15 @@ class ModelResult:
 
 
 class ModelResultCollection:
-    """Collection of ModelResult with same "topology"
-    e.g. several "runs" of the same model. For calibration.
-    Future: different type of models (local vs regional etc)
+    """
+    A collection of results from multiple MIKE FM simulations
+    with the same "topology", e.g. several "runs" of the same model.
+
+    Examples
+    --------
+    >>> mr1 = ModelResult("HKZN_local_2017_v1.dfsu", name="HKZN_v1")
+    >>> mr2 = ModelResult("HKZN_local_2017_v2.dfsu", name="HKZN_v2")
+    >>> mr = ModelResultCollection([mr1, mr2])
     """
 
     _mr0 = None

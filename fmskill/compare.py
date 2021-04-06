@@ -6,13 +6,12 @@ These Comparers are constructed by extracting data from the combination of obser
 Examples
 --------
 >>> mr = ModelResult("Oresund2D.dfsu")
->>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+>>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 >>> mr.add_observation(o1, item=0)
 >>> comparer = mr.extract()
 """
 from collections.abc import Mapping
-from typing import List
-from matplotlib import markers
+from typing import List, Union
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -240,14 +239,40 @@ class BaseComparer:
 
     def skill(
         self,
-        df=None,
-        model=None,
-        observation=None,
-        start=None,
-        end=None,
-        area=None,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
         metrics: list = None,
     ) -> pd.DataFrame:
+        """Skill assessment of model(s)
+
+        Parameters
+        ----------
+        model : (str, int, List[str], List[int]), optional 
+            name or ids of models to be compared, by default all
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1], 
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            by default None
+        df : pd.dataframe, optional
+            show user-provided data instead of the comparers own data, by default None
+        metrics : list, optional
+            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+
+        Returns
+        -------
+        pd.DataFrame
+            skill assessment as a dataframe
+        """
 
         if metrics is None:
             metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
@@ -360,26 +385,83 @@ class BaseComparer:
 
     def scatter(
         self,
-        df=None,
-        model=None,
-        observation=None,
-        start=None,
-        end=None,
-        area=None,
-        xlabel=None,
-        ylabel=None,
-        binsize=None,
-        nbins=20,
-        show_points=None,
-        show_hist=True,
-        backend="matplotlib",
-        title=None,
-        figsize=(8, 8),
-        xlim=None,
-        ylim=None,
-        reg_method="ols",
+        binsize: float = None,
+        nbins: int = 20,
+        show_points: bool = None,
+        show_hist: bool = True,
+        backend: str = "matplotlib",
+        figsize: List[float] = (8, 8),
+        xlim: List[float] = None,
+        ylim: List[float] = None,
+        reg_method: str = "ols",
+        title: str = None,
+        xlabel: str = None,
+        ylabel: str = None,
+        model: Union[str, int] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
         **kwargs,
     ):
+        """Scatter plot showing compared data: observation vs modelled
+        Optionally, with density histogram. 
+
+        Parameters
+        ----------
+        binsize : float, optional
+            the size of each bin in the 2d histogram, by default None
+        nbins : int, optional
+            number of bins (if binsize is not given), by default 20
+        show_points : bool, optional
+            Should the scatter points be displayed?
+            None means: only show points if fewer than threshold, by default None
+        show_hist : bool, optional
+            show the data density as a a 2d histogram, by default True
+        backend : str, optional
+            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"                
+        figsize : tuple, optional
+            width and height of the figure, by default (8, 8)
+        xlim : tuple, optional
+            plot range for the observation (xmin, xmax), by default None
+        ylim : tuple, optional
+            plot range for the model (ymin, ymax), by default None
+        reg_method : str, optional
+            method for determining the regression line
+            "ols" : ordinary least squares regression
+            "odr" : orthogonal distance regression, 
+            by default "ols"
+        title : str, optional
+            plot title, by default None
+        xlabel : str, optional
+            x-label text on plot, by default None
+        ylabel : str, optional
+            y-label text on plot, by default None
+        model : (int, str), optional
+            name or id of model to be compared, by default None
+        observation : (int, str), optional
+            name or ids of observations to be compared, by default None
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1], 
+            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn], 
+            by default None
+        df : pd.dataframe, optional
+            show user-provided data instead of the comparers own data, by default None
+        
+        Examples
+        ------
+        >>> comparer.scatter()
+        >>> comparer.scatter(binsize=0.2, backend='plotly')
+        >>> comparer.scatter(show_points=False, title='no points')
+        >>> comparer.scatter(xlabel='all observations', ylabel='my model')
+        >>> comparer.scatter(model='HKZN_v2', figsize=(10, 10))
+        >>> comparer.scatter(observations=['c2','HKNA'])
+        """
         mod_id = self._get_mod_id(model)
         mod_name = self._mod_names[mod_id]
 
@@ -450,7 +532,7 @@ class BaseComparer:
 
             plt.figure(figsize=figsize)
             plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
-            plt.plot(xq, yq, label="QQ", c="gray")
+            plt.plot(xq, yq, label="Q-Q", c="gray")
             plt.plot(
                 x, intercept + slope * x, "r", label=reglabel,
             )
@@ -576,7 +658,7 @@ class SingleObsComparer(BaseComparer):
         plt.title(f"{mod_name} vs {self.name}")
         plt.xlabel(f"{self._obs_unit_text}")
 
-    # def skill(self, model=None, metric=None):
+    # def score(self, model=None, metric=None):
 
     #     mod_id = self._get_mod_id(model)
 
@@ -593,9 +675,10 @@ class PointComparer(SingleObsComparer):
     Examples
     --------
     >>> mr = ModelResult("Oresund2D.dfsu")
-    >>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> mr.add_observation(o1, item=0)
     >>> comparer = mr.extract()
+    >>> comparer['Klagshamn']
     """
 
     def __init__(self, observation, modeldata):
@@ -684,6 +767,18 @@ class PointComparer(SingleObsComparer):
 
 
 class TrackComparer(SingleObsComparer):
+    """
+    Comparer for observations from changing locations i.e. `TrackObservation`
+
+    Examples
+    --------
+    >>> mr = ModelResult("HKZN_local_2017.dfsu")
+    >>> c2 = TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+    >>> mr.add_observation(c2, item=0)
+    >>> comparer = mr.extract()
+    >>> comparer['c2']
+    """
+
     @property
     def x(self):
         return self.df.iloc[:, 0]
@@ -721,7 +816,7 @@ class ComparerCollection(Mapping, BaseComparer):
     Examples
     --------
     >>> mr = ModelResult("Oresund2D.dfsu")
-    >>> o1 = PointObservation("klagshamn.dfs0, item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
     >>> mr.add_observation(o1, item=0)
     >>> mr.add_observation(o2, item=0)
