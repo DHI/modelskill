@@ -987,15 +987,58 @@ class ComparerCollection(Mapping, BaseComparer):
 
     def mean_skill(
         self,
-        df=None,
-        model=None,
-        observation=None,
-        start=None,
-        end=None,
-        area=None,
+        weights: Union[str, List[float]] = None,
         metrics: list = None,
-        weights=None,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
     ) -> pd.DataFrame:
+        """Weighted Mean skill of model(s) over all observations        
+
+        Parameters
+        ----------
+        weights : (str, List(float)), optional
+            list of weights e.g. [0.3, 0.3, 0.4] per observation
+            "equal": giving all observations equal weight,
+            "points": giving all points equal weight,
+            by default "equal"
+        metrics : list, optional
+            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+        model : (str, int, List[str], List[int]), optional 
+            name or ids of models to be compared, by default all
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1], 
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            by default None
+        df : pd.dataframe, optional
+            show user-provided data instead of the comparers own data, by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            mean skill assessment as a dataframe
+
+        See also
+        --------
+        skill
+            a method for skill assessment observation by observation
+
+        Examples
+        --------
+        >>> cc = mr.extract()
+        >>> cc.mean_skill().round(2)
+                    bias  rmse  urmse   mae    cc    si    r2
+        HKZN_local -0.09  0.31   0.28  0.24  0.97  0.09  0.99
+        """
 
         if metrics is None:
             metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
@@ -1029,7 +1072,7 @@ class ComparerCollection(Mapping, BaseComparer):
 
             tot_weight = np.sum(
                 weights[tmp_n > 0]
-            )  # this may be different for different moels
+            )  # this may be different for different models
             for j, metric in enumerate(metrics):
                 row[metric.__name__] = np.inner(tmp[:, j], weights) / tot_weight
             rows.append(row)
