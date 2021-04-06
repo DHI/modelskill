@@ -39,8 +39,8 @@ The data will be read later.
 The next step is to define the measurements to be used for the skill assessment. 
 Two types of observation are available: 
 
-* PointObservation
-* TrackObservation
+* `PointObservation <api.html#fmskill.observation.PointObservation>`_
+* `TrackObservation <api.html#fmskill.observation.TrackObservation>`_
 
 Let's assume that we have one point observation and one track observation: 
 
@@ -54,9 +54,7 @@ In this case both observations are provided as .dfs0 files but pandas
 dataframes are also supported in case data are stored in another file format. 
 
 Both PointObservation and TrackObservation need the path of the data file, 
-the item number (or item name) and a name. 
-
-A PointObservation further needs to be initialized with it's x-, y-position. 
+the item number (or item name) and a name. A PointObservation further needs to be initialized with it's x-, y-position. 
 
 
 
