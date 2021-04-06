@@ -30,7 +30,7 @@ jobs:
       run: |
         git clone https://github.com/DHI/fmskill.git --branch gh-pages --single-branch gh-pages
         dir
-        xcopy gh-pages\docs\_build\html gh-pages\ /sy
+        xcopy docs\_build\html gh-pages\ /sy
         cd gh-pages
         dir
         touch .nojekyll
