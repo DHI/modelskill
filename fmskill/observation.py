@@ -58,6 +58,7 @@ class Observation:
 
     def __init__(self, name: str = None):
         self.name = name
+        self.weight = 1.0
 
     def _unit_text(self):
         if self.itemInfo is None:

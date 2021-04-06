@@ -73,7 +73,7 @@ class ModelResult:
         item : str, integer
             ModelResult item name or number corresponding to the observation
         weight: float
-            Relative weight used in compound skill calculation, default 1.0
+            Relative weight used in weighted skill calculation, default 1.0
         """
         ok = self._validate_observation(observation)
         if ok:
@@ -101,9 +101,9 @@ class ModelResult:
         """extract model result in all observations"""
         cc = ComparerCollection()
         for obs in self.observations.values():
-            comparison = self._extract_observation(obs, obs.model_variable)
-            if comparison is not None:
-                cc.add_comparison(comparison)
+            comparer = self._extract_observation(obs, obs.model_variable)
+            if comparer is not None:
+                cc.add_comparer(comparer)
         return cc
 
     def _extract_observation(
@@ -127,14 +127,14 @@ class ModelResult:
         """
         if isinstance(observation, PointObservation):
             ds_model = self._extract_point(observation, item)
-            comparison = PointComparer(observation, ds_model)
+            comparer = PointComparer(observation, ds_model)
         elif isinstance(observation, TrackObservation):
             ds_model = self._extract_track(observation, item)
-            comparison = TrackComparer(observation, ds_model)
+            comparer = TrackComparer(observation, ds_model)
         else:
             raise ValueError("Only point and track observation are supported!")
 
-        return comparison
+        return comparer
 
     def _extract_point(self, observation: PointObservation, item) -> Dataset:
         assert isinstance(observation, PointObservation)
@@ -279,13 +279,13 @@ class ModelResultCollection:
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, PointObservation):
-            comparison = self._compare_point_observation(observation, item)
+            comparer = self._compare_point_observation(observation, item)
         elif isinstance(observation, TrackObservation):
-            comparison = self._compare_track_observation(observation, item)
+            comparer = self._compare_track_observation(observation, item)
         else:
             raise ValueError("Only point and track observation are supported!")
 
-        return comparison
+        return comparer
 
     def _compare_point_observation(self, observation, item) -> PointComparer:
         """Compare all ModelResults in collection with a point observation
@@ -337,16 +337,9 @@ class ModelResultCollection:
         cc = ComparerCollection()
 
         for obs in self.observations.values():
-            comparison = self._extract_observation(obs, obs.model_variable)
-            if comparison is not None:
-                cc.add_comparison(comparison)
-
-        # for mr in self.modelresults.values():
-        #     for obs in mr.observations.values():
-        #         comparison = mr.compare_observation(obs, obs.model_variable)
-        #         if comparison is not None:
-        #             comparison.name = comparison.name + "_" + mr.name
-        #             cc.add_comparison(comparison)
+            comparer = self._extract_observation(obs, obs.model_variable)
+            if comparer is not None:
+                cc.add_comparer(comparer)
         return cc
 
     def plot_observation_positions(self, figsize=None):
