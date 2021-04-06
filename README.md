@@ -17,11 +17,13 @@ Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html
 
 ## Installation
 
-    > pip install fmskill
+From [pypi](https://pypi.org/project/fmskill/):
+
+`> pip install fmskill`
 
 Or the development version:
 
-    > pip install https://github.com/DHI/fmskill/archive/master.zip
+`> pip install https://github.com/DHI/fmskill/archive/master.zip`
 
 
 ## Example notebooks
