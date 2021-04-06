@@ -8,6 +8,7 @@ Examples
 """
 import os
 from shapely.geometry import Point, MultiPoint
+from typing import Union
 import pandas as pd
 from mikeio import Dfs0, eum
 
@@ -158,6 +159,7 @@ class TrackObservation(Observation):
     Examples
     --------
     >>> o1 = TrackObservation("track.dfs0", item=2, name="c2")
+
     >>> df = pd.DataFrame(
     ...         {
     ...             "t": pd.date_range("2010-01-01", freq="10s", periods=n),
@@ -185,12 +187,10 @@ class TrackObservation(Observation):
                '2010-01-01 00:00:20', '2010-01-01 00:00:30',
                '2010-01-01 00:00:40'],
               dtype='datetime64[ns]', name='t', freq=None)
-
     >>> t1.x
     array([ 0. ,  2.5,  5. ,  7.5, 10. ])
     >>> t1.y
     array([45000., 45025., 45050., 45075., 45100.])
-
 
     """
 

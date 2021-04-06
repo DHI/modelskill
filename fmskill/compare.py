@@ -298,7 +298,7 @@ class BaseComparer:
             metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
         df = self.sel_df(
-            df, model=model, observation=observation, start=start, end=end, area=area
+            model=model, observation=observation, start=start, end=end, area=area, df=df
         )
 
         mod_names = df.mod_name.unique()
@@ -329,8 +329,60 @@ class BaseComparer:
         return res
 
     def sel_df(
-        self, df=None, model=None, observation=None, start=None, end=None, area=None
-    ):
+        self,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+    ) -> pd.DataFrame:
+        """Select/filter data from all the compared data
+        Used by compare.scatter and compare.skill to select data.
+
+        Parameters
+        ----------
+        model : (str, int, List[str], List[int]), optional 
+            name or ids of models to be compared, by default all
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1], 
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            by default None
+        df : pd.dataframe, optional
+            show user-provided data instead of the comparers own data, by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            selected data in a dataframe with columns ()
+
+        See also
+        --------
+        skill 
+            a method for aggregated skill assessment
+        scatter
+            a method for plotting compared data
+
+        Examples
+        --------
+        >>> cc = mr.extract()        
+        >>> dfsub = cc.sel_df(observation=['EPL','HKNA'])
+        >>> dfsub = cc.sel_df(model=0)        
+        >>> dfsub = cc.sel_df(start='2017-10-1', end='2017-11-1')
+        >>> dfsub = cc.sel_df(area=[0.5,52.5,5,54])
+
+        >>> cc.sel_df(observation='c2', start='2017-10-28').head(3)
+                         mod_name obs_name      x       y   mod_val  obs_val
+        2017-10-28 01:00:00  SW_1      EPL  3.276  51.999  1.644092     1.82
+        2017-10-28 02:00:00  SW_1      EPL  3.276  51.999  1.755809     1.86
+        2017-10-28 03:00:00  SW_1      EPL  3.276  51.999  1.867526     2.11
+        """
         if df is None:
             df = self.all_df
         if model is not None:
@@ -944,7 +996,7 @@ class ComparerCollection(Mapping, BaseComparer):
             metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
         df = self.sel_df(
-            df, model=model, observation=observation, start=start, end=end, area=area
+            df=df, model=model, observation=observation, start=start, end=end, area=area
         )
         mod_names = df.mod_name.unique()
         obs_names = df.obs_name.unique()
