@@ -237,6 +237,27 @@ class BaseComparer:
             raise ValueError("model must be None, str or int")
         return mod_id
 
+    def _parse_metric(self, metric):
+        if (type(metric) is list) or (type(metric) is tuple):
+            metrics = [self._parse_metric(m) for m in metric]
+            return metrics
+
+        if isinstance(metric, str):
+            valid_metrics = [
+                m for m in dir(mtr) if (m[0] != "_") & (m != "np") & (m != "warnings")
+            ]
+            if metric.lower() in valid_metrics:
+                metric = getattr(mtr, metric.lower())
+            else:
+                raise ValueError(
+                    f"Invalid metric: {metric}. Valid metrics are {valid_metrics}."
+                )
+        elif not callable(metric):
+            raise ValueError(
+                f"Invalid metric: {metric}. Must be either string or callable."
+            )
+        return metric
+
     def skill(
         self,
         model: Union[str, int, List[str], List[int]] = None,
@@ -296,6 +317,8 @@ class BaseComparer:
 
         if metrics is None:
             metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+        else:
+            metrics = self._parse_metric(metrics)
 
         df = self.sel_df(
             model=model, observation=observation, start=start, end=end, area=area, df=df
@@ -799,6 +822,7 @@ class SingleObsComparer(BaseComparer):
         >>> cc['c2'].score(metric=mtr.mape)
         11.567399646108198
         """
+        metric = self._parse_metric(metric)
 
         df = self.skill(
             metrics=[metric], model=model, start=start, end=end, area=area, df=df,
@@ -1220,6 +1244,8 @@ class ComparerCollection(Mapping, BaseComparer):
 
         if metrics is None:
             metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+        else:
+            metrics = self._parse_metric(metrics)
 
         df = self.sel_df(
             df=df, model=model, observation=observation, start=start, end=end, area=area
@@ -1347,6 +1373,7 @@ class ComparerCollection(Mapping, BaseComparer):
         >>> cc.score(weights='points', metric=mtr.mape)
         8.414442957854142
         """
+        metric = self._parse_metric(metric)
 
         df = self.mean_skill(
             weights=weights,
