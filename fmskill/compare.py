@@ -1255,7 +1255,7 @@ class ComparerCollection(Mapping, BaseComparer):
         n_obs = len(obs_names)
         n_metrics = len(metrics)
 
-        weights = self._parse_weights(weights, observation)
+        weights = self._parse_weights(weights, obs_names)
         has_weights = False if (weights is None) else True
 
         rows = []
