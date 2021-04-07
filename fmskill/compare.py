@@ -1303,7 +1303,7 @@ class ComparerCollection(Mapping, BaseComparer):
             elif isinstance(weights, str):
                 if weights.lower() == "equal":
                     weights = np.ones(n_obs)  # equal weight to all
-                elif "points" in weights.lower():
+                elif "point" in weights.lower():
                     weights = None  # no weight => use n_points
             elif not np.isscalar(weights):
                 if not len(weights) == n_obs:

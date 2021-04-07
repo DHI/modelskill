@@ -3,7 +3,7 @@ import numpy as np
 
 from fmskill.model import ModelResult, ModelResultCollection
 from fmskill.observation import PointObservation, TrackObservation
-from fmskill.metrics import root_mean_squared_error, mean_absolute_error
+import fmskill.metrics as mtr
 
 
 @pytest.fixture
@@ -64,7 +64,10 @@ def test_extract(mrc, o1, o2):
     mrc.add_observation(o1, item=0)
     mrc.add_observation(o2, item=0)
     cc = mrc.extract()
-    assert True
+    assert cc.n_points > 0
+    assert "ComparerCollection" in repr(cc)
+    assert "PointComparer" in repr(cc["EPL"])
+    assert "TrackComparer" in repr(cc[2])
 
 
 def test_mm_skill(cc):
@@ -79,25 +82,128 @@ def test_mm_skill_model(cc):
     assert df.loc["c2"].n == 113
 
 
+def test_mm_skill_missing_model(cc):
+    with pytest.raises(ValueError):
+        cc.skill(model="SW_3")
+    with pytest.raises(ValueError):
+        cc.skill(model=999)
+    with pytest.raises(ValueError):
+        cc.skill(model=[999, "SW_2"])
+    with pytest.raises(ValueError):
+        cc.skill(model=[0.1])
+
+
 def test_mm_skill_obs(cc):
     df = cc.skill(observation="c2")
     assert len(df) == 2
     assert df.bias[0] == 0.08143105172057515
 
+    df = cc.mean_skill(model=0, observation=[0, "c2"])
+    assert df.si[0] == 0.10349949854443843
+
+
+def test_mm_skill_missing_obs(cc, o1):
+    with pytest.raises(ValueError):
+        cc.skill(observation="imaginary_obs")
+    with pytest.raises(ValueError):
+        cc.skill(observation=999)
+    with pytest.raises(ValueError):
+        cc.skill(observation=["c2", 999])
+    with pytest.raises(ValueError):
+        cc.skill(observation=[o1])
+
 
 def test_mm_skill_start_end(cc):
-    df = cc.skill(model="SW_1", end="2017-10-28")
-    assert df.n[1] == 48
+    df = cc.skill(model="SW_1", start="2017")
+    assert df.loc["EPL"].n == 66
+    df = cc.skill(model="SW_1", end="2017-10-28 00:00:01")
+    assert df.loc["EPL"].n == 24
+    df = cc.skill(model="SW_1", start="2017-10-28 00:00:01")
+    assert df.loc["EPL"].n == 42
 
 
 def test_mm_skill_area(cc):
+    bbox = [0.5, 52.5, 5, 54]
+    df = cc.skill(model="SW_1", area=bbox)
+    assert pytest.approx(df.loc["HKNA"].urmse) == 0.29321445043385863
     bbox = np.array([0.5, 52.5, 5, 54])
-    polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
-
     df = cc.skill(model="SW_1", area=bbox)
     assert pytest.approx(df.loc["HKNA"].urmse) == 0.29321445043385863
 
+    polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
     df = cc.skill(model="SW_2", area=polygon)
     assert "HKNA" not in df.index
     assert df.n[1] == 66
     assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
+
+    polygon = [6, 51, 0, 55, 0, 51, 6, 51]
+    df = cc.skill(model="SW_2", area=polygon)
+    assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
+
+    df = cc.mean_skill(area=polygon)
+    assert pytest.approx(df.loc["SW_2"].rmse) == 0.331661
+
+    with pytest.raises(ValueError):
+        cc.skill(area=[0.1, 0.2])
+    with pytest.raises(ValueError):
+        cc.skill(area="polygon")
+    with pytest.raises(ValueError):
+        cc.skill(area=[0.1, 0.2, 0.3, 0.6, "string"])
+    with pytest.raises(ValueError):
+        # uneven number of elements
+        cc.skill(area=[0.1, 0.2, 0.3, 0.6, 5.6])
+    with pytest.raises(ValueError):
+        polygon = np.array([[6, 51, 4], [0, 55, 4], [0, 51, 4], [6, 51, 4]])
+        cc.skill(area=polygon)
+
+
+def test_mm_skill_metrics(cc):
+    df = cc.skill(model="SW_1", metrics=[mtr.mean_absolute_error])
+    assert df.mean_absolute_error.values.sum() > 0.0
+
+    df = cc.skill(model="SW_1", metrics=[mtr.bias, "rmse"])
+    assert df.loc["EPL"].bias == -0.07533533467221397
+    assert df.loc["EPL"].rmse == 0.21635651988376833
+
+    with pytest.raises(ValueError):
+        cc.skill(model="SW_1", metrics=["mean_se"])
+    with pytest.raises(AttributeError):
+        cc.skill(model="SW_1", metrics=[mtr.fake])
+    with pytest.raises(ValueError):
+        cc.skill(model="SW_1", metrics=[47])
+
+
+def test_mm_mean_skill(cc):
+    df = cc.mean_skill()
+    assert len(df) == 2
+    df = cc.mean_skill(weights=[0.2, 0.3, 1.0])
+    assert len(df) == 2
+    df = cc.mean_skill(weights="points")
+    assert len(df) == 2
+    df = cc.mean_skill(weights=1)
+    assert len(df) == 2
+    df = cc.mean_skill(weights="equal")
+    assert len(df) == 2
+    with pytest.raises(ValueError):
+        # too many weights
+        cc.mean_skill(weights=[0.2, 0.3, 0.4, 0.5])
+
+
+def test_mm_scatter(cc):
+    cc.scatter(model="SW_1", observation=[0, 1])
+    cc.scatter(model="SW_2", show_points=False)
+    cc.scatter(model="SW_2", show_hist=False)
+    cc.scatter(model="SW_2", binsize=0.5)
+    cc.scatter(model="SW_2", nbins=5, reg_method="odr")
+    cc.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
+    # cc.scatter(model="SW_2", binsize=0.5, backend="plotly")
+    assert True
+
+
+def test_mm_plot_timeseries(cc):
+    cc["EPL"].plot_timeseries()
+    cc["EPL"].plot_timeseries(title="t", figsize=(3, 3))
+
+    # cc["EPL"].plot_timeseries(backend="plotly")
+    with pytest.raises(ValueError):
+        cc["EPL"].plot_timeseries(backend="mpl")
