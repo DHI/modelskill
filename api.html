@@ -992,10 +992,11 @@ by default None</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>weights</strong> (<em>(</em><em>str</em><em>, </em><em>List</em><em>(</em><em>float</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – list of weights e.g. [0.3, 0.3, 0.4] per observation,
+<li><p><strong>weights</strong> (<em>(</em><em>str</em><em>, </em><em>List</em><em>(</em><em>float</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – None: use assigned weights from observations
 “equal”: giving all observations equal weight,
 “points”: giving all points equal weight,
-by default “equal”</p></li>
+list of weights e.g. [0.3, 0.3, 0.4] per observation,
+by default None</p></li>
 <li><p><strong>metric</strong> (<em>list</em><em>, </em><em>optional</em>) – a single metric from fmskill.metrics, by default rmse</p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
 <li><p><strong>observation</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of observations to be compared, by default all</p></li>
