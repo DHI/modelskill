@@ -60,9 +60,10 @@ def test_add_observation(mrc, o1):
     assert len(mrc.observations) == 1
 
 
-def test_extract(mrc, o1, o2):
+def test_extract(mrc, o1, o2, o3):
     mrc.add_observation(o1, item=0)
     mrc.add_observation(o2, item=0)
+    mrc.add_observation(o3, item=0)
     cc = mrc.extract()
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
