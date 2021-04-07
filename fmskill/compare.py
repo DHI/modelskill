@@ -652,7 +652,7 @@ class BaseComparer:
                 plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
             plt.title(title)
 
-        elif backend == "plotly":
+        elif backend == "plotly":  # pragma: no cover
             import plotly.graph_objects as go
 
             linvals = np.linspace(np.min([x, y]), np.max([x, y]))
@@ -1000,7 +1000,7 @@ class PointComparer(SingleObsComparer):
             plt.title(title)
             return ax
 
-        elif backend == "plotly":
+        elif backend == "plotly":  # pragma: no cover
             import plotly.graph_objects as go
 
             mod_scatter_list = []
@@ -1328,10 +1328,11 @@ class ComparerCollection(Mapping, BaseComparer):
         Parameters
         ----------
         weights : (str, List(float)), optional
-            list of weights e.g. [0.3, 0.3, 0.4] per observation, 
+            None: use assigned weights from observations
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
-            by default "equal"
+            list of weights e.g. [0.3, 0.3, 0.4] per observation, 
+            by default None
         metric : list, optional
             a single metric from fmskill.metrics, by default rmse
         model : (str, int, List[str], List[int]), optional 
