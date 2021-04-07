@@ -8,15 +8,16 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="fmskill",
-    version="0.1.dev",
+    version="0.2.dev",
     install_requires=["numpy", "pandas", "mikeio >= 0.6", "matplotlib"],
     extras_require={
         "dev": [
             "pytest",
+            "sphinx",
+            "sphinx-rtd-theme",
             "black",
             "shapely",
             "plotly >= 4.5",
-            "jupyterlab",
         ],
         "test": ["pytest", "shapely"],
     },
@@ -24,7 +25,7 @@ setuptools.setup(
     author_email="jem@dhigroup.com",
     description="Compare results from MIKE FM simulations with observations.",
     platform="windows_x64",
-    license=license,
+    license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/DHI/fmskill",

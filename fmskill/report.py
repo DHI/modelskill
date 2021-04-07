@@ -25,7 +25,7 @@ class Reporter:
 
             f.write("## Timeseries\n")
             cc = self.mr.extract()
-            for key, value in cc.comparisons.items():
+            for key, value in cc.comparers.items():
                 if "plot_timeseries" in dir(value):
                     value.plot_timeseries()
                     plt.savefig(self.basedir / f"{self.name}_{key}_ts.png")
@@ -33,7 +33,7 @@ class Reporter:
 
             f.write("## Scatter\n")
 
-            for key, value in cc.comparisons.items():
+            for key, value in cc.comparers.items():
                 value.scatter()
                 plt.savefig(self.basedir / f"{self.name}_{key}_scatter.png")
                 f.write(f"![{key}]({self.name}_{key}_scatter.png)\n")

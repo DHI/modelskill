@@ -35,27 +35,27 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
     mr.add_observation(o1, item=0)
     c = mr.extract()
     s = c["Klagshamn"].skill()
-    assert not np.isnan(s)
+    assert not np.any(np.isnan(s))
 
 
-def test_compound_skill(modelresult_oresund_2d, klagshamn, drogden):
+def test_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
     mr.add_observation(klagshamn, item=0)
     mr.add_observation(drogden, item=0)
     collection = mr.extract()
 
-    assert collection.compound_skill(metric=root_mean_squared_error) > 0.0
-    report = collection.skill_df(metrics=[root_mean_squared_error, mean_absolute_error])
+    assert collection.score(metric=root_mean_squared_error) > 0.0
+    report = collection.skill(metrics=[root_mean_squared_error, mean_absolute_error])
 
 
-def test_compound_weighted_skill(modelresult_oresund_2d, klagshamn, drogden):
+def test_weighted_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
     mr.add_observation(klagshamn, item=0)
     mr.add_observation(drogden, item=0)
     c = mr.extract()
-    unweighted_skill = c.compound_skill()
+    unweighted_skill = c.score()
 
     mrw = modelresult_oresund_2d
 
@@ -63,7 +63,7 @@ def test_compound_weighted_skill(modelresult_oresund_2d, klagshamn, drogden):
     mrw.add_observation(drogden, item=0, weight=0.0)
     cw = mrw.extract()
 
-    weighted_skill = cw.compound_skill()
+    weighted_skill = cw.score()
 
     assert unweighted_skill != weighted_skill
 
@@ -78,7 +78,7 @@ def test_misc_properties(klagshamn, drogden):
     c = mr.extract()
 
     assert len(c) == 2
-    assert c.n_comparisons == 2
+    assert c.n_comparers == 2
 
     assert c.n_models == 1
     assert c._mod_names == [
@@ -96,7 +96,7 @@ def test_misc_properties(klagshamn, drogden):
     assert ck.x == 366844
 
 
-def test_skill_df(klagshamn, drogden):
+def test_skill(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
@@ -105,9 +105,9 @@ def test_skill_df(klagshamn, drogden):
 
     c = mr.extract()
 
-    df = c.skill_df()
+    df = c.skill()
     assert df.loc["Klagshamn"].n == 167
 
-    # Filtered skill_df
-    df = c.skill_df(observation="Klagshamn")
+    # Filtered skill
+    df = c.skill(observation="Klagshamn")
     assert df.loc["Klagshamn"].n == 167

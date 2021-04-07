@@ -6,7 +6,7 @@ from enum import Enum
 
 from mikeio import Dfs0, Dfsu, Dataset
 from .observation import PointObservation, TrackObservation
-from .compare import PointComparer, TrackComparer, ComparisonCollection, BaseComparer
+from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 
 
 class ModelResultType(Enum):
@@ -16,6 +16,16 @@ class ModelResultType(Enum):
 
 
 class ModelResult:
+    """
+    The result from a MIKE FM simulation (either dfsu or dfs0)
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu") 
+
+    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund") 
+    """
+
     # name = None
     # type = None
     # filename = None
@@ -58,12 +68,12 @@ class ModelResult:
 
         Parameters
         ----------
-        observation : <fmskill.PointObservation>
+        observation : <fmskill.Observation>
             Observation object for later comparison
         item : str, integer
             ModelResult item name or number corresponding to the observation
         weight: float
-            Relative weight used in compound skill calculation, default 1.0
+            Relative weight used in weighted skill calculation, default 1.0
         """
         ok = self._validate_observation(observation)
         if ok:
@@ -87,13 +97,13 @@ class ModelResult:
 
         return ok
 
-    def extract(self) -> ComparisonCollection:
+    def extract(self) -> ComparerCollection:
         """extract model result in all observations"""
-        cc = ComparisonCollection()
+        cc = ComparerCollection()
         for obs in self.observations.values():
-            comparison = self._extract_observation(obs, obs.model_variable)
-            if comparison is not None:
-                cc.add_comparison(comparison)
+            comparer = self._extract_observation(obs, obs.model_variable)
+            if comparer is not None:
+                cc.add_comparer(comparer)
         return cc
 
     def _extract_observation(
@@ -117,14 +127,14 @@ class ModelResult:
         """
         if isinstance(observation, PointObservation):
             ds_model = self._extract_point(observation, item)
-            comparison = PointComparer(observation, ds_model)
+            comparer = PointComparer(observation, ds_model)
         elif isinstance(observation, TrackObservation):
             ds_model = self._extract_track(observation, item)
-            comparison = TrackComparer(observation, ds_model)
+            comparer = TrackComparer(observation, ds_model)
         else:
             raise ValueError("Only point and track observation are supported!")
 
-        return comparison
+        return comparer
 
     def _extract_point(self, observation: PointObservation, item) -> Dataset:
         assert isinstance(observation, PointObservation)
@@ -194,9 +204,15 @@ class ModelResult:
 
 
 class ModelResultCollection:
-    """Collection of ModelResult with same "topology"
-    e.g. several "runs" of the same model. For calibration.
-    Future: different type of models (local vs regional etc)
+    """
+    A collection of results from multiple MIKE FM simulations
+    with the same "topology", e.g. several "runs" of the same model.
+
+    Examples
+    --------
+    >>> mr1 = ModelResult("HKZN_local_2017_v1.dfsu", name="HKZN_v1")
+    >>> mr2 = ModelResult("HKZN_local_2017_v2.dfsu", name="HKZN_v2")
+    >>> mr = ModelResultCollection([mr1, mr2])
     """
 
     _mr0 = None
@@ -263,13 +279,13 @@ class ModelResultCollection:
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, PointObservation):
-            comparison = self._compare_point_observation(observation, item)
+            comparer = self._compare_point_observation(observation, item)
         elif isinstance(observation, TrackObservation):
-            comparison = self._compare_track_observation(observation, item)
+            comparer = self._compare_track_observation(observation, item)
         else:
             raise ValueError("Only point and track observation are supported!")
 
-        return comparison
+        return comparer
 
     def _compare_point_observation(self, observation, item) -> PointComparer:
         """Compare all ModelResults in collection with a point observation
@@ -316,21 +332,14 @@ class ModelResultCollection:
 
         return TrackComparer(observation, ds_model)
 
-    def extract(self) -> ComparisonCollection:
+    def extract(self) -> ComparerCollection:
         """extract model result in all observations"""
-        cc = ComparisonCollection()
+        cc = ComparerCollection()
 
         for obs in self.observations.values():
-            comparison = self._extract_observation(obs, obs.model_variable)
-            if comparison is not None:
-                cc.add_comparison(comparison)
-
-        # for mr in self.modelresults.values():
-        #     for obs in mr.observations.values():
-        #         comparison = mr.compare_observation(obs, obs.model_variable)
-        #         if comparison is not None:
-        #             comparison.name = comparison.name + "_" + mr.name
-        #             cc.add_comparison(comparison)
+            comparer = self._extract_observation(obs, obs.model_variable)
+            if comparer is not None:
+                cc.add_comparer(comparer)
         return cc
 
     def plot_observation_positions(self, figsize=None):

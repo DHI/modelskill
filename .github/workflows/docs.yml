@@ -1,0 +1,47 @@
+name: Documentation
+
+on:
+  push:
+    branches:    
+      - main
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+        
+    - name: Install fmskill
+      run: |
+        pip install .[dev]
+    
+    - name: Sphinx Build
+      run: |
+        cd docs
+        make html
+    
+    - name: Commit documentation changes
+      run: |
+        git clone https://github.com/DHI/fmskill.git --branch gh-pages --single-branch gh-pages
+        xcopy docs\_build\html gh-pages\ /sy
+        cd gh-pages
+        touch .nojekyll
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "Update documentation" -a || true
+        # The above command will fail if no changes were present, so we ignore
+        # that.
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        branch: gh-pages
+        directory: gh-pages
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+    # ===============================
