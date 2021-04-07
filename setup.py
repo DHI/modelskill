@@ -8,7 +8,7 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="fmskill",
-    version="0.1.1",
+    version="0.1.2.dev",
     install_requires=["numpy", "pandas", "mikeio >= 0.6", "matplotlib"],
     extras_require={
         "dev": [

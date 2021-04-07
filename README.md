@@ -4,7 +4,7 @@
 
 [fmskill](https://github.com/DHI/fmskill) is a python package for scoring [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) models. 
 
-Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/fmskill/discussions),[report an issue](https://github.com/DHI/fmskill/issues) or browse the [API documentation](https://dhi.github.io/fmskill/api.html).
+Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/fmskill/discussions),report an [issue](https://github.com/DHI/fmskill/issues) or browse the [API documentation](https://dhi.github.io/fmskill/api.html).
 
 
 ## Use cases
@@ -42,7 +42,7 @@ Or the development version:
 4. **Extract** ModelResults at observation positions
 5. Do plotting, statistics, reporting using a **Comparer**
 
-Read more about the [workflow in the documentation](https://dhi.github.io/fmskill/).
+Read more about the workflow in the [getting started guide](https://dhi.github.io/fmskill/getting_started.html).
 
 
 ## Example of use
