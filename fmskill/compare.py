@@ -453,21 +453,24 @@ class BaseComparer:
             return False
 
         if polygon.ndim == 1:
-            if len(polygon) <= 7:
+            if len(polygon) <= 5:
+                return False
+            if len(polygon) % 2 != 0:
                 return False
             x0, y0 = polygon[0:2]
             x1, y1 = polygon[-2:]
+
         if polygon.ndim == 2:
-            if polygon.shape[0] <= 3:
+            if polygon.shape[0] < 3:
                 return False
             if polygon.shape[1] != 2:
                 return False
             x0, y0 = polygon[0, :]
             x1, y1 = polygon[-1, :]
 
-        if (x0 != x1) | (y0 != y1):
-            # start point must equal end point
-            return False
+        if (x0 != x1) & (y0 != y1):
+            # make polygon closed
+            polygon = np.append(polygon, [x0, x1], axis=0)
 
         return True
 

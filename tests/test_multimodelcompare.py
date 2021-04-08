@@ -137,7 +137,17 @@ def test_mm_skill_area(cc):
     assert df.n[1] == 66
     assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
 
+    # same as above but not closed
+    polygon = np.array([[6, 51], [0, 55], [0, 51]])
+    df = cc.skill(model="SW_2", area=polygon)
+    assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
+
     polygon = [6, 51, 0, 55, 0, 51, 6, 51]
+    df = cc.skill(model="SW_2", area=polygon)
+    assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
+
+    # same as above but not closed
+    polygon = [6, 51, 0, 55, 0, 51]
     df = cc.skill(model="SW_2", area=polygon)
     assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
 
@@ -152,7 +162,7 @@ def test_mm_skill_area(cc):
         cc.skill(area=[0.1, 0.2, 0.3, 0.6, "string"])
     with pytest.raises(ValueError):
         # uneven number of elements
-        cc.skill(area=[0.1, 0.2, 0.3, 0.6, 5.6])
+        cc.skill(area=[0.1, 0.2, 0.3, 0.6, 5.6, 5.9, 5.0])
     with pytest.raises(ValueError):
         polygon = np.array([[6, 51, 4], [0, 55, 4], [0, 51, 4], [6, 51, 4]])
         cc.skill(area=polygon)
