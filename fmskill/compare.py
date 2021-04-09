@@ -1269,48 +1269,31 @@ class ComparerCollection(Mapping, BaseComparer):
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
         """
 
-        if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
-        else:
-            metrics = self._parse_metric(metrics)
+        # TODO: how to handle freq?
 
         df = self.sel_df(
             df=df, model=model, observation=observation, start=start, end=end, area=area
         )
+        skilldf = self.skill(df=df, metrics=metrics)
         mod_names = df.model.unique()
         obs_names = df.observation.unique()
-        n_obs = len(obs_names)
-        n_metrics = len(metrics)
+        n_models = len(mod_names)
 
         weights = self._parse_weights(weights, obs_names)
         has_weights = False if (weights is None) else True
 
         rows = []
-        for mod_name in mod_names:
-            row = {}
-            tmp = np.zeros((n_obs, n_metrics + 1))
-            tmp_n = np.zeros(n_obs, dtype=int)
-            for obs_id, obs_name in enumerate(obs_names):
-                dfsub = df[(df.model == mod_name) & (df.observation == obs_name)]
-                if len(dfsub) > 0:
-                    tmp_n[obs_id] = len(dfsub)
-                    for j, metric in enumerate(metrics):
-                        tmp[obs_id, j] = metric(
-                            dfsub.obs_val.values, dfsub.mod_val.values
-                        )
-            if not has_weights:
-                weights = tmp_n
-
-            weights = np.array(weights)
-            tot_weight = np.sum(
-                weights[tmp_n > 0]
-            )  # this may be different for different models
-            row["n"] = tmp_n.sum()
-            for j, metric in enumerate(metrics):
-                row[metric.__name__] = np.inner(tmp[:, j], weights) / tot_weight
+        for model in mod_names:
+            dfsub = skilldf.loc[model].copy() if n_models > 1 else skilldf
+            dfsub["weights"] = weights if has_weights else dfsub.n
+            wm = lambda x: np.average(x, weights=dfsub.loc[x.index, "weights"])
+            row = dfsub.apply(wm)
+            row.n = dfsub.n.sum().astype(int)
+            row.drop("weights")
             rows.append(row)
 
-        return pd.DataFrame(rows, index=mod_names)
+        df = pd.DataFrame(rows, index=mod_names)
+        return df.astype({"n": int})
 
     def _parse_weights(self, weights, observations):
 
