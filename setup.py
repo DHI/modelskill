@@ -9,7 +9,7 @@ with open("LICENSE") as fh:
 setuptools.setup(
     name="fmskill",
     version="0.2.dev",
-    install_requires=["numpy", "pandas", "mikeio >= 0.6", "matplotlib"],
+    install_requires=["numpy", "pandas", "mikeio >= 0.6", "matplotlib","xarray"],
     extras_require={
         "dev": [
             "pytest",
@@ -17,7 +17,7 @@ setuptools.setup(
             "sphinx-rtd-theme",
             "black",
             "shapely",
-            "plotly >= 4.5",
+            "plotly >= 4.5"
         ],
         "test": ["pytest", "shapely"],
     },
