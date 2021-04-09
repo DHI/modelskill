@@ -342,7 +342,8 @@ class BaseComparer:
         if len(by) == 0:
             by.append("observation")
 
-        return self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        return res.astype({"n": int})
 
     def _groupby_df(self, df, by, metrics):
         def calc_metrics(x):
@@ -736,6 +737,7 @@ class SingleObsComparer(BaseComparer):
     def skill(
         self,
         model: Union[str, int, List[str], List[int]] = None,
+        freq: str = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -750,6 +752,10 @@ class SingleObsComparer(BaseComparer):
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
+        freq : string, optional
+            do temporal binning using pandas pd.Grouper(freq),
+            typical examples: 'M' = monthly; 'D' daily
+            by default None
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -781,7 +787,13 @@ class SingleObsComparer(BaseComparer):
         """
         # only for improved documentation
         return super().skill(
-            model=model, start=start, end=end, area=area, df=df, metrics=metrics
+            model=model,
+            freq=freq,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
+            metrics=metrics,
         )
 
     def score(
@@ -1277,7 +1289,7 @@ class ComparerCollection(Mapping, BaseComparer):
         for mod_name in mod_names:
             row = {}
             tmp = np.zeros((n_obs, n_metrics + 1))
-            tmp_n = np.ones(n_obs, dtype=int)
+            tmp_n = np.zeros(n_obs, dtype=int)
             for obs_id, obs_name in enumerate(obs_names):
                 dfsub = df[(df.model == mod_name) & (df.observation == obs_name)]
                 if len(dfsub) > 0:
