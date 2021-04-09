@@ -36,6 +36,7 @@ Compare
 .. autoclass:: fmskill.compare.ComparerCollection
 	:members:
 	:inherited-members:
+	:exclude-members: keys, values, get, items
 
 Metrics
 -------

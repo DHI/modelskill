@@ -453,21 +453,24 @@ class BaseComparer:
             return False
 
         if polygon.ndim == 1:
-            if len(polygon) <= 7:
+            if len(polygon) <= 5:
+                return False
+            if len(polygon) % 2 != 0:
                 return False
             x0, y0 = polygon[0:2]
             x1, y1 = polygon[-2:]
+
         if polygon.ndim == 2:
-            if polygon.shape[0] <= 3:
+            if polygon.shape[0] < 3:
                 return False
             if polygon.shape[1] != 2:
                 return False
             x0, y0 = polygon[0, :]
             x1, y1 = polygon[-1, :]
 
-        if (x0 != x1) | (y0 != y1):
-            # start point must equal end point
-            return False
+        if (x0 != x1) & (y0 != y1):
+            # make polygon closed
+            polygon = np.append(polygon, [x0, x1], axis=0)
 
         return True
 
@@ -652,7 +655,7 @@ class BaseComparer:
                 plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
             plt.title(title)
 
-        elif backend == "plotly":
+        elif backend == "plotly":  # pragma: no cover
             import plotly.graph_objects as go
 
             linvals = np.linspace(np.min([x, y]), np.max([x, y]))
@@ -1000,7 +1003,7 @@ class PointComparer(SingleObsComparer):
             plt.title(title)
             return ax
 
-        elif backend == "plotly":
+        elif backend == "plotly":  # pragma: no cover
             import plotly.graph_objects as go
 
             mod_scatter_list = []
@@ -1255,7 +1258,7 @@ class ComparerCollection(Mapping, BaseComparer):
         n_obs = len(obs_names)
         n_metrics = len(metrics)
 
-        weights = self._parse_weights(weights, observation)
+        weights = self._parse_weights(weights, obs_names)
         has_weights = False if (weights is None) else True
 
         rows = []
@@ -1303,7 +1306,7 @@ class ComparerCollection(Mapping, BaseComparer):
             elif isinstance(weights, str):
                 if weights.lower() == "equal":
                     weights = np.ones(n_obs)  # equal weight to all
-                elif "points" in weights.lower():
+                elif "point" in weights.lower():
                     weights = None  # no weight => use n_points
             elif not np.isscalar(weights):
                 if not len(weights) == n_obs:
@@ -1328,10 +1331,11 @@ class ComparerCollection(Mapping, BaseComparer):
         Parameters
         ----------
         weights : (str, List(float)), optional
-            list of weights e.g. [0.3, 0.3, 0.4] per observation, 
+            None: use assigned weights from observations
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
-            by default "equal"
+            list of weights e.g. [0.3, 0.3, 0.4] per observation, 
+            by default None
         metric : list, optional
             a single metric from fmskill.metrics, by default rmse
         model : (str, int, List[str], List[int]), optional 
