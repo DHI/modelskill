@@ -238,6 +238,9 @@ class BaseComparer:
         return mod_id
 
     def _parse_metric(self, metric):
+        if metric is None:
+            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+
         if (type(metric) is list) or (type(metric) is tuple):
             metrics = [self._parse_metric(m) for m in metric]
             return metrics
@@ -315,10 +318,7 @@ class BaseComparer:
         c2            41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
 
-        if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
-        else:
-            metrics = self._parse_metric(metrics)
+        metrics = self._parse_metric(metrics)
 
         df = self.sel_df(
             model=model, observation=observation, start=start, end=end, area=area, df=df
@@ -350,6 +350,7 @@ class BaseComparer:
             res.drop(columns=["observation", "model"], inplace=True)
 
         return res
+
 
     def sel_df(
         self,
