@@ -125,8 +125,8 @@ class BaseComparer:
 
     def _all_df_template(self):
         template = {
-            "mod_name": pd.Series([], dtype="category"),
-            "obs_name": pd.Series([], dtype="category"),
+            "model": pd.Series([], dtype="category"),
+            "observation": pd.Series([], dtype="category"),
             "x": pd.Series([], dtype="float"),
             "y": pd.Series([], dtype="float"),
             "mod_val": pd.Series([], dtype="float"),
@@ -143,8 +143,8 @@ class BaseComparer:
             mod_name = self.mod_names[j]
             df = self.df[[mod_name]].copy()
             df.columns = ["mod_val"]
-            df["mod_name"] = mod_name
-            df["obs_name"] = self.observation.name
+            df["model"] = mod_name
+            df["observation"] = self.observation.name
             df["x"] = self.x
             df["y"] = self.y
             df["obs_val"] = self.obs
@@ -262,6 +262,7 @@ class BaseComparer:
         self,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        freq: str = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -278,6 +279,10 @@ class BaseComparer:
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
+        freq : string, optional
+            do temporal binning using pandas pd.Grouper(freq),
+            typical examples: 'M' = monthly; 'D' daily
+            by default None
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -324,32 +329,20 @@ class BaseComparer:
             model=model, observation=observation, start=start, end=end, area=area, df=df
         )
 
-        mod_names = df.mod_name.unique()
-        obs_names = df.obs_name.unique()
+        mod_names = df.model.unique()
+        obs_names = df.observation.unique()
 
-        rows = []
-        for mod_name in mod_names:
-            for obs_name in obs_names:
-                dfsub = df[(df.mod_name == mod_name) & (df.obs_name == obs_name)]
-                row = {}
-                row["model"] = mod_name
-                row["observation"] = obs_name
-                row["n"] = len(dfsub)
-                for metric in metrics:
-                    row[metric.__name__] = metric(
-                        dfsub.obs_val.values, dfsub.mod_val.values
-                    )
-                rows.append(row)
-        res = pd.DataFrame(rows)
+        by = []
+        if len(mod_names) > 1:
+            by.append("model")
+        if len(obs_names) > 1:
+            by.append("observation")
+        if freq is not None:
+            by.append(pd.Grouper(freq=freq))
+        if len(by) == 0:
+            by.append("observation")
 
-        if len(mod_names) == 1:
-            res.index = res.observation
-            res.drop(columns=["observation", "model"], inplace=True)
-        elif len(obs_names) == 1:
-            res.index = res.model
-            res.drop(columns=["observation", "model"], inplace=True)
-
-        return res
+        return self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
 
     def _groupby_df(self, df, by, metrics):
         def calc_metrics(x):
@@ -412,21 +405,21 @@ class BaseComparer:
         >>> dfsub = cc.sel_df(area=[0.5,52.5,5,54])
 
         >>> cc.sel_df(observation='c2', start='2017-10-28').head(3)
-                         mod_name obs_name      x       y   mod_val  obs_val
-        2017-10-28 01:00:00  SW_1      EPL  3.276  51.999  1.644092     1.82
-        2017-10-28 02:00:00  SW_1      EPL  3.276  51.999  1.755809     1.86
-        2017-10-28 03:00:00  SW_1      EPL  3.276  51.999  1.867526     2.11
+                           model observation      x       y   mod_val  obs_val
+        2017-10-28 01:00:00 SW_1         EPL  3.276  51.999  1.644092     1.82
+        2017-10-28 02:00:00 SW_1         EPL  3.276  51.999  1.755809     1.86
+        2017-10-28 03:00:00 SW_1         EPL  3.276  51.999  1.867526     2.11
         """
         if df is None:
             df = self.all_df
         if model is not None:
             models = [model] if np.isscalar(model) else model
             models = [self._get_mod_name(m) for m in models]
-            df = df[df.mod_name.isin(models)]
+            df = df[df.model.isin(models)]
         if observation is not None:
             observation = [observation] if np.isscalar(observation) else observation
             observation = [self._get_obs_name(o) for o in observation]
-            df = df[df.obs_name.isin(observation)]
+            df = df[df.observation.isin(observation)]
         if (start is not None) or (end is not None):
             df = df.loc[start:end]
         if area is not None:
@@ -884,7 +877,7 @@ class SingleObsComparer(BaseComparer):
         Returns
         -------
         pd.DataFrame
-            selected data in a dataframe with columns (mod_name,obs_name,x,y,mod_val,obs_val)
+            selected data in a dataframe with columns (model,observation,x,y,mod_val,obs_val)
 
         See also
         --------
@@ -1155,8 +1148,8 @@ class ComparerCollection(Mapping, BaseComparer):
                 mod_name = cmp.mod_names[j]
                 df = cmp.df[[mod_name]].copy()
                 df.columns = ["mod_val"]
-                df["mod_name"] = mod_name
-                df["obs_name"] = cmp.observation.name
+                df["model"] = mod_name
+                df["observation"] = cmp.observation.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
@@ -1272,8 +1265,8 @@ class ComparerCollection(Mapping, BaseComparer):
         df = self.sel_df(
             df=df, model=model, observation=observation, start=start, end=end, area=area
         )
-        mod_names = df.mod_name.unique()
-        obs_names = df.obs_name.unique()
+        mod_names = df.model.unique()
+        obs_names = df.observation.unique()
         n_obs = len(obs_names)
         n_metrics = len(metrics)
 
@@ -1286,7 +1279,7 @@ class ComparerCollection(Mapping, BaseComparer):
             tmp = np.zeros((n_obs, n_metrics + 1))
             tmp_n = np.ones(n_obs, dtype=int)
             for obs_id, obs_name in enumerate(obs_names):
-                dfsub = df[(df.mod_name == mod_name) & (df.obs_name == obs_name)]
+                dfsub = df[(df.model == mod_name) & (df.observation == obs_name)]
                 if len(dfsub) > 0:
                     tmp_n[obs_id] = len(dfsub)
                     for j, metric in enumerate(metrics):
