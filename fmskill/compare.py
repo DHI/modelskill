@@ -351,6 +351,37 @@ class BaseComparer:
 
         return res
 
+    def spatial_skill(
+        self,
+        by: Union[str, List[str]] = ["mod_name", "obs_name"],
+        metrics: list = None,
+        to_xarray=True,
+    ):
+
+        metrics = self._parse_metric(metrics)
+
+        def _compute_metrics(
+            x, metrics
+        ):  # TODO: make private method of BaseCompare class?
+            res = dict(n=len(x))  # TODO: add n to metrics?
+            for metric in metrics:
+                res.update({metric.__name__: metric(x["obs_val"], x["mod_val"])})
+            ser = pd.Series(res, name="metrics")
+            return ser
+
+        # TODO: sel_df() as in .skill() here or via seperate method: c.sel().spatial_skill()
+        df = self.all_df
+
+        grouper = df.groupby(by)
+
+        res = grouper.apply(lambda x: _compute_metrics(x, metrics))
+        # TODO: .Series() in _compute_metrics() only allows one dtype, i.e., n ends up being float in res. How can this be avoided?
+
+        if to_xarray:
+            res = res.to_xarray()
+            # TODO: drop mod_name / obs_name dims if unique similar to .skill() via ds.squeeze()?
+
+        return res
 
     def sel_df(
         self,

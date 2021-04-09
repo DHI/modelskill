@@ -19,11 +19,25 @@ def modelresult():
     return ModelResult(fn, name="HD")
 
 
-def test_skill(observation, modelresult):
+@pytest.fixture
+def comparer(observation, modelresult):
     mr = modelresult
     mr.add_observation(observation, item=2)
+    return mr.extract()
 
-    c = mr.extract()
+
+def test_skill(comparer):
+    c = comparer
     df = c.skill()
 
     assert df.loc["alti"].n == 544
+
+
+def test_skill_vs_spatial_skill(comparer):
+    # default should return same result as .skill() but as dataset
+    df = comparer.skill(metrics=["rmse", "bias"])
+    ds = comparer.spatial_skill(metrics=["rmse", "bias"])
+
+    assert df.loc["alti"].n == ds.sel(mod_name="HD", obs_name="alti").n
+    assert df.loc["alti"].rmse == ds.sel(mod_name="HD", obs_name="alti").rmse
+
