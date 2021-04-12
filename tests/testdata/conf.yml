@@ -1,0 +1,16 @@
+filename: tests/testdata/Oresund2D.dfsu
+observations:
+- filename: tests/testdata/smhi_2095_klagshamn.dfs0
+  item: 0
+  name: Klagshamn
+  x: 366844
+  y: 6154291
+- filename: tests/testdata/dmi_30357_Drogden_Fyr.dfs0
+  item: 0
+  x: 355568.0
+  y: 6156863.0
+# This station is not reliable
+#- filename: tests/testdata/fake_data.dfs0
+#  item: 0
+#  x: 0.0
+#  y: 0.0

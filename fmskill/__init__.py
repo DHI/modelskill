@@ -1,4 +1,7 @@
 from platform import architecture
+from typing import Union
+import yaml
+
 
 # PEP0440 compatible formatted version, see:
 # https://www.python.org/dev/peps/pep-0440/
@@ -24,3 +27,18 @@ if "64" not in architecture()[0]:
 from .model import ModelResult, ModelResultCollection
 from .observation import PointObservation, TrackObservation
 
+
+def create(configuration: Union[dict, str]):
+
+    if isinstance(configuration, str):
+        with open(configuration) as f:
+            contents = f.read()
+        configuration = yaml.load(contents, Loader=yaml.FullLoader)
+
+    mr = ModelResult(configuration["filename"])
+    for observation in configuration["observations"]:
+
+        obs = PointObservation(**observation)
+        mr.add_observation(obs, item=observation["item"])
+
+    return mr

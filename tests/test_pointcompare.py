@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 
+import fmskill
 from fmskill.model import ModelResult
 from fmskill.observation import PointObservation
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
@@ -111,3 +112,54 @@ def test_skill(klagshamn, drogden):
     # Filtered skill
     df = c.skill(observation="Klagshamn")
     assert df.loc["Klagshamn"].n == 167
+
+
+def test_comparison_from_dict():
+
+    # As an alternative to
+    # mr = ModelResult()
+
+    # o1 = PointObservation()
+    # mr.add_observation(o1, item=0)
+    # c = mr.extract()
+
+    configuration = dict(
+        filename="tests/testdata/Oresund2D.dfsu",
+        observations=[
+            dict(
+                filename="tests/testdata/smhi_2095_klagshamn.dfs0",
+                item=0,
+                x=366844,
+                y=6154291,
+                name="Klagshamn",
+            ),
+            dict(
+                filename="tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+                item=0,
+                x=355568.0,
+                y=6156863.0,
+            ),
+        ],
+    )
+    mr = fmskill.create(configuration)
+    c = mr.extract()
+    assert len(c) == 2
+    assert c.n_comparers == 2
+    assert c.n_models == 1
+
+
+def test_comparison_from_yml():
+
+    # As an alternative to
+    # mr = ModelResult()
+
+    # o1 = PointObservation()
+    # mr.add_observation(o1, item=0)
+    # c = mr.extract()
+
+    mr = fmskill.create("tests/testdata/conf.yml")
+    c = mr.extract()
+
+    assert len(c) == 2
+    assert c.n_comparers == 2
+    assert c.n_models == 1

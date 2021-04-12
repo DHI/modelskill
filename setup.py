@@ -9,7 +9,7 @@ with open("LICENSE") as fh:
 setuptools.setup(
     name="fmskill",
     version="0.1.2.dev",
-    install_requires=["numpy", "pandas", "mikeio >= 0.6", "matplotlib"],
+    install_requires=["numpy", "pandas", "mikeio >= 0.6", "matplotlib", "click"],
     extras_require={
         "dev": [
             "pytest",
@@ -21,6 +21,10 @@ setuptools.setup(
         ],
         "test": ["pytest", "shapely"],
     },
+    entry_points="""
+        [console_scripts]
+            fmskill=fmskill.cli:report
+    """,
     author="Jesper Sandvig Mariegaard",
     author_email="jem@dhigroup.com",
     description="Compare results from MIKE FM simulations with observations.",
