@@ -238,6 +238,8 @@ class BaseComparer:
         return mod_id
 
     def _parse_metric(self, metric):
+        if metric is None:
+            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]                         
         if (type(metric) is list) or (type(metric) is tuple):
             metrics = [self._parse_metric(m) for m in metric]
             return metrics
@@ -389,6 +391,61 @@ class BaseComparer:
             raise ValueError("Invalid by argument. Must be string or list of strings.")
         return by
 
+    def spatial_skill(
+        self,
+        binsize: float = None,
+        by: Union[str, List[str]] = None,
+        metrics: list = None,
+        to_xarray=True,
+    ):
+
+        metrics = self._parse_metric(metrics)
+
+        def _compute_metrics(
+            x, metrics
+        ):  # TODO: make private method of BaseCompare class?
+            res = dict(n=len(x))  # TODO: add n to metrics?
+            for metric in metrics:
+                res.update({metric.__name__: metric(x["obs_val"], x["mod_val"])})
+            ser = pd.Series(res, name="metrics")
+            return ser
+
+        # TODO: sel_df() as in .skill() here or via seperate method: c.sel().spatial_skill()
+        df = self.all_df
+
+        # find number of bins
+        x_ptp = df.x.values.ptp()
+        y_ptp = df.y.values.ptp()
+        if binsize is None:
+            binsize = min((x_ptp, y_ptp)) / 5
+        nx = int(np.ceil(x_ptp / binsize))
+        ny = int(np.ceil(y_ptp / binsize))
+
+        # divide domain in bins
+        df["xBin"] = pd.cut(df.x, bins=nx)
+        df["xBin"] = df["xBin"].apply(lambda x: x.mid)
+        df["yBin"] = pd.cut(df.y, bins=ny)
+        df["yBin"] = df["yBin"].apply(lambda x: x.mid)
+
+        if by is None:
+            by = []
+        by.append("xBin")
+        by.append("yBin")
+        grouper = df.drop(columns=["x", "y"]).groupby(by)
+
+        res = grouper.apply(lambda x: _compute_metrics(x, metrics))
+
+        # number of observations
+        res.loc[np.isnan(res.n)] = 0
+        res = res.astype({"n": int})  # what if land value - not possible
+
+        # TODO: .Series() in _compute_metrics() only allows one dtype, i.e., n ends up being float in res. How can this be avoided?
+        # if to_xarray:
+        # res = res.to_xarray()
+        # TODO: drop mod_name / obs_name dims if unique similar to .skill() via ds.squeeze()?
+
+        return res.to_xarray() if to_xarray else res
+        
     def sel_df(
         self,
         model: Union[str, int, List[str], List[int]] = None,

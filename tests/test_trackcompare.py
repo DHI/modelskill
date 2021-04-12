@@ -35,8 +35,8 @@ def test_skill(comparer):
 
 def test_skill_vs_spatial_skill(comparer):
     # default should return same result as .skill() but as dataset
-    df = comparer.skill(metrics=["rmse", "bias"])
-    ds = comparer.spatial_skill(metrics=["rmse", "bias"])
+    df = comparer.skill()
+    ds = comparer.spatial_skill()
 
     assert df.loc["alti"].n == ds.n.values.sum()
     # ds.sel(mod_name="HD", obs_name="alti").n
