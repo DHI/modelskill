@@ -1,4 +1,5 @@
 filename: tests/testdata/Oresund2D.dfsu
+name: Oresund TwoD
 observations:
 - filename: tests/testdata/smhi_2095_klagshamn.dfs0
   item: 0
