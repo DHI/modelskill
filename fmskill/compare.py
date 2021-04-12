@@ -260,29 +260,30 @@ class BaseComparer:
 
     def skill(
         self,
+        by: Union[str, List[str]] = None,
+        metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
-        freq: str = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-        metrics: list = None,
     ) -> pd.DataFrame:
-        """Skill assessment of model(s)
+        """Aggregated skill assessment of model(s)
 
         Parameters
         ----------
+        by : (str, List[str]), optional
+            group by column name or by temporal bin via the freq-argument
+            (using pandas pd.Grouper(freq)),
+            e.g.: 'freq:M' = monthly; 'freq:D' daily
+            by default ["model","observation"]
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
-        freq : string, optional
-            do temporal binning using pandas pd.Grouper(freq),
-            typical examples: 'M' = monthly; 'D' daily
-            by default None
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -329,18 +330,9 @@ class BaseComparer:
             model=model, observation=observation, start=start, end=end, area=area, df=df
         )
 
-        mod_names = df.model.unique()
-        obs_names = df.observation.unique()
-
-        by = []
-        if len(mod_names) > 1:
-            by.append("model")
-        if len(obs_names) > 1:
-            by.append("observation")
-        if freq is not None:
-            by.append(pd.Grouper(freq=freq))
-        if len(by) == 0:
-            by.append("observation")
+        n_models = len(df.model.unique())
+        n_obs = len(df.observation.unique())
+        by = self._parse_by(by, n_models, n_obs)
 
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         return res.astype({"n": int})
@@ -355,6 +347,31 @@ class BaseComparer:
 
         # .drop(columns=["x", "y"])
         return df.groupby(by=by).apply(calc_metrics)
+
+    def _parse_by(self, by, n_models, n_obs):
+        if by is None:
+            by = []
+            if n_models > 1:
+                by.append("model")
+            if (n_obs > 1) or ((n_models == 1) and (n_obs == 1)):
+                by.append("observation")
+            return by
+
+        if (type(by) is list) or (type(by) is tuple):
+            by = [self._parse_by(b, n_models, n_obs) for b in by]
+            return by
+
+        if isinstance(by, str):
+            if (by == "mdl") or (by == "mod") or (by == "models"):
+                by = "model"
+            if (by == "obs") or (by == "observations"):
+                by = "observation"
+            if by[:5] == "freq:":
+                freq = by.split(":")[1]
+                by = pd.Grouper(freq=freq)
+        else:
+            raise ValueError("Invalid by argument. Must be string or list of strings.")
+        return by
 
     def sel_df(
         self,
@@ -736,18 +753,23 @@ class BaseComparer:
 class SingleObsComparer(BaseComparer):
     def skill(
         self,
+        by: Union[str, List[str]] = None,
+        metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
-        freq: str = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-        metrics: list = None,
     ) -> pd.DataFrame:
         """Skill assessment of model(s)
 
         Parameters
         ----------
+        by : (str, List[str]), optional
+            group by column name or by temporal bin via the freq-argument
+            (using pandas pd.Grouper(freq)),
+            e.g.: 'freq:M' = monthly; 'freq:D' daily
+            by default ["model"]
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
         model : (str, int, List[str], List[int]), optional
@@ -788,7 +810,7 @@ class SingleObsComparer(BaseComparer):
         # only for improved documentation
         return super().skill(
             model=model,
-            freq=freq,
+            by=by,
             start=start,
             end=end,
             area=area,
@@ -955,15 +977,6 @@ class SingleObsComparer(BaseComparer):
         ax.legend([mod_name, self.obs_name])
         plt.title(f"{mod_name} vs {self.name}")
         plt.xlabel(f"{self._obs_unit_text}")
-
-    # def score(self, model=None, metric=None):
-
-    #     mod_id = self._get_mod_id(model)
-
-    #     if metric is None:
-    #         metric = mtr.rmse
-
-    #     return metric(self.obs, self.mod[:, mod_id])
 
 
 class PointComparer(SingleObsComparer):
