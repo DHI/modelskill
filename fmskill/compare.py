@@ -293,7 +293,7 @@ class BaseComparer:
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -319,6 +319,22 @@ class BaseComparer:
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
         c2            41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
+
+        >>> cc.skill(by='freq:D').round(2)
+                      n  bias  rmse  urmse   mae    cc    si    r2
+        2017-10-27  239 -0.15  0.25   0.21  0.20  0.72  0.10  0.98
+        2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
+        2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
+
+        >>> df = cc.sel_df(observation=['HKNA','EPL']).copy()
+        >>> df['seastate'] = pd.cut(df.obs_val, bins=[0,2,6], labels=['small','large'])
+        >>> cc.skill(by=['observation','seastate'], df=df).round(2)
+                                n  bias  rmse  urmse   mae    cc    si    r2
+        observation seastate
+        EPL         small      16  0.02  0.22   0.22  0.17  0.38  0.13  0.98
+                    large      50 -0.11  0.22   0.19  0.19  0.98  0.06  0.99
+        HKNA        small      61  0.02  0.09   0.09  0.08  0.88  0.05  1.00
+                    large     324 -0.23  0.38   0.30  0.28  0.96  0.09  0.99
         """
 
         if metrics is None:
@@ -400,7 +416,7 @@ class BaseComparer:
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -787,7 +803,7 @@ class SingleObsComparer(BaseComparer):
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -806,6 +822,20 @@ class SingleObsComparer(BaseComparer):
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
         c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
+
+        >>> cc['c2'].skill(by='freq:D').round(2)
+                     n  bias  rmse  urmse   mae    cc    si    r2
+        2017-10-27  72 -0.19  0.31   0.25  0.26  0.48  0.12  0.98
+        2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
+        2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
+
+        >>> df = cc['c2'].sel_df().copy()
+        >>> df['Hm0 group'] = pd.cut(df.obs_val, bins=[0,2,6])
+        >>> cc['c2'].skill(by='Hm0 group', df=df).round(2)
+                    n  bias  rmse  urmse   mae    cc    si    r2
+        Hm0 group
+        (0, 2]     33 -0.09  0.23   0.22  0.21  0.46  0.12  0.98
+        (2, 6]     80  0.03  0.39   0.39  0.33  0.97  0.12  0.99
         """
         # only for improved documentation
         return super().skill(
@@ -844,7 +874,7 @@ class SingleObsComparer(BaseComparer):
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -906,7 +936,7 @@ class SingleObsComparer(BaseComparer):
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -1262,7 +1292,7 @@ class ComparerCollection(Mapping, BaseComparer):
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -1282,7 +1312,7 @@ class ComparerCollection(Mapping, BaseComparer):
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
         """
 
-        # TODO: how to handle freq?
+        # TODO: how to handle by=freq:D?
 
         df = self.sel_df(
             df=df, model=model, observation=observation, start=start, end=end, area=area
@@ -1376,7 +1406,7 @@ class ComparerCollection(Mapping, BaseComparer):
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
