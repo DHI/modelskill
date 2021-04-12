@@ -23,6 +23,7 @@ from scipy import odr
 from mikeio import Dfs0, Dataset
 import fmskill.metrics as mtr
 from fmskill.observation import PointObservation, TrackObservation
+from fmskill.plot import scatter
 
 
 class BaseComparer:
@@ -628,142 +629,22 @@ class BaseComparer:
         if show_points is None:
             show_points = len(x) < 1e4
 
-        xmin, xmax = x.min(), x.max()
-        ymin, ymax = y.min(), y.max()
-        xymin = min([xmin, ymin])
-        xymax = max([xmax, ymax])
-
-        if xlim is None:
-            xlim = [xymin, xymax]
-
-        if ylim is None:
-            ylim = [xymin, xymax]
-
-        if binsize is None:
-            binsize = (xmax - xmin) / nbins
-        else:
-            nbins = int((xmax - xmin) / binsize)
-
-        xq = np.quantile(x, q=np.linspace(0, 1, num=nbins))
-        yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
-
-        # linear fit
-        if reg_method == "ols":
-            reg = linregress(x, y)
-            intercept = reg.intercept
-            slope = reg.slope
-        elif reg_method == "odr":
-            data = odr.Data(x, y)
-            odr_obj = odr.ODR(data, odr.unilinear)
-            output = odr_obj.run()
-
-            intercept = output.beta[1]
-            slope = output.beta[0]
-        else:
-            raise NotImplementedError(
-                f"Regression method: {reg_method} not implemented, select 'ols' or 'odr'"
-            )
-
-        if intercept < 0:
-            sign = ""
-        else:
-            sign = "+"
-        reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
-
-        if backend == "matplotlib":
-
-            plt.figure(figsize=figsize)
-            plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
-            plt.plot(xq, yq, label="Q-Q", c="gray")
-            plt.plot(
-                x,
-                intercept + slope * x,
-                "r",
-                label=reglabel,
-            )
-            if show_hist:
-                plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
-            plt.legend()
-            plt.xlabel(xlabel)
-            plt.ylabel(ylabel)
-            plt.axis("square")
-            plt.xlim(xlim)
-            plt.ylim(ylim)
-            if show_hist:
-                cbar = plt.colorbar(fraction=0.046, pad=0.04)
-                cbar.set_label("# points")
-            if show_points:
-                plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
-            plt.title(title)
-
-        elif backend == "plotly":  # pragma: no cover
-            import plotly.graph_objects as go
-
-            linvals = np.linspace(np.min([x, y]), np.max([x, y]))
-
-            data = [
-                go.Scatter(
-                    x=x,
-                    y=intercept + slope * x,
-                    name=reglabel,
-                    mode="lines",
-                    line=dict(color="red"),
-                ),
-                go.Scatter(
-                    x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
-                ),
-                go.Scatter(
-                    x=xq, y=yq, name="Q-Q", mode="lines", line=dict(color="gray")
-                ),
-            ]
-
-            if show_hist:
-                data.append(
-                    go.Histogram2d(
-                        x=x,
-                        y=y,
-                        xbins=dict(size=binsize),
-                        ybins=dict(size=binsize),
-                        colorscale=[
-                            [0.0, "rgba(0,0,0,0)"],
-                            [0.1, "purple"],
-                            [0.5, "green"],
-                            [1.0, "yellow"],
-                        ],
-                    )
-                )
-
-            if show_points:
-                data.append(
-                    go.Scatter(
-                        x=x,
-                        y=y,
-                        mode="markers",
-                        name="Data",
-                        marker=dict(color="black"),
-                    )
-                )
-
-            defaults = {"width": 600, "height": 600}
-            defaults = {**defaults, **kwargs}
-
-            layout = layout = go.Layout(
-                legend=dict(x=0.01, y=0.99),
-                yaxis=dict(scaleanchor="x", scaleratio=1),
-                title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
-                yaxis_title=ylabel,
-                xaxis_title=xlabel,
-                **defaults,
-            )
-
-            fig = go.Figure(data=data, layout=layout)
-            fig.update_xaxes(range=xlim)
-            fig.update_yaxes(range=ylim)
-            fig.show()  # Should this be here
-
-        else:
-
-            raise ValueError(f"Plotting backend: {backend} not supported")
+        scatter(
+            x=x,
+            y=y,
+            binsize=binsize,
+            nbins=nbins,
+            show_points=show_points,
+            show_hist=show_hist,
+            backend=backend,
+            figsize=figsize,
+            xlim=xlim,
+            ylim=ylim,
+            reg_method=reg_method,
+            title=title,
+            xlabel=xlabel,
+            ylabel=ylabel,
+        )
 
 
 class SingleObsComparer(BaseComparer):
