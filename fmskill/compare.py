@@ -239,7 +239,7 @@ class BaseComparer:
 
     def _parse_metric(self, metric):
         if metric is None:
-            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]                         
+            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
         if (type(metric) is list) or (type(metric) is tuple):
             metrics = [self._parse_metric(m) for m in metric]
             return metrics
@@ -393,11 +393,34 @@ class BaseComparer:
 
     def spatial_skill(
         self,
-        binsize: float = None,
+        binsize: float = None,  # TODO: allow different for x and y?
         by: Union[str, List[str]] = None,
         metrics: list = None,
         to_xarray=True,
     ):
+        """Aggregated spatial skill assessment of model(s)
+
+        Parameters
+        ----------
+        binsize : float, optional
+            bin size for x and y dimension
+        by : (str, List[str]), optional
+            group by column name or by temporal bin via the freq-argument
+            (using pandas pd.Grouper(freq)),
+            e.g.: 'freq:M' = monthly; 'freq:D' daily
+            by default ["model","observation"]
+        metrics : list, optional
+            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+
+        Returns
+        -------
+        xr.Dataset
+            skill assessment as a dataset
+
+        See also
+        --------
+
+        """
 
         metrics = self._parse_metric(metrics)
 
@@ -445,7 +468,7 @@ class BaseComparer:
         # TODO: drop mod_name / obs_name dims if unique similar to .skill() via ds.squeeze()?
 
         return res.to_xarray() if to_xarray else res
-        
+
     def sel_df(
         self,
         model: Union[str, int, List[str], List[int]] = None,
@@ -733,10 +756,7 @@ class BaseComparer:
             plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
             plt.plot(xq, yq, label="Q-Q", c="gray")
             plt.plot(
-                x,
-                intercept + slope * x,
-                "r",
-                label=reglabel,
+                x, intercept + slope * x, "r", label=reglabel,
             )
             if show_hist:
                 plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
@@ -896,13 +916,7 @@ class SingleObsComparer(BaseComparer):
         """
         # only for improved documentation
         return super().skill(
-            model=model,
-            by=by,
-            start=start,
-            end=end,
-            area=area,
-            df=df,
-            metrics=metrics,
+            model=model, by=by, start=start, end=end, area=area, df=df, metrics=metrics,
         )
 
     def score(
@@ -956,12 +970,7 @@ class SingleObsComparer(BaseComparer):
         metric = self._parse_metric(metric)
 
         df = self.skill(
-            metrics=[metric],
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-            df=df,
+            metrics=[metric], model=model, start=start, end=end, area=area, df=df,
         )
         values = df[metric.__name__].values
         if len(values) == 1:
