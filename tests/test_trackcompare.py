@@ -34,23 +34,39 @@ def test_skill(comparer):
 
 
 def test_skill_vs_spatial_skill(comparer):
-    # compare to result of .skill()
-    df = comparer.skill()
+    df = comparer.skill()  # to compare to result of .skill()
     ds = comparer.spatial_skill()
 
     assert df.loc["alti"].n == ds.n.values.sum()
-    # ds.sel(mod_name="HD", obs_name="alti").n
-    # assert df.loc["alti"].rmse == ds.sel(mod_name="HD", obs_name="alti").rmse
+    assert ds.xBin.__len__() == 5
+    assert ds.yBin.__len__() == 5
+    # assert ds.coords._names == {"xBin","yBin"}  # TODO: Why return "observation" a by, when n_obs==1?
 
 
 def test_spatial_skill_bins(comparer):
     # default
     ds = comparer.spatial_skill(metrics=["bias"])
-
-    assert ds.xBin.__len__() == 10
+    assert ds.xBin.__len__() == 5
     assert ds.yBin.__len__() == 5
+
+    # float
+    ds = comparer.spatial_skill(metrics=["bias"], bins=2)
+    assert ds.xBin.__len__() == 2
+    assert ds.yBin.__len__() == 2
+
+    # float for x and range for y
+    ds = comparer.spatial_skill(metrics=["bias"], bins=(2, [50, 50.5, 51, 53]))
+    assert ds.xBin.__len__() == 2
+    assert ds.yBin.__len__() == 3
+
+    # binsize (overwrites bins)
+    ds = comparer.spatial_skill(metrics=["bias"], binsize=2.5, bins=100)
+    assert ds.xBin.__len__() == 4
+    assert ds.yBin.__len__() == 3
+    assert ds.xBin[0] == -0.75
 
 
 def test_spatial_skill_by(comparer):
-    ds = comparer.spatial_skill(metrics=["bias"], by=["mod"])
-
+    # odd order of by
+    ds = comparer.spatial_skill(metrics=["bias"], by=["yBin", "mod"])
+    assert ds.coords._names == {"xBin", "model", "yBin"}

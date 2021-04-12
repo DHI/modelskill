@@ -353,7 +353,7 @@ class BaseComparer:
         by = self._parse_by(by, n_models, n_obs)
 
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
-        return res.astype({"n": int})
+        return res
 
     def _groupby_df(self, df, by, metrics):
         def calc_metrics(x):
@@ -364,7 +364,13 @@ class BaseComparer:
             return pd.Series(row)
 
         # .drop(columns=["x", "y"])
-        return df.groupby(by=by).apply(calc_metrics)
+
+        res = df.groupby(by=by).apply(calc_metrics)
+
+        res["n"] = res["n"].fillna(0)
+        res = res.astype({"n": int})
+
+        return res
 
     def _parse_by(self, by, n_models, n_obs):
         if by is None:
@@ -393,17 +399,29 @@ class BaseComparer:
 
     def spatial_skill(
         self,
-        binsize: float = None,  # TODO: allow different for x and y?
+        bins=5,
+        binsize: float = None,
+        retbins: bool = False,
         by: Union[str, List[str]] = None,
         metrics: list = None,
-        to_xarray=True,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
     ):
-        """Aggregated spatial skill assessment of model(s)
+        """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
         Parameters
         ----------
+        bins: int, list of scalars, or IntervalIndex, or tuple of, optional
+            criteria to bin x and y by, argument bins to pd.cut(), default 5
+            define different bins for x and y a tuple
+            e.g.: bins = 5, bins = (5,[2,3,5])
         binsize : float, optional
-            bin size for x and y dimension
+            bin size for x and y dimension, overwrites bins
+            creates bins with reference to round(mean(x)), round(mean(y))
         by : (str, List[str]), optional
             group by column name or by temporal bin via the freq-argument
             (using pandas pd.Grouper(freq)),
@@ -424,50 +442,54 @@ class BaseComparer:
 
         metrics = self._parse_metric(metrics)
 
-        def _compute_metrics(
-            x, metrics
-        ):  # TODO: make private method of BaseCompare class?
-            res = dict(n=len(x))  # TODO: add n to metrics?
-            for metric in metrics:
-                res.update({metric.__name__: metric(x["obs_val"], x["mod_val"])})
-            ser = pd.Series(res, name="metrics")
-            return ser
+        df = self.sel_df(
+            model=model, observation=observation, start=start, end=end, area=area, df=df
+        )
 
-        # TODO: sel_df() as in .skill() here or via seperate method: c.sel().spatial_skill()
-        df = self.all_df
+        df = self._add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        # find number of bins
-        x_ptp = df.x.values.ptp()
-        y_ptp = df.y.values.ptp()
+        n_models = len(df.model.unique())
+        n_obs = len(df.observation.unique())
+        by = self._parse_by(by, n_models, n_obs)
+        if not "xBin" in by:
+            by.append("xBin")
+        if not "yBin" in by:
+            by.append("yBin")
+
+        res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+
+        return res.to_xarray().squeeze()
+
+    def _add_spatial_grid_to_df(self, df, bins, binsize):
         if binsize is None:
-            binsize = min((x_ptp, y_ptp)) / 5
-        nx = int(np.ceil(x_ptp / binsize))
-        ny = int(np.ceil(y_ptp / binsize))
-
-        # divide domain in bins
-        df["xBin"] = pd.cut(df.x, bins=nx)
+            # bins from bins
+            if isinstance(bins, tuple):
+                bins_x = bins[0]
+                bins_y = bins[1]
+            else:
+                bins_x = bins
+                bins_y = bins
+        else:
+            # bins from binsize
+            x_ptp = df.x.values.ptp()
+            y_ptp = df.y.values.ptp()
+            nx = int(np.ceil(x_ptp / binsize))
+            ny = int(np.ceil(y_ptp / binsize))
+            x_mean = np.round(df.x.mean())
+            y_mean = np.round(df.y.mean())
+            bins_x = np.arange(
+                x_mean - nx / 2 * binsize, x_mean + (nx / 2 + 1) * binsize, binsize
+            )
+            bins_y = np.arange(
+                y_mean - ny / 2 * binsize, y_mean + (ny / 2 + 1) * binsize, binsize
+            )
+        # cut and get bin centre
+        df["xBin"] = pd.cut(df.x, bins=bins_x)
         df["xBin"] = df["xBin"].apply(lambda x: x.mid)
-        df["yBin"] = pd.cut(df.y, bins=ny)
+        df["yBin"] = pd.cut(df.y, bins=bins_y)
         df["yBin"] = df["yBin"].apply(lambda x: x.mid)
 
-        if by is None:
-            by = []
-        by.append("xBin")
-        by.append("yBin")
-        grouper = df.drop(columns=["x", "y"]).groupby(by)
-
-        res = grouper.apply(lambda x: _compute_metrics(x, metrics))
-
-        # number of observations
-        res.loc[np.isnan(res.n)] = 0
-        res = res.astype({"n": int})  # what if land value - not possible
-
-        # TODO: .Series() in _compute_metrics() only allows one dtype, i.e., n ends up being float in res. How can this be avoided?
-        # if to_xarray:
-        # res = res.to_xarray()
-        # TODO: drop mod_name / obs_name dims if unique similar to .skill() via ds.squeeze()?
-
-        return res.to_xarray() if to_xarray else res
+        return df
 
     def sel_df(
         self,
