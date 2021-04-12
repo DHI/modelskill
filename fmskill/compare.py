@@ -125,8 +125,8 @@ class BaseComparer:
 
     def _all_df_template(self):
         template = {
-            "mod_name": pd.Series([], dtype="category"),
-            "obs_name": pd.Series([], dtype="category"),
+            "model": pd.Series([], dtype="category"),
+            "observation": pd.Series([], dtype="category"),
             "x": pd.Series([], dtype="float"),
             "y": pd.Series([], dtype="float"),
             "mod_val": pd.Series([], dtype="float"),
@@ -143,8 +143,8 @@ class BaseComparer:
             mod_name = self.mod_names[j]
             df = self.df[[mod_name]].copy()
             df.columns = ["mod_val"]
-            df["mod_name"] = mod_name
-            df["obs_name"] = self.observation.name
+            df["model"] = mod_name
+            df["observation"] = self.observation.name
             df["x"] = self.x
             df["y"] = self.y
             df["obs_val"] = self.obs
@@ -184,11 +184,11 @@ class BaseComparer:
             self._mod_end = mod_df.index[-1].to_pydatetime()
 
     def __repr__(self):
-
         out = []
         out.append(f"<{type(self).__name__}>")
-        out.append(f"Observation: {self.observation.name}")
-        # out.append(f"{self.metric.__name__}: {self.skill():.3f}")
+        out.append(f"Observation: {self.observation.name}, n_points={self.n_points}")
+        for model in self.mod_names:
+            out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
         return str.join("\n", out)
 
     def _get_obs_name(self, obs):
@@ -260,21 +260,27 @@ class BaseComparer:
 
     def skill(
         self,
+        by: Union[str, List[str]] = None,
+        metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-        metrics: list = None,
     ) -> pd.DataFrame:
-        """Skill assessment of model(s)
+        """Aggregated skill assessment of model(s)
 
         Parameters
         ----------
+        by : (str, List[str]), optional
+            group by column name or by temporal bin via the freq-argument
+            (using pandas pd.Grouper(freq)),
+            e.g.: 'freq:M' = monthly; 'freq:D' daily
+            by default ["model","observation"]
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
-        model : (str, int, List[str], List[int]), optional 
+        model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
@@ -283,12 +289,12 @@ class BaseComparer:
         end : (str, datetime), optional
             end time of comparison, by default None
         area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1], 
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
-        
+            user-provided data instead of the comparers own data, by default None
+
         Returns
         -------
         pd.DataFrame
@@ -304,15 +310,31 @@ class BaseComparer:
         >>> cc = mr.extract()
         >>> cc.skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
-        observation                                                
+        observation
         HKNA         385 -0.20  0.35   0.29  0.25  0.97  0.09  0.99
         EPL           66 -0.08  0.22   0.20  0.18  0.97  0.07  0.99
         c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 
         >>> cc.skill(observation='c2', start='2017-10-28').round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
-        observation                                               
+        observation
         c2            41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
+
+        >>> cc.skill(by='freq:D').round(2)
+                      n  bias  rmse  urmse   mae    cc    si    r2
+        2017-10-27  239 -0.15  0.25   0.21  0.20  0.72  0.10  0.98
+        2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
+        2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
+
+        >>> df = cc.sel_df(observation=['HKNA','EPL']).copy()
+        >>> df['seastate'] = pd.cut(df.obs_val, bins=[0,2,6], labels=['small','large'])
+        >>> cc.skill(by=['observation','seastate'], df=df).round(2)
+                                n  bias  rmse  urmse   mae    cc    si    r2
+        observation seastate
+        EPL         small      16  0.02  0.22   0.22  0.17  0.38  0.13  0.98
+                    large      50 -0.11  0.22   0.19  0.19  0.98  0.06  0.99
+        HKNA        small      61  0.02  0.09   0.09  0.08  0.88  0.05  1.00
+                    large     324 -0.23  0.38   0.30  0.28  0.96  0.09  0.99
         """
 
         if metrics is None:
@@ -324,32 +346,48 @@ class BaseComparer:
             model=model, observation=observation, start=start, end=end, area=area, df=df
         )
 
-        mod_names = df.mod_name.unique()
-        obs_names = df.obs_name.unique()
+        n_models = len(df.model.unique())
+        n_obs = len(df.observation.unique())
+        by = self._parse_by(by, n_models, n_obs)
 
-        rows = []
-        for mod_name in mod_names:
-            for obs_name in obs_names:
-                dfsub = df[(df.mod_name == mod_name) & (df.obs_name == obs_name)]
-                row = {}
-                row["model"] = mod_name
-                row["observation"] = obs_name
-                row["n"] = len(dfsub)
-                for metric in metrics:
-                    row[metric.__name__] = metric(
-                        dfsub.obs_val.values, dfsub.mod_val.values
-                    )
-                rows.append(row)
-        res = pd.DataFrame(rows)
+        res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        return res.astype({"n": int})
 
-        if len(mod_names) == 1:
-            res.index = res.observation
-            res.drop(columns=["observation", "model"], inplace=True)
-        elif len(obs_names) == 1:
-            res.index = res.model
-            res.drop(columns=["observation", "model"], inplace=True)
+    def _groupby_df(self, df, by, metrics):
+        def calc_metrics(x):
+            row = {}
+            row["n"] = len(x)
+            for metric in metrics:
+                row[metric.__name__] = metric(x.obs_val.values, x.mod_val.values)
+            return pd.Series(row)
 
-        return res
+        # .drop(columns=["x", "y"])
+        return df.groupby(by=by).apply(calc_metrics)
+
+    def _parse_by(self, by, n_models, n_obs):
+        if by is None:
+            by = []
+            if n_models > 1:
+                by.append("model")
+            if (n_obs > 1) or ((n_models == 1) and (n_obs == 1)):
+                by.append("observation")
+            return by
+
+        if (type(by) is list) or (type(by) is tuple):
+            by = [self._parse_by(b, n_models, n_obs) for b in by]
+            return by
+
+        if isinstance(by, str):
+            if (by == "mdl") or (by == "mod") or (by == "models"):
+                by = "model"
+            if (by == "obs") or (by == "observations"):
+                by = "observation"
+            if by[:5] == "freq:":
+                freq = by.split(":")[1]
+                by = pd.Grouper(freq=freq)
+        else:
+            raise ValueError("Invalid by argument. Must be string or list of strings.")
+        return by
 
     def sel_df(
         self,
@@ -360,12 +398,12 @@ class BaseComparer:
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> pd.DataFrame:
-        """Select/filter data from all the compared data. 
+        """Select/filter data from all the compared data.
         Used by compare.scatter and compare.skill to select data.
 
         Parameters
         ----------
-        model : (str, int, List[str], List[int]), optional 
+        model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
@@ -374,11 +412,11 @@ class BaseComparer:
         end : (str, datetime), optional
             end time of comparison, by default None
         area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1], 
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -387,35 +425,35 @@ class BaseComparer:
 
         See also
         --------
-        skill 
+        skill
             a method for aggregated skill assessment
         scatter
             a method for plotting compared data
 
         Examples
         --------
-        >>> cc = mr.extract()        
+        >>> cc = mr.extract()
         >>> dfsub = cc.sel_df(observation=['EPL','HKNA'])
-        >>> dfsub = cc.sel_df(model=0)        
+        >>> dfsub = cc.sel_df(model=0)
         >>> dfsub = cc.sel_df(start='2017-10-1', end='2017-11-1')
         >>> dfsub = cc.sel_df(area=[0.5,52.5,5,54])
 
         >>> cc.sel_df(observation='c2', start='2017-10-28').head(3)
-                         mod_name obs_name      x       y   mod_val  obs_val
-        2017-10-28 01:00:00  SW_1      EPL  3.276  51.999  1.644092     1.82
-        2017-10-28 02:00:00  SW_1      EPL  3.276  51.999  1.755809     1.86
-        2017-10-28 03:00:00  SW_1      EPL  3.276  51.999  1.867526     2.11
+                           model observation      x       y   mod_val  obs_val
+        2017-10-28 01:00:00 SW_1         EPL  3.276  51.999  1.644092     1.82
+        2017-10-28 02:00:00 SW_1         EPL  3.276  51.999  1.755809     1.86
+        2017-10-28 03:00:00 SW_1         EPL  3.276  51.999  1.867526     2.11
         """
         if df is None:
             df = self.all_df
         if model is not None:
             models = [model] if np.isscalar(model) else model
             models = [self._get_mod_name(m) for m in models]
-            df = df[df.mod_name.isin(models)]
+            df = df[df.model.isin(models)]
         if observation is not None:
             observation = [observation] if np.isscalar(observation) else observation
             observation = [self._get_obs_name(o) for o in observation]
-            df = df[df.obs_name.isin(observation)]
+            df = df[df.observation.isin(observation)]
         if (start is not None) or (end is not None):
             df = df.loc[start:end]
         if area is not None:
@@ -504,7 +542,7 @@ class BaseComparer:
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
-        Optionally, with density histogram. 
+        Optionally, with density histogram.
 
         Parameters
         ----------
@@ -518,7 +556,7 @@ class BaseComparer:
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default True
         backend : str, optional
-            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"                
+            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
         figsize : tuple, optional
             width and height of the figure, by default (8, 8)
         xlim : tuple, optional
@@ -528,7 +566,7 @@ class BaseComparer:
         reg_method : str, optional
             method for determining the regression line
             "ols" : ordinary least squares regression
-            "odr" : orthogonal distance regression, 
+            "odr" : orthogonal distance regression,
             by default "ols"
         title : str, optional
             plot title, by default None
@@ -545,13 +583,13 @@ class BaseComparer:
         end : (str, datetime), optional
             end time of comparison, by default None
         area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1], 
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn], 
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
         kwargs
-        
+
         Examples
         ------
         >>> comparer.scatter()
@@ -638,7 +676,10 @@ class BaseComparer:
             plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
             plt.plot(xq, yq, label="Q-Q", c="gray")
             plt.plot(
-                x, intercept + slope * x, "r", label=reglabel,
+                x,
+                intercept + slope * x,
+                "r",
+                label=reglabel,
             )
             if show_hist:
                 plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
@@ -728,32 +769,42 @@ class BaseComparer:
 class SingleObsComparer(BaseComparer):
     def skill(
         self,
+        by: Union[str, List[str]] = None,
+        metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-        metrics: list = None,
     ) -> pd.DataFrame:
         """Skill assessment of model(s)
 
         Parameters
         ----------
+        by : (str, List[str]), optional
+            group by column name or by temporal bin via the freq-argument
+            (using pandas pd.Grouper(freq)),
+            e.g.: 'freq:M' = monthly; 'freq:D' daily
+            by default ["model"]
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
-        model : (str, int, List[str], List[int]), optional 
+        model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
+        freq : string, optional
+            do temporal binning using pandas pd.Grouper(freq),
+            typical examples: 'M' = monthly; 'D' daily
+            by default None
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
             end time of comparison, by default None
         area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1], 
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
-        
+            user-provided data instead of the comparers own data, by default None
+
         Returns
         -------
         pd.DataFrame
@@ -769,12 +820,32 @@ class SingleObsComparer(BaseComparer):
         >>> cc = mr.extract()
         >>> cc['c2'].skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
-        observation                                                
+        observation
         c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
+
+        >>> cc['c2'].skill(by='freq:D').round(2)
+                     n  bias  rmse  urmse   mae    cc    si    r2
+        2017-10-27  72 -0.19  0.31   0.25  0.26  0.48  0.12  0.98
+        2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
+        2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
+
+        >>> df = cc['c2'].sel_df().copy()
+        >>> df['Hm0 group'] = pd.cut(df.obs_val, bins=[0,2,6])
+        >>> cc['c2'].skill(by='Hm0 group', df=df).round(2)
+                    n  bias  rmse  urmse   mae    cc    si    r2
+        Hm0 group
+        (0, 2]     33 -0.09  0.23   0.22  0.21  0.46  0.12  0.98
+        (2, 6]     80  0.03  0.39   0.39  0.33  0.97  0.12  0.99
         """
         # only for improved documentation
         return super().skill(
-            model=model, start=start, end=end, area=area, df=df, metrics=metrics
+            model=model,
+            by=by,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
+            metrics=metrics,
         )
 
     def score(
@@ -792,18 +863,18 @@ class SingleObsComparer(BaseComparer):
         ----------
         metric : list, optional
             a single metric from fmskill.metrics, by default rmse
-        model : (str, int, List[str], List[int]), optional 
+        model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
             end time of comparison, by default None
         area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1], 
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -820,7 +891,7 @@ class SingleObsComparer(BaseComparer):
         >>> cc = mr.extract()
         >>> cc['c2'].score()
         0.3517964910888918
-        
+
         >>> import fmskill.metrics as mtr
         >>> cc['c2'].score(metric=mtr.mape)
         11.567399646108198
@@ -828,7 +899,12 @@ class SingleObsComparer(BaseComparer):
         metric = self._parse_metric(metric)
 
         df = self.skill(
-            metrics=[metric], model=model, start=start, end=end, area=area, df=df,
+            metrics=[metric],
+            model=model,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
         )
         values = df[metric.__name__].values
         if len(values) == 1:
@@ -844,40 +920,40 @@ class SingleObsComparer(BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> pd.DataFrame:
-        """Select/filter data from all the compared data. 
+        """Select/filter data from all the compared data.
         Used by compare.scatter and compare.skill to select data.
 
         Parameters
         ----------
-        model : (str, int, List[str], List[int]), optional 
+        model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
             end time of comparison, by default None
         area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1], 
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
         pd.DataFrame
-            selected data in a dataframe with columns (mod_name,obs_name,x,y,mod_val,obs_val)
+            selected data in a dataframe with columns (model,observation,x,y,mod_val,obs_val)
 
         See also
         --------
-        skill 
+        skill
             a method for aggregated skill assessment
         scatter
             a method for plotting compared data
 
         Examples
         --------
-        >>> cc = mr.extract()        
-        >>> dfsub = cc['c2'].sel_df(model=0)        
+        >>> cc = mr.extract()
+        >>> dfsub = cc['c2'].sel_df(model=0)
         >>> dfsub = cc['c2'].sel_df(start='2017-10-1', end='2017-11-1')
         >>> dfsub = cc['c2'].sel_df(area=[0.5,52.5,5,54])
         """
@@ -909,7 +985,7 @@ class SingleObsComparer(BaseComparer):
         plt.xlabel(f"Residuals of {self._obs_unit_text}")
 
     def hist(self, model=None, bins=100):
-        """Plot histogram of model data and observations. 
+        """Plot histogram of model data and observations.
         Wraps pandas.DataFrame hist() method.
 
         Parameters
@@ -931,15 +1007,6 @@ class SingleObsComparer(BaseComparer):
         ax.legend([mod_name, self.obs_name])
         plt.title(f"{mod_name} vs {self.name}")
         plt.xlabel(f"{self._obs_unit_text}")
-
-    # def score(self, model=None, metric=None):
-
-    #     mod_id = self._get_mod_id(model)
-
-    #     if metric is None:
-    #         metric = mtr.rmse
-
-    #     return metric(self.obs, self.mod[:, mod_id])
 
 
 class PointComparer(SingleObsComparer):
@@ -1136,8 +1203,8 @@ class ComparerCollection(Mapping, BaseComparer):
                 mod_name = cmp.mod_names[j]
                 df = cmp.df[[mod_name]].copy()
                 df.columns = ["mod_val"]
-                df["mod_name"] = mod_name
-                df["obs_name"] = cmp.observation.name
+                df["model"] = mod_name
+                df["observation"] = cmp.observation.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
@@ -1200,7 +1267,7 @@ class ComparerCollection(Mapping, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> pd.DataFrame:
-        """Weighted mean skill of model(s) over all observations        
+        """Weighted mean skill of model(s) over all observations
 
         Parameters
         ----------
@@ -1208,11 +1275,11 @@ class ComparerCollection(Mapping, BaseComparer):
             None: use assigned weights from observations
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
-            list of weights e.g. [0.3, 0.3, 0.4] per observation, 
+            list of weights e.g. [0.3, 0.3, 0.4] per observation,
             by default None
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
-        model : (str, int, List[str], List[int]), optional 
+        model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
@@ -1221,11 +1288,11 @@ class ComparerCollection(Mapping, BaseComparer):
         end : (str, datetime), optional
             end time of comparison, by default None
         area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1], 
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -1241,51 +1308,35 @@ class ComparerCollection(Mapping, BaseComparer):
         --------
         >>> cc = mr.extract()
         >>> cc.mean_skill().round(2)
-                    bias  rmse  urmse   mae    cc    si    r2
-        HKZN_local -0.09  0.31   0.28  0.24  0.97  0.09  0.99
+                      n  bias  rmse  urmse   mae    cc    si    r2
+        HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
         """
 
-        if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
-        else:
-            metrics = self._parse_metric(metrics)
+        # TODO: how to handle by=freq:D?
 
         df = self.sel_df(
             df=df, model=model, observation=observation, start=start, end=end, area=area
         )
-        mod_names = df.mod_name.unique()
-        obs_names = df.obs_name.unique()
-        n_obs = len(obs_names)
-        n_metrics = len(metrics)
+        skilldf = self.skill(df=df, metrics=metrics)
+        mod_names = df.model.unique()
+        obs_names = df.observation.unique()
+        n_models = len(mod_names)
 
         weights = self._parse_weights(weights, obs_names)
         has_weights = False if (weights is None) else True
 
         rows = []
-        for mod_name in mod_names:
-            row = {}
-            tmp = np.zeros((n_obs, n_metrics + 1))
-            tmp_n = np.ones(n_obs, dtype=int)
-            for obs_id, obs_name in enumerate(obs_names):
-                dfsub = df[(df.mod_name == mod_name) & (df.obs_name == obs_name)]
-                if len(dfsub) > 0:
-                    tmp_n[obs_id] = len(dfsub)
-                    for j, metric in enumerate(metrics):
-                        tmp[obs_id, j] = metric(
-                            dfsub.obs_val.values, dfsub.mod_val.values
-                        )
-            if not has_weights:
-                weights = tmp_n
-
-            weights = np.array(weights)
-            tot_weight = np.sum(
-                weights[tmp_n > 0]
-            )  # this may be different for different models
-            for j, metric in enumerate(metrics):
-                row[metric.__name__] = np.inner(tmp[:, j], weights) / tot_weight
+        for model in mod_names:
+            dfsub = skilldf.loc[model].copy() if n_models > 1 else skilldf
+            dfsub["weights"] = weights if has_weights else dfsub.n
+            wm = lambda x: np.average(x, weights=dfsub.loc[x.index, "weights"])
+            row = dfsub.apply(wm)
+            row.n = dfsub.n.sum().astype(int)
+            row.drop("weights")
             rows.append(row)
 
-        return pd.DataFrame(rows, index=mod_names)
+        df = pd.DataFrame(rows, index=mod_names)
+        return df.astype({"n": int})
 
     def _parse_weights(self, weights, observations):
 
@@ -1308,6 +1359,10 @@ class ComparerCollection(Mapping, BaseComparer):
                     weights = np.ones(n_obs)  # equal weight to all
                 elif "point" in weights.lower():
                     weights = None  # no weight => use n_points
+                else:
+                    raise ValueError(
+                        "unknown weights argument (None, 'equal', 'points', or list of floats)"
+                    )
             elif not np.isscalar(weights):
                 if not len(weights) == n_obs:
                     raise ValueError(
@@ -1326,7 +1381,7 @@ class ComparerCollection(Mapping, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> pd.DataFrame:
-        """Weighted mean score of model(s) over all observations        
+        """Weighted mean score of model(s) over all observations
 
         Parameters
         ----------
@@ -1334,11 +1389,11 @@ class ComparerCollection(Mapping, BaseComparer):
             None: use assigned weights from observations
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
-            list of weights e.g. [0.3, 0.3, 0.4] per observation, 
+            list of weights e.g. [0.3, 0.3, 0.4] per observation,
             by default None
         metric : list, optional
             a single metric from fmskill.metrics, by default rmse
-        model : (str, int, List[str], List[int]), optional 
+        model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
@@ -1347,11 +1402,11 @@ class ComparerCollection(Mapping, BaseComparer):
         end : (str, datetime), optional
             end time of comparison, by default None
         area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1], 
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn], 
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
         df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -1363,7 +1418,7 @@ class ComparerCollection(Mapping, BaseComparer):
         skill
             a method for skill assessment observation by observation
         mean_skill
-            a method for weighted mean skill assessment 
+            a method for weighted mean skill assessment
 
         Examples
         --------
@@ -1372,7 +1427,7 @@ class ComparerCollection(Mapping, BaseComparer):
         0.30681206
         >>> cc.score(weights=[0.1,0.1,0.8])
         0.3383011631797379
-        
+
         >>> import fmskill.metrics as mtr
         >>> cc.score(weights='points', metric=mtr.mape)
         8.414442957854142

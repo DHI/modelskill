@@ -73,8 +73,9 @@ def test_extract(mrc, o1, o2, o3):
 
 def test_mm_skill(cc):
     df = cc.skill()
-    assert df.iloc[4].model == "SW_2"
-    assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.193719
+    assert df.iloc[4].name[0] == "SW_2"
+    assert df.iloc[4].name[1] == "HKNA"
+    assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.214476
 
 
 def test_mm_skill_model(cc):
@@ -97,7 +98,7 @@ def test_mm_skill_missing_model(cc):
 def test_mm_skill_obs(cc):
     df = cc.skill(observation="c2")
     assert len(df) == 2
-    assert df.bias[0] == 0.08143105172057515
+    assert df.loc["SW_2"].bias == 0.08143105172057515
 
     df = cc.mean_skill(model=0, observation=[0, "c2"])
     assert df.si[0] == 0.10349949854443843
