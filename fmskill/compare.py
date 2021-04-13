@@ -10,7 +10,7 @@ Examples
 >>> mr.add_observation(o1, item=0)
 >>> comparer = mr.extract()
 """
-from collections.abc import Mapping
+from collections.abc import Mapping, Iterable
 from typing import List, Union
 import numpy as np
 import pandas as pd
@@ -238,9 +238,6 @@ class BaseComparer:
         return mod_id
 
     def _parse_metric(self, metric):
-        if (type(metric) is list) or (type(metric) is tuple):
-            metrics = [self._parse_metric(m) for m in metric]
-            return metrics
 
         if isinstance(metric, str):
             valid_metrics = [
@@ -252,6 +249,9 @@ class BaseComparer:
                 raise ValueError(
                     f"Invalid metric: {metric}. Valid metrics are {valid_metrics}."
                 )
+        elif isinstance(metric, Iterable):
+            metrics = [self._parse_metric(m) for m in metric]
+            return metrics
         elif not callable(metric):
             raise ValueError(
                 f"Invalid metric: {metric}. Must be either string or callable."
@@ -373,18 +373,17 @@ class BaseComparer:
                 by.append("observation")
             return by
 
-        if (type(by) is list) or (type(by) is tuple):
-            by = [self._parse_by(b, n_models, n_obs) for b in by]
-            return by
-
         if isinstance(by, str):
-            if (by == "mdl") or (by == "mod") or (by == "models"):
+            if by in {"mdl", "mod", "models"}:
                 by = "model"
-            if (by == "obs") or (by == "observations"):
+            if by in {"obs", "observations"}:
                 by = "observation"
             if by[:5] == "freq:":
                 freq = by.split(":")[1]
                 by = pd.Grouper(freq=freq)
+        elif isinstance(by, Iterable):
+            by = [self._parse_by(b, n_models, n_obs) for b in by]
+            return by
         else:
             raise ValueError("Invalid by argument. Must be string or list of strings.")
         return by
@@ -1048,7 +1047,6 @@ class PointComparer(SingleObsComparer):
         self, title=None, ylim=None, figsize=None, backend="matplotlib", **kwargs
     ):
 
-        mod_df = self.mod_data[self.mod_names[0]]
         if title is None:
             title = self.name
 
