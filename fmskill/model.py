@@ -3,6 +3,7 @@ from typing import Union
 import numpy as np
 import warnings
 from enum import Enum
+import matplotlib.pyplot as plt
 
 from mikeio import Dfs0, Dfsu, Dataset
 from .observation import PointObservation, TrackObservation
@@ -21,9 +22,9 @@ class ModelResult:
 
     Examples
     --------
-    >>> mr = ModelResult("Oresund2D.dfsu") 
+    >>> mr = ModelResult("Oresund2D.dfsu")
 
-    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund") 
+    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund")
     """
 
     # name = None
@@ -200,6 +201,26 @@ class ModelResult:
                 else:
                     print("Too many points to plot")
                     # TODO: group by lonlat bin
+        return ax
+
+    def plot_data_coverage(self, limit_to_model_period=True):
+
+        fig, ax = plt.subplots()
+        y = np.repeat(0.0, 2)
+        x = self.dfs.start_time, self.dfs.end_time
+        plt.plot(x, y)
+        labels = ["Model"]
+
+        plt.plot([self.dfs.start_time, self.dfs.end_time], y)
+        for key, obs in self.observations.items():
+            y += 1.0
+            plt.plot([obs.start_time, obs.end_time], y)
+            labels.append(key)
+        if limit_to_model_period:
+            plt.xlim([self.dfs.start_time, self.dfs.end_time])
+
+        plt.yticks(np.arange(0, len(self.observations) + 1), labels)
+        fig.autofmt_xdate()
         return ax
 
 

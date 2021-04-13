@@ -82,3 +82,10 @@ def test_plot_positions(sw_dutch_coast, Hm0_EPL, Hm0_HKNA):
     mr.add_observation(Hm0_EPL, item=0)
     mr.add_observation(Hm0_HKNA, item=0)
     mr.plot_observation_positions()
+
+
+def test_plot_data_coverage(sw_dutch_coast, Hm0_EPL, Hm0_HKNA):
+    mr = ModelResult(sw_dutch_coast)
+    mr.add_observation(Hm0_EPL, item=0)
+    mr.add_observation(Hm0_HKNA, item=0)
+    mr.plot_data_coverage()
