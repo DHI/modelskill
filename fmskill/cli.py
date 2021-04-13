@@ -6,7 +6,13 @@ from fmskill.report import Reporter
 @click.command()
 @click.argument("configuration")
 @click.option("--output_folder", help="Folder to write output to")
-def report(configuration: str, output_folder=None) -> None:
+@click.option(
+    "--output_format",
+    type=click.Choice(["md", "html"]),
+    default="md",
+    help="Output format, default is markdown",
+)
+def report(configuration: str, output_folder=None, output_format="md") -> None:
     """
     fmskill: Automatic model skill assessment
     """
@@ -14,5 +20,8 @@ def report(configuration: str, output_folder=None) -> None:
     model_result = fmskill.create(configuration)
     reporter = Reporter(model_result, output_folder)
 
-    filename = reporter.markdown()
+    if output_format == "md":
+        filename = reporter.markdown()
+    else:
+        filename = reporter.html()
     print(f"Report created at: {filename}")
