@@ -7,6 +7,7 @@ from enum import Enum
 from mikeio import Dfs0, Dfsu, Dataset
 from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
+from .plot import plot_observation_positions
 
 
 class ModelResultType(Enum):
@@ -21,9 +22,9 @@ class ModelResult:
 
     Examples
     --------
-    >>> mr = ModelResult("Oresund2D.dfsu") 
+    >>> mr = ModelResult("Oresund2D.dfsu")
 
-    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund") 
+    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund")
     """
 
     # name = None
@@ -175,7 +176,7 @@ class ModelResult:
         return ds_model
 
     def plot_observation_positions(self, figsize=None):
-        """Plot oberservation points on a map showing the model domain
+        """Plot observation points on a map showing the model domain
 
         Parameters
         ----------
@@ -187,19 +188,11 @@ class ModelResult:
                 "Plotting observations is only supported for dfsu ModelResults"
             )
             return
-        xn = self.dfs.node_coordinates[:, 0]
-        offset_x = 0.02 * (max(xn) - min(xn))
-        ax = self.dfs.plot(plot_type="outline_only", figsize=figsize)
-        for obs in self.observations.values():
-            if isinstance(obs, PointObservation):
-                ax.scatter(x=obs.x, y=obs.y, marker="x")
-                ax.annotate(obs.name, (obs.x + offset_x, obs.y))
-            elif isinstance(obs, TrackObservation):
-                if obs.n_points < 10000:
-                    ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
-                else:
-                    print("Too many points to plot")
-                    # TODO: group by lonlat bin
+
+        ax = plot_observation_positions(
+            dfs=self.dfs, observations=self.observations.values()
+        )
+
         return ax
 
 
