@@ -2,14 +2,29 @@ import os
 from typing import Union
 import numpy as np
 import warnings
-from enum import Enum
+
+from abc import ABC, abstractmethod
 
 from mikeio import Dfs0, Dfsu, Dataset
 from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 
 
-class ModelResult:
+class ModelResultInterface(ABC):
+    @abstractmethod
+    def add_observation(self, observation, item, weight):
+        pass
+
+    @abstractmethod
+    def extract(self) -> ComparerCollection:
+        pass
+
+    @abstractmethod
+    def plot_observation_positions(self, figsize):
+        pass
+
+
+class ModelResult(ModelResultInterface):
     """
     The result from a MIKE FM simulation (either dfsu or dfs0)
 
@@ -19,14 +34,6 @@ class ModelResult:
 
     >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund")
     """
-
-    # name = None
-    # type = None
-    # filename = None
-    # dfs = None
-    # observations = None
-    # items = None
-    # start = None  # TODO: add start time
 
     def __init__(self, filename: str, name: str = None):
         # TODO: add "start" as user may wish to disregard start from comparison
@@ -48,7 +55,6 @@ class ModelResult:
         self.name = name
 
     def __repr__(self):
-        # return self.dfs
         out = []
         out.append("<fmskill.ModelResult>")
         out.append(self.filename)
@@ -202,7 +208,7 @@ class ModelResult:
         return isinstance(self.dfs, Dfs0)
 
 
-class ModelResultCollection:
+class ModelResultCollection(ModelResultInterface):
     """
     A collection of results from multiple MIKE FM simulations
     with the same "topology", e.g. several "runs" of the same model.
