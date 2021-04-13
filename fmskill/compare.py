@@ -478,7 +478,7 @@ class BaseComparer:
                         is_bbox = True
         return is_bbox
 
-    def _area_is_polygon(self, area):
+    def _area_is_polygon(self, area) -> bool:
         if area is None:
             return False
         if np.isscalar(area):
@@ -494,20 +494,12 @@ class BaseComparer:
                 return False
             if len(polygon) % 2 != 0:
                 return False
-            x0, y0 = polygon[0:2]
-            x1, y1 = polygon[-2:]
 
         if polygon.ndim == 2:
             if polygon.shape[0] < 3:
                 return False
             if polygon.shape[1] != 2:
                 return False
-            x0, y0 = polygon[0, :]
-            x1, y1 = polygon[-1, :]
-
-        if (x0 != x1) & (y0 != y1):
-            # make polygon closed
-            polygon = np.append(polygon, [x0, x1], axis=0)
 
         return True
 
@@ -520,6 +512,7 @@ class BaseComparer:
 
     def scatter(
         self,
+        *,
         binsize: float = None,
         nbins: int = 20,
         show_points: bool = None,
