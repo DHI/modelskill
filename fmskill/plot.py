@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -34,7 +34,7 @@ def scatter(
     Parameters
     ----------
     x: np.array
-        X values e.g model values, , must be same length as y
+        X values e.g model values, must be same length as y
     y: np.array
         Y values e.g observation values, must be same length as x
     binsize : float, optional
