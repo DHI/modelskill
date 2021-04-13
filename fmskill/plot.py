@@ -1,10 +1,14 @@
-from typing import List
+from typing import List, Dict, Tuple
 import numpy as np
 
 import matplotlib.pyplot as plt
 
 from scipy.stats import linregress
 from scipy import odr
+
+from mikeio import Dfsu
+
+from .observation import Observation, PointObservation, TrackObservation
 
 
 def scatter(
@@ -29,6 +33,10 @@ def scatter(
 
     Parameters
     ----------
+    x: np.array
+        X values e.g model values, , must be same length as y
+    y: np.array
+        Y values e.g observation values, must be same length as x
     binsize : float, optional
         the size of each bin in the 2d histogram, by default None
     nbins : int, optional
@@ -73,6 +81,10 @@ def scatter(
         show user-provided data instead of the comparers own data, by default None
     kwargs
     """
+
+    if len(x) != len(y):
+        raise ValueError("x & y are not of equal length")
+
     if show_points is None:
         show_points = len(x) < 1e4
 
@@ -208,3 +220,34 @@ def scatter(
     else:
 
         raise ValueError(f"Plotting backend: {backend} not supported")
+
+
+def plot_observation_positions(
+    dfs: Dfsu, observations: List[Observation], figsize: Tuple = None
+):
+    """Plot observation points on a map showing the model domain
+
+    Parameters
+    ----------
+    dfs: Dfsu
+        model object
+    observations: list
+        Observation collection
+    figsize : (float, float), optional
+        figure size, by default None
+    """
+
+    xn = dfs.node_coordinates[:, 0]
+    offset_x = 0.02 * (max(xn) - min(xn))
+    ax = dfs.plot(plot_type="outline_only", figsize=figsize)
+    for obs in observations:
+        if isinstance(obs, PointObservation):
+            ax.scatter(x=obs.x, y=obs.y, marker="x")
+            ax.annotate(obs.name, (obs.x + offset_x, obs.y))
+        elif isinstance(obs, TrackObservation):
+            if obs.n_points < 10000:
+                ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
+            else:
+                print("Too many points to plot")
+                # TODO: group by lonlat bin
+    return ax
