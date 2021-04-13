@@ -70,3 +70,10 @@ def test_spatial_skill_by(comparer):
     # odd order of by
     ds = comparer.spatial_skill(metrics=["bias"], by=["yBin", "mod"])
     assert ds.coords._names == {"xBin", "model", "yBin"}
+
+
+def test_spatial_skill_misc(comparer):
+    # miniumum n
+    ds = comparer.spatial_skill(metrics=["bias", "rmse"], n_min=20)
+    df = ds.to_dataframe()
+    assert df.loc[df.n < 20, ["bias", "rmse"]].size

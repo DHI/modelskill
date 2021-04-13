@@ -355,7 +355,7 @@ class BaseComparer:
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         return res
 
-    def _groupby_df(self, df, by, metrics):
+    def _groupby_df(self, df, by, metrics, n_min: int = None):
         def calc_metrics(x):
             row = {}
             row["n"] = len(x)
@@ -366,6 +366,11 @@ class BaseComparer:
         # .drop(columns=["x", "y"])
 
         res = df.groupby(by=by).apply(calc_metrics)
+
+        if n_min:
+            # nan for all cols but n
+            cols = [col for col in res.columns if not col == "n"]
+            res.loc[res.n < n_min, cols] = np.nan
 
         res["n"] = res["n"].fillna(0)
         res = res.astype({"n": int})
@@ -404,6 +409,7 @@ class BaseComparer:
         retbins: bool = False,
         by: Union[str, List[str]] = None,
         metrics: list = None,
+        n_min: int = None,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
@@ -429,6 +435,22 @@ class BaseComparer:
             by default ["model","observation"]
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+        n_min : int, optional
+            minimum number of observations
+        model : (str, int, List[str], List[int]), optional
+            name or ids of models to be compared, by default all
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -437,6 +459,8 @@ class BaseComparer:
 
         See also
         --------
+        skill
+            a method for aggregated skill assessment
 
         """
 
@@ -456,7 +480,7 @@ class BaseComparer:
         if not "yBin" in by:
             by.append("yBin")
 
-        res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics, n_min)
 
         return res.to_xarray().squeeze()
 
