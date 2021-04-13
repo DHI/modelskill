@@ -127,17 +127,23 @@ def test_comparison_from_dict():
         filename="tests/testdata/Oresund2D.dfsu",
         observations=[
             dict(
-                filename="tests/testdata/smhi_2095_klagshamn.dfs0",
+                observation=dict(
+                    filename="tests/testdata/obs_two_items.dfs0",
+                    item=1,
+                    x=366844,
+                    y=6154291,
+                    name="Klagshamn",
+                ),
                 item=0,
-                x=366844,
-                y=6154291,
-                name="Klagshamn",
             ),
             dict(
-                filename="tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+                observation=dict(
+                    filename="tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+                    item=0,
+                    x=355568.0,
+                    y=6156863.0,
+                ),
                 item=0,
-                x=355568.0,
-                y=6156863.0,
             ),
         ],
     )
@@ -163,3 +169,4 @@ def test_comparison_from_yml():
     assert len(c) == 2
     assert c.n_comparers == 2
     assert c.n_models == 1
+    assert mr.observations["Klagshamn"].itemInfo.name == "Water Level"

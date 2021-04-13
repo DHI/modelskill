@@ -36,13 +36,14 @@ def create(configuration: Union[dict, str]):
         configuration = yaml.load(contents, Loader=yaml.FullLoader)
 
     mr = ModelResult(filename=configuration["filename"], name=configuration.get("name"))
-    for observation in configuration["observations"]:
+    for connection in configuration["observations"]:
+        observation = connection["observation"]
 
         if observation.get("type") == "track":
             obs = TrackObservation(**observation)
         else:
             obs = PointObservation(**observation)
 
-        mr.add_observation(obs, item=observation["item"])
+        mr.add_observation(obs, item=connection["item"])
 
     return mr
