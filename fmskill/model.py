@@ -9,21 +9,15 @@ from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 
 
-class ModelResultType(Enum):
-    dfs0 = 0
-    dfsu = 1
-    dfs2 = 2
-
-
 class ModelResult:
     """
     The result from a MIKE FM simulation (either dfsu or dfs0)
 
     Examples
     --------
-    >>> mr = ModelResult("Oresund2D.dfsu") 
+    >>> mr = ModelResult("Oresund2D.dfsu")
 
-    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund") 
+    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund")
     """
 
     # name = None
@@ -40,13 +34,10 @@ class ModelResult:
         ext = os.path.splitext(filename)[-1]
         if ext == ".dfsu":
             self.dfs = Dfsu(filename)
-            self.type = ModelResultType.dfsu
         # elif ext == '.dfs2':
         #    self.dfs = Dfs2(filename)
-        #    self.type = ModelResultType.dfs2
         elif ext == ".dfs0":
             self.dfs = Dfs0(filename)
-            self.type = ModelResultType.dfs0
         else:
             raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
 
@@ -86,12 +77,12 @@ class ModelResult:
 
     def _validate_observation(self, observation) -> bool:
         ok = False
-        if self.type == ModelResultType.dfsu:
+        if self.is_dfsu:
             if isinstance(observation, PointObservation):
                 ok = self.dfs.contains([observation.x, observation.y])
             elif isinstance(observation, TrackObservation):
                 ok = True
-        elif self.type == ModelResultType.dfs0:
+        elif self.is_dfs0:
             # TODO: add check on name
             ok = True
 
@@ -139,9 +130,9 @@ class ModelResult:
     def _extract_point(self, observation: PointObservation, item) -> Dataset:
         assert isinstance(observation, PointObservation)
         ds_model = None
-        if self.type == ModelResultType.dfsu:
+        if self.is_dfsu:
             ds_model = self._extract_point_dfsu(observation, item)
-        elif self.type == ModelResultType.dfs0:
+        elif self.is_dfs0:
             ds_model = self._extract_point_dfs0(observation, item)
         return ds_model
 
@@ -161,9 +152,9 @@ class ModelResult:
     def _extract_track(self, observation: TrackObservation, item) -> Dataset:
         assert isinstance(observation, TrackObservation)
         ds_model = None
-        if self.type == ModelResultType.dfsu:
+        if self.is_dfsu:
             ds_model = self._extract_track_dfsu(observation, item)
-        elif self.type == ModelResultType.dfs0:
+        elif self.is_dfs0:
             ds_model = self.dfs.read(items=[0, 1, item])
             ds_model.items[-1].name = self.name
         return ds_model
@@ -182,7 +173,7 @@ class ModelResult:
         figsize : (float, float), optional
             figure size, by default None
         """
-        if self.type == ModelResultType.dfs0:
+        if self.is_dfs0:
             warnings.warn(
                 "Plotting observations is only supported for dfsu ModelResults"
             )
@@ -201,6 +192,14 @@ class ModelResult:
                     print("Too many points to plot")
                     # TODO: group by lonlat bin
         return ax
+
+    @property
+    def is_dfsu(self):
+        return isinstance(self.dfs, Dfsu)
+
+    @property
+    def is_dfs0(self):
+        return isinstance(self.dfs, Dfs0)
 
 
 class ModelResultCollection:
