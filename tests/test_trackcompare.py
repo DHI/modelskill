@@ -76,4 +76,5 @@ def test_spatial_skill_misc(comparer):
     # miniumum n
     ds = comparer.spatial_skill(metrics=["bias", "rmse"], n_min=20)
     df = ds.to_dataframe()
-    assert df.loc[df.n < 20, ["bias", "rmse"]].size
+    assert df.loc[df.n < 20, ["bias", "rmse"]].size == 30
+    assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
