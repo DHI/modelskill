@@ -12,6 +12,7 @@ Examples
 """
 from collections.abc import Mapping, Iterable
 from typing import List, Union
+from inspect import getmembers, isfunction
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -240,9 +241,8 @@ class BaseComparer:
     def _parse_metric(self, metric):
 
         if isinstance(metric, str):
-            valid_metrics = [
-                m for m in dir(mtr) if (m[0] != "_") & (m != "np") & (m != "warnings")
-            ]
+            valid_metrics = [x[0] for x in getmembers(mtr, isfunction)]
+
             if metric.lower() in valid_metrics:
                 metric = getattr(mtr, metric.lower())
             else:
