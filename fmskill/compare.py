@@ -240,6 +240,8 @@ class BaseComparer:
         return mod_id
 
     def _parse_metric(self, metric):
+        if metric is None:
+            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
         if isinstance(metric, str):
             valid_metrics = [x[0] for x in getmembers(mtr, isfunction)]
@@ -352,9 +354,9 @@ class BaseComparer:
         by = self._parse_by(by, n_models, n_obs)
 
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
-        return res.astype({"n": int})
+        return res
 
-    def _groupby_df(self, df, by, metrics):
+    def _groupby_df(self, df, by, metrics, n_min: int = None):
         def calc_metrics(x):
             row = {}
             row["n"] = len(x)
@@ -363,7 +365,18 @@ class BaseComparer:
             return pd.Series(row)
 
         # .drop(columns=["x", "y"])
-        return df.groupby(by=by).apply(calc_metrics)
+
+        res = df.groupby(by=by).apply(calc_metrics)
+
+        if n_min:
+            # nan for all cols but n
+            cols = [col for col in res.columns if not col == "n"]
+            res.loc[res.n < n_min, cols] = np.nan
+
+        res["n"] = res["n"].fillna(0)
+        res = res.astype({"n": int})
+
+        return res
 
     def _parse_by(self, by, n_models, n_obs):
         if by is None:
@@ -388,6 +401,119 @@ class BaseComparer:
         else:
             raise ValueError("Invalid by argument. Must be string or list of strings.")
         return by
+
+    def spatial_skill(
+        self,
+        bins=5,
+        binsize: float = None,
+        retbins: bool = False,
+        by: Union[str, List[str]] = None,
+        metrics: list = None,
+        n_min: int = None,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+    ):
+        """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
+
+        Parameters
+        ----------
+        bins: int, list of scalars, or IntervalIndex, or tuple of, optional
+            criteria to bin x and y by, argument bins to pd.cut(), default 5
+            define different bins for x and y a tuple
+            e.g.: bins = 5, bins = (5,[2,3,5])
+        binsize : float, optional
+            bin size for x and y dimension, overwrites bins
+            creates bins with reference to round(mean(x)), round(mean(y))
+        by : (str, List[str]), optional
+            group by column name or by temporal bin via the freq-argument
+            (using pandas pd.Grouper(freq)),
+            e.g.: 'freq:M' = monthly; 'freq:D' daily
+            by default ["model","observation"]
+        metrics : list, optional
+            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+        n_min : int, optional
+            minimum number of observations
+        model : (str, int, List[str], List[int]), optional
+            name or ids of models to be compared, by default all
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            user-provided data instead of the comparers own data, by default None
+
+        Returns
+        -------
+        xr.Dataset
+            skill assessment as a dataset
+
+        See also
+        --------
+        skill
+            a method for aggregated skill assessment
+
+        """
+
+        metrics = self._parse_metric(metrics)
+
+        df = self.sel_df(
+            model=model, observation=observation, start=start, end=end, area=area, df=df
+        )
+
+        df = self._add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
+
+        n_models = len(df.model.unique())
+        n_obs = len(df.observation.unique())
+        by = self._parse_by(by, n_models, n_obs)
+        if not "xBin" in by:
+            by.append("xBin")
+        if not "yBin" in by:
+            by.append("yBin")
+
+        res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics, n_min)
+
+        return res.to_xarray().squeeze()
+
+    def _add_spatial_grid_to_df(self, df, bins, binsize):
+        if binsize is None:
+            # bins from bins
+            if isinstance(bins, tuple):
+                bins_x = bins[0]
+                bins_y = bins[1]
+            else:
+                bins_x = bins
+                bins_y = bins
+        else:
+            # bins from binsize
+            x_ptp = df.x.values.ptp()
+            y_ptp = df.y.values.ptp()
+            nx = int(np.ceil(x_ptp / binsize))
+            ny = int(np.ceil(y_ptp / binsize))
+            x_mean = np.round(df.x.mean())
+            y_mean = np.round(df.y.mean())
+            bins_x = np.arange(
+                x_mean - nx / 2 * binsize, x_mean + (nx / 2 + 1) * binsize, binsize
+            )
+            bins_y = np.arange(
+                y_mean - ny / 2 * binsize, y_mean + (ny / 2 + 1) * binsize, binsize
+            )
+        # cut and get bin centre
+        df["xBin"] = pd.cut(df.x, bins=bins_x)
+        df["xBin"] = df["xBin"].apply(lambda x: x.mid)
+        df["yBin"] = pd.cut(df.y, bins=bins_y)
+        df["yBin"] = df["yBin"].apply(lambda x: x.mid)
+
+        return df
 
     def sel_df(
         self,
