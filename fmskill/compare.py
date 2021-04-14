@@ -475,12 +475,17 @@ class BaseComparer:
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
         by = self._parse_by(by, n_models, n_obs)
-        if not "xBin" in by:
-            by.append("xBin")
-        if not "yBin" in by:
-            by.append("yBin")
+        if not "x" in by:
+            by.append("x")
+        if not "y" in by:
+            by.append("y")
 
-        res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics, n_min)
+        res = self._groupby_df(
+            df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y")),
+            by,
+            metrics,
+            n_min,
+        )
 
         return res.to_xarray().squeeze()
 
