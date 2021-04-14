@@ -10,8 +10,9 @@ Examples
 >>> mr.add_observation(o1, item=0)
 >>> comparer = mr.extract()
 """
-from collections.abc import Mapping
+from collections.abc import Mapping, Iterable
 from typing import List, Union
+from inspect import getmembers, isfunction
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,6 +24,7 @@ from scipy import odr
 from mikeio import Dfs0, Dataset
 import fmskill.metrics as mtr
 from fmskill.observation import PointObservation, TrackObservation
+from fmskill.plot import scatter
 
 
 class BaseComparer:
@@ -245,15 +247,17 @@ class BaseComparer:
             return metrics
 
         if isinstance(metric, str):
-            valid_metrics = [
-                m for m in dir(mtr) if (m[0] != "_") & (m != "np") & (m != "warnings")
-            ]
+            valid_metrics = [x[0] for x in getmembers(mtr, isfunction)]
+
             if metric.lower() in valid_metrics:
                 metric = getattr(mtr, metric.lower())
             else:
                 raise ValueError(
                     f"Invalid metric: {metric}. Valid metrics are {valid_metrics}."
                 )
+        elif isinstance(metric, Iterable):
+            metrics = [self._parse_metric(m) for m in metric]
+            return metrics
         elif not callable(metric):
             raise ValueError(
                 f"Invalid metric: {metric}. Must be either string or callable."
@@ -386,18 +390,17 @@ class BaseComparer:
                 by.append("observation")
             return by
 
-        if (type(by) is list) or (type(by) is tuple):
-            by = [self._parse_by(b, n_models, n_obs) for b in by]
-            return by
-
         if isinstance(by, str):
-            if (by == "mdl") or (by == "mod") or (by == "models"):
+            if by in {"mdl", "mod", "models"}:
                 by = "model"
-            if (by == "obs") or (by == "observations"):
+            if by in {"obs", "observations"}:
                 by = "observation"
             if by[:5] == "freq:":
                 freq = by.split(":")[1]
                 by = pd.Grouper(freq=freq)
+        elif isinstance(by, Iterable):
+            by = [self._parse_by(b, n_models, n_obs) for b in by]
+            return by
         else:
             raise ValueError("Invalid by argument. Must be string or list of strings.")
         return by
@@ -605,7 +608,7 @@ class BaseComparer:
                         is_bbox = True
         return is_bbox
 
-    def _area_is_polygon(self, area):
+    def _area_is_polygon(self, area) -> bool:
         if area is None:
             return False
         if np.isscalar(area):
@@ -621,20 +624,12 @@ class BaseComparer:
                 return False
             if len(polygon) % 2 != 0:
                 return False
-            x0, y0 = polygon[0:2]
-            x1, y1 = polygon[-2:]
 
         if polygon.ndim == 2:
             if polygon.shape[0] < 3:
                 return False
             if polygon.shape[1] != 2:
                 return False
-            x0, y0 = polygon[0, :]
-            x1, y1 = polygon[-1, :]
-
-        if (x0 != x1) & (y0 != y1):
-            # make polygon closed
-            polygon = np.append(polygon, [x0, x1], axis=0)
 
         return True
 
@@ -647,6 +642,7 @@ class BaseComparer:
 
     def scatter(
         self,
+        *,
         binsize: float = None,
         nbins: int = 20,
         show_points: bool = None,
@@ -1160,7 +1156,6 @@ class PointComparer(SingleObsComparer):
         self, title=None, ylim=None, figsize=None, backend="matplotlib", **kwargs
     ):
 
-        mod_df = self.mod_data[self.mod_names[0]]
         if title is None:
             title = self.name
 
