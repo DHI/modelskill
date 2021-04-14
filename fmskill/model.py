@@ -7,6 +7,7 @@ from enum import Enum
 from mikeio import Dfs0, Dfsu, Dataset
 from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
+from .plot import plot_observation_positions
 
 
 class ModelResultType(Enum):
@@ -21,9 +22,9 @@ class ModelResult:
 
     Examples
     --------
-    >>> mr = ModelResult("Oresund2D.dfsu") 
+    >>> mr = ModelResult("Oresund2D.dfsu")
 
-    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund") 
+    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund")
     """
 
     # name = None

@@ -802,7 +802,10 @@ class BaseComparer:
             plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
             plt.plot(xq, yq, label="Q-Q", c="gray")
             plt.plot(
-                x, intercept + slope * x, "r", label=reglabel,
+                x,
+                intercept + slope * x,
+                "r",
+                label=reglabel,
             )
             if show_hist:
                 plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
@@ -962,7 +965,13 @@ class SingleObsComparer(BaseComparer):
         """
         # only for improved documentation
         return super().skill(
-            model=model, by=by, start=start, end=end, area=area, df=df, metrics=metrics,
+            model=model,
+            by=by,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
+            metrics=metrics,
         )
 
     def score(
@@ -1016,7 +1025,12 @@ class SingleObsComparer(BaseComparer):
         metric = self._parse_metric(metric)
 
         df = self.skill(
-            metrics=[metric], model=model, start=start, end=end, area=area, df=df,
+            metrics=[metric],
+            model=model,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
         )
         values = df[metric.__name__].values
         if len(values) == 1:
