@@ -1,6 +1,6 @@
 import pytest
 
-from fmskill.model import ModelResult
+from fmskill.model import ModelResult, ModelResultType
 from fmskill.observation import PointObservation
 
 
@@ -53,13 +53,19 @@ def test_dfs_object(hd_oresund_2d):
 def test_ModelResultType(sw_dutch_coast):
     mr = ModelResult(sw_dutch_coast)
 
-    assert mr.is_dfsu
+    assert mr.type == ModelResultType.dfsu
 
 
 def test_ModelResultType0():
     mr = ModelResult("tests/testdata/TS.dfs0")
 
-    assert mr.is_dfs0
+    assert mr.type == ModelResultType.dfs0
+
+
+# def test_compare_point_observation(hd_oresund_2d, klagshamn, drogden):
+#    mr = ModelResult(hd_oresund_2d)
+
+# cmp = mr.compare_point_observation(klagshamn, item=0)
 
 
 def test_extract(hd_oresund_2d, klagshamn, drogden):

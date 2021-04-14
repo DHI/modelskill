@@ -2,39 +2,37 @@ import os
 from typing import Union
 import numpy as np
 import warnings
-
-from abc import ABC, abstractmethod
+from enum import Enum
 
 from mikeio import Dfs0, Dfsu, Dataset
 from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
-from .plot import plot_observation_positions
 
 
-class ModelResultInterface(ABC):
-    @abstractmethod
-    def add_observation(self, observation, item, weight):
-        pass
-
-    @abstractmethod
-    def extract(self) -> ComparerCollection:
-        pass
-
-    @abstractmethod
-    def plot_observation_positions(self, figsize):
-        pass
+class ModelResultType(Enum):
+    dfs0 = 0
+    dfsu = 1
+    dfs2 = 2
 
 
-class ModelResult(ModelResultInterface):
+class ModelResult:
     """
     The result from a MIKE FM simulation (either dfsu or dfs0)
 
     Examples
     --------
-    >>> mr = ModelResult("Oresund2D.dfsu")
+    >>> mr = ModelResult("Oresund2D.dfsu") 
 
-    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund")
+    >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund") 
     """
+
+    # name = None
+    # type = None
+    # filename = None
+    # dfs = None
+    # observations = None
+    # items = None
+    # start = None  # TODO: add start time
 
     def __init__(self, filename: str, name: str = None):
         # TODO: add "start" as user may wish to disregard start from comparison
@@ -42,10 +40,13 @@ class ModelResult(ModelResultInterface):
         ext = os.path.splitext(filename)[-1]
         if ext == ".dfsu":
             self.dfs = Dfsu(filename)
+            self.type = ModelResultType.dfsu
         # elif ext == '.dfs2':
         #    self.dfs = Dfs2(filename)
+        #    self.type = ModelResultType.dfs2
         elif ext == ".dfs0":
             self.dfs = Dfs0(filename)
+            self.type = ModelResultType.dfs0
         else:
             raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
 
@@ -56,6 +57,7 @@ class ModelResult(ModelResultInterface):
         self.name = name
 
     def __repr__(self):
+        # return self.dfs
         out = []
         out.append("<fmskill.ModelResult>")
         out.append(self.filename)
@@ -84,12 +86,12 @@ class ModelResult(ModelResultInterface):
 
     def _validate_observation(self, observation) -> bool:
         ok = False
-        if self.is_dfsu:
+        if self.type == ModelResultType.dfsu:
             if isinstance(observation, PointObservation):
                 ok = self.dfs.contains([observation.x, observation.y])
             elif isinstance(observation, TrackObservation):
                 ok = True
-        elif self.is_dfs0:
+        elif self.type == ModelResultType.dfs0:
             # TODO: add check on name
             ok = True
 
@@ -137,9 +139,9 @@ class ModelResult(ModelResultInterface):
     def _extract_point(self, observation: PointObservation, item) -> Dataset:
         assert isinstance(observation, PointObservation)
         ds_model = None
-        if self.is_dfsu:
+        if self.type == ModelResultType.dfsu:
             ds_model = self._extract_point_dfsu(observation, item)
-        elif self.is_dfs0:
+        elif self.type == ModelResultType.dfs0:
             ds_model = self._extract_point_dfs0(observation, item)
         return ds_model
 
@@ -159,9 +161,9 @@ class ModelResult(ModelResultInterface):
     def _extract_track(self, observation: TrackObservation, item) -> Dataset:
         assert isinstance(observation, TrackObservation)
         ds_model = None
-        if self.is_dfsu:
+        if self.type == ModelResultType.dfsu:
             ds_model = self._extract_track_dfsu(observation, item)
-        elif self.is_dfs0:
+        elif self.type == ModelResultType.dfs0:
             ds_model = self.dfs.read(items=[0, 1, item])
             ds_model.items[-1].name = self.name
         return ds_model
@@ -173,35 +175,35 @@ class ModelResult(ModelResultInterface):
         return ds_model
 
     def plot_observation_positions(self, figsize=None):
-        """Plot observation points on a map showing the model domain
+        """Plot oberservation points on a map showing the model domain
 
         Parameters
         ----------
         figsize : (float, float), optional
             figure size, by default None
         """
-        if self.is_dfs0:
+        if self.type == ModelResultType.dfs0:
             warnings.warn(
                 "Plotting observations is only supported for dfsu ModelResults"
             )
             return
-
-        ax = plot_observation_positions(
-            dfs=self.dfs, observations=self.observations.values()
-        )
-
+        xn = self.dfs.node_coordinates[:, 0]
+        offset_x = 0.02 * (max(xn) - min(xn))
+        ax = self.dfs.plot(plot_type="outline_only", figsize=figsize)
+        for obs in self.observations.values():
+            if isinstance(obs, PointObservation):
+                ax.scatter(x=obs.x, y=obs.y, marker="x")
+                ax.annotate(obs.name, (obs.x + offset_x, obs.y))
+            elif isinstance(obs, TrackObservation):
+                if obs.n_points < 10000:
+                    ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
+                else:
+                    print("Too many points to plot")
+                    # TODO: group by lonlat bin
         return ax
 
-    @property
-    def is_dfsu(self):
-        return isinstance(self.dfs, Dfsu)
 
-    @property
-    def is_dfs0(self):
-        return isinstance(self.dfs, Dfs0)
-
-
-class ModelResultCollection(ModelResultInterface):
+class ModelResultCollection:
     """
     A collection of results from multiple MIKE FM simulations
     with the same "topology", e.g. several "runs" of the same model.
