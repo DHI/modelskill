@@ -10,8 +10,9 @@ Examples
 >>> mr.add_observation(o1, item=0)
 >>> comparer = mr.extract()
 """
-from collections.abc import Mapping
+from collections.abc import Mapping, Iterable
 from typing import List, Union
+from inspect import getmembers, isfunction
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,6 +24,7 @@ from scipy import odr
 from mikeio import Dfs0, Dataset
 import fmskill.metrics as mtr
 from fmskill.observation import PointObservation, TrackObservation
+from fmskill.plot import scatter
 
 
 class BaseComparer:
@@ -238,22 +240,19 @@ class BaseComparer:
         return mod_id
 
     def _parse_metric(self, metric):
-        if metric is None:
-            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
-        if (type(metric) is list) or (type(metric) is tuple):
-            metrics = [self._parse_metric(m) for m in metric]
-            return metrics
 
         if isinstance(metric, str):
-            valid_metrics = [
-                m for m in dir(mtr) if (m[0] != "_") & (m != "np") & (m != "warnings")
-            ]
+            valid_metrics = [x[0] for x in getmembers(mtr, isfunction)]
+
             if metric.lower() in valid_metrics:
                 metric = getattr(mtr, metric.lower())
             else:
                 raise ValueError(
                     f"Invalid metric: {metric}. Valid metrics are {valid_metrics}."
                 )
+        elif isinstance(metric, Iterable):
+            metrics = [self._parse_metric(m) for m in metric]
+            return metrics
         elif not callable(metric):
             raise ValueError(
                 f"Invalid metric: {metric}. Must be either string or callable."
@@ -353,9 +352,9 @@ class BaseComparer:
         by = self._parse_by(by, n_models, n_obs)
 
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
-        return res
+        return res.astype({"n": int})
 
-    def _groupby_df(self, df, by, metrics, n_min: int = None):
+    def _groupby_df(self, df, by, metrics):
         def calc_metrics(x):
             row = {}
             row["n"] = len(x)
@@ -364,18 +363,7 @@ class BaseComparer:
             return pd.Series(row)
 
         # .drop(columns=["x", "y"])
-
-        res = df.groupby(by=by).apply(calc_metrics)
-
-        if n_min:
-            # nan for all cols but n
-            cols = [col for col in res.columns if not col == "n"]
-            res.loc[res.n < n_min, cols] = np.nan
-
-        res["n"] = res["n"].fillna(0)
-        res = res.astype({"n": int})
-
-        return res
+        return df.groupby(by=by).apply(calc_metrics)
 
     def _parse_by(self, by, n_models, n_obs):
         if by is None:
@@ -386,134 +374,20 @@ class BaseComparer:
                 by.append("observation")
             return by
 
-        if (type(by) is list) or (type(by) is tuple):
-            by = [self._parse_by(b, n_models, n_obs) for b in by]
-            return by
-
         if isinstance(by, str):
-            if (by == "mdl") or (by == "mod") or (by == "models"):
+            if by in {"mdl", "mod", "models"}:
                 by = "model"
-            if (by == "obs") or (by == "observations"):
+            if by in {"obs", "observations"}:
                 by = "observation"
             if by[:5] == "freq:":
                 freq = by.split(":")[1]
                 by = pd.Grouper(freq=freq)
+        elif isinstance(by, Iterable):
+            by = [self._parse_by(b, n_models, n_obs) for b in by]
+            return by
         else:
             raise ValueError("Invalid by argument. Must be string or list of strings.")
         return by
-
-    def spatial_skill(
-        self,
-        bins=5,
-        binsize: float = None,
-        retbins: bool = False,
-        by: Union[str, List[str]] = None,
-        metrics: list = None,
-        n_min: int = None,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
-        area: List[float] = None,
-        df: pd.DataFrame = None,
-    ):
-        """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
-
-        Parameters
-        ----------
-        bins: int, list of scalars, or IntervalIndex, or tuple of, optional
-            criteria to bin x and y by, argument bins to pd.cut(), default 5
-            define different bins for x and y a tuple
-            e.g.: bins = 5, bins = (5,[2,3,5])
-        binsize : float, optional
-            bin size for x and y dimension, overwrites bins
-            creates bins with reference to round(mean(x)), round(mean(y))
-        by : (str, List[str]), optional
-            group by column name or by temporal bin via the freq-argument
-            (using pandas pd.Grouper(freq)),
-            e.g.: 'freq:M' = monthly; 'freq:D' daily
-            by default ["model","observation"]
-        metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
-        n_min : int, optional
-            minimum number of observations
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
-
-        Returns
-        -------
-        xr.Dataset
-            skill assessment as a dataset
-
-        See also
-        --------
-        skill
-            a method for aggregated skill assessment
-
-        """
-
-        metrics = self._parse_metric(metrics)
-
-        df = self.sel_df(
-            model=model, observation=observation, start=start, end=end, area=area, df=df
-        )
-
-        df = self._add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
-
-        n_models = len(df.model.unique())
-        n_obs = len(df.observation.unique())
-        by = self._parse_by(by, n_models, n_obs)
-        if not "xBin" in by:
-            by.append("xBin")
-        if not "yBin" in by:
-            by.append("yBin")
-
-        res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics, n_min)
-
-        return res.to_xarray().squeeze()
-
-    def _add_spatial_grid_to_df(self, df, bins, binsize):
-        if binsize is None:
-            # bins from bins
-            if isinstance(bins, tuple):
-                bins_x = bins[0]
-                bins_y = bins[1]
-            else:
-                bins_x = bins
-                bins_y = bins
-        else:
-            # bins from binsize
-            x_ptp = df.x.values.ptp()
-            y_ptp = df.y.values.ptp()
-            nx = int(np.ceil(x_ptp / binsize))
-            ny = int(np.ceil(y_ptp / binsize))
-            x_mean = np.round(df.x.mean())
-            y_mean = np.round(df.y.mean())
-            bins_x = np.arange(
-                x_mean - nx / 2 * binsize, x_mean + (nx / 2 + 1) * binsize, binsize
-            )
-            bins_y = np.arange(
-                y_mean - ny / 2 * binsize, y_mean + (ny / 2 + 1) * binsize, binsize
-            )
-        # cut and get bin centre
-        df["xBin"] = pd.cut(df.x, bins=bins_x)
-        df["xBin"] = df["xBin"].apply(lambda x: x.mid)
-        df["yBin"] = pd.cut(df.y, bins=bins_y)
-        df["yBin"] = df["yBin"].apply(lambda x: x.mid)
-
-        return df
 
     def sel_df(
         self,
@@ -605,7 +479,7 @@ class BaseComparer:
                         is_bbox = True
         return is_bbox
 
-    def _area_is_polygon(self, area):
+    def _area_is_polygon(self, area) -> bool:
         if area is None:
             return False
         if np.isscalar(area):
@@ -621,20 +495,12 @@ class BaseComparer:
                 return False
             if len(polygon) % 2 != 0:
                 return False
-            x0, y0 = polygon[0:2]
-            x1, y1 = polygon[-2:]
 
         if polygon.ndim == 2:
             if polygon.shape[0] < 3:
                 return False
             if polygon.shape[1] != 2:
                 return False
-            x0, y0 = polygon[0, :]
-            x1, y1 = polygon[-1, :]
-
-        if (x0 != x1) & (y0 != y1):
-            # make polygon closed
-            polygon = np.append(polygon, [x0, x1], axis=0)
 
         return True
 
@@ -647,6 +513,7 @@ class BaseComparer:
 
     def scatter(
         self,
+        *,
         binsize: float = None,
         nbins: int = 20,
         show_points: bool = None,
@@ -754,139 +621,22 @@ class BaseComparer:
         if show_points is None:
             show_points = len(x) < 1e4
 
-        xmin, xmax = x.min(), x.max()
-        ymin, ymax = y.min(), y.max()
-        xymin = min([xmin, ymin])
-        xymax = max([xmax, ymax])
-
-        if xlim is None:
-            xlim = [xymin, xymax]
-
-        if ylim is None:
-            ylim = [xymin, xymax]
-
-        if binsize is None:
-            binsize = (xmax - xmin) / nbins
-        else:
-            nbins = int((xmax - xmin) / binsize)
-
-        xq = np.quantile(x, q=np.linspace(0, 1, num=nbins))
-        yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
-
-        # linear fit
-        if reg_method == "ols":
-            reg = linregress(x, y)
-            intercept = reg.intercept
-            slope = reg.slope
-        elif reg_method == "odr":
-            data = odr.Data(x, y)
-            odr_obj = odr.ODR(data, odr.unilinear)
-            output = odr_obj.run()
-
-            intercept = output.beta[1]
-            slope = output.beta[0]
-        else:
-            raise NotImplementedError(
-                f"Regression method: {reg_method} not implemented, select 'ols' or 'odr'"
-            )
-
-        if intercept < 0:
-            sign = ""
-        else:
-            sign = "+"
-        reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
-
-        if backend == "matplotlib":
-
-            plt.figure(figsize=figsize)
-            plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
-            plt.plot(xq, yq, label="Q-Q", c="gray")
-            plt.plot(
-                x, intercept + slope * x, "r", label=reglabel,
-            )
-            if show_hist:
-                plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
-            plt.legend()
-            plt.xlabel(xlabel)
-            plt.ylabel(ylabel)
-            plt.axis("square")
-            plt.xlim(xlim)
-            plt.ylim(ylim)
-            if show_hist:
-                cbar = plt.colorbar(fraction=0.046, pad=0.04)
-                cbar.set_label("# points")
-            if show_points:
-                plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
-            plt.title(title)
-
-        elif backend == "plotly":  # pragma: no cover
-            import plotly.graph_objects as go
-
-            linvals = np.linspace(np.min([x, y]), np.max([x, y]))
-
-            data = [
-                go.Scatter(
-                    x=x,
-                    y=intercept + slope * x,
-                    name=reglabel,
-                    mode="lines",
-                    line=dict(color="red"),
-                ),
-                go.Scatter(
-                    x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
-                ),
-                go.Scatter(
-                    x=xq, y=yq, name="Q-Q", mode="lines", line=dict(color="gray")
-                ),
-            ]
-
-            if show_hist:
-                data.append(
-                    go.Histogram2d(
-                        x=x,
-                        y=y,
-                        xbins=dict(size=binsize),
-                        ybins=dict(size=binsize),
-                        colorscale=[
-                            [0.0, "rgba(0,0,0,0)"],
-                            [0.1, "purple"],
-                            [0.5, "green"],
-                            [1.0, "yellow"],
-                        ],
-                    )
-                )
-
-            if show_points:
-                data.append(
-                    go.Scatter(
-                        x=x,
-                        y=y,
-                        mode="markers",
-                        name="Data",
-                        marker=dict(color="black"),
-                    )
-                )
-
-            defaults = {"width": 600, "height": 600}
-            defaults = {**defaults, **kwargs}
-
-            layout = layout = go.Layout(
-                legend=dict(x=0.01, y=0.99),
-                yaxis=dict(scaleanchor="x", scaleratio=1),
-                title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
-                yaxis_title=ylabel,
-                xaxis_title=xlabel,
-                **defaults,
-            )
-
-            fig = go.Figure(data=data, layout=layout)
-            fig.update_xaxes(range=xlim)
-            fig.update_yaxes(range=ylim)
-            fig.show()  # Should this be here
-
-        else:
-
-            raise ValueError(f"Plotting backend: {backend} not supported")
+        scatter(
+            x=x,
+            y=y,
+            binsize=binsize,
+            nbins=nbins,
+            show_points=show_points,
+            show_hist=show_hist,
+            backend=backend,
+            figsize=figsize,
+            xlim=xlim,
+            ylim=ylim,
+            reg_method=reg_method,
+            title=title,
+            xlabel=xlabel,
+            ylabel=ylabel,
+        )
 
 
 class SingleObsComparer(BaseComparer):
@@ -962,7 +712,13 @@ class SingleObsComparer(BaseComparer):
         """
         # only for improved documentation
         return super().skill(
-            model=model, by=by, start=start, end=end, area=area, df=df, metrics=metrics,
+            model=model,
+            by=by,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
+            metrics=metrics,
         )
 
     def score(
@@ -1016,7 +772,12 @@ class SingleObsComparer(BaseComparer):
         metric = self._parse_metric(metric)
 
         df = self.skill(
-            metrics=[metric], model=model, start=start, end=end, area=area, df=df,
+            metrics=[metric],
+            model=model,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
         )
         values = df[metric.__name__].values
         if len(values) == 1:
@@ -1160,7 +921,6 @@ class PointComparer(SingleObsComparer):
         self, title=None, ylim=None, figsize=None, backend="matplotlib", **kwargs
     ):
 
-        mod_df = self.mod_data[self.mod_names[0]]
         if title is None:
             title = self.name
 
