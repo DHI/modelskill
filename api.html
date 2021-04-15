@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>API Documentation &mdash; fmskill 0.1 documentation</title>
+  <title>API Documentation &mdash; fmskill 0.1.1 documentation</title>
   
 
   
@@ -648,6 +648,73 @@ by default None</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt id="fmskill.compare.PointComparer.spatial_skill">
+<code class="sig-name descname"><span class="pre">spatial_skill</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binsize</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retbins</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_min</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.compare.PointComparer.spatial_skill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregated spatial skill assessment of model(s) on a regular spatial grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bins</strong> (<em>int</em><em>, </em><em>list of scalars</em><em>, or </em><em>IntervalIndex</em><em>, or </em><em>tuple of</em><em>, </em><em>optional</em>) – criteria to bin x and y by, argument bins to pd.cut(), default 5
+define different bins for x and y a tuple
+e.g.: bins = 5, bins = (5,[2,3,5])</p></li>
+<li><p><strong>binsize</strong> (<em>float</em><em>, </em><em>optional</em>) – bin size for x and y dimension, overwrites bins
+creates bins with reference to round(mean(x)), round(mean(y))</p></li>
+<li><p><strong>by</strong> (<em>(</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – group by column name or by temporal bin via the freq-argument
+(using pandas pd.Grouper(freq)),
+e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
+by default [“model”,”observation”]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>n_min</strong> (<em>int</em><em>, </em><em>optional</em>) – minimum number of observations in a grid cell;
+cells with fewer observations get a score of <cite>np.nan</cite></p></li>
+<li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
+<li><p><strong>observation</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of observations to be compared, by default all</p></li>
+<li><p><strong>start</strong> (<em>(</em><em>str</em><em>, </em><em>datetime</em><em>)</em><em>, </em><em>optional</em>) – start time of comparison, by default None</p></li>
+<li><p><strong>end</strong> (<em>(</em><em>str</em><em>, </em><em>datetime</em><em>)</em><em>, </em><em>optional</em>) – end time of comparison, by default None</p></li>
+<li><p><strong>area</strong> (<em>list</em><em>(</em><em>float</em><em>)</em><em>, </em><em>optional</em>) – bbox coordinates [x0, y0, x1, y1],
+or polygon coordinates [x0, y0, x1, y1, …, xn, yn],
+by default None</p></li>
+<li><p><strong>df</strong> (<em>pd.dataframe</em><em>, </em><em>optional</em>) – user-provided data instead of the comparers own data, by default None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>skill assessment as a dataset</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#fmskill.compare.PointComparer.skill" title="fmskill.compare.PointComparer.skill"><code class="xref py py-obj docutils literal notranslate"><span class="pre">skill</span></code></a></dt><dd><p>a method for aggregated skill assessment</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">)</span>
+<span class="go">&lt;xarray.Dataset&gt;</span>
+<span class="go">Dimensions:      (x: 5, y: 5)</span>
+<span class="go">Coordinates:</span>
+<span class="go">    observation  &lt;U4 &#39;alti&#39;</span>
+<span class="go">* x            (x) float64 -0.436 1.543 3.517 5.492 7.466</span>
+<span class="go">* y            (y) float64 50.6 51.66 52.7 53.75 54.8</span>
+<span class="go">Data variables:</span>
+<span class="go">    n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76</span>
+<span class="go">    bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">binsize</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span>
+<span class="go">Coordinates:</span>
+<span class="go">    observation  &lt;U4 &#39;alti&#39;</span>
+<span class="go">* x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5</span>
+<span class="go">* y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt id="fmskill.compare.PointComparer.start">
 <em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">start</span></code><a class="headerlink" href="#fmskill.compare.PointComparer.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>start datetime of compared data</p>
@@ -893,6 +960,73 @@ by default None</p></li>
 <span class="go">Hm0 group</span>
 <span class="go">(0, 2]     33 -0.09  0.23   0.22  0.21  0.46  0.12  0.98</span>
 <span class="go">(2, 6]     80  0.03  0.39   0.39  0.33  0.97  0.12  0.99</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="fmskill.compare.TrackComparer.spatial_skill">
+<code class="sig-name descname"><span class="pre">spatial_skill</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binsize</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retbins</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_min</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.compare.TrackComparer.spatial_skill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregated spatial skill assessment of model(s) on a regular spatial grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bins</strong> (<em>int</em><em>, </em><em>list of scalars</em><em>, or </em><em>IntervalIndex</em><em>, or </em><em>tuple of</em><em>, </em><em>optional</em>) – criteria to bin x and y by, argument bins to pd.cut(), default 5
+define different bins for x and y a tuple
+e.g.: bins = 5, bins = (5,[2,3,5])</p></li>
+<li><p><strong>binsize</strong> (<em>float</em><em>, </em><em>optional</em>) – bin size for x and y dimension, overwrites bins
+creates bins with reference to round(mean(x)), round(mean(y))</p></li>
+<li><p><strong>by</strong> (<em>(</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – group by column name or by temporal bin via the freq-argument
+(using pandas pd.Grouper(freq)),
+e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
+by default [“model”,”observation”]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>n_min</strong> (<em>int</em><em>, </em><em>optional</em>) – minimum number of observations in a grid cell;
+cells with fewer observations get a score of <cite>np.nan</cite></p></li>
+<li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
+<li><p><strong>observation</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of observations to be compared, by default all</p></li>
+<li><p><strong>start</strong> (<em>(</em><em>str</em><em>, </em><em>datetime</em><em>)</em><em>, </em><em>optional</em>) – start time of comparison, by default None</p></li>
+<li><p><strong>end</strong> (<em>(</em><em>str</em><em>, </em><em>datetime</em><em>)</em><em>, </em><em>optional</em>) – end time of comparison, by default None</p></li>
+<li><p><strong>area</strong> (<em>list</em><em>(</em><em>float</em><em>)</em><em>, </em><em>optional</em>) – bbox coordinates [x0, y0, x1, y1],
+or polygon coordinates [x0, y0, x1, y1, …, xn, yn],
+by default None</p></li>
+<li><p><strong>df</strong> (<em>pd.dataframe</em><em>, </em><em>optional</em>) – user-provided data instead of the comparers own data, by default None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>skill assessment as a dataset</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#fmskill.compare.TrackComparer.skill" title="fmskill.compare.TrackComparer.skill"><code class="xref py py-obj docutils literal notranslate"><span class="pre">skill</span></code></a></dt><dd><p>a method for aggregated skill assessment</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">)</span>
+<span class="go">&lt;xarray.Dataset&gt;</span>
+<span class="go">Dimensions:      (x: 5, y: 5)</span>
+<span class="go">Coordinates:</span>
+<span class="go">    observation  &lt;U4 &#39;alti&#39;</span>
+<span class="go">* x            (x) float64 -0.436 1.543 3.517 5.492 7.466</span>
+<span class="go">* y            (y) float64 50.6 51.66 52.7 53.75 54.8</span>
+<span class="go">Data variables:</span>
+<span class="go">    n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76</span>
+<span class="go">    bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">binsize</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span>
+<span class="go">Coordinates:</span>
+<span class="go">    observation  &lt;U4 &#39;alti&#39;</span>
+<span class="go">* x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5</span>
+<span class="go">* y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1218,6 +1352,73 @@ by default None</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt id="fmskill.compare.ComparerCollection.spatial_skill">
+<code class="sig-name descname"><span class="pre">spatial_skill</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binsize</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retbins</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_min</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">datetime.datetime</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.compare.ComparerCollection.spatial_skill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregated spatial skill assessment of model(s) on a regular spatial grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bins</strong> (<em>int</em><em>, </em><em>list of scalars</em><em>, or </em><em>IntervalIndex</em><em>, or </em><em>tuple of</em><em>, </em><em>optional</em>) – criteria to bin x and y by, argument bins to pd.cut(), default 5
+define different bins for x and y a tuple
+e.g.: bins = 5, bins = (5,[2,3,5])</p></li>
+<li><p><strong>binsize</strong> (<em>float</em><em>, </em><em>optional</em>) – bin size for x and y dimension, overwrites bins
+creates bins with reference to round(mean(x)), round(mean(y))</p></li>
+<li><p><strong>by</strong> (<em>(</em><em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – group by column name or by temporal bin via the freq-argument
+(using pandas pd.Grouper(freq)),
+e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
+by default [“model”,”observation”]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>n_min</strong> (<em>int</em><em>, </em><em>optional</em>) – minimum number of observations in a grid cell;
+cells with fewer observations get a score of <cite>np.nan</cite></p></li>
+<li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
+<li><p><strong>observation</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of observations to be compared, by default all</p></li>
+<li><p><strong>start</strong> (<em>(</em><em>str</em><em>, </em><em>datetime</em><em>)</em><em>, </em><em>optional</em>) – start time of comparison, by default None</p></li>
+<li><p><strong>end</strong> (<em>(</em><em>str</em><em>, </em><em>datetime</em><em>)</em><em>, </em><em>optional</em>) – end time of comparison, by default None</p></li>
+<li><p><strong>area</strong> (<em>list</em><em>(</em><em>float</em><em>)</em><em>, </em><em>optional</em>) – bbox coordinates [x0, y0, x1, y1],
+or polygon coordinates [x0, y0, x1, y1, …, xn, yn],
+by default None</p></li>
+<li><p><strong>df</strong> (<em>pd.dataframe</em><em>, </em><em>optional</em>) – user-provided data instead of the comparers own data, by default None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>skill assessment as a dataset</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="#fmskill.compare.ComparerCollection.skill" title="fmskill.compare.ComparerCollection.skill"><code class="xref py py-obj docutils literal notranslate"><span class="pre">skill</span></code></a></dt><dd><p>a method for aggregated skill assessment</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">)</span>
+<span class="go">&lt;xarray.Dataset&gt;</span>
+<span class="go">Dimensions:      (x: 5, y: 5)</span>
+<span class="go">Coordinates:</span>
+<span class="go">    observation  &lt;U4 &#39;alti&#39;</span>
+<span class="go">* x            (x) float64 -0.436 1.543 3.517 5.492 7.466</span>
+<span class="go">* y            (y) float64 50.6 51.66 52.7 53.75 54.8</span>
+<span class="go">Data variables:</span>
+<span class="go">    n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76</span>
+<span class="go">    bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">binsize</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span>
+<span class="go">Coordinates:</span>
+<span class="go">    observation  &lt;U4 &#39;alti&#39;</span>
+<span class="go">* x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5</span>
+<span class="go">* y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt id="fmskill.compare.ComparerCollection.start">
 <em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">start</span></code><a class="headerlink" href="#fmskill.compare.ComparerCollection.start" title="Permalink to this definition">¶</a></dt>
 <dd><p>start datetime of compared data</p>
@@ -1328,7 +1529,7 @@ by default None</p></li>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Jesper Mariegaard, Henrik Andersson.
+        &#169; Copyright 2021, Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger.
 
     </p>
   </div>
