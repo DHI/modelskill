@@ -496,10 +496,10 @@ class BaseComparer:
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
         by = self._parse_by(by, n_models, n_obs)
-        if not "x" in by:
-            by.append("x")
         if not "y" in by:
-            by.append("y")
+            by.insert(0,"y")
+        if not "x" in by:
+            by.insert(0,"x")
 
         res = self._groupby_df(
             df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y")),
