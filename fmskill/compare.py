@@ -436,7 +436,7 @@ class BaseComparer:
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
         n_min : int, optional
-            minimum number of observations in a grid cell; 
+            minimum number of observations in a grid cell;
             cells with fewer observations get a score of `np.nan`
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
@@ -463,6 +463,26 @@ class BaseComparer:
         skill
             a method for aggregated skill assessment
 
+        Examples
+        --------
+        >>> cc = mr.extract()  # with satellite track measurements
+        >>> cc.spatial_skill(metrics='bias')
+        <xarray.Dataset>
+        Dimensions:      (x: 5, y: 5)
+        Coordinates:
+            observation  <U4 'alti'
+        * x            (x) float64 -0.436 1.543 3.517 5.492 7.466
+        * y            (y) float64 50.6 51.66 52.7 53.75 54.8
+        Data variables:
+            n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
+            bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
+
+        >>> ds = cc.spatial_skill(binsize=0.5)
+        >>> ds.coords
+        Coordinates:
+            observation  <U4 'alti'
+        * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
+        * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
         metrics = self._parse_metric(metrics)
