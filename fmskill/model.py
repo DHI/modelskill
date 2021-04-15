@@ -214,7 +214,7 @@ class ModelResult:
         plt.plot([self.dfs.start_time, self.dfs.end_time], y)
         for key, obs in self.observations.items():
             y += 1.0
-            plt.plot([obs.start_time, obs.end_time], y)
+            plt.plot(obs.time, y[0] * np.ones_like(obs.values), "_", markersize=5)
             labels.append(key)
         if limit_to_model_period:
             plt.xlim([self.dfs.start_time, self.dfs.end_time])
