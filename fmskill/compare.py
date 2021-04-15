@@ -436,7 +436,8 @@ class BaseComparer:
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
         n_min : int, optional
-            minimum number of observations
+            minimum number of observations in a grid cell; 
+            cells with fewer observations get a score of `np.nan`
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
