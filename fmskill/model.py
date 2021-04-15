@@ -2,6 +2,7 @@ import os
 from typing import Union
 import numpy as np
 import warnings
+import matplotlib.pyplot as plt
 
 from abc import ABC, abstractmethod
 
@@ -190,6 +191,26 @@ class ModelResult(ModelResultInterface):
             dfs=self.dfs, observations=self.observations.values()
         )
 
+        return ax
+
+    def plot_data_coverage(self, limit_to_model_period=True):
+
+        fig, ax = plt.subplots()
+        y = np.repeat(0.0, 2)
+        x = self.dfs.start_time, self.dfs.end_time
+        plt.plot(x, y)
+        labels = ["Model"]
+
+        plt.plot([self.dfs.start_time, self.dfs.end_time], y)
+        for key, obs in self.observations.items():
+            y += 1.0
+            plt.plot(obs.time, y[0] * np.ones_like(obs.values), "_", markersize=5)
+            labels.append(key)
+        if limit_to_model_period:
+            plt.xlim([self.dfs.start_time, self.dfs.end_time])
+
+        plt.yticks(np.arange(0, len(self.observations) + 1), labels)
+        fig.autofmt_xdate()
         return ax
 
     @property
