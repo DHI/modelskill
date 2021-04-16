@@ -6,6 +6,7 @@ import warnings
 from abc import ABC, abstractmethod
 
 from mikeio import Dfs0, Dfsu, Dataset
+from mikeio.dfsutil import _valid_item_numbers, _get_item_info
 from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from .plot import plot_observation_positions
@@ -61,7 +62,7 @@ class ModelResult(ModelResultInterface):
         out.append(self.filename)
         return str.join("\n", out)
 
-    def add_observation(self, observation, item, weight=1.0):
+    def add_observation(self, observation, item, weight=1.0, ignore_eum=False):
         """Add an observation to this ModelResult
 
         Parameters
@@ -74,6 +75,10 @@ class ModelResult(ModelResultInterface):
             Relative weight used in weighted skill calculation, default 1.0
         """
         ok = self._validate_observation(observation)
+        if ok:
+            ok = self._validate_item(observation, item)
+            if ignore_eum:
+                ok = True
         if ok:
             observation.model_variable = item
             observation.weight = weight
@@ -92,8 +97,29 @@ class ModelResult(ModelResultInterface):
         elif self.is_dfs0:
             # TODO: add check on name
             ok = True
-
         return ok
+
+    def _validate_item(self, observation, mod_item):
+        ok = True
+        mod_item = self._parse_model_item(mod_item)
+        obs_item = observation.itemInfo
+        if mod_item.type != obs_item.type:
+            ok = False
+            warnings.warn(
+                f"{observation.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs_item.type.display_name}"
+            )
+        if mod_item.unit != obs_item.unit:
+            ok = False
+            warnings.warn(
+                f"{observation.name}:Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs_item.unit.display_name}"
+            )
+        return ok
+
+    def _parse_model_item(self, mod_item):
+        dfsItemInfo = self.dfs._source.ItemInfo
+        mod_item_num = _valid_item_numbers(dfsItemInfo, mod_item)
+        mod_items = _get_item_info(dfsItemInfo, mod_item_num)
+        return mod_items[0]
 
     def extract(self) -> ComparerCollection:
         """extract model result in all observations"""

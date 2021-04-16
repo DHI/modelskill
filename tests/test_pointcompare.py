@@ -41,8 +41,8 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
 def test_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, ignore_eum=True)
+    mr.add_observation(drogden, item=0, ignore_eum=True)
     collection = mr.extract()
 
     assert collection.score(metric=root_mean_squared_error) > 0.0
@@ -52,15 +52,15 @@ def test_score(modelresult_oresund_2d, klagshamn, drogden):
 def test_weighted_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, ignore_eum=True)
+    mr.add_observation(drogden, item=0, ignore_eum=True)
     c = mr.extract()
     unweighted_skill = c.score()
 
     mrw = modelresult_oresund_2d
 
-    mrw.add_observation(klagshamn, item=0, weight=1.0)
-    mrw.add_observation(drogden, item=0, weight=0.0)
+    mrw.add_observation(klagshamn, item=0, weight=1.0, ignore_eum=True)
+    mrw.add_observation(drogden, item=0, weight=0.0, ignore_eum=True)
     cw = mrw.extract()
 
     weighted_skill = cw.score()
@@ -72,8 +72,8 @@ def test_misc_properties(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, ignore_eum=True)
+    mr.add_observation(drogden, item=0, ignore_eum=True)
 
     c = mr.extract()
 
@@ -100,8 +100,8 @@ def test_skill(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, ignore_eum=True)
+    mr.add_observation(drogden, item=0, ignore_eum=True)
 
     c = mr.extract()
 

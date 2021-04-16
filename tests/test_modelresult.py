@@ -65,8 +65,8 @@ def test_ModelResultType0():
 def test_extract(hd_oresund_2d, klagshamn, drogden):
     mr = ModelResult(hd_oresund_2d)
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, ignore_eum=True)
+    mr.add_observation(drogden, item=0, ignore_eum=True)
     collection = mr.extract()
     collection["Klagshamn"].name == "Klagshamn"
 
