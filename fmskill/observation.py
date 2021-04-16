@@ -33,7 +33,9 @@ class Observation:
 
     # matplotlib: red=#d62728
 
-    def __init__(self, name: str = None, df=None, itemInfo=None):
+    def __init__(
+        self, name: str = None, df=None, itemInfo=None, variable_name: str = None
+    ):
         self.name = name
         self.df = df
         if itemInfo is None:
@@ -41,6 +43,9 @@ class Observation:
         else:
             self.itemInfo = itemInfo
         self.weight = 1.0
+        if variable_name is None:
+            variable_name = self.itemInfo.type.name
+        self.variable_name = variable_name
 
     @property
     def time(self) -> pd.DatetimeIndex:
