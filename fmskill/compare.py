@@ -1375,7 +1375,7 @@ class ComparerCollection(Mapping, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> pd.DataFrame:
-        """Weighted mean skill of model(s) over all observations
+        """Weighted mean skill of model(s) over all observations (of same variable)
 
         Parameters
         ----------
@@ -1421,7 +1421,7 @@ class ComparerCollection(Mapping, BaseComparer):
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
         """
-
+        metrics = self._parse_metric(metrics)
         # TODO: how to handle by=freq:D?
 
         df = self.sel_df(
@@ -1436,24 +1436,45 @@ class ComparerCollection(Mapping, BaseComparer):
         skilldf = self.skill(df=df, metrics=metrics)
         mod_names = df.model.unique()
         obs_names = df.observation.unique()
+        var_names = self._var_names
         if self.n_variables > 1:
             var_names = df.variable.unique()
         n_models = len(mod_names)
 
-        weights = self._parse_weights(weights, obs_names)
+        weights = self._parse_weights(weights, obs_names)  # var_names
         has_weights = False if (weights is None) else True
+        # TODO: add weights to all rows in skilldf
 
         rows = []
-        for model in mod_names:
-            dfsub = skilldf.loc[model].copy() if n_models > 1 else skilldf
-            dfsub["weights"] = weights if has_weights else dfsub.n
-            wm = lambda x: np.average(x, weights=dfsub.loc[x.index, "weights"])
-            row = dfsub.apply(wm)
-            row.n = dfsub.n.sum().astype(int)
-            row.drop("weights", inplace=True)
-            rows.append(row)
+        if len(var_names) == 1:
+            for model in mod_names:
+                dfsub = skilldf.loc[model].copy() if n_models > 1 else skilldf
+                dfsub["weights"] = weights if has_weights else dfsub.n
+                wm = lambda x: np.average(x, weights=dfsub.loc[x.index, "weights"])
+                row = dfsub.apply(wm)
+                row.n = dfsub.n.sum().astype(int)
+                row.drop("weights", inplace=True)
+                rows.append(row)
+            df = pd.DataFrame(rows, index=mod_names)
+        else:
+            by = []
+            if len(mod_names) > 1:
+                by.append("model")
+            if len(var_names) > 1:
+                by.append("variable")
+            if len(by) == 0:
+                if (self.n_variables > 1) and ("variable" in skilldf):
+                    by.append("variable")
+                elif "model" in skilldf:
+                    by.append("model")
+                else:
+                    by.append("observation")
+            agg = {"n": np.sum}
+            for metric in metrics:
+                # TODO: add weighting
+                agg[metric.__name__] = np.mean
+            df = skilldf.groupby(by).agg(agg)
 
-        df = pd.DataFrame(rows, index=mod_names)
         return df.astype({"n": int})
 
     def _parse_weights(self, weights, observations):
