@@ -25,6 +25,7 @@ from mikeio import Dfs0, Dataset
 import fmskill.metrics as mtr
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.plot import scatter
+from fmskill.spatial import SpatialSkill
 
 
 class BaseComparer:
@@ -497,9 +498,9 @@ class BaseComparer:
         n_obs = len(df.observation.unique())
         by = self._parse_by(by, n_models, n_obs)
         if not "y" in by:
-            by.insert(0,"y")
+            by.insert(0, "y")
         if not "x" in by:
-            by.insert(0,"x")
+            by.insert(0, "x")
 
         res = self._groupby_df(
             df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y")),
@@ -508,7 +509,8 @@ class BaseComparer:
             n_min,
         )
 
-        return res.to_xarray().squeeze()
+        ss = SpatialSkill(res.to_xarray().squeeze())
+        return ss
 
     def _add_spatial_grid_to_df(self, df, bins, binsize):
         if binsize is None:
