@@ -9,13 +9,15 @@ from fmskill.metrics import root_mean_squared_error, mean_absolute_error
 @pytest.fixture
 def klagshamn():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
-    return PointObservation(fn, item=0, x=366844, y=6154291, name="Klagshamn")
+    return PointObservation(
+        fn, item=0, x=366844, y=6154291, name="Klagshamn", variable_name="WL"
+    )
 
 
 @pytest.fixture
 def drogden():
     fn = "tests/testdata/dmi_30357_Drogden_Fyr.dfs0"
-    return PointObservation(fn, item=0, x=355568.0, y=6156863.0)
+    return PointObservation(fn, item=0, x=355568.0, y=6156863.0, variable_name="WL")
 
 
 @pytest.fixture
