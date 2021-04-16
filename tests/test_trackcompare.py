@@ -38,7 +38,7 @@ def test_skill_vs_spatial_skill(comparer):
     ds = comparer.spatial_skill(bins=1)  # force 1 bin only
 
     assert df.loc["alti"].n == ds.n.values
-    assert df.loc["alti"].bias == ds.bias.values
+    assert df.loc["alti"].bias == ds.ds.bias.values
     assert ds.x.size == 1
     assert ds.y.size == 1
     # assert ds.coords._names == {"x","y"}  # TODO: Why return "observation" as by, when n_obs==1 but not "model"?
