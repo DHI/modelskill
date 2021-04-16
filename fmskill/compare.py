@@ -390,7 +390,7 @@ class BaseComparer:
 
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
-        n_var = len(df.variable.unique())
+        n_var = len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = self._parse_by(by, n_models, n_obs, n_var)
 
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
@@ -1005,6 +1005,8 @@ class SingleObsComparer(BaseComparer):
     def sel_df(
         self,
         model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -1048,7 +1050,15 @@ class SingleObsComparer(BaseComparer):
         >>> dfsub = cc['c2'].sel_df(area=[0.5,52.5,5,54])
         """
         # only for improved documentation
-        return super().sel_df(model=model, start=start, end=end, area=area, df=df)
+        return super().sel_df(
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
+        )
 
     def remove_bias(self, correct="Model"):
         bias = self.residual.mean(axis=0)
@@ -1426,6 +1436,8 @@ class ComparerCollection(Mapping, BaseComparer):
         skilldf = self.skill(df=df, metrics=metrics)
         mod_names = df.model.unique()
         obs_names = df.observation.unique()
+        if self.n_variables > 1:
+            var_names = df.variable.unique()
         n_models = len(mod_names)
 
         weights = self._parse_weights(weights, obs_names)
@@ -1438,7 +1450,7 @@ class ComparerCollection(Mapping, BaseComparer):
             wm = lambda x: np.average(x, weights=dfsub.loc[x.index, "weights"])
             row = dfsub.apply(wm)
             row.n = dfsub.n.sum().astype(int)
-            row.drop("weights")
+            row.drop("weights", inplace=True)
             rows.append(row)
 
         df = pd.DataFrame(rows, index=mod_names)
