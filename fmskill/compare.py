@@ -12,6 +12,7 @@ Examples
 """
 from collections.abc import Mapping, Iterable
 from typing import List, Union
+import warnings
 from inspect import getmembers, isfunction
 import numpy as np
 import pandas as pd
@@ -1442,40 +1443,36 @@ class ComparerCollection(Mapping, BaseComparer):
         n_models = len(mod_names)
 
         weights = self._parse_weights(weights, obs_names)  # var_names
-        has_weights = False if (weights is None) else True
-        # TODO: add weights to all rows in skilldf
+        skilldf["weights"] = (
+            skilldf.n if weights is None else np.repeat(weights, n_models)
+        )
+        weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
-        rows = []
-        if len(var_names) == 1:
-            for model in mod_names:
-                dfsub = skilldf.loc[model].copy() if n_models > 1 else skilldf
-                dfsub["weights"] = weights if has_weights else dfsub.n
-                wm = lambda x: np.average(x, weights=dfsub.loc[x.index, "weights"])
-                row = dfsub.apply(wm)
-                row.n = dfsub.n.sum().astype(int)
-                row.drop("weights", inplace=True)
-                rows.append(row)
-            df = pd.DataFrame(rows, index=mod_names)
-        else:
-            by = []
-            if len(mod_names) > 1:
-                by.append("model")
-            if len(var_names) > 1:
-                by.append("variable")
-            if len(by) == 0:
-                if (self.n_variables > 1) and ("variable" in skilldf):
-                    by.append("variable")
-                elif "model" in skilldf:
-                    by.append("model")
-                else:
-                    by.append("observation")
-            agg = {"n": np.sum}
-            for metric in metrics:
-                # TODO: add weighting
-                agg[metric.__name__] = np.mean
-            df = skilldf.groupby(by).agg(agg)
+        by = self._mean_skill_by(skilldf, mod_names, var_names)
+        agg = {"n": np.sum}
+        for metric in metrics:
+            agg[metric.__name__] = weighted_mean
+        df = skilldf.groupby(by).agg(agg)
 
         return df.astype({"n": int})
+
+    def _mean_skill_by(self, skilldf, mod_names, var_names):
+        by = []
+
+        if len(mod_names) > 1:
+            by.append("model")
+        if len(var_names) > 1:
+            by.append("variable")
+        if len(by) == 0:
+            if (self.n_variables > 1) and ("variable" in skilldf):
+                by.append("variable")
+            elif "model" in skilldf:
+                by.append("model")
+            else:
+                by = [mod_names[0]] * len(
+                    skilldf
+                )  # [True]*len(df)  # by.append("observation")
+        return by
 
     def _parse_weights(self, weights, observations):
 
@@ -1503,9 +1500,15 @@ class ComparerCollection(Mapping, BaseComparer):
                         "unknown weights argument (None, 'equal', 'points', or list of floats)"
                     )
             elif not np.isscalar(weights):
+                if n_obs == 1:
+                    if len(weights) > 1:
+                        warnings.warn(
+                            "Cannot apply multiple weights to one observation"
+                        )
+                    weights = [1.0]
                 if not len(weights) == n_obs:
                     raise ValueError(
-                        "weights must have length equal to number of observations"
+                        f"weights must have same length as observations: {observations}"
                     )
         return weights
 
