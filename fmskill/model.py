@@ -5,7 +5,7 @@ import warnings
 
 from abc import ABC, abstractmethod
 
-from mikeio import Dfs0, Dfsu, Dataset
+from mikeio import Dfs0, Dfsu, Dataset, eum
 from mikeio.dfsutil import _valid_item_numbers, _get_item_info
 from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
@@ -101,8 +101,18 @@ class ModelResult(ModelResultInterface):
 
     def _validate_item(self, observation, mod_item):
         ok = True
-        mod_item = self._parse_model_item(mod_item)
+        try:
+            mod_item = self._parse_model_item(mod_item)
+        except Exception:
+            warnings.warn(
+                "Could not parse model item eum type. Consider updating mikeio to version 0.6.4."
+            )
+            return ok
+
         obs_item = observation.itemInfo
+        if obs_item.type == eum.EUMType.Undefined:
+            warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
+        
         if mod_item.type != obs_item.type:
             ok = False
             warnings.warn(
@@ -116,7 +126,9 @@ class ModelResult(ModelResultInterface):
         return ok
 
     def _parse_model_item(self, mod_item):
+        # this will fail for dfs0 in mikeio <0.6.4
         dfsItemInfo = self.dfs._source.ItemInfo
+
         mod_item_num = _valid_item_numbers(dfsItemInfo, mod_item)
         mod_items = _get_item_info(dfsItemInfo, mod_item_num)
         return mod_items[0]
