@@ -322,8 +322,8 @@ class BaseComparer:
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
-        variable :
-
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -490,8 +490,8 @@ class BaseComparer:
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
-        variable
-
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -787,8 +787,8 @@ class BaseComparer:
             name or id of model to be compared, by default None
         observation : (int, str), optional
             name or ids of observations to be compared, by default None
-        variable :
-
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -1392,8 +1392,8 @@ class ComparerCollection(Mapping, BaseComparer):
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
-        variable :
-
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -1541,8 +1541,8 @@ class ComparerCollection(Mapping, BaseComparer):
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
-        variable
-
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
