@@ -62,7 +62,7 @@ class ModelResult(ModelResultInterface):
         out.append(self.filename)
         return str.join("\n", out)
 
-    def add_observation(self, observation, item, weight=1.0, ignore_eum=False):
+    def add_observation(self, observation, item, weight=1.0, validate_eum=True):
         """Add an observation to this ModelResult
 
         Parameters
@@ -73,17 +73,17 @@ class ModelResult(ModelResultInterface):
             ModelResult item name or number corresponding to the observation
         weight: float
             Relative weight used in weighted skill calculation, default 1.0
+        validate_eum: bool
+            Require eum type and units to match between model and observation?
+            Defaut: True
         """
         ok = self._validate_observation(observation)
-        if ok:
-            ok = self._validate_item(observation, item)
-            if ignore_eum:
-                ok = True
+        if ok and validate_eum:
+            ok = self._validate_item_eum(observation, item)
         if ok:
             observation.model_variable = item
             observation.weight = weight
             self.observations[observation.name] = observation
-            # self.items.append(item)
         else:
             warnings.warn("Could not add observation")
 
@@ -99,7 +99,7 @@ class ModelResult(ModelResultInterface):
             ok = True
         return ok
 
-    def _validate_item(self, observation, mod_item):
+    def _validate_item_eum(self, observation, mod_item):
         ok = True
         try:
             mod_item = self._parse_model_item(mod_item)
@@ -112,7 +112,7 @@ class ModelResult(ModelResultInterface):
         obs_item = observation.itemInfo
         if obs_item.type == eum.EUMType.Undefined:
             warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
-        
+
         if mod_item.type != obs_item.type:
             ok = False
             warnings.warn(
