@@ -71,9 +71,9 @@ class ModelResult(ModelResultInterface):
             Observation object for later comparison
         item : str, integer
             ModelResult item name or number corresponding to the observation
-        weight: float
+        weight: float, optional
             Relative weight used in weighted skill calculation, default 1.0
-        validate_eum: bool
+        validate_eum: bool, optional
             Require eum type and units to match between model and observation?
             Defaut: True
         """
@@ -99,20 +99,15 @@ class ModelResult(ModelResultInterface):
             ok = True
         return ok
 
-    def _validate_item_eum(self, observation, mod_item):
+    def _validate_item_eum(self, observation, mod_item) -> bool:
+        """Check that observation and model item eum match"""
         ok = True
-        try:
-            mod_item = self._parse_model_item(mod_item)
-        except Exception:
-            warnings.warn(
-                "Could not parse model item eum type. Consider updating mikeio to version 0.6.4."
-            )
-            return ok
-
         obs_item = observation.itemInfo
         if obs_item.type == eum.EUMType.Undefined:
             warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
+            return ok
 
+        mod_item = self._get_model_item(mod_item)
         if mod_item.type != obs_item.type:
             ok = False
             warnings.warn(
@@ -121,20 +116,29 @@ class ModelResult(ModelResultInterface):
         if mod_item.unit != obs_item.unit:
             ok = False
             warnings.warn(
-                f"{observation.name}:Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs_item.unit.display_name}"
+                f"{observation.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs_item.unit.display_name}"
             )
         return ok
 
-    def _parse_model_item(self, mod_item):
-        # this will fail for dfs0 in mikeio <0.6.4
-        dfsItemInfo = self.dfs._source.ItemInfo
-
-        mod_item_num = _valid_item_numbers(dfsItemInfo, mod_item)
-        mod_items = _get_item_info(dfsItemInfo, mod_item_num)
-        return mod_items[0]
+    def _get_model_item(self, item) -> eum.ItemInfo:
+        """"Given str or int find corresponding model itemInfo"""
+        mod_items = self.dfs.items
+        n_items = len(mod_items)
+        if isinstance(item, int):
+            if (item < 0) or (item >= n_items):
+                raise ValueError(f"item number must be between 0 and {n_items}")
+        elif isinstance(item, str):
+            item_names = [i.name for i in mod_items]
+            try:
+                item = item_names.index(item)
+            except ValueError:
+                raise ValueError(f"item not found in model items ({item_names})")
+        else:
+            raise ValueError("item must be an integer or a string")
+        return mod_items[item]
 
     def extract(self) -> ComparerCollection:
-        """extract model result in all observations"""
+        """Extract model result in all observations"""
         cc = ComparerCollection()
         for obs in self.observations.values():
             comparer = self._extract_observation(obs, obs.model_variable)
