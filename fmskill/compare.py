@@ -122,7 +122,7 @@ class BaseComparer:
 
     @property
     def n_variables(self) -> int:
-        return len(set(self._var_names))
+        return len(self._var_names)
 
     @property
     def all_df(self) -> pd.DataFrame:
@@ -1285,11 +1285,43 @@ class ComparerCollection(Mapping, BaseComparer):
         return self._end
 
     @property
+    def var_names(self):
+        """List of variable names"""
+        return self._var_names
+
+    @var_names.setter
+    def var_names(self, value):
+        if np.isscalar(value):
+            value = [value]
+        if len(value) != self.n_variables:
+            raise ValueError(f"Length of var_names must be {self.n_variables}")
+        for var_id, new_var in enumerate(value):
+            for c in self.comparers.values():
+                if c._var_names[0] == self.var_names[var_id]:
+                    c.observation.variable_name = new_var
+                    c._var_names = [new_var]
+        if self.n_variables > 1:
+            if self._all_df is not None:
+                self._all_df["variable"]
+                for old_var, new_var in zip(self.var_names, value):
+                    self._all_df.loc[
+                        self._all_df.variable == old_var, "variable"
+                    ] = new_var
+        self._var_names = value
+
+    @property
+    def obs_names(self):
+        """List of observation names"""
+        return self._var_names
+
+    @property
     def n_observations(self) -> int:
+        """Number of observations"""
         return self.n_comparers
 
     @property
     def n_comparers(self) -> int:
+        """Number of comparers"""
         return len(self.comparers)
 
     def _construct_all_df(self):
