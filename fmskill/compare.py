@@ -1518,12 +1518,14 @@ class ComparerCollection(Mapping, BaseComparer):
         metric=mtr.rmse,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> pd.DataFrame:
         """Weighted mean score of model(s) over all observations
+        NOTE: will take simple mean over different variables
 
         Parameters
         ----------
@@ -1539,6 +1541,8 @@ class ComparerCollection(Mapping, BaseComparer):
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
+        variable
+
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -1570,23 +1574,38 @@ class ComparerCollection(Mapping, BaseComparer):
         >>> cc.score(weights=[0.1,0.1,0.8])
         0.3383011631797379
 
-        >>> import fmskill.metrics as mtr
-        >>> cc.score(weights='points', metric=mtr.mape)
+        >>> cc.score(weights='points', metric="mape")
         8.414442957854142
         """
         metric = self._parse_metric(metric)
 
+        if model is None:
+            models = self._mod_names
+        else:
+            models = [model] if np.isscalar(model) else model
+            models = [self._get_mod_name(m) for m in models]
+        n_models = len(models)
+
         df = self.mean_skill(
             weights=weights,
             metrics=[metric],
-            model=model,
+            model=models,
             observation=observation,
+            variable=variable,
             start=start,
             end=end,
             area=area,
             df=df,
         )
-        values = df[metric.__name__].values
-        if len(values) == 1:
-            values = values[0]
+
+        if n_models == 1:
+            values = df[metric.__name__].values.mean()
+        else:
+            values = []
+            for model in models:
+                mtr_val = df.loc[model][metric.__name__]
+                if not np.isscalar(mtr_val):
+                    mtr_val = mtr_val.values.mean()
+                values.append(mtr_val)
+
         return values
