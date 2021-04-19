@@ -1599,13 +1599,13 @@ class ComparerCollection(Mapping, BaseComparer):
         )
 
         if n_models == 1:
-            values = df[metric.__name__].values.mean()
+            score = df[metric.__name__].values.mean()
         else:
-            values = []
+            score = {}
             for model in models:
                 mtr_val = df.loc[model][metric.__name__]
                 if not np.isscalar(mtr_val):
                     mtr_val = mtr_val.values.mean()
-                values.append(mtr_val)
+                score[model] = mtr_val
 
-        return values
+        return score
