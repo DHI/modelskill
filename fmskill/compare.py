@@ -403,6 +403,8 @@ class BaseComparer:
     ):
         """Add a field to skilldf if unique in df"""
         for field in reversed(fields):
+            if (field == "model") and (self.n_models <= 1):
+                continue
             if (field == "variable") and (self.n_variables <= 1):
                 continue
             if field not in skilldf.index.names:
