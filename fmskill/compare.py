@@ -800,11 +800,11 @@ class BaseComparer:
         ylabel : str, optional
             y-label text on plot, by default None
         model : (int, str), optional
-            name or id of model to be compared, by default None
-        observation : (int, str), optional
+            name or id of model to be compared, by default first
+        observation : (int, str, List[str], List[int])), optional
             name or ids of observations to be compared, by default None
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
+        variable : (str, int), optional
+            name or id of variable to be compared, by default first
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -826,14 +826,20 @@ class BaseComparer:
         >>> comparer.scatter(model='HKZN_v2', figsize=(10, 10))
         >>> comparer.scatter(observations=['c2','HKNA'])
         """
+        # select model
         mod_id = self._get_mod_id(model)
-        mod_name = self._mod_names[mod_id]
+        mod_name = self.mod_names[mod_id]
 
+        # select variable
+        var_id = self._get_var_id(variable)
+        var_name = self.var_names[var_id]
+
+        # filter data
         df = self.sel_df(
             df=df,
             model=mod_name,
             observation=observation,
-            variable=variable,
+            variable=var_name,
             start=start,
             end=end,
             area=area,
@@ -844,11 +850,15 @@ class BaseComparer:
         x = df.obs_val
         y = df.mod_val
 
+        unit_text = self._obs_unit_text
+        if isinstance(self, ComparerCollection):
+            unit_text = self[df.observation[0]]._obs_unit_text
+
         if xlabel is None:
-            xlabel = f"Observation, {self._obs_unit_text}"
+            xlabel = f"Observation, {unit_text}"
 
         if ylabel is None:
-            ylabel = f"Model, {self._obs_unit_text}"
+            ylabel = f"Model, {unit_text}"
 
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
