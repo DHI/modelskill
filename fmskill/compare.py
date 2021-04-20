@@ -395,7 +395,21 @@ class BaseComparer:
         by = self._parse_by(by, n_models, n_obs, n_var)
 
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = self._add_as_field_if_not_in_index(df, skilldf=res)
         return res
+
+    def _add_as_field_if_not_in_index(
+        self, df, skilldf, fields=["model", "observation", "variable"]
+    ):
+        """Add a field to skilldf if unique in df"""
+        for field in reversed(fields):
+            if (field == "variable") and (self.n_variables <= 1):
+                continue
+            if field not in skilldf.index.names:
+                unames = df[field].unique()
+                if len(unames) == 1:
+                    skilldf.insert(loc=0, column=field, value=unames[0])
+        return skilldf
 
     def _groupby_df(self, df, by, metrics, n_min: int = None):
         def calc_metrics(x):
@@ -1454,9 +1468,9 @@ class ComparerCollection(Mapping, BaseComparer):
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
         """
-        metrics = self._parse_metric(metrics)
         # TODO: how to handle by=freq:D?
 
+        # filter data
         df = self.sel_df(
             df=df,
             model=model,
@@ -1466,31 +1480,37 @@ class ComparerCollection(Mapping, BaseComparer):
             end=end,
             area=area,
         )
-        skilldf = self.skill(df=df, metrics=metrics)
         mod_names = df.model.unique()
         obs_names = df.observation.unique()
-        var_names = self._var_names
+        var_names = self.var_names
         if self.n_variables > 1:
             var_names = df.variable.unique()
         n_models = len(mod_names)
 
+        # skill assessment
+        metrics = self._parse_metric(metrics)
+        skilldf = self.skill(df=df, metrics=metrics)
+
+        # weights
         weights = self._parse_weights(weights, obs_names)
         skilldf["weights"] = (
             skilldf.n if weights is None else np.repeat(weights, n_models)
         )
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
+        # group by
         by = self._mean_skill_by(skilldf, mod_names, var_names)
         agg = {"n": np.sum}
         for metric in metrics:
             agg[metric.__name__] = weighted_mean
-        df = skilldf.groupby(by).agg(agg)
+        res = skilldf.groupby(by).agg(agg)
 
-        return df.astype({"n": int})
+        # output
+        res = self._add_as_field_if_not_in_index(df, res, fields=["model", "variable"])
+        return res.astype({"n": int})
 
     def _mean_skill_by(self, skilldf, mod_names, var_names):
         by = []
-
         if len(mod_names) > 1:
             by.append("model")
         if len(var_names) > 1:
@@ -1501,9 +1521,7 @@ class ComparerCollection(Mapping, BaseComparer):
             elif "model" in skilldf:
                 by.append("model")
             else:
-                by = [mod_names[0]] * len(
-                    skilldf
-                )  # [True]*len(df)  # by.append("observation")
+                by = [mod_names[0]] * len(skilldf)
         return by
 
     def _parse_weights(self, weights, observations):
@@ -1637,6 +1655,7 @@ class ComparerCollection(Mapping, BaseComparer):
             for model in models:
                 mtr_val = df.loc[model][metric.__name__]
                 if not np.isscalar(mtr_val):
+                    # e.g. mean over different variables!
                     mtr_val = mtr_val.values.mean()
                 score[model] = mtr_val
 
