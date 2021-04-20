@@ -832,7 +832,7 @@ class BaseComparer:
 
         # select variable
         var_id = self._get_var_id(variable)
-        var_name = self.var_names[var_id]
+        var_name = self._var_names[var_id]
 
         # filter data
         df = self.sel_df(
