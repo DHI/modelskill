@@ -15,7 +15,7 @@ setuptools.setup(
             "pytest",
             "sphinx",
             "sphinx-rtd-theme",
-            "black >= 20.8",
+            "black",
             "shapely",
             "plotly >= 4.5",
         ],
