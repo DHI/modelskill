@@ -285,7 +285,7 @@ class ModelResultCollection(ModelResultInterface):
         assert isinstance(modelresult, ModelResult)
         self.modelresults[modelresult.name] = modelresult
 
-    def add_observation(self, observation, item):
+    def add_observation(self, observation, item, weight=1.0, validate_eum=True):
         """Add an observation to all ModelResults in collection
 
         Parameters
@@ -296,7 +296,7 @@ class ModelResultCollection(ModelResultInterface):
             ModelResult item name or number corresponding to the observation
         """
         for mr in self.modelresults.values():
-            mr.add_observation(observation, item)
+            mr.add_observation(observation, item, weight, validate_eum)
 
     def _extract_observation(
         self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
