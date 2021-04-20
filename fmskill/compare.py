@@ -881,6 +881,7 @@ class BaseComparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
+            **kwargs,
         )
 
 
