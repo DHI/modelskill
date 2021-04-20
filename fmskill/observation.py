@@ -33,7 +33,9 @@ class Observation:
 
     # matplotlib: red=#d62728
 
-    def __init__(self, name: str = None, df=None, itemInfo=None):
+    def __init__(
+        self, name: str = None, df=None, itemInfo=None, variable_name: str = None
+    ):
         self.name = name
         self.df = df
         if itemInfo is None:
@@ -41,6 +43,9 @@ class Observation:
         else:
             self.itemInfo = itemInfo
         self.weight = 1.0
+        if variable_name is None:
+            variable_name = self.itemInfo.type.name
+        self.variable_name = variable_name
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -111,7 +116,8 @@ class PointObservation(Observation):
         x: float = None,
         y: float = None,
         z: float = None,
-        name=None,
+        name: str = None,
+        variable_name: str = None,
     ):
         self.x = x
         self.y = y
@@ -129,7 +135,9 @@ class PointObservation(Observation):
             else:
                 raise NotImplementedError()
 
-        super().__init__(name=name, df=df, itemInfo=itemInfo)
+        super().__init__(
+            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
+        )
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
@@ -218,7 +226,9 @@ class TrackObservation(Observation):
     def values(self):
         return self.df.iloc[:, 2].values
 
-    def __init__(self, filename, item: int = 2, name=None):
+    def __init__(
+        self, filename, item: int = 2, name: str = None, variable_name: str = None
+    ):
         if isinstance(filename, pd.DataFrame):  # or isinstance(filename, pd.Series):
             df = filename
             df = df.iloc[:, [0, 1, item]]
@@ -234,7 +244,9 @@ class TrackObservation(Observation):
             else:
                 raise NotImplementedError()
 
-        super().__init__(name=name, df=df, itemInfo=itemInfo)
+        super().__init__(
+            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
+        )
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"

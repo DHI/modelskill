@@ -32,6 +32,7 @@ Or the development version:
 * [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Track_comparison.ipynb)
 * [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/SW_DutchCoast.ipynb)
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_model_comparison.ipynb)
+* [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
 
 
 ## Workflow

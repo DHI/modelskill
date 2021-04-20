@@ -5,7 +5,7 @@ import warnings
 
 from abc import ABC, abstractmethod
 
-from mikeio import Dfs0, Dfsu, Dataset
+from mikeio import Dfs0, Dfsu, Dataset, eum
 from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from .plot import plot_observation_positions
@@ -13,7 +13,7 @@ from .plot import plot_observation_positions
 
 class ModelResultInterface(ABC):
     @abstractmethod
-    def add_observation(self, observation, item, weight):
+    def add_observation(self, observation, item, weight, validate_eum):
         pass
 
     @abstractmethod
@@ -59,9 +59,9 @@ class ModelResult(ModelResultInterface):
         out = []
         out.append("<fmskill.ModelResult>")
         out.append(self.filename)
-        return str.join("\n", out)
+        return "\n".join(out)
 
-    def add_observation(self, observation, item, weight=1.0):
+    def add_observation(self, observation, item, weight=1.0, validate_eum=True):
         """Add an observation to this ModelResult
 
         Parameters
@@ -70,15 +70,19 @@ class ModelResult(ModelResultInterface):
             Observation object for later comparison
         item : str, integer
             ModelResult item name or number corresponding to the observation
-        weight: float
+        weight: float, optional
             Relative weight used in weighted skill calculation, default 1.0
+        validate_eum: bool, optional
+            Require eum type and units to match between model and observation?
+            Defaut: True
         """
         ok = self._validate_observation(observation)
+        if ok and validate_eum:
+            ok = self._validate_item_eum(observation, item)
         if ok:
             observation.model_variable = item
             observation.weight = weight
             self.observations[observation.name] = observation
-            # self.items.append(item)
         else:
             warnings.warn("Could not add observation")
 
@@ -92,11 +96,48 @@ class ModelResult(ModelResultInterface):
         elif self.is_dfs0:
             # TODO: add check on name
             ok = True
-
         return ok
 
+    def _validate_item_eum(self, observation, mod_item) -> bool:
+        """Check that observation and model item eum match"""
+        ok = True
+        obs_item = observation.itemInfo
+        if obs_item.type == eum.EUMType.Undefined:
+            warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
+            return ok
+
+        mod_item = self._get_model_item(mod_item)
+        if mod_item.type != obs_item.type:
+            ok = False
+            warnings.warn(
+                f"{observation.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs_item.type.display_name}"
+            )
+        if mod_item.unit != obs_item.unit:
+            ok = False
+            warnings.warn(
+                f"{observation.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs_item.unit.display_name}"
+            )
+        return ok
+
+    def _get_model_item(self, item) -> eum.ItemInfo:
+        """"Given str or int find corresponding model itemInfo"""
+        mod_items = self.dfs.items
+        n_items = len(mod_items)
+        if isinstance(item, int):
+            if (item < 0) or (item >= n_items):
+                raise ValueError(f"item number must be between 0 and {n_items}")
+        elif isinstance(item, str):
+            item_names = [i.name for i in mod_items]
+            try:
+                item = item_names.index(item)
+            except ValueError:
+                raise ValueError(f"item not found in model items ({item_names})")
+        else:
+            raise ValueError("item must be an integer or a string")
+        return mod_items[item]
+
     def extract(self) -> ComparerCollection:
-        """extract model result in all observations"""
+        """Extract model result in all observations"""
         cc = ComparerCollection()
         for obs in self.observations.values():
             comparer = self._extract_observation(obs, obs.model_variable)
@@ -135,39 +176,37 @@ class ModelResult(ModelResultInterface):
         return comparer
 
     def _extract_point(self, observation: PointObservation, item) -> Dataset:
-        assert isinstance(observation, PointObservation)
         ds_model = None
         if self.is_dfsu:
-            ds_model = self._extract_point_dfsu(observation, item)
+            ds_model = self._extract_point_dfsu(observation.x, observation.y, item)
         elif self.is_dfs0:
-            ds_model = self._extract_point_dfs0(observation, item)
+            ds_model = self._extract_point_dfs0(item)
+
         return ds_model
 
-    def _extract_point_dfsu(self, observation: PointObservation, item):
-        assert isinstance(observation, PointObservation)
-        xy = np.atleast_2d([observation.x, observation.y])
+    def _extract_point_dfsu(self, x, y, item):
+        xy = np.atleast_2d([x, y])
         elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
         ds_model.items[0].name = self.name
         return ds_model
 
-    def _extract_point_dfs0(self, observation, item):
+    def _extract_point_dfs0(self, item):
         ds_model = self.dfs.read(items=[item])
         ds_model.items[0].name = self.name
         return ds_model
 
     def _extract_track(self, observation: TrackObservation, item) -> Dataset:
-        assert isinstance(observation, TrackObservation)
         ds_model = None
         if self.is_dfsu:
             ds_model = self._extract_track_dfsu(observation, item)
         elif self.is_dfs0:
             ds_model = self.dfs.read(items=[0, 1, item])
             ds_model.items[-1].name = self.name
+
         return ds_model
 
     def _extract_track_dfsu(self, observation: TrackObservation, item):
-        assert isinstance(observation, TrackObservation)
         ds_model = self.dfs.extract_track(track=observation.df, items=[item])
         ds_model.items[-1].name = self.name
         return ds_model
@@ -246,7 +285,7 @@ class ModelResultCollection(ModelResultInterface):
         assert isinstance(modelresult, ModelResult)
         self.modelresults[modelresult.name] = modelresult
 
-    def add_observation(self, observation, item):
+    def add_observation(self, observation, item, weight=1.0, validate_eum=True):
         """Add an observation to all ModelResults in collection
 
         Parameters
@@ -257,7 +296,7 @@ class ModelResultCollection(ModelResultInterface):
             ModelResult item name or number corresponding to the observation
         """
         for mr in self.modelresults.values():
-            mr.add_observation(observation, item)
+            mr.add_observation(observation, item, weight, validate_eum)
 
     def _extract_observation(
         self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
