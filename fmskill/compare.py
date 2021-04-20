@@ -12,6 +12,7 @@ Examples
 """
 from collections.abc import Mapping, Iterable
 from typing import List, Union
+import warnings
 from inspect import getmembers, isfunction
 import numpy as np
 import pandas as pd
@@ -120,6 +121,10 @@ class BaseComparer:
         return self._mod_names  # list(self.mod_data.keys())
 
     @property
+    def n_variables(self) -> int:
+        return len(self._var_names)
+
+    @property
     def all_df(self) -> pd.DataFrame:
         if self._all_df is None:
             self._construct_all_df()
@@ -129,11 +134,14 @@ class BaseComparer:
         template = {
             "model": pd.Series([], dtype="category"),
             "observation": pd.Series([], dtype="category"),
-            "x": pd.Series([], dtype="float"),
-            "y": pd.Series([], dtype="float"),
-            "mod_val": pd.Series([], dtype="float"),
-            "obs_val": pd.Series([], dtype="float"),
         }
+        if self.n_variables > 1:
+            template["variable"] = pd.Series([], dtype="category")
+
+        template["x"] = pd.Series([], dtype="float")
+        template["y"] = pd.Series([], dtype="float")
+        template["mod_val"] = pd.Series([], dtype="float")
+        template["obs_val"] = pd.Series([], dtype="float")
         res = pd.DataFrame(template)
         return res
 
@@ -147,6 +155,8 @@ class BaseComparer:
             df.columns = ["mod_val"]
             df["model"] = mod_name
             df["observation"] = self.observation.name
+            if self.n_variables > 1:
+                df["variable"] = self.observation.variable_name
             df["x"] = self.x
             df["y"] = self.y
             df["obs_val"] = self.obs
@@ -159,6 +169,8 @@ class BaseComparer:
         self._obs_unit_text = self.observation._unit_text()
         self.mod_data = {}
         self._obs_names = [observation.name]
+        self._var_names = [observation.variable_name]
+        self._itemInfos = [observation.itemInfo]
 
         if modeldata is not None:
             self.add_modeldata(modeldata)
@@ -215,6 +227,28 @@ class BaseComparer:
             raise ValueError("observation must be None, str or int")
         return obs_id
 
+    def _get_var_name(self, var):
+        return self._var_names[self._get_var_id(var)]
+
+    def _get_var_id(self, var):
+        if var is None or self.n_variables <= 1:
+            return 0
+        elif isinstance(var, str):
+            if var in self._var_names:
+                var_id = self._var_names.index(var)
+            else:
+                raise ValueError(f"var {var} could not be found in {self._var_names}")
+        elif isinstance(var, int):
+            if var >= 0 and var < self.n_variables:
+                var_id = var
+            else:
+                raise ValueError(
+                    f"var id was {var} - must be within 0 and {self.n_variables-1}"
+                )
+        else:
+            raise ValueError("variable must be None, str or int")
+        return var_id
+
     def _get_mod_name(self, model):
         return self._mod_names[self._get_mod_id(model)]
 
@@ -267,6 +301,7 @@ class BaseComparer:
         metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -287,6 +322,8 @@ class BaseComparer:
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -340,21 +377,41 @@ class BaseComparer:
                     large     324 -0.23  0.38   0.30  0.28  0.96  0.09  0.99
         """
 
-        if metrics is None:
-            metrics = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
-        else:
-            metrics = self._parse_metric(metrics)
+        metrics = self._parse_metric(metrics)
 
         df = self.sel_df(
-            model=model, observation=observation, start=start, end=end, area=area, df=df
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
         )
 
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
-        by = self._parse_by(by, n_models, n_obs)
+        n_var = len(df.variable.unique()) if (self.n_variables > 1) else 1
+        by = self._parse_by(by, n_models, n_obs, n_var)
 
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = self._add_as_field_if_not_in_index(df, skilldf=res)
         return res
+
+    def _add_as_field_if_not_in_index(
+        self, df, skilldf, fields=["model", "observation", "variable"]
+    ):
+        """Add a field to skilldf if unique in df"""
+        for field in reversed(fields):
+            if (field == "model") and (self.n_models <= 1):
+                continue
+            if (field == "variable") and (self.n_variables <= 1):
+                continue
+            if field not in skilldf.index.names:
+                unames = df[field].unique()
+                if len(unames) == 1:
+                    skilldf.insert(loc=0, column=field, value=unames[0])
+        return skilldf
 
     def _groupby_df(self, df, by, metrics, n_min: int = None):
         def calc_metrics(x):
@@ -378,12 +435,17 @@ class BaseComparer:
 
         return res
 
-    def _parse_by(self, by, n_models, n_obs):
+    def _parse_by(self, by, n_models, n_obs, n_var=1):
         if by is None:
             by = []
             if n_models > 1:
                 by.append("model")
-            if (n_obs > 1) or ((n_models == 1) and (n_obs == 1)):
+            if n_obs > 1:  # or ((n_models == 1) and (n_obs == 1)):
+                by.append("observation")
+            if n_var > 1:
+                by.append("variable")
+            if len(by) == 0:
+                # default value
                 by.append("observation")
             return by
 
@@ -392,11 +454,13 @@ class BaseComparer:
                 by = "model"
             if by in {"obs", "observations"}:
                 by = "observation"
+            if by in {"var", "variables", "item"}:
+                by = "variable"
             if by[:5] == "freq:":
                 freq = by.split(":")[1]
                 by = pd.Grouper(freq=freq)
         elif isinstance(by, Iterable):
-            by = [self._parse_by(b, n_models, n_obs) for b in by]
+            by = [self._parse_by(b, n_models, n_obs, n_var) for b in by]
             return by
         else:
             raise ValueError("Invalid by argument. Must be string or list of strings.")
@@ -406,12 +470,12 @@ class BaseComparer:
         self,
         bins=5,
         binsize: float = None,
-        retbins: bool = False,
         by: Union[str, List[str]] = None,
         metrics: list = None,
         n_min: int = None,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -442,6 +506,8 @@ class BaseComparer:
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -470,7 +536,7 @@ class BaseComparer:
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
-            observation  <U4 'alti'
+            observation   'alti'
         * x            (x) float64 -0.436 1.543 3.517 5.492 7.466
         * y            (y) float64 50.6 51.66 52.7 53.75 54.8
         Data variables:
@@ -480,7 +546,7 @@ class BaseComparer:
         >>> ds = cc.spatial_skill(binsize=0.5)
         >>> ds.coords
         Coordinates:
-            observation  <U4 'alti'
+            observation   'alti'
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
@@ -488,7 +554,13 @@ class BaseComparer:
         metrics = self._parse_metric(metrics)
 
         df = self.sel_df(
-            model=model, observation=observation, start=start, end=end, area=area, df=df
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
         )
 
         df = self._add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
@@ -497,9 +569,9 @@ class BaseComparer:
         n_obs = len(df.observation.unique())
         by = self._parse_by(by, n_models, n_obs)
         if not "y" in by:
-            by.insert(0,"y")
+            by.insert(0, "y")
         if not "x" in by:
-            by.insert(0,"x")
+            by.insert(0, "x")
 
         res = self._groupby_df(
             df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y")),
@@ -545,6 +617,7 @@ class BaseComparer:
         self,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -559,6 +632,8 @@ class BaseComparer:
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -606,6 +681,10 @@ class BaseComparer:
             observation = [observation] if np.isscalar(observation) else observation
             observation = [self._get_obs_name(o) for o in observation]
             df = df[df.observation.isin(observation)]
+        if (variable is not None) and (self.n_variables > 1):
+            variable = [variable] if np.isscalar(variable) else variable
+            variable = [self._get_var_name(v) for v in variable]
+            df = df[df.variable.isin(variable)]
         if (start is not None) or (end is not None):
             df = df.loc[start:end]
         if area is not None:
@@ -680,6 +759,7 @@ class BaseComparer:
         ylabel: str = None,
         model: Union[str, int] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -720,9 +800,11 @@ class BaseComparer:
         ylabel : str, optional
             y-label text on plot, by default None
         model : (int, str), optional
-            name or id of model to be compared, by default None
-        observation : (int, str), optional
+            name or id of model to be compared, by default first
+        observation : (int, str, List[str], List[int])), optional
             name or ids of observations to be compared, by default None
+        variable : (str, int), optional
+            name or id of variable to be compared, by default first
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -744,13 +826,20 @@ class BaseComparer:
         >>> comparer.scatter(model='HKZN_v2', figsize=(10, 10))
         >>> comparer.scatter(observations=['c2','HKNA'])
         """
+        # select model
         mod_id = self._get_mod_id(model)
-        mod_name = self._mod_names[mod_id]
+        mod_name = self.mod_names[mod_id]
 
+        # select variable
+        var_id = self._get_var_id(variable)
+        var_name = self._var_names[var_id]
+
+        # filter data
         df = self.sel_df(
             df=df,
             model=mod_name,
             observation=observation,
+            variable=var_name,
             start=start,
             end=end,
             area=area,
@@ -761,11 +850,15 @@ class BaseComparer:
         x = df.obs_val
         y = df.mod_val
 
+        unit_text = self._obs_unit_text
+        if isinstance(self, ComparerCollection):
+            unit_text = self[df.observation[0]]._obs_unit_text
+
         if xlabel is None:
-            xlabel = f"Observation, {self._obs_unit_text}"
+            xlabel = f"Observation, {unit_text}"
 
         if ylabel is None:
-            ylabel = f"Model, {self._obs_unit_text}"
+            ylabel = f"Model, {unit_text}"
 
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
@@ -788,10 +881,33 @@ class BaseComparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
+            **kwargs,
         )
 
 
 class SingleObsComparer(BaseComparer):
+    def __add__(self, other):
+        cc = ComparerCollection()
+        cc.add_comparer(self)
+        if isinstance(other, SingleObsComparer):
+            cc.add_comparer(other)
+        elif isinstance(other, ComparerCollection):
+            for c in other:
+                cc.add_comparer(c)
+        else:
+            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
+        return cc
+
+    def __copy__(self):
+        # cls = self.__class__
+        # cp = cls.__new__(cls)
+        # cp.__init__(self.observation, self.mod_df)
+        # return cp
+        return deepcopy(self)
+
+    def copy(self):
+        return self.__copy__()
+
     def skill(
         self,
         by: Union[str, List[str]] = None,
@@ -940,6 +1056,7 @@ class SingleObsComparer(BaseComparer):
         self,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -984,7 +1101,13 @@ class SingleObsComparer(BaseComparer):
         """
         # only for improved documentation
         return super().sel_df(
-            model=model, observation=observation, start=start, end=end, area=area, df=df
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
         )
 
     def remove_bias(self, correct="Model"):
@@ -1211,11 +1334,43 @@ class ComparerCollection(Mapping, BaseComparer):
         return self._end
 
     @property
+    def var_names(self):
+        """List of variable names"""
+        return self._var_names
+
+    @var_names.setter
+    def var_names(self, value):
+        if np.isscalar(value):
+            value = [value]
+        if len(value) != self.n_variables:
+            raise ValueError(f"Length of var_names must be {self.n_variables}")
+        for var_id, new_var in enumerate(value):
+            for c in self.comparers.values():
+                if c._var_names[0] == self.var_names[var_id]:
+                    c.observation.variable_name = new_var
+                    c._var_names = [new_var]
+        if self.n_variables > 1:
+            if self._all_df is not None:
+                self._all_df["variable"]
+                for old_var, new_var in zip(self.var_names, value):
+                    self._all_df.loc[
+                        self._all_df.variable == old_var, "variable"
+                    ] = new_var
+        self._var_names = value
+
+    @property
+    def obs_names(self):
+        """List of observation names"""
+        return self._var_names
+
+    @property
     def n_observations(self) -> int:
+        """Number of observations"""
         return self.n_comparers
 
     @property
     def n_comparers(self) -> int:
+        """Number of comparers"""
         return len(self.comparers)
 
     def _construct_all_df(self):
@@ -1229,6 +1384,8 @@ class ComparerCollection(Mapping, BaseComparer):
                 df.columns = ["mod_val"]
                 df["model"] = mod_name
                 df["observation"] = cmp.observation.name
+                if self.n_variables > 1:
+                    df["variable"] = cmp.observation.variable_name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
@@ -1240,6 +1397,8 @@ class ComparerCollection(Mapping, BaseComparer):
         self.comparers = {}
         self._mod_names = []
         self._obs_names = []
+        self._var_names = []
+        self._itemInfos = []
 
     def __repr__(self):
         out = []
@@ -1257,6 +1416,29 @@ class ComparerCollection(Mapping, BaseComparer):
     def __iter__(self):
         return iter(self.comparers)
 
+    def __add__(self, other):
+        # if type(other) not in (SingleObsComparer, ComparerCollection):
+        #    raise TypeError(f"Cannot add {type(other)} to ComparerCollection")
+
+        cp = self.copy()
+        if isinstance(other, SingleObsComparer):
+            cp.add_comparer(other)
+        elif isinstance(other, ComparerCollection):
+            for c in other:
+                cp.add_comparer(c)
+        return cp
+
+    def __copy__(self):
+        cls = self.__class__
+        cp = cls.__new__(cls)
+        cp.__init__()
+        for c in self.comparers.values():
+            cp.add_comparer(c)
+        return cp
+
+    def copy(self):
+        return self.__copy__()
+
     def add_comparer(self, comparer: SingleObsComparer):
         """Add another Comparer to this collection.
 
@@ -1271,6 +1453,12 @@ class ComparerCollection(Mapping, BaseComparer):
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
         self._obs_names.append(comparer.observation.name)
+        if comparer.observation.variable_name not in self._var_names:
+            self._var_names.append(comparer.observation.variable_name)
+
+        # check if already in...
+        self._itemInfos.append(comparer.observation.itemInfo)
+
         self._n_points = self._n_points + comparer.n_points
         if comparer.start < self.start:
             self._start = comparer.start
@@ -1286,12 +1474,13 @@ class ComparerCollection(Mapping, BaseComparer):
         metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> pd.DataFrame:
-        """Weighted mean skill of model(s) over all observations
+        """Weighted mean skill of model(s) over all observations (of same variable)
 
         Parameters
         ----------
@@ -1307,6 +1496,8 @@ class ComparerCollection(Mapping, BaseComparer):
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -1335,32 +1526,61 @@ class ComparerCollection(Mapping, BaseComparer):
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
         """
-
         # TODO: how to handle by=freq:D?
 
+        # filter data
         df = self.sel_df(
-            df=df, model=model, observation=observation, start=start, end=end, area=area
+            df=df,
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
         )
-        skilldf = self.skill(df=df, metrics=metrics)
         mod_names = df.model.unique()
         obs_names = df.observation.unique()
+        var_names = self.var_names
+        if self.n_variables > 1:
+            var_names = df.variable.unique()
         n_models = len(mod_names)
 
+        # skill assessment
+        metrics = self._parse_metric(metrics)
+        skilldf = self.skill(df=df, metrics=metrics)
+
+        # weights
         weights = self._parse_weights(weights, obs_names)
-        has_weights = False if (weights is None) else True
+        skilldf["weights"] = (
+            skilldf.n if weights is None else np.repeat(weights, n_models)
+        )
+        weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
-        rows = []
-        for model in mod_names:
-            dfsub = skilldf.loc[model].copy() if n_models > 1 else skilldf
-            dfsub["weights"] = weights if has_weights else dfsub.n
-            wm = lambda x: np.average(x, weights=dfsub.loc[x.index, "weights"])
-            row = dfsub.apply(wm)
-            row.n = dfsub.n.sum().astype(int)
-            row.drop("weights")
-            rows.append(row)
+        # group by
+        by = self._mean_skill_by(skilldf, mod_names, var_names)
+        agg = {"n": np.sum}
+        for metric in metrics:
+            agg[metric.__name__] = weighted_mean
+        res = skilldf.groupby(by).agg(agg)
 
-        df = pd.DataFrame(rows, index=mod_names)
-        return df.astype({"n": int})
+        # output
+        res = self._add_as_field_if_not_in_index(df, res, fields=["model", "variable"])
+        return res.astype({"n": int})
+
+    def _mean_skill_by(self, skilldf, mod_names, var_names):
+        by = []
+        if len(mod_names) > 1:
+            by.append("model")
+        if len(var_names) > 1:
+            by.append("variable")
+        if len(by) == 0:
+            if (self.n_variables > 1) and ("variable" in skilldf):
+                by.append("variable")
+            elif "model" in skilldf:
+                by.append("model")
+            else:
+                by = [mod_names[0]] * len(skilldf)
+        return by
 
     def _parse_weights(self, weights, observations):
 
@@ -1388,9 +1608,15 @@ class ComparerCollection(Mapping, BaseComparer):
                         "unknown weights argument (None, 'equal', 'points', or list of floats)"
                     )
             elif not np.isscalar(weights):
+                if n_obs == 1:
+                    if len(weights) > 1:
+                        warnings.warn(
+                            "Cannot apply multiple weights to one observation"
+                        )
+                    weights = [1.0]
                 if not len(weights) == n_obs:
                     raise ValueError(
-                        "weights must have length equal to number of observations"
+                        f"weights must have same length as observations: {observations}"
                     )
         return weights
 
@@ -1400,12 +1626,14 @@ class ComparerCollection(Mapping, BaseComparer):
         metric=mtr.rmse,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> pd.DataFrame:
         """Weighted mean score of model(s) over all observations
+        NOTE: will take simple mean over different variables
 
         Parameters
         ----------
@@ -1421,6 +1649,8 @@ class ComparerCollection(Mapping, BaseComparer):
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
             name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
         start : (str, datetime), optional
             start time of comparison, by default None
         end : (str, datetime), optional
@@ -1452,23 +1682,39 @@ class ComparerCollection(Mapping, BaseComparer):
         >>> cc.score(weights=[0.1,0.1,0.8])
         0.3383011631797379
 
-        >>> import fmskill.metrics as mtr
-        >>> cc.score(weights='points', metric=mtr.mape)
+        >>> cc.score(weights='points', metric="mape")
         8.414442957854142
         """
         metric = self._parse_metric(metric)
 
+        if model is None:
+            models = self._mod_names
+        else:
+            models = [model] if np.isscalar(model) else model
+            models = [self._get_mod_name(m) for m in models]
+        n_models = len(models)
+
         df = self.mean_skill(
             weights=weights,
             metrics=[metric],
-            model=model,
+            model=models,
             observation=observation,
+            variable=variable,
             start=start,
             end=end,
             area=area,
             df=df,
         )
-        values = df[metric.__name__].values
-        if len(values) == 1:
-            values = values[0]
-        return values
+
+        if n_models == 1:
+            score = df[metric.__name__].values.mean()
+        else:
+            score = {}
+            for model in models:
+                mtr_val = df.loc[model][metric.__name__]
+                if not np.isscalar(mtr_val):
+                    # e.g. mean over different variables!
+                    mtr_val = mtr_val.values.mean()
+                score[model] = mtr_val
+
+        return score

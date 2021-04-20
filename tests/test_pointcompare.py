@@ -9,13 +9,15 @@ from fmskill.metrics import root_mean_squared_error, mean_absolute_error
 @pytest.fixture
 def klagshamn():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
-    return PointObservation(fn, item=0, x=366844, y=6154291, name="Klagshamn")
+    return PointObservation(
+        fn, item=0, x=366844, y=6154291, name="Klagshamn", variable_name="WL"
+    )
 
 
 @pytest.fixture
 def drogden():
     fn = "tests/testdata/dmi_30357_Drogden_Fyr.dfs0"
-    return PointObservation(fn, item=0, x=355568.0, y=6156863.0)
+    return PointObservation(fn, item=0, x=355568.0, y=6156863.0, variable_name="WL")
 
 
 @pytest.fixture
@@ -41,8 +43,8 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
 def test_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    mr.add_observation(drogden, item=0, validate_eum=False)
     collection = mr.extract()
 
     assert collection.score(metric=root_mean_squared_error) > 0.0
@@ -52,15 +54,15 @@ def test_score(modelresult_oresund_2d, klagshamn, drogden):
 def test_weighted_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    mr.add_observation(drogden, item=0, validate_eum=False)
     c = mr.extract()
     unweighted_skill = c.score()
 
     mrw = modelresult_oresund_2d
 
-    mrw.add_observation(klagshamn, item=0, weight=1.0)
-    mrw.add_observation(drogden, item=0, weight=0.0)
+    mrw.add_observation(klagshamn, item=0, weight=1.0, validate_eum=False)
+    mrw.add_observation(drogden, item=0, weight=0.0, validate_eum=False)
     cw = mrw.extract()
 
     weighted_skill = cw.score()
@@ -72,8 +74,8 @@ def test_misc_properties(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    mr.add_observation(drogden, item=0, validate_eum=False)
 
     c = mr.extract()
 
@@ -100,8 +102,8 @@ def test_skill(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    mr.add_observation(klagshamn, item=0)
-    mr.add_observation(drogden, item=0)
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    mr.add_observation(drogden, item=0, validate_eum=False)
 
     c = mr.extract()
 
