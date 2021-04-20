@@ -885,6 +885,28 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
+    def __add__(self, other):
+        cc = ComparerCollection()
+        cc.add_comparer(self)
+        if isinstance(other, SingleObsComparer):
+            cc.add_comparer(other)
+        elif isinstance(other, ComparerCollection):
+            for c in other:
+                cc.add_comparer(c)
+        else:
+            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
+        return cc
+
+    def __copy__(self):
+        # cls = self.__class__
+        # cp = cls.__new__(cls)
+        # cp.__init__(self.observation, self.mod_df)
+        # return cp
+        return deepcopy(self)
+
+    def copy(self):
+        return self.__copy__()
+
     def skill(
         self,
         by: Union[str, List[str]] = None,
@@ -1392,6 +1414,29 @@ class ComparerCollection(Mapping, BaseComparer):
 
     def __iter__(self):
         return iter(self.comparers)
+
+    def __add__(self, other):
+        # if type(other) not in (SingleObsComparer, ComparerCollection):
+        #    raise TypeError(f"Cannot add {type(other)} to ComparerCollection")
+
+        cp = self.copy()
+        if isinstance(other, SingleObsComparer):
+            cp.add_comparer(other)
+        elif isinstance(other, ComparerCollection):
+            for c in other:
+                cp.add_comparer(c)
+        return cp
+
+    def __copy__(self):
+        cls = self.__class__
+        cp = cls.__new__(cls)
+        cp.__init__()
+        for c in self.comparers.values():
+            cp.add_comparer(c)
+        return cp
+
+    def copy(self):
+        return self.__copy__()
 
     def add_comparer(self, comparer: SingleObsComparer):
         """Add another Comparer to this collection.
