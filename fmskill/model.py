@@ -6,7 +6,6 @@ import warnings
 from abc import ABC, abstractmethod
 
 from mikeio import Dfs0, Dfsu, Dataset, eum
-from mikeio.dfsutil import _valid_item_numbers, _get_item_info
 from .observation import PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from .plot import plot_observation_positions
@@ -14,7 +13,7 @@ from .plot import plot_observation_positions
 
 class ModelResultInterface(ABC):
     @abstractmethod
-    def add_observation(self, observation, item, weight):
+    def add_observation(self, observation, item, weight, validate_eum):
         pass
 
     @abstractmethod
@@ -60,7 +59,7 @@ class ModelResult(ModelResultInterface):
         out = []
         out.append("<fmskill.ModelResult>")
         out.append(self.filename)
-        return str.join("\n", out)
+        return "\n".join(out)
 
     def add_observation(self, observation, item, weight=1.0, validate_eum=True):
         """Add an observation to this ModelResult
@@ -177,39 +176,37 @@ class ModelResult(ModelResultInterface):
         return comparer
 
     def _extract_point(self, observation: PointObservation, item) -> Dataset:
-        assert isinstance(observation, PointObservation)
         ds_model = None
         if self.is_dfsu:
-            ds_model = self._extract_point_dfsu(observation, item)
+            ds_model = self._extract_point_dfsu(observation.x, observation.y, item)
         elif self.is_dfs0:
-            ds_model = self._extract_point_dfs0(observation, item)
+            ds_model = self._extract_point_dfs0(item)
+
         return ds_model
 
-    def _extract_point_dfsu(self, observation: PointObservation, item):
-        assert isinstance(observation, PointObservation)
-        xy = np.atleast_2d([observation.x, observation.y])
+    def _extract_point_dfsu(self, x, y, item):
+        xy = np.atleast_2d([x, y])
         elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
         ds_model.items[0].name = self.name
         return ds_model
 
-    def _extract_point_dfs0(self, observation, item):
+    def _extract_point_dfs0(self, item):
         ds_model = self.dfs.read(items=[item])
         ds_model.items[0].name = self.name
         return ds_model
 
     def _extract_track(self, observation: TrackObservation, item) -> Dataset:
-        assert isinstance(observation, TrackObservation)
         ds_model = None
         if self.is_dfsu:
             ds_model = self._extract_track_dfsu(observation, item)
         elif self.is_dfs0:
             ds_model = self.dfs.read(items=[0, 1, item])
             ds_model.items[-1].name = self.name
+
         return ds_model
 
     def _extract_track_dfsu(self, observation: TrackObservation, item):
-        assert isinstance(observation, TrackObservation)
         ds_model = self.dfs.extract_track(track=observation.df, items=[item])
         ds_model.items[-1].name = self.name
         return ds_model
