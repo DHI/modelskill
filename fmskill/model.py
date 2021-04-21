@@ -153,7 +153,6 @@ class ModelResult(ModelResultInterface):
         alt_items = []
         obs_item = observation.itemInfo
         for j, mod_item in enumerate(mod_items):
-            print(mod_item.type == obs_item.type)
             if (mod_item.type == obs_item.type) and (mod_item.unit == obs_item.unit):
                 if item == -1:
                     item = j
