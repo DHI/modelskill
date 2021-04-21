@@ -61,26 +61,31 @@ class ModelResult(ModelResultInterface):
         out.append(self.filename)
         return "\n".join(out)
 
-    def add_observation(self, observation, item, weight=1.0, validate_eum=True):
+    def add_observation(self, observation, item=None, weight=1.0, validate_eum=True):
         """Add an observation to this ModelResult
 
         Parameters
         ----------
         observation : <fmskill.Observation>
             Observation object for later comparison
-        item : str, integer
-            ModelResult item name or number corresponding to the observation
+        item : (str, integer), optional
+            Model item name or number corresponding to the observation
+            If None, then try to infer from observation eum value.
+            Default: None
         weight: float, optional
             Relative weight used in weighted skill calculation, default 1.0
         validate_eum: bool, optional
             Require eum type and units to match between model and observation?
             Defaut: True
         """
+        if item is None:
+            item = self._infer_model_item(observation)
+
         ok = self._validate_observation(observation)
         if ok and validate_eum:
             ok = self._validate_item_eum(observation, item)
         if ok:
-            observation.model_variable = item
+            observation.model_item = item
             observation.weight = weight
             self.observations[observation.name] = observation
         else:
@@ -136,19 +141,49 @@ class ModelResult(ModelResultInterface):
             raise ValueError("item must be an integer or a string")
         return mod_items[item]
 
+    def _infer_model_item(self, observation) -> int:
+        """Attempt to infer model item by matching observation eum with model eum"""
+        mod_items = self.dfs.items
+        n_items = len(mod_items)
+        if n_items == 1:
+            # accept even if eum does not match
+            return 0
+
+        item = -1
+        alt_items = []
+        obs_item = observation.itemInfo
+        for j, mod_item in enumerate(mod_items):
+            print(mod_item.type == obs_item.type)
+            if (mod_item.type == obs_item.type) and (mod_item.unit == obs_item.unit):
+                if item == -1:
+                    item = j
+                    alt_items.append(j)
+                else:
+                    # we already found one match
+                    alt_items.append(j)
+        if item == -1:
+            raise Exception("Could not infer")
+        if len(alt_items) > 1:
+            warnings.warn(
+                f"Multiple matching model items found! Will pick first one (Matches {alt_items})."
+            )
+
+        return item
+
     def extract(self) -> ComparerCollection:
         """Extract model result in all observations"""
         cc = ComparerCollection()
         for obs in self.observations.values():
-            comparer = self._extract_observation(obs, obs.model_variable)
+            comparer = self.extract_observation(obs, obs.model_item)
             if comparer is not None:
                 cc.add_comparer(comparer)
         return cc
 
-    def _extract_observation(
+    def extract_observation(
         self,
         observation: Union[PointObservation, TrackObservation],
-        item: Union[int, str],
+        item: Union[int, str] = None,
+        validate: bool = False,
     ) -> BaseComparer:
         """Compare this ModelResult with an observation
 
@@ -158,12 +193,27 @@ class ModelResult(ModelResultInterface):
             Observation to be compared
         item : str, integer
             ModelResult item name or number
+            If None, then try to infer from observation eum value.
+            Default: None
+        validate: bool, optional
+            Validate if observation is inside domain and that eum type
+            and units; Defaut: False
 
         Returns
         -------
         <fmskill.BaseComparer>
             A comparer object for further analysis or plotting
         """
+        if item is None:
+            item = self._infer_model_item(observation)
+
+        if validate:
+            ok = self._validate_observation(observation)
+            if ok:
+                ok = self._validate_item_eum(observation, item)
+            if not ok:
+                raise ValueError("Could not extract observation")
+
         if isinstance(observation, PointObservation):
             ds_model = self._extract_point(observation, item)
             comparer = PointComparer(observation, ds_model)
@@ -285,21 +335,31 @@ class ModelResultCollection(ModelResultInterface):
         assert isinstance(modelresult, ModelResult)
         self.modelresults[modelresult.name] = modelresult
 
-    def add_observation(self, observation, item, weight=1.0, validate_eum=True):
+    def add_observation(self, observation, item=None, weight=1.0, validate_eum=True):
         """Add an observation to all ModelResults in collection
 
         Parameters
         ----------
         observation : <fmskill.PointObservation>
             Observation object for later comparison
-        item : str, integer
+        item : (str, integer), optional
             ModelResult item name or number corresponding to the observation
+            If None, then try to infer from observation eum value.
+            Default: None
+        weight: float, optional
+            Relative weight used in weighted skill calculation, default 1.0
+        validate_eum: bool, optional
+            Require eum type and units to match between model and observation?
+            Defaut: True
         """
         for mr in self.modelresults.values():
             mr.add_observation(observation, item, weight, validate_eum)
 
-    def _extract_observation(
-        self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
+    def extract_observation(
+        self,
+        observation: Union[PointComparer, TrackComparer],
+        item: Union[int, str] = None,
+        validate: bool = False,
     ) -> BaseComparer:
         """Compare all ModelResults in collection with an observation
 
@@ -309,12 +369,27 @@ class ModelResultCollection(ModelResultInterface):
             Observation to be compared
         item : str, integer
             ModelResult item name or number
+            If None, then try to infer from observation eum value.
+            Default: None
+        validate: bool, optional
+            Validate if observation is inside domain and that eum type
+            and units; Defaut: False
 
         Returns
         -------
         <fmskill.BaseComparer>
             A comparer object for further analysis or plotting
         """
+        if item is None:
+            item = self._infer_model_item(observation)
+
+        if validate:
+            ok = self._validate_observation(observation)
+            if ok:
+                ok = self._validate_item_eum(observation, item)
+            if not ok:
+                raise ValueError("Could not extract observation")
+
         if isinstance(observation, PointObservation):
             comparer = self._compare_point_observation(observation, item)
         elif isinstance(observation, TrackObservation):
@@ -374,7 +449,7 @@ class ModelResultCollection(ModelResultInterface):
         cc = ComparerCollection()
 
         for obs in self.observations.values():
-            comparer = self._extract_observation(obs, obs.model_variable)
+            comparer = self.extract_observation(obs, obs.model_item)
             if comparer is not None:
                 cc.add_comparer(comparer)
         return cc
