@@ -1361,7 +1361,7 @@ class ComparerCollection(Mapping, BaseComparer):
     @property
     def obs_names(self):
         """List of observation names"""
-        return self._var_names
+        return self._obs_names
 
     @property
     def n_observations(self) -> int:
