@@ -1,12 +1,12 @@
 import os
-from typing import Union
+from typing import List, Union
 import numpy as np
 import warnings
 
 from abc import ABC, abstractmethod
 
 from mikeio import Dfs0, Dfsu, Dataset, eum
-from .observation import PointObservation, TrackObservation
+from .observation import Observation, PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from .plot import plot_observation_positions
 
@@ -23,6 +23,73 @@ class ModelResultInterface(ABC):
     @abstractmethod
     def plot_observation_positions(self, figsize):
         pass
+
+    def _validate_item_eum(self, mod_items, observation, item) -> bool:
+        """Check that observation and model item eum match"""
+        ok = True
+        obs_item = observation.itemInfo
+        if obs_item.type == eum.EUMType.Undefined:
+            warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
+            return ok
+
+        item = self._get_model_item(mod_items, item)
+        if item.type != obs_item.type:
+            ok = False
+            warnings.warn(
+                f"{observation.name}: Item type should match. Model item: {item.type.display_name}, obs item: {obs_item.type.display_name}"
+            )
+        if item.unit != obs_item.unit:
+            ok = False
+            warnings.warn(
+                f"{observation.name}: Unit should match. Model unit: {item.unit.display_name}, obs unit: {obs_item.unit.display_name}"
+            )
+        return ok
+
+    def _get_model_item(self, mod_items, item) -> eum.ItemInfo:
+        """"Given str or int find corresponding model itemInfo"""
+        n_items = len(mod_items)
+        if isinstance(item, int):
+            if (item < 0) or (item >= n_items):
+                raise ValueError(f"item number must be between 0 and {n_items}")
+        elif isinstance(item, str):
+            item_names = [i.name for i in mod_items]
+            try:
+                item = item_names.index(item)
+            except ValueError:
+                raise ValueError(f"item not found in model items ({item_names})")
+        else:
+            raise ValueError("item must be an integer or a string")
+        return mod_items[item]
+
+    def _infer_model_item(
+        self, mod_items: List[eum.ItemInfo], observation: Observation
+    ) -> int:
+        """Attempt to infer model item by matching observation eum with model eum"""
+        mod_items = self.dfs.items
+        n_items = len(mod_items)
+        if n_items == 1:
+            # accept even if eum does not match
+            return 0
+
+        item = -1
+        alt_items = []
+        obs_item = observation.itemInfo
+        for j, mod_item in enumerate(mod_items):
+            if (mod_item.type == obs_item.type) and (mod_item.unit == obs_item.unit):
+                if item == -1:
+                    item = j
+                    alt_items.append(j)
+                else:
+                    # we already found one match
+                    alt_items.append(j)
+        if item == -1:
+            raise Exception("Could not infer")
+        if len(alt_items) > 1:
+            warnings.warn(
+                f"Multiple matching model items found! Will pick first one (Matches {alt_items})."
+            )
+
+        return item
 
 
 class ModelResult(ModelResultInterface):
@@ -79,11 +146,11 @@ class ModelResult(ModelResultInterface):
             Defaut: True
         """
         if item is None:
-            item = self._infer_model_item(observation)
+            item = self._infer_model_item(self.dfs.items, observation)
 
         ok = self._validate_observation(observation)
         if ok and validate_eum:
-            ok = self._validate_item_eum(observation, item)
+            ok = self._validate_item_eum(self.dfs.items, observation, item)
         if ok:
             observation.model_item = item
             observation.weight = weight
@@ -103,77 +170,11 @@ class ModelResult(ModelResultInterface):
             ok = True
         return ok
 
-    def _validate_item_eum(self, observation, mod_item) -> bool:
-        """Check that observation and model item eum match"""
-        ok = True
-        obs_item = observation.itemInfo
-        if obs_item.type == eum.EUMType.Undefined:
-            warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
-            return ok
-
-        mod_item = self._get_model_item(mod_item)
-        if mod_item.type != obs_item.type:
-            ok = False
-            warnings.warn(
-                f"{observation.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs_item.type.display_name}"
-            )
-        if mod_item.unit != obs_item.unit:
-            ok = False
-            warnings.warn(
-                f"{observation.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs_item.unit.display_name}"
-            )
-        return ok
-
-    def _get_model_item(self, item) -> eum.ItemInfo:
-        """"Given str or int find corresponding model itemInfo"""
-        mod_items = self.dfs.items
-        n_items = len(mod_items)
-        if isinstance(item, int):
-            if (item < 0) or (item >= n_items):
-                raise ValueError(f"item number must be between 0 and {n_items}")
-        elif isinstance(item, str):
-            item_names = [i.name for i in mod_items]
-            try:
-                item = item_names.index(item)
-            except ValueError:
-                raise ValueError(f"item not found in model items ({item_names})")
-        else:
-            raise ValueError("item must be an integer or a string")
-        return mod_items[item]
-
-    def _infer_model_item(self, observation) -> int:
-        """Attempt to infer model item by matching observation eum with model eum"""
-        mod_items = self.dfs.items
-        n_items = len(mod_items)
-        if n_items == 1:
-            # accept even if eum does not match
-            return 0
-
-        item = -1
-        alt_items = []
-        obs_item = observation.itemInfo
-        for j, mod_item in enumerate(mod_items):
-            if (mod_item.type == obs_item.type) and (mod_item.unit == obs_item.unit):
-                if item == -1:
-                    item = j
-                    alt_items.append(j)
-                else:
-                    # we already found one match
-                    alt_items.append(j)
-        if item == -1:
-            raise Exception("Could not infer")
-        if len(alt_items) > 1:
-            warnings.warn(
-                f"Multiple matching model items found! Will pick first one (Matches {alt_items})."
-            )
-
-        return item
-
     def extract(self) -> ComparerCollection:
         """Extract model result in all observations"""
         cc = ComparerCollection()
         for obs in self.observations.values():
-            comparer = self.extract_observation(obs, obs.model_item)
+            comparer = self.extract_observation(obs, obs.model_item, validate=False)
             if comparer is not None:
                 cc.add_comparer(comparer)
         return cc
@@ -182,7 +183,7 @@ class ModelResult(ModelResultInterface):
         self,
         observation: Union[PointObservation, TrackObservation],
         item: Union[int, str] = None,
-        validate: bool = False,
+        validate: bool = True,
     ) -> BaseComparer:
         """Compare this ModelResult with an observation
 
@@ -196,7 +197,7 @@ class ModelResult(ModelResultInterface):
             Default: None
         validate: bool, optional
             Validate if observation is inside domain and that eum type
-            and units; Defaut: False
+            and units; Defaut: True
 
         Returns
         -------
@@ -204,12 +205,12 @@ class ModelResult(ModelResultInterface):
             A comparer object for further analysis or plotting
         """
         if item is None:
-            item = self._infer_model_item(observation)
+            item = self._infer_model_item(self.dfs.items, observation)
 
         if validate:
             ok = self._validate_observation(observation)
             if ok:
-                ok = self._validate_item_eum(observation, item)
+                ok = self._validate_item_eum(self.dfs.items, observation, item)
             if not ok:
                 raise ValueError("Could not extract observation")
 
@@ -358,7 +359,7 @@ class ModelResultCollection(ModelResultInterface):
         self,
         observation: Union[PointComparer, TrackComparer],
         item: Union[int, str] = None,
-        validate: bool = False,
+        validate: bool = True,
     ) -> BaseComparer:
         """Compare all ModelResults in collection with an observation
 
@@ -372,7 +373,7 @@ class ModelResultCollection(ModelResultInterface):
             Default: None
         validate: bool, optional
             Validate if observation is inside domain and that eum type
-            and units; Defaut: False
+            and units match; Defaut: False
 
         Returns
         -------
@@ -380,14 +381,24 @@ class ModelResultCollection(ModelResultInterface):
             A comparer object for further analysis or plotting
         """
         if item is None:
-            item = self._infer_model_item(observation)
+            for mr in self.modelresults.values():
+                itemj = mr._infer_model_item(mr.dfs.items, observation)
+                if item is None:
+                    item = itemj
+                if item != itemj:
+                    raise Exception(
+                        "Cannot infer model item as different ModelResults in collection give different match"
+                    )
 
         if validate:
-            ok = self._validate_observation(observation)
-            if ok:
-                ok = self._validate_item_eum(observation, item)
-            if not ok:
-                raise ValueError("Could not extract observation")
+            ok = True
+            for mr in self.modelresults.values():
+                if ok:
+                    ok = mr._validate_observation(observation)
+                if ok:
+                    ok = mr._validate_item_eum(mr.dfs.items, observation, item)
+                if not ok:
+                    raise ValueError("Could not extract observation")
 
         if isinstance(observation, PointObservation):
             comparer = self._compare_point_observation(observation, item)
