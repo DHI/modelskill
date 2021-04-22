@@ -226,12 +226,12 @@ class BaseComparer:
             if obs in self._obs_names:
                 obs_id = self._obs_names.index(obs)
             else:
-                raise ValueError(f"obs {obs} could not be found in {self._obs_names}")
+                raise KeyError(f"obs {obs} could not be found in {self._obs_names}")
         elif isinstance(obs, int):
             if obs >= 0 and obs < self.n_observations:
                 obs_id = obs
             else:
-                raise ValueError(
+                raise IndexError(
                     f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
                 )
         else:
@@ -1407,13 +1407,16 @@ class ComparerCollection(Mapping, BaseComparer):
         return str.join("\n", out)
 
     def __getitem__(self, x):
-        return self.comparers[self._get_obs_name(x)]
+        if isinstance(x, int):
+            x = self._get_obs_name(x)
+
+        return self.comparers[x]
 
     def __len__(self) -> int:
         return len(self.comparers)
 
     def __iter__(self):
-        return iter(self.comparers)
+        return iter(self.comparers.values())
 
     def __copy__(self):
         cls = self.__class__
@@ -1435,7 +1438,7 @@ class ComparerCollection(Mapping, BaseComparer):
             Comparer to add to this collection
         """
         if isinstance(comparer, ComparerCollection):
-            for c in comparer.values():
+            for c in comparer:
                 self._add_comparer(c)
         else:
             self._add_comparer(comparer)
