@@ -235,7 +235,7 @@ class BaseComparer:
                     f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
                 )
         else:
-            raise ValueError("observation must be None, str or int")
+            raise KeyError("observation must be None, str or int")
         return obs_id
 
     def _get_var_name(self, var):

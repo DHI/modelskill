@@ -128,13 +128,13 @@ def test_mm_skill_obs(cc):
 
 
 def test_mm_skill_missing_obs(cc, o1):
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         cc.skill(observation="imaginary_obs")
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         cc.skill(observation=999)
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, IndexError)):
         cc.skill(observation=["c2", 999])
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         cc.skill(observation=[o1])
 
 
