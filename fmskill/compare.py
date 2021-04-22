@@ -130,6 +130,17 @@ class BaseComparer:
             self._construct_all_df()
         return self._all_df
 
+    def __add__(self, other: "BaseComparer") -> "ComparerCollection":
+
+        if not isinstance(other, BaseComparer):
+            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
+
+        cc = ComparerCollection()
+        cc.add_comparer(self)
+        cc.add_comparer(other)
+
+        return cc
+
     def _all_df_template(self):
         template = {
             "model": pd.Series([], dtype="category"),
@@ -886,17 +897,6 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
-    def __add__(self, other: BaseComparer) -> "ComparerCollection":
-
-        if not isinstance(other, BaseComparer):
-            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
-
-        cc = ComparerCollection()
-        cc.add_comparer(self)
-        cc.add_comparer(other)
-
-        return cc
-
     def __copy__(self):
         # cls = self.__class__
         # cp = cls.__new__(cls)
@@ -1414,15 +1414,6 @@ class ComparerCollection(Mapping, BaseComparer):
 
     def __iter__(self):
         return iter(self.comparers)
-
-    def __add__(self, other):
-        # if type(other) not in (SingleObsComparer, ComparerCollection):
-        #    raise TypeError(f"Cannot add {type(other)} to ComparerCollection")
-
-        cp = self.copy()
-        cp.add_comparer(other)
-
-        return cp
 
     def __copy__(self):
         cls = self.__class__
