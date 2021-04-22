@@ -10,7 +10,7 @@ Examples
 >>> mr.add_observation(o1, item=0)
 >>> comparer = mr.extract()
 """
-from collections.abc import Mapping, Iterable
+from collections.abc import Mapping, Iterable, Sequence
 from typing import List, Union
 import warnings
 from inspect import getmembers, isfunction
@@ -1296,7 +1296,7 @@ class TrackComparer(SingleObsComparer):
         # TODO: add check
 
 
-class ComparerCollection(Mapping, BaseComparer):
+class ComparerCollection(Mapping, Sequence, BaseComparer):
     """
     Collection of comparers, constructed by calling the `ModelResult.extract` method.
 
