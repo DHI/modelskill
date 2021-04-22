@@ -32,6 +32,11 @@ class Reporter:
                 plt.savefig(self.basedir / f"{self.safe_name}_{key}_ts.png")
                 lines.append(f"![{key}]({self.safe_name}_{key}_ts.png)")
 
+        lines.append("## Aggregated skill")
+
+        skilldf = cc.skill().round(3)
+        lines.append(skilldf.to_html() + "\n")
+
         lines.append("## Scatter")
 
         for key, value in cc.comparers.items():
