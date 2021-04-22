@@ -886,16 +886,15 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
-    def __add__(self, other):
+    def __add__(self, other: BaseComparer) -> "ComparerCollection":
+
+        if not isinstance(other, BaseComparer):
+            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
+
         cc = ComparerCollection()
         cc.add_comparer(self)
-        if isinstance(other, SingleObsComparer):
-            cc.add_comparer(other)
-        elif isinstance(other, ComparerCollection):
-            for c in other:
-                cc.add_comparer(c)
-        else:
-            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
+        cc.add_comparer(other)
+
         return cc
 
     def __copy__(self):
@@ -1421,11 +1420,8 @@ class ComparerCollection(Mapping, BaseComparer):
         #    raise TypeError(f"Cannot add {type(other)} to ComparerCollection")
 
         cp = self.copy()
-        if isinstance(other, SingleObsComparer):
-            cp.add_comparer(other)
-        elif isinstance(other, ComparerCollection):
-            for c in other:
-                cp.add_comparer(c)
+        cp.add_comparer(other)
+
         return cp
 
     def __copy__(self):
@@ -1439,15 +1435,21 @@ class ComparerCollection(Mapping, BaseComparer):
     def copy(self):
         return self.__copy__()
 
-    def add_comparer(self, comparer: SingleObsComparer):
+    def add_comparer(self, comparer: BaseComparer):
         """Add another Comparer to this collection.
 
         Parameters
         ----------
-        comparer : (PointComparer, TrackComparer)
+        comparer : (PointComparer, TrackComparer, ComparerCollection)
             Comparer to add to this collection
         """
+        if isinstance(comparer, ComparerCollection):
+            for c in comparer.values():
+                self._add_comparer(c)
+        else:
+            self._add_comparer(comparer)
 
+    def _add_comparer(self, comparer: SingleObsComparer):
         self.comparers[comparer.name] = comparer
         for mod_name in comparer.mod_names:
             if mod_name not in self._mod_names:
