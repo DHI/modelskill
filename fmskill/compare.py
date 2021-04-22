@@ -1415,18 +1415,6 @@ class ComparerCollection(Mapping, BaseComparer):
     def __iter__(self):
         return iter(self.comparers)
 
-    def __add__(self, other):
-        if not isinstance(other, BaseComparer):
-            raise TypeError(f"Cannot add {type(other)} to ComparerCollection")
-
-        cp = self.copy()
-        if isinstance(other, SingleObsComparer):
-            cp.add_comparer(other)
-        elif isinstance(other, ComparerCollection):
-            for c in other.values():
-                cp.add_comparer(c)
-        return cp
-
     def __copy__(self):
         cls = self.__class__
         cp = cls.__new__(cls)
