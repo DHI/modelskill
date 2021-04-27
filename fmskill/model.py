@@ -234,7 +234,7 @@ class ModelResult(ModelResultInterface):
 
         return ax
 
-    def plot_data_coverage(self, limit_to_model_period=True):
+    def plot_temporal_coverage(self, limit_to_model_period=True):
 
         fig, ax = plt.subplots()
         y = np.repeat(0.0, 2)
