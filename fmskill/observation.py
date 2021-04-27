@@ -6,17 +6,17 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
+from datetime import datetime
 import os
 from shapely.geometry import Point, MultiPoint
-from typing import Union
+import numpy as np
 import pandas as pd
 from mikeio import Dfs0, eum
 
 
 class Observation:
-    # name = None
-    # df = None
-    # itemInfo = None
+    "Base class for all types of observations"
+
     color = "#d62728"
 
     # DHI: darkblue: #004165,
@@ -33,32 +33,44 @@ class Observation:
 
     # matplotlib: red=#d62728
 
+    def __init__(
+        self, name: str = None, df=None, itemInfo=None, variable_name: str = None
+    ):
+        self.name = name
+        self.df = df
+        if itemInfo is None:
+            self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+        else:
+            self.itemInfo = itemInfo
+        self.weight = 1.0
+        if variable_name is None:
+            variable_name = self.itemInfo.type.name
+        self.variable_name = variable_name
+
     @property
-    def time(self):
+    def time(self) -> pd.DatetimeIndex:
+        "Time index"
         return self.df.index
 
     @property
-    def start_time(self):
+    def start_time(self) -> datetime:
         """First time instance (as datetime)"""
         return self.time[0].to_pydatetime()
 
     @property
-    def end_time(self):
+    def end_time(self) -> datetime:
         """Last time instance (as datetime)"""
         return self.time[-1].to_pydatetime()
 
     @property
-    def values(self):
+    def values(self) -> np.ndarray:
+        "Observed values"
         return self.df.values
 
     @property
     def n_points(self):
         """Number of observations"""
         return len(self.df)
-
-    def __init__(self, name: str = None):
-        self.name = name
-        self.weight = 1.0
 
     def _unit_text(self):
         if self.itemInfo is None:
@@ -104,7 +116,8 @@ class PointObservation(Observation):
         x: float = None,
         y: float = None,
         z: float = None,
-        name=None,
+        name: str = None,
+        variable_name: str = None,
     ):
         self.x = x
         self.y = y
@@ -119,11 +132,12 @@ class PointObservation(Observation):
             ext = os.path.splitext(filename)[-1]
             if ext == ".dfs0":
                 df, itemInfo = self._read_dfs0(Dfs0(filename), item)
-                self.df, self.itemInfo = df, itemInfo
             else:
                 raise NotImplementedError()
 
-        super().__init__(name)
+        super().__init__(
+            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
+        )
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
@@ -212,11 +226,13 @@ class TrackObservation(Observation):
     def values(self):
         return self.df.iloc[:, 2].values
 
-    def __init__(self, filename, item: int = 2, name=None):
+    def __init__(
+        self, filename, item: int = 2, name: str = None, variable_name: str = None
+    ):
         if isinstance(filename, pd.DataFrame):  # or isinstance(filename, pd.Series):
             df = filename
-            self.df = df.iloc[:, [0, 1, item]]
-            self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+            df = df.iloc[:, [0, 1, item]]
+            itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         else:
             if name is None:
                 name = os.path.basename(filename).split(".")[0]
@@ -225,11 +241,12 @@ class TrackObservation(Observation):
             if ext == ".dfs0":
                 items = [0, 1, item]
                 df, itemInfo = self._read_dfs0(Dfs0(filename), items)
-                self.df, self.itemInfo = df, itemInfo
             else:
                 raise NotImplementedError()
 
-        super().__init__(name)
+        super().__init__(
+            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
+        )
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
