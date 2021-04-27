@@ -1,6 +1,8 @@
 import os
 from typing import Union
+from pathlib import Path
 import numpy as np
+import yaml
 import warnings
 
 from abc import ABC, abstractmethod
@@ -61,6 +63,44 @@ class ModelResult(ModelResultInterface):
         out.append(self.filename)
         return "\n".join(out)
 
+    @staticmethod
+    def from_config(configuration: Union[dict, str], validate_eum=True):
+
+        if isinstance(configuration, str):
+            with open(configuration) as f:
+                contents = f.read()
+            configuration = yaml.load(contents, Loader=yaml.FullLoader)
+
+        mr = ModelResult(
+            filename=configuration["filename"], name=configuration.get("name")
+        )
+        for connection in configuration["observations"]:
+            observation = connection["observation"]
+
+            if observation.get("type") == "track":
+                obs = TrackObservation(**observation)
+            else:
+                obs = PointObservation(**observation)
+
+            mr.add_observation(obs, item=connection["item"], validate_eum=validate_eum)
+
+        return mr
+
+    def to_config(self, filename: Union[str, Path]):
+        """
+        Parameters
+        ----------
+        filename: str or Path
+            Save configuration in yaml format
+
+        Notes
+        -----
+        1. Manually create your skill assessment in fmskill as usual
+        2. When you are satisfied, save config: cc.to_config('conf.yml') or similar
+        3. Later: run your reporting from the commandline e.g. directly after model execution
+        """
+        raise NotImplementedError()
+
     def add_observation(self, observation, item, weight=1.0, validate_eum=True):
         """Add an observation to this ModelResult
 
@@ -84,7 +124,10 @@ class ModelResult(ModelResultInterface):
             observation.weight = weight
             self.observations[observation.name] = observation
         else:
-            warnings.warn("Could not add observation")
+            raise ValueError(
+                "Could not add observation, to ignore EUM validation, try validate_eum=False"
+            )
+            # warnings.warn("Could not add observation")
 
         return self
 
