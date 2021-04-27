@@ -1,6 +1,5 @@
 from platform import architecture
 from typing import Union
-import yaml
 
 
 # PEP0440 compatible formatted version, see:
@@ -28,22 +27,6 @@ from .model import ModelResult, ModelResultCollection
 from .observation import PointObservation, TrackObservation
 
 
-def create(configuration: Union[dict, str]):
+def from_config(configuration: Union[dict, str], validate_eum=True):
 
-    if isinstance(configuration, str):
-        with open(configuration) as f:
-            contents = f.read()
-        configuration = yaml.load(contents, Loader=yaml.FullLoader)
-
-    mr = ModelResult(filename=configuration["filename"], name=configuration.get("name"))
-    for connection in configuration["observations"]:
-        observation = connection["observation"]
-
-        if observation.get("type") == "track":
-            obs = TrackObservation(**observation)
-        else:
-            obs = PointObservation(**observation)
-
-        mr.add_observation(obs, item=connection["item"])
-
-    return mr
+    return ModelResult.from_config(configuration, validate_eum)
