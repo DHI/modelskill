@@ -175,7 +175,7 @@ def test_comparison_from_dict():
             ),
         ],
     )
-    mr = fmskill.create(configuration)
+    mr = fmskill.from_config(configuration, validate_eum=False)
     c = mr.extract()
     assert len(c) == 2
     assert c.n_comparers == 2
@@ -191,7 +191,7 @@ def test_comparison_from_yml():
     # mr.add_observation(o1, item=0)
     # c = mr.extract()
 
-    mr = fmskill.create("tests/testdata/conf.yml")
+    mr = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     c = mr.extract()
 
     assert len(c) == 2

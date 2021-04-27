@@ -46,7 +46,7 @@ class Reporter:
 
         return "\n".join(lines)
 
-    def markdown(self):
+    def to_markdown(self):
         """Create report in markdown format"""
 
         filename = self.basedir / f"{self.safe_name}.md"
@@ -58,7 +58,7 @@ class Reporter:
 
         return filename
 
-    def html(self):
+    def to_html(self):
         """Create report in html format"""
 
         filename = self.basedir / f"index.html"
