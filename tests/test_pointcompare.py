@@ -66,6 +66,18 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
     assert not np.any(np.isnan(s))
 
 
+def test_extraction_no_overlap(modelresult_oresund_2d):
+    o1 = PointObservation(
+        "tests/testdata/smhi_2095_klagshamn_shifted.dfs0",
+        x=366844,
+        y=6154291,
+        name="Klagshamn",
+    )
+    mr = modelresult_oresund_2d
+    mr.add_observation(o1, item=0)
+    mr.extract()
+
+
 def test_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
