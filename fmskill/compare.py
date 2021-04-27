@@ -10,7 +10,7 @@ Examples
 >>> mr.add_observation(o1, item=0)
 >>> comparer = mr.extract()
 """
-from collections.abc import Mapping, Iterable
+from collections.abc import Mapping, Iterable, Sequence
 from typing import List, Union
 import warnings
 from inspect import getmembers, isfunction
@@ -130,6 +130,17 @@ class BaseComparer:
             self._construct_all_df()
         return self._all_df
 
+    def __add__(self, other: "BaseComparer") -> "ComparerCollection":
+
+        if not isinstance(other, BaseComparer):
+            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
+
+        cc = ComparerCollection()
+        cc.add_comparer(self)
+        cc.add_comparer(other)
+
+        return cc
+
     def _all_df_template(self):
         template = {
             "model": pd.Series([], dtype="category"),
@@ -215,16 +226,16 @@ class BaseComparer:
             if obs in self._obs_names:
                 obs_id = self._obs_names.index(obs)
             else:
-                raise ValueError(f"obs {obs} could not be found in {self._obs_names}")
+                raise KeyError(f"obs {obs} could not be found in {self._obs_names}")
         elif isinstance(obs, int):
             if obs >= 0 and obs < self.n_observations:
                 obs_id = obs
             else:
-                raise ValueError(
+                raise IndexError(
                     f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
                 )
         else:
-            raise ValueError("observation must be None, str or int")
+            raise KeyError("observation must be None, str or int")
         return obs_id
 
     def _get_var_name(self, var):
@@ -886,18 +897,6 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
-    def __add__(self, other):
-        cc = ComparerCollection()
-        cc.add_comparer(self)
-        if isinstance(other, SingleObsComparer):
-            cc.add_comparer(other)
-        elif isinstance(other, ComparerCollection):
-            for c in other:
-                cc.add_comparer(c)
-        else:
-            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
-        return cc
-
     def __copy__(self):
         # cls = self.__class__
         # cp = cls.__new__(cls)
@@ -1297,7 +1296,7 @@ class TrackComparer(SingleObsComparer):
         # TODO: add check
 
 
-class ComparerCollection(Mapping, BaseComparer):
+class ComparerCollection(Mapping, Sequence, BaseComparer):
     """
     Collection of comparers, constructed by calling the `ModelResult.extract` method.
 
@@ -1408,25 +1407,16 @@ class ComparerCollection(Mapping, BaseComparer):
         return str.join("\n", out)
 
     def __getitem__(self, x):
-        return self.comparers[self._get_obs_name(x)]
+        if isinstance(x, int):
+            x = self._get_obs_name(x)
+
+        return self.comparers[x]
 
     def __len__(self) -> int:
         return len(self.comparers)
 
     def __iter__(self):
-        return iter(self.comparers)
-
-    def __add__(self, other):
-        if not isinstance(other, BaseComparer):
-            raise TypeError(f"Cannot add {type(other)} to ComparerCollection")
-
-        cp = self.copy()
-        if isinstance(other, SingleObsComparer):
-            cp.add_comparer(other)
-        elif isinstance(other, ComparerCollection):
-            for c in other.values():
-                cp.add_comparer(c)
-        return cp
+        return iter(self.comparers.values())
 
     def __copy__(self):
         cls = self.__class__
@@ -1439,15 +1429,21 @@ class ComparerCollection(Mapping, BaseComparer):
     def copy(self):
         return self.__copy__()
 
-    def add_comparer(self, comparer: SingleObsComparer):
+    def add_comparer(self, comparer: BaseComparer):
         """Add another Comparer to this collection.
 
         Parameters
         ----------
-        comparer : (PointComparer, TrackComparer)
+        comparer : (PointComparer, TrackComparer, ComparerCollection)
             Comparer to add to this collection
         """
+        if isinstance(comparer, ComparerCollection):
+            for c in comparer:
+                self._add_comparer(c)
+        else:
+            self._add_comparer(comparer)
 
+    def _add_comparer(self, comparer: SingleObsComparer):
         self.comparers[comparer.name] = comparer
         for mod_name in comparer.mod_names:
             if mod_name not in self._mod_names:
