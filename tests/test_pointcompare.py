@@ -5,6 +5,7 @@ import fmskill
 from fmskill.model import ModelResult
 from fmskill.observation import PointObservation
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
+from fmskill.compare import PointComparer
 
 
 @pytest.fixture
@@ -24,6 +25,31 @@ def drogden():
 @pytest.fixture
 def modelresult_oresund_2d():
     return ModelResult("tests/testdata/Oresund2D.dfsu")
+
+
+def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
+    mr = modelresult_oresund_2d
+
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    mr.add_observation(drogden, item=0, validate_eum=False)
+    cc = mr.extract()
+
+    assert len(cc) == 2
+    assert "Klagshamn" in cc.keys()
+    assert "dmi_30357_Drogden_Fyr" in cc.keys()
+    assert "Atlantis" not in cc.keys()
+
+
+def test_iterate_over_comparers(modelresult_oresund_2d, klagshamn, drogden):
+    mr = modelresult_oresund_2d
+
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    mr.add_observation(drogden, item=0, validate_eum=False)
+    cc = mr.extract()
+
+    assert len(cc) == 2
+    for c in cc:
+        assert isinstance(c, PointComparer)
 
 
 def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):

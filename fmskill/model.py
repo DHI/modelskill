@@ -86,6 +86,8 @@ class ModelResult(ModelResultInterface):
         else:
             warnings.warn("Could not add observation")
 
+        return self
+
     def _validate_observation(self, observation) -> bool:
         ok = False
         if self.is_dfsu:
@@ -297,6 +299,8 @@ class ModelResultCollection(ModelResultInterface):
         """
         for mr in self.modelresults.values():
             mr.add_observation(observation, item, weight, validate_eum)
+
+        return self
 
     def _extract_observation(
         self, observation: Union[PointComparer, TrackComparer], item: Union[int, str]
