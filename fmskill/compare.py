@@ -564,6 +564,8 @@ class BaseComparer:
         """
 
         metrics = self._parse_metric(metrics)
+        if not isinstance(metrics, List):
+            metrics = [metrics]
 
         df = self.sel_df(
             model=model,
@@ -580,6 +582,8 @@ class BaseComparer:
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
         by = self._parse_by(by, n_models, n_obs)
+        if not isinstance(by, List):
+            by = [by]
         if not "x" in by:
             by.insert(0, "x")
         if not "y" in by:
