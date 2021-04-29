@@ -1,9 +1,11 @@
 import pytest
 import numpy as np
 
+import fmskill
 from fmskill.model import ModelResult
 from fmskill.observation import PointObservation
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
+from fmskill.compare import PointComparer
 
 
 @pytest.fixture
@@ -23,6 +25,31 @@ def drogden():
 @pytest.fixture
 def modelresult_oresund_2d():
     return ModelResult("tests/testdata/Oresund2D.dfsu")
+
+
+def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
+    mr = modelresult_oresund_2d
+
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    mr.add_observation(drogden, item=0, validate_eum=False)
+    cc = mr.extract()
+
+    assert len(cc) == 2
+    assert "Klagshamn" in cc.keys()
+    assert "dmi_30357_Drogden_Fyr" in cc.keys()
+    assert "Atlantis" not in cc.keys()
+
+
+def test_iterate_over_comparers(modelresult_oresund_2d, klagshamn, drogden):
+    mr = modelresult_oresund_2d
+
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    mr.add_observation(drogden, item=0, validate_eum=False)
+    cc = mr.extract()
+
+    assert len(cc) == 2
+    for c in cc:
+        assert isinstance(c, PointComparer)
 
 
 def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
@@ -113,3 +140,61 @@ def test_skill(klagshamn, drogden):
     # Filtered skill
     df = c.skill(observation="Klagshamn")
     assert df.loc["Klagshamn"].n == 167
+
+
+def test_comparison_from_dict():
+
+    # As an alternative to
+    # mr = ModelResult()
+
+    # o1 = PointObservation()
+    # mr.add_observation(o1, item=0)
+    # c = mr.extract()
+
+    configuration = dict(
+        filename="tests/testdata/Oresund2D.dfsu",
+        observations=[
+            dict(
+                observation=dict(
+                    filename="tests/testdata/obs_two_items.dfs0",
+                    item=1,
+                    x=366844,
+                    y=6154291,
+                    name="Klagshamn",
+                ),
+                item=0,
+            ),
+            dict(
+                observation=dict(
+                    filename="tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+                    item=0,
+                    x=355568.0,
+                    y=6156863.0,
+                ),
+                item=0,
+            ),
+        ],
+    )
+    mr = fmskill.from_config(configuration, validate_eum=False)
+    c = mr.extract()
+    assert len(c) == 2
+    assert c.n_comparers == 2
+    assert c.n_models == 1
+
+
+def test_comparison_from_yml():
+
+    # As an alternative to
+    # mr = ModelResult()
+
+    # o1 = PointObservation()
+    # mr.add_observation(o1, item=0)
+    # c = mr.extract()
+
+    mr = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    c = mr.extract()
+
+    assert len(c) == 2
+    assert c.n_comparers == 2
+    assert c.n_models == 1
+    assert mr.observations["Klagshamn"].itemInfo.name == "Water Level"
