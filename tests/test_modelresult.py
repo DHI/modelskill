@@ -35,6 +35,12 @@ def Hm0_HKNA():
 
 
 @pytest.fixture
+def wind_HKNA():
+    fn = "tests/testdata/SW/HKNA_Wind.dfs0"
+    return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
+
+
+@pytest.fixture
 def Hm0_EPL():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
     return PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
@@ -120,6 +126,13 @@ def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
     mr = ModelResult(sw_dutch_coast)
     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM
     assert c.n_points == 385
+
+
+def test_extract_observation_no_matching_item(sw_total_windsea, wind_HKNA):
+    mr = ModelResult(sw_total_windsea)  # No wind speed here !
+
+    with pytest.raises(Exception):  # More specific error?
+        c = mr.extract_observation(wind_HKNA)
 
 
 def test_extract_observation_total_windsea_swell_not_possible(
