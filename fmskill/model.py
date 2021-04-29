@@ -200,30 +200,24 @@ class ModelResult(ModelResultInterface):
         """Attempt to infer model item by matching observation eum with model eum"""
         if mod_items is None:
             mod_items = self.dfs.items
-        n_items = len(mod_items)
-        if n_items == 1:
+
+        if len(mod_items) == 1:
             # accept even if eum does not match
             return 0
 
-        item = -1
-        alt_items = []
-        obs_item = observation.itemInfo
-        for j, mod_item in enumerate(mod_items):
-            if (mod_item.type == obs_item.type) and (mod_item.unit == obs_item.unit):
-                if item == -1:
-                    item = j
-                    alt_items.append(j)
-                else:
-                    # we already found one match
-                    alt_items.append(j)
-        if item == -1:
+        mod_items = [(x.type, x.unit) for x in mod_items]
+        obs_item = (observation.itemInfo.type, observation.itemInfo.unit)
+
+        pot_items = [j for j, mod_item in enumerate(mod_items) if mod_item == obs_item]
+
+        if len(pot_items) == 0:
             raise Exception("Could not infer")
-        if len(alt_items) > 1:
+        if len(pot_items) > 1:
             raise ValueError(
-                f"Multiple matching model items found! (Matches {alt_items})."
+                f"Multiple matching model items found! (Matches {pot_items})."
             )
 
-        return item
+        return pot_items[0]
 
     def extract(self) -> ComparerCollection:
         """Extract model result in all observations"""
