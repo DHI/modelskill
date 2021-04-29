@@ -30,7 +30,7 @@ class SpatialSkill:
 
     @property
     def field_names(self):
-        return [k for k in self.ds.variables.keys() if k not in self.ds.coords]
+        return list(self.ds.data_vars)
 
     @property
     def _coords_list(self):
