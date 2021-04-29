@@ -142,6 +142,8 @@ class ModelResult(ModelResultInterface):
         if self.is_dfsu:
             if isinstance(observation, PointObservation):
                 ok = self.dfs.contains([observation.x, observation.y])
+                if not ok:
+                    raise ValueError("Observation outside domain")
             elif isinstance(observation, TrackObservation):
                 ok = True
         elif self.is_dfs0:
