@@ -45,6 +45,11 @@ def sw_dutch_coast():
     return "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
 
 
+@pytest.fixture
+def sw_total_windsea():
+    return "tests/testdata/SW/SW_Tot_Wind_Swell.dfsu"
+
+
 def test_dfs_object(hd_oresund_2d):
     mr = ModelResult(hd_oresund_2d)
 
@@ -115,6 +120,26 @@ def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
     mr = ModelResult(sw_dutch_coast)
     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM
     assert c.n_points == 385
+
+
+def test_extract_observation_total_windsea_swell_not_possible(
+    sw_total_windsea, Hm0_HKNA
+):
+    mr = ModelResult(sw_total_windsea)
+    """
+    Items:
+        0:  Sign. Wave Height <Significant wave height> (meter)
+        1:  Sign. Wave Height, W <Significant wave height> (meter)
+        2:  Sign. Wave Height, S <Significant wave height> (meter)
+    """
+
+    with pytest.raises(Exception):
+        c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
+
+    c = mr.extract_observation(
+        Hm0_HKNA, item="Sign. Wave Height, S"
+    )  # Specify Swell item explicitely
+    assert c.n_points > 0
 
 
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):

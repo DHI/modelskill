@@ -219,8 +219,8 @@ class ModelResult(ModelResultInterface):
         if item == -1:
             raise Exception("Could not infer")
         if len(alt_items) > 1:
-            warnings.warn(
-                f"Multiple matching model items found! Will pick first one (Matches {alt_items})."
+            raise ValueError(
+                f"Multiple matching model items found! (Matches {alt_items})."
             )
 
         return item
