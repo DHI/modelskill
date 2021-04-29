@@ -2,6 +2,7 @@ import pytest
 
 from fmskill.model import ModelResult
 from fmskill.observation import PointObservation
+from mikeio import eum
 
 
 @pytest.fixture
@@ -62,6 +63,45 @@ def test_ModelResultType0():
     assert mr.is_dfs0
 
 
+def test_add_observation(hd_oresund_2d, klagshamn):
+    mr = ModelResult(hd_oresund_2d)
+    mr.add_observation(klagshamn, item=0, validate_eum=False)
+    assert len(mr.observations) == 1
+
+
+def test_add_observation_eum_validation(hd_oresund_2d, klagshamn):
+    mr = ModelResult(hd_oresund_2d)
+    with pytest.raises(ValueError):
+        # EUM type doesn't match
+        mr.add_observation(klagshamn, item=0)
+
+    klagshamn.itemInfo = eum.ItemInfo(eum.EUMType.Surface_Elevation)
+    mr = ModelResult(hd_oresund_2d)
+    mr.add_observation(klagshamn, item=0)
+    assert len(mr.observations) == 1
+
+    klagshamn.itemInfo = eum.ItemInfo(
+        eum.EUMType.Surface_Elevation, unit=eum.EUMUnit.feet
+    )
+    with pytest.raises(ValueError):
+        # EUM unit doesn't match
+        mr.add_observation(klagshamn, item=0)
+
+
+def test_add_observation_infer_item(sw_dutch_coast, Hm0_EPL):
+    mr = ModelResult(sw_dutch_coast)
+    mr.add_observation(Hm0_EPL)  # infer item by EUM
+    assert len(mr.observations) == 1
+
+    mr = ModelResult(sw_dutch_coast)
+    Hm0_EPL.itemInfo = eum.ItemInfo(
+        eum.EUMType.Significant_wave_height, unit=eum.EUMUnit.feet
+    )
+    with pytest.raises(Exception):
+        # EUM unit doesn't match
+        mr.add_observation(Hm0_EPL)
+
+
 def test_extract(hd_oresund_2d, klagshamn, drogden):
     mr = ModelResult(hd_oresund_2d)
 
@@ -69,6 +109,30 @@ def test_extract(hd_oresund_2d, klagshamn, drogden):
     mr.add_observation(drogden, item=0, validate_eum=False)
     collection = mr.extract()
     collection["Klagshamn"].name == "Klagshamn"
+
+
+def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
+    mr = ModelResult(sw_dutch_coast)
+    c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM
+    assert c.n_points == 385
+
+
+def test_extract_observation_validation(hd_oresund_2d, klagshamn):
+    mr = ModelResult(hd_oresund_2d)
+    with pytest.raises(Exception):
+        c = mr.extract_observation(klagshamn, item=0, validate=True)
+
+    c = mr.extract_observation(klagshamn, item=0, validate=False)
+    assert c.n_points > 0
+
+
+def test_extract_observation_outside(hd_oresund_2d, klagshamn):
+    mr = ModelResult(hd_oresund_2d)
+    # correct eum, but outside domain
+    klagshamn.itemInfo = eum.ItemInfo(eum.EUMType.Surface_Elevation)
+    klagshamn.y = -10
+    with pytest.raises(ValueError):
+        c = mr.extract_observation(klagshamn, item=0, validate=True)
 
 
 def test_plot_positions(sw_dutch_coast, Hm0_EPL, Hm0_HKNA):
