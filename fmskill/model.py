@@ -6,7 +6,7 @@ import warnings
 from abc import ABC, abstractmethod
 
 from mikeio import Dfs0, Dfsu, Dataset, eum
-from .observation import PointObservation, TrackObservation
+from .observation import Observation, PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from .plot import plot_observation_positions
 
@@ -98,9 +98,24 @@ class ModelResult(ModelResultInterface):
         elif self.is_dfs0:
             # TODO: add check on name
             ok = True
+        if ok:
+            ok = self._validate_start_end(observation)
+            if not ok:
+                warnings.warn("No time overlap between model result and observation!")
         return ok
 
-    def _validate_item_eum(self, observation, mod_item) -> bool:
+    def _validate_start_end(self, observation: Observation) -> bool:
+        try:
+            # need to put this in try-catch due to error in dfs0 in mikeio
+            if observation.end_time < self.dfs.start_time:
+                return False
+            if observation.start_time > self.dfs.end_time:
+                return False
+        except:
+            pass
+        return True
+
+    def _validate_item_eum(self, observation: Observation, mod_item) -> bool:
         """Check that observation and model item eum match"""
         ok = True
         obs_item = observation.itemInfo
