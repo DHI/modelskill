@@ -1284,7 +1284,7 @@ class TrackComparer(SingleObsComparer):
         for j, data in enumerate(modeldata):
             df = data.to_dataframe()
             if j == 0:
-                df[self.obs_name] = observation.df.iloc[:, -1]
+                df[self.obs_name] = observation.df.iloc[:, -1].values
                 cols = list(df.columns)
                 cols = list((*cols[0:2], *cols[:1:-1]))
                 self.df = df[cols]
