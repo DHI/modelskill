@@ -33,7 +33,6 @@ def comparer(observation, modelresult):
 def test_skill(comparer):
     c = comparer
     df = c.skill()
-
     assert df.loc["alti"].n == 544
 
 
@@ -44,6 +43,7 @@ def test_extract_no_time_overlap(modelresult, observation_df):
     o = TrackObservation(df, item=2, name="alti")
     mr.add_observation(o, item=2)
     cc = mr.extract()
+    assert cc.n_comparers == 0
 
 
 def test_extract_obs_start_before(modelresult, observation_df):
@@ -53,6 +53,7 @@ def test_extract_obs_start_before(modelresult, observation_df):
     o = TrackObservation(df, item=2, name="alti")
     mr.add_observation(o, item=2)
     cc = mr.extract()
+    assert cc.n_comparers == 0
 
 
 def test_extract_obs_end_after(modelresult, observation_df):
@@ -62,6 +63,7 @@ def test_extract_obs_end_after(modelresult, observation_df):
     o = TrackObservation(df, item=2, name="alti")
     mr.add_observation(o, item=2)
     cc = mr.extract()
+    assert cc.n_comparers == 0
 
 
 def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
@@ -73,6 +75,7 @@ def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
     mr.add_observation(o, item=2)
     cc = mr.extract()
 
+    assert cc.n_comparers == 0
     assert len(cc.all_df) == 0
 
 
