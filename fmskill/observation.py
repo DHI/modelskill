@@ -263,7 +263,7 @@ class TrackObservation(Observation):
 
     def _make_index_unique(self, df):
         warnings.warn(
-            "Time axis has duplicate entries. Now adding 10 milliseconds to consecutive entries with same time stamp."
+            "Time axis has duplicate entries. Now adding milliseconds to non-unique entries to make index unique."
         )
         offset_in_seconds = 0.01
         values = df.index.duplicated(keep=False).astype(float)  # keep='first'
