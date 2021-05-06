@@ -125,15 +125,16 @@ class ModelResult(ModelResultInterface):
         ok = self._validate_observation(observation)
         if ok and validate_eum:
             ok = self._validate_item_eum(observation, item)
+            if not ok:
+                raise ValueError(
+                    "Could not add observation, to ignore EUM validation, try validate_eum=False"
+                )
         if ok:
             observation.model_item = item
             observation.weight = weight
             self.observations[observation.name] = observation
-        else:
-            raise ValueError(
-                "Could not add observation, to ignore EUM validation, try validate_eum=False"
-            )
-            # warnings.warn("Could not add observation")
+        else:            
+            warnings.warn("Could not add observation")
 
         return self
 
