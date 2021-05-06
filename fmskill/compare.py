@@ -907,6 +907,12 @@ class SingleObsComparer(BaseComparer):
     def copy(self):
         return self.__copy__()
 
+    def _model2obs_interp(self, obs, mod_ds):
+        """interpolate model to measurement time"""
+        df = mod_ds.interp_time(obs.time).to_dataframe()
+        df[self.obs_name] = obs.values
+        return df.iloc[:, ::-1]
+
     def skill(
         self,
         by: Union[str, List[str]] = None,
@@ -1185,12 +1191,6 @@ class PointComparer(SingleObsComparer):
 
         self.df.dropna(inplace=True)
 
-    def _model2obs_interp(self, obs, mod_ds):
-        """interpolate model to measurement time"""
-        df = mod_ds.interp_time(obs.time).to_dataframe()
-        df[self.obs_name] = obs.values
-        return df.iloc[:, ::-1]
-
     def plot_timeseries(
         self, title=None, ylim=None, figsize=None, backend="matplotlib", **kwargs
     ):
@@ -1282,18 +1282,28 @@ class TrackComparer(SingleObsComparer):
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
         for j, data in enumerate(modeldata):
-            df = data.to_dataframe()
+            df = self._model2obs_interp(self.observation, data)
+            if (len(df) > 0) and (len(df) == len(self.observation.df)):
+                ok = self._obs_mod_xy_distance_acceptable(df, self.observation.df)
+                df.iloc[~ok, 1] = np.nan
+                if sum(ok) == 0:
+                    warnings.warn("no (spatial) overlap between model and observation points")
             if j == 0:
-                df[self.obs_name] = observation.df.iloc[:, -1].values
                 cols = list(df.columns)
-                cols = list((*cols[0:2], *cols[:1:-1]))
+                cols = list((*cols[:1:-1], *cols[0:2]))
                 self.df = df[cols]
             else:
-
                 self.df[self.mod_names[j]] = df[self.mod_names[j]]
 
         self.df = self.df.dropna()
         # TODO: add check
+
+    def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
+        mod_xy = df_mod.iloc[:, [-1, -2]].values
+        obs_xy = df_obs.iloc[:, :2].values
+        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
+        tol_xy = np.sqrt(np.sum((obs_xy[1, :] - obs_xy[0, :]) ** 2))
+        return d_xy < tol_xy
 
 
 class ComparerCollection(Mapping, Sequence, BaseComparer):
