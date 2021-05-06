@@ -1,4 +1,5 @@
 import numpy as np
+from mikeio import eum
 
 
 class SpatialSkill:
@@ -41,9 +42,31 @@ class SpatialSkill:
         if "n" in self.ds:
             return self.ds.n
 
-    def __init__(self, ds, name: str = None):
+    def __init__(self, ds, name: str = None, itemInfo: eum.ItemInfo = None):
         self.ds = ds
         self.name = name
+        self._set_attrs()
+
+    def _set_attrs(self):
+
+        # self.ds["bias"].attrs = dict(
+        #     long_name="Bias of significant wave height, Hm0", units="m"
+        # )
+        self.ds["n"].attrs = dict(long_name="Number of observations", units="-")
+        if self._has_geographical_coords():
+            self.ds["x"].attrs = dict(long_name="Longitude", units="degrees east")
+            self.ds["y"].attrs = dict(long_name="Latitude", units="degrees north")
+        else:
+            self.ds["x"].attrs = dict(long_name="Easting", units="meter")
+            self.ds["y"].attrs = dict(long_name="Northing", units="meter")
+
+    def _has_geographical_coords(self):
+        is_geo = True
+        if (min(self.x) < -180.0) or (max(self.x) > 360.0):
+            is_geo = False
+        if (min(self.y) < -90.0) or (max(self.y) > 90.0):
+            is_geo = False
+        return is_geo
 
     def plot(self, field, model=None, **kwargs):
         if field not in self.field_names:
