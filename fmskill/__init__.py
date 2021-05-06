@@ -1,4 +1,6 @@
 from platform import architecture
+from typing import Union
+
 
 # PEP0440 compatible formatted version, see:
 # https://www.python.org/dev/peps/pep-0440/
@@ -23,3 +25,8 @@ if "64" not in architecture()[0]:
 
 from .model import ModelResult, ModelResultCollection
 from .observation import PointObservation, TrackObservation
+
+
+def from_config(configuration: Union[dict, str], validate_eum=True):
+
+    return ModelResult.from_config(configuration, validate_eum)
