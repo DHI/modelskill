@@ -190,6 +190,10 @@ class ModelResult(ModelResultInterface):
         else:
             raise ValueError("Only point and track observation are supported!")
 
+        if len(comparer.df) == 0:
+            warnings.warn(f"No overlapping data in found for {observation.name}!")
+            comparer = None
+
         return comparer
 
     def _extract_point(self, observation: PointObservation, item) -> Dataset:
