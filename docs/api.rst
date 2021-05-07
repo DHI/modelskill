@@ -38,6 +38,11 @@ Compare
 	:inherited-members:
 	:exclude-members: keys, values, get, items
 
+Spatial Skill
+-------------
+.. autoclass:: fmskill.spatial.SpatialSkill
+	:members:
+
 Metrics
 -------
 .. automodule:: fmskill.metrics
