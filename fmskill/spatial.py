@@ -86,9 +86,9 @@ class SpatialSkill:
 
     def _has_geographical_coords(self):
         is_geo = True
-        if (min(self.x) < -180.0) or (max(self.x) > 360.0):
+        if (self.x.min() < -180.0) or (self.x.max() > 360.0):
             is_geo = False
-        if (min(self.y) < -90.0) or (max(self.y) > 90.0):
+        if (self.y.min() < -90.0) or (self.y.max() > 90.0):
             is_geo = False
         return is_geo
 
