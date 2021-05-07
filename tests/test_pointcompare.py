@@ -76,7 +76,8 @@ def test_extraction_no_overlap(modelresult_oresund_2d):
     )
     mr = modelresult_oresund_2d
     mr.add_observation(o1, item=0)
-    mr.extract()
+    c = mr.extract()
+    assert c.n_comparers == 0
 
 
 def test_score(modelresult_oresund_2d, klagshamn, drogden):
