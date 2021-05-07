@@ -95,14 +95,14 @@ def test_add_same_comparer_twice(mr1, mr2, o1, o2):
 
 
 def test_mm_skill(cc):
-    df = cc.skill()
+    df = cc.skill().df
     assert df.iloc[4].name[0] == "SW_2"
     assert df.iloc[4].name[1] == "HKNA"
     assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.214476
 
 
 def test_mm_skill_model(cc):
-    df = cc.skill(model="SW_1")
+    df = cc.skill(model="SW_1").df
     assert df.loc["EPL"].n == 66
     assert df.loc["c2"].n == 113
 
@@ -119,11 +119,11 @@ def test_mm_skill_missing_model(cc):
 
 
 def test_mm_skill_obs(cc):
-    df = cc.skill(observation="c2")
+    df = cc.skill(observation="c2").df
     assert len(df) == 2
     assert df.loc["SW_2"].bias == 0.08143105172057515
 
-    df = cc.mean_skill(model=0, observation=[0, "c2"])
+    df = cc.mean_skill(model=0, observation=[0, "c2"]).df
     assert df.si[0] == 0.10349949854443843
 
 
@@ -139,43 +139,43 @@ def test_mm_skill_missing_obs(cc, o1):
 
 
 def test_mm_skill_start_end(cc):
-    df = cc.skill(model="SW_1", start="2017")
+    df = cc.skill(model="SW_1", start="2017").df
     assert df.loc["EPL"].n == 66
-    df = cc.skill(model="SW_1", end="2017-10-28 00:00:01")
+    df = cc.skill(model="SW_1", end="2017-10-28 00:00:01").df
     assert df.loc["EPL"].n == 24
-    df = cc.skill(model="SW_1", start="2017-10-28 00:00:01")
+    df = cc.skill(model="SW_1", start="2017-10-28 00:00:01").df
     assert df.loc["EPL"].n == 42
 
 
 def test_mm_skill_area(cc):
     bbox = [0.5, 52.5, 5, 54]
-    df = cc.skill(model="SW_1", area=bbox)
+    df = cc.skill(model="SW_1", area=bbox).df
     assert pytest.approx(df.loc["HKNA"].urmse) == 0.29321445043385863
     bbox = np.array([0.5, 52.5, 5, 54])
-    df = cc.skill(model="SW_1", area=bbox)
+    df = cc.skill(model="SW_1", area=bbox).df
     assert pytest.approx(df.loc["HKNA"].urmse) == 0.29321445043385863
 
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
-    df = cc.skill(model="SW_2", area=polygon)
+    df = cc.skill(model="SW_2", area=polygon).df
     assert "HKNA" not in df.index
     assert df.n[1] == 66
     assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
 
     # same as above but not closed
     polygon = np.array([[6, 51], [0, 55], [0, 51]])
-    df = cc.skill(model="SW_2", area=polygon)
+    df = cc.skill(model="SW_2", area=polygon).df
     assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
 
     polygon = [6, 51, 0, 55, 0, 51, 6, 51]
-    df = cc.skill(model="SW_2", area=polygon)
+    df = cc.skill(model="SW_2", area=polygon).df
     assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
 
     # same as above but not closed
     polygon = [6, 51, 0, 55, 0, 51]
-    df = cc.skill(model="SW_2", area=polygon)
+    df = cc.skill(model="SW_2", area=polygon).df
     assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
 
-    df = cc.mean_skill(area=polygon)
+    df = cc.mean_skill(area=polygon).df
     assert pytest.approx(df.loc["SW_2"].rmse) == 0.331661
 
     with pytest.raises(ValueError):
@@ -193,10 +193,10 @@ def test_mm_skill_area(cc):
 
 
 def test_mm_skill_metrics(cc):
-    df = cc.skill(model="SW_1", metrics=[mtr.mean_absolute_error])
+    df = cc.skill(model="SW_1", metrics=[mtr.mean_absolute_error]).df
     assert df.mean_absolute_error.values.sum() > 0.0
 
-    df = cc.skill(model="SW_1", metrics=[mtr.bias, "rmse"])
+    df = cc.skill(model="SW_1", metrics=[mtr.bias, "rmse"]).df
     assert df.loc["EPL"].bias == -0.07533533467221397
     assert df.loc["EPL"].rmse == 0.21635651988376833
 
