@@ -10,6 +10,8 @@ class BaseSkill(pd.DataFrame):
     # ALTERNATIVE approach: where the class inherits from DataFrame
     # instead of holding a DataFrame as an attribute.
 
+    # https://pandas.pydata.org/pandas-docs/stable/development/extending.html#extending-subclassing-pandas
+    # https://stackoverflow.com/questions/47466255/subclassing-a-pandas-dataframe-updates
     # This class variable tells Pandas the name of the attributes
     # that are to be ported over to derivative DataFrames.  There
     # is a method named `__finalize__` that grabs these attributes
