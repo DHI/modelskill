@@ -911,7 +911,7 @@ class SingleObsComparer(BaseComparer):
         """interpolate model to measurement time"""
         df = mod_ds.interp_time(obs.time).to_dataframe()
         df[self.obs_name] = obs.values
-        return df.iloc[:, ::-1]
+        return df
 
     def skill(
         self,
@@ -1183,7 +1183,7 @@ class PointComparer(SingleObsComparer):
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
         for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data)
+            df = self._model2obs_interp(self.observation, data).iloc[:, ::-1]
             if j == 0:
                 self.df = df
             else:
@@ -1283,26 +1283,30 @@ class TrackComparer(SingleObsComparer):
             modeldata = [modeldata]
         for j, data in enumerate(modeldata):
             df = self._model2obs_interp(self.observation, data)
+            # rename first columns to x, y
+            df.columns = ["x", "y", *list(df.columns)[2:]]
             if (len(df) > 0) and (len(df) == len(self.observation.df)):
                 ok = self._obs_mod_xy_distance_acceptable(df, self.observation.df)
-                df.iloc[~ok, 1] = np.nan
+                # set model to NaN if too far away from obs location
+                df.loc[~ok, self.mod_names[j]] = np.nan
                 if sum(ok) == 0:
-                    warnings.warn("no (spatial) overlap between model and observation points")
+                    warnings.warn(
+                        "no (spatial) overlap between model and observation points"
+                    )
             if j == 0:
-                cols = list(df.columns)
-                cols = list((*cols[:1:-1], *cols[0:2]))
+                # change order of obs and model
+                cols = ["x", "y", self.obs_name, self.mod_names[j]]
                 self.df = df[cols]
             else:
                 self.df[self.mod_names[j]] = df[self.mod_names[j]]
 
         self.df = self.df.dropna()
-        # TODO: add check
 
     def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
-        mod_xy = df_mod.iloc[:, [-1, -2]].values
+        mod_xy = df_mod.loc[:, ["x", "y"]].values
         obs_xy = df_obs.iloc[:, :2].values
         d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-        tol_xy = np.sqrt(np.sum((obs_xy[1, :] - obs_xy[0, :]) ** 2))
+        tol_xy = np.sqrt(np.sum((obs_xy[0, :] - obs_xy[1, :]) ** 2))
         return d_xy < tol_xy
 
 
