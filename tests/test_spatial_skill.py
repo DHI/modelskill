@@ -42,7 +42,7 @@ def o3():
 def cc2(o1, o2, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     mr1 = ModelResult(fn, name="SW_1")
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_2.dfsu"
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     mr2 = ModelResult(fn, name="SW_2")
     mr = ModelResultCollection([mr1, mr2])
 
@@ -57,8 +57,37 @@ def test_spatial_skill(cc1):
     assert isinstance(ss.ds, xr.Dataset)
     assert len(ss.x) == 5
     assert len(ss.y) == 5
+    assert len(ss.mod_names) == 0
+    assert len(ss.obs_names) == 0
+    df = ss.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert "Coordinates:" in repr(ss)
+    assert ss.coords is not None
+    assert ss.n is not None
 
 
-def test_plot(cc1):
+def test_spatial_skill_multi_model(cc2):
+    ss = cc2.spatial_skill(bins=3, metrics=["rmse", "bias"])
+    assert len(ss.x) == 3
+    assert len(ss.y) == 3
+    assert len(ss.mod_names) == 2
+    assert len(ss.obs_names) == 3
+    assert len(ss.field_names) == 3
+
+
+def test_spatial_skill_plot(cc1):
     ss = cc1.spatial_skill(metrics=["rmse", "bias"])
     ss.plot("bias")
+
+
+def test_spatial_skill_plot_multi_model(cc2):
+    ss = cc2.spatial_skill(by=["model"])
+    ss.plot("bias")
+
+    ss.plot("rmse", model="SW_1")
+
+    with pytest.raises(ValueError):
+        ss.plot("bad_metric")
+
+    with pytest.raises(ValueError):
+        ss.plot("rmse", model="bad_model")
