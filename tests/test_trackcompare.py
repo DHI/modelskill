@@ -7,10 +7,14 @@ from fmskill.observation import TrackObservation
 
 
 @pytest.fixture
-def observation():
+def observation_df():
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
-    df = pd.read_csv(fn, index_col=0, parse_dates=True)
-    return TrackObservation(df, item=2, name="alti")
+    return pd.read_csv(fn, index_col=0, parse_dates=True)
+
+
+@pytest.fixture
+def observation(observation_df):
+    return TrackObservation(observation_df, item=2, name="alti")
 
 
 @pytest.fixture
@@ -31,6 +35,52 @@ def test_skill(comparer):
     df = c.skill().df
 
     assert df.loc["alti"].n == 544
+
+
+def test_extract_no_time_overlap(modelresult, observation_df):
+    mr = modelresult
+    df = observation_df.copy(deep=True)
+    df.index = df.index + np.timedelta64(100, "D")
+    o = TrackObservation(df, item=2, name="alti")
+    mr.add_observation(o, item=2)
+    cc = mr.extract()
+    assert cc.n_comparers == 0
+
+
+def test_extract_obs_start_before(modelresult, observation_df):
+    mr = modelresult
+    df = observation_df.copy(deep=True)
+    df.index = df.index - np.timedelta64(1, "D")
+    o = TrackObservation(df, item=2, name="alti")
+    mr.add_observation(o, item=2)
+    cc = mr.extract()
+    assert cc.n_comparers == 0
+
+
+def test_extract_obs_end_after(modelresult, observation_df):
+    mr = modelresult
+    df = observation_df.copy(deep=True)
+    df.index = df.index + np.timedelta64(1, "D")
+    o = TrackObservation(df, item=2, name="alti")
+    mr.add_observation(o, item=2)
+    cc = mr.extract()
+    assert cc.n_comparers == 0
+
+
+def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
+    mr = modelresult
+    df = observation_df.copy(deep=True)
+    df.lon = -100
+    df.lat = -50
+    o = TrackObservation(df, item=2, name="alti")
+    mr.add_observation(o, item=2)
+    cc = mr.extract()
+
+    assert cc.n_comparers == 0
+    assert len(cc.all_df) == 0
+
+
+# def test_extract_no_spatial_overlap_dfsu(observation_df):
 
 
 def test_skill_vs_spatial_skill(comparer):

@@ -67,6 +67,24 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
     assert not np.any(np.isnan(df))
 
 
+def test_extraction_no_overlap(modelresult_oresund_2d):
+    o1 = PointObservation(
+        "tests/testdata/smhi_2095_klagshamn_shifted.dfs0",
+        x=366844,
+        y=6154291,
+        name="Klagshamn",
+    )
+    mr = modelresult_oresund_2d
+    with pytest.warns(UserWarning) as wn:
+        mr.add_observation(o1, item=0)
+    assert len(wn) == 2
+    assert "No time overlap" in str(wn[0].message)
+    assert "Could not add observation" in str(wn[1].message)
+    assert len(mr.observations) == 0
+    c = mr.extract()
+    assert c.n_comparers == 0
+
+
 def test_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
