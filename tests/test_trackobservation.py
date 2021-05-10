@@ -35,3 +35,14 @@ def test_from_df():
 
     t1 = TrackObservation(df, name="fake")
     assert t1.n_points == n
+
+
+def test_non_unique_index():
+    fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
+    df = pd.read_csv(fn, index_col=0, parse_dates=True)
+    assert not df.index.is_unique
+    assert df.index[160] == df.index[161]
+    o = TrackObservation(df)
+    assert o.df.index.is_unique
+    assert o.df.index[160].to_pydatetime().microsecond == 10000
+    assert o.df.index[161].to_pydatetime().microsecond == 20000

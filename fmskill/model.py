@@ -125,15 +125,16 @@ class ModelResult(ModelResultInterface):
         ok = self._validate_observation(observation)
         if ok and validate_eum:
             ok = self._validate_item_eum(observation, item)
+            if not ok:
+                raise ValueError(
+                    "Could not add observation, to ignore EUM validation, try validate_eum=False"
+                )
         if ok:
             observation.model_item = item
             observation.weight = weight
             self.observations[observation.name] = observation
-        else:
-            raise ValueError(
-                "Could not add observation, to ignore EUM validation, try validate_eum=False"
-            )
-            # warnings.warn("Could not add observation")
+        else:            
+            warnings.warn("Could not add observation")
 
         return self
 
@@ -149,9 +150,26 @@ class ModelResult(ModelResultInterface):
         elif self.is_dfs0:
             # TODO: add check on name
             ok = True
+        if ok:
+            ok = self._validate_start_end(observation)
+            if not ok:
+                warnings.warn("No time overlap between model result and observation!")
         return ok
 
-    def _validate_item_eum(self, observation, item, mod_items=None) -> bool:
+    def _validate_start_end(self, observation: Observation) -> bool:
+        try:
+            # need to put this in try-catch due to error in dfs0 in mikeio
+            if observation.end_time < self.dfs.start_time:
+                return False
+            if observation.start_time > self.dfs.end_time:
+                return False
+        except:
+            pass
+        return True
+
+    def _validate_item_eum(
+        self, observation: Observation, item, mod_items=None
+    ) -> bool:
         """Check that observation and model item eum match"""
         if mod_items is None:
             mod_items = self.dfs.items
@@ -271,6 +289,10 @@ class ModelResult(ModelResultInterface):
             comparer = TrackComparer(observation, ds_model)
         else:
             raise ValueError("Only point and track observation are supported!")
+
+        if len(comparer.df) == 0:
+            warnings.warn(f"No overlapping data in found for {observation.name}!")
+            comparer = None
 
         return comparer
 
