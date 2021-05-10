@@ -33,13 +33,13 @@ By providing many examples to cut/paste from.
 
 Examples are available in two forms:
 
-* `Unit tests <https://github.com/DHI/fmskill/tree/master/tests>`_
-* `Jupyter notebooks <https://nbviewer.jupyter.org/github/DHI/fmskill/tree/master/notebooks/>`_
+* `Unit tests <https://github.com/DHI/fmskill/tree/main/tests>`_
+* `Jupyter notebooks <https://nbviewer.jupyter.org/github/DHI/fmskill/tree/main/notebooks/>`_
 
 Open Source​
 ------------
 
-fmskill is an open source project licensed under the `MIT license <https://github.com/DHI/fmskill/blob/master/License>`_.
+fmskill is an open source project licensed under the `MIT license <https://github.com/DHI/fmskill/blob/main/License>`_.
 The software is provided free of charge with the source code available for inspection and modification.
 
 
