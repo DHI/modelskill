@@ -65,13 +65,42 @@ class AggregatedSkill:
     #     return self.df.index()
 
     def round(self, precision):
-        return self.df.round(precision)
+        # return self.df.round(precision)
+        return AggregatedSkill(self.df.round(precision))
 
-    def style(self):
-        raise NotImplementedError()
+    def sort_values(self, field, **kwargs):
+        return AggregatedSkill(self.df.sort_values(field, **kwargs))
+
+    def style(self, precision=3, columns=None, cmap="Reds"):
+        float_list = ["float16", "float32", "float64"]
+        cols = list(self.df.select_dtypes(include=float_list).columns.values)
+        if columns is None:
+            columns = cols
+        else:
+            if isinstance(columns, str):
+                columns = [columns]
+            for column in columns:
+                if column not in cols:
+                    raise ValueError(
+                        f"Invalid column name {column} (must be one of {cols})"
+                    )
+
+        cols = list(set(columns) & set(cols))
+        if "bias" in cols:
+            cols.remove("bias")
+
+        styled_df = self.df.style.set_precision(precision)
+        if len(cols) > 0:
+            styled_df = styled_df.background_gradient(subset=cols, cmap=cmap)
+        if "bias" in columns:
+            styled_df = styled_df.background_gradient(subset=["bias"], cmap="coolwarm")
+        return styled_df
 
     def taylor_diagram(self):
         raise NotImplementedError()
 
     def target_diagram(self):
         raise NotImplementedError()
+
+    def to_html(self, **kwargs):
+        return self.df.to_html(**kwargs)
