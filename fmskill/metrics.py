@@ -10,18 +10,12 @@ def bias(obs, model) -> float:
     """
 
     assert obs.size == model.size
-
     return np.mean(model.ravel() - obs.ravel())
 
 
 def mae(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
-    """Mean Absolute Error (MAE)
-
-    .. math::
-        MAE=\\frac{1}{n}\\sum_{i=1}^n|model_i - obs_i|
-    """
+    """alias for mean_absolute_error"""
     assert obs.size == model.size
-
     return mean_absolute_error(obs, model, weights)
 
 
@@ -41,13 +35,12 @@ def mean_absolute_error(
 
 
 def mape(obs: np.ndarray, model: np.ndarray) -> float:
-    """Mean Absolute Percentage Error (MAPE)"""
+    """alias for mean_absolute_percentage_error"""
     return mean_absolute_percentage_error(obs, model)
 
 
 def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
     """Mean Absolute Percentage Error (MAPE)
-
 
     .. math::
         MAPE=\\frac{1}{n}\\sum_{i=1}^n\\frac{|model_i - obs_i|}{obs_i}*100
@@ -65,10 +58,9 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
 def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
     """Unbiased Root Mean Squared Error (uRMSE)
 
-
     See Also
     --------
-    rmse
+    root_mean_squared_error
     """
     return root_mean_squared_error(obs, model, weights, unbiased=True)
 
@@ -79,7 +71,7 @@ def rmse(
     weights: np.ndarray = None,
     unbiased: bool = False,
 ) -> float:
-    """Root Mean Squared Error (RMSE)"""
+    """alias for root_mean_squared_error"""
     return root_mean_squared_error(obs, model, weights, unbiased)
 
 
@@ -115,14 +107,18 @@ def root_mean_squared_error(
     return error
 
 
+def nse(obs: np.ndarray, model: np.ndarray) -> float:
+    """alias for nash_sutcliffe_efficiency"""
+    return nash_sutcliffe_efficiency(obs, model)
+
+
 def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     """Nash-Sutcliffe Efficiency (NSE)
 
     .. math::
 
-        NSE=1 - \\frac {\\sum _{i=i}^{n}\\left(model_{i}-obs_{i}\\right)^{2}}
+        NSE = 1 - \\frac {\\sum _{i=i}^{n}\\left(model_{i}-obs_{i}\\right)^{2}}
                        {\\sum_{i=1}^{n}\\left(obs_{i}-{\\overline {obs}}\\right)^{2}}
-
 
     References
     ----------
@@ -160,20 +156,19 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
-    """Correlation coefficient (CC)"""
+    """alias for corrcoef"""
     return corrcoef(obs, model)
 
 
 def corrcoef(obs, model, weights=None) -> float:
     """Correlation coefficient (CC)
 
-
     .. math::
         CC=\\frac{cov(obs,model)}{\\sigma_{obs}\\sigma_{model}}
 
     See Also
     --------
-    np.corrcoef
+    numpy.corrcoef
     """
     assert obs.size == model.size
 
@@ -185,7 +180,7 @@ def corrcoef(obs, model, weights=None) -> float:
 
 
 def si(obs: np.ndarray, model: np.ndarray) -> float:
-    """Scatter index (SI)"""
+    """alias for scatter_index"""
     return scatter_index(obs, model)
 
 
@@ -216,8 +211,7 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     assert obs.size == model.size
 
     residual = model.ravel() - obs.ravel()
-
-    SSt = np.sum(obs.ravel() ** 2)
     SSr = np.sum(residual ** 2)
+    SSt = np.sum(obs.ravel() ** 2)
 
     return 1 - SSr / SSt
