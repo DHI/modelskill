@@ -1,4 +1,4 @@
-![fmskill logo](images/logo/mike-fm-skill-rgb.svg | width="300")
+![fmskill logo](images/logo/mike-fm-skill-rgb.svg | width=300)
 # fmskill: Compare MIKE FM results with observations.
  ![Python version](https://img.shields.io/pypi/pyversions/fmskill.svg) 
 ![Python package](https://github.com/DHI/fmskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/fmskill.svg)](https://badge.fury.io/py/fmskill)
