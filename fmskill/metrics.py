@@ -296,6 +296,13 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
 
         R^2 = 1 - \\frac{\\sum_{i=1}^n (model_i - obs_i)^2}
                     {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
+
+    Examples
+    --------
+    >>> obs = np.array([1.0,1.1,1.2,1.3,1.4])
+    >>> array([1.09, 1.16, 1.3 , 1.38, 1.49])
+    >>> r2(obs,model)
+    0.6379999999999998
     """
     assert obs.size == model.size
     if len(obs) == 0:
