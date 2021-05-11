@@ -248,7 +248,7 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     applied to ranked quantities and is useful to quantify a monotonous relationship
 
     .. math::
-        \\rho = \\frac{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})(obs_i - \\overline{robs}) }
+        \\rho = \\frac{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})(robs_i - \\overline{robs}) }
                       {\\sqrt{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})^2}
                        \\sqrt{\\sum_{i=1}^n (robs_i - \\overline{robs})^2} }
 
