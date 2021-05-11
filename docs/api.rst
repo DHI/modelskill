@@ -46,6 +46,8 @@ Spatial Skill
 Metrics
 -------
 .. autosummary:: 
+	:nosignatures:
+	
 	fmskill.metrics.bias	
 	fmskill.metrics.root_mean_squared_error
 	fmskill.metrics.rmse
