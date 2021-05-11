@@ -95,6 +95,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#model">Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#observation">Observation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#compare">Compare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spatial-skill">Spatial Skill</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-fmskill.metrics">Metrics</a></li>
 </ul>
 </li>
@@ -1545,6 +1546,100 @@ by default None</p></li>
 <dt class="sig sig-object py" id="fmskill.compare.ComparerCollection.var_names">
 <em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">var_names</span></span><a class="headerlink" href="#fmskill.compare.ComparerCollection.var_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of variable names</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="spatial-skill">
+<h2>Spatial Skill<a class="headerlink" href="#spatial-skill" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.spatial.</span></span><span class="sig-name descname"><span class="pre">SpatialSkill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.spatial.SpatialSkill" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spatial skill object for analysis and visualization of spatially
+gridded skill assessment. The object wraps the xr.DataSet class
+which can be accessed from the attribute ds.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span> <span class="o">=</span> <span class="n">comparer</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">field_names</span>
+<span class="go">[&#39;n&#39;, &#39;bias&#39;, &#39;rmse&#39;, &#39;urmse&#39;, &#39;mae&#39;, &#39;cc&#39;, &#39;si&#39;, &#39;r2&#39;]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">mod_names</span>
+<span class="go">[&#39;SW_1&#39;, &#39;SW_2&#39;]</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s1">&#39;rmse&#39;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">&#39;SW_1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.coords">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">coords</span></span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coordinates (same as xr.DataSet.coords)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.field_names">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">field_names</span></span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.field_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of field names (=data vars)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.mod_names">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">mod_names</span></span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.mod_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of model names</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.n">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">n</span></span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.n" title="Permalink to this definition">¶</a></dt>
+<dd><p>number of observations</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.obs_names">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">obs_names</span></span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.obs_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of observation names</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>wrapper for xArray DataSet plot function</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>field</strong> (<em>str</em>) – The field to plot, e.g. ‘rmse’ or ‘bias’</p></li>
+<li><p><strong>model</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of model to plot, by default all models</p></li>
+<li><p><strong>**kwargs</strong> (<em>keyword arguments passed to xr.DataSet plot</em><em>(</em><em>)</em>) – e.g. figsize</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span> <span class="o">=</span> <span class="n">comparer</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="s1">&#39;rmse&#39;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">&#39;SW_1&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ss</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">field</span><span class="o">=</span><span class="s1">&#39;r2&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;YlOrRd&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.to_dataframe">
+<span class="sig-name descname"><span class="pre">to_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.to_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>export as pandas.DataFrame</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.x">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>x-coordinate values</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.spatial.SpatialSkill.y">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#fmskill.spatial.SpatialSkill.y" title="Permalink to this definition">¶</a></dt>
+<dd><p>y-coordinate values</p>
 </dd></dl>
 
 </dd></dl>
