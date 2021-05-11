@@ -48,6 +48,8 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
 
     assert obs.size == model.size
 
+    if len(obs) == 0:
+        return np.nan
     if np.any(obs == 0.0):
         warnings.warn("Observation is zero, consider to use another metric than MAPE")
         return np.nan  # TODO is it better to return a large value +inf than NaN?
@@ -126,6 +128,8 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     """
     assert obs.size == model.size
 
+    if len(obs) == 0:
+        return np.nan
     error = 1 - (
         np.sum((obs.ravel() - model.ravel()) ** 2)
         / np.sum((model.ravel() - np.mean(model.ravel())) ** 2)
@@ -171,6 +175,8 @@ def corrcoef(obs, model, weights=None) -> float:
     numpy.corrcoef
     """
     assert obs.size == model.size
+    if len(obs) <= 1:
+        return np.nan
 
     if weights is None:
         return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
@@ -193,6 +199,8 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
 
     """
     assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
 
     return np.sqrt(
         np.sum(((model.ravel() - model.mean()) - (obs.ravel() - obs.mean())) ** 2)
@@ -209,6 +217,8 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
                     {\\sum_{i=1}^n obs_i^2}
     """
     assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
 
     residual = model.ravel() - obs.ravel()
     SSr = np.sum(residual ** 2)
