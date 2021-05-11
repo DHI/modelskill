@@ -38,11 +38,11 @@ Examples
 >>> lin_slope(obs, mod)
 0.4724896836313617
 """
+from typing import Tuple
 import warnings
 import numpy as np
 from scipy.stats import linregress
 from scipy import odr
-
 
 def bias(obs, model) -> float:
     """Bias (mean error)
@@ -161,8 +161,8 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     .. math::
 
-        NSE = 1 - \\frac {\\frac{1}{n} \\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}
-                       {\\frac{1}{n} \\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}
+        NSE = 1 - \\frac {\\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}
+                       {\\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}
 
     References
     ----------
@@ -323,25 +323,30 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
 
         slope = \\frac{\\sum_{i=1}^n (model_i - \\overline {model})(obs_i - \\overline {obs})}
                       {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
-    """
+    """    
+    return _linear_regression(obs, model, reg_method)[0]
+
+
+def _linear_regression(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> Tuple[float, float]:
+
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
 
     if reg_method == "ols":
         reg = linregress(obs, model)
-        # intercept = reg.intercept
+        intercept = reg.intercept
         slope = reg.slope
     elif reg_method == "odr":
         data = odr.Data(obs, model)
         odr_obj = odr.ODR(data, odr.unilinear)
         output = odr_obj.run()
 
-        # intercept = output.beta[1]
+        intercept = output.beta[1]
         slope = output.beta[0]
     else:
         raise NotImplementedError(
             f"Regression method: {reg_method} not implemented, select 'ols' or 'odr'"
         )
 
-    return slope
+    return slope, intercept
