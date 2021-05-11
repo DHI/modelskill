@@ -188,8 +188,8 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     """Scatter index (SI)
 
     .. math::
-        \\frac{\\sum_i^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2}
-        {\\sum_i^n obs_i^2}
+        \\sqrt {\\frac{\\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2}
+        {\\sum_{i=1}^n obs_i^2}}
 
     """
     assert obs.size == model.size
@@ -206,12 +206,12 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     .. math::
 
         R^2 = 1 - \\frac{\\sum_{i=1}^n (model_i - obs_i)^2}
-                    {\\sum_{i=1}^n obs_i^2}
+                    {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
     """
     assert obs.size == model.size
 
     residual = model.ravel() - obs.ravel()
     SSr = np.sum(residual ** 2)
-    SSt = np.sum(obs.ravel() ** 2)
+    SSt = np.sum((obs - obs.mean()) ** 2)
 
     return 1 - SSr / SSt
