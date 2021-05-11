@@ -208,7 +208,7 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
 
 def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
     """alias for corrcoef"""
-    return corrcoef(obs, model)
+    return corrcoef(obs, model, weights)
 
 
 def corrcoef(obs, model, weights=None) -> float:
@@ -232,6 +232,39 @@ def corrcoef(obs, model, weights=None) -> float:
     else:
         C = np.cov(obs.ravel(), model.ravel(), fweights=weights)
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
+
+
+def rho(obs: np.ndarray, model: np.ndarray) -> float:
+    """alias for Spearman rank correlation coefficient"""
+    return spearmanr(obs, model)
+
+
+def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
+    """Spearman rank correlation coefficient
+
+
+    The rank correlation coefficient is similar to the Pearson correlation coefficient but
+    applied to ranked quantities and is useful to quantify a monotonous relationship
+    .. math::
+
+    \\rho = \\frac{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})(obs_i - \\overline{robs}) }
+                   {\\sqrt{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})^2}
+                    \\sqrt{\\sum_{i=1}^n (robs_i - \\overline{robs})^2} }
+
+    Examples
+    --------
+    >>> obs = np.linspace(-20,20, 100)
+    >>> mod = np.tanh(obs)
+    >>> corrcoef(obs, mod)
+    0.8865141786249244
+    >>> rho(obs, mod)
+    0.9999759973116955
+
+    See Also
+    --------
+    corrcoef
+    """
+    return scipy.stats.spearmanr(obs, model)[0]
 
 
 def si(obs: np.ndarray, model: np.ndarray) -> float:
@@ -264,6 +297,13 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
 
         R^2 = 1 - \\frac{\\sum_{i=1}^n (model_i - obs_i)^2}
                     {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
+
+    Examples
+    --------
+    >>> obs = np.array([1.0,1.1,1.2,1.3,1.4])
+    >>> array([1.09, 1.16, 1.3 , 1.38, 1.49])
+    >>> r2(obs,model)
+    0.6379999999999998
     """
     assert obs.size == model.size
     if len(obs) == 0:
