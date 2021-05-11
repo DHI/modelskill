@@ -159,21 +159,21 @@ def test_mm_skill_area(cc):
     df = cc.skill(model="SW_2", area=polygon)
     assert "HKNA" not in df.index
     assert df.n[1] == 66
-    assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
+    assert pytest.approx(df.iloc[0].r2) == 0.9280893149478934
 
     # same as above but not closed
     polygon = np.array([[6, 51], [0, 55], [0, 51]])
     df = cc.skill(model="SW_2", area=polygon)
-    assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
+    assert pytest.approx(df.iloc[0].r2) == 0.9280893149478934
 
     polygon = [6, 51, 0, 55, 0, 51, 6, 51]
     df = cc.skill(model="SW_2", area=polygon)
-    assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
+    assert pytest.approx(df.iloc[0].r2) == 0.9280893149478934
 
     # same as above but not closed
     polygon = [6, 51, 0, 55, 0, 51]
     df = cc.skill(model="SW_2", area=polygon)
-    assert pytest.approx(df.iloc[0].r2) == 0.9932189179977318
+    assert pytest.approx(df.iloc[0].r2) == 0.9280893149478934
 
     df = cc.mean_skill(area=polygon)
     assert pytest.approx(df.loc["SW_2"].rmse) == 0.331661

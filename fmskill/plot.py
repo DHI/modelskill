@@ -3,13 +3,10 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from scipy.stats import linregress
-from scipy import odr
-
 from mikeio import Dfsu
 
 from .observation import Observation, PointObservation, TrackObservation
-
+from .metrics import _linear_regression
 
 def scatter(
     x,
@@ -108,21 +105,7 @@ def scatter(
     yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
 
     # linear fit
-    if reg_method == "ols":
-        reg = linregress(x, y)
-        intercept = reg.intercept
-        slope = reg.slope
-    elif reg_method == "odr":
-        data = odr.Data(x, y)
-        odr_obj = odr.ODR(data, odr.unilinear)
-        output = odr_obj.run()
-
-        intercept = output.beta[1]
-        slope = output.beta[0]
-    else:
-        raise NotImplementedError(
-            f"Regression method: {reg_method} not implemented, select 'ols' or 'odr'"
-        )
+    slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
 
     if intercept < 0:
         sign = ""
