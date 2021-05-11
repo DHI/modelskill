@@ -27,6 +27,7 @@ import fmskill.metrics as mtr
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.plot import scatter
 from fmskill.skill import AggregatedSkill
+from fmskill.spatial import SpatialSkill
 
 
 class BaseComparer:
@@ -564,6 +565,8 @@ class BaseComparer:
         """
 
         metrics = self._parse_metric(metrics)
+        if callable(metrics) or isinstance(metrics, str):
+            metrics = [metrics]
 
         df = self.sel_df(
             model=model,
@@ -580,10 +583,12 @@ class BaseComparer:
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
         by = self._parse_by(by, n_models, n_obs)
-        if not "y" in by:
-            by.insert(0, "y")
+        if isinstance(by, str) or (not isinstance(by, Iterable)):
+            by = [by]
         if not "x" in by:
             by.insert(0, "x")
+        if not "y" in by:
+            by.insert(0, "y")
 
         res = self._groupby_df(
             df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y")),
@@ -592,7 +597,8 @@ class BaseComparer:
             n_min,
         )
 
-        return res.to_xarray().squeeze()
+        ss = SpatialSkill(res.to_xarray().squeeze())
+        return ss
 
     def _add_spatial_grid_to_df(self, df, bins, binsize):
         if binsize is None:

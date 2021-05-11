@@ -126,7 +126,7 @@ def test_mv_mm_mean_skill(cc):
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "variable"
     idx = ("SW_1", "Wind_speed")
-    assert pytest.approx(df.loc[idx].r2) == 0.98130765692
+    assert pytest.approx(df.loc[idx].r2) == 0.6523880517075856
 
     df = cc.mean_skill(variable=0).df
     assert pytest.approx(df.loc["SW_1"].cc) == 0.972628061122
