@@ -41,3 +41,4 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+        pytest ./fmskill/metrics.py --doctest-modules
