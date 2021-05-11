@@ -34,7 +34,7 @@ Examples
 >>> si(obs, mod)
 0.7294663886165093
 >>> r2(obs, mod)
-0.24909090909090914
+0.14786795048143053
 >>> lin_slope(obs, mod)
 0.4724896836313617
 """
@@ -42,6 +42,7 @@ from typing import Tuple
 import warnings
 import numpy as np
 from scipy.stats import linregress
+import scipy.stats
 from scipy import odr
 
 def bias(obs, model) -> float:
@@ -301,7 +302,7 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     Examples
     --------
     >>> obs = np.array([1.0,1.1,1.2,1.3,1.4])
-    >>> array([1.09, 1.16, 1.3 , 1.38, 1.49])
+    >>> model = np.array([1.09, 1.16, 1.3 , 1.38, 1.49])
     >>> r2(obs,model)
     0.6379999999999998
     """
