@@ -61,6 +61,7 @@ Metrics
 	fmskill.metrics.scatter_index
 	fmskill.metrics.si
 	fmskill.metrics.r2
+	fmskill.metrics.lin_slope
 	
 .. automodule:: fmskill.metrics
 	:members:

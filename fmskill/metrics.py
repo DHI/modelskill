@@ -8,6 +8,8 @@ difference between a model and an observation.
 * nash_sutcliffe_efficiency (nse)
 * model_efficiency_factor (mef)
 * scatter_index (si)
+* r2
+* lin_slope
 
 The names in parentheses are shorthand aliases for the different metrics.
 
@@ -32,15 +34,14 @@ Examples
 >>> si(obs, mod)
 0.7294663886165093
 >>> r2(obs, mod)
-0.14786795048143053
->>> corrcoef(obs, mod)
-0.637783218973691
->>> rho(obs, mod)
-0.5
+0.24909090909090914
+>>> lin_slope(obs, mod)
+0.4724896836313617
 """
 import warnings
 import numpy as np
-import scipy.stats
+from scipy.stats import linregress
+from scipy import odr
 
 
 def bias(obs, model) -> float:
@@ -160,8 +161,8 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     .. math::
 
-        NSE = 1 - \\frac {\\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}
-                       {\\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}
+        NSE = 1 - \\frac {\\frac{1}{n} \\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}
+                       {\\frac{1}{n} \\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}
 
     References
     ----------
@@ -191,8 +192,8 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
 
     .. math::
 
-        MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\sum_{i=1}^n(model_i - obs_i)^2}}
-                                        {\\sqrt{\\sum_{i=1}^n(obs_i - \\overline{obs})^2}}=\\sqrt{1-NSE}
+        MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}}
+                                        {\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(obs_i - \\overline{obs})^2}}=\\sqrt{1-NSE}
 
     See Also
     --------
@@ -207,7 +208,7 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
 
 def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
     """alias for corrcoef"""
-    return corrcoef(obs, model)
+    return corrcoef(obs, model, weights)
 
 
 def corrcoef(obs, model, weights=None) -> float:
@@ -313,3 +314,34 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     SSt = np.sum((obs - obs.mean()) ** 2)
 
     return 1 - SSr / SSt
+
+
+def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
+    """Slope of the regression line.
+
+    .. math::
+
+        slope = \\frac{\\sum_{i=1}^n (model_i - \\overline {model})(obs_i - \\overline {obs})}
+                      {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
+    """
+    assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
+
+    if reg_method == "ols":
+        reg = linregress(obs, model)
+        # intercept = reg.intercept
+        slope = reg.slope
+    elif reg_method == "odr":
+        data = odr.Data(obs, model)
+        odr_obj = odr.ODR(data, odr.unilinear)
+        output = odr_obj.run()
+
+        # intercept = output.beta[1]
+        slope = output.beta[0]
+    else:
+        raise NotImplementedError(
+            f"Regression method: {reg_method} not implemented, select 'ols' or 'odr'"
+        )
+
+    return slope
