@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: https://raw.githubusercontent.com/DHI/fmskill/add_logo/images/logo/mike-fm-skill-rgb.svg
+.. image:: https://raw.githubusercontent.com/DHI/fmskill/main/images/logo/mike-fm-skill-rgb.svg
 
 |
  
