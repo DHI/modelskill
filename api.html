@@ -1696,6 +1696,12 @@ which can be accessed from the attribute ds.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#fmskill.metrics.si" title="fmskill.metrics.si"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmskill.metrics.si</span></code></a></p></td>
 <td><p>alias for scatter_index</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#fmskill.metrics.spearmanr" title="fmskill.metrics.spearmanr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmskill.metrics.spearmanr</span></code></a></p></td>
+<td><p>Spearman rank correlation coefficient</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#fmskill.metrics.rho" title="fmskill.metrics.rho"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmskill.metrics.rho</span></code></a></p></td>
+<td><p>alias for Spearman rank correlation coefficient</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#fmskill.metrics.r2" title="fmskill.metrics.r2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmskill.metrics.r2</span></code></a></p></td>
 <td><p>Coefficient of determination (R2)</p></td>
 </tr>
@@ -1714,6 +1720,7 @@ difference between a model and an observation.</p>
 <li><p>nash_sutcliffe_efficiency (nse)</p></li>
 <li><p>model_efficiency_factor (mef)</p></li>
 <li><p>scatter_index (si)</p></li>
+<li><p>spearmanr (rho)</p></li>
 <li><p>r2</p></li>
 <li><p>lin_slope</p></li>
 </ul>
@@ -1737,6 +1744,8 @@ difference between a model and an observation.</p>
 <span class="go">0.9231099877688299</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">si</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
 <span class="go">0.7294663886165093</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spearmanr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
+<span class="go">0.5</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">r2</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
 <span class="go">0.14786795048143053</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">lin_slope</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
