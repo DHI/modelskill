@@ -13,11 +13,26 @@ The names in parentheses are shorthand aliases for the different metrics.
 
 Examples
 --------
->>> mod = np.array([0.0, 2.3, 1.0])
 >>> obs = np.array([0.3, 2.1, -1.0])
->>> metrics
->>> 
->>> 
+>>> mod = np.array([0.0, 2.3, 1.0])
+>>> bias(obs, mod)
+0.6333333333333332
+>>> rmse(obs, mod)
+1.173314393786536
+>>> urmse(obs, mod)
+0.9877021593352702
+>>> mae(obs, mod)
+0.8333333333333331
+>>> mape(obs, mod)
+103.17460317460316
+>>> nse(obs, mod)
+-0.5526315789473688
+>>> mef(obs, mod)
+0.9231099877688299
+>>> si(obs, mod)
+0.7294663886165093
+>>> r2(obs, mod)
+0.24909090909090914
 """
 import warnings
 import numpy as np
@@ -157,6 +172,11 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     )
 
     return error
+
+
+def mef(obs: np.ndarray, model: np.ndarray) -> float:
+    """alias for model_efficiency_factor"""
+    return model_efficiency_factor(obs, model)
 
 
 def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
