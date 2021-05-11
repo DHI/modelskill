@@ -5,6 +5,7 @@ from fmskill.metrics import (
     bias,
     mean_absolute_error,
     mean_absolute_percentage_error,
+    model_efficiency_factor,
     nash_sutcliffe_efficiency,
     root_mean_squared_error,
     corrcoef,
@@ -27,6 +28,17 @@ def test_nse_suboptimal():
     mod = np.array([1.0, 0.0, 0.5])
 
     assert nash_sutcliffe_efficiency(obs, mod) == 0.0
+
+
+def test_mef_suboptimal():
+
+    obs = np.array([1.0, 0.5, 0])
+    mod = np.array([1.0, 0.0, 0.5])
+
+    assert model_efficiency_factor(obs, mod) > 0.0
+    assert model_efficiency_factor(obs, mod) == (
+        1 - np.sqrt(nash_sutcliffe_efficiency(obs, mod))
+    )
 
 
 def test_bias():
