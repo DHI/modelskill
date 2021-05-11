@@ -8,6 +8,7 @@ difference between a model and an observation.
 * nash_sutcliffe_efficiency (nse)
 * model_efficiency_factor (mef)
 * scatter_index (si)
+* spearmanr (rho)
 * r2
 * lin_slope
 
@@ -33,6 +34,8 @@ Examples
 0.9231099877688299
 >>> si(obs, mod)
 0.7294663886165093
+>>> spearmanr(obs, mod)
+0.5
 >>> r2(obs, mod)
 0.14786795048143053
 >>> lin_slope(obs, mod)
@@ -44,6 +47,7 @@ import numpy as np
 from scipy.stats import linregress
 import scipy.stats
 from scipy import odr
+
 
 def bias(obs, model) -> float:
     """Bias (mean error)
@@ -248,7 +252,7 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     applied to ranked quantities and is useful to quantify a monotonous relationship
 
     .. math::
-        \\rho = \\frac{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})(obs_i - \\overline{robs}) }
+        \\rho = \\frac{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})(robs_i - \\overline{robs}) }
                       {\\sqrt{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})^2}
                        \\sqrt{\\sum_{i=1}^n (robs_i - \\overline{robs})^2} }
 
@@ -324,11 +328,13 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
 
         slope = \\frac{\\sum_{i=1}^n (model_i - \\overline {model})(obs_i - \\overline {obs})}
                       {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
-    """    
+    """
     return _linear_regression(obs, model, reg_method)[0]
 
 
-def _linear_regression(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> Tuple[float, float]:
+def _linear_regression(
+    obs: np.ndarray, model: np.ndarray, reg_method="ols"
+) -> Tuple[float, float]:
 
     assert obs.size == model.size
     if len(obs) == 0:
