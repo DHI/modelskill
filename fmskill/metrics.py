@@ -27,6 +27,8 @@ def mape(obs: np.ndarray, model: np.ndarray) -> float:
 
 def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
     """Mean Absolute Percentage Error (MAPE)"""
+    if len(obs) == 0:
+        return np.nan
     if np.any(obs == 0.0):
         warnings.warn("Observation is zero, consider to use another metric than MAPE")
         return np.nan  # TODO is it better to return a large value +inf than NaN?
@@ -66,6 +68,8 @@ def root_mean_squared_error(
 
 def nash_sutcliffe_efficiency(obs, model) -> float:
     """Nash-Sutcliffe Efficiency (NSE)"""
+    if len(obs) == 0:
+        return np.nan
     error = 1 - (
         np.sum((obs.ravel() - model.ravel()) ** 2)
         / np.sum((model.ravel() - np.mean(model.ravel())) ** 2)
@@ -81,7 +85,9 @@ def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
 
 def corrcoef(obs, model, weights=None) -> float:
     """Correlation coefficient (CC)"""
-    if weights is None:
+    if len(obs) <= 1:
+        return np.nan
+    if weights is None:        
         return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
     else:
         C = np.cov(obs.ravel(), model.ravel(), fweights=weights)
@@ -95,6 +101,8 @@ def si(obs: np.ndarray, model: np.ndarray) -> float:
 
 def scatter_index(obs, model) -> float:
     """Scatter index (SI)"""
+    if len(obs) == 0:
+        return np.nan
     return np.sqrt(
         np.sum(((model.ravel() - model.mean()) - (obs.ravel() - obs.mean())) ** 2)
         / np.sum(obs.ravel() ** 2)
@@ -103,7 +111,8 @@ def scatter_index(obs, model) -> float:
 
 def r2(obs, model) -> float:
     """Coefficient of determination"""
-
+    if len(obs) == 0:
+        return np.nan
     residual = model.ravel() - obs.ravel()
 
     SSt = np.sum(obs.ravel() ** 2)
