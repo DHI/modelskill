@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/DHI/fmskill/main/images/logo/mike-fm-skill-rgb.svg" width="300">
+
 # fmskill: Compare MIKE FM results with observations.
  ![Python version](https://img.shields.io/pypi/pyversions/fmskill.svg) 
 ![Python package](https://github.com/DHI/fmskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/fmskill.svg)](https://badge.fury.io/py/fmskill)
@@ -33,6 +35,7 @@ Or the development version:
 * [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/SW_DutchCoast.ipynb)
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_model_comparison.ipynb)
 * [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
+* [Spatial_skill.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Spatial_skill.ipynb)
 
 
 ## Workflow
