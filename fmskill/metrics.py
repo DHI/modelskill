@@ -92,7 +92,7 @@ def root_mean_squared_error(
 
     .. math::
 
-        res_{u,i} = res_i - \\overline res
+        res_{u,i} = res_i - \\overline {res}
 
         RMSE_u=\\sqrt{\\sum_{i=1}^n res_{u,i}^2}
 
@@ -142,7 +142,7 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
     .. math::
 
         MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\sum_{i=1}^n(obs_i - model_i)^2}}
-                                        {\\sqrt{\\sum_{i=1}^n(obs_i - \\overline obs)^2}}=\\sqrt{1-NSE}
+                                        {\\sqrt{\\sum_{i=1}^n(obs_i - \\overline {obs})^2}}=\\sqrt{1-NSE}
 
     See Also
     --------
@@ -188,7 +188,7 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     """Scatter index (SI)
 
     .. math::
-        \\frac{\\sum_i^n \\left( (model_i - \\overline model) - (obs_i - \\overline obs) \\right)^2}
+        \\frac{\\sum_i^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2}
         {\\sum_i^n obs_i^2}
 
     """
