@@ -45,5 +45,22 @@ Spatial Skill
 
 Metrics
 -------
+.. autosummary:: 
+	fmskill.metrics.bias	
+	fmskill.metrics.root_mean_squared_error
+	fmskill.metrics.rmse
+	fmskill.metrics.urmse
+	fmskill.metrics.mean_absolute_error
+	fmskill.metrics.mae
+	fmskill.metrics.mean_absolute_percentage_error
+	fmskill.metrics.mape
+	fmskill.metrics.nash_sutcliffe_efficiency
+	fmskill.metrics.nse
+	fmskill.metrics.model_efficiency_factor
+	fmskill.metrics.mef
+	fmskill.metrics.scatter_index
+	fmskill.metrics.si
+	fmskill.metrics.r2
+	
 .. automodule:: fmskill.metrics
 	:members:
