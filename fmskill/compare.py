@@ -291,7 +291,9 @@ class BaseComparer:
             return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
         if isinstance(metric, str):
-            valid_metrics = [x[0] for x in getmembers(mtr, isfunction)]
+            valid_metrics = [
+                x[0] for x in getmembers(mtr, isfunction) if x[0][0] != "_"
+            ]
 
             if metric.lower() in valid_metrics:
                 metric = getattr(mtr, metric.lower())

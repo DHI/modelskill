@@ -44,7 +44,7 @@ Examples
 from typing import Tuple
 import warnings
 import numpy as np
-from scipy.stats import linregress
+from scipy.stats import linregress as _linregress
 import scipy.stats
 from scipy import odr
 
@@ -340,7 +340,7 @@ def _linear_regression(
         return np.nan
 
     if reg_method == "ols":
-        reg = linregress(obs, model)
+        reg = _linregress(obs, model)
         intercept = reg.intercept
         slope = reg.slope
     elif reg_method == "odr":
