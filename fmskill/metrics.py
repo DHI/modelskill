@@ -1,9 +1,45 @@
+"""The `metrics` module contains different skill metrics for evaluating the 
+difference between a model and an observation. 
+
+* bias
+* root_mean_squared_error (rmse)    
+* mean_absolute_error (mae)
+* mean_absolute_percentage_error (mape)
+* nash_sutcliffe_efficiency (nse)
+* model_efficiency_factor (mef)
+* scatter_index (si)
+
+The names in parentheses are shorthand aliases for the different metrics.
+
+Examples
+--------
+>>> obs = np.array([0.3, 2.1, -1.0])
+>>> mod = np.array([0.0, 2.3, 1.0])
+>>> bias(obs, mod)
+0.6333333333333332
+>>> rmse(obs, mod)
+1.173314393786536
+>>> urmse(obs, mod)
+0.9877021593352702
+>>> mae(obs, mod)
+0.8333333333333331
+>>> mape(obs, mod)
+103.17460317460316
+>>> nse(obs, mod)
+-0.5526315789473688
+>>> mef(obs, mod)
+0.9231099877688299
+>>> si(obs, mod)
+0.7294663886165093
+>>> r2(obs, mod)
+0.24909090909090914
+"""
 import warnings
 import numpy as np
 
 
 def bias(obs, model) -> float:
-    """Bias (model - obs)
+    """Bias (mean error)
 
     .. math::
         bias=\\frac{1}{n}\\sum_{i=1}^n (model_i - obs_i)
@@ -48,6 +84,8 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
 
     assert obs.size == model.size
 
+    if len(obs) == 0:
+        return np.nan
     if np.any(obs == 0.0):
         warnings.warn("Observation is zero, consider to use another metric than MAPE")
         return np.nan  # TODO is it better to return a large value +inf than NaN?
@@ -84,9 +122,9 @@ def root_mean_squared_error(
     """Root Mean Squared Error (RMSE)
 
     .. math::
-        res_i = obs_i - model_i
+        res_i = model_i - obs_i
 
-        RMSE=\\sqrt{\\sum_{i=1}^n res_i^2}
+        RMSE=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_i^2}
 
     Unbiased version:
 
@@ -94,7 +132,7 @@ def root_mean_squared_error(
 
         res_{u,i} = res_i - \\overline {res}
 
-        RMSE_u=\\sqrt{\\sum_{i=1}^n res_{u,i}^2}
+        RMSE_u=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
 
     """
     assert obs.size == model.size
@@ -117,8 +155,8 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     .. math::
 
-        NSE = 1 - \\frac {\\sum _{i=i}^{n}\\left(model_{i}-obs_{i}\\right)^{2}}
-                       {\\sum_{i=1}^{n}\\left(obs_{i}-{\\overline {obs}}\\right)^{2}}
+        NSE = 1 - \\frac {\\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}
+                       {\\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}
 
     References
     ----------
@@ -126,6 +164,8 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     """
     assert obs.size == model.size
 
+    if len(obs) == 0:
+        return np.nan
     error = 1 - (
         np.sum((obs.ravel() - model.ravel()) ** 2)
         / np.sum((model.ravel() - np.mean(model.ravel())) ** 2)
@@ -134,20 +174,25 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     return error
 
 
+def mef(obs: np.ndarray, model: np.ndarray) -> float:
+    """alias for model_efficiency_factor"""
+    return model_efficiency_factor(obs, model)
+
+
 def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
     """Model Efficiency Factor (MEF)
 
-    Scale independendt RMSE, standardized by Stdev of observations
+    Scale independent RMSE, standardized by Stdev of observations
 
     .. math::
 
-        MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\sum_{i=1}^n(obs_i - model_i)^2}}
-                                        {\\sqrt{\\sum_{i=1}^n(obs_i - \\overline {obs})^2}}=\\sqrt{1-NSE}
+        MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\sum_{i=1}^n(model_i - obs_i)^2}}
+                                        {\\sqrt{\\sum_{i=1}^n(obs_i - \\overline{obs})^2}}=\\sqrt{1-NSE}
 
     See Also
     --------
     nash_sutcliffe_efficiency
-    rmse
+    root_mean_square_error
 
     """
     assert obs.size == model.size
@@ -161,16 +206,20 @@ def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
 
 
 def corrcoef(obs, model, weights=None) -> float:
-    """Correlation coefficient (CC)
+    """Pearson’s Correlation coefficient (CC)
 
     .. math::
-        CC=\\frac{cov(obs,model)}{\\sigma_{obs}\\sigma_{model}}
+        CC = \\frac{\\sum_{i=1}^n (model_i - \\overline{model})(obs_i - \\overline{obs}) }
+                   {\\sqrt{\\sum_{i=1}^n (model_i - \\overline{model})^2}
+                    \\sqrt{\\sum_{i=1}^n (obs_i - \\overline{obs})^2} }
 
     See Also
     --------
     numpy.corrcoef
     """
     assert obs.size == model.size
+    if len(obs) <= 1:
+        return np.nan
 
     if weights is None:
         return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
@@ -193,6 +242,8 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
 
     """
     assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
 
     return np.sqrt(
         np.sum(((model.ravel() - model.mean()) - (obs.ravel() - obs.mean())) ** 2)
@@ -209,6 +260,8 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
                     {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
     """
     assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
 
     residual = model.ravel() - obs.ravel()
     SSr = np.sum(residual ** 2)
