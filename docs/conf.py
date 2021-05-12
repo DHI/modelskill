@@ -22,7 +22,7 @@ copyright = "2021, Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger"
 author = "Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.1"
+release = ""
 
 
 # -- General configuration ---------------------------------------------------
