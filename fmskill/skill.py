@@ -90,14 +90,14 @@ class AggregatedSkill:
         styled_df = self.df.style.set_precision(precision)
 
         #'mef', 'model_efficiency_factor', 'nash_sutcliffe_efficiency', 'nse',
-        large_is_good_metrics = [
+        large_is_best_metrics = [
             "cc",
             "corrcoef",
             "r2",
             "spearmanr",
             "rho",
         ]
-        small_is_good_metrics = [
+        small_is_best_metrics = [
             "mae",
             "mape",
             "mean_absolute_error",
@@ -108,8 +108,8 @@ class AggregatedSkill:
             "scatter_index",
             "si",
         ]
-        one_is_good_metrics = ["lin_slope"]
-        zero_is_good_metrics = ["bias"]
+        one_is_best_metrics = ["lin_slope"]
+        zero_is_best_metrics = ["bias"]
 
         bg_cols = list(set(columns) & set(float_cols))
         if "bias" in bg_cols:
@@ -123,12 +123,12 @@ class AggregatedSkill:
                 subset=["bias"], cmap="coolwarm", vmin=-mm, vmax=mm
             )
 
-        cols = list(set(large_is_good_metrics) & set(float_cols))
+        cols = list(set(large_is_best_metrics) & set(float_cols))
         styled_df = styled_df.apply(self._style_max, subset=cols)
-        cols = list(set(small_is_good_metrics) & set(float_cols))
+        cols = list(set(small_is_best_metrics) & set(float_cols))
         styled_df = styled_df.apply(self._style_min, subset=cols)
-        cols = list(set(one_is_good_metrics) & set(float_cols))
-        styled_df = styled_df.apply(self._style_best_one, subset=cols)
+        cols = list(set(one_is_best_metrics) & set(float_cols))
+        styled_df = styled_df.apply(self._style_one_best, subset=cols)
         # cols = list(set(zero_is_good_metrics) & set(float_cols.append("bias")))
         if "bias" in float_cols:
             print("best bias")
@@ -137,7 +137,7 @@ class AggregatedSkill:
 
         return styled_df
 
-    def _style_best_one(self, s):
+    def _style_one_best(self, s):
         """Using blod-face to highlight the best in a Series."""
         is_best = (s - 1.0).abs() == (s - 1.0).abs().min()
         cell_style = (
