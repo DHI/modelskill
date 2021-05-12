@@ -61,40 +61,112 @@ class AggregatedSkill:
     def _repr_html_(self):
         return self.df._repr_html_()
 
-    # def index(self):
-    #     return self.df.index()
+    def index(self):
+        return self.df.index()
+
+    def head(self, **kwargs):
+        return AggregatedSkill(self.df.head(**kwargs))
 
     def round(self, precision):
-        # return self.df.round(precision)
         return AggregatedSkill(self.df.round(precision))
 
     def sort_values(self, field, **kwargs):
         return AggregatedSkill(self.df.sort_values(field, **kwargs))
 
-    def style(self, precision=3, columns=None, cmap="Reds"):
+    def style(self, precision=3, columns=None, cmap="Reds", background_gradient=True):
         float_list = ["float16", "float32", "float64"]
-        cols = list(self.df.select_dtypes(include=float_list).columns.values)
+        float_cols = list(self.df.select_dtypes(include=float_list).columns.values)
         if columns is None:
-            columns = cols
+            columns = float_cols
         else:
             if isinstance(columns, str):
                 columns = [columns]
             for column in columns:
-                if column not in cols:
+                if column not in float_cols:
                     raise ValueError(
-                        f"Invalid column name {column} (must be one of {cols})"
+                        f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        cols = list(set(columns) & set(cols))
-        if "bias" in cols:
-            cols.remove("bias")
-
         styled_df = self.df.style.set_precision(precision)
-        if len(cols) > 0:
-            styled_df = styled_df.background_gradient(subset=cols, cmap=cmap)
-        if "bias" in columns:
-            styled_df = styled_df.background_gradient(subset=["bias"], cmap="coolwarm")
+
+        #'mef', 'model_efficiency_factor', 'nash_sutcliffe_efficiency', 'nse',
+        large_is_good_metrics = [
+            "cc",
+            "corrcoef",
+            "r2",
+            "spearmanr",
+            "rho",
+        ]
+        small_is_good_metrics = [
+            "mae",
+            "mape",
+            "mean_absolute_error",
+            "mean_absolute_percentage_error",
+            "rmse",
+            "root_mean_squared_error",
+            "urmse",
+            "scatter_index",
+            "si",
+        ]
+        one_is_good_metrics = ["lin_slope"]
+        zero_is_good_metrics = ["bias"]
+
+        bg_cols = list(set(columns) & set(float_cols))
+        if "bias" in bg_cols:
+            bg_cols.remove("bias")
+
+        if background_gradient and (len(bg_cols) > 0):
+            styled_df = styled_df.background_gradient(subset=bg_cols, cmap=cmap)
+        if background_gradient and ("bias" in columns):
+            mm = self.df.bias.abs().max()
+            styled_df = styled_df.background_gradient(
+                subset=["bias"], cmap="coolwarm", vmin=-mm, vmax=mm
+            )
+
+        cols = list(set(large_is_good_metrics) & set(float_cols))
+        styled_df = styled_df.apply(self._style_max, subset=cols)
+        cols = list(set(small_is_good_metrics) & set(float_cols))
+        styled_df = styled_df.apply(self._style_min, subset=cols)
+        cols = list(set(one_is_good_metrics) & set(float_cols))
+        styled_df = styled_df.apply(self._style_best_one, subset=cols)
+        # cols = list(set(zero_is_good_metrics) & set(float_cols.append("bias")))
+        if "bias" in float_cols:
+            print("best bias")
+            styled_df = styled_df.apply(self._style_abs_min, subset=["bias"])
+        # , subset=
+
         return styled_df
+
+    def _style_best_one(self, s):
+        """Using blod-face to highlight the best in a Series."""
+        is_best = (s - 1.0).abs() == (s - 1.0).abs().min()
+        cell_style = (
+            "text-decoration: underline; font-style: italic; font-weight: bold;"
+        )
+        return [cell_style if v else "" for v in is_best]
+
+    def _style_abs_min(self, s):
+        """Using blod-face to highlight the best in a Series."""
+        is_best = s.abs() == s.abs().min()
+        cell_style = (
+            "text-decoration: underline; font-style: italic; font-weight: bold;"
+        )
+        return [cell_style if v else "" for v in is_best]
+
+    def _style_min(self, s):
+        """Using blod-face to highlight the best in a Series."""
+        cell_style = (
+            "text-decoration: underline; font-style: italic; font-weight: bold;"
+        )
+        return [cell_style if v else "" for v in (s == s.min())]
+
+    def _style_max(self, s):
+        """Using blod-face to highlight the best in a Series."""
+        cell_style = (
+            "text-decoration: underline; font-style: italic; font-weight: bold;"
+        )
+        return [cell_style if v else "" for v in (s == s.max())]
+        # font-weight: bold; font-style: oblique; border-style: solid; border-color: #212121; border-style: solid; border-width: thin;
 
     def taylor_diagram(self):
         raise NotImplementedError()
