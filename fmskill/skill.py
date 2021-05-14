@@ -1,5 +1,10 @@
+import warnings
+from collections.abc import Iterable
+import numpy as np
 import pandas as pd
-from pandas.plotting import parallel_coordinates
+from matplotlib import pyplot as plt
+
+# from pandas.plotting import parallel_coordinates
 
 # import numpy as np
 # import warnings
@@ -89,11 +94,102 @@ class AggregatedSkill(SkillDataFrame):
     def parallel_coordinates(self):
         pass
 
-    def plot_bar(self):
-        pass
+    def _validate_multi_index(self, min_levels=2, max_levels=2):
+        errors = []
+        if isinstance(self.index, pd.MultiIndex):
+            if len(self.index.levels) < min_levels:
+                errors.append(
+                    f"not possible for MultiIndex with fewer than {min_levels} levels"
+                )
+            if len(self.index.levels) > max_levels:
+                errors.append(
+                    f"not possible for MultiIndex with more than {max_levels} levels"
+                )
+        else:
+            errors.append("only possible for MultiIndex skill objects")
+        return errors
 
-    def plot_grid(self):
-        pass
+    def plot_line(self, field, level=-1, **kwargs):
+        if isinstance(self.index, pd.MultiIndex):
+            df = self.df[field].unstack(level=level)
+        else:
+            df = self.df[field]
+        if "title" not in kwargs:
+            if isinstance(field, str):
+                kwargs["title"] = field
+        axes = df.plot.line(**kwargs)
+        xlabels = list(df.index)
+        nx = len(xlabels)
+
+        if not isinstance(axes, Iterable):
+            axes = [axes]
+        for ax in axes:
+            ax.set_xticks(np.arange(nx))
+            ax.set_xticklabels(xlabels)
+        return axes
+
+    def plot_bar(self, field, level=-1, **kwargs):
+        if isinstance(self.index, pd.MultiIndex):
+            df = self.df[field].unstack(level=level)
+        else:
+            df = self.df[field]
+        if "title" not in kwargs:
+            if isinstance(field, str):
+                kwargs["title"] = field
+        return df.plot.bar(**kwargs)
+
+    def plot_grid(
+        self, field, show_numbers=True, precision=3, figsize=None, title=None, cmap=None
+    ):
+        errors = self._validate_multi_index()
+        if len(errors) > 0:
+            warnings.warn("plot_grid: " + "\n".join(errors))
+            return None
+            # df = self.df[field]    TODO: at_least_2d...
+        df = self.df[field].unstack()
+
+        vmin = None
+        vmax = None
+        if cmap is None:
+            cmap = "Reds"
+            if field == "bias":
+                cmap = "coolwarm"
+                mm = self.df.bias.abs().max()
+                vmin = -mm
+                vmax = mm
+        if title is None:
+            title = field
+        xlabels = list(df.keys())
+        nx = len(xlabels)
+        ylabels = list(df.index)
+        ny = len(ylabels)
+
+        if figsize is None:
+            figsize = (nx, ny)  # (nx * ((4 + precision) / 7), ny * 0.7)
+        plt.figure(figsize=figsize)
+        plt.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
+        plt.gca().set_xticks(np.arange(nx) + 0.5)
+        plt.gca().set_xticklabels(xlabels)
+        plt.gca().set_yticks(np.arange(ny) + 0.5)
+        plt.gca().set_yticklabels(ylabels)
+        if show_numbers:
+            mean_val = df.to_numpy().mean()
+            for ii in range(ny):
+                for jj in range(nx):
+                    val = df.iloc[ii, jj].round(precision)
+                    col = "w" if val > mean_val else "k"
+                    if field == "bias":
+                        col = "w" if np.abs(val) > (0.7 * mm) else "k"
+                    plt.text(
+                        jj + 0.5,
+                        ii + 0.5,
+                        val,
+                        ha="center",
+                        va="center",
+                        # size=15,
+                        color=col,
+                    )
+        plt.title(title, fontsize=14)
 
     def style(self, precision=3, columns=None, cmap="Reds", background_gradient=True):
         float_list = ["float16", "float32", "float64"]
