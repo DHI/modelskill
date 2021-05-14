@@ -70,8 +70,20 @@ class SkillDataFrame:
     def round(self, decimals, *args, **kwargs):
         return self.__class__(self.df.round(decimals))
 
+    def sort_index(self, **kwargs):
+        return self.__class__(self.df.sort_index(**kwargs))
+
     def sort_values(self, by, **kwargs):
         return self.__class__(self.df.sort_values(by, **kwargs))
+
+    def query(self, expr, **kwargs):
+        return self.__class__(self.df.query(expr, **kwargs))
+
+    def reorder_levels(self, order, **kwargs):
+        return self.__class__(self.df.reorder_levels(order, **kwargs))
+
+    def swaplevel(self, *args, **kwargs):
+        return self.__class__(self.df.swaplevel(*args, **kwargs))
 
 
 class AggregatedSkill(SkillDataFrame):
@@ -234,7 +246,14 @@ class AggregatedSkill(SkillDataFrame):
             bg_cols.remove("bias")
 
         if background_gradient and (len(bg_cols) > 0):
-            styled_df = styled_df.background_gradient(subset=bg_cols, cmap=cmap)
+            cols = list(set(small_is_best_metrics) & set(float_cols))
+            styled_df = styled_df.background_gradient(subset=cols, cmap=cmap)
+
+            cols = list(set(large_is_best_metrics) & set(float_cols))
+            cmap_r = cmap
+            if isinstance(cmap, str):
+                cmap_r = cmap + "_r"
+            styled_df = styled_df.background_gradient(subset=cols, cmap=cmap_r)
         if background_gradient and ("bias" in columns):
             mm = self.df.bias.abs().max()
             styled_df = styled_df.background_gradient(
