@@ -2,6 +2,7 @@ import warnings
 from collections.abc import Iterable
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 
 # from pandas.plotting import parallel_coordinates
@@ -79,6 +80,9 @@ class SkillDataFrame:
     def query(self, expr, **kwargs):
         return self.__class__(self.df.query(expr, **kwargs))
 
+    def xs(self, *args, **kwargs):
+        return self.__class__(self.df.xs(*args, **kwargs))
+
     def reorder_levels(self, order, **kwargs):
         return self.__class__(self.df.reorder_levels(order, **kwargs))
 
@@ -87,6 +91,31 @@ class SkillDataFrame:
 
 
 class AggregatedSkill(SkillDataFrame):
+    large_is_best_metrics = [
+        "cc",
+        "corrcoef",
+        "r2",
+        "spearmanr",
+        "rho",
+        "nash_sutcliffe_efficiency",
+        "nse",
+    ]
+    small_is_best_metrics = [
+        "mae",
+        "mape",
+        "mean_absolute_error",
+        "mean_absolute_percentage_error",
+        "rmse",
+        "root_mean_squared_error",
+        "urmse",
+        "scatter_index",
+        "si",
+        "mef",
+        "model_efficiency_factor",
+    ]
+    one_is_best_metrics = ["lin_slope"]
+    zero_is_best_metrics = ["bias"]
+
     @property
     def mod_names(self):
         return self._get_index_level_by_name("model")
@@ -95,6 +124,10 @@ class AggregatedSkill(SkillDataFrame):
     def obs_names(self):
         return self._get_index_level_by_name("observation")
 
+    @property
+    def var_names(self):
+        return self._get_index_level_by_name("variable")
+
     def _get_index_level_by_name(self, name):
         if name in self.index.names:
             level = self.index.names.index(name)
@@ -102,6 +135,26 @@ class AggregatedSkill(SkillDataFrame):
         else:
             return []
             # raise ValueError(f"name {name} not in index {list(self.index.names)}")
+
+    # model=None, observation=None, variable=None, 
+    def sel(self, **kwargs):
+        df = self.df
+        # if model is not None:
+        #     df = df.xs(model, level="model")
+        # if observation is not None:
+        #     df = df.xs(observation, level="observation")
+        # if variable is not None:
+        #     df = df.xs(variable, level="variable")
+        for key, value in kwargs.items():
+            if key in df.index.names:
+                if isinstance(df.index, pd.MultiIndex):
+                    df = df.xs(value, level=key)
+                else:
+                    df = df.loc[value].copy()
+
+        if isinstance(df, pd.Series):
+            df = df.to_frame()
+        return self.__class__(df)  # .squeeze()
 
     def parallel_coordinates(self):
         pass
@@ -181,7 +234,7 @@ class AggregatedSkill(SkillDataFrame):
         plt.figure(figsize=figsize)
         plt.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
         plt.gca().set_xticks(np.arange(nx) + 0.5)
-        plt.gca().set_xticklabels(xlabels)
+        plt.gca().set_xticklabels(xlabels, rotation=90)
         plt.gca().set_yticks(np.arange(ny) + 0.5)
         plt.gca().set_yticklabels(ylabels)
         if show_numbers:
@@ -201,9 +254,18 @@ class AggregatedSkill(SkillDataFrame):
                         # size=15,
                         color=col,
                     )
+        else:
+            plt.colorbar()
         plt.title(title, fontsize=14)
 
-    def style(self, precision=3, columns=None, cmap="Reds", background_gradient=True):
+    def style(
+        self,
+        precision=3,
+        columns=None,
+        cmap="Reds",
+        show_best=True,
+        background_gradient=True,
+    ):
         float_list = ["float16", "float32", "float64"]
         float_cols = list(self.df.select_dtypes(include=float_list).columns.values)
         if columns is None:
@@ -217,61 +279,45 @@ class AggregatedSkill(SkillDataFrame):
                         f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        styled_df = self.df.style.set_precision(precision)
-
-        #'mef', 'model_efficiency_factor', 'nash_sutcliffe_efficiency', 'nse',
-        large_is_best_metrics = [
-            "cc",
-            "corrcoef",
-            "r2",
-            "spearmanr",
-            "rho",
-        ]
-        small_is_best_metrics = [
-            "mae",
-            "mape",
-            "mean_absolute_error",
-            "mean_absolute_percentage_error",
-            "rmse",
-            "root_mean_squared_error",
-            "urmse",
-            "scatter_index",
-            "si",
-        ]
-        one_is_best_metrics = ["lin_slope"]
-        zero_is_best_metrics = ["bias"]
+        sdf = self.df.style.set_precision(precision)
 
         bg_cols = list(set(columns) & set(float_cols))
         if "bias" in bg_cols:
             bg_cols.remove("bias")
 
         if background_gradient and (len(bg_cols) > 0):
-            cols = list(set(small_is_best_metrics) & set(float_cols))
-            styled_df = styled_df.background_gradient(subset=cols, cmap=cmap)
+            cols = list(set(self.small_is_best_metrics) & set(float_cols))
+            sdf = sdf.background_gradient(subset=cols, cmap=cmap)
 
-            cols = list(set(large_is_best_metrics) & set(float_cols))
-            cmap_r = cmap
-            if isinstance(cmap, str):
-                cmap_r = cmap + "_r"
-            styled_df = styled_df.background_gradient(subset=cols, cmap=cmap_r)
+            cols = list(set(self.large_is_best_metrics) & set(float_cols))
+            cmap_r = self._reverse_colormap(cmap)
+            sdf = sdf.background_gradient(subset=cols, cmap=cmap_r)
         if background_gradient and ("bias" in columns):
             mm = self.df.bias.abs().max()
-            styled_df = styled_df.background_gradient(
+            sdf = sdf.background_gradient(
                 subset=["bias"], cmap="coolwarm", vmin=-mm, vmax=mm
             )
+        if show_best:
+            cols = list(set(self.large_is_best_metrics) & set(float_cols))
+            sdf = sdf.apply(self._style_max, subset=cols)
+            cols = list(set(self.small_is_best_metrics) & set(float_cols))
+            sdf = sdf.apply(self._style_min, subset=cols)
+            cols = list(set(self.one_is_best_metrics) & set(float_cols))
+            sdf = sdf.apply(self._style_one_best, subset=cols)
+            if "bias" in float_cols:
+                sdf = sdf.apply(self._style_abs_min, subset=["bias"])
 
-        cols = list(set(large_is_best_metrics) & set(float_cols))
-        styled_df = styled_df.apply(self._style_max, subset=cols)
-        cols = list(set(small_is_best_metrics) & set(float_cols))
-        styled_df = styled_df.apply(self._style_min, subset=cols)
-        cols = list(set(one_is_best_metrics) & set(float_cols))
-        styled_df = styled_df.apply(self._style_one_best, subset=cols)
-        # cols = list(set(zero_is_good_metrics) & set(float_cols.append("bias")))
-        if "bias" in float_cols:
-            styled_df = styled_df.apply(self._style_abs_min, subset=["bias"])
-        # , subset=
+        return sdf
 
-        return styled_df
+    def _reverse_colormap(self, cmap):
+        cmap_r = cmap
+        if isinstance(cmap, str):
+            if cmap[-2:] == "_r":
+                cmap_r = cmap_r[:-2]
+            cmap_r = cmap + "_r"
+        else:
+            cmap_r = cmap.reversed()
+        return cmap_r
 
     def _style_one_best(self, s):
         """Using blod-face to highlight the best in a Series."""
