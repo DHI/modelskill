@@ -2,15 +2,12 @@ import warnings
 from collections.abc import Iterable
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
+
+# import matplotlib as mpl
 from matplotlib import pyplot as plt
 
 # from pandas.plotting import parallel_coordinates
-
-# import numpy as np
-# import warnings
 # from typing import List, Union
-# from IPython.display import display
 
 
 class SkillDataFrame:
