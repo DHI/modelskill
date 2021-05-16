@@ -42,6 +42,10 @@ class SkillDataFrame:
         return self.df.index
 
     @property
+    def columns(self):
+        return self.df.columns
+
+    @property
     def shape(self):
         return self.df.shape
 
@@ -91,6 +95,21 @@ class SkillDataFrame:
 
 
 class AggregatedSkill(SkillDataFrame):
+    """
+    AggregatedSkill object for visualization and analysis returned by
+    the comparer's skill method. The object wraps the pd.DataFrame
+    class which can be accessed from the attribute df.
+
+    Examples
+    --------
+    >>> s = comparer.skill()
+    >>> s.mod_names
+    ['SW_1', 'SW_2']
+    >>> s.style()
+    >>> s.sel(model='SW_1').style()
+    >>> s.plot_bar(field='rmse')
+    """
+
     large_is_best_metrics = [
         "cc",
         "corrcoef",
@@ -131,6 +150,11 @@ class AggregatedSkill(SkillDataFrame):
         """List of variable names"""
         return self._get_index_level_by_name("variable")
 
+    @property
+    def field_names(self):
+        """List of field names (=dataframe columns)"""
+        return list(self.df.columns)
+
     def _get_index_level_by_name(self, name):
         if name in self.index.names:
             level = self.index.names.index(name)
@@ -150,6 +174,7 @@ class AggregatedSkill(SkillDataFrame):
         #     df = df.xs(variable, level="variable")
         for key, value in kwargs.items():
             if key in df.index.names:
+                # TODO: if value is int: lookup name in self.mod_names ...
                 if isinstance(df.index, pd.MultiIndex):
                     df = df.xs(value, level=key)
                 else:
