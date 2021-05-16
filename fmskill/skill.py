@@ -118,14 +118,17 @@ class AggregatedSkill(SkillDataFrame):
 
     @property
     def mod_names(self):
+        """List of model names"""
         return self._get_index_level_by_name("model")
 
     @property
     def obs_names(self):
+        """List of observation names"""
         return self._get_index_level_by_name("observation")
 
     @property
     def var_names(self):
+        """List of variable names"""
         return self._get_index_level_by_name("variable")
 
     def _get_index_level_by_name(self, name):
@@ -136,8 +139,8 @@ class AggregatedSkill(SkillDataFrame):
             return []
             # raise ValueError(f"name {name} not in index {list(self.index.names)}")
 
-    # model=None, observation=None, variable=None, 
-    def sel(self, **kwargs):
+    # model=None, observation=None, variable=None,
+    def sel(self, query=None, **kwargs):
         df = self.df
         # if model is not None:
         #     df = df.xs(model, level="model")
@@ -151,6 +154,13 @@ class AggregatedSkill(SkillDataFrame):
                     df = df.xs(value, level=key)
                 else:
                     df = df.loc[value].copy()
+            else:
+                raise ValueError(
+                    f"Unknown index {key}. Valid index names are {df.index.names}"
+                )
+        if query is not None:
+            if isinstance(query, str):
+                df = df.query(query)
 
         if isinstance(df, pd.Series):
             df = df.to_frame()
@@ -174,7 +184,28 @@ class AggregatedSkill(SkillDataFrame):
             errors.append("only possible for MultiIndex skill objects")
         return errors
 
-    def plot_line(self, field, level=-1, **kwargs):
+    def plot_line(self, field, level=0, **kwargs):
+        """plot statistic as a lines using pd.DataFrame.plot.line()
+
+        Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        level : int or str, optional
+            level to unstack, by default 0
+        kwargs : dict, optional
+            key word arguments to be pased to pd.DataFrame.plot.line()
+            e.g. marker, title, figsize, ...
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot_line("rmse")
+        >>> s.plot_line("mae", marker="o")
+        >>> s.plot_line(field="bias", precision=1)
+        """
         if isinstance(self.index, pd.MultiIndex):
             df = self.df[field].unstack(level=level)
         else:
@@ -190,10 +221,34 @@ class AggregatedSkill(SkillDataFrame):
             axes = [axes]
         for ax in axes:
             ax.set_xticks(np.arange(nx))
-            ax.set_xticklabels(xlabels)
+            ax.set_xticklabels(xlabels, rotation=90)
         return axes
 
-    def plot_bar(self, field, level=-1, **kwargs):
+    def plot_bar(self, field, level=0, **kwargs):
+        """plot statistic as bar chart using pd.DataFrame.plot.bar()
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        level : int or str, optional
+            level to unstack, by default 0
+        kwargs : dict, optional
+            key word arguments to be pased to pd.DataFrame.plot.bar()
+            e.g. color, title, figsize, ...
+
+
+        Returns
+        -------
+        AxesSubplot
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot_bar("rmse")
+        >>> s.plot_bar("mae", level="observation")
+        >>> s.plot_bar(field="si", title="scatter index")
+        """
         if isinstance(self.index, pd.MultiIndex):
             df = self.df[field].unstack(level=level)
         else:
@@ -204,8 +259,45 @@ class AggregatedSkill(SkillDataFrame):
         return df.plot.bar(**kwargs)
 
     def plot_grid(
-        self, field, show_numbers=True, precision=3, figsize=None, title=None, cmap=None
+        self,
+        field,
+        show_numbers=True,
+        precision=3,
+        fmt=None,
+        figsize=None,
+        title=None,
+        cmap=None,
     ):
+        """plot statistic as a colored grid, optionally with values in the cells.
+
+        Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        show_numbers : bool, optional
+            should values of the static be shown in the cells?, by default True
+            if False, a colorbar will be displayed instead
+        precision : int, optional
+            number of decimals if show_numbers, by default 3
+        fmt : str, optional
+            format string, e.g. "{:.0%}" to show value as percentage
+        figsize : Tuple(float, float), optional
+            figure size, by default None
+        title : str, optional
+            plot title, by default name of statistic
+        cmap : str, optional
+            colormap, by default "OrRd" ("coolwarm" if bias)
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot_grid("rmse")
+        >>> s.plot_grid("n", show_numbers=False, cmap="magma")
+        >>> s.plot_grid(field="bias", precision=1)
+        >>> s.plot_grid('si', fmt="{:.0%}", title="scatter index")
+        """
         errors = self._validate_multi_index()
         if len(errors) > 0:
             warnings.warn("plot_grid: " + "\n".join(errors))
@@ -216,7 +308,7 @@ class AggregatedSkill(SkillDataFrame):
         vmin = None
         vmax = None
         if cmap is None:
-            cmap = "Reds"
+            cmap = "OrRd"
             if field == "bias":
                 cmap = "coolwarm"
                 mm = self.df.bias.abs().max()
@@ -245,6 +337,8 @@ class AggregatedSkill(SkillDataFrame):
                     col = "w" if val > mean_val else "k"
                     if field == "bias":
                         col = "w" if np.abs(val) > (0.7 * mm) else "k"
+                    if fmt is not None:
+                        val = fmt.format(val)
                     plt.text(
                         jj + 0.5,
                         ii + 0.5,
@@ -262,17 +356,49 @@ class AggregatedSkill(SkillDataFrame):
         self,
         precision=3,
         columns=None,
-        cmap="Reds",
+        cmap="OrRd",
         show_best=True,
-        background_gradient=True,
     ):
+        """style dataframe with colors using pandas style
+
+        Parameters
+        ----------
+        precision : int, optional
+            number of decimals, by default 3
+        columns : str or List[str], optional
+            apply background gradient color to these columns, by default all;
+            if columns is [] then no background gradient will be applied.
+        cmap : str, optional
+            colormap of background gradient, by default "OrRd",
+            except "bias" column which will always be "coolwarm"
+        show_best : bool, optional
+            indicate best of each column by underline, by default True
+
+        Returns
+        -------
+        pd.Styler
+            Returns a pandas Styler object.
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.style()
+        >>> s.style(precision=1, columns="rmse")
+        >>> s.style(cmap="Blues", show_best=False)
+        """
+        # identity metric columns
         float_list = ["float16", "float32", "float64"]
         float_cols = list(self.df.select_dtypes(include=float_list).columns.values)
+
+        # selected columns
         if columns is None:
             columns = float_cols
         else:
             if isinstance(columns, str):
-                columns = [columns]
+                if not columns:
+                    columns = []
+                else:
+                    columns = [columns]
             for column in columns:
                 if column not in float_cols:
                     raise ValueError(
@@ -281,22 +407,24 @@ class AggregatedSkill(SkillDataFrame):
 
         sdf = self.df.style.set_precision(precision)
 
+        # apply background gradient
         bg_cols = list(set(columns) & set(float_cols))
         if "bias" in bg_cols:
-            bg_cols.remove("bias")
-
-        if background_gradient and (len(bg_cols) > 0):
-            cols = list(set(self.small_is_best_metrics) & set(float_cols))
-            sdf = sdf.background_gradient(subset=cols, cmap=cmap)
-
-            cols = list(set(self.large_is_best_metrics) & set(float_cols))
-            cmap_r = self._reverse_colormap(cmap)
-            sdf = sdf.background_gradient(subset=cols, cmap=cmap_r)
-        if background_gradient and ("bias" in columns):
             mm = self.df.bias.abs().max()
             sdf = sdf.background_gradient(
                 subset=["bias"], cmap="coolwarm", vmin=-mm, vmax=mm
             )
+            bg_cols.remove("bias")
+        if len(bg_cols) > 0:
+            cols = list(set(self.small_is_best_metrics) & set(bg_cols))
+            sdf = sdf.background_gradient(subset=cols, cmap=cmap)
+
+            cols = list(set(self.large_is_best_metrics) & set(bg_cols))
+            cmap_r = self._reverse_colormap(cmap)
+            sdf = sdf.background_gradient(subset=cols, cmap=cmap_r)
+
+            # TODO: lin_slope is not implemented!
+
         if show_best:
             cols = list(set(self.large_is_best_metrics) & set(float_cols))
             sdf = sdf.apply(self._style_max, subset=cols)
@@ -314,7 +442,8 @@ class AggregatedSkill(SkillDataFrame):
         if isinstance(cmap, str):
             if cmap[-2:] == "_r":
                 cmap_r = cmap_r[:-2]
-            cmap_r = cmap + "_r"
+            else:
+                cmap_r = cmap + "_r"
         else:
             cmap_r = cmap.reversed()
         return cmap_r
