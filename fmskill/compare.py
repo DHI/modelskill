@@ -1198,6 +1198,7 @@ class PointComparer(SingleObsComparer):
             else:
                 self.df[self.mod_names[j]] = df[self.mod_names[j]]
 
+        self.df.index.name = "datetime"
         self.df.dropna(inplace=True)
 
     def plot_timeseries(
@@ -1309,6 +1310,7 @@ class TrackComparer(SingleObsComparer):
             else:
                 self.df[self.mod_names[j]] = df[self.mod_names[j]]
 
+        self.df.index.name = "datetime"
         self.df = self.df.dropna()
 
     def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
@@ -1414,6 +1416,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                 res = res.append(df[cols])
 
         self._all_df = res.sort_index()
+        self._all_df.index.name = "datetime"
 
     def __init__(self):
         self.comparers = {}
