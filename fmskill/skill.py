@@ -57,6 +57,15 @@ class SkillDataFrame:
     def to_html(self, *args, **kwargs):
         return self.df.to_html(*args, **kwargs)
 
+    def to_markdown(self, *args, **kwargs):
+        return self.df.to_markdown(*args, **kwargs)
+
+    def to_excel(self, *args, **kwargs):
+        return self.df.to_excel(*args, **kwargs)
+
+    def to_csv(self, *args, **kwargs):
+        return self.df.to_csv(*args, **kwargs)
+
     def to_dataframe(self, copy=True):
         if copy:
             return self.df.copy()
@@ -242,8 +251,9 @@ class AggregatedSkill(SkillDataFrame):
         if not isinstance(axes, Iterable):
             axes = [axes]
         for ax in axes:
-            ax.set_xticks(np.arange(nx))
-            ax.set_xticklabels(xlabels, rotation=90)
+            if not isinstance(df.index, pd.DatetimeIndex):
+                ax.set_xticks(np.arange(nx))
+                ax.set_xticklabels(xlabels, rotation=90)
         return axes
 
     def plot_bar(self, field, level=0, **kwargs):
@@ -258,7 +268,6 @@ class AggregatedSkill(SkillDataFrame):
         kwargs : dict, optional
             key word arguments to be pased to pd.DataFrame.plot.bar()
             e.g. color, title, figsize, ...
-
 
         Returns
         -------
@@ -304,7 +313,7 @@ class AggregatedSkill(SkillDataFrame):
         precision : int, optional
             number of decimals if show_numbers, by default 3
         fmt : str, optional
-            format string, e.g. "{:.0%}" to show value as percentage
+            format string, e.g. ".0%" to show value as percentage
         figsize : Tuple(float, float), optional
             figure size, by default None
         title : str, optional
@@ -318,7 +327,7 @@ class AggregatedSkill(SkillDataFrame):
         >>> s.plot_grid("rmse")
         >>> s.plot_grid("n", show_numbers=False, cmap="magma")
         >>> s.plot_grid(field="bias", precision=1)
-        >>> s.plot_grid('si', fmt="{:.0%}", title="scatter index")
+        >>> s.plot_grid('si', fmt=".0%", title="scatter index")
         """
         errors = self._validate_multi_index()
         if len(errors) > 0:
@@ -342,6 +351,9 @@ class AggregatedSkill(SkillDataFrame):
         nx = len(xlabels)
         ylabels = list(df.index)
         ny = len(ylabels)
+
+        if (fmt is not None) and fmt[0] != "{":
+            fmt = "{:" + fmt + "}"
 
         if figsize is None:
             figsize = (nx, ny)  # (nx * ((4 + precision) / 7), ny * 0.7)
