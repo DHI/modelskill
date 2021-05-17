@@ -169,22 +169,50 @@ class AggregatedSkill(SkillDataFrame):
             return []
             # raise ValueError(f"name {name} not in index {list(self.index.names)}")
 
+    def _id_to_name(self, index, id):
+        """Assumes that index is valid and id is int """
+        if isinstance(id, Iterable):
+            name_list = []
+            for i in id:
+                name_list.append(self._id_to_name(index, i))
+            print(name_list)
+            return name_list
+        names = self._get_index_level_by_name(index)
+        n = len(names)
+        if (id < 0) or (id >= n):
+            raise KeyError(f"Id {id} is out of bounds for index {index} (0, {n})")
+        return names[id]
+
+    def _sel_from_index(self, df, key, value):
+        if (not isinstance(value, str)) and isinstance(value, Iterable):
+            for i, v in enumerate(value):
+                dfi = self._sel_from_index(df, key, v)
+                if i == 0:
+                    dfout = dfi
+                else:
+                    dfout = dfout.append(dfi)
+            return dfout
+
+        if isinstance(value, int):
+            value = self._id_to_name(key, value)
+
+        if isinstance(df.index, pd.MultiIndex):
+            df = df.xs(value, level=key, drop_level=False)
+        else:
+            df = df.loc[value].copy()
+        return df
+
     # model=None, observation=None, variable=None,
     def sel(self, query=None, **kwargs):
         df = self.df
-        # if model is not None:
-        #     df = df.xs(model, level="model")
-        # if observation is not None:
-        #     df = df.xs(observation, level="observation")
-        # if variable is not None:
-        #     df = df.xs(variable, level="variable")
         for key, value in kwargs.items():
             if key in df.index.names:
-                # TODO: if value is int: lookup name in self.mod_names ...
-                if isinstance(df.index, pd.MultiIndex):
-                    df = df.xs(value, level=key)
-                else:
-                    df = df.loc[value].copy()
+                df = self._sel_from_index(df, key, value)
+            elif key == "columns":
+                cols = value
+                if isinstance(cols, str):
+                    cols = [cols]
+                df = df[cols]
             else:
                 raise ValueError(
                     f"Unknown index {key}. Valid index names are {df.index.names}"
