@@ -202,28 +202,65 @@ class AggregatedSkill(SkillDataFrame):
             df = df.loc[value].copy()
         return df
 
-    # model=None, observation=None, variable=None,
-    def sel(self, query=None, **kwargs):
+    def sel(self, query=None, reduce_index=True, **kwargs):
+        """Select a subset of the AggregatedSkill by a query,
+           (part of) the index, or specific columns
+
+        Parameters
+        ----------
+        query : str, optional
+            string supported by pd.DataFrame.query(), by default None
+        reduce_index : bool, optional
+            Should unnecessary levels of the index be removed after subsetting?
+            Removed levels will stay as columns. By default True
+        **kwargs : dict, optional
+            "columns"=... to select specific columns,
+            "model"=... to select specific models,
+            "observation"=... to select specific observations, etc.
+
+        Returns
+        -------
+        AggregatedSkill
+            A subset of the orignal AggregatedSkill
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.sel("rmse>0.3")
+        >>> s.sel(model = "SW_1")
+        >>> s.sel(observation = ["EPL", "HKNA"])
+        """
         df = self.df
+
+        if query is not None:
+            if isinstance(query, str):
+                df = df.query(query)
+
         for key, value in kwargs.items():
             if key in df.index.names:
                 df = self._sel_from_index(df, key, value)
             elif key == "columns":
-                cols = value
-                if isinstance(cols, str):
-                    cols = [cols]
+                cols = [value] if isinstance(value, str) else value
                 df = df[cols]
             else:
                 raise ValueError(
                     f"Unknown index {key}. Valid index names are {df.index.names}"
                 )
-        if query is not None:
-            if isinstance(query, str):
-                df = df.query(query)
 
         if isinstance(df, pd.Series):
             df = df.to_frame()
-        return self.__class__(df)  # .squeeze()
+        if reduce_index:
+            df = self._reduce_index(df)
+        return self.__class__(df)
+
+    def _reduce_index(self, df):
+        """Remove unnecessary levels of MultiIndex"""
+        df.index = df.index.remove_unused_levels()
+        levels_to_reset = []
+        for j, level in enumerate(df.index.levels):
+            if len(level) == 1:
+                levels_to_reset.append(j)
+        return df.reset_index(level=levels_to_reset)
 
     def parallel_coordinates(self):
         pass
