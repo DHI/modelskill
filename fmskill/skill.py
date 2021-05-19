@@ -51,8 +51,8 @@ class SkillDataFrame:
         return self.df.size
 
     @property
-    def ndims(self):
-        return self.df.ndims
+    def ndim(self):
+        return self.df.ndim
 
     def to_html(self, *args, **kwargs):
         return self.df.to_html(*args, **kwargs)
