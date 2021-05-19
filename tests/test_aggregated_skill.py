@@ -97,8 +97,29 @@ def test_skill_multi_model(cc2):
     s2 = s.swaplevel()
     assert np.all(s2.index.levels[0] == s.index.levels[1])
 
+    s2 = s.head(1)
+    assert s.iloc[0]["rmse"] == s2.iloc[-1]["rmse"]
 
-def test_skill_sel(cc2):
+    s2 = s.tail(1)
+    assert s.iloc[-1]["rmse"] == s2.iloc[0]["rmse"]
+
+    s2 = s.sort_index(level="observation")
+    assert np.all(s2.iloc[0].name == ("SW_1", "EPL"))
+
+    s2 = s.reorder_levels(["observation", "model"])
+    assert np.all(s2.index.levels[0] == s.index.levels[1])
+
+
+def test_skill_sel(cc1):
+    s = cc1.skill(metrics=["rmse", "bias"])
+    s2 = s.sel(observation="alti")
+    assert len(s2) == 1
+
+    s2 = s.sel(columns="rmse")
+    assert s2.columns[-1] == "rmse"
+
+
+def test_skill_sel_multi_model(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
     s2 = s.sel(model="SW_1")
     assert len(s2.mod_names) == 0  # no longer in index
@@ -110,10 +131,10 @@ def test_skill_sel(cc2):
     assert not isinstance(s2.index, pd.MultiIndex)
     assert len(s2) == 2
 
-    s2 = s.sel(model=1, observation=["EPL", "c2"])
-    assert len(s2.obs_names) == 2
+    s2 = s.sel(model=1, observation=["EPL"])
+    assert len(s2.obs_names) == 0
     assert not isinstance(s2.index, pd.MultiIndex)
-    assert len(s2) == 2
+    assert len(s2) == 1
 
 
 def test_skill_sel_query(cc2):
@@ -194,4 +215,5 @@ def test_skill_style(cc2):
     s.style(precision=0)
     s.style(columns="rmse")
     s.style(columns=["bias", "rmse"])
-    s.style(cmap="viridis", show_best=False)
+    s.style(columns=[])
+    s.style(cmap="viridis_r", show_best=False)
