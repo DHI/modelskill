@@ -1053,7 +1053,7 @@ class SingleObsComparer(BaseComparer):
         11.567399646108198
         """
         metric = self._parse_metric(metric)
-        if (not callable(metric)) or (not isinstance(metric, str)):
+        if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
         df = self.skill(
@@ -1711,7 +1711,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         8.414442957854142
         """
         metric = self._parse_metric(metric)
-        if (not callable(metric)) or (not isinstance(metric, str)):
+        if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
         if model is None:
