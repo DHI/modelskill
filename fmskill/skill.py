@@ -143,17 +143,17 @@ class AggregatedSkill(SkillDataFrame):
 
     @property
     def mod_names(self):
-        """List of model names"""
+        """List of model names (in index)"""
         return self._get_index_level_by_name("model")
 
     @property
     def obs_names(self):
-        """List of observation names"""
+        """List of observation names (in index)"""
         return self._get_index_level_by_name("observation")
 
     @property
     def var_names(self):
-        """List of variable names"""
+        """List of variable names (in index)"""
         return self._get_index_level_by_name("variable")
 
     @property
@@ -243,7 +243,7 @@ class AggregatedSkill(SkillDataFrame):
                 cols = [value] if isinstance(value, str) else value
                 df = df[cols]
             else:
-                raise ValueError(
+                raise KeyError(
                     f"Unknown index {key}. Valid index names are {df.index.names}"
                 )
 
