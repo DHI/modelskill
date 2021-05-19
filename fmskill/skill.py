@@ -226,9 +226,11 @@ class AggregatedSkill(SkillDataFrame):
         Examples
         --------
         >>> s = comparer.skill()
-        >>> s.sel("rmse>0.3")
+        >>> s.sel(query="rmse>0.3")
         >>> s.sel(model = "SW_1")
         >>> s.sel(observation = ["EPL", "HKNA"])
+        >>> s.sel(columns="rmse")
+        >>> s.sel("rmse>0.2", observation=[0, 2], columns=["n","rmse"])
         """
         df = self.df
 
@@ -421,7 +423,7 @@ class AggregatedSkill(SkillDataFrame):
             fmt = "{:" + fmt + "}"
 
         if figsize is None:
-            figsize = (nx, ny)  # (nx * ((4 + precision) / 7), ny * 0.7)
+            figsize = (nx, ny)
         plt.figure(figsize=figsize)
         plt.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
         plt.gca().set_xticks(np.arange(nx) + 0.5)
@@ -514,6 +516,12 @@ class AggregatedSkill(SkillDataFrame):
                 subset=["bias"], cmap="coolwarm", vmin=-mm, vmax=mm
             )
             bg_cols.remove("bias")
+        if "lin_slope" in bg_cols:
+            mm = (self.df.lin_slope - 1).abs().max()
+            sdf = sdf.background_gradient(
+                subset=["lin_slope"], cmap="coolwarm", vmin=(1 - mm), vmax=(1 + mm)
+            )
+            bg_cols.remove("lin_slope")
         if len(bg_cols) > 0:
             cols = list(set(self.small_is_best_metrics) & set(bg_cols))
             sdf = sdf.background_gradient(subset=cols, cmap=cmap)
@@ -521,8 +529,6 @@ class AggregatedSkill(SkillDataFrame):
             cols = list(set(self.large_is_best_metrics) & set(bg_cols))
             cmap_r = self._reverse_colormap(cmap)
             sdf = sdf.background_gradient(subset=cols, cmap=cmap_r)
-
-            # TODO: lin_slope is not implemented!
 
         if show_best:
             cols = list(set(self.large_is_best_metrics) & set(float_cols))
@@ -548,7 +554,7 @@ class AggregatedSkill(SkillDataFrame):
         return cmap_r
 
     def _style_one_best(self, s):
-        """Using blod-face to highlight the best in a Series."""
+        """Using underline-etc to highlight the best in a Series."""
         is_best = (s - 1.0).abs() == (s - 1.0).abs().min()
         cell_style = (
             "text-decoration: underline; font-style: italic; font-weight: bold;"
@@ -556,7 +562,7 @@ class AggregatedSkill(SkillDataFrame):
         return [cell_style if v else "" for v in is_best]
 
     def _style_abs_min(self, s):
-        """Using blod-face to highlight the best in a Series."""
+        """Using underline-etc to highlight the best in a Series."""
         is_best = s.abs() == s.abs().min()
         cell_style = (
             "text-decoration: underline; font-style: italic; font-weight: bold;"
@@ -564,19 +570,15 @@ class AggregatedSkill(SkillDataFrame):
         return [cell_style if v else "" for v in is_best]
 
     def _style_min(self, s):
-        """Using blod-face to highlight the best in a Series."""
+        """Using underline-etc to highlight the best in a Series."""
         cell_style = (
             "text-decoration: underline; font-style: italic; font-weight: bold;"
         )
         return [cell_style if v else "" for v in (s == s.min())]
 
     def _style_max(self, s):
-        """Using blod-face to highlight the best in a Series."""
+        """Using underline-etc to highlight the best in a Series."""
         cell_style = (
             "text-decoration: underline; font-style: italic; font-weight: bold;"
         )
         return [cell_style if v else "" for v in (s == s.max())]
-        # font-weight: bold; font-style: oblique; border-style: solid; border-color: #212121; border-style: solid; border-width: thin;
-
-    def target_diagram(self):
-        raise NotImplementedError()
