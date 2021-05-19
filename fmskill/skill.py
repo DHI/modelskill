@@ -81,8 +81,8 @@ class SkillDataFrame:
     def round(self, decimals, *args, **kwargs):
         return self.__class__(self.df.round(decimals))
 
-    def sort_index(self, **kwargs):
-        return self.__class__(self.df.sort_index(**kwargs))
+    def sort_index(self, *args, **kwargs):
+        return self.__class__(self.df.sort_index(*args, **kwargs))
 
     def sort_values(self, by, **kwargs):
         return self.__class__(self.df.sort_values(by, **kwargs))
@@ -199,7 +199,7 @@ class AggregatedSkill(SkillDataFrame):
         if isinstance(df.index, pd.MultiIndex):
             df = df.xs(value, level=key, drop_level=False)
         else:
-            df = df.loc[value].copy()
+            df = df[df.index == value]  # .copy()
         return df
 
     def sel(self, query=None, reduce_index=True, **kwargs):
@@ -249,7 +249,7 @@ class AggregatedSkill(SkillDataFrame):
 
         if isinstance(df, pd.Series):
             df = df.to_frame()
-        if reduce_index:
+        if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
         return self.__class__(df)
 
