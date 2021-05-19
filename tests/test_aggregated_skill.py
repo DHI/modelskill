@@ -1,4 +1,5 @@
 import pytest
+import numpy as np
 import pandas as pd
 from fmskill import (
     ModelResult,
@@ -56,10 +57,28 @@ def test_skill(cc1):
     assert isinstance(s.df, pd.DataFrame)
     assert len(s.mod_names) == 0
     assert len(s.obs_names) == 1
+    assert len(s.var_names) == 0
+
     df = s.to_dataframe()
     assert isinstance(df, pd.DataFrame)
     assert "bias" in repr(s)
     assert s.loc["alti"] is not None
+
+    assert np.all(df.index == s.index)
+    assert np.all(df.columns == s.columns)
+    assert np.all(df.shape == s.shape)
+    assert np.all(df.size == s.size)
+    assert df.ndim == s.ndim
+    assert len(df) == len(s)
+    assert df.loc["alti"]["n"] == s.loc["alti"]["n"]
+    assert len(df.to_html()) == len(s.to_html())
+    assert len(df.to_markdown()) == len(s.to_markdown())
+
+    s2 = s.sort_values("rmse")
+    assert s2.iloc[0]["rmse"] == s["rmse"].max()
+
+    s2 = s.sort_values("rmse", ascending=False)
+    assert s2.iloc[0]["rmse"] == s["rmse"].min()
 
 
 def test_skill_multi_model(cc2):
@@ -68,6 +87,15 @@ def test_skill_multi_model(cc2):
     assert len(s.mod_names) == 2
     assert len(s.obs_names) == 3
     assert len(s.field_names) == 3
+
+    s2 = s.xs("SW_1", level="model")
+    assert len(s2.mod_names) == 0
+
+    s2 = s.xs("c2", level="observation")
+    assert len(s2.obs_names) == 0
+
+    s2 = s.swaplevel()
+    assert np.all(s2.index.levels[0] == s.index.levels[1])
 
 
 def test_skill_sel(cc2):
@@ -82,6 +110,11 @@ def test_skill_sel(cc2):
     assert not isinstance(s2.index, pd.MultiIndex)
     assert len(s2) == 2
 
+    s2 = s.sel(model=1, observation=["EPL", "c2"])
+    assert len(s2.obs_names) == 2
+    assert not isinstance(s2.index, pd.MultiIndex)
+    assert len(s2) == 2
+
 
 def test_skill_sel_query(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
@@ -89,14 +122,18 @@ def test_skill_sel_query(cc2):
     assert len(s2.mod_names) == 2
 
     s2 = s.sel("rmse>0.2", model="SW_2")
-    assert len(s2.mod_names) == 0 # no longer in index
+    assert len(s2.mod_names) == 0  # no longer in index
 
 
 def test_skill_sel_columns(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
-    s2 = s.sel(columns=["n", "rmse"])
+    s2 = s.sel(columns=["rmse", "n"])
+    assert s2.columns[-1] == "n"
+    assert "bias" not in s2.columns
 
     s2 = s.sel(columns="rmse")
+    assert s2.columns[-1] == "rmse"
+    assert "bias" not in s2.columns
 
 
 def test_skill_sel_fail(cc2):
@@ -124,3 +161,8 @@ def test_skill_plot_multi_model(cc2):
 
     with pytest.raises(KeyError):
         s.plot_bar("bad_metric")
+
+
+def test_skill_plot_grid(cc2):
+    s = cc2.skill(metrics="rmse")
+    s.plot_grid("rmse")
