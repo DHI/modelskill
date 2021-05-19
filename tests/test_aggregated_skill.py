@@ -64,14 +64,58 @@ def test_skill(cc1):
 
 def test_skill_multi_model(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
+    assert isinstance(s.index, pd.MultiIndex)
     assert len(s.mod_names) == 2
     assert len(s.obs_names) == 3
     assert len(s.field_names) == 3
 
 
+def test_skill_sel(cc2):
+    s = cc2.skill(metrics=["rmse", "bias"])
+    s2 = s.sel(model="SW_1")
+    assert len(s2.mod_names) == 0  # no longer in index
+    assert not isinstance(s2.index, pd.MultiIndex)
+    assert len(s2) == 3
+
+    s2 = s.sel(model="SW_1", observation=["EPL", "c2"])
+    assert len(s2.obs_names) == 2
+    assert not isinstance(s2.index, pd.MultiIndex)
+    assert len(s2) == 2
+
+
+def test_skill_sel_query(cc2):
+    s = cc2.skill(metrics=["rmse", "bias"])
+    s2 = s.sel("rmse>0.2")
+    assert len(s2.mod_names) == 2
+
+    s2 = s.sel("rmse>0.2", model="SW_2")
+    assert len(s2.mod_names) == 0 # no longer in index
+
+
+def test_skill_sel_columns(cc2):
+    s = cc2.skill(metrics=["rmse", "bias"])
+    s2 = s.sel(columns=["n", "rmse"])
+
+    s2 = s.sel(columns="rmse")
+
+
+def test_skill_sel_fail(cc2):
+    s = cc2.skill(metrics=["rmse", "bias"])
+    with pytest.raises(KeyError):
+        s2 = s.sel(columns=["cc"])
+
+    with pytest.raises(KeyError):
+        s2 = s.sel(variable="Hm0")
+
+
 def test_skill_plot_bar(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
     s.plot_bar("bias")
+
+
+def test_skill_plot_bar_multi_model(cc2):
+    s = cc2.skill(metrics="rmse")
+    s.plot_bar("rmse")
 
 
 def test_skill_plot_multi_model(cc2):
