@@ -286,7 +286,7 @@ class BaseComparer:
             raise ValueError("model must be None, str or int")
         return mod_id
 
-    def _parse_metric(self, metric):
+    def _parse_metric(self, metric, return_list=False):
         if metric is None:
             return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
@@ -308,6 +308,9 @@ class BaseComparer:
             raise ValueError(
                 f"Invalid metric: {metric}. Must be either string or callable."
             )
+        if return_list:
+            if callable(metric) or isinstance(metric, str):
+                metric = [metric]
         return metric
 
     def skill(
@@ -392,7 +395,7 @@ class BaseComparer:
                     large     324 -0.23  0.38   0.30  0.28  0.96  0.09  0.99
         """
 
-        metrics = self._parse_metric(metrics)
+        metrics = self._parse_metric(metrics, return_list=True)
 
         df = self.sel_df(
             model=model,
@@ -566,9 +569,7 @@ class BaseComparer:
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
-        metrics = self._parse_metric(metrics)
-        if callable(metrics) or isinstance(metrics, str):
-            metrics = [metrics]
+        metrics = self._parse_metric(metrics, return_list=True)
 
         df = self.sel_df(
             model=model,
@@ -1052,6 +1053,8 @@ class SingleObsComparer(BaseComparer):
         11.567399646108198
         """
         metric = self._parse_metric(metric)
+        if (not callable(metric)) or (not isinstance(metric, str)):
+            raise ValueError("metric must be a string or a function")
 
         df = self.skill(
             metrics=[metric],
@@ -1568,7 +1571,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         n_models = len(mod_names)
 
         # skill assessment
-        metrics = self._parse_metric(metrics)
+        metrics = self._parse_metric(metrics, return_list=True)
         skilldf = self.skill(df=df, metrics=metrics).df
 
         # weights
@@ -1708,6 +1711,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         8.414442957854142
         """
         metric = self._parse_metric(metric)
+        if (not callable(metric)) or (not isinstance(metric, str)):
+            raise ValueError("metric must be a string or a function")
 
         if model is None:
             models = self._mod_names
