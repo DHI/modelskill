@@ -72,7 +72,7 @@ def test_skill(cc1):
     assert len(df) == len(s)
     assert df.loc["alti"]["n"] == s.loc["alti"]["n"]
     assert len(df.to_html()) == len(s.to_html())
-    assert len(df.to_markdown()) == len(s.to_markdown())
+    # assert len(df.to_markdown()) == len(s.to_markdown())
 
     s2 = s.sort_values("rmse")
     assert s2.iloc[0]["rmse"] == s["rmse"].max()
@@ -121,7 +121,7 @@ def test_skill_sel_query(cc2):
     s2 = s.sel("rmse>0.2")
     assert len(s2.mod_names) == 2
 
-    s2 = s.sel("rmse>0.2", model="SW_2")
+    s2 = s.sel("rmse>0.2", model="SW_2", observation=[0, 2])
     assert len(s2.mod_names) == 0  # no longer in index
 
 
@@ -144,6 +144,9 @@ def test_skill_sel_fail(cc2):
     with pytest.raises(KeyError):
         s2 = s.sel(variable="Hm0")
 
+    with pytest.raises(KeyError):
+        s2 = s.sel(model=99)
+
 
 def test_skill_plot_bar(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
@@ -154,15 +157,41 @@ def test_skill_plot_bar_multi_model(cc2):
     s = cc2.skill(metrics="rmse")
     s.plot_bar("rmse")
 
-
-def test_skill_plot_multi_model(cc2):
-    s = cc2.skill()
-    s.plot_line("bias")
-
     with pytest.raises(KeyError):
         s.plot_bar("bad_metric")
 
 
-def test_skill_plot_grid(cc2):
+def test_skill_plot_line(cc1):
+    s = cc1.skill(metrics=["rmse", "bias"])
+    s.plot_line("bias")
+
+
+def test_skill_plot_line_multi_model(cc2):
     s = cc2.skill(metrics="rmse")
+    s.plot_line("rmse")
+
+    with pytest.raises(KeyError):
+        s.plot_line("bad_metric")
+
+
+def test_skill_plot_grid(cc2):
+    s = cc2.skill()
     s.plot_grid("rmse")
+    s.plot_grid("bias")
+    s.plot_grid("si", fmt=".0%")
+    s.plot_grid("bias", figsize=(2, 1), show_numbers=False)
+
+    s2 = s.sel(model="SW_1")
+    with pytest.warns(UserWarning) as wn:
+        s2.plot_grid("rmse")
+    assert len(wn) == 1
+    assert "only possible for MultiIndex" in str(wn[0].message)
+
+
+def test_skill_style(cc2):
+    s = cc2.skill()
+    s.style()
+    s.style(precision=0)
+    s.style(columns="rmse")
+    s.style(columns=["bias", "rmse"])
+    s.style(cmap="viridis", show_best=False)
