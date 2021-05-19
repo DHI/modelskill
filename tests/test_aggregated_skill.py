@@ -210,7 +210,7 @@ def test_skill_plot_grid(cc2):
 
 
 def test_skill_style(cc2):
-    s = cc2.skill()
+    s = cc2.skill(metrics=["bias", "rmse", "lin_slope", "si"])
     s.style()
     s.style(precision=0)
     s.style(columns="rmse")
