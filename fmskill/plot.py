@@ -229,7 +229,7 @@ def plot_observation_positions(
 TaylorPoint = namedtuple("TaylorPoint", "name std cc marker marker_size")
 
 
-def taylor(obs_std, points, figsize=(7, 7)):
+def taylor_diagram(obs_std, points, figsize=(7, 7), obs_text="Observations"):
     if figsize[0] != figsize[1]:
         warnings.warn(
             "It is strongly recommended that the aspect ratio is 1:1 for Taylor diagrams"
@@ -237,7 +237,9 @@ def taylor(obs_std, points, figsize=(7, 7)):
     fig = plt.figure(figsize=figsize)
 
     # srange=(0, 1.5),
-    td = TaylorDiagram(obs_std, fig=fig, rect=111, label="Observation")
+    if len(obs_text) > 30:
+        obs_text = obs_text[:25] + "..."
+    td = TaylorDiagram(obs_std, fig=fig, rect=111, label=obs_text)
     contours = td.add_contours(levels=8, colors="0.5", linestyles="dotted")
     plt.clabel(contours, inline=1, fontsize=10, fmt="%.2f")
 
