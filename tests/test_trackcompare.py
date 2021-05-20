@@ -32,7 +32,8 @@ def comparer(observation, modelresult):
 
 def test_skill(comparer):
     c = comparer
-    df = c.skill()
+    df = c.skill().df
+
     assert df.loc["alti"].n == 544
 
 
@@ -83,7 +84,7 @@ def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
 
 
 def test_skill_vs_spatial_skill(comparer):
-    df = comparer.skill()  # to compare to result of .skill()
+    df = comparer.skill().df  # to compare to result of .skill()
     ds = comparer.spatial_skill(bins=1)  # force 1 bin only
 
     assert df.loc["alti"].n == ds.n.values

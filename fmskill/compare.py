@@ -26,6 +26,7 @@ from mikeio import Dfs0, Dataset
 import fmskill.metrics as mtr
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.plot import scatter
+from fmskill.skill import AggregatedSkill
 from fmskill.spatial import SpatialSkill
 
 
@@ -285,12 +286,14 @@ class BaseComparer:
             raise ValueError("model must be None, str or int")
         return mod_id
 
-    def _parse_metric(self, metric):
+    def _parse_metric(self, metric, return_list=False):
         if metric is None:
             return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
         if isinstance(metric, str):
-            valid_metrics = [x[0] for x in getmembers(mtr, isfunction)]
+            valid_metrics = [
+                x[0] for x in getmembers(mtr, isfunction) if x[0][0] != "_"
+            ]
 
             if metric.lower() in valid_metrics:
                 metric = getattr(mtr, metric.lower())
@@ -305,6 +308,9 @@ class BaseComparer:
             raise ValueError(
                 f"Invalid metric: {metric}. Must be either string or callable."
             )
+        if return_list:
+            if callable(metric) or isinstance(metric, str):
+                metric = [metric]
         return metric
 
     def skill(
@@ -318,7 +324,7 @@ class BaseComparer:
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
+    ) -> AggregatedSkill:
         """Aggregated skill assessment of model(s)
 
         Parameters
@@ -389,7 +395,7 @@ class BaseComparer:
                     large     324 -0.23  0.38   0.30  0.28  0.96  0.09  0.99
         """
 
-        metrics = self._parse_metric(metrics)
+        metrics = self._parse_metric(metrics, return_list=True)
 
         df = self.sel_df(
             model=model,
@@ -408,7 +414,7 @@ class BaseComparer:
 
         res = self._groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = self._add_as_field_if_not_in_index(df, skilldf=res)
-        return res
+        return AggregatedSkill(res)
 
     def _add_as_field_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "variable"]
@@ -563,9 +569,7 @@ class BaseComparer:
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
-        metrics = self._parse_metric(metrics)
-        if callable(metrics) or isinstance(metrics, str):
-            metrics = [metrics]
+        metrics = self._parse_metric(metrics, return_list=True)
 
         df = self.sel_df(
             model=model,
@@ -928,7 +932,7 @@ class SingleObsComparer(BaseComparer):
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
+    ) -> AggregatedSkill:
         """Skill assessment of model(s)
 
         Parameters
@@ -959,8 +963,8 @@ class SingleObsComparer(BaseComparer):
 
         Returns
         -------
-        pd.DataFrame
-            skill assessment as a dataframe
+        AggregatedSkill
+            skill assessment object
 
         See also
         --------
@@ -1008,7 +1012,7 @@ class SingleObsComparer(BaseComparer):
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
+    ) -> float:
         """Model skill score
 
         Parameters
@@ -1049,6 +1053,8 @@ class SingleObsComparer(BaseComparer):
         11.567399646108198
         """
         metric = self._parse_metric(metric)
+        if not (callable(metric) or isinstance(metric, str)):
+            raise ValueError("metric must be a string or a function")
 
         df = self.skill(
             metrics=[metric],
@@ -1057,7 +1063,7 @@ class SingleObsComparer(BaseComparer):
             end=end,
             area=area,
             df=df,
-        )
+        ).df
         values = df[metric.__name__].values
         if len(values) == 1:
             values = values[0]
@@ -1195,6 +1201,7 @@ class PointComparer(SingleObsComparer):
             else:
                 self.df[self.mod_names[j]] = df[self.mod_names[j]]
 
+        self.df.index.name = "datetime"
         self.df.dropna(inplace=True)
 
     def plot_timeseries(
@@ -1306,6 +1313,7 @@ class TrackComparer(SingleObsComparer):
             else:
                 self.df[self.mod_names[j]] = df[self.mod_names[j]]
 
+        self.df.index.name = "datetime"
         self.df = self.df.dropna()
 
     def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
@@ -1411,6 +1419,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                 res = res.append(df[cols])
 
         self._all_df = res.sort_index()
+        self._all_df.index.name = "datetime"
 
     def __init__(self):
         self.comparers = {}
@@ -1495,7 +1504,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
+    ) -> AggregatedSkill:
         """Weighted mean skill of model(s) over all observations (of same variable)
 
         Parameters
@@ -1527,8 +1536,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         Returns
         -------
-        pd.DataFrame
-            mean skill assessment as a dataframe
+        AggregatedSkill
+            mean skill assessment as a skill object
 
         See also
         --------
@@ -1562,8 +1571,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         n_models = len(mod_names)
 
         # skill assessment
-        metrics = self._parse_metric(metrics)
-        skilldf = self.skill(df=df, metrics=metrics)
+        metrics = self._parse_metric(metrics, return_list=True)
+        skilldf = self.skill(df=df, metrics=metrics).df
 
         # weights
         weights = self._parse_weights(weights, obs_names)
@@ -1581,7 +1590,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         # output
         res = self._add_as_field_if_not_in_index(df, res, fields=["model", "variable"])
-        return res.astype({"n": int})
+        return AggregatedSkill(res.astype({"n": int}))
 
     def _mean_skill_by(self, skilldf, mod_names, var_names):
         by = []
@@ -1647,7 +1656,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
+    ) -> float:
         """Weighted mean score of model(s) over all observations
         NOTE: will take simple mean over different variables
 
@@ -1702,6 +1711,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         8.414442957854142
         """
         metric = self._parse_metric(metric)
+        if not (callable(metric) or isinstance(metric, str)):
+            raise ValueError("metric must be a string or a function")
 
         if model is None:
             models = self._mod_names
@@ -1720,7 +1731,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             end=end,
             area=area,
             df=df,
-        )
+        ).df
 
         if n_models == 1:
             score = df[metric.__name__].values.mean()

@@ -63,8 +63,8 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
     mr = modelresult_oresund_2d
     mr.add_observation(o1, item=0)
     c = mr.extract()
-    s = c["Klagshamn"].skill()
-    assert not np.any(np.isnan(s))
+    df = c["Klagshamn"].skill().df
+    assert not np.any(np.isnan(df))
 
 
 def test_extraction_no_overlap(modelresult_oresund_2d):
@@ -152,11 +152,11 @@ def test_skill(klagshamn, drogden):
 
     c = mr.extract()
 
-    df = c.skill()
+    df = c.skill().df
     assert df.loc["Klagshamn"].n == 167
 
     # Filtered skill
-    df = c.skill(observation="Klagshamn")
+    df = c.skill(observation="Klagshamn").df
     assert df.loc["Klagshamn"].n == 167
 
 
