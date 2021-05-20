@@ -916,7 +916,8 @@ class BaseComparer:
         df: pd.DataFrame = None,
         figsize: List[float] = (7, 7),
     ):
-        """Taylor diagram showing compared data: observation vs modelled
+        """Taylor diagram showing model std and correlation to observation
+        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
         ----------
@@ -1202,7 +1203,8 @@ class SingleObsComparer(BaseComparer):
         df: pd.DataFrame = None,
         figsize: List[float] = (7, 7),
     ):
-        """Taylor diagram showing compared data: observation vs modelled
+        """Taylor diagram showing model std and correlation to observation
+        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
         ----------
