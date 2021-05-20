@@ -1,5 +1,7 @@
 from typing import List, Tuple
+import warnings
 import numpy as np
+from collections import namedtuple
 
 import matplotlib.pyplot as plt
 
@@ -7,6 +9,8 @@ from mikeio import Dfsu
 
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
+from .plot_taylor import TaylorDiagram
+
 
 def scatter(
     x,
@@ -62,20 +66,6 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
-    model : (int, str), optional
-        name or id of model to be compared, by default None
-    observation : (int, str), optional
-        name or ids of observations to be compared, by default None
-    start : (str, datetime), optional
-        start time of comparison, by default None
-    end : (str, datetime), optional
-        end time of comparison, by default None
-    area : list(float), optional
-        bbox coordinates [x0, y0, x1, y1],
-        or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-        by default None
-    df : pd.dataframe, optional
-        show user-provided data instead of the comparers own data, by default None
     kwargs
     """
 
@@ -234,3 +224,37 @@ def plot_observation_positions(
                 print("Too many points to plot")
                 # TODO: group by lonlat bin
     return ax
+
+
+TaylorPoint = namedtuple("TaylorPoint", "name std cc marker marker_size")
+
+
+def taylor(obs_std, points, figsize=(7, 7)):
+    if figsize[0] != figsize[1]:
+        warnings.warn(
+            "It is strongly recommended that the aspect ratio is 1:1 for Taylor diagrams"
+        )
+    fig = plt.figure(figsize=figsize)
+
+    # srange=(0, 1.5),
+    td = TaylorDiagram(obs_std, fig=fig, rect=111, label="Observation")
+    contours = td.add_contours(levels=8, colors="0.5", linestyles="dotted")
+    plt.clabel(contours, inline=1, fontsize=10, fmt="%.2f")
+
+    if isinstance(points, TaylorPoint):
+        points = [points]
+    for p in points:
+        m = "o" if p.marker is None else p.marker
+        ms = "6" if p.marker_size is None else p.marker_size
+        td.add_sample(p.std, p.cc, marker=m, ms=ms, ls="", label=p.name)
+        # marker=f"${1}$",
+        # td.add_sample(0.2, 0.8, marker="+", ms=15, mew=1.2, ls="", label="m2")
+    td.add_grid()
+    fig.legend(
+        td.samplePoints,
+        [p.get_label() for p in td.samplePoints],
+        numpoints=1,
+        prop=dict(size="medium"),
+        loc="upper right",
+    )
+    fig.suptitle("Taylor diagram", size="x-large")
