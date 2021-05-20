@@ -230,7 +230,9 @@ TaylorPoint = namedtuple("TaylorPoint", "name std cc marker marker_size")
 
 
 def taylor_diagram(obs_std, points, figsize=(7, 7), obs_text="Observations"):
-    if figsize[0] != figsize[1]:
+    if np.isscalar(figsize):
+        figsize = (figsize, figsize)
+    elif figsize[0] != figsize[1]:
         warnings.warn(
             "It is strongly recommended that the aspect ratio is 1:1 for Taylor diagrams"
         )
