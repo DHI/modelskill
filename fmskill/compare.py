@@ -1239,9 +1239,6 @@ class SingleObsComparer(BaseComparer):
         df = s.df
         ref_std = df.iloc[0]["_std_obs"]
 
-        if isinstance(df.index, pd.MultiIndex):
-            df.index = df.index.map("_".join)
-
         df = df[["_std_mod", "cc"]].copy()
         df.columns = ["std", "cc"]
         # df["marker"] = "o"
