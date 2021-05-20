@@ -945,6 +945,10 @@ class BaseComparer:
         >>> comparer.taylor()
         >>> comparer.taylor(observation="c2")
         >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+
+        References
+        ----------
+        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
@@ -1227,6 +1231,10 @@ class SingleObsComparer(BaseComparer):
         ------
         >>> comparer.taylor()
         >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+
+        References
+        ----------
+        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>        
         """
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]

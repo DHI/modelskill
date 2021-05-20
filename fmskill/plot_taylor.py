@@ -98,8 +98,6 @@ class TaylorDiagram(object):
 
         self._ax = ax  # Graphical axes
         self.ax = ax.get_aux_axes(tr)  # Polar coordinates
-        # ax.axis.equal  #
-        # ax.set_aspect("equal")
 
         # Add reference point and stddev contour
         (l,) = self.ax.plot([0], self.refstd, "k*", ls="", ms=10, label=label)
@@ -126,13 +124,10 @@ class TaylorDiagram(object):
 
     def add_grid(self, *args, **kwargs):
         """Add a grid."""
-
         self._ax.grid(*args, **kwargs)
 
     def add_contours(self, levels=5, **kwargs):
-        """
-        Add constant centered RMS difference contours, defined by *levels*.
-        """
+        """Add constant centered RMS difference contours, defined by *levels*."""
 
         rs, ts = np.meshgrid(
             np.linspace(self.smin, self.smax), np.linspace(0, self.tmax)
@@ -143,143 +138,3 @@ class TaylorDiagram(object):
         contours = self.ax.contour(ts, rs, rms, levels, **kwargs)
 
         return contours
-
-
-def test_jem():
-    fig = plt.figure(figsize=(7, 7))
-    td = TaylorDiagram(0.2, fig=fig, rect=111, srange=(0, 1.5), label="Observation")
-    contours = td.add_contours(levels=8, colors="0.5", linestyles="dotted")
-    plt.clabel(contours, inline=1, fontsize=10, fmt="%.2f")
-    td.add_sample(0.1, 0.9, marker="o", ms=6, ls="", label="m1")  # marker=f"${1}$",
-    td.add_sample(0.2, 0.8, marker="+", ms=15, mew=1.2, ls="", label="m2")
-    td.add_grid()
-    fig.legend(
-        td.samplePoints,
-        [p.get_label() for p in td.samplePoints],
-        numpoints=1,
-        prop=dict(size="medium"),
-        loc="upper right",
-    )
-    fig.suptitle("Taylor diagram", size="x-large")
-
-
-def test1():
-    """Display a Taylor diagram in a separate axis."""
-
-    # Reference dataset
-    x = np.linspace(0, 4 * np.pi, 100)
-    data = np.sin(x)
-    refstd = data.std(ddof=1)  # Reference standard deviation
-
-    # Generate models
-    m1 = data + 0.2 * np.random.randn(len(x))  # Model 1
-    m2 = 0.8 * data + 0.1 * np.random.randn(len(x))  # Model 2
-    m3 = np.sin(x - np.pi / 10)  # Model 3
-
-    # Compute stddev and correlation coefficient of models
-    samples = np.array(
-        [[m.std(ddof=1), np.corrcoef(data, m)[0, 1]] for m in (m1, m2, m3)]
-    )
-
-    fig = plt.figure(figsize=(10, 4))
-
-    ax1 = fig.add_subplot(1, 2, 1, xlabel="X", ylabel="Y")
-    # Taylor diagram
-    dia = TaylorDiagram(refstd, fig=fig, rect=122, label="Reference", srange=(0.5, 1.5))
-
-    colors = plt.matplotlib.cm.jet(np.linspace(0, 1, len(samples)))
-
-    ax1.plot(x, data, "ko", label="Data")
-    for i, m in enumerate([m1, m2, m3]):
-        ax1.plot(x, m, c=colors[i], label="Model %d" % (i + 1))
-    ax1.legend(numpoints=1, prop=dict(size="small"), loc="best")
-
-    # Add the models to Taylor diagram
-    for i, (stddev, corrcoef) in enumerate(samples):
-        dia.add_sample(
-            stddev,
-            corrcoef,
-            marker="$%d$" % (i + 1),
-            ms=10,
-            ls="",
-            mfc=colors[i],
-            mec=colors[i],
-            label="Model %d" % (i + 1),
-        )
-
-    # Add grid
-    dia.add_grid()
-
-    # Add RMS contours, and label them
-    contours = dia.add_contours(colors="0.5")
-    plt.clabel(contours, inline=1, fontsize=10, fmt="%.2f")
-
-    # Add a figure legend
-    fig.legend(
-        dia.samplePoints,
-        [p.get_label() for p in dia.samplePoints],
-        numpoints=1,
-        prop=dict(size="small"),
-        loc="upper right",
-    )
-
-    return dia
-
-
-def test2():
-    """
-    Climatology-oriented example (after iteration w/ Michael A. Rawlins).
-    """
-
-    # Reference std
-    stdref = 48.491
-
-    # Samples std,rho,name
-    samples = [
-        [25.939, 0.385, "Model A"],
-        [29.593, 0.509, "Model B"],
-        [33.125, 0.585, "Model C"],
-        [29.593, 0.509, "Model D"],
-        [71.215, 0.473, "Model E"],
-        [27.062, 0.360, "Model F"],
-        [38.449, 0.342, "Model G"],
-        [35.807, 0.609, "Model H"],
-        [17.831, 0.360, "Model I"],
-    ]
-
-    fig = plt.figure()
-
-    dia = TaylorDiagram(stdref, fig=fig, label="Reference", extend=True)
-    dia.samplePoints[0].set_color("r")  # Mark reference point as a red star
-
-    # Add models to Taylor diagram
-    for i, (stddev, corrcoef, name) in enumerate(samples):
-        dia.add_sample(
-            stddev,
-            corrcoef,
-            marker="$%d$" % (i + 1),
-            ms=10,
-            ls="",
-            mfc="k",
-            mec="k",
-            label=name,
-        )
-
-    # Add RMS contours, and label them
-    contours = dia.add_contours(levels=5, colors="0.5")  # 5 levels in grey
-    plt.clabel(contours, inline=1, fontsize=10, fmt="%.0f")
-
-    dia.add_grid()  # Add grid
-    dia._ax.axis[:].major_ticks.set_tick_out(True)  # Put ticks outward
-
-    # Add a figure legend and title
-    fig.legend(
-        dia.samplePoints,
-        [p.get_label() for p in dia.samplePoints],
-        numpoints=1,
-        prop=dict(size="small"),
-        loc="upper right",
-    )
-    fig.suptitle("Taylor diagram", size="x-large")  # Figure title
-
-    return dia
