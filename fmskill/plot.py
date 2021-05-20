@@ -244,6 +244,7 @@ def taylor(obs_std, points, figsize=(7, 7)):
     if isinstance(points, TaylorPoint):
         points = [points]
     for p in points:
+        assert isinstance(p, TaylorPoint)
         m = "o" if p.marker is None else p.marker
         ms = "6" if p.marker_size is None else p.marker_size
         td.add_sample(p.std, p.cc, marker=m, ms=ms, ls="", label=p.name)

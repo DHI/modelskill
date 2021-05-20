@@ -917,14 +917,14 @@ class BaseComparer:
         figsize: List[float] = (7, 7),
         **kwargs,
     ):
-        """Taylor diagram plot showing compared data: observation vs modelled
+        """Taylor diagram showing compared data: observation vs modelled
 
         Parameters
         ----------
         model : (int, str), optional
-            name or id of model to be compared, by default first
+            name or id of model to be compared, by default all
         observation : (int, str, List[str], List[int])), optional
-            name or ids of observations to be compared, by default None
+            name or ids of observations to be compared, by default all
         variable : (str, int), optional
             name or id of variable to be compared, by default first
         start : (str, datetime), optional
@@ -944,11 +944,12 @@ class BaseComparer:
         Examples
         ------
         >>> comparer.taylor()
-        >>> comparer.taylor()
+        >>> comparer.taylor(observation="c2")
+        >>> comparer.taylor(start="2017-10-28")
         """
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        s = self.skill(
+        s = self.mean_skill(
             model=model,
             observation=observation,
             variable=variable,
@@ -963,13 +964,12 @@ class BaseComparer:
 
         if isinstance(df.index, pd.MultiIndex):
             df.index = df.index.map("_".join)
-        df.index.name = "name"
 
         df = df[["_std_mod", "cc"]].copy()
         df.columns = ["std", "cc"]
-        df["marker"] = "o"
-        df["marker_size"] = 6
-        pts = list(df.reset_index().itertuples(name="TaylorPoint", index=False))
+        # df["marker"] = "o"
+        # df["marker_size"] = 6
+        pts = [TaylorPoint(r.Index, r.std, r.cc, "o", 6) for r in df.itertuples()]
 
         taylor(obs_std=ref_std, points=pts, figsize=figsize)
 
