@@ -91,7 +91,7 @@ def test_n_variables(cc):
 
 
 def test_mv_skill(cc_1model):
-    df = cc_1model.skill()
+    df = cc_1model.skill().df
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
     assert pytest.approx(df.iloc[0].rmse) == 0.21635651988
@@ -100,21 +100,21 @@ def test_mv_skill(cc_1model):
 
 
 def test_mv_mm_skill(cc):
-    df = cc.skill()
+    df = cc.skill().df
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     assert df.index.names[2] == "variable"
     idx = ("SW_1", "HKNA_wind", "Wind_speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.skill(model="SW_1")
+    df = cc.skill(model="SW_1").df
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
     assert pytest.approx(df.iloc[0].rmse) == 0.21635651988
     idx = ("HKNA_wind", "Wind_speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.skill(variable=1)
+    df = cc.skill(variable=1).df
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     idx = ("SW_1", "HKNA_wind")
@@ -122,11 +122,11 @@ def test_mv_mm_skill(cc):
 
 
 def test_mv_mm_mean_skill(cc):
-    df = cc.mean_skill()
+    df = cc.mean_skill().df
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "variable"
     idx = ("SW_1", "Wind_speed")
     assert pytest.approx(df.loc[idx].r2) == 0.6523880517075856
 
-    df = cc.mean_skill(variable=0)
+    df = cc.mean_skill(variable=0).df
     assert pytest.approx(df.loc["SW_1"].cc) == 0.972628061122

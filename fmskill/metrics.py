@@ -44,7 +44,7 @@ Examples
 from typing import Tuple
 import warnings
 import numpy as np
-from scipy.stats import linregress
+from scipy.stats import linregress as _linregress
 import scipy.stats
 from scipy import odr
 
@@ -203,7 +203,7 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
     See Also
     --------
     nash_sutcliffe_efficiency
-    root_mean_square_error
+    root_mean_squared_error
 
     """
     assert obs.size == model.size
@@ -240,13 +240,12 @@ def corrcoef(obs, model, weights=None) -> float:
 
 
 def rho(obs: np.ndarray, model: np.ndarray) -> float:
-    """alias for Spearman rank correlation coefficient"""
+    """alias for spearmanr"""
     return spearmanr(obs, model)
 
 
 def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     """Spearman rank correlation coefficient
-
 
     The rank correlation coefficient is similar to the Pearson correlation coefficient but
     applied to ranked quantities and is useful to quantify a monotonous relationship
@@ -341,7 +340,7 @@ def _linear_regression(
         return np.nan
 
     if reg_method == "ols":
-        reg = linregress(obs, model)
+        reg = _linregress(obs, model)
         intercept = reg.intercept
         slope = reg.slope
     elif reg_method == "odr":
