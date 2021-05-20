@@ -1248,7 +1248,9 @@ class SingleObsComparer(BaseComparer):
         # df["marker_size"] = 6
         pts = [TaylorPoint(r.Index, r.std, r.cc, "o", 6) for r in df.itertuples()]
 
-        taylor_diagram(obs_std=ref_std, points=pts, figsize=figsize, obs_text=f"Obs:{self.name}")
+        taylor_diagram(
+            obs_std=ref_std, points=pts, figsize=figsize, obs_text=f"Obs: {self.name}"
+        )
 
     def remove_bias(self, correct="Model"):
         bias = self.residual.mean(axis=0)
