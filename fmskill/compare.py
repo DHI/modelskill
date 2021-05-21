@@ -25,7 +25,7 @@ from scipy import odr
 from mikeio import Dfs0, Dataset
 import fmskill.metrics as mtr
 from fmskill.observation import PointObservation, TrackObservation
-from fmskill.plot import scatter
+from fmskill.plot import scatter, taylor_diagram, TaylorPoint
 from fmskill.skill import AggregatedSkill
 from fmskill.spatial import SpatialSkill
 
@@ -905,6 +905,77 @@ class BaseComparer:
             **kwargs,
         )
 
+    def taylor(
+        self,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+        figsize: List[float] = (7, 7),
+    ):
+        """Taylor diagram showing model std and correlation to observation
+        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
+
+        Parameters
+        ----------
+        model : (int, str), optional
+            name or id of model to be compared, by default all
+        observation : (int, str, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        variable : (str, int), optional
+            name or id of variable to be compared, by default first
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            show user-provided data instead of the comparers own data, by default None
+        figsize : tuple, optional
+            width and height of the figure (should be square), by default (7, 7)
+
+        Examples
+        ------
+        >>> comparer.taylor()
+        >>> comparer.taylor(observation="c2")
+        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+
+        References
+        ----------
+        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
+        """
+
+        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        s = self.mean_skill(
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+            metrics=metrics,
+        )
+
+        df = s.df
+        ref_std = df.iloc[0]["_std_obs"]
+
+        if isinstance(df.index, pd.MultiIndex):
+            df.index = df.index.map("_".join)
+
+        df = df[["_std_mod", "cc"]].copy()
+        df.columns = ["std", "cc"]
+        # df["marker"] = "o"
+        # df["marker_size"] = 6
+        pts = [TaylorPoint(r.Index, r.std, r.cc, "o", 6) for r in df.itertuples()]
+
+        taylor_diagram(obs_std=ref_std, points=pts, figsize=figsize)
+
 
 class SingleObsComparer(BaseComparer):
     def __copy__(self):
@@ -1125,6 +1196,67 @@ class SingleObsComparer(BaseComparer):
             end=end,
             area=area,
             df=df,
+        )
+
+    def taylor(
+        self,
+        model: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+        figsize: List[float] = (7, 7),
+    ):
+        """Taylor diagram showing model std and correlation to observation
+        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
+
+        Parameters
+        ----------
+        model : (int, str), optional
+            name or id of model to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            show user-provided data instead of the comparers own data, by default None
+        figsize : tuple, optional
+            width and height of the figure (should be square), by default (7, 7)
+
+        Examples
+        ------
+        >>> comparer.taylor()
+        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+
+        References
+        ----------
+        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>        
+        """
+
+        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        s = self.skill(
+            model=model,
+            start=start,
+            end=end,
+            area=area,
+            metrics=metrics,
+        )
+
+        df = s.df
+        ref_std = df.iloc[0]["_std_obs"]
+
+        df = df[["_std_mod", "cc"]].copy()
+        df.columns = ["std", "cc"]
+        # df["marker"] = "o"
+        # df["marker_size"] = 6
+        pts = [TaylorPoint(r.Index, r.std, r.cc, "o", 6) for r in df.itertuples()]
+
+        taylor_diagram(
+            obs_std=ref_std, points=pts, figsize=figsize, obs_text=f"Obs: {self.name}"
         )
 
     def remove_bias(self, correct="Model"):

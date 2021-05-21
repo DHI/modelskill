@@ -239,6 +239,15 @@ def test_mm_scatter(cc):
     assert True
 
 
+def test_mm_taylor(cc):
+    cc.taylor(model="SW_1", observation=[0, 1])
+    cc.taylor()
+    cc.taylor(figsize=(4, 4))
+    cc.taylor(model="SW_2", start="2017-10-28")
+    cc[0].taylor(model=0, end="2017-10-29")
+    assert True
+
+
 def test_mm_plot_timeseries(cc):
     cc["EPL"].plot_timeseries()
     cc["EPL"].plot_timeseries(title="t", figsize=(3, 3))

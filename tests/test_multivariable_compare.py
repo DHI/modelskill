@@ -130,3 +130,15 @@ def test_mv_mm_mean_skill(cc):
 
     df = cc.mean_skill(variable=0).df
     assert pytest.approx(df.loc["SW_1"].cc) == 0.972628061122
+
+
+def test_mv_mm_scatter(cc):
+    cc.scatter(model="SW_1", variable="Wind_speed")
+    assert True
+
+
+def test_mv_mm_taylor(cc):
+    cc.taylor(variable="Wind_speed")
+    cc.taylor(figsize=(4, 4))
+    cc.taylor(model="SW_2", start="2017-10-28")
+    assert True

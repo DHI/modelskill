@@ -356,3 +356,11 @@ def _linear_regression(
         )
 
     return slope, intercept
+
+
+def _std_obs(obs: np.ndarray, model: np.ndarray) -> float:
+    return obs.std()
+
+
+def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
+    return model.std()
