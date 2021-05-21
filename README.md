@@ -25,7 +25,7 @@ From [pypi](https://pypi.org/project/fmskill/):
 
 Or the development version:
 
-`> pip install https://github.com/DHI/fmskill/archive/master.zip`
+`> pip install https://github.com/DHI/fmskill/archive/main.zip`
 
 
 ## Example notebooks
