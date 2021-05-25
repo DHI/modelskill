@@ -93,9 +93,12 @@ class Observation:
 class PointObservation(Observation):
     """Class for observations of fixed locations
 
+    Can be created from a dfs0 file or from a pd.DataFrame
+
     Examples
     --------
     >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o1 = PointObservation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     """
 
     x = None
@@ -120,12 +123,46 @@ class PointObservation(Observation):
         name: str = None,
         variable_name: str = None,
     ):
+        """Create a PointObservation from a dfs0 file or a pd.DataFrame.
+
+        Parameters
+        ----------
+        input : (str, pd.DataFrame, pd.Series)
+            dfs0 filename or dataframe with the data
+        item : (int, str), optional
+            index or name of the wanted item, by default 0
+        x : float, optional
+            x-coordinate of the observation point, by default None
+        y : float, optional
+            y-coordinate of the observation point, by default None
+        z : float, optional
+            z-coordinate of the observation point, by default None
+        name : str, optional
+            user-defined name for easy identification in plots etc, by default file basename
+        variable_name : str, optional
+            user-defined variable name in case of multiple variables, by default eumType name
+
+        Examples
+        --------
+        >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
+        >>> o1 = PointObservation("klagshamn.dfs0", item="Water Level", x=366844, y=6154291)
+        >>> o1 = PointObservation(df, item=0, x=366844, y=6154291, name="Klagshamn")
+        >>> o1 = PointObservation(df["Water Level"], x=366844, y=6154291)
+        """
         self.x = x
         self.y = y
         self.z = z
 
         if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
-            raise NotImplementedError()
+            df = filename
+            if not isinstance(filename, pd.Series):
+                if isinstance(item, str):
+                    df = df[[item]]
+                elif isinstance(item, int):
+                    df = df.iloc[:, item]
+                else:
+                    raise TypeError("item must be int or string")
+            itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         else:
             if name is None:
                 name = os.path.basename(filename).split(".")[0]
@@ -160,9 +197,11 @@ class PointObservation(Observation):
     @staticmethod
     def _read_dfs0(dfs, item):
         """Read data from dfs0 file"""
-        df = dfs.read(items=item).to_dataframe()
+        ds = dfs.read(items=item)
+        itemInfo = ds.items[0]
+        df = ds.to_dataframe()
         df.dropna(inplace=True)
-        return df, dfs.items[item]
+        return df, itemInfo
 
     def plot(self, **kwargs):
         """plot timeseries"""
