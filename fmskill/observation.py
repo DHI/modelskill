@@ -125,7 +125,10 @@ class PointObservation(Observation):
         self.z = z
 
         if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
-            raise NotImplementedError()
+            df = filename
+            if not isinstance(filename, pd.Series):
+                df = df.iloc[:, item]
+            itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         else:
             if name is None:
                 name = os.path.basename(filename).split(".")[0]
