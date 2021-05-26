@@ -19,8 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
-from scipy.stats import linregress
-from scipy import odr
+from scipy.interpolate import interp1d
 
 from mikeio import Dfs0, Dataset
 import fmskill.metrics as mtr
@@ -988,11 +987,21 @@ class SingleObsComparer(BaseComparer):
     def copy(self):
         return self.__copy__()
 
-    def _model2obs_interp(self, obs, mod_ds):
+    def _model2obs_interp(self, obs, mod_df):
         """interpolate model to measurement time"""
-        df = mod_ds.interp_time(obs.time).to_dataframe()
+        df = self._interp_df(mod_df, obs.time)
+        # mod_ds.interp_time(obs.time).to_dataframe()
         df[self.obs_name] = obs.values
         return df
+
+    @staticmethod
+    def _interp_df(df, new_time):
+        new_df = (
+            df.reindex(df.index.union(new_time))
+            .interpolate(method="index")
+            .reindex(new_time)
+        )
+        return new_df
 
     def skill(
         self,
@@ -1234,7 +1243,7 @@ class SingleObsComparer(BaseComparer):
 
         References
         ----------
-        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>        
+        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]

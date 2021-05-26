@@ -2,6 +2,7 @@ import os
 from typing import List, Union
 from pathlib import Path
 import numpy as np
+import pandas as pd
 import yaml
 import warnings
 import matplotlib.pyplot as plt
@@ -133,7 +134,7 @@ class ModelResult(ModelResultInterface):
             observation.model_item = item
             observation.weight = weight
             self.observations[observation.name] = observation
-        else:            
+        else:
             warnings.warn("Could not add observation")
 
         return self
@@ -282,11 +283,11 @@ class ModelResult(ModelResultInterface):
                 raise ValueError("Could not extract observation")
 
         if isinstance(observation, PointObservation):
-            ds_model = self._extract_point(observation, item)
-            comparer = PointComparer(observation, ds_model)
+            df_model = self._extract_point(observation, item)
+            comparer = PointComparer(observation, df_model)
         elif isinstance(observation, TrackObservation):
-            ds_model = self._extract_track(observation, item)
-            comparer = TrackComparer(observation, ds_model)
+            df_model = self._extract_track(observation, item)
+            comparer = TrackComparer(observation, df_model)
         else:
             raise ValueError("Only point and track observation are supported!")
 
@@ -296,28 +297,28 @@ class ModelResult(ModelResultInterface):
 
         return comparer
 
-    def _extract_point(self, observation: PointObservation, item) -> Dataset:
+    def _extract_point(self, observation: PointObservation, item) -> pd.DataFrame:
         ds_model = None
         if self.is_dfsu:
             ds_model = self._extract_point_dfsu(observation.x, observation.y, item)
         elif self.is_dfs0:
             ds_model = self._extract_point_dfs0(item)
 
-        return ds_model
+        return ds_model.to_dataframe()
 
-    def _extract_point_dfsu(self, x, y, item):
+    def _extract_point_dfsu(self, x, y, item) -> Dataset:
         xy = np.atleast_2d([x, y])
         elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
         ds_model.items[0].name = self.name
         return ds_model
 
-    def _extract_point_dfs0(self, item):
+    def _extract_point_dfs0(self, item) -> Dataset:
         ds_model = self.dfs.read(items=[item])
         ds_model.items[0].name = self.name
         return ds_model
 
-    def _extract_track(self, observation: TrackObservation, item) -> Dataset:
+    def _extract_track(self, observation: TrackObservation, item) -> pd.DataFrame:
         ds_model = None
         if self.is_dfsu:
             ds_model = self._extract_track_dfsu(observation, item)
@@ -325,9 +326,9 @@ class ModelResult(ModelResultInterface):
             ds_model = self.dfs.read(items=[0, 1, item])
             ds_model.items[-1].name = self.name
 
-        return ds_model
+        return ds_model.to_dataframe()
 
-    def _extract_track_dfsu(self, observation: TrackObservation, item):
+    def _extract_track_dfsu(self, observation: TrackObservation, item) -> Dataset:
         ds_model = self.dfs.extract_track(track=observation.df, items=[item])
         ds_model.items[-1].name = self.name
         return ds_model
@@ -516,11 +517,11 @@ class ModelResultCollection(ModelResultInterface):
             A comparer object for further analysis or plotting
         """
         assert isinstance(observation, PointObservation)
-        ds_model = []
+        df_model = []
         for mr in self.modelresults.values():
-            ds_model.append(mr._extract_point(observation, item))
+            df_model.append(mr._extract_point(observation, item))
 
-        return PointComparer(observation, ds_model)
+        return PointComparer(observation, df_model)
 
     def _compare_track_observation(self, observation, item) -> TrackComparer:
         """Compare all ModelResults in collection with a track observation
@@ -538,12 +539,12 @@ class ModelResultCollection(ModelResultInterface):
             A comparer object for further analysis or plotting
         """
         assert isinstance(observation, TrackObservation)
-        ds_model = []
+        df_model = []
         for mr in self.modelresults.values():
             assert isinstance(mr, ModelResult)
-            ds_model.append(mr._extract_track(observation, item))
+            df_model.append(mr._extract_track(observation, item))
 
-        return TrackComparer(observation, ds_model)
+        return TrackComparer(observation, df_model)
 
     def extract(self) -> ComparerCollection:
         """extract model result in all observations"""
