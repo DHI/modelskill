@@ -195,7 +195,7 @@ class ModelResult(ModelResultInterface):
         return ok
 
     def _get_model_item(self, item, mod_items=None) -> eum.ItemInfo:
-        """"Given str or int find corresponding model itemInfo"""
+        """Given str or int find corresponding model itemInfo"""
         if mod_items is None:
             mod_items = self.dfs.items
         n_items = len(mod_items)
@@ -320,15 +320,15 @@ class ModelResult(ModelResultInterface):
         return ds_model
 
     def _extract_track(self, observation: TrackObservation, item) -> pd.DataFrame:
-        ds_model = None
+        df = None
         if self.is_dfsu:
             ds_model = self._extract_track_dfsu(observation, item)
+            df = ds_model.to_dataframe().dropna()
         elif self.is_dfs0:
             ds_model = self.dfs.read(items=[0, 1, item])
             ds_model.items[-1].name = self.name
-
-        df = ds_model.to_dataframe()
-        df.index = make_unique_index(df.index, offset_in_seconds=0.01)
+            df = ds_model.to_dataframe().dropna()
+            df.index = make_unique_index(df.index, offset_in_seconds=0.01)
         return df
 
     def _extract_track_dfsu(self, observation: TrackObservation, item) -> Dataset:
