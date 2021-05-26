@@ -5,7 +5,7 @@ import fmskill
 from fmskill.model import ModelResult
 from fmskill.observation import PointObservation
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
-from fmskill.compare import PointComparer
+from fmskill.comparison import PointComparer
 
 
 @pytest.fixture
