@@ -23,10 +23,21 @@ from scipy.interpolate import interp1d
 
 from mikeio import Dfs0, Dataset
 import fmskill.metrics as mtr
-from fmskill.observation import PointObservation, TrackObservation
+from fmskill.observation import Observation, PointObservation, TrackObservation
 from fmskill.plot import scatter, taylor_diagram, TaylorPoint
 from fmskill.skill import AggregatedSkill
 from fmskill.spatial import SpatialSkill
+
+
+def compare(mod, obs):
+    if not isinstance(obs, Observation):
+        obs = PointObservation(obs)
+    if isinstance(mod, str):
+        mod = Dfs0(mod).read().to_dataframe()
+    elif isinstance(mod, pd.Series):
+        mod = mod.to_frame()
+    c = PointComparer(obs, mod)
+    return c
 
 
 class BaseComparer:
