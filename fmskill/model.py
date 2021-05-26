@@ -1,3 +1,4 @@
+from fmskill.utils import make_unique_index
 import os
 from typing import List, Union
 from pathlib import Path
@@ -326,7 +327,9 @@ class ModelResult(ModelResultInterface):
             ds_model = self.dfs.read(items=[0, 1, item])
             ds_model.items[-1].name = self.name
 
-        return ds_model.to_dataframe()
+        df = ds_model.to_dataframe()
+        df.index = make_unique_index(df.index, offset_in_seconds=0.01)
+        return df
 
     def _extract_track_dfsu(self, observation: TrackObservation, item) -> Dataset:
         ds_model = self.dfs.extract_track(track=observation.df, items=[item])

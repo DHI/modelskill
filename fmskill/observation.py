@@ -6,6 +6,7 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
+from fmskill.utils import make_unique_index
 import os
 import warnings
 import numpy as np
@@ -290,7 +291,7 @@ class TrackObservation(Observation):
                 raise NotImplementedError()
 
         if not df.index.is_unique:
-            self._make_index_unique(df)
+            df.index = make_unique_index(df.index)
 
         super().__init__(
             name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
@@ -299,24 +300,6 @@ class TrackObservation(Observation):
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
         return out
-
-    def _make_index_unique(self, df):
-        warnings.warn(
-            "Time axis has duplicate entries. Now adding milliseconds to non-unique entries to make index unique."
-        )
-        offset_in_seconds = 0.01
-        values = df.index.duplicated(keep=False).astype(float)  # keep='first'
-        values[values == 0] = np.NaN
-
-        missings = np.isnan(values)
-        cumsum = np.cumsum(~missings)
-        diff = np.diff(np.concatenate(([0.0], cumsum[missings])))
-        values[missings] = -diff
-
-        offset_in_ns = offset_in_seconds * 1e9
-        new_index = df.index + offset_in_ns * np.cumsum(values).astype(np.timedelta64)
-        df.index = new_index
-        # return df
 
     @staticmethod
     def _read_dfs0(dfs, items):
