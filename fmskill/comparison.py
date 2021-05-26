@@ -33,7 +33,13 @@ def compare(mod, obs):
     if not isinstance(obs, Observation):
         obs = PointObservation(obs)
     if isinstance(mod, str):
-        mod = Dfs0(mod).read().to_dataframe()
+        dfs = Dfs0(mod)
+        if len(dfs.items) > 1:
+            raise ValueError('Model ambiguous - please provide single item')
+        mod = dfs.read().to_dataframe()
+    elif isinstance(mod, pd.DataFrame):
+        if len(mod.columns) > 1:
+            raise ValueError('Model ambiguous - please provide single item')
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
     c = PointComparer(obs, mod)
