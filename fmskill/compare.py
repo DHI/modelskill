@@ -996,9 +996,11 @@ class SingleObsComparer(BaseComparer):
 
     @staticmethod
     def _interp_df(df, new_time):
+        assert df.index.is_unique
+        assert new_time.is_unique
         new_df = (
             df.reindex(df.index.union(new_time))
-            .interpolate(method="index")
+            .interpolate(method="time")
             .reindex(new_time)
         )
         return new_df
@@ -1461,8 +1463,15 @@ class TrackComparer(SingleObsComparer):
         mod_xy = df_mod.loc[:, ["x", "y"]].values
         obs_xy = df_obs.iloc[:, :2].values
         d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-        tol_xy = np.sqrt(np.sum((obs_xy[0, :] - obs_xy[1, :]) ** 2))
+        tol_xy = self._minimal_accepted_distance(obs_xy)
         return d_xy < tol_xy
+
+    @staticmethod
+    def _minimal_accepted_distance(obs_xy):
+        # all consequtive distances
+        vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
+        # fraction of small quantile
+        return 0.5 * np.quantile(vec, 0.1)
 
 
 class ComparerCollection(Mapping, Sequence, BaseComparer):
