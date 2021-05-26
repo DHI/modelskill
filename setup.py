@@ -16,6 +16,7 @@ setuptools.setup(
         "matplotlib",
         "xarray",
         "markdown",
+        "jinja2",
     ],
     extras_require={
         "dev": [
