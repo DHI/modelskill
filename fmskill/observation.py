@@ -14,6 +14,7 @@ from shapely.geometry import Point, MultiPoint
 from mikeio import Dfs0, eum
 from .utils import make_unique_index
 
+
 class Observation:
     "Base class for all types of observations"
 
@@ -114,7 +115,7 @@ class PointObservation(Observation):
 
     def __init__(
         self,
-        input,
+        filename,
         item: int = 0,
         x: float = None,
         y: float = None,
@@ -152,9 +153,9 @@ class PointObservation(Observation):
         self.y = y
         self.z = z
 
-        if isinstance(input, pd.DataFrame) or isinstance(input, pd.Series):
-            df = input
-            if not isinstance(input, pd.Series):
+        if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
+            df = filename
+            if not isinstance(df, pd.Series):
                 if isinstance(item, str):
                     df = df[[item]]
                 elif isinstance(item, int):
@@ -164,11 +165,11 @@ class PointObservation(Observation):
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         else:
             if name is None:
-                name = os.path.basename(input).split(".")[0]
+                name = os.path.basename(filename).split(".")[0]
 
-            ext = os.path.splitext(input)[-1]
+            ext = os.path.splitext(filename)[-1]
             if ext == ".dfs0":
-                df, itemInfo = self._read_dfs0(Dfs0(input), item)
+                df, itemInfo = self._read_dfs0(Dfs0(filename), item)
             else:
                 raise NotImplementedError()
 
