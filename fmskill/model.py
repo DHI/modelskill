@@ -1,4 +1,3 @@
-from fmskill.utils import make_unique_index
 import os
 from typing import List, Union
 from pathlib import Path
@@ -7,13 +6,13 @@ import pandas as pd
 import yaml
 import warnings
 import matplotlib.pyplot as plt
-
 from abc import ABC, abstractmethod
 
 from mikeio import Dfs0, Dfsu, Dataset, eum
 from .observation import Observation, PointObservation, TrackObservation
 from .compare import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from .plot import plot_observation_positions
+from .utils import make_unique_index
 
 
 class ModelResultInterface(ABC):

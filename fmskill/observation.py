@@ -6,15 +6,13 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
-from fmskill.utils import make_unique_index
 import os
-import warnings
 import numpy as np
 import pandas as pd
 from datetime import datetime
 from shapely.geometry import Point, MultiPoint
 from mikeio import Dfs0, eum
-
+from .utils import make_unique_index
 
 class Observation:
     "Base class for all types of observations"
@@ -116,7 +114,7 @@ class PointObservation(Observation):
 
     def __init__(
         self,
-        filename,
+        input,
         item: int = 0,
         x: float = None,
         y: float = None,
@@ -154,9 +152,9 @@ class PointObservation(Observation):
         self.y = y
         self.z = z
 
-        if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
-            df = filename
-            if not isinstance(filename, pd.Series):
+        if isinstance(input, pd.DataFrame) or isinstance(input, pd.Series):
+            df = input
+            if not isinstance(input, pd.Series):
                 if isinstance(item, str):
                     df = df[[item]]
                 elif isinstance(item, int):
@@ -166,11 +164,11 @@ class PointObservation(Observation):
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         else:
             if name is None:
-                name = os.path.basename(filename).split(".")[0]
+                name = os.path.basename(input).split(".")[0]
 
-            ext = os.path.splitext(filename)[-1]
+            ext = os.path.splitext(input)[-1]
             if ext == ".dfs0":
-                df, itemInfo = self._read_dfs0(Dfs0(filename), item)
+                df, itemInfo = self._read_dfs0(Dfs0(input), item)
             else:
                 raise NotImplementedError()
 
