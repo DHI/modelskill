@@ -147,7 +147,10 @@ class ModelResult(ModelResultInterface):
 
     @staticmethod
     def from_config(configuration: Union[dict, str], validate_eum=True):
-
+        warnings.warn(
+            "ModelResult.from_config is deprecated, use Connector instead",
+            DeprecationWarning,
+        )
         if isinstance(configuration, str):
             with open(configuration) as f:
                 contents = f.read()
@@ -200,6 +203,10 @@ class ModelResult(ModelResultInterface):
             Require eum type and units to match between model and observation?
             Defaut: True
         """
+        warnings.warn(
+            "ModelResult.add_observation is deprecated, use Connector instead",
+            DeprecationWarning,
+        )
         if item is None:
             item = self._infer_model_item(observation)
 
@@ -326,6 +333,10 @@ class ModelResult(ModelResultInterface):
 
     def extract(self) -> ComparerCollection:
         """Extract model result in all observations"""
+        warnings.warn(
+            "ModelResult.extract is deprecated, use Connector instead",
+            DeprecationWarning,
+        )
         cc = ComparerCollection()
         for obs in self.observations.values():
             comparer = self.extract_observation(obs, obs.model_item, validate=False)
@@ -426,6 +437,10 @@ class ModelResult(ModelResultInterface):
         return ds_model
 
     def plot_observation_positions(self, figsize=None):
+        warnings.warn(
+            "ModelResult.plot_observation_positions is deprecated, use Connector instead",
+            DeprecationWarning,
+        )
         """Plot observation points on a map showing the model domain
 
         Parameters
@@ -446,10 +461,13 @@ class ModelResult(ModelResultInterface):
         return ax
 
     def plot_temporal_coverage(self, limit_to_model_period=True):
-
+        warnings.warn(
+            "ModelResult.plot_temporal_coverage is deprecated, use Connector instead",
+            DeprecationWarning,
+        )
         fig, ax = plt.subplots()
         y = np.repeat(0.0, 2)
-        x = self.dfs.start_time, self.dfs.end_time
+        x = self.start_time, self.dfs.end_time
         plt.plot(x, y)
         labels = ["Model"]
 
@@ -474,7 +492,7 @@ class ModelResult(ModelResultInterface):
         return isinstance(self.dfs, Dfs0)
 
 
-class ModelResultCollection():
+class ModelResultCollection:
     """
     A collection of results from multiple MIKE FM simulations
     with the same "topology", e.g. several "runs" of the same model.
@@ -640,6 +658,10 @@ class ModelResultCollection():
 
     def extract(self) -> ComparerCollection:
         """extract model result in all observations"""
+        warnings.warn(
+            "ModelResultCollection.extract is deprecated, use Connector instead",
+            DeprecationWarning,
+        )
         cc = ComparerCollection()
 
         for obs in self.observations.values():
