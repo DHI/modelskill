@@ -191,6 +191,7 @@ class PointObservation(Observation):
                 raise NotImplementedError()
 
         if not df.index.is_unique:
+            # TODO: duplicates_keep="mean","first","last"
             raise ValueError(
                 "Time axis has duplicate entries. It must be monotonically increasing."
             )
