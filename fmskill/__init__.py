@@ -25,7 +25,7 @@ if "64" not in architecture()[0]:
 
 from .model import ModelResult, ModelResultCollection
 from .observation import PointObservation, TrackObservation
-from .connection import compare
+from .connection import compare, Connector
 
 
 def from_config(configuration: Union[dict, str], validate_eum=True):
