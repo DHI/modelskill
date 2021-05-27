@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Iterable, Sequence
+from fmskill.plot import plot_observation_positions
 from typing import List, Union
 import warnings
 import numpy as np
@@ -47,12 +48,21 @@ def _parse_model(mod, item=None):
     return mod
 
 
-class SingleObsConnector:
-    """A connection between a single observation and model(s)"""
+class BaseConnector:
+    def __init__(self):
+        self.modelresults = {}
 
     @property
     def n_models(self):
         return len(self.modelresults)
+
+    @property
+    def mod_names(self):
+        return list(self.modelresults.keys())
+
+
+class SingleObsConnector(BaseConnector):
+    """A connection between a single observation and model(s)"""
 
     @property
     def _mrc(self):
@@ -173,16 +183,40 @@ class SingleObsConnector:
             pass
         return True
 
+    def plot_observation_positions(self, figsize=None):
+        """Plot observation points on a map showing the model domain
+
+        Parameters
+        ----------
+        figsize : (float, float), optional
+            figure size, by default None
+        """
+        mod = self.modelresults[0]
+
+        if mod.is_dfs0:
+            warnings.warn(
+                "Plotting observations is only supported for dfsu ModelResults"
+            )
+            return
+
+        ax = plot_observation_positions(dfs=mod.dfs, observations=[self.obs])
+
+        return ax
+
     def extract(self) -> BaseComparer:
         return self._mrc.extract_observation(self.obs, validate=False)
 
 
-class Connector(Mapping, Sequence):
+class Connector(BaseConnector, Mapping, Sequence):
     """A Connector object can have multiple SingleConnectors"""
 
     @property
+    def n_observations(self):
+        return len(self.observations)
+
+    @property
     def obs_names(self):
-        return list(self.connections.keys())
+        return list(self.observations.keys())
 
     def __repr__(self):
         txt = "<Connector> with \n"
@@ -190,6 +224,8 @@ class Connector(Mapping, Sequence):
 
     def __init__(self, obs=None, mod=None, validate=True):
         self.connections = {}
+        self.observations = {}
+        self.modelresults = {}
         if (mod is not None) and (obs is not None):
             if not is_iterable_not_str(obs):
                 obs = [obs]
@@ -199,8 +235,25 @@ class Connector(Mapping, Sequence):
             raise ValueError("obs and mod must both be specified (or both None)")
 
     def add(self, obs, mod, validate=True):
-        con = SingleObsConnector(obs, mod, validate=validate)
+        if isinstance(obs, SingleObsConnector):
+            con = obs
+        else:
+            con = SingleObsConnector(obs, mod, validate=validate)
         self.connections[con.name] = con
+        self._add_observation(con.obs)
+        self._add_modelresults(con.modelresults)
+
+    def _add_observation(self, obs):
+        if obs.name not in self.obs_names:
+            self.observations[obs.name] = obs
+
+    def _add_modelresults(self, mod):
+        if is_iterable_not_str(mod):
+            for m in mod:
+                self._add_modelresults(m)
+        else:
+            if mod.name not in self.mod_names:
+                self.modelresults[mod.name] = mod
 
     def _get_obs_name(self, obs):
         return self.obs_names[self._get_obs_id(obs)]
@@ -248,6 +301,26 @@ class Connector(Mapping, Sequence):
             if comparer is not None:
                 cc.add_comparer(comparer)
         return cc
+
+    def plot_observation_positions(self, figsize=None):
+        """Plot observation points on a map showing the model domain
+
+        Parameters
+        ----------
+        figsize : (float, float), optional
+            figure size, by default None
+        """
+        mod = list(self.modelresults.values())[0]
+
+        if mod.is_dfs0:
+            warnings.warn(
+                "Plotting observations is only supported for dfsu ModelResults"
+            )
+            return
+
+        observations = list(self.observations.values())
+        ax = plot_observation_positions(dfs=mod.dfs, observations=observations)
+        return ax
 
     def to_config(self, filename: str):
         # write contents of connector to configuration file (yml or xlxs)
