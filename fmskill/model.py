@@ -16,6 +16,20 @@ from .utils import make_unique_index
 
 
 class ModelResultInterface(ABC):
+    @property
+    @abstractmethod
+    def start_time(self):
+        pass
+
+    @property
+    @abstractmethod
+    def end_time(self):
+        pass
+
+    @property
+    def itemInfo(self):
+        return None
+
     @abstractmethod
     def add_observation(self, observation, item, weight, validate_eum):
         pass
@@ -51,6 +65,14 @@ class DataFrameModelResult(ModelResultInterface):
         if name is None:
             name = self.df.columns[0]
         self.name = name
+
+    @property
+    def start_time(self):
+        return self.df.index[0].to_pydatetime()
+
+    @property
+    def end_time(self):
+        return self.df.index[-1].to_pydatetime()
 
 
 class ModelResult(ModelResultInterface):
@@ -100,9 +122,22 @@ class ModelResult(ModelResultInterface):
             item_names = [i.name for i in items]
             if item not in item_names:
                 raise ValueError(f"item must be one of {item_names}")
+            item = item_names.index(item)
         else:
             raise ValueError("item must be int or string")
         return item
+
+    @property
+    def start_time(self):
+        return self.dfs.start_time
+
+    @property
+    def end_time(self):
+        return self.dfs.end_time
+
+    @property
+    def itemInfo(self):
+        return None if self.item is None else self.dfs.items[self.item]
 
     def __repr__(self):
         out = []
@@ -183,6 +218,12 @@ class ModelResult(ModelResultInterface):
             warnings.warn("Could not add observation")
 
         return self
+
+    def _in_domain(self, x, y) -> bool:
+        ok = True
+        if self.is_dfsu:
+            ok = self.dfs.contains([x, y])
+        return ok
 
     def _validate_observation(self, observation) -> bool:
         ok = False
