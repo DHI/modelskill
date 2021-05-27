@@ -30,10 +30,21 @@ class ModelResultInterface(ABC):
 
 
 class DataFrameModelResult(ModelResultInterface):
-    def __init__(self, df, name: str = None):
+    def __init__(self, df, name: str = None, item=None):
         if isinstance(df, pd.DataFrame):
-            if len(df.columns) > 1:
-                raise ValueError("Model ambiguous - please provide single item")
+            if item is None:
+                if len(df.columns) == 1:
+                    item = 0
+                else:
+                    raise ValueError("Model ambiguous - please provide item")
+
+            if isinstance(item, str):
+                df = df[[item]]
+            elif isinstance(item, int):
+                df = df.iloc[:, item].to_frame()
+            else:
+                raise TypeError("item must be int or string")
+
         elif isinstance(df, pd.Series):
             df = df.to_frame()
         self.df = df
@@ -349,7 +360,9 @@ class ModelResult(ModelResultInterface):
         ds_model.items[0].name = self.name
         return ds_model
 
-    def _extract_point_dfs0(self, item) -> Dataset:
+    def _extract_point_dfs0(self, item=None) -> Dataset:
+        if item is None:
+            item = self.item
         ds_model = self.dfs.read(items=[item])
         ds_model.items[0].name = self.name
         return ds_model

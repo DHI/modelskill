@@ -17,23 +17,33 @@ from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 
 
-def compare(obs, mod):
+def compare(obs, mod, mod_item=None):
     # return SingleConnection(obs, mod).extract()
     if not isinstance(obs, Observation):
         obs = PointObservation(obs)
 
+    mod = _parse_model(mod, mod_item)
+    return PointComparer(obs, mod)
+
+
+def _parse_model(mod, item=None):
     if isinstance(mod, str):
         dfs = Dfs0(mod)
-        if len(dfs.items) > 1:
-            raise ValueError("Model ambiguous - please provide single item")
+        if (len(dfs.items) > 1) and (item is None):
+            raise ValueError("Model ambiguous - please provide item")
         mod = dfs.read().to_dataframe()
     elif isinstance(mod, pd.DataFrame):
         if len(mod.columns) > 1:
-            raise ValueError("Model ambiguous - please provide single item")
+            raise ValueError("Model ambiguous - please provide item")
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
-
-    return PointComparer(obs, mod)
+    elif isinstance(mod, ModelResult):
+        if not mod.is_dfs0:
+            raise ValueError("Only dfs0 ModelResults are supported")
+        if mod.item is None:
+            raise ValueError("Model ambiguous - please provide item")
+        mod = mod._extract_point_dfs0(mod.item).to_dataframe()
+    return mod
 
 
 class SingleConnector:
@@ -46,38 +56,40 @@ class SingleConnector:
         else:
             return ModelResultCollection(self.modelresults)
 
-    def __init__(self, obs=None, mod=None, validate=True):
+    def __init__(self, obs=None, mod=None, mod_item=None, validate=True):
         # mod_item, obs_item
-        self.modelresults = self._parse_model(mod)
+        self.modelresults = self._parse_model(mod, mod_item)
         self.obs = self._parse_observation(obs)
         self.name = self.obs.name
         if validate:
             self._validate()
 
-    def _parse_model(self, mod) -> List[ModelResultInterface]:
+    def _parse_model(self, mod, item=None) -> List[ModelResultInterface]:
         if isinstance(mod, Sequence) and (not isinstance(mod, str)):
             mr = []
             for m in mod:
-                mr.append(self._parse_single_model(m))
+                mr.append(self._parse_single_model(m, item))
         else:
-            mr = [self._parse_single_model(mod)]
+            mr = [self._parse_single_model(mod, item)]
         return mr
 
-    def _parse_single_model(self, mod) -> ModelResultInterface:
+    def _parse_single_model(self, mod, item=None) -> ModelResultInterface:
         if isinstance(mod, (pd.Series, pd.DataFrame)):
-            return self._parse_pandas_model(mod)
+            return self._parse_pandas_model(mod, item)
         elif isinstance(mod, str):
-            return self._parse_filename_model(mod)
+            return self._parse_filename_model(mod, item)
         elif isinstance(mod, ModelResultInterface):
+            if mod.item is None:
+                mod.item = item
             return mod
         else:
             raise ValueError("Unknown model result type")
 
-    def _parse_pandas_model(self, df) -> ModelResultInterface:
-        return DataFrameModelResult(df)
+    def _parse_pandas_model(self, df, item=None) -> ModelResultInterface:
+        return DataFrameModelResult(df, item=item)
 
-    def _parse_filename_model(self, filename) -> ModelResultInterface:
-        return ModelResult(filename)
+    def _parse_filename_model(self, filename, item=None) -> ModelResultInterface:
+        return ModelResult(filename, item=item)
 
     def _parse_observation(self, obs) -> Observation:
         if isinstance(obs, (pd.Series, pd.DataFrame)):
