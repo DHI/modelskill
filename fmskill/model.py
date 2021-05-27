@@ -137,7 +137,12 @@ class ModelResult(ModelResultInterface):
 
     @property
     def itemInfo(self):
-        return None if self.item is None else self.dfs.items[self.item]
+        if self.item is None:
+            return eum.ItemInfo(eum.EUMType.Undefined)
+        else:
+            # if isinstance(self.item, str):
+            self.item = self._parse_item(self.item)
+            self.dfs.items[self.item]
 
     def __repr__(self):
         out = []
