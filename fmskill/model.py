@@ -29,6 +29,19 @@ class ModelResultInterface(ABC):
         pass
 
 
+class DataFrameModelResult(ModelResultInterface):
+    def __init__(self, df, name: str = None):
+        if isinstance(df, pd.DataFrame):
+            if len(df.columns) > 1:
+                raise ValueError("Model ambiguous - please provide single item")
+        elif isinstance(df, pd.Series):
+            df = df.to_frame()
+        self.df = df
+        if name is None:
+            name = self.df.columns[0]        
+        self.name = name
+
+
 class ModelResult(ModelResultInterface):
     """
     The result from a MIKE FM simulation (either dfsu or dfs0)
