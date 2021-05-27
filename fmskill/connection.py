@@ -1,11 +1,10 @@
-from collections.abc import Mapping, Iterable, Sequence
+from collections.abc import Mapping, Sequence
 from fmskill.plot import plot_observation_positions
-from typing import List, Union
+from typing import List
 import warnings
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
 
 from mikeio import Dfs0, eum
 from .model import (
@@ -14,8 +13,8 @@ from .model import (
     DataFrameModelResult,
     ModelResultCollection,
 )
-from .observation import Observation, PointObservation, TrackObservation
-from .comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
+from .observation import Observation, PointObservation
+from .comparison import PointComparer, ComparerCollection, BaseComparer
 from .utils import is_iterable_not_str
 
 
