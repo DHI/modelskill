@@ -7,7 +7,12 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 from mikeio import Dfs0
-from .model import ModelResult, ModelResultInterface
+from .model import (
+    ModelResult,
+    ModelResultInterface,
+    DataFrameModelResult,
+    ModelResultCollection,
+)
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 
@@ -31,8 +36,15 @@ def compare(mod, obs):
     return c
 
 
-class SingleConnection:
+class SingleConnector:
     """A connection between model(s) and a single observation"""
+
+    @property
+    def _mrc(self):
+        if len(self.modelresults) == 1:
+            return self.modelresults[0]
+        else:
+            return ModelResultCollection(self.modelresults)
 
     def __init__(self, mod=None, obs=None, validate=True):
         # mod_item, obs_item
@@ -62,10 +74,10 @@ class SingleConnection:
             raise ValueError("Unknown model result type")
 
     def _parse_pandas_model(self, df) -> ModelResultInterface:
-        return PointObservation(df)
+        return DataFrameModelResult(df)
 
     def _parse_filename_model(self, filename) -> ModelResultInterface:
-        return
+        return ModelResult(filename)
 
     def _parse_observation(self, obs) -> Observation:
         if isinstance(obs, (pd.Series, pd.DataFrame)):
@@ -80,14 +92,19 @@ class SingleConnection:
     def _validate(self):
         pass
 
-    def extract(self):
-        pass
+    def extract(self) -> BaseComparer:
+        return self._mrc.extract_observation(self.obs, validate=False)
 
 
 class Connector(Mapping, Sequence):
     """A Connector object can have multiple SingleConnections"""
 
+    @property
+    def obs_names(self):
+        return list(self.connections.keys())
+
     def __init__(self, mod=None, obs=None, validate=True):
+        # self._obs_names = []
         self.connections = {}
         if (mod is not None) and (obs is not None):
             self.add(mod, obs)
@@ -95,11 +112,56 @@ class Connector(Mapping, Sequence):
             raise ValueError("mod and obs must both be specified (or both None)")
 
     def add(self, mod, obs, validate=True):
-        con = SingleConnection(mod, obs, validate)
+        con = SingleConnector(mod, obs, validate)
+        # self._obs_names.append(con.name)
         self.connections[con.name] = con
 
+    def _get_obs_name(self, obs):
+        return self.obs_names[self._get_obs_id(obs)]
+
+    def _get_obs_id(self, obs):
+        n_con = len(self.connections)
+        if obs is None or n_con <= 1:
+            return 0
+        elif isinstance(obs, str):
+            if obs in self.obs_names:
+                obs_id = self.obs_names.index(obs)
+            else:
+                raise KeyError(
+                    f"connection {obs} could not be found in {self.obs_names}"
+                )
+        elif isinstance(obs, int):
+            if obs >= 0 and obs < n_con:
+                obs_id = obs
+            else:
+                raise IndexError(
+                    f"connection id was {obs} - must be within 0 and {n_con-1}"
+                )
+        else:
+            raise KeyError("connection must be None, str or int")
+        return obs_id
+
+    def __getitem__(self, x):
+        if isinstance(x, int):
+            x = self._get_obs_name(x)
+
+        return self.connections[x]
+
+    def __len__(self) -> int:
+        return len(self.connections)
+
+    def __iter__(self):
+        return iter(self.connections.values())
+
     def extract(self) -> ComparerCollection:
-        pass
+        """do extract for all connections"""
+        cc = ComparerCollection()
+
+        for con in self.connections.values():
+            comparer = con.extract()
+            if comparer is not None:
+                cc.add_comparer(comparer)
+        return cc
 
     def to_config(self, filename: str):
         # write contents of connector to configuration file (yml or xlxs)
