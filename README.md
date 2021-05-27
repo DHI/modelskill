@@ -120,7 +120,7 @@ With a few lines of code, it will be possible to generate an automated report.
 from fmskill.report import Reporter
 
 rep = Reporter(mr)
-rep.markdown()
+rep.to_markdown()
 ```
 
 [Very basic first example report](https://github.com/DHI/fmskill/blob/main/notebooks/HKZN_local/HKZN_local.md)
