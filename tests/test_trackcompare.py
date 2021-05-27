@@ -2,8 +2,9 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from fmskill.model import ModelResult
-from fmskill.observation import TrackObservation
+from fmskill import ModelResult
+from fmskill import TrackObservation
+from fmskill import Connector
 
 
 @pytest.fixture
@@ -25,9 +26,8 @@ def modelresult():
 
 @pytest.fixture
 def comparer(observation, modelresult):
-    mr = modelresult
-    mr.add_observation(observation, item=2)
-    return mr.extract()
+    con = Connector(observation, modelresult, mod_item=2)
+    return con.extract()
 
 
 def test_skill(comparer):
@@ -42,8 +42,10 @@ def test_extract_no_time_overlap(modelresult, observation_df):
     df = observation_df.copy(deep=True)
     df.index = df.index + np.timedelta64(100, "D")
     o = TrackObservation(df, item=2, name="alti")
-    mr.add_observation(o, item=2)
-    cc = mr.extract()
+
+    con = Connector(o, mr, mod_item=2)
+    cc = con.extract()
+
     assert cc.n_comparers == 0
 
 
@@ -52,8 +54,8 @@ def test_extract_obs_start_before(modelresult, observation_df):
     df = observation_df.copy(deep=True)
     df.index = df.index - np.timedelta64(1, "D")
     o = TrackObservation(df, item=2, name="alti")
-    mr.add_observation(o, item=2)
-    cc = mr.extract()
+    con = Connector(o, mr, mod_item=2)
+    cc = con.extract()
     assert cc.n_comparers == 0
 
 
@@ -62,8 +64,8 @@ def test_extract_obs_end_after(modelresult, observation_df):
     df = observation_df.copy(deep=True)
     df.index = df.index + np.timedelta64(1, "D")
     o = TrackObservation(df, item=2, name="alti")
-    mr.add_observation(o, item=2)
-    cc = mr.extract()
+    con = Connector(o, mr, mod_item=2)
+    cc = con.extract()
     assert cc.n_comparers == 0
 
 
@@ -73,8 +75,8 @@ def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
     df.lon = -100
     df.lat = -50
     o = TrackObservation(df, item=2, name="alti")
-    mr.add_observation(o, item=2)
-    cc = mr.extract()
+    con = Connector(o, mr, mod_item=2)
+    cc = con.extract()
 
     assert cc.n_comparers == 0
     assert len(cc.all_df) == 0
