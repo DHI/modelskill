@@ -474,7 +474,7 @@ class ModelResult(ModelResultInterface):
         return isinstance(self.dfs, Dfs0)
 
 
-class ModelResultCollection(ModelResultInterface):
+class ModelResultCollection():
     """
     A collection of results from multiple MIKE FM simulations
     with the same "topology", e.g. several "runs" of the same model.
