@@ -87,7 +87,7 @@ in space and time to the observation points using the `extract() <api.html#fmski
 
    cc = mr.extract()
 
-The extract method returns a `ComparerCollection <api.html#fmskill.compare.ComparerCollection>`_ for further analysis and plotting. 
+The extract method returns a `ComparerCollection <api.html#fmskill.comparison.ComparerCollection>`_ for further analysis and plotting. 
 
 
 5. Do analysis, plotting, etc with a Comparer
@@ -99,8 +99,8 @@ for plotting and skill assessment.
 
 The primary comparer methods are:
 
-* `skill() <api.html#fmskill.compare.ComparerCollection.skill>`_ which returns a pandas dataframe with the skill scores
-* `scatter() <api.html#fmskill.compare.ComparerCollection.scatter>`_ which shows a scatter density plot of the data
+* `skill() <api.html#fmskill.comparison.ComparerCollection.skill>`_ which returns a pandas dataframe with the skill scores
+* `scatter() <api.html#fmskill.comparison.ComparerCollection.scatter>`_ which shows a scatter density plot of the data
 
 
 Filtering
