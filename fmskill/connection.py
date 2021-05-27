@@ -107,7 +107,8 @@ class SingleObsConnector(BaseConnector):
         elif isinstance(mod, str):
             return self._parse_filename_model(mod, item)
         elif isinstance(mod, ModelResultInterface):
-            if mod.item is None:
+            # if mod.item is None:
+            if item is not None:
                 mod.item = item
             return mod
         else:
@@ -127,7 +128,7 @@ class SingleObsConnector(BaseConnector):
         elif isinstance(obs, Observation):
             return obs
         else:
-            raise ValueError("Unknown observation type")
+            raise ValueError(f"Unknown observation type {type(obs)}")
 
     def _validate(self):
         # TODO: add validation errors to list
@@ -148,6 +149,8 @@ class SingleObsConnector(BaseConnector):
     @staticmethod
     def _validate_eum(obs, mod):
         """Check that observation and model item eum match"""
+        assert isinstance(obs, Observation)
+        assert isinstance(mod, ModelResultInterface)
         ok = True
         has_eum = lambda x: (x.itemInfo is not None) and (
             x.itemInfo.type != eum.EUMType.Undefined
@@ -222,7 +225,7 @@ class Connector(BaseConnector, Mapping, Sequence):
         txt = "<Connector> with \n"
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
-    def __init__(self, obs=None, mod=None, validate=True):
+    def __init__(self, obs=None, mod=None, mod_item=None, validate=True):
         self.connections = {}
         self.observations = {}
         self.modelresults = {}
@@ -230,15 +233,19 @@ class Connector(BaseConnector, Mapping, Sequence):
             if not is_iterable_not_str(obs):
                 obs = [obs]
             for o in obs:
-                self.add(o, mod, validate=validate)
+                self.add(o, mod, mod_item=mod_item, validate=validate)
         elif (mod is not None) or (obs is not None):
             raise ValueError("obs and mod must both be specified (or both None)")
 
-    def add(self, obs, mod, validate=True):
-        if isinstance(obs, SingleObsConnector):
+    def add(self, obs, mod, mod_item=None, validate=True):
+        if is_iterable_not_str(obs):
+            for o in obs:
+                self.add(o, mod, mod_item=mod_item, validate=validate)
+            return
+        elif isinstance(obs, SingleObsConnector):
             con = obs
         else:
-            con = SingleObsConnector(obs, mod, validate=validate)
+            con = SingleObsConnector(obs, mod, mod_item=mod_item, validate=validate)
         self.connections[con.name] = con
         self._add_observation(con.obs)
         self._add_modelresults(con.modelresults)
