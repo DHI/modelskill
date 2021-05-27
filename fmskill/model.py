@@ -38,7 +38,7 @@ class DataFrameModelResult(ModelResultInterface):
             df = df.to_frame()
         self.df = df
         if name is None:
-            name = self.df.columns[0]        
+            name = self.df.columns[0]
         self.name = name
 
 
@@ -53,7 +53,7 @@ class ModelResult(ModelResultInterface):
     >>> mr = ModelResult("Oresund2D_points.dfs0", name="Oresund")
     """
 
-    def __init__(self, filename: str, name: str = None):
+    def __init__(self, filename: str, name: str = None, item=None):
         # TODO: add "start" as user may wish to disregard start from comparison
         self.filename = filename
         ext = os.path.splitext(filename)[-1]
@@ -71,6 +71,27 @@ class ModelResult(ModelResultInterface):
         if name is None:
             name = os.path.basename(filename).split(".")[0]
         self.name = name
+        self.item = self._parse_item(item)
+
+    def _parse_item(self, item, items=None):
+        if items is None:
+            items = self.dfs.items
+        n_items = len(items)
+        if item is None:
+            if n_items == 1:
+                return 0
+            else:
+                return None
+        if isinstance(item, int):
+            if (item < 0) or (item >= n_items):
+                raise ValueError(f"item must be between 0 and {n_items-1}")
+        elif isinstance(item, str):
+            item_names = [i.name for i in items]
+            if item not in item_names:
+                raise ValueError(f"item must be one of {item_names}")
+        else:
+            raise ValueError("item must be int or string")
+        return item
 
     def __repr__(self):
         out = []
@@ -285,6 +306,8 @@ class ModelResult(ModelResultInterface):
         <fmskill.BaseComparer>
             A comparer object for further analysis or plotting
         """
+        if item is None:
+            item = self.item
         if item is None:
             item = self._infer_model_item(observation)
 
