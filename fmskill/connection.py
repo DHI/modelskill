@@ -17,11 +17,11 @@ from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 
 
-def compare(mod, obs):
-    # con = SingleConnection(mod, obs)
-    # return con.extract()
+def compare(obs, mod):
+    # return SingleConnection(obs, mod).extract()
     if not isinstance(obs, Observation):
         obs = PointObservation(obs)
+
     if isinstance(mod, str):
         dfs = Dfs0(mod)
         if len(dfs.items) > 1:
@@ -32,12 +32,12 @@ def compare(mod, obs):
             raise ValueError("Model ambiguous - please provide single item")
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
-    c = PointComparer(obs, mod)
-    return c
+
+    return PointComparer(obs, mod)
 
 
 class SingleConnector:
-    """A connection between model(s) and a single observation"""
+    """A connection between a single observation and model(s)"""
 
     @property
     def _mrc(self):
@@ -46,7 +46,7 @@ class SingleConnector:
         else:
             return ModelResultCollection(self.modelresults)
 
-    def __init__(self, mod=None, obs=None, validate=True):
+    def __init__(self, obs=None, mod=None, validate=True):
         # mod_item, obs_item
         self.modelresults = self._parse_model(mod)
         self.obs = self._parse_observation(obs)
@@ -97,23 +97,21 @@ class SingleConnector:
 
 
 class Connector(Mapping, Sequence):
-    """A Connector object can have multiple SingleConnections"""
+    """A Connector object can have multiple SingleConnectors"""
 
     @property
     def obs_names(self):
         return list(self.connections.keys())
 
-    def __init__(self, mod=None, obs=None, validate=True):
-        # self._obs_names = []
+    def __init__(self, obs=None, mod=None, validate=True):
         self.connections = {}
         if (mod is not None) and (obs is not None):
             self.add(mod, obs)
         elif (mod is not None) or (obs is not None):
-            raise ValueError("mod and obs must both be specified (or both None)")
+            raise ValueError("obs and mod must both be specified (or both None)")
 
-    def add(self, mod, obs, validate=True):
-        con = SingleConnector(mod, obs, validate)
-        # self._obs_names.append(con.name)
+    def add(self, obs, mod, validate=True):
+        con = SingleConnector(obs, mod, validate)
         self.connections[con.name] = con
 
     def _get_obs_name(self, obs):
