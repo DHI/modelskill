@@ -322,6 +322,29 @@ class Connector(BaseConnector, Mapping, Sequence):
         ax = plot_observation_positions(dfs=mod.dfs, observations=observations)
         return ax
 
+    def plot_temporal_coverage(self, limit_to_model_period=True):
+
+        # TODO: multiple model
+        mod0 = list(self.modelresults.values())[0]
+
+        fig, ax = plt.subplots()
+        y = np.repeat(0.0, 2)
+        x = mod0.start_time, mod0.end_time
+        plt.plot(x, y)
+        labels = ["Model"]
+
+        plt.plot([mod0.start_time, mod0.end_time], y)
+        for key, obs in self.observations.items():
+            y += 1.0
+            plt.plot(obs.time, y[0] * np.ones_like(obs.values), "_", markersize=5)
+            labels.append(key)
+        if limit_to_model_period:
+            plt.xlim([mod0.start_time, mod0.end_time])
+
+        plt.yticks(np.arange(0, len(self.observations) + 1), labels)
+        fig.autofmt_xdate()
+        return ax
+
     def to_config(self, filename: str):
         # write contents of connector to configuration file (yml or xlxs)
         raise NotImplementedError()
