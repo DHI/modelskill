@@ -20,6 +20,22 @@ from .utils import is_iterable_not_str
 
 
 def compare(obs, mod, mod_item=None):
+    """Quick-and-dirty compare of observation and model
+
+    Parameters
+    ----------
+    obs : (str, pd.DataFrame, Observation)
+        Observation to be compared
+    mod : (str, pd.DataFrame, ModelResult)
+        Model result to be compared
+    mod_item : (int, str), optional
+        model item, by default None
+
+    Returns
+    -------
+    fmskill.PointComparer
+        A comparer object for further analysis and plotting
+    """
     # return SingleConnection(obs, mod).extract()
     if not isinstance(obs, Observation):
         obs = PointObservation(obs)
@@ -54,10 +70,12 @@ class BaseConnector:
 
     @property
     def n_models(self):
+        """Number of (unique) model results in Connector."""
         return len(self.modelresults)
 
     @property
     def mod_names(self):
+        """Names of (unique) model results in Connector."""
         return list(self.modelresults.keys())
 
 
@@ -207,6 +225,13 @@ class SingleObsConnector(BaseConnector):
         return ax
 
     def extract(self) -> BaseComparer:
+        """Extract model results at times and positions of observation.
+
+        Returns
+        -------
+        PointComparer or TrackComparer
+            A comparer object for further analysis and plotting.
+        """
         return self._mrc.extract_observation(self.obs, validate=False)
 
 
@@ -215,10 +240,12 @@ class Connector(BaseConnector, Mapping, Sequence):
 
     @property
     def n_observations(self):
+        """Number of (unique) observations in Connector."""
         return len(self.observations)
 
     @property
     def obs_names(self):
+        """Names of (unique) observations in Connector."""
         return list(self.observations.keys())
 
     def __repr__(self):
@@ -237,7 +264,21 @@ class Connector(BaseConnector, Mapping, Sequence):
         elif (mod is not None) or (obs is not None):
             raise ValueError("obs and mod must both be specified (or both None)")
 
-    def add(self, obs, mod, mod_item=None, validate=True):
+    def add(self, obs, mod=None, mod_item=None, validate=True):
+        """Add Observation-ModelResult-connections to Connector
+
+        Parameters
+        ----------
+        obs : (str, pd.DataFrame, Observation)
+            Observation(s) to be compared
+        mod : (str, pd.DataFrame, ModelResult)
+            Model result(s) to be compared
+        mod_item : (int, str), optional
+            item name or number, by default None
+        validate : bool, optional
+            Perform validation on eum type, observation-model
+            overlap in space and time? by default True
+        """
         if is_iterable_not_str(obs):
             for o in obs:
                 self.add(o, mod, mod_item=mod_item, validate=validate)
@@ -300,7 +341,13 @@ class Connector(BaseConnector, Mapping, Sequence):
         return iter(self.connections.values())
 
     def extract(self) -> ComparerCollection:
-        """do extract for all connections"""
+        """Extract model results at times and positions of all observations.
+
+        Returns
+        -------
+        ComparerCollection
+            A comparer object for further analysis and plotting.
+        """
         cc = ComparerCollection()
 
         for con in self.connections.values():
@@ -330,7 +377,14 @@ class Connector(BaseConnector, Mapping, Sequence):
         return ax
 
     def plot_temporal_coverage(self, limit_to_model_period=True):
+        """Plot graph showing temporal coverage for all observations
 
+        Parameters
+        ----------
+        limit_to_model_period : bool, optional
+            Show temporal coverage only for period covered
+            by the model, by default True
+        """
         # TODO: multiple model
         mod0 = list(self.modelresults.values())[0]
 

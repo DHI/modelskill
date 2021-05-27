@@ -10,7 +10,7 @@ The typical fmskill workflow consists of these five steps:
 
 #. Define **ModelResults**
 #. Define **Observations**
-#. **Associate** observations with ModelResults
+#. **Connect** observations and ModelResults
 #. **Extract** ModelResults at observation positions
 #. Do analysis, plotting, etc with a **Comparer**
 
@@ -26,7 +26,7 @@ result file path and a name:
 .. code-block:: python
 
    from fmskill import ModelResult
-   mr = ModelResult("HKZN_local_2017.dfsu", name="HKZN_local")
+   mr = ModelResult("HKZN_local_2017.dfsu", name="HKZN_local", item=0)
 
 Currently, ModelResult supports .dfs0 and .dfsu files. 
 Only the file header is read when the ModelResult object is created. 
@@ -61,31 +61,29 @@ the item number (or item name) and a name. A PointObservation further needs to b
 
 
 
-3. Associate observations with ModelResults
-===========================================
+3. Connect observations and ModelResults
+========================================
 
-The observations are associated with a model result one by one using the 
-`add_observation() <api.html#fmskill.model.ModelResult.add_observation>`_ method like this:
+The observations are connected with a model result one by one using the 
+`Connector <api.html#fmskill.connection.Connector>`_ method like this:
 
 
 .. code-block:: python
 
-   mr.add_observation(HKNA, item=0)
-   mr.add_observation(c2, item=0)   
-
-
+   from fmskill import Connector
+   con = Connector([HKNA, c2], mr, item=0)   
 
 
 4. Extract ModelResults at observation positions
 ================================================
 
-Once the observations have been associated with the model results, 
+Once the observations and the model results have been connected, 
 its very simple to do the extraction which interpolates the model results 
-in space and time to the observation points using the `extract() <api.html#fmskill.model.ModelResult.extract>`_ method: 
+in space and time to the observation points using the `extract() <api.html#fmskill.connection.Connector.extract>`_ method: 
 
 .. code-block:: python
 
-   cc = mr.extract()
+   cc = con.extract()
 
 The extract method returns a `ComparerCollection <api.html#fmskill.comparison.ComparerCollection>`_ for further analysis and plotting. 
 

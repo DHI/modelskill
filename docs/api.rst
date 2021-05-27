@@ -23,6 +23,21 @@ Observation
 	:members:
 	:inherited-members:
 
+Connector
+---------
+.. automodule:: fmskill.connection
+	:members: compare
+	
+
+.. autoclass:: fmskill.connection.SingleObsConnector
+	:members:
+	:inherited-members:
+
+.. autoclass:: fmskill.connection.Connector
+	:members:
+	:inherited-members:
+	:exclude-members: keys, values, get, items, count, index
+
 Compare
 -------
 .. autoclass:: fmskill.comparison.PointComparer
@@ -36,7 +51,7 @@ Compare
 .. autoclass:: fmskill.comparison.ComparerCollection
 	:members:
 	:inherited-members:
-	:exclude-members: keys, values, get, items
+	:exclude-members: keys, values, get, items, count, index
 
 Skill
 -------------
