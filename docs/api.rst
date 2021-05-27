@@ -25,15 +25,15 @@ Observation
 
 Compare
 -------
-.. autoclass:: fmskill.compare.PointComparer
+.. autoclass:: fmskill.comparison.PointComparer
 	:members:
 	:inherited-members:
 
-.. autoclass:: fmskill.compare.TrackComparer
+.. autoclass:: fmskill.comparison.TrackComparer
 	:members:
 	:inherited-members:
 
-.. autoclass:: fmskill.compare.ComparerCollection
+.. autoclass:: fmskill.comparison.ComparerCollection
 	:members:
 	:inherited-members:
 	:exclude-members: keys, values, get, items

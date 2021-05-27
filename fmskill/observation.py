@@ -116,7 +116,7 @@ class PointObservation(Observation):
     def __init__(
         self,
         filename,
-        item: int = 0,
+        item=None,
         x: float = None,
         y: float = None,
         z: float = None,
@@ -130,7 +130,7 @@ class PointObservation(Observation):
         input : (str, pd.DataFrame, pd.Series)
             dfs0 filename or dataframe with the data
         item : (int, str), optional
-            index or name of the wanted item, by default 0
+            index or name of the wanted item, by default None
         x : float, optional
             x-coordinate of the observation point, by default None
         y : float, optional
@@ -153,15 +153,32 @@ class PointObservation(Observation):
         self.y = y
         self.z = z
 
-        if isinstance(filename, pd.DataFrame) or isinstance(filename, pd.Series):
+        if isinstance(filename, pd.Series):
+            df = filename.to_frame()
+            if name is None:
+                name = "Observation"
+            itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+        elif isinstance(filename, pd.DataFrame):
             df = filename
-            if not isinstance(df, pd.Series):
-                if isinstance(item, str):
-                    df = df[[item]]
-                elif isinstance(item, int):
-                    df = df.iloc[:, item]
+            default_name = "Observation"
+            if item is None:
+                if len(df.columns) == 1:
+                    item = 0
                 else:
-                    raise TypeError("item must be int or string")
+                    raise ValueError(
+                        "item needs to be specified (more than one column in dataframe)"
+                    )
+
+            if isinstance(item, str):
+                df = df[[item]]
+                default_name = item
+            elif isinstance(item, int):
+                default_name = df.columns[item]
+                df = df.iloc[:, item]
+            else:
+                raise TypeError("item must be int or string")
+            if name is None:
+                name = default_name
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         else:
             if name is None:
@@ -197,6 +214,11 @@ class PointObservation(Observation):
     @staticmethod
     def _read_dfs0(dfs, item):
         """Read data from dfs0 file"""
+        if item is None:
+            if len(dfs.items) == 1:
+                item = 0
+            else:
+                raise ValueError("item needs to be specified (more than one in file)")
         ds = dfs.read(items=item)
         itemInfo = ds.items[0]
         df = ds.to_dataframe()
