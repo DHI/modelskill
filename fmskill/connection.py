@@ -50,14 +50,24 @@ class SingleConnector:
     """A connection between a single observation and model(s)"""
 
     @property
+    def n_models(self):
+        return len(self.modelresults)
+
+    @property
     def _mrc(self):
-        if len(self.modelresults) == 1:
+        if self.n_models == 1:
             return self.modelresults[0]
         else:
             return ModelResultCollection(self.modelresults)
 
-    def __init__(self, obs=None, mod=None, mod_item=None, validate=True):
-        # mod_item, obs_item
+    def __repr__(self):
+        models = self.modelresults[0].name if self.n_models == 1 else self.n_models
+        return (
+            f"<SingleConnector> obs={self.name} (n={self.obs.n_points}), mod={models}"
+        )
+
+    def __init__(self, obs, mod, mod_item=None, validate=True):
+        # mod_item is temporary solution
         self.modelresults = self._parse_model(mod, mod_item)
         self.obs = self._parse_observation(obs)
         self.name = self.obs.name
@@ -83,7 +93,7 @@ class SingleConnector:
                 mod.item = item
             return mod
         else:
-            raise ValueError("Unknown model result type")
+            raise ValueError(f"Unknown model result type {type(mod)}")
 
     def _parse_pandas_model(self, df, item=None) -> ModelResultInterface:
         return DataFrameModelResult(df, item=item)
@@ -115,10 +125,14 @@ class Connector(Mapping, Sequence):
     def obs_names(self):
         return list(self.connections.keys())
 
+    def __repr__(self):
+        txt = "<Connector> with \n"
+        return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
+
     def __init__(self, obs=None, mod=None, validate=True):
         self.connections = {}
         if (mod is not None) and (obs is not None):
-            self.add(mod, obs)
+            self.add(obs, mod)
         elif (mod is not None) or (obs is not None):
             raise ValueError("obs and mod must both be specified (or both None)")
 
