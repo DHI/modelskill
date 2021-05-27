@@ -30,6 +30,7 @@ Or the development version:
 
 ## Example notebooks
 
+* [Quick_and_dirty_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Quick_and_dirty_compare.ipynb)
 * [Timeseries_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/timeseries_compare.ipynb)
 * [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Track_comparison.ipynb)
 * [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/SW_DutchCoast.ipynb)
@@ -42,8 +43,8 @@ Or the development version:
 
 1. Define **ModelResults**
 2. Define **Observations**
-3. **Associate** observations with ModelResults
-4. **Extract** ModelResults at observation positions
+3. **Connect** Observations and ModelResults
+4. **Extract** ModelResults at Observation positions
 5. Do plotting, statistics, reporting using a **Comparer**
 
 Read more about the workflow in the [getting started guide](https://dhi.github.io/fmskill/getting_started.html).
