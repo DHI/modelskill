@@ -77,9 +77,10 @@ def test_extraction_no_overlap(modelresult_oresund_2d):
     mr = modelresult_oresund_2d
     with pytest.warns(UserWarning) as wn:
         mr.add_observation(o1, item=0)
-    assert len(wn) == 2
-    assert "No time overlap" in str(wn[0].message)
-    assert "Could not add observation" in str(wn[1].message)
+    assert len(wn) == 3
+    assert "deprecated" in str(wn[0].message)
+    assert "No time overlap" in str(wn[1].message)
+    assert "Could not add observation" in str(wn[2].message)
     assert len(mr.observations) == 0
     c = mr.extract()
     assert c.n_comparers == 0
