@@ -74,7 +74,7 @@ class SingleConnector:
         self.name = self.obs.name
 
         ok = self._validate()
-        if validate and not ok:
+        if validate and (not ok):
             raise ValueError("Validation failed! Cannot connect observation and model.")
 
     def _parse_model(self, mod, item=None) -> List[ModelResultInterface]:
@@ -122,8 +122,13 @@ class SingleConnector:
             in_domain = True
             if isinstance(mod, ModelResult) and isinstance(self.obs, PointObservation):
                 in_domain = mod._in_domain(self.obs.x, self.obs.y)
+                if not in_domain:
+                    warnings.warn(
+                        f"Obs '{self.obs.name}' outside domain of model '{mod.name}'"
+                    )
             time_overlaps = self._validate_start_end(self.obs, mod)
             ok = ok and eum_match and in_domain and time_overlaps
+        return ok
 
     @staticmethod
     def _validate_eum(obs, mod):
