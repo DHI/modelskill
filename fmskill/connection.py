@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
-from mikeio import Dfs0
+from mikeio import Dfs0, eum
 from .model import (
     ModelResult,
     ModelResultInterface,
@@ -15,6 +15,7 @@ from .model import (
 )
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
+from .utils import is_iterable_not_str
 
 
 def compare(obs, mod, mod_item=None):
@@ -71,11 +72,13 @@ class SingleConnector:
         self.modelresults = self._parse_model(mod, mod_item)
         self.obs = self._parse_observation(obs)
         self.name = self.obs.name
-        if validate:
-            self._validate()
+
+        ok = self._validate()
+        if validate and not ok:
+            raise ValueError("Validation failed! Cannot connect observation and model.")
 
     def _parse_model(self, mod, item=None) -> List[ModelResultInterface]:
-        if isinstance(mod, Sequence) and (not isinstance(mod, str)):
+        if is_iterable_not_str(mod):
             mr = []
             for m in mod:
                 mr.append(self._parse_single_model(m, item))
@@ -112,7 +115,53 @@ class SingleConnector:
             raise ValueError("Unknown observation type")
 
     def _validate(self):
-        pass
+        # TODO: add validation errors to list
+        ok = True
+        for mod in self.modelresults:
+            eum_match = self._validate_eum(self.obs, mod)
+            in_domain = True
+            if isinstance(mod, ModelResult) and isinstance(self.obs, PointObservation):
+                in_domain = mod._in_domain(self.obs.x, self.obs.y)
+            time_overlaps = self._validate_start_end(self.obs, mod)
+            ok = ok and eum_match and in_domain and time_overlaps
+
+    @staticmethod
+    def _validate_eum(obs, mod):
+        """Check that observation and model item eum match"""
+        ok = True
+        has_eum = lambda x: (x.itemInfo is not None) and (
+            x.itemInfo.type != eum.EUMType.Undefined
+        )
+
+        # we can only check if both have eum itemInfo
+        if has_eum(obs) and has_eum(mod):
+            if obs.itemInfo.type != mod.itemInfo.type:
+                ok = False
+                warnings.warn(
+                    f"Item type should match. Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
+                )
+            if obs.itemInfo.unit != mod.itemInfo.unit:
+                ok = False
+                warnings.warn(
+                    f"Unit should match. Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
+                )
+        return ok
+
+    @staticmethod
+    def _validate_start_end(obs, mod):
+        try:
+            # need to put this in try-catch due to error in dfs0 in mikeio
+            if obs.end_time < mod.start_time:
+                warnings.warn(
+                    f"Obs '{obs.name}' end is before model '{mod.name}' start"
+                )
+                return False
+            if obs.start_time > mod.end_time:
+                warnings.warn(f"Obs '{obs.name}' start is after model '{mod.name}' end")
+                return False
+        except:
+            pass
+        return True
 
     def extract(self) -> BaseComparer:
         return self._mrc.extract_observation(self.obs, validate=False)
@@ -132,12 +181,15 @@ class Connector(Mapping, Sequence):
     def __init__(self, obs=None, mod=None, validate=True):
         self.connections = {}
         if (mod is not None) and (obs is not None):
-            self.add(obs, mod)
+            if not is_iterable_not_str(obs):
+                obs = [obs]
+            for o in obs:
+                self.add(o, mod, validate=validate)
         elif (mod is not None) or (obs is not None):
             raise ValueError("obs and mod must both be specified (or both None)")
 
     def add(self, obs, mod, validate=True):
-        con = SingleConnector(obs, mod, validate)
+        con = SingleConnector(obs, mod, validate=validate)
         self.connections[con.name] = con
 
     def _get_obs_name(self, obs):
