@@ -62,10 +62,15 @@ class SingleObsConnector:
             return ModelResultCollection(self.modelresults)
 
     def __repr__(self):
-        models = self.modelresults[0].name if self.n_models == 1 else self.n_models
-        return (
-            f"<SingleConnector> obs={self.name} (n={self.obs.n_points}), mod={models}"
-        )
+        obs_txt = f"obs={self.name}(n={self.obs.n_points})"
+        mod_txt = f"model={self.modelresults[0].name}"
+        if self.n_models > 1:
+            mod_txt = f"{self.n_models} models="
+            mod_txt += "[" + ", ".join(m.name for m in self.modelresults) + "]"
+            if len(mod_txt) > 25:
+                mod_txt = mod_txt[:20] + "...]"
+
+        return f"<SingleConnector> {obs_txt} :: {mod_txt}"
 
     def __init__(self, obs, mod, mod_item=None, validate=True):
         # mod_item is temporary solution
