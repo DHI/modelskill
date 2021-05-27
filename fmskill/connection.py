@@ -47,7 +47,7 @@ def _parse_model(mod, item=None):
     return mod
 
 
-class SingleConnector:
+class SingleObsConnector:
     """A connection between a single observation and model(s)"""
 
     @property
@@ -194,7 +194,7 @@ class Connector(Mapping, Sequence):
             raise ValueError("obs and mod must both be specified (or both None)")
 
     def add(self, obs, mod, validate=True):
-        con = SingleConnector(obs, mod, validate=validate)
+        con = SingleObsConnector(obs, mod, validate=validate)
         self.connections[con.name] = con
 
     def _get_obs_name(self, obs):
