@@ -142,7 +142,7 @@ class ModelResult(ModelResultInterface):
         else:
             # if isinstance(self.item, str):
             self.item = self._parse_item(self.item)
-            self.dfs.items[self.item]
+            return self.dfs.items[self.item]
 
     def __repr__(self):
         out = []
