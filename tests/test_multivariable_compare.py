@@ -1,8 +1,8 @@
 import pytest
-import numpy as np
 
-from fmskill.model import ModelResult, ModelResultCollection
-from fmskill.observation import PointObservation, TrackObservation
+from fmskill import ModelResult
+from fmskill import PointObservation, TrackObservation
+from fmskill import Connector
 
 
 @pytest.fixture
@@ -54,36 +54,19 @@ def wind3():
 
 
 @pytest.fixture
-def mrc(mr1, mr2):
-    return ModelResultCollection([mr1, mr2])
-
-
-@pytest.fixture
 def cc_1model(mr1, o1, o2, o3, wind1, wind2, wind3):
-    mr = mr1
-    _add_Hm0_observations(mr, o1, o2, o3)
-    _add_wind_observations(mr, wind1, wind2, wind3)
-    return mr.extract()
+    con = Connector()
+    con.add([o1, o2, o3], mr1, mod_item="Sign. Wave Height")
+    con.add([wind1, wind2, wind3], mr1, mod_item="Wind speed")
+    return con.extract()
 
 
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3, wind1, wind2, wind3):
-    mr = ModelResultCollection([mr1, mr2])
-    _add_Hm0_observations(mr, o1, o2, o3)
-    _add_wind_observations(mr, wind1, wind2, wind3)
-    return mr.extract()
-
-
-def _add_Hm0_observations(mr, o1, o2, o3):
-    mr.add_observation(o1, item="Sign. Wave Height")
-    mr.add_observation(o2, item="Sign. Wave Height")
-    mr.add_observation(o3, item="Sign. Wave Height")
-
-
-def _add_wind_observations(mr, wind1, wind2, wind3):
-    mr.add_observation(wind1, item="Wind speed")
-    mr.add_observation(wind2, item="Wind speed")
-    mr.add_observation(wind3, item="Wind speed")
+    con = Connector()
+    con.add([o1, o2, o3], [mr1, mr2], mod_item="Sign. Wave Height")
+    con.add([wind1, wind2, wind3], [mr1, mr2], mod_item="Wind speed")
+    return con.extract()
 
 
 def test_n_variables(cc):
