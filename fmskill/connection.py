@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from fmskill.plot import plot_observation_positions
 from typing import List
@@ -11,10 +12,9 @@ from .model import (
     ModelResult,
     ModelResultInterface,
     DataFrameModelResult,
-    ModelResultCollection,
 )
 from .observation import Observation, PointObservation, TrackObservation
-from .comparison import PointComparer, ComparerCollection, BaseComparer, TrackComparer
+from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 
 
@@ -64,8 +64,9 @@ def _parse_model(mod, item=None):
 
 
 class BaseConnector:
-    def __init__(self):
-        self.modelresults = {}
+    modelresults = {}
+    name = None
+    obs = None
 
     @property
     def n_models(self):
@@ -77,6 +78,10 @@ class BaseConnector:
         """Names of (unique) model results in Connector."""
         return list(self.modelresults.keys())
 
+    @abstractmethod
+    def extract(self):
+        raise NotImplementedError()
+
 
 class ModelResultItem:
     def __init__(self, modelresult, item):
@@ -87,38 +92,53 @@ class ModelResultItem:
 class SingleObsConnector(BaseConnector):
     """A connection between a single observation and model(s)"""
 
-    @property
-    def _mrc(self):
-        if self.n_models == 1:
-            return self.modelresults[0]
-        else:
-            return ModelResultCollection(self.modelresults)
+    # @property
+    # def _mrc(self):
+    #     if self.n_models == 1:
+    #         return self.modelresults[0]
+    #     else:
+    #         return ModelResultCollection(self.modelresults)
 
     def __repr__(self):
-        obs_txt = f"obs={self.name}(n={self.obs.n_points})"
-        mod_txt = f"model={self.modelresults[0].name}"
-        if self.n_models > 1:
-            mod_txt = f"{self.n_models} models="
-            mod_txt += "[" + ", ".join(m.name for m in self.modelresults) + "]"
-            if len(mod_txt) > 25:
-                mod_txt = mod_txt[:20] + "...]"
+        if self.n_models > 0:
+            obs_txt = f"obs={self.name}(n={self.obs.n_points})"
+            mod_txt = f"model={self.modelresults[0].name}"
+            if self.n_models > 1:
+                mod_txt = f"{self.n_models} models="
+                mod_txt += "[" + ", ".join(m.name for m in self.modelresults) + "]"
+                if len(mod_txt) > 25:
+                    mod_txt = mod_txt[:20] + "...]"
+            txt = f"{obs_txt} :: {mod_txt}"
+        else:
+            txt = "[empty]"
 
-        return f"<SingleConnector> {obs_txt} :: {mod_txt}"
+        return f"<{self.__class__.__name__}> {txt}"
 
     def __init__(self, obs, mod, mod_item=None, validate=True):
         # mod_item is temporary solution
-        self.modelresults = self._parse_model(mod, mod_item)
-        self.obs = self._parse_observation(obs)
-        self.name = self.obs.name
-        self._mri = self._set_model_and_item(self.modelresults, mod_item)
+        obs = self._parse_observation(obs)
+        self.name = obs.name
+        modelresults = self._parse_model(mod, mod_item)
+        mri = self._set_model_and_item(modelresults, mod_item)
 
-        ok = self._validate()
+        ok = self._validate(obs, modelresults)
         if validate and (not ok):
-            raise ValueError("Validation failed! Cannot connect observation and model.")
+            mod_txt = (
+                f"model '{modelresults[0].name}'"
+                if len(modelresults) == 1
+                else f"models {[m.name for m in modelresults]}"
+            )
+            raise ValueError(
+                f"Validation failed! Cannot connect observation '{obs.name}' and {mod_txt}."
+            )
+        if ok or (not validate):
+            self.modelresults = modelresults
+            self.obs = obs
+            self._mri = mri
 
     def _set_model_and_item(self, model, item):
         _mri = []
-        for mr in self.modelresults:
+        for mr in model:
             itemj = mr.item if item is None else item
             _mri.append(ModelResultItem(mr, itemj))
         return _mri
@@ -151,31 +171,26 @@ class SingleObsConnector(BaseConnector):
     def _parse_filename_model(self, filename, item=None) -> ModelResultInterface:
         return ModelResult(filename, item=item)
 
-    def _parse_observation(self, obs) -> Observation:
-        if isinstance(obs, (pd.Series, pd.DataFrame)):
-            return PointObservation(obs)
-        elif isinstance(obs, str):
-            return PointObservation(obs)
-        elif isinstance(obs, Observation):
-            return obs
-        else:
-            raise ValueError(f"Unknown observation type {type(obs)}")
-
-    def _validate(self):
+    def _validate(self, obs, modelresults):
         # TODO: add validation errors to list
         ok = True
-        for mod in self.modelresults:
-            eum_match = self._validate_eum(self.obs, mod)
-            in_domain = True
-            if isinstance(mod, ModelResult) and isinstance(self.obs, PointObservation):
-                in_domain = mod._in_domain(self.obs.x, self.obs.y)
-                if not in_domain:
-                    warnings.warn(
-                        f"Obs '{self.obs.name}' outside domain of model '{mod.name}'"
-                    )
-            time_overlaps = self._validate_start_end(self.obs, mod)
+        for mod in modelresults:
+            eum_match = self._validate_eum(obs, mod)
+            in_domain = self._validate_in_domain(obs, mod)
+            time_overlaps = self._validate_start_end(obs, mod)
             ok = ok and eum_match and in_domain and time_overlaps
         return ok
+
+    @staticmethod
+    def _validate_in_domain(obs, mod):
+        in_domain = True
+        if isinstance(mod, ModelResult) and isinstance(obs, PointObservation):
+            in_domain = mod._in_domain(obs.x, obs.y)
+            if not in_domain:
+                warnings.warn(
+                    f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
+                )
+        return in_domain
 
     @staticmethod
     def _validate_eum(obs, mod):
@@ -192,12 +207,12 @@ class SingleObsConnector(BaseConnector):
             if obs.itemInfo.type != mod.itemInfo.type:
                 ok = False
                 warnings.warn(
-                    f"Item type should match. Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
+                    f"Item type mismatch! Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
                 )
             if obs.itemInfo.unit != mod.itemInfo.unit:
                 ok = False
                 warnings.warn(
-                    f"Unit should match. Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
+                    f"Item unit mismatch! Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
                 )
         return ok
 
@@ -207,11 +222,13 @@ class SingleObsConnector(BaseConnector):
             # need to put this in try-catch due to error in dfs0 in mikeio
             if obs.end_time < mod.start_time:
                 warnings.warn(
-                    f"Obs '{obs.name}' end is before model '{mod.name}' start"
+                    f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
                 )
                 return False
             if obs.start_time > mod.end_time:
-                warnings.warn(f"Obs '{obs.name}' start is after model '{mod.name}' end")
+                warnings.warn(
+                    f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
+                )
                 return False
         except:
             pass
@@ -237,52 +254,67 @@ class SingleObsConnector(BaseConnector):
 
         return ax
 
-    def extract(self) -> BaseComparer:
+    @staticmethod
+    def _comparer_or_None(comparer, warn=True):
+        """If comparer is empty issue warning and return None."""
+        if len(comparer.df) == 0:
+            if warn:
+                name = comparer.observation.name
+                warnings.warn(f"No overlapping data in found for {name}!")
+            return None
+        return comparer
+
+
+class PointConnector(SingleObsConnector):
+    def _parse_observation(self, obs) -> PointObservation:
+        if isinstance(obs, (pd.Series, pd.DataFrame)):
+            return PointObservation(obs)
+        elif isinstance(obs, str):
+            return PointObservation(obs)
+        elif isinstance(obs, Observation):
+            return obs
+        else:
+            raise ValueError(f"Unknown observation type {type(obs)}")
+
+    def extract(self) -> PointComparer:
         """Extract model results at times and positions of observation.
 
         Returns
         -------
-        PointComparer or TrackComparer
-            A comparer object for further analysis and plotting.
-        """
-        # cc = ComparerCollection()
-
-        if isinstance(self.obs, PointObservation):
-            return self._extract_point()
-        elif isinstance(self.obs, TrackObservation):
-            return self._extract_track()
-        else:
-            raise ValueError("Only point and track observation are supported!")
-
-        # for mri in self._mri:
-        #     mr = mri.modelresult
-        #     comparer = mr.extract_observation(self.obs, mri.item, validate=False)
-        #     if comparer is not None:
-        #         print(f"add {comparer.name} with models: {comparer.mod_names}")
-        #         cc.add_comparer(comparer.copy())
-        # for c in cc:
-        #     print(c)
-        # print(f"len: {len(cc)}")
-        # return cc
-        # return self._mrc.extract_observation(self.obs, validate=False)
-
-    def _extract_point(self) -> PointComparer:
+        PointComparer
+            A comparer object for further analysis and plotting."""
         assert isinstance(self.obs, PointObservation)
         df_model = []
         for mri in self._mri:
             mr = mri.modelresult
             df_model.append(mr._extract_point(self.obs, mri.item))
 
-        return PointComparer(self.obs, df_model)
+        comparer = PointComparer(self.obs, df_model)
+        return self._comparer_or_None(comparer)
 
-    def _extract_track(self) -> TrackComparer:
+
+class TrackConnector(SingleObsConnector):
+    def _parse_observation(self, obs) -> TrackObservation:
+        if isinstance(obs, TrackObservation):
+            return obs
+        else:
+            raise ValueError(f"Unknown track observation type {type(obs)}")
+
+    def extract(self) -> TrackComparer:
+        """Extract model results at times and positions of observation.
+
+        Returns
+        -------
+        TrackComparer
+            A comparer object for further analysis and plotting."""
         assert isinstance(self.obs, TrackObservation)
         df_model = []
         for mri in self._mri:
             mr = mri.modelresult
             df_model.append(mr._extract_track(self.obs, mri.item))
 
-        return TrackComparer(self.obs, df_model)
+        comparer = TrackComparer(self.obs, df_model)
+        return self._comparer_or_None(comparer)
 
 
 class Connector(BaseConnector, Mapping, Sequence):
@@ -336,10 +368,14 @@ class Connector(BaseConnector, Mapping, Sequence):
         elif isinstance(obs, SingleObsConnector):
             con = obs
         else:
-            con = SingleObsConnector(obs, mod, mod_item=mod_item, validate=validate)
-        self.connections[con.name] = con
-        self._add_observation(con.obs)
-        self._add_modelresults(con.modelresults)
+            if isinstance(obs, TrackObservation):
+                con = TrackConnector(obs, mod, mod_item=mod_item, validate=validate)
+            else:
+                con = PointConnector(obs, mod, mod_item=mod_item, validate=validate)
+        if con.n_models > 0:
+            self.connections[con.name] = con
+            self._add_observation(con.obs)
+            self._add_modelresults(con.modelresults)
 
     def _add_observation(self, obs):
         if obs.name not in self.obs_names:
