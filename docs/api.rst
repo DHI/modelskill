@@ -9,9 +9,6 @@ Model
 .. autoclass:: fmskill.model.ModelResult
 	:members:
 
-.. autoclass:: fmskill.model.ModelResultCollection
-	:members:
-	:inherited-members:
 
 Observation
 -----------
@@ -29,7 +26,11 @@ Connector
 	:members: compare
 	
 
-.. autoclass:: fmskill.connection.SingleObsConnector
+.. autoclass:: fmskill.connection.PointConnector
+	:members:
+	:inherited-members:
+
+.. autoclass:: fmskill.connection.TrackConnector
 	:members:
 	:inherited-members:
 
