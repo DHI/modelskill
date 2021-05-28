@@ -13,8 +13,8 @@ from .model import (
     DataFrameModelResult,
     ModelResultCollection,
 )
-from .observation import Observation, PointObservation
-from .comparison import PointComparer, ComparerCollection, BaseComparer
+from .observation import Observation, PointObservation, TrackObservation
+from .comparison import PointComparer, ComparerCollection, BaseComparer, TrackComparer
 from .utils import is_iterable_not_str
 
 
@@ -78,6 +78,12 @@ class BaseConnector:
         return list(self.modelresults.keys())
 
 
+class ModelResultItem:
+    def __init__(self, modelresult, item):
+        self.modelresult = modelresult
+        self.item = item
+
+
 class SingleObsConnector(BaseConnector):
     """A connection between a single observation and model(s)"""
 
@@ -104,10 +110,18 @@ class SingleObsConnector(BaseConnector):
         self.modelresults = self._parse_model(mod, mod_item)
         self.obs = self._parse_observation(obs)
         self.name = self.obs.name
+        self._mri = self._set_model_and_item(self.modelresults, mod_item)
 
         ok = self._validate()
         if validate and (not ok):
             raise ValueError("Validation failed! Cannot connect observation and model.")
+
+    def _set_model_and_item(self, model, item):
+        _mri = []
+        for mr in self.modelresults:
+            itemj = mr.item if item is None else item
+            _mri.append(ModelResultItem(mr, itemj))
+        return _mri
 
     def _parse_model(self, mod, item=None) -> List[ModelResultInterface]:
         if is_iterable_not_str(mod):
@@ -231,7 +245,44 @@ class SingleObsConnector(BaseConnector):
         PointComparer or TrackComparer
             A comparer object for further analysis and plotting.
         """
-        return self._mrc.extract_observation(self.obs, validate=False)
+        # cc = ComparerCollection()
+
+        if isinstance(self.obs, PointObservation):
+            return self._extract_point()
+        elif isinstance(self.obs, TrackObservation):
+            return self._extract_track()
+        else:
+            raise ValueError("Only point and track observation are supported!")
+
+        # for mri in self._mri:
+        #     mr = mri.modelresult
+        #     comparer = mr.extract_observation(self.obs, mri.item, validate=False)
+        #     if comparer is not None:
+        #         print(f"add {comparer.name} with models: {comparer.mod_names}")
+        #         cc.add_comparer(comparer.copy())
+        # for c in cc:
+        #     print(c)
+        # print(f"len: {len(cc)}")
+        # return cc
+        # return self._mrc.extract_observation(self.obs, validate=False)
+
+    def _extract_point(self) -> PointComparer:
+        assert isinstance(self.obs, PointObservation)
+        df_model = []
+        for mri in self._mri:
+            mr = mri.modelresult
+            df_model.append(mr._extract_point(self.obs, mri.item))
+
+        return PointComparer(self.obs, df_model)
+
+    def _extract_track(self) -> TrackComparer:
+        assert isinstance(self.obs, TrackObservation)
+        df_model = []
+        for mri in self._mri:
+            mr = mri.modelresult
+            df_model.append(mr._extract_track(self.obs, mri.item))
+
+        return TrackComparer(self.obs, df_model)
 
 
 class Connector(BaseConnector, Mapping, Sequence):
