@@ -23,7 +23,7 @@ __version__ = "0.2.3.dev"
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
 
-from .model import ModelResult, ModelResultCollection
+from .model import ModelResult
 from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector
 

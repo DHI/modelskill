@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from fmskill import ModelResult, ModelResultCollection
+from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
 from fmskill import Connector
 import fmskill.metrics as mtr

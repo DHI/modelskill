@@ -497,190 +497,190 @@ class ModelResult(ModelResultInterface):
         return isinstance(self.dfs, Dfs0)
 
 
-class ModelResultCollection:
-    """
-    A collection of results from multiple MIKE FM simulations
-    with the same "topology", e.g. several "runs" of the same model.
+# class ModelResultCollection:
+#     """
+#     A collection of results from multiple MIKE FM simulations
+#     with the same "topology", e.g. several "runs" of the same model.
 
-    Examples
-    --------
-    >>> mr1 = ModelResult("HKZN_local_2017_v1.dfsu", name="HKZN_v1")
-    >>> mr2 = ModelResult("HKZN_local_2017_v2.dfsu", name="HKZN_v2")
-    >>> mr = ModelResultCollection([mr1, mr2])
-    """
+#     Examples
+#     --------
+#     >>> mr1 = ModelResult("HKZN_local_2017_v1.dfsu", name="HKZN_v1")
+#     >>> mr2 = ModelResult("HKZN_local_2017_v2.dfsu", name="HKZN_v2")
+#     >>> mr = ModelResultCollection([mr1, mr2])
+#     """
 
-    _mr0 = None
+#     _mr0 = None
 
-    @property
-    def names(self):
-        return list(self.modelresults.keys())
+#     @property
+#     def names(self):
+#         return list(self.modelresults.keys())
 
-    @property
-    def observations(self):
-        return self._mr0.observations
+#     @property
+#     def observations(self):
+#         return self._mr0.observations
 
-    # has_same_topology = False
+#     # has_same_topology = False
 
-    def __init__(self, modelresults=None):
-        self.modelresults = {}
-        if modelresults is not None:
-            for mr in modelresults:
-                self.add_modelresult(mr)
-        self._mr0 = self.modelresults[self.names[0]]
+#     def __init__(self, modelresults=None):
+#         self.modelresults = {}
+#         if modelresults is not None:
+#             for mr in modelresults:
+#                 self.add_modelresult(mr)
+#         self._mr0 = self.modelresults[self.names[0]]
 
-    def __repr__(self):
-        out = []
-        out.append(f"<{type(self).__name__}>")
-        for key, value in self.modelresults.items():
-            out.append(f"{type(value).__name__}: {key}")
-        return str.join("\n", out)
+#     def __repr__(self):
+#         out = []
+#         out.append(f"<{type(self).__name__}>")
+#         for key, value in self.modelresults.items():
+#             out.append(f"{type(value).__name__}: {key}")
+#         return str.join("\n", out)
 
-    def __getitem__(self, x):
-        return self.modelresults[x]
+#     def __getitem__(self, x):
+#         return self.modelresults[x]
 
-    def add_modelresult(self, modelresult):
-        assert isinstance(modelresult, ModelResult)
-        self.modelresults[modelresult.name] = modelresult
+#     def add_modelresult(self, modelresult):
+#         assert isinstance(modelresult, ModelResult)
+#         self.modelresults[modelresult.name] = modelresult
 
-    def add_observation(self, observation, item=None, weight=1.0, validate_eum=True):
-        """Add an observation to all ModelResults in collection
+#     def add_observation(self, observation, item=None, weight=1.0, validate_eum=True):
+#         """Add an observation to all ModelResults in collection
 
-        Parameters
-        ----------
-        observation : <fmskill.PointObservation>
-            Observation object for later comparison
-        item : (str, integer), optional
-            ModelResult item name or number corresponding to the observation
-            If None, then try to infer from observation eum value.
-            Default: None
-        weight: float, optional
-            Relative weight used in weighted skill calculation, default 1.0
-        validate_eum: bool, optional
-            Require eum type and units to match between model and observation?
-            Defaut: True
-        """
-        for mr in self.modelresults.values():
-            mr.add_observation(observation, item, weight, validate_eum)
+#         Parameters
+#         ----------
+#         observation : <fmskill.PointObservation>
+#             Observation object for later comparison
+#         item : (str, integer), optional
+#             ModelResult item name or number corresponding to the observation
+#             If None, then try to infer from observation eum value.
+#             Default: None
+#         weight: float, optional
+#             Relative weight used in weighted skill calculation, default 1.0
+#         validate_eum: bool, optional
+#             Require eum type and units to match between model and observation?
+#             Defaut: True
+#         """
+#         for mr in self.modelresults.values():
+#             mr.add_observation(observation, item, weight, validate_eum)
 
-    def extract_observation(
-        self,
-        observation: Union[PointComparer, TrackComparer],
-        item: Union[int, str] = None,
-        validate: bool = True,
-    ) -> BaseComparer:
-        """Compare all ModelResults in collection with an observation
+#     def extract_observation(
+#         self,
+#         observation: Union[PointComparer, TrackComparer],
+#         item: Union[int, str] = None,
+#         validate: bool = True,
+#     ) -> BaseComparer:
+#         """Compare all ModelResults in collection with an observation
 
-        Parameters
-        ----------
-        observation : <PointObservation> or <TrackObservation>
-            Observation to be compared
-        item : str, integer
-            ModelResult item name or number
-            If None, then try to infer from observation eum value.
-            Default: None
-        validate: bool, optional
-            Validate if observation is inside domain and that eum type
-            and units match; Defaut: False
+#         Parameters
+#         ----------
+#         observation : <PointObservation> or <TrackObservation>
+#             Observation to be compared
+#         item : str, integer
+#             ModelResult item name or number
+#             If None, then try to infer from observation eum value.
+#             Default: None
+#         validate: bool, optional
+#             Validate if observation is inside domain and that eum type
+#             and units match; Defaut: False
 
-        Returns
-        -------
-        <fmskill.BaseComparer>
-            A comparer object for further analysis or plotting
-        """
-        if item is None:
-            for mr in self.modelresults.values():
-                itemj = mr._infer_model_item(observation)
-                if item is None:
-                    item = itemj
-                if item != itemj:
-                    raise Exception(
-                        "Cannot infer model item as different ModelResults in collection give different match"
-                    )
+#         Returns
+#         -------
+#         <fmskill.BaseComparer>
+#             A comparer object for further analysis or plotting
+#         """
+#         if item is None:
+#             for mr in self.modelresults.values():
+#                 itemj = mr._infer_model_item(observation)
+#                 if item is None:
+#                     item = itemj
+#                 if item != itemj:
+#                     raise Exception(
+#                         "Cannot infer model item as different ModelResults in collection give different match"
+#                     )
 
-        if validate:
-            ok = True
-            for mr in self.modelresults.values():
-                if ok:
-                    ok = mr._validate_observation(observation)
-                if ok:
-                    ok = mr._validate_item_eum(observation, item)
-                if not ok:
-                    raise ValueError("Could not extract observation")
+#         if validate:
+#             ok = True
+#             for mr in self.modelresults.values():
+#                 if ok:
+#                     ok = mr._validate_observation(observation)
+#                 if ok:
+#                     ok = mr._validate_item_eum(observation, item)
+#                 if not ok:
+#                     raise ValueError("Could not extract observation")
 
-        if isinstance(observation, PointObservation):
-            comparer = self._compare_point_observation(observation, item)
-        elif isinstance(observation, TrackObservation):
-            comparer = self._compare_track_observation(observation, item)
-        else:
-            raise ValueError("Only point and track observation are supported!")
+#         if isinstance(observation, PointObservation):
+#             comparer = self._compare_point_observation(observation, item)
+#         elif isinstance(observation, TrackObservation):
+#             comparer = self._compare_track_observation(observation, item)
+#         else:
+#             raise ValueError("Only point and track observation are supported!")
 
-        return comparer
+#         return comparer
 
-    def _compare_point_observation(self, observation, item) -> PointComparer:
-        """Compare all ModelResults in collection with a point observation
+#     def _compare_point_observation(self, observation, item) -> PointComparer:
+#         """Compare all ModelResults in collection with a point observation
 
-        Parameters
-        ----------
-        observation : <fmskill.PointObservation>
-            Observation to be compared
-        item : str, integer
-            ModelResult item name or number
+#         Parameters
+#         ----------
+#         observation : <fmskill.PointObservation>
+#             Observation to be compared
+#         item : str, integer
+#             ModelResult item name or number
 
-        Returns
-        -------
-        <fmskill.PointComparer>
-            A comparer object for further analysis or plotting
-        """
-        assert isinstance(observation, PointObservation)
-        df_model = []
-        for mr in self.modelresults.values():
-            df_model.append(mr._extract_point(observation, item))
+#         Returns
+#         -------
+#         <fmskill.PointComparer>
+#             A comparer object for further analysis or plotting
+#         """
+#         assert isinstance(observation, PointObservation)
+#         df_model = []
+#         for mr in self.modelresults.values():
+#             df_model.append(mr._extract_point(observation, item))
 
-        return PointComparer(observation, df_model)
+#         return PointComparer(observation, df_model)
 
-    def _compare_track_observation(self, observation, item) -> TrackComparer:
-        """Compare all ModelResults in collection with a track observation
+#     def _compare_track_observation(self, observation, item) -> TrackComparer:
+#         """Compare all ModelResults in collection with a track observation
 
-        Parameters
-        ----------
-        observation : <fmskill.TrackObservation>
-            Observation to be compared
-        item : str, integer
-            ModelResult item name or number
+#         Parameters
+#         ----------
+#         observation : <fmskill.TrackObservation>
+#             Observation to be compared
+#         item : str, integer
+#             ModelResult item name or number
 
-        Returns
-        -------
-        <fmskill.TrackComparer>
-            A comparer object for further analysis or plotting
-        """
-        assert isinstance(observation, TrackObservation)
-        df_model = []
-        for mr in self.modelresults.values():
-            assert isinstance(mr, ModelResult)
-            df_model.append(mr._extract_track(observation, item))
+#         Returns
+#         -------
+#         <fmskill.TrackComparer>
+#             A comparer object for further analysis or plotting
+#         """
+#         assert isinstance(observation, TrackObservation)
+#         df_model = []
+#         for mr in self.modelresults.values():
+#             assert isinstance(mr, ModelResult)
+#             df_model.append(mr._extract_track(observation, item))
 
-        return TrackComparer(observation, df_model)
+#         return TrackComparer(observation, df_model)
 
-    def extract(self) -> ComparerCollection:
-        """extract model result in all observations"""
-        warnings.warn(
-            "ModelResultCollection.extract is deprecated, use Connector instead",
-            DeprecationWarning,
-        )
-        cc = ComparerCollection()
+#     def extract(self) -> ComparerCollection:
+#         """extract model result in all observations"""
+#         warnings.warn(
+#             "ModelResultCollection.extract is deprecated, use Connector instead",
+#             DeprecationWarning,
+#         )
+#         cc = ComparerCollection()
 
-        for obs in self.observations.values():
-            comparer = self.extract_observation(obs, obs.model_item)
-            if comparer is not None:
-                cc.add_comparer(comparer)
-        return cc
+#         for obs in self.observations.values():
+#             comparer = self.extract_observation(obs, obs.model_item)
+#             if comparer is not None:
+#                 cc.add_comparer(comparer)
+#         return cc
 
-    def plot_observation_positions(self, figsize=None):
-        """Plot observation points on a map showing the first model domain
+#     def plot_observation_positions(self, figsize=None):
+#         """Plot observation points on a map showing the first model domain
 
-        Parameters
-        ----------
-        figsize : (float, float), optional
-            figure size, by default None
-        """
-        return self._mr0.plot_observation_positions(figsize=figsize)
+#         Parameters
+#         ----------
+#         figsize : (float, float), optional
+#             figure size, by default None
+#         """
+#         return self._mr0.plot_observation_positions(figsize=figsize)
