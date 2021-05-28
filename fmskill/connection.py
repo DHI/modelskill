@@ -92,13 +92,6 @@ class ModelResultItem:
 class SingleObsConnector(BaseConnector):
     """A connection between a single observation and model(s)"""
 
-    # @property
-    # def _mrc(self):
-    #     if self.n_models == 1:
-    #         return self.modelresults[0]
-    #     else:
-    #         return ModelResultCollection(self.modelresults)
-
     def __repr__(self):
         if self.n_models > 0:
             obs_txt = f"obs={self.name}(n={self.obs.n_points})"
