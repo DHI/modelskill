@@ -17,7 +17,7 @@ from inspect import getmembers, isfunction
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import datetime
+from datetime import datetime, timedelta
 from copy import deepcopy
 
 from mikeio import Dataset
@@ -1332,7 +1332,9 @@ class PointComparer(SingleObsComparer):
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
         assert isinstance(observation, PointObservation)
-        self.observation.df = self.observation.df[self._mod_start : self._mod_end]
+        mod_start = self._mod_start - timedelta(seconds=0.1)  # avoid rounding err
+        mod_end = self._mod_end + timedelta(seconds=0.1)
+        self.observation.df = self.observation.df[mod_start:mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
