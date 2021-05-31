@@ -380,7 +380,7 @@ class Connector(BaseConnector, Mapping, Sequence):
     @staticmethod
     def _parse_weights(n_obs, weights):
         if np.isscalar(weights):
-            weights = weights * np.ones(n_obs, dtype=np.float)
+            weights = weights * np.ones(n_obs, dtype=np.float64)
         if len(weights) != n_obs:
             raise ValueError("weight and obs should have same length")
         return weights
