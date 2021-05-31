@@ -32,7 +32,6 @@ Currently, ModelResult supports .dfs0 and .dfsu files.
 Only the file header is read when the ModelResult object is created. 
 The data will be read later. 
 
-Note: multiple models can be assessed using the `ModelResultCollection <api.html#fmskill.model.ModelResultCollection>`_. 
 
 
 2. Define Observations
