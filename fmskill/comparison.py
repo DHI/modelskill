@@ -1434,7 +1434,9 @@ class TrackComparer(SingleObsComparer):
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
-        self.observation.df = self.observation.df[self._mod_start : self._mod_end]
+        mod_start = self._mod_start - timedelta(seconds=0.1)  # avoid rounding err
+        mod_end = self._mod_end + timedelta(seconds=0.1)
+        self.observation.df = self.observation.df[mod_start:mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
