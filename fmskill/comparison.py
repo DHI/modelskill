@@ -1332,8 +1332,8 @@ class PointComparer(SingleObsComparer):
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
         assert isinstance(observation, PointObservation)
-        mod_start = self._mod_start - timedelta(seconds=0.1)  # avoid rounding err
-        mod_end = self._mod_end + timedelta(seconds=0.1)
+        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
+        mod_end = self._mod_end + timedelta(seconds=1)
         self.observation.df = self.observation.df[mod_start:mod_end]
 
         if not isinstance(modeldata, list):
@@ -1434,8 +1434,8 @@ class TrackComparer(SingleObsComparer):
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
-        mod_start = self._mod_start - timedelta(seconds=0.1)  # avoid rounding err
-        mod_end = self._mod_end + timedelta(seconds=0.1)
+        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
+        mod_end = self._mod_end + timedelta(seconds=1)
         self.observation.df = self.observation.df[mod_start:mod_end]
 
         if not isinstance(modeldata, list):
