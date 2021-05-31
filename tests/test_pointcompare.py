@@ -99,17 +99,19 @@ def test_weighted_score(modelresult_oresund_2d, klagshamn, drogden):
     cc = con.extract()
     unweighted_skill = cc.score()
 
-    # TODO: weighted observations
-
-    mrw = modelresult_oresund_2d
-
-    mrw.add_observation(klagshamn, item=0, weight=1.0, validate_eum=False)
-    mrw.add_observation(drogden, item=0, weight=0.0, validate_eum=False)
-    cw = mrw.extract()
-
-    weighted_skill = cw.score()
-
+    con = Connector()
+    con.add(klagshamn, mr, weight=0.9, mod_item=0, validate=False)
+    con.add(drogden, mr, weight=0.1, mod_item=0, validate=False)
+    cc = con.extract()
+    weighted_skill = cc.score()
     assert unweighted_skill != weighted_skill
+
+    obs = [klagshamn, drogden]
+    con = Connector(obs, mr, weight=[0.9, 0.1], mod_item=0, validate=False)
+    cc = con.extract()
+    weighted_skill2 = cc.score()
+
+    assert weighted_skill == weighted_skill2
 
 
 def test_misc_properties(klagshamn, drogden):

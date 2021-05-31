@@ -107,7 +107,7 @@ class SingleObsConnector(BaseConnector):
 
         return f"<{self.__class__.__name__}> {txt}"
 
-    def __init__(self, obs, mod, mod_item=None, validate=True):
+    def __init__(self, obs, mod, weight=1.0, mod_item=None, validate=True):
         # mod_item is temporary solution
         obs = self._parse_observation(obs)
         self.name = obs.name
@@ -127,6 +127,7 @@ class SingleObsConnector(BaseConnector):
         if ok or (not validate):
             self.modelresults = modelresults
             self.obs = obs
+            self.obs.weight = weight
             self._mri = mri
 
     def _set_model_and_item(self, model, item):
@@ -327,19 +328,20 @@ class Connector(BaseConnector, Mapping, Sequence):
         txt = "<Connector> with \n"
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
-    def __init__(self, obs=None, mod=None, mod_item=None, validate=True):
+    def __init__(self, obs=None, mod=None, weight=1.0, mod_item=None, validate=True):
         self.connections = {}
         self.observations = {}
         self.modelresults = {}
-        if (mod is not None) and (obs is not None):
+        if (obs is not None) and (mod is not None):
             if not is_iterable_not_str(obs):
                 obs = [obs]
-            for o in obs:
-                self.add(o, mod, mod_item=mod_item, validate=validate)
+            weight = self._parse_weights(len(obs), weight)
+            for j, o in enumerate(obs):
+                self.add(o, mod, weight=weight[j], mod_item=mod_item, validate=validate)
         elif (mod is not None) or (obs is not None):
             raise ValueError("obs and mod must both be specified (or both None)")
 
-    def add(self, obs, mod=None, mod_item=None, validate=True):
+    def add(self, obs, mod=None, weight=1.0, mod_item=None, validate=True):
         """Add Observation-ModelResult-connections to Connector
 
         Parameters
@@ -355,20 +357,33 @@ class Connector(BaseConnector, Mapping, Sequence):
             overlap in space and time? by default True
         """
         if is_iterable_not_str(obs):
-            for o in obs:
-                self.add(o, mod, mod_item=mod_item, validate=validate)
+            weight = self._parse_weights(len(obs), weight)
+            for j, o in enumerate(obs):
+                self.add(o, mod, weight=weight[j], mod_item=mod_item, validate=validate)
             return
         elif isinstance(obs, SingleObsConnector):
             con = obs
         else:
             if isinstance(obs, TrackObservation):
-                con = TrackConnector(obs, mod, mod_item=mod_item, validate=validate)
+                con = TrackConnector(
+                    obs, mod, weight=weight, mod_item=mod_item, validate=validate
+                )
             else:
-                con = PointConnector(obs, mod, mod_item=mod_item, validate=validate)
+                con = PointConnector(
+                    obs, mod, weight=weight, mod_item=mod_item, validate=validate
+                )
         if con.n_models > 0:
             self.connections[con.name] = con
             self._add_observation(con.obs)
             self._add_modelresults(con.modelresults)
+
+    @staticmethod
+    def _parse_weights(n_obs, weights):
+        if np.isscalar(weights):
+            weights = weights * np.ones(n_obs, dtype=np.float)
+        if len(weights) != n_obs:
+            raise ValueError("weight and obs should have same length")
+        return weights
 
     def _add_observation(self, obs):
         if obs.name not in self.obs_names:
