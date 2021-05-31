@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from mikeio import Dfs0
+from datetime import datetime
 import fmskill
 
 
@@ -18,6 +19,8 @@ def test_compare(fn_obs, fn_mod):
     df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
     c = fmskill.compare(fn_obs, df_mod)
     assert c.n_points == 66
+    assert c.start == datetime(2017, 10, 27, 0, 0, 0)
+    assert c.end == datetime(2017, 10, 29, 18, 0, 0)
 
 
 def test_compare_fn(fn_obs):
@@ -30,6 +33,8 @@ def test_compare_df(fn_obs, fn_mod):
     df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
     c = fmskill.compare(df_obs, df_mod)
     assert c.n_points == 66
+    assert c.start == datetime(2017, 10, 27, 0, 0, 0)
+    assert c.end == datetime(2017, 10, 29, 18, 0, 0)
 
 
 def test_compare_point_obs(fn_obs, fn_mod):
@@ -37,6 +42,8 @@ def test_compare_point_obs(fn_obs, fn_mod):
     df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
     c = fmskill.compare(obs, df_mod)
     assert c.n_points == 66
+    assert c.start == datetime(2017, 10, 27, 0, 0, 0)
+    assert c.end == datetime(2017, 10, 29, 18, 0, 0)
 
 
 def test_compare_fail(fn_obs, fn_mod):
