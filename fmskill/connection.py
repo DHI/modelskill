@@ -52,6 +52,7 @@ def _parse_model(mod, item=None):
     elif isinstance(mod, pd.DataFrame):
         if len(mod.columns) > 1:
             raise ValueError("Model ambiguous - please provide item")
+        mod.index = pd.DatetimeIndex(mod.index.round(freq="ms"), freq="infer")
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
     elif isinstance(mod, ModelResult):
