@@ -35,11 +35,12 @@ def compare(mod, obs):
     if isinstance(mod, str):
         dfs = Dfs0(mod)
         if len(dfs.items) > 1:
-            raise ValueError('Model ambiguous - please provide single item')
+            raise ValueError("Model ambiguous - please provide single item")
         mod = dfs.read().to_dataframe()
+        mod.index = pd.DatetimeIndex(mod.index.round(freq="ms"), freq="infer")
     elif isinstance(mod, pd.DataFrame):
         if len(mod.columns) > 1:
-            raise ValueError('Model ambiguous - please provide single item')
+            raise ValueError("Model ambiguous - please provide single item")
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
     c = PointComparer(obs, mod)
@@ -220,6 +221,9 @@ class BaseComparer:
         mod_name = mod_df.columns[-1]
         self.mod_data[mod_name] = mod_df
         self._mod_names = list(self.mod_data.keys())
+
+        time = mod_df.index.round(freq="ms")  # 0.001s accuracy
+        mod_df.index = pd.DatetimeIndex(time, freq="infer")
 
         if mod_df.index[0] < self._mod_start:
             self._mod_start = mod_df.index[0].to_pydatetime()
