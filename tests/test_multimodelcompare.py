@@ -37,20 +37,10 @@ def o3():
     return TrackObservation(fn, item=3, name="c2")
 
 
-# @pytest.fixture
-# def mrc(mr1, mr2):
-#     return ModelResultCollection([mr1, mr2])
-
-
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3):
     con = Connector([o1, o2, o3], [mr1, mr2], mod_item=0)
     return con.extract()
-
-
-# def test_mrc_repr(mrc):
-#     txt = repr(mrc)
-#     assert "ModelResultCollection" in txt
 
 
 def test_add_observation(mr1, mr2, o1):
