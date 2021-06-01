@@ -38,8 +38,9 @@ class Observation:
         self, name: str = None, df=None, itemInfo=None, variable_name: str = None
     ):
         self.name = name
-        df.index = df.index.round(freq="1000000ns") # 0.001s accuracy
-        self.df = df        
+        time = df.index.round(freq="ms")  # 0.001s accuracy
+        df.index = pd.DatetimeIndex(time, freq="infer")
+        self.df = df
         if itemInfo is None:
             self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         else:
