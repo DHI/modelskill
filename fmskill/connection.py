@@ -365,6 +365,8 @@ class Connector(BaseConnector, Mapping, Sequence):
             Observation(s) to be compared
         mod : (str, pd.DataFrame, ModelResult)
             Model result(s) to be compared
+        weight: float, optional
+            Relative weight used in weighted skill calculation, default 1.0
         mod_item : (int, str), optional
             item name or number, by default None
         validate : bool, optional
@@ -516,13 +518,20 @@ class Connector(BaseConnector, Mapping, Sequence):
         return ax
 
     def to_config(self, filename: str):
+        """
+        Parameters
+        ----------
+        filename: str or Path
+            Save configuration in yaml format
+
+        Notes
+        -----
+        1. Manually create your skill assessment in fmskill as usual
+        2. When you are satisfied, save config: cc.to_config('conf.yml') or similar
+        3. Later: run your reporting from the commandline e.g. directly after model execution
+        """
         # write contents of connector to configuration file (yml or xlxs)
         raise NotImplementedError()
-
-    # @classmethod
-    # def from_config(cls, filename: str):
-    #     # get connector from configuration file (yml or xlxs)
-    #     raise NotImplementedError()
 
     @staticmethod
     def from_config(configuration: Union[dict, str], validate_eum=True):
