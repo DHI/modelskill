@@ -83,17 +83,25 @@ def test_connector_add(o1, mr1):
 #         mr.add_observation(klagshamn, item=0)
 
 
-def test_add_but_non_matching_eum(o2, mr1):
+def test_add_fail(o2, mr1):
     # mr.add_observation(Hm0_EPL)  # infer item by EUM
     # assert len(mr.observations) == 1
 
     con = Connector()
-    o2.itemInfo = eum.ItemInfo(
-        eum.EUMType.Significant_wave_height, unit=eum.EUMUnit.feet
-    )
+    with pytest.raises(Exception):
+        # item not specified
+        con.add(o2, mr1)
+
+    eumHm0 = eum.EUMType.Significant_wave_height
+    o2.itemInfo = eum.ItemInfo(eumHm0, unit=eum.EUMUnit.feet)
     with pytest.raises(Exception):
         # EUM unit doesn't match
-        con.add(o2, mr1)
+        con.add(o2, mr1, mod_item=0)
+
+    o2.itemInfo = eum.ItemInfo(eum.EUMType.Water_Level, unit=eum.EUMUnit.meter)
+    with pytest.raises(Exception):
+        # EUM type doesn't match
+        con.add(o2, mr1, mod_item=0)
 
 
 def test_extract(con32):
