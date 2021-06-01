@@ -77,7 +77,7 @@ def test_mv_skill(cc_1model):
     df = cc_1model.skill().df
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
-    assert pytest.approx(df.iloc[0].rmse) == 0.21635651988
+    assert pytest.approx(df.iloc[0].rmse) == 0.22359663
     idx = ("HKNA_wind", "Wind_speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
@@ -93,7 +93,7 @@ def test_mv_mm_skill(cc):
     df = cc.skill(model="SW_1").df
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
-    assert pytest.approx(df.iloc[0].rmse) == 0.21635651988
+    assert pytest.approx(df.iloc[0].rmse) == 0.22359663
     idx = ("HKNA_wind", "Wind_speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
@@ -109,10 +109,10 @@ def test_mv_mm_mean_skill(cc):
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "variable"
     idx = ("SW_1", "Wind_speed")
-    assert pytest.approx(df.loc[idx].r2) == 0.6523880517075856
+    assert pytest.approx(df.loc[idx].r2) == 0.65238805170
 
     df = cc.mean_skill(variable=0).df
-    assert pytest.approx(df.loc["SW_1"].cc) == 0.972628061122
+    assert pytest.approx(df.loc["SW_1"].cc) == 0.971791458
 
 
 def test_mv_mm_scatter(cc):
