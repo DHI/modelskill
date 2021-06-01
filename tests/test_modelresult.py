@@ -125,7 +125,7 @@ def test_extract(hd_oresund_2d, klagshamn, drogden):
 def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
     mr = ModelResult(sw_dutch_coast)
     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM
-    assert c.n_points == 385
+    assert c.n_points == 386
 
 
 def test_extract_observation_no_matching_item(sw_total_windsea, wind_HKNA):
