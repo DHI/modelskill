@@ -1,6 +1,7 @@
+from datetime import datetime
 import pytest
 
-from fmskill.model import ModelResult, DataFrameModelResult
+from fmskill.model import ModelResult, DataFrameModelResult, ModelResultInterface
 from fmskill.observation import PointObservation
 from mikeio import eum
 
@@ -58,7 +59,24 @@ def sw_total_windsea():
 
 def test_df_modelresult(klagshamn):
     df = klagshamn.df
-    mr = DataFrameModelResult(df, item=0)
+    df["ones"] = 1.0
+    
+    mr1 = DataFrameModelResult(df, item=0)
+    assert isinstance(mr1, ModelResultInterface)
+    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
+    assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
+    assert mr1.name == "Water Level"
+
+    mr2 = DataFrameModelResult(df[['Water Level']])
+    assert len(mr2.df) == len(mr1.df)
+
+    # Series
+    mr3 = DataFrameModelResult(df['Water Level'])
+    assert len(mr3.df) == len(mr1.df)
+
+    # item as string
+    mr4 = DataFrameModelResult(df, item='Water Level')
+    assert len(mr4.df) == len(mr1.df)
 
 
 def test_repr(hd_oresund_2d):

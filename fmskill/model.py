@@ -1,21 +1,17 @@
 import os
 from typing import List, Union
-from pathlib import Path
 import numpy as np
 import pandas as pd
-import yaml
 import warnings
-import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 
 from mikeio import Dfs0, Dfsu, Dataset, eum
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
-from .plot import plot_observation_positions
 from .utils import make_unique_index
 
 
-class ModelResultInterface(ABC):
+class ModelResultInterface(ABC):  # pragma: no cover
     @property
     @abstractmethod
     def start_time(self):
@@ -29,6 +25,10 @@ class ModelResultInterface(ABC):
     @property
     def itemInfo(self):
         return None
+
+    @abstractmethod
+    def extract_observation(self, observation) -> BaseComparer:
+        pass
 
 
 class DataFrameModelResult(ModelResultInterface):
@@ -61,6 +61,30 @@ class DataFrameModelResult(ModelResultInterface):
     @property
     def end_time(self):
         return self.df.index[-1].to_pydatetime()
+
+    def extract_observation(self, observation: PointObservation) -> PointComparer:
+        """Compare this ModelResult with an observation
+
+        Parameters
+        ----------
+        observation : <PointObservation>
+            Observation to be compared
+
+        Returns
+        -------
+        <fmskill.PointComparer>
+            A comparer object for further analysis or plotting
+        """
+        if isinstance(observation, PointObservation):
+            comparer = PointComparer(observation, self.df)
+        else:
+            raise ValueError("Only point observation are supported!")
+
+        if len(comparer.df) == 0:
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+            comparer = None
+
+        return comparer
 
 
 class ModelResult(ModelResultInterface):
@@ -309,7 +333,7 @@ class ModelResult(ModelResultInterface):
             raise ValueError("Only point and track observation are supported!")
 
         if len(comparer.df) == 0:
-            warnings.warn(f"No overlapping data in found for {observation.name}!")
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
             comparer = None
 
         return comparer
