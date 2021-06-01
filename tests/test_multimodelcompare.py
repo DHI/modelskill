@@ -103,7 +103,7 @@ def test_mm_skill(cc):
 
 def test_mm_skill_model(cc):
     df = cc.skill(model="SW_1").df
-    assert df.loc["EPL"].n == 66
+    assert df.loc["EPL"].n == 67
     assert df.loc["c2"].n == 113
 
 
@@ -140,9 +140,9 @@ def test_mm_skill_missing_obs(cc, o1):
 
 def test_mm_skill_start_end(cc):
     s = cc.skill(model="SW_1", start="2017")
-    assert s.loc["EPL"].n == 66
+    assert s.loc["EPL"].n == 67
     s = cc.skill(model="SW_1", end="2017-10-28 00:00:01")
-    assert s.loc["EPL"].n == 24
+    assert s.loc["EPL"].n == 25
     s = cc.skill(model="SW_1", start="2017-10-28 00:00:01")
     assert s.loc["EPL"].n == 42
 
