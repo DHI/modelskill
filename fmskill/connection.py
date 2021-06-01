@@ -172,22 +172,23 @@ class SingleObsConnector(BaseConnector):
         # TODO: add validation errors to list
         ok = True
         for mod in modelresults:
+            has_mod_item = self._has_mod_item(mod)
             eum_match = self._validate_eum(obs, mod)
             in_domain = self._validate_in_domain(obs, mod)
             time_overlaps = self._validate_start_end(obs, mod)
-            ok = ok and eum_match and in_domain and time_overlaps
+            ok = ok and has_mod_item and eum_match and in_domain and time_overlaps
         return ok
 
     @staticmethod
-    def _validate_in_domain(obs, mod):
-        in_domain = True
-        if isinstance(mod, ModelResult) and isinstance(obs, PointObservation):
-            in_domain = mod._in_domain(obs.x, obs.y)
-            if not in_domain:
-                warnings.warn(
-                    f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
-                )
-        return in_domain
+    def _has_mod_item(mod):
+        ok = True
+        if mod.item is None:
+            if len(mod.dfs.items) == 1:
+                mod.item = 0
+            else:
+                ok = False
+                warnings.warn(f"Model '{mod.name}' ambiguous - please provide item")
+        return ok
 
     @staticmethod
     def _validate_eum(obs, mod):
@@ -212,6 +213,17 @@ class SingleObsConnector(BaseConnector):
                     f"Item unit mismatch! Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
                 )
         return ok
+
+    @staticmethod
+    def _validate_in_domain(obs, mod):
+        in_domain = True
+        if isinstance(mod, ModelResult) and isinstance(obs, PointObservation):
+            in_domain = mod._in_domain(obs.x, obs.y)
+            if not in_domain:
+                warnings.warn(
+                    f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
+                )
+        return in_domain
 
     @staticmethod
     def _validate_start_end(obs, mod):
@@ -531,7 +543,6 @@ class Connector(BaseConnector, Mapping, Sequence):
             else:
                 obs = PointObservation(**observation)
 
-            # mr.add_observation(obs, item=connection["item"], validate_eum=validate_eum)
             con.add(obs, mr, mod_item=connection["item"], validate=validate_eum)
 
         return con
