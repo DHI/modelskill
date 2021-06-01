@@ -17,7 +17,7 @@ def fn_obs():
 def test_compare(fn_mod, fn_obs):
     df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
     c = fmskill.compare(df_mod, fn_obs)
-    assert c.n_points == 66
+    assert c.n_points == 67
 
 
 def test_compare_fn(fn_obs):
@@ -29,14 +29,14 @@ def test_compare_df(fn_mod, fn_obs):
     df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
     df_obs = Dfs0(fn_obs).read().to_dataframe()
     c = fmskill.compare(df_mod, df_obs)
-    assert c.n_points == 66
+    assert c.n_points == 67
 
 
 def test_compare_point_obs(fn_mod, fn_obs):
     df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
     obs = fmskill.PointObservation(fn_obs, name="EPL")
     c = fmskill.compare(df_mod, obs)
-    assert c.n_points == 66
+    assert c.n_points == 67
 
 
 def test_compare_fail(fn_mod, fn_obs):
