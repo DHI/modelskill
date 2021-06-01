@@ -1,6 +1,6 @@
 import pytest
 
-from fmskill.model import ModelResult
+from fmskill.model import ModelResult, DataFrameModelResult
 from fmskill.observation import PointObservation
 from mikeio import eum
 
@@ -54,6 +54,17 @@ def sw_dutch_coast():
 @pytest.fixture
 def sw_total_windsea():
     return "tests/testdata/SW/SW_Tot_Wind_Swell.dfsu"
+
+
+def test_df_modelresult(klagshamn):
+    df = klagshamn.df
+    mr = DataFrameModelResult(df, item=0)
+
+
+def test_repr(hd_oresund_2d):
+    mr = ModelResult(hd_oresund_2d)
+    txt = repr(mr)
+    assert "Oresund2D.dfsu" in txt
 
 
 def test_dfs_object(hd_oresund_2d):
