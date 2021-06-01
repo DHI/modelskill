@@ -1,7 +1,9 @@
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
+
+import yaml
 from fmskill.plot import plot_observation_positions
-from typing import List
+from typing import List, Union
 import warnings
 import numpy as np
 import pandas as pd
@@ -505,7 +507,31 @@ class Connector(BaseConnector, Mapping, Sequence):
         # write contents of connector to configuration file (yml or xlxs)
         raise NotImplementedError()
 
-    @classmethod
-    def from_config(cls, filename: str):
-        # get connector from configuration file (yml or xlxs)
-        raise NotImplementedError()
+    # @classmethod
+    # def from_config(cls, filename: str):
+    #     # get connector from configuration file (yml or xlxs)
+    #     raise NotImplementedError()
+
+    @staticmethod
+    def from_config(configuration: Union[dict, str], validate_eum=True):
+        if isinstance(configuration, str):
+            with open(configuration) as f:
+                contents = f.read()
+            configuration = yaml.load(contents, Loader=yaml.FullLoader)
+
+        con = Connector()
+        mr = ModelResult(
+            filename=configuration["filename"], name=configuration.get("name")
+        )
+        for connection in configuration["observations"]:
+            observation = connection["observation"]
+
+            if observation.get("type") == "track":
+                obs = TrackObservation(**observation)
+            else:
+                obs = PointObservation(**observation)
+
+            # mr.add_observation(obs, item=connection["item"], validate_eum=validate_eum)
+            con.add(obs, mr, mod_item=connection["item"], validate=validate_eum)
+
+        return con

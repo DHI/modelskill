@@ -5,9 +5,9 @@ import markdown
 
 
 class Reporter:
-    def __init__(self, modelresults, folder=None):
-        self.name = modelresults.name
-        self.mr = modelresults
+    def __init__(self, connector, folder=None):
+        self.connector = connector
+        self.name = connector.mod_names[0]
 
         if folder is None:
             self.basedir = Path(self.name)
@@ -20,12 +20,12 @@ class Reporter:
         lines.append(f"# Validation report - {self.name}")
         lines.append("## Observations")
 
-        self.mr.plot_observation_positions()
+        self.connector.plot_observation_positions()
         plt.savefig(self.basedir / f"{self.safe_name}_map.png")
         lines.append(f"![map]({self.safe_name}_map.png)")
 
         lines.append("## Timeseries")
-        cc = self.mr.extract()
+        cc = self.connector.extract()
         for key, value in cc.comparers.items():
             if "plot_timeseries" in dir(value):
                 value.plot_timeseries()

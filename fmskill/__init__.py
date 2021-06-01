@@ -30,4 +30,4 @@ from .connection import compare, Connector
 
 def from_config(configuration: Union[dict, str], validate_eum=True):
 
-    return ModelResult.from_config(configuration, validate_eum)
+    return Connector.from_config(configuration, validate_eum)
