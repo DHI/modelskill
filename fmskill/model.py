@@ -99,7 +99,7 @@ class ModelResult(ModelResultInterface):
         else:
             raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
 
-        self.observations = {}
+        # self.observations = {}
 
         if name is None:
             name = os.path.basename(filename).split(".")[0]
@@ -156,25 +156,25 @@ class ModelResult(ModelResultInterface):
             "ModelResult.from_config is deprecated, use Connector instead",
             DeprecationWarning,
         )
-        if isinstance(configuration, str):
-            with open(configuration) as f:
-                contents = f.read()
-            configuration = yaml.load(contents, Loader=yaml.FullLoader)
+        # if isinstance(configuration, str):
+        #     with open(configuration) as f:
+        #         contents = f.read()
+        #     configuration = yaml.load(contents, Loader=yaml.FullLoader)
 
-        mr = ModelResult(
-            filename=configuration["filename"], name=configuration.get("name")
-        )
-        for connection in configuration["observations"]:
-            observation = connection["observation"]
+        # mr = ModelResult(
+        #     filename=configuration["filename"], name=configuration.get("name")
+        # )
+        # for connection in configuration["observations"]:
+        #     observation = connection["observation"]
 
-            if observation.get("type") == "track":
-                obs = TrackObservation(**observation)
-            else:
-                obs = PointObservation(**observation)
+        #     if observation.get("type") == "track":
+        #         obs = TrackObservation(**observation)
+        #     else:
+        #         obs = PointObservation(**observation)
 
-            mr.add_observation(obs, item=connection["item"], validate_eum=validate_eum)
+        #     mr.add_observation(obs, item=connection["item"], validate_eum=validate_eum)
 
-        return mr
+        # return mr
 
     def to_config(self, filename: Union[str, Path]):
         """
@@ -212,24 +212,24 @@ class ModelResult(ModelResultInterface):
             "ModelResult.add_observation is deprecated, use Connector instead",
             DeprecationWarning,
         )
-        if item is None:
-            item = self._infer_model_item(observation)
+        # if item is None:
+        #     item = self._infer_model_item(observation)
 
-        ok = self._validate_observation(observation)
-        if ok and validate_eum:
-            ok = self._validate_item_eum(observation, item)
-            if not ok:
-                raise ValueError(
-                    "Could not add observation, to ignore EUM validation, try validate_eum=False"
-                )
-        if ok:
-            observation.model_item = item
-            observation.weight = weight
-            self.observations[observation.name] = observation
-        else:
-            warnings.warn("Could not add observation")
+        # ok = self._validate_observation(observation)
+        # if ok and validate_eum:
+        #     ok = self._validate_item_eum(observation, item)
+        #     if not ok:
+        #         raise ValueError(
+        #             "Could not add observation, to ignore EUM validation, try validate_eum=False"
+        #         )
+        # if ok:
+        #     observation.model_item = item
+        #     observation.weight = weight
+        #     self.observations[observation.name] = observation
+        # else:
+        #     warnings.warn("Could not add observation")
 
-        return self
+        # return self
 
     def _in_domain(self, x, y) -> bool:
         ok = True
@@ -342,12 +342,12 @@ class ModelResult(ModelResultInterface):
             "ModelResult.extract is deprecated, use Connector instead",
             DeprecationWarning,
         )
-        cc = ComparerCollection()
-        for obs in self.observations.values():
-            comparer = self.extract_observation(obs, obs.model_item, validate=False)
-            if comparer is not None:
-                cc.add_comparer(comparer)
-        return cc
+        # cc = ComparerCollection()
+        # for obs in self.observations.values():
+        #     comparer = self.extract_observation(obs, obs.model_item, validate=False)
+        #     if comparer is not None:
+        #         cc.add_comparer(comparer)
+        # return cc
 
     def extract_observation(
         self,
@@ -453,40 +453,40 @@ class ModelResult(ModelResultInterface):
         figsize : (float, float), optional
             figure size, by default None
         """
-        if self.is_dfs0:
-            warnings.warn(
-                "Plotting observations is only supported for dfsu ModelResults"
-            )
-            return
+        # if self.is_dfs0:
+        #     warnings.warn(
+        #         "Plotting observations is only supported for dfsu ModelResults"
+        #     )
+        #     return
 
-        ax = plot_observation_positions(
-            dfs=self.dfs, observations=self.observations.values()
-        )
+        # ax = plot_observation_positions(
+        #     dfs=self.dfs, observations=self.observations.values()
+        # )
 
-        return ax
+        # return ax
 
     def plot_temporal_coverage(self, limit_to_model_period=True):
         warnings.warn(
             "ModelResult.plot_temporal_coverage is deprecated, use Connector instead",
             DeprecationWarning,
         )
-        fig, ax = plt.subplots()
-        y = np.repeat(0.0, 2)
-        x = self.start_time, self.dfs.end_time
-        plt.plot(x, y)
-        labels = ["Model"]
+        # fig, ax = plt.subplots()
+        # y = np.repeat(0.0, 2)
+        # x = self.start_time, self.dfs.end_time
+        # plt.plot(x, y)
+        # labels = ["Model"]
 
-        plt.plot([self.dfs.start_time, self.dfs.end_time], y)
-        for key, obs in self.observations.items():
-            y += 1.0
-            plt.plot(obs.time, y[0] * np.ones_like(obs.values), "_", markersize=5)
-            labels.append(key)
-        if limit_to_model_period:
-            plt.xlim([self.dfs.start_time, self.dfs.end_time])
+        # plt.plot([self.dfs.start_time, self.dfs.end_time], y)
+        # for key, obs in self.observations.items():
+        #     y += 1.0
+        #     plt.plot(obs.time, y[0] * np.ones_like(obs.values), "_", markersize=5)
+        #     labels.append(key)
+        # if limit_to_model_period:
+        #     plt.xlim([self.dfs.start_time, self.dfs.end_time])
 
-        plt.yticks(np.arange(0, len(self.observations) + 1), labels)
-        fig.autofmt_xdate()
-        return ax
+        # plt.yticks(np.arange(0, len(self.observations) + 1), labels)
+        # fig.autofmt_xdate()
+        # return ax
 
     @property
     def is_dfsu(self):
