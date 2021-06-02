@@ -60,22 +60,22 @@ def sw_total_windsea():
 def test_df_modelresult(klagshamn):
     df = klagshamn.df
     df["ones"] = 1.0
-    
+
     mr1 = DataFrameModelResult(df, item=0)
     assert isinstance(mr1, ModelResultInterface)
     assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
     assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
     assert mr1.name == "Water Level"
 
-    mr2 = DataFrameModelResult(df[['Water Level']])
+    mr2 = DataFrameModelResult(df[["Water Level"]])
     assert len(mr2.df) == len(mr1.df)
 
     # Series
-    mr3 = DataFrameModelResult(df['Water Level'])
+    mr3 = DataFrameModelResult(df["Water Level"])
     assert len(mr3.df) == len(mr1.df)
 
     # item as string
-    mr4 = DataFrameModelResult(df, item='Water Level')
+    mr4 = DataFrameModelResult(df, item="Water Level")
     assert len(mr4.df) == len(mr1.df)
 
 
@@ -152,3 +152,32 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     klagshamn.y = -10
     with pytest.raises(ValueError):
         _ = mr.extract_observation(klagshamn, item=0, validate=True)
+
+
+from fmskill.model import DfsModelResultItem, DfsModelResult, ModelResultFactory
+
+
+def test_dfs_model_result(hd_oresund_2d):
+    mr = DfsModelResult(hd_oresund_2d, "Oresund")
+    assert mr.n_items == 7
+    assert isinstance(mr, DfsModelResult)
+
+    mr0 = mr[0]
+    assert isinstance(mr0, DfsModelResultItem)
+    assert mr.item_names[0] == mr0.item_name
+
+    mr1 = mr["Surface elevation"]
+    assert mr.item_names[0] == mr1.item_name
+    assert mr.filename == mr1.filename
+    assert mr.name == mr1.name
+
+
+def test_factory(hd_oresund_2d):
+    mr = ModelResultFactory(hd_oresund_2d, name="myname")
+    assert isinstance(mr, DfsModelResult)
+    assert mr.name == "myname"
+    assert mr.n_items == 7
+
+    mri = ModelResultFactory(hd_oresund_2d, item="Surface elevation")
+    assert isinstance(mri, DfsModelResultItem)
+    assert mri.item_name == "Surface elevation"

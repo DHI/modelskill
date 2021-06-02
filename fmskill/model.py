@@ -2,8 +2,10 @@ import os
 from typing import List, Union
 import numpy as np
 import pandas as pd
+import xarray as xr
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 
 from mikeio import Dfs0, Dfsu, Dataset, eum
 from .observation import Observation, PointObservation, TrackObservation
@@ -397,3 +399,150 @@ class ModelResult(ModelResultInterface):
     @property
     def is_dfs0(self):
         return isinstance(self.dfs, Dfs0)
+
+
+class _DfsBase:
+    dfs = None
+    name = None
+    _filename = None
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @property
+    def is_dfsu(self):
+        return isinstance(self.dfs, Dfsu)
+
+    @property
+    def is_dfs0(self):
+        return isinstance(self.dfs, Dfs0)
+
+    def _in_domain(self, x, y) -> bool:
+        ok = True
+        if self.is_dfsu:
+            ok = self.dfs.contains([x, y])
+        return ok
+
+    def _get_item_num(self, item) -> int:
+        items = self.dfs.items
+        n_items = len(items)
+        if item is None:
+            if n_items == 1:
+                return 0
+            else:
+                return None
+        if isinstance(item, eum.ItemInfo):
+            item = item.name
+        if isinstance(item, int):
+            if (item < 0) or (item >= n_items):
+                raise ValueError(f"item must be between 0 and {n_items-1}")
+        elif isinstance(item, str):
+            item_names = [i.name for i in items]
+            if item not in item_names:
+                raise ValueError(f"item must be one of {item_names}")
+            item = item_names.index(item)
+        else:
+            raise ValueError("item must be int or string")
+        return item
+
+    def _get_item_name(self, item) -> str:
+        item_num = self._get_item_num(item)
+        return self.dfs.items[item_num].name
+
+
+class DfsModelResultItem(_DfsBase):
+    @property
+    def item_name(self):
+        return self.itemInfo.name
+
+    def __init__(self, dfs, item, filename, name):
+        self.dfs = dfs
+        self.itemInfo = item
+        self._filename = filename
+        self.name = name
+
+    def __repr__(self):
+        txt = [f"<DfsModelResultItem> '{self.name}'"]
+        txt.append(f"File: {self.filename}")
+        item_num = self._get_item_num(self.item_name)
+        txt.append(f"- Item: {item_num}: {self.itemInfo}")
+        return "\n".join(txt)
+
+
+class DfsModelResult(_DfsBase, Mapping):
+    @property
+    def item_names(self):
+        return [item.name for item in self.dfs.items]
+
+    @property
+    def n_items(self):
+        return len(self.dfs.items)
+
+    def __init__(self, filename: str, name: str = None, item=None):
+        self._filename = filename
+        ext = os.path.splitext(filename)[-1]
+        if ext == ".dfsu":
+            self.dfs = Dfsu(filename)
+        elif ext == ".dfs0":
+            self.dfs = Dfs0(filename)
+        else:
+            raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
+
+        if name is None:
+            name = os.path.basename(filename).split(".")[0]
+        self.name = name
+
+        self._mr_items = {}
+        for it in self.dfs.items:
+            self._mr_items[it.name] = DfsModelResultItem(
+                self.dfs, it, self._filename, self.name
+            )
+
+        if item is not None:
+            self._selected_item = self._get_item_num(item)
+        elif len(self._mr_items) == 1:
+            self._selected_item = 0
+        else:
+            self._selected_item = None
+
+    def __repr__(self):
+        txt = [f"<DfsModelResult> '{self.name}'"]
+        txt.append(f"File: {self.filename}")
+        for j, item in enumerate(self.dfs.items):
+            txt.append(f"- Item: {j}: {item}")
+        return "\n".join(txt)
+
+    def __getitem__(self, x):
+        if isinstance(x, (int, str)):
+            x = self._get_item_name(x)
+        return self._mr_items[x]
+
+    def __len__(self) -> int:
+        return len(self._mr_items)
+
+    def __iter__(self):
+        return iter(self._mr_items.values())
+
+
+class ModelResultFactory:
+    def __new__(self, input, *args, **kwargs):
+        if isinstance(input, str):
+            filename = input
+            ext = os.path.splitext(filename)[-1]
+            if "dfs" in ext:
+                mr = DfsModelResult(filename, *args, **kwargs)
+                if mr._selected_item is not None:
+                    return mr[mr._selected_item]
+                else:
+                    return mr
+            else:
+                # return XrModelResult(filename, *args, **kwargs)
+                raise NotImplementedError()
+        elif isinstance(input, (pd.DataFrame, pd.Series)):
+            return DataFrameModelResult(input, *args, **kwargs)
+        elif isinstance(input, (xr.Dataset, xr.DataArray)):
+            raise NotImplementedError()
+            # return XrModelResult(input, *args, **kwargs)
+        else:
+            raise ValueError("Input type not supported (filename or DataFrame)")
