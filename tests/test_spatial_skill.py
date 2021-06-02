@@ -17,7 +17,7 @@ def cc1():
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
     o1 = TrackObservation(df, item=2, name="alti")
 
-    con = Connector(o1, mr, mod_item=0)
+    con = Connector(o1, mr[0])
     return con.extract()
 
 
@@ -46,7 +46,7 @@ def cc2(o1, o2, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     mr2 = ModelResult(fn, name="SW_2")
 
-    con = Connector([o1, o2, o3], [mr1, mr2], mod_item=0)
+    con = Connector([o1, o2, o3], [mr1[0], mr2[0]])
     return con.extract()
 
 

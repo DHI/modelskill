@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from mikeio import Dfs0, eum
 from .model import (
     ModelResult,
+    DfsModelResultItem,
     ModelResultInterface,
     DataFrameModelResult,
 )
@@ -27,7 +28,7 @@ def compare(obs, mod, mod_item=None):
     ----------
     obs : (str, pd.DataFrame, Observation)
         Observation to be compared
-    mod : (str, pd.DataFrame, ModelResult)
+    mod : (str, pd.DataFrame, ModelResultInterface)
         Model result to be compared
     mod_item : (int, str), optional
         model item, by default None
@@ -57,11 +58,11 @@ def _parse_model(mod, item=None):
         mod.index = pd.DatetimeIndex(mod.index.round(freq="ms"), freq="infer")
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
-    elif isinstance(mod, ModelResult):
+    elif isinstance(mod, DfsModelResultItem):
         if not mod.is_dfs0:
             raise ValueError("Only dfs0 ModelResults are supported")
-        if mod.item is None:
-            raise ValueError("Model ambiguous - please provide item")
+        # if mod.item is None:
+        #     raise ValueError("Model ambiguous - please provide item")
         mod = mod._extract_point_dfs0(mod.item).to_dataframe()
     return mod
 
@@ -136,7 +137,8 @@ class SingleObsConnector(BaseConnector):
     def _set_model_and_item(self, model, item):
         _mri = []
         for mr in model:
-            itemj = mr.item if item is None else item
+            assert isinstance(mr, ModelResultInterface)
+            itemj = mr.item_name if item is None else item
             _mri.append(ModelResultItem(mr, itemj))
         return _mri
 
@@ -156,8 +158,8 @@ class SingleObsConnector(BaseConnector):
             return self._parse_filename_model(mod, item)
         elif isinstance(mod, ModelResultInterface):
             # if mod.item is None:
-            if item is not None:
-                mod.item = item
+            # if item is not None:
+            #    mod.item = item
             return mod
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
@@ -172,23 +174,23 @@ class SingleObsConnector(BaseConnector):
         # TODO: add validation errors to list
         ok = True
         for mod in modelresults:
-            has_mod_item = self._has_mod_item(mod)
+            # has_mod_item = self._has_mod_item(mod)
             eum_match = self._validate_eum(obs, mod)
             in_domain = self._validate_in_domain(obs, mod)
             time_overlaps = self._validate_start_end(obs, mod)
-            ok = ok and has_mod_item and eum_match and in_domain and time_overlaps
+            ok = ok and eum_match and in_domain and time_overlaps
         return ok
 
-    @staticmethod
-    def _has_mod_item(mod):
-        ok = True
-        if mod.item is None:
-            if len(mod.dfs.items) == 1:
-                mod.item = 0
-            else:
-                ok = False
-                warnings.warn(f"Model '{mod.name}' ambiguous - please provide item")
-        return ok
+    # @staticmethod
+    # def _has_mod_item(mod):
+    #     ok = True
+    #     # if mod.item is None:
+    #     #     if len(mod.dfs.items) == 1:
+    #     #         mod.item = 0
+    #     #     else:
+    #     #         ok = False
+    #     #         warnings.warn(f"Model '{mod.name}' ambiguous - please provide item")
+    #     return ok
 
     @staticmethod
     def _validate_eum(obs, mod):
@@ -259,7 +261,9 @@ class SingleObsConnector(BaseConnector):
             )
             return
 
-        ax = plot_observation_positions(dfs=mod.dfs, observations=[self.obs])
+        ax = plot_observation_positions(
+            dfs=mod.dfs, observations=[self.obs], figsize=figsize
+        )
 
         return ax
 
@@ -541,9 +545,7 @@ class Connector(BaseConnector, Mapping, Sequence):
             configuration = yaml.load(contents, Loader=yaml.FullLoader)
 
         con = Connector()
-        mr = ModelResult(
-            filename=configuration["filename"], name=configuration.get("name")
-        )
+        mr = ModelResult(configuration["filename"], name=configuration.get("name"))
         for connection in configuration["observations"]:
             observation = connection["observation"]
 
@@ -552,6 +554,6 @@ class Connector(BaseConnector, Mapping, Sequence):
             else:
                 obs = PointObservation(**observation)
 
-            con.add(obs, mr, mod_item=connection["item"], validate=validate_eum)
+            con.add(obs, mr[connection["item"]], validate=validate_eum)
 
         return con

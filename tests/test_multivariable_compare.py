@@ -56,16 +56,16 @@ def wind3():
 @pytest.fixture
 def cc_1model(mr1, o1, o2, o3, wind1, wind2, wind3):
     con = Connector()
-    con.add([o1, o2, o3], mr1, mod_item="Sign. Wave Height")
-    con.add([wind1, wind2, wind3], mr1, mod_item="Wind speed")
+    con.add([o1, o2, o3], mr1["Sign. Wave Height"])
+    con.add([wind1, wind2, wind3], mr1["Wind speed"])
     return con.extract()
 
 
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3, wind1, wind2, wind3):
     con = Connector()
-    con.add([o1, o2, o3], [mr1, mr2], mod_item="Sign. Wave Height")
-    con.add([wind1, wind2, wind3], [mr1, mr2], mod_item="Wind speed")
+    con.add([o1, o2, o3], [mr1["Sign. Wave Height"], mr2["Sign. Wave Height"]])
+    con.add([wind1, wind2, wind3], [mr1["Wind speed"], mr2["Wind speed"]])
     return con.extract()
 
 

@@ -39,28 +39,28 @@ def o3():
 
 @pytest.fixture
 def con11(o1, mr1):
-    return Connector(o1, mr1, mod_item=0)
+    return Connector(o1, mr1[0])
 
 
 @pytest.fixture
 def con31(o1, o2, o3, mr1):
-    return Connector([o1, o2, o3], mr1, mod_item=0)
+    return Connector([o1, o2, o3], mr1[0])
 
 
 @pytest.fixture
 def con32(o1, o2, o3, mr1, mr2):
-    return Connector([o1, o2, o3], [mr1, mr2], mod_item=0)
+    return Connector([o1, o2, o3], [mr1[0], mr2[0]])
 
 
 def test_point_connector_repr(o1, mr1):
-    con = PointConnector(o1, mr1, mod_item=0)
+    con = PointConnector(o1, mr1[0])
     txt = repr(con)
     assert "PointConnector" in txt
 
 
 def test_connector_add(o1, mr1):
     con = Connector()
-    con.add(o1, mr1, mod_item=0, validate=False)
+    con.add(o1, mr1[0], validate=False)
     assert len(con.observations) == 1
 
 
@@ -96,12 +96,12 @@ def test_add_fail(o2, mr1):
     o2.itemInfo = eum.ItemInfo(eumHm0, unit=eum.EUMUnit.feet)
     with pytest.raises(Exception):
         # EUM unit doesn't match
-        con.add(o2, mr1, mod_item=0)
+        con.add(o2, mr1[0])
 
     o2.itemInfo = eum.ItemInfo(eum.EUMType.Water_Level, unit=eum.EUMUnit.meter)
     with pytest.raises(Exception):
         # EUM type doesn't match
-        con.add(o2, mr1, mod_item=0)
+        con.add(o2, mr1[0])
 
 
 def test_extract(con32):

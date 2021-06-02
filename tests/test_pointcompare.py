@@ -29,7 +29,7 @@ def modelresult_oresund_2d():
 def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    con = Connector([klagshamn, drogden], mr, mod_item=0, validate=False)
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -41,7 +41,7 @@ def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
 def test_iterate_over_comparers(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    con = Connector([klagshamn, drogden], mr, mod_item=0, validate=False)
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -58,7 +58,7 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
         name="Klagshamn",
     )
     mr = modelresult_oresund_2d
-    con = Connector(o1, mr, mod_item=0)
+    con = Connector(o1, mr[0])
     c = con.extract()
     df = c["Klagshamn"].skill().df
     assert not np.any(np.isnan(df))
@@ -73,7 +73,7 @@ def test_extraction_no_overlap(modelresult_oresund_2d):
     )
     mr = modelresult_oresund_2d
     with pytest.warns(UserWarning) as wn:
-        con = Connector(o1, mr, mod_item=0, validate=False)
+        con = Connector(o1, mr[0], validate=False)
     assert len(wn) == 1
     assert "No time overlap" in str(wn[0].message)
     # assert "Could not add observation" in str(wn[1].message)
@@ -85,7 +85,7 @@ def test_extraction_no_overlap(modelresult_oresund_2d):
 def test_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    con = Connector([klagshamn, drogden], mr, mod_item=0, validate=False)
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     assert cc.score(metric=root_mean_squared_error) > 0.0
@@ -95,19 +95,19 @@ def test_score(modelresult_oresund_2d, klagshamn, drogden):
 def test_weighted_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    con = Connector([klagshamn, drogden], mr, mod_item=0, validate=False)
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
     unweighted_skill = cc.score()
 
     con = Connector()
-    con.add(klagshamn, mr, weight=0.9, mod_item=0, validate=False)
-    con.add(drogden, mr, weight=0.1, mod_item=0, validate=False)
+    con.add(klagshamn, mr[0], weight=0.9, validate=False)
+    con.add(drogden, mr[0], weight=0.1, validate=False)
     cc = con.extract()
     weighted_skill = cc.score()
     assert unweighted_skill != weighted_skill
 
     obs = [klagshamn, drogden]
-    con = Connector(obs, mr, weight=[0.9, 0.1], mod_item=0, validate=False)
+    con = Connector(obs, mr[0], weight=[0.9, 0.1], validate=False)
     cc = con.extract()
     weighted_skill2 = cc.score()
 
@@ -118,7 +118,7 @@ def test_misc_properties(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    con = Connector([klagshamn, drogden], mr, mod_item=0, validate=False)
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -144,7 +144,7 @@ def test_skill(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    con = Connector([klagshamn, drogden], mr, mod_item=0, validate=False)
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     df = cc.skill().df
@@ -161,7 +161,7 @@ def test_comparison_from_dict():
     # mr = ModelResult()
 
     # o1 = PointObservation()
-    # con = Connector(o1, mr, mod_item=0)
+    # con = Connector(o1, mr[0])
     # c = mr.extract()
 
     configuration = dict(

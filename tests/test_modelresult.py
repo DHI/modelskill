@@ -103,10 +103,10 @@ def test_ModelResultType0():
     assert mr.is_dfs0
 
 
-def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
-    mr = ModelResult(sw_dutch_coast)
-    c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM
-    assert c.n_points == 386
+# def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
+#     mr = ModelResult(sw_dutch_coast)
+#     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM
+#     assert c.n_points == 386
 
 
 def test_extract_observation_no_matching_item(sw_total_windsea, wind_HKNA):
@@ -127,21 +127,20 @@ def test_extract_observation_total_windsea_swell_not_possible(
         2:  Sign. Wave Height, S <Significant wave height> (meter)
     """
 
-    with pytest.raises(Exception):
-        c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
+    # with pytest.raises(Exception):
+    #     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
 
-    c = mr.extract_observation(
-        Hm0_HKNA, item="Sign. Wave Height, S"
-    )  # Specify Swell item explicitely
+    # Specify Swell item explicitely
+    c = mr["Sign. Wave Height, S"].extract_observation(Hm0_HKNA)
     assert c.n_points > 0
 
 
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d)
     with pytest.raises(Exception):
-        c = mr.extract_observation(klagshamn, item=0, validate=True)
+        c = mr[0].extract_observation(klagshamn, validate=True)
 
-    c = mr.extract_observation(klagshamn, item=0, validate=False)
+    c = mr[0].extract_observation(klagshamn, validate=False)
     assert c.n_points > 0
 
 
@@ -151,10 +150,10 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     klagshamn.itemInfo = eum.ItemInfo(eum.EUMType.Surface_Elevation)
     klagshamn.y = -10
     with pytest.raises(ValueError):
-        _ = mr.extract_observation(klagshamn, item=0, validate=True)
+        _ = mr[0].extract_observation(klagshamn, validate=True)
 
 
-from fmskill.model import DfsModelResultItem, DfsModelResult, ModelResultFactory
+from fmskill.model import DfsModelResultItem, DfsModelResult  # , ModelResultFactory
 
 
 def test_dfs_model_result(hd_oresund_2d):
@@ -173,11 +172,11 @@ def test_dfs_model_result(hd_oresund_2d):
 
 
 def test_factory(hd_oresund_2d):
-    mr = ModelResultFactory(hd_oresund_2d, name="myname")
+    mr = ModelResult(hd_oresund_2d, name="myname")
     assert isinstance(mr, DfsModelResult)
     assert mr.name == "myname"
     assert mr.n_items == 7
 
-    mri = ModelResultFactory(hd_oresund_2d, item="Surface elevation")
+    mri = ModelResult(hd_oresund_2d, item="Surface elevation")
     assert isinstance(mri, DfsModelResultItem)
     assert mri.item_name == "Surface elevation"

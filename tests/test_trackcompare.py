@@ -26,7 +26,7 @@ def modelresult():
 
 @pytest.fixture
 def comparer(observation, modelresult):
-    con = Connector(observation, modelresult, mod_item=2)
+    con = Connector(observation, modelresult[2])
     return con.extract()
 
 
@@ -43,7 +43,7 @@ def test_extract_no_time_overlap(modelresult, observation_df):
     df.index = df.index + np.timedelta64(100, "D")
     o = TrackObservation(df, item=2, name="alti")
 
-    con = Connector(o, mr, mod_item=2)
+    con = Connector(o, mr[2])
     cc = con.extract()
 
     assert cc.n_comparers == 0
@@ -54,7 +54,7 @@ def test_extract_obs_start_before(modelresult, observation_df):
     df = observation_df.copy(deep=True)
     df.index = df.index - np.timedelta64(1, "D")
     o = TrackObservation(df, item=2, name="alti")
-    con = Connector(o, mr, mod_item=2)
+    con = Connector(o, mr[2])
     cc = con.extract()
     assert cc.n_comparers == 0
 
@@ -64,7 +64,7 @@ def test_extract_obs_end_after(modelresult, observation_df):
     df = observation_df.copy(deep=True)
     df.index = df.index + np.timedelta64(1, "D")
     o = TrackObservation(df, item=2, name="alti")
-    con = Connector(o, mr, mod_item=2)
+    con = Connector(o, mr[2])
     cc = con.extract()
     assert cc.n_comparers == 0
 
@@ -75,7 +75,7 @@ def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
     df.lon = -100
     df.lat = -50
     o = TrackObservation(df, item=2, name="alti")
-    con = Connector(o, mr, mod_item=2)
+    con = Connector(o, mr[2])
     cc = con.extract()
 
     assert cc.n_comparers == 0
