@@ -139,8 +139,7 @@ class SingleObsConnector(BaseConnector):
     def _parse_single_model(self, mod) -> ModelResultInterface:
         if isinstance(mod, (pd.Series, pd.DataFrame)):
             mod = self._parse_pandas_model(mod)
-        # elif isinstance(mod, str):
-        #     return self._parse_filename_model(mod)
+
         if isinstance(mod, ModelResultInterface):
             return mod
         elif isinstance(mod, MultiItemModelResult):
