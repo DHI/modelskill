@@ -156,6 +156,7 @@ class _DfsBase:
 
     def extract(self) -> ComparerCollection:
         self._deprecation_message("ModelResult.extract()")
+        raise NotImplementedError()
 
 
 class DfsModelResultItem(_DfsBase, ModelResultInterface):
