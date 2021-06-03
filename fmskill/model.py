@@ -431,6 +431,77 @@ class _DfsBase:
         item_num = self._get_item_num(item)
         return self.dfs.items[item_num].name
 
+    def _validate_observation(self, observation) -> bool:
+        ok = False
+        if self.is_dfsu:
+            if isinstance(observation, PointObservation):
+                ok = self.dfs.contains([observation.x, observation.y])
+                if not ok:
+                    raise ValueError("Observation outside domain")
+            elif isinstance(observation, TrackObservation):
+                ok = True
+        elif self.is_dfs0:
+            # TODO: add check on name
+            ok = True
+        if ok:
+            ok = self._validate_start_end(observation)
+            if not ok:
+                warnings.warn("No time overlap between model result and observation!")
+        return ok
+
+    def _validate_start_end(self, observation: Observation) -> bool:
+        try:
+            # need to put this in try-catch due to error in dfs0 in mikeio
+            if observation.end_time < self.dfs.start_time:
+                return False
+            if observation.start_time > self.dfs.end_time:
+                return False
+        except:
+            pass
+        return True
+
+    def _extract_point(self, observation: PointObservation, item=None) -> pd.DataFrame:
+        if item is None:
+            item = self._selected_item
+        ds_model = None
+        if self.is_dfsu:
+            ds_model = self._extract_point_dfsu(observation.x, observation.y, item)
+        elif self.is_dfs0:
+            ds_model = self._extract_point_dfs0(item)
+
+        return ds_model.to_dataframe()
+
+    def _extract_point_dfsu(self, x, y, item) -> Dataset:
+        xy = np.atleast_2d([x, y])
+        elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
+        ds_model = self.dfs.read(elements=elemids, items=[item])
+        ds_model.items[0].name = self.name
+        return ds_model
+
+    def _extract_point_dfs0(self, item) -> Dataset:
+        ds_model = self.dfs.read(items=[item])
+        ds_model.items[0].name = self.name
+        return ds_model
+
+    def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+        if item is None:
+            item = self._selected_item
+        df = None
+        if self.is_dfsu:
+            ds_model = self._extract_track_dfsu(observation, item)
+            df = ds_model.to_dataframe().dropna()
+        elif self.is_dfs0:
+            ds_model = self.dfs.read(items=[0, 1, item])
+            ds_model.items[-1].name = self.name
+            df = ds_model.to_dataframe().dropna()
+            df.index = make_unique_index(df.index, offset_in_seconds=0.01)
+        return df
+
+    def _extract_track_dfsu(self, observation: TrackObservation, item) -> Dataset:
+        ds_model = self.dfs.extract_track(track=observation.df, items=[item])
+        ds_model.items[-1].name = self.name
+        return ds_model
+
 
 class DfsModelResultItem(_DfsBase, ModelResultInterface):
     @property
@@ -493,88 +564,14 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
 
         return comparer
 
-    def _extract_point(self, observation: PointObservation, item) -> pd.DataFrame:
-        if item is None:
-            item = self._selected_item
-        ds_model = None
-        if self.is_dfsu:
-            ds_model = self._extract_point_dfsu(observation.x, observation.y, item)
-        elif self.is_dfs0:
-            ds_model = self._extract_point_dfs0(item)
-
-        return ds_model.to_dataframe()
-
-    def _extract_point_dfsu(self, x, y, item) -> Dataset:
-        xy = np.atleast_2d([x, y])
-        elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
-        ds_model = self.dfs.read(elements=elemids, items=[item])
-        ds_model.items[0].name = self.name
-        return ds_model
-
-    def _extract_point_dfs0(self, item) -> Dataset:
-        ds_model = self.dfs.read(items=[item])
-        ds_model.items[0].name = self.name
-        return ds_model
-
-    def _extract_track(self, observation: TrackObservation, item) -> pd.DataFrame:
-        if item is None:
-            item = self._selected_item
-        df = None
-        if self.is_dfsu:
-            ds_model = self._extract_track_dfsu(observation, item)
-            df = ds_model.to_dataframe().dropna()
-        elif self.is_dfs0:
-            ds_model = self.dfs.read(items=[0, 1, item])
-            ds_model.items[-1].name = self.name
-            df = ds_model.to_dataframe().dropna()
-            df.index = make_unique_index(df.index, offset_in_seconds=0.01)
-        return df
-
-    def _extract_track_dfsu(self, observation: TrackObservation, item) -> Dataset:
-        ds_model = self.dfs.extract_track(track=observation.df, items=[item])
-        ds_model.items[-1].name = self.name
-        return ds_model
-
-    def _validate_observation(self, observation) -> bool:
-        ok = False
-        if self.is_dfsu:
-            if isinstance(observation, PointObservation):
-                ok = self.dfs.contains([observation.x, observation.y])
-                if not ok:
-                    raise ValueError("Observation outside domain")
-            elif isinstance(observation, TrackObservation):
-                ok = True
-        elif self.is_dfs0:
-            # TODO: add check on name
-            ok = True
-        if ok:
-            ok = self._validate_start_end(observation)
-            if not ok:
-                warnings.warn("No time overlap between model result and observation!")
-        return ok
-
-    def _validate_start_end(self, observation: Observation) -> bool:
-        try:
-            # need to put this in try-catch due to error in dfs0 in mikeio
-            if observation.end_time < self.dfs.start_time:
-                return False
-            if observation.start_time > self.dfs.end_time:
-                return False
-        except:
-            pass
-        return True
-
     def _validate_item_eum(self, observation: Observation) -> bool:
         """Check that observation and model item eum match"""
-        # if mod_items is None:
-        #     mod_items = self.dfs.items
         ok = True
         obs_item = observation.itemInfo
         if obs_item.type == eum.EUMType.Undefined:
             warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
             return ok
 
-        # item = self._get_model_item(item, mod_items)
         item = self.itemInfo
         if item.type != obs_item.type:
             ok = False
