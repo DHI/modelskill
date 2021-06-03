@@ -1,6 +1,3 @@
-import os
-import pandas as pd
-import xarray as xr
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 
@@ -32,7 +29,7 @@ class ModelResultInterface(ABC):  # pragma: no cover
         pass
 
 
-class MultiItemModelResult(ABC, Mapping):
+class MultiItemModelResult(ABC, Mapping):  # pragma: no cover
     _mr_items = None
 
     @property
