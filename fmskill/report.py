@@ -2,10 +2,12 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import re
 import markdown
+import fmskill
 
 
 class Reporter:
     def __init__(self, connector, folder=None):
+        assert isinstance(connector, fmskill.Connector)
         self.connector = connector
         self.name = connector.mod_names[0]
 
