@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 from mikeio import Dfs0, eum
 from .model import (
+    DfsModelResult,
     ModelResult,
     DfsModelResultItem,
     ModelResultInterface,
@@ -87,12 +88,6 @@ class BaseConnector:
         raise NotImplementedError()
 
 
-class ModelResultItem:
-    def __init__(self, modelresult, item):
-        self.modelresult = modelresult
-        self.item = item
-
-
 class SingleObsConnector(BaseConnector):
     """A connection between a single observation and model(s)"""
 
@@ -111,12 +106,10 @@ class SingleObsConnector(BaseConnector):
 
         return f"<{self.__class__.__name__}> {txt}"
 
-    def __init__(self, obs, mod, weight=1.0, mod_item=None, validate=True):
-        # mod_item is temporary solution
+    def __init__(self, obs, mod, weight=1.0, validate=True):
         obs = self._parse_observation(obs)
         self.name = obs.name
-        modelresults = self._parse_model(mod, mod_item)
-        mri = self._set_model_and_item(modelresults, mod_item)
+        modelresults = self._parse_model(mod)
 
         ok = self._validate(obs, modelresults)
         if validate and (not ok):
@@ -132,35 +125,25 @@ class SingleObsConnector(BaseConnector):
             self.modelresults = modelresults
             self.obs = obs
             self.obs.weight = weight
-            self._mri = mri
 
-    def _set_model_and_item(self, model, item):
-        _mri = []
-        for mr in model:
-            assert isinstance(mr, ModelResultInterface)
-            itemj = mr.item_name if item is None else item
-            _mri.append(ModelResultItem(mr, itemj))
-        return _mri
-
-    def _parse_model(self, mod, item=None) -> List[ModelResultInterface]:
+    def _parse_model(self, mod) -> List[ModelResultInterface]:
         if is_iterable_not_str(mod):
             mr = []
             for m in mod:
-                mr.append(self._parse_single_model(m, item))
+                mr.append(self._parse_single_model(m))
         else:
-            mr = [self._parse_single_model(mod, item)]
+            mr = [self._parse_single_model(mod)]
         return mr
 
-    def _parse_single_model(self, mod, item=None) -> ModelResultInterface:
+    def _parse_single_model(self, mod) -> ModelResultInterface:
         if isinstance(mod, (pd.Series, pd.DataFrame)):
-            return self._parse_pandas_model(mod, item)
-        elif isinstance(mod, str):
-            return self._parse_filename_model(mod, item)
+            return self._parse_pandas_model(mod)
+        # elif isinstance(mod, str):
+        #     return self._parse_filename_model(mod)
         elif isinstance(mod, ModelResultInterface):
-            # if mod.item is None:
-            # if item is not None:
-            #    mod.item = item
             return mod
+        elif isinstance(mod, DfsModelResult):
+            raise ValueError("Please select model item!")
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
 
@@ -181,29 +164,18 @@ class SingleObsConnector(BaseConnector):
             ok = ok and eum_match and in_domain and time_overlaps
         return ok
 
-    # @staticmethod
-    # def _has_mod_item(mod):
-    #     ok = True
-    #     # if mod.item is None:
-    #     #     if len(mod.dfs.items) == 1:
-    #     #         mod.item = 0
-    #     #     else:
-    #     #         ok = False
-    #     #         warnings.warn(f"Model '{mod.name}' ambiguous - please provide item")
-    #     return ok
-
     @staticmethod
     def _validate_eum(obs, mod):
         """Check that observation and model item eum match"""
         assert isinstance(obs, Observation)
         assert isinstance(mod, ModelResultInterface)
         ok = True
-        has_eum = lambda x: (x.itemInfo is not None) and (
+        _has_eum = lambda x: (x.itemInfo is not None) and (
             x.itemInfo.type != eum.EUMType.Undefined
         )
 
         # we can only check if both have eum itemInfo
-        if has_eum(obs) and has_eum(mod):
+        if _has_eum(obs) and _has_eum(mod):
             if obs.itemInfo.type != mod.itemInfo.type:
                 ok = False
                 warnings.warn(
@@ -298,9 +270,8 @@ class PointConnector(SingleObsConnector):
             A comparer object for further analysis and plotting."""
         assert isinstance(self.obs, PointObservation)
         df_model = []
-        for mri in self._mri:
-            mr = mri.modelresult
-            df_model.append(mr._extract_point(self.obs, mri.item))
+        for mr in self.modelresults:
+            df_model.append(mr._extract_point(self.obs))
 
         comparer = PointComparer(self.obs, df_model)
         return self._comparer_or_None(comparer)
@@ -320,11 +291,11 @@ class TrackConnector(SingleObsConnector):
         -------
         TrackComparer
             A comparer object for further analysis and plotting."""
+
         assert isinstance(self.obs, TrackObservation)
         df_model = []
-        for mri in self._mri:
-            mr = mri.modelresult
-            df_model.append(mr._extract_track(self.obs, mri.item))
+        for mr in self.modelresults:
+            df_model.append(mr._extract_track(self.obs))
 
         comparer = TrackComparer(self.obs, df_model)
         return self._comparer_or_None(comparer)
@@ -347,7 +318,7 @@ class Connector(BaseConnector, Mapping, Sequence):
         txt = "<Connector> with \n"
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
-    def __init__(self, obs=None, mod=None, weight=1.0, mod_item=None, validate=True):
+    def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
         self.connections = {}
         self.observations = {}
         self.modelresults = {}
@@ -356,11 +327,11 @@ class Connector(BaseConnector, Mapping, Sequence):
                 obs = [obs]
             weight = self._parse_weights(len(obs), weight)
             for j, o in enumerate(obs):
-                self.add(o, mod, weight=weight[j], mod_item=mod_item, validate=validate)
+                self.add(o, mod, weight=weight[j], validate=validate)
         elif (mod is not None) or (obs is not None):
             raise ValueError("obs and mod must both be specified (or both None)")
 
-    def add(self, obs, mod=None, weight=1.0, mod_item=None, validate=True):
+    def add(self, obs, mod=None, weight=1.0, validate=True):
         """Add Observation-ModelResult-connections to Connector
 
         Parameters
@@ -371,8 +342,6 @@ class Connector(BaseConnector, Mapping, Sequence):
             Model result(s) to be compared
         weight: float, optional
             Relative weight used in weighted skill calculation, default 1.0
-        mod_item : (int, str), optional
-            item name or number, by default None
         validate : bool, optional
             Perform validation on eum type, observation-model
             overlap in space and time? by default True
@@ -380,19 +349,15 @@ class Connector(BaseConnector, Mapping, Sequence):
         if is_iterable_not_str(obs):
             weight = self._parse_weights(len(obs), weight)
             for j, o in enumerate(obs):
-                self.add(o, mod, weight=weight[j], mod_item=mod_item, validate=validate)
+                self.add(o, mod, weight=weight[j], validate=validate)
             return
         elif isinstance(obs, SingleObsConnector):
             con = obs
         else:
             if isinstance(obs, TrackObservation):
-                con = TrackConnector(
-                    obs, mod, weight=weight, mod_item=mod_item, validate=validate
-                )
+                con = TrackConnector(obs, mod, weight=weight, validate=validate)
             else:
-                con = PointConnector(
-                    obs, mod, weight=weight, mod_item=mod_item, validate=validate
-                )
+                con = PointConnector(obs, mod, weight=weight, validate=validate)
         if con.n_models > 0:
             self.connections[con.name] = con
             self._add_observation(con.obs)
@@ -482,9 +447,7 @@ class Connector(BaseConnector, Mapping, Sequence):
         mod = list(self.modelresults.values())[0]
 
         if mod.is_dfs0:
-            warnings.warn(
-                "Plotting observations is only supported for dfsu ModelResults"
-            )
+            warnings.warn("Only supported for dfsu ModelResults")
             return
 
         observations = list(self.observations.values())
