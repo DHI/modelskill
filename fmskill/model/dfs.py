@@ -140,8 +140,7 @@ class _DfsBase:
         ds_model.items[-1].name = self.name
         return ds_model
 
-    @staticmethod
-    def _deprecation_message(method: str):
+    def _deprecation_message(self, method: str):
         warnings.warn(
             f"{method} is deprecated from v.0.3, use Connector instead",
             DeprecationWarning,
@@ -149,14 +148,16 @@ class _DfsBase:
 
     @staticmethod
     def from_config(configuration: Union[dict, str], validate_eum=True):
-        _DfsBase._deprecation_message("ModelResult.from_config()")
+        self._deprecation_message("ModelResult.from_config()")
+        raise NotImplementedError("Deprecated! Use Connector instead.")
 
     def add_observation(self, observation, item=None, weight=1.0, validate_eum=True):
         self._deprecation_message("ModelResult.add_observation()")
+        raise NotImplementedError("Deprecated! Use Connector instead.")
 
     def extract(self) -> ComparerCollection:
         self._deprecation_message("ModelResult.extract()")
-        raise NotImplementedError()
+        raise NotImplementedError("Deprecated! Use Connector instead.")
 
 
 class DfsModelResultItem(_DfsBase, ModelResultInterface):
