@@ -10,13 +10,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from mikeio import Dfs0, eum
-from .model import (
-    DfsModelResult,
-    ModelResult,
-    DfsModelResultItem,
-    ModelResultInterface,
-    DataFrameModelResult,
-)
+from .model import ModelResult
+from .model.dfs import DfsModelResult, DfsModelResultItem
+from .model.pandas import DataFrameModelResultItem
+from .model.abstract import ModelResultInterface, MultiItemModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -62,8 +59,12 @@ def _parse_model(mod, item=None):
     elif isinstance(mod, DfsModelResultItem):
         if not mod.is_dfs0:
             raise ValueError("Only dfs0 ModelResults are supported")
-        # if mod.item is None:
-        #     raise ValueError("Model ambiguous - please provide item")
+        mod = mod._extract_point_dfs0(mod.item).to_dataframe()
+    elif isinstance(mod, DfsModelResult):
+        if not mod.is_dfs0:
+            raise ValueError("Only dfs0 ModelResults are supported")
+        if mod.item is None:
+            raise ValueError("Model ambiguous - please provide item")
         mod = mod._extract_point_dfs0(mod.item).to_dataframe()
     return mod
 
@@ -137,18 +138,18 @@ class SingleObsConnector(BaseConnector):
 
     def _parse_single_model(self, mod) -> ModelResultInterface:
         if isinstance(mod, (pd.Series, pd.DataFrame)):
-            return self._parse_pandas_model(mod)
+            mod = self._parse_pandas_model(mod)
         # elif isinstance(mod, str):
         #     return self._parse_filename_model(mod)
-        elif isinstance(mod, ModelResultInterface):
+        if isinstance(mod, ModelResultInterface):
             return mod
-        elif isinstance(mod, DfsModelResult):
-            raise ValueError("Please select model item!")
+        elif isinstance(mod, MultiItemModelResult):
+            raise ValueError("Please select model item! e.g. mr[0]")
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
 
     def _parse_pandas_model(self, df, item=None) -> ModelResultInterface:
-        return DataFrameModelResult(df, item=item)
+        return DataFrameModelResultItem(df, item=item)
 
     def _parse_filename_model(self, filename, item=None) -> ModelResultInterface:
         return ModelResult(filename, item=item)
