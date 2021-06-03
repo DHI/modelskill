@@ -60,35 +60,3 @@ class ModelResult:
             # return XrModelResult(input, *args, **kwargs)
         else:
             raise ValueError("Input type not supported (filename or DataFrame)")
-
-
-# class ModelResult(ModelResultInterface):
-
-
-#     @property
-#     def itemInfo(self):
-#         if self.item is None:
-#             return eum.ItemInfo(eum.EUMType.Undefined)
-#         else:
-#             # if isinstance(self.item, str):
-#             self.item = self._parse_item(self.item)
-#             return self.dfs.items[self.item]
-
-
-#     def _get_model_item(self, item, mod_items=None) -> eum.ItemInfo:
-#         """Given str or int find corresponding model itemInfo"""
-#         if mod_items is None:
-#             mod_items = self.dfs.items
-#         n_items = len(mod_items)
-#         if isinstance(item, int):
-#             if (item < 0) or (item >= n_items):
-#                 raise ValueError(f"item number must be between 0 and {n_items}")
-#         elif isinstance(item, str):
-#             item_names = [i.name for i in mod_items]
-#             try:
-#                 item = item_names.index(item)
-#             except ValueError:
-#                 raise ValueError(f"item not found in model items ({item_names})")
-#         else:
-#             raise ValueError("item must be an integer or a string")
-#         return mod_items[item]
