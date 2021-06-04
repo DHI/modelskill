@@ -9,9 +9,6 @@ Model
 .. autoclass:: fmskill.model.ModelResult
 	:members:
 
-.. autoclass:: fmskill.model.ModelResultCollection
-	:members:
-	:inherited-members:
 
 Observation
 -----------
@@ -22,6 +19,25 @@ Observation
 .. autoclass:: fmskill.observation.TrackObservation
 	:members:
 	:inherited-members:
+
+Connector
+---------
+.. automodule:: fmskill.connection
+	:members: compare
+	
+
+.. autoclass:: fmskill.connection.PointConnector
+	:members:
+	:inherited-members:
+
+.. autoclass:: fmskill.connection.TrackConnector
+	:members:
+	:inherited-members:
+
+.. autoclass:: fmskill.connection.Connector
+	:members:
+	:inherited-members:
+	:exclude-members: keys, values, get, items, count, index
 
 Compare
 -------
@@ -36,7 +52,7 @@ Compare
 .. autoclass:: fmskill.comparison.ComparerCollection
 	:members:
 	:inherited-members:
-	:exclude-members: keys, values, get, items
+	:exclude-members: keys, values, get, items, count, index
 
 Skill
 -------------
