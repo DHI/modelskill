@@ -69,7 +69,7 @@ def _parse_model(mod, item=None):
     return mod
 
 
-class BaseConnector:
+class _BaseConnector:
     modelresults = {}
     name = None
     obs = None
@@ -89,7 +89,7 @@ class BaseConnector:
         raise NotImplementedError()
 
 
-class SingleObsConnector(BaseConnector):
+class _SingleObsConnector(_BaseConnector):
     """A connection between a single observation and model(s)"""
 
     def __repr__(self):
@@ -250,7 +250,7 @@ class SingleObsConnector(BaseConnector):
         return comparer
 
 
-class PointConnector(SingleObsConnector):
+class PointConnector(_SingleObsConnector):
     def _parse_observation(self, obs) -> PointObservation:
         if isinstance(obs, (pd.Series, pd.DataFrame)):
             return PointObservation(obs)
@@ -277,7 +277,7 @@ class PointConnector(SingleObsConnector):
         return self._comparer_or_None(comparer)
 
 
-class TrackConnector(SingleObsConnector):
+class TrackConnector(_SingleObsConnector):
     def _parse_observation(self, obs) -> TrackObservation:
         if isinstance(obs, TrackObservation):
             return obs
@@ -301,8 +301,8 @@ class TrackConnector(SingleObsConnector):
         return self._comparer_or_None(comparer)
 
 
-class Connector(BaseConnector, Mapping, Sequence):
-    """A Connector object can have multiple SingleConnectors"""
+class Connector(_BaseConnector, Mapping, Sequence):
+    """A Connector object can have multiple single-obs-Connectors"""
 
     @property
     def n_observations(self):
@@ -351,7 +351,7 @@ class Connector(BaseConnector, Mapping, Sequence):
             for j, o in enumerate(obs):
                 self.add(o, mod, weight=weight[j], validate=validate)
             return
-        elif isinstance(obs, SingleObsConnector):
+        elif isinstance(obs, _SingleObsConnector):
             con = obs
         else:
             if isinstance(obs, TrackObservation):
@@ -502,6 +502,7 @@ class Connector(BaseConnector, Mapping, Sequence):
 
     @staticmethod
     def from_config(configuration: Union[dict, str], validate_eum=True):
+
         if isinstance(configuration, str):
             with open(configuration) as f:
                 contents = f.read()
