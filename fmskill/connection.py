@@ -251,6 +251,18 @@ class _SingleObsConnector(_BaseConnector):
 
 
 class PointConnector(_SingleObsConnector):
+    """Connector for a single PointObservation and ModelResults
+
+    Typically, not constructed directly, but part of a Connector.
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+    >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
+    >>> con1 = PointConnector(o1, mr)
+    >>> con = Connector(o1, mr)    # con[0] = con1
+    """
+
     def _parse_observation(self, obs) -> PointObservation:
         if isinstance(obs, (pd.Series, pd.DataFrame)):
             return PointObservation(obs)
@@ -278,6 +290,18 @@ class PointConnector(_SingleObsConnector):
 
 
 class TrackConnector(_SingleObsConnector):
+    """Connector for a single TrackObservation and ModelResults
+
+    Typically, not constructed directly, but part of a Connector.
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+    >>> o1 = TrackObservation(df, item=2, name="altimeter")
+    >>> con1 = TrackConnector(o1, mr)
+    >>> con = Connector(o1, mr)    # con[0] = con1
+    """
+
     def _parse_observation(self, obs) -> TrackObservation:
         if isinstance(obs, TrackObservation):
             return obs
@@ -285,7 +309,7 @@ class TrackConnector(_SingleObsConnector):
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
     def extract(self) -> TrackComparer:
-        """Extract model results at times and positions of observation.
+        """Extract model results at times and positions of track observation.
 
         Returns
         -------
@@ -302,7 +326,34 @@ class TrackConnector(_SingleObsConnector):
 
 
 class Connector(_BaseConnector, Mapping, Sequence):
-    """A Connector object can have multiple single-obs-Connectors"""
+    """The Connector is used for matching Observations and ModelResults
+
+    It is one of the most important classes in fmskill. The connections are
+    added either at construction of the Connector or by using the add()
+    method.
+
+    When observations and modelResults are added the connection is
+    validated (inside domain? overlapping time? eum match?).
+
+    The extract() method are then called to extract ModelResult data at
+    the time and positions of each observation.
+
+    Note
+    ----
+    Only ModelResults with a single item can be added to the Connector.
+    Multi-item ModelResults 'mr' must be subset e.g. with 'mr[0]'
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+    >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
+    >>> o2 = TrackObservation(df, item=2, name="altimeter")
+    >>> conA = Connector([o1, o2], mr)
+    >>> conB = Connector()
+    >>> conB.add(o1, mr)
+    >>> conB.add(o2, mr)    # conA = conB
+    >>> cc = conB.extract()
+    """
 
     @property
     def n_observations(self):
@@ -485,7 +536,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
         return ax
 
     def to_config(self, filename: str):
-        """
+        """Save Connector to a config file.
+
         Parameters
         ----------
         filename: str or Path
@@ -502,7 +554,20 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
     @staticmethod
     def from_config(configuration: Union[dict, str], validate_eum=True):
+        """Load Connector from a config file (or dict)
 
+        Parameters
+        ----------
+        configuration : Union[atr, dict]
+            path to config file or dict with configuration
+        validate_eum : bool, optional
+            require eum to match, by default True
+
+        Returns
+        -------
+        Connector
+            A Connector object with the given configuration
+        """
         if isinstance(configuration, str):
             with open(configuration) as f:
                 contents = f.read()
