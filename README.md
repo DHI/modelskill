@@ -57,19 +57,18 @@ Start by defining model results and observations:
 ```python
 >>> from fmskill.model import ModelResult
 >>> from fmskill.observation import PointObservation, TrackObservation
->>> mr = ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local")
+>>> mr = ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
 >>> HKNA = PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 >>> EPL = PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
 >>> c2 = TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
 ```
 
-Then, associate observations with model results, and extract data at observation points:
+Then, connect observations and model results, and extract data at observation points:
 
 ```python
->>> mr.add_observation(HKNA, item=0)
->>> mr.add_observation(EPL, item=0)
->>> mr.add_observation(c2, item=0)
->>> comparer = mr.extract()
+>>> from fmskill import Connector
+>>> con = Connector([HKNA, EPL, c2], mr)
+>>> comparer = con.extract()
 ```
 
 With the comparer, all sorts of skill assessments and plots can be made:
@@ -86,7 +85,7 @@ c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 ### Overview of observation locations
 
 ```python
-mr.plot_observation_positions(figsize=(7,7))
+con.plot_observation_positions(figsize=(7,7))
 ```
 
 ![map](https://raw.githubusercontent.com/DHI/fmskill/main/images/map.png)

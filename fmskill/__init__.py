@@ -23,11 +23,11 @@ __version__ = "0.3.dev"
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
 
-from .model import ModelResult, ModelResultCollection
+from .model.factory import ModelResult
 from .observation import PointObservation, TrackObservation
-from .comparison import compare
+from .connection import compare, Connector
 
 
 def from_config(configuration: Union[dict, str], validate_eum=True):
 
-    return ModelResult.from_config(configuration, validate_eum)
+    return Connector.from_config(configuration, validate_eum)

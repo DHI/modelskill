@@ -3,8 +3,8 @@ from fmskill.report import Reporter
 
 
 def test_markdown(tmpdir):
-    model_result = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
-    reporter = Reporter(model_result, tmpdir)
+    connector = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    reporter = Reporter(connector, tmpdir)
 
     filename = reporter.to_markdown()
 
@@ -13,8 +13,8 @@ def test_markdown(tmpdir):
 
 
 def test_html(tmpdir):
-    model_result = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
-    reporter = Reporter(model_result, tmpdir)
+    connector = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    reporter = Reporter(connector, tmpdir)
 
     filename = reporter.to_html()
 

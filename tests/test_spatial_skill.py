@@ -3,9 +3,9 @@ import pandas as pd
 import xarray as xr
 from fmskill import (
     ModelResult,
-    ModelResultCollection,
     PointObservation,
     TrackObservation,
+    Connector,
 )
 
 
@@ -16,8 +16,9 @@ def cc1():
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
     o1 = TrackObservation(df, item=2, name="alti")
-    mr.add_observation(o1, item=0)
-    return mr.extract()
+
+    con = Connector(o1, mr[0])
+    return con.extract()
 
 
 @pytest.fixture
@@ -44,12 +45,9 @@ def cc2(o1, o2, o3):
     mr1 = ModelResult(fn, name="SW_1")
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     mr2 = ModelResult(fn, name="SW_2")
-    mr = ModelResultCollection([mr1, mr2])
 
-    mr.add_observation(o1, item=0)
-    mr.add_observation(o2, item=0)
-    mr.add_observation(o3, item=0)
-    return mr.extract()
+    con = Connector([o1, o2, o3], [mr1[0], mr2[0]])
+    return con.extract()
 
 
 def test_spatial_skill(cc1):

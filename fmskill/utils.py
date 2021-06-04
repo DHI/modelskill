@@ -1,7 +1,17 @@
 import warnings
 import numpy as np
 import pandas as pd
+from collections.abc import Iterable
 
+
+def is_iterable_not_str(obj):
+    """Check if an object is an iterable but not a string."""
+    if isinstance(obj, str):
+        return False
+    if isinstance(obj, Iterable):
+        return True
+    return False
+    
 
 def make_unique_index(df_index, offset_in_seconds=0.01, warn=True):
     """Given a non-unique DatetimeIndex, create a unique index by adding

@@ -1,8 +1,9 @@
 import pytest
 import numpy as np
 
-from fmskill.model import ModelResult, ModelResultCollection
-from fmskill.observation import PointObservation, TrackObservation
+from fmskill import ModelResult
+from fmskill import PointObservation, TrackObservation
+from fmskill import Connector
 import fmskill.metrics as mtr
 
 
@@ -37,34 +38,20 @@ def o3():
 
 
 @pytest.fixture
-def mrc(mr1, mr2):
-    return ModelResultCollection([mr1, mr2])
-
-
-@pytest.fixture
 def cc(mr1, mr2, o1, o2, o3):
-    mrc = ModelResultCollection([mr1, mr2])
-    mrc.add_observation(o1, item=0)
-    mrc.add_observation(o2, item=0)
-    mrc.add_observation(o3, item=0)
-    return mrc.extract()
+    con = Connector([o1, o2, o3], [mr1[0], mr2[0]])
+    return con.extract()
 
 
-def test_mrc_repr(mrc):
-    txt = repr(mrc)
-    assert "ModelResultCollection" in txt
+def test_add_observation(mr1, mr2, o1):
+    con = Connector(o1, [mr1[0], mr2[0]])
+    assert len(con.observations) == 1
 
 
-def test_add_observation(mrc, o1):
-    mrc.add_observation(o1, item=0)
-    assert len(mrc.observations) == 1
+def test_extract(mr1, mr2, o1, o2, o3):
+    con = Connector([o1, o2, o3], [mr1[0], mr2[0]])
+    cc = con.extract()
 
-
-def test_extract(mrc, o1, o2, o3):
-    mrc.add_observation(o1, item=0)
-    mrc.add_observation(o2, item=0)
-    mrc.add_observation(o3, item=0)
-    cc = mrc.extract()
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
     assert "PointComparer" in repr(cc["EPL"])
@@ -72,8 +59,8 @@ def test_extract(mrc, o1, o2, o3):
 
 
 def test_add_comparer(mr1, mr2, o1, o2):
-    cc1 = mr1.add_observation(o1, item=0).extract()
-    cc2 = mr2.add_observation(o2, item=0).extract()
+    cc1 = Connector(o1, mr1[0]).extract()
+    cc2 = Connector(o2, mr2[0]).extract()
     cc = cc1 + cc2
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
@@ -82,8 +69,8 @@ def test_add_comparer(mr1, mr2, o1, o2):
 
 
 def test_add_same_comparer_twice(mr1, mr2, o1, o2):
-    cc1 = mr1.add_observation(o1, item=0).extract()
-    cc2 = mr2.add_observation(o2, item=0).extract()
+    cc1 = Connector(o1, mr1[0]).extract()
+    cc2 = Connector(o2, mr2[0]).extract()
     cc = cc1 + cc2
     assert len(cc) == 2
     cc = cc + cc2

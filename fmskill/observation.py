@@ -38,6 +38,10 @@ class Observation:
         self, name: str = None, df=None, itemInfo=None, variable_name: str = None
     ):
         self.name = name
+        if not isinstance(df.index, pd.DatetimeIndex):
+            raise TypeError(
+                f"Input must have a datetime index! Provided index was {type(df.index)}"
+            )
         time = df.index.round(freq="ms")  # 0.001s accuracy
         df.index = pd.DatetimeIndex(time, freq="infer")
         self.df = df
@@ -193,6 +197,7 @@ class PointObservation(Observation):
                 raise NotImplementedError()
 
         if not df.index.is_unique:
+            # TODO: duplicates_keep="mean","first","last"
             raise ValueError(
                 "Time axis has duplicate entries. It must be monotonically increasing."
             )

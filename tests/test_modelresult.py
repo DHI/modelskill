@@ -1,8 +1,11 @@
+from datetime import datetime
 import pytest
 
-from fmskill.model import ModelResult
-from fmskill.observation import PointObservation
 from mikeio import eum
+from fmskill.model import ModelResult
+from fmskill.model.abstract import ModelResultInterface
+from fmskill.model import DataFrameModelResult, DataFrameModelResultItem
+from fmskill.observation import PointObservation
 
 
 @pytest.fixture
@@ -56,6 +59,48 @@ def sw_total_windsea():
     return "tests/testdata/SW/SW_Tot_Wind_Swell.dfsu"
 
 
+def test_df_modelresultitem(klagshamn):
+    df = klagshamn.df
+    df["ones"] = 1.0
+
+    mr1 = DataFrameModelResultItem(df, item=0)
+    assert isinstance(mr1, ModelResultInterface)
+    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
+    assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
+    assert mr1.name == "Water Level"
+
+    # item as string
+    mr2 = DataFrameModelResultItem(df, item="Water Level")
+    assert len(mr2.df) == len(mr1.df)
+
+    mr3 = DataFrameModelResultItem(df[["Water Level"]])
+    assert len(mr3.df) == len(mr1.df)
+
+    # Series
+    mr4 = DataFrameModelResultItem(df["Water Level"])
+    assert len(mr4.df) == len(mr1.df)
+
+
+def test_df_modelresult(klagshamn):
+    df = klagshamn.df
+    df["ones"] = 1.0
+
+    mr1 = DataFrameModelResult(df)
+    assert not isinstance(mr1, ModelResultInterface)
+    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
+    assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
+    assert mr1.name == "model"
+
+    mr2 = mr1["Water Level"]
+    assert len(mr2.df) == len(mr1.df)
+
+
+def test_repr(hd_oresund_2d):
+    mr = ModelResult(hd_oresund_2d)
+    txt = repr(mr)
+    assert "Oresund2D.dfsu" in txt
+
+
 def test_dfs_object(hd_oresund_2d):
     mr = ModelResult(hd_oresund_2d)
 
@@ -74,65 +119,17 @@ def test_ModelResultType0():
     assert mr.is_dfs0
 
 
-def test_add_observation(hd_oresund_2d, klagshamn):
-    mr = ModelResult(hd_oresund_2d)
-    mr.add_observation(klagshamn, item=0, validate_eum=False)
-    assert len(mr.observations) == 1
-
-
-def test_add_observation_eum_validation(hd_oresund_2d, klagshamn):
-    mr = ModelResult(hd_oresund_2d)
-    with pytest.raises(ValueError):
-        # EUM type doesn't match
-        mr.add_observation(klagshamn, item=0)
-
-    klagshamn.itemInfo = eum.ItemInfo(eum.EUMType.Surface_Elevation)
-    mr = ModelResult(hd_oresund_2d)
-    mr.add_observation(klagshamn, item=0)
-    assert len(mr.observations) == 1
-
-    klagshamn.itemInfo = eum.ItemInfo(
-        eum.EUMType.Surface_Elevation, unit=eum.EUMUnit.feet
-    )
-    with pytest.raises(ValueError):
-        # EUM unit doesn't match
-        mr.add_observation(klagshamn, item=0)
-
-
-def test_add_observation_infer_item(sw_dutch_coast, Hm0_EPL):
-    mr = ModelResult(sw_dutch_coast)
-    mr.add_observation(Hm0_EPL)  # infer item by EUM
-    assert len(mr.observations) == 1
-
-    mr = ModelResult(sw_dutch_coast)
-    Hm0_EPL.itemInfo = eum.ItemInfo(
-        eum.EUMType.Significant_wave_height, unit=eum.EUMUnit.feet
-    )
-    with pytest.raises(Exception):
-        # EUM unit doesn't match
-        mr.add_observation(Hm0_EPL)
-
-
-def test_extract(hd_oresund_2d, klagshamn, drogden):
-    mr = ModelResult(hd_oresund_2d)
-
-    mr.add_observation(klagshamn, item=0, validate_eum=False)
-    mr.add_observation(drogden, item=0, validate_eum=False)
-    collection = mr.extract()
-    collection["Klagshamn"].name == "Klagshamn"
-
-
-def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
-    mr = ModelResult(sw_dutch_coast)
-    c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM
-    assert c.n_points == 386
+# def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
+#     mr = ModelResult(sw_dutch_coast)
+#     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM
+#     assert c.n_points == 386
 
 
 def test_extract_observation_no_matching_item(sw_total_windsea, wind_HKNA):
     mr = ModelResult(sw_total_windsea)  # No wind speed here !
 
     with pytest.raises(Exception):  # More specific error?
-        c = mr.extract_observation(wind_HKNA)
+        _ = mr.extract_observation(wind_HKNA)
 
 
 def test_extract_observation_total_windsea_swell_not_possible(
@@ -146,21 +143,20 @@ def test_extract_observation_total_windsea_swell_not_possible(
         2:  Sign. Wave Height, S <Significant wave height> (meter)
     """
 
-    with pytest.raises(Exception):
-        c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
+    # with pytest.raises(Exception):
+    #     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
 
-    c = mr.extract_observation(
-        Hm0_HKNA, item="Sign. Wave Height, S"
-    )  # Specify Swell item explicitely
+    # Specify Swell item explicitely
+    c = mr["Sign. Wave Height, S"].extract_observation(Hm0_HKNA)
     assert c.n_points > 0
 
 
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d)
     with pytest.raises(Exception):
-        c = mr.extract_observation(klagshamn, item=0, validate=True)
+        c = mr[0].extract_observation(klagshamn, validate=True)
 
-    c = mr.extract_observation(klagshamn, item=0, validate=False)
+    c = mr[0].extract_observation(klagshamn, validate=False)
     assert c.n_points > 0
 
 
@@ -170,18 +166,33 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     klagshamn.itemInfo = eum.ItemInfo(eum.EUMType.Surface_Elevation)
     klagshamn.y = -10
     with pytest.raises(ValueError):
-        c = mr.extract_observation(klagshamn, item=0, validate=True)
+        _ = mr[0].extract_observation(klagshamn, validate=True)
 
 
-def test_plot_positions(sw_dutch_coast, Hm0_EPL, Hm0_HKNA):
-    mr = ModelResult(sw_dutch_coast)
-    mr.add_observation(Hm0_EPL, item=0)
-    mr.add_observation(Hm0_HKNA, item=0)
-    mr.plot_observation_positions()
+from fmskill.model import DfsModelResultItem, DfsModelResult  # , ModelResultFactory
 
 
-def test_plot_data_coverage(sw_dutch_coast, Hm0_EPL, Hm0_HKNA):
-    mr = ModelResult(sw_dutch_coast)
-    mr.add_observation(Hm0_EPL, item=0)
-    mr.add_observation(Hm0_HKNA, item=0)
-    mr.plot_temporal_coverage()
+def test_dfs_model_result(hd_oresund_2d):
+    mr = DfsModelResult(hd_oresund_2d, "Oresund")
+    assert mr.n_items == 7
+    assert isinstance(mr, DfsModelResult)
+
+    mr0 = mr[0]
+    assert isinstance(mr0, DfsModelResultItem)
+    assert mr.item_names[0] == mr0.item_name
+
+    mr1 = mr["Surface elevation"]
+    assert mr.item_names[0] == mr1.item_name
+    assert mr.filename == mr1.filename
+    assert mr.name == mr1.name
+
+
+def test_factory(hd_oresund_2d):
+    mr = ModelResult(hd_oresund_2d, name="myname")
+    assert isinstance(mr, DfsModelResult)
+    assert mr.name == "myname"
+    assert mr.n_items == 7
+
+    mri = ModelResult(hd_oresund_2d, item="Surface elevation")
+    assert isinstance(mri, DfsModelResultItem)
+    assert mri.item_name == "Surface elevation"

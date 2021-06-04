@@ -2,8 +2,7 @@ import pytest
 import numpy as np
 
 import fmskill
-from fmskill.model import ModelResult
-from fmskill.observation import PointObservation
+from fmskill import ModelResult, PointObservation, Connector
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
 from fmskill.comparison import PointComparer
 
@@ -30,9 +29,8 @@ def modelresult_oresund_2d():
 def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    mr.add_observation(klagshamn, item=0, validate_eum=False)
-    mr.add_observation(drogden, item=0, validate_eum=False)
-    cc = mr.extract()
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    cc = con.extract()
 
     assert len(cc) == 2
     assert "Klagshamn" in cc.keys()
@@ -43,9 +41,8 @@ def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
 def test_iterate_over_comparers(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    mr.add_observation(klagshamn, item=0, validate_eum=False)
-    mr.add_observation(drogden, item=0, validate_eum=False)
-    cc = mr.extract()
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    cc = con.extract()
 
     assert len(cc) == 2
     for c in cc:
@@ -61,8 +58,8 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_2d):
         name="Klagshamn",
     )
     mr = modelresult_oresund_2d
-    mr.add_observation(o1, item=0)
-    c = mr.extract()
+    con = Connector(o1, mr[0])
+    c = con.extract()
     df = c["Klagshamn"].skill().df
     assert not np.any(np.isnan(df))
 
@@ -76,63 +73,63 @@ def test_extraction_no_overlap(modelresult_oresund_2d):
     )
     mr = modelresult_oresund_2d
     with pytest.warns(UserWarning) as wn:
-        mr.add_observation(o1, item=0)
-    assert len(wn) == 2
+        con = Connector(o1, mr[0], validate=False)
+    assert len(wn) == 1
     assert "No time overlap" in str(wn[0].message)
-    assert "Could not add observation" in str(wn[1].message)
-    assert len(mr.observations) == 0
-    c = mr.extract()
+    # assert "Could not add observation" in str(wn[1].message)
+    assert len(con.observations) == 1
+    c = con.extract()
     assert c.n_comparers == 0
 
 
 def test_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    mr.add_observation(klagshamn, item=0, validate_eum=False)
-    mr.add_observation(drogden, item=0, validate_eum=False)
-    collection = mr.extract()
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    cc = con.extract()
 
-    assert collection.score(metric=root_mean_squared_error) > 0.0
-    report = collection.skill(metrics=[root_mean_squared_error, mean_absolute_error])
+    assert cc.score(metric=root_mean_squared_error) > 0.0
+    cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
 
 
 def test_weighted_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    mr.add_observation(klagshamn, item=0, validate_eum=False)
-    mr.add_observation(drogden, item=0, validate_eum=False)
-    c = mr.extract()
-    unweighted_skill = c.score()
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    cc = con.extract()
+    unweighted_skill = cc.score()
 
-    mrw = modelresult_oresund_2d
-
-    mrw.add_observation(klagshamn, item=0, weight=1.0, validate_eum=False)
-    mrw.add_observation(drogden, item=0, weight=0.0, validate_eum=False)
-    cw = mrw.extract()
-
-    weighted_skill = cw.score()
-
+    con = Connector()
+    con.add(klagshamn, mr[0], weight=0.9, validate=False)
+    con.add(drogden, mr[0], weight=0.1, validate=False)
+    cc = con.extract()
+    weighted_skill = cc.score()
     assert unweighted_skill != weighted_skill
+
+    obs = [klagshamn, drogden]
+    con = Connector(obs, mr[0], weight=[0.9, 0.1], validate=False)
+    cc = con.extract()
+    weighted_skill2 = cc.score()
+
+    assert weighted_skill == weighted_skill2
 
 
 def test_misc_properties(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    mr.add_observation(klagshamn, item=0, validate_eum=False)
-    mr.add_observation(drogden, item=0, validate_eum=False)
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    cc = con.extract()
 
-    c = mr.extract()
+    assert len(cc) == 2
+    assert cc.n_comparers == 2
 
-    assert len(c) == 2
-    assert c.n_comparers == 2
-
-    assert c.n_models == 1
-    assert c._mod_names == [
+    assert cc.n_models == 1
+    assert cc._mod_names == [
         "Oresund2D"
     ]  # TODO this fails when all tests are run, something is spilling over from another test !!
 
-    ck = c["Klagshamn"]
+    ck = cc["Klagshamn"]
     assert ck.name == "Klagshamn"
 
     assert ck.n_points > 0
@@ -147,16 +144,14 @@ def test_skill(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    mr.add_observation(klagshamn, item=0, validate_eum=False)
-    mr.add_observation(drogden, item=0, validate_eum=False)
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    cc = con.extract()
 
-    c = mr.extract()
-
-    df = c.skill().df
+    df = cc.skill().df
     assert df.loc["Klagshamn"].n == 167
 
     # Filtered skill
-    df = c.skill(observation="Klagshamn").df
+    df = cc.skill(observation="Klagshamn").df
     assert df.loc["Klagshamn"].n == 167
 
 
@@ -166,7 +161,7 @@ def test_comparison_from_dict():
     # mr = ModelResult()
 
     # o1 = PointObservation()
-    # mr.add_observation(o1, item=0)
+    # con = Connector(o1, mr[0])
     # c = mr.extract()
 
     configuration = dict(
