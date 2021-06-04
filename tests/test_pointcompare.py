@@ -197,13 +197,6 @@ def test_comparison_from_dict():
 
 def test_comparison_from_yml():
 
-    # As an alternative to
-    # mr = ModelResult()
-
-    # o1 = PointObservation()
-    # mr.add_observation(o1, item=0)
-    # c = mr.extract()
-
     mr = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     c = mr.extract()
 
