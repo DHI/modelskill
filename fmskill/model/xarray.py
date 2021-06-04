@@ -27,7 +27,7 @@ class _XarrayBase:
         raise NotImplementedError()
 
 
-class XarrayModelResultItem(_XarrayBase, ModelResultInterface):
+class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
     @property
     def item_name(self):
         raise NotImplementedError()
@@ -66,7 +66,7 @@ class XarrayModelResultItem(_XarrayBase, ModelResultInterface):
         return comparer
 
 
-class XarrayModelResult(_XarrayBase, MultiItemModelResult):
+class XArrayModelResult(_XarrayBase, MultiItemModelResult):
     @property
     def item_names(self):
         """List of item names (=data vars)"""
