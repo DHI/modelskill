@@ -5,10 +5,10 @@ These Comparers are constructed by extracting data from the combination of obser
 
 Examples
 --------
->>> mr = ModelResult("Oresund2D.dfsu")
+>>> mr = ModelResult("Oresund2D.dfsu", item=0)
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
->>> mr.add_observation(o1, item=0)
->>> comparer = mr.extract()
+>>> con = Connector(o1, mr)
+>>> comparer = con.extract()
 """
 from collections.abc import Mapping, Iterable, Sequence
 from typing import List, Union
@@ -366,7 +366,7 @@ class BaseComparer:
 
         Examples
         --------
-        >>> cc = mr.extract()
+        >>> cc = con.extract()
         >>> cc.skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -550,7 +550,7 @@ class BaseComparer:
 
         Examples
         --------
-        >>> cc = mr.extract()  # with satellite track measurements
+        >>> cc = con.extract()  # with satellite track measurements
         >>> cc.spatial_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
@@ -681,7 +681,7 @@ class BaseComparer:
 
         Examples
         --------
-        >>> cc = mr.extract()
+        >>> cc = con.extract()
         >>> dfsub = cc.sel_df(observation=['EPL','HKNA'])
         >>> dfsub = cc.sel_df(model=0)
         >>> dfsub = cc.sel_df(start='2017-10-1', end='2017-11-1')
@@ -1057,7 +1057,7 @@ class SingleObsComparer(BaseComparer):
 
         Examples
         --------
-        >>> cc = mr.extract()
+        >>> cc = con.extract()
         >>> cc['c2'].skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -1128,7 +1128,7 @@ class SingleObsComparer(BaseComparer):
 
         Examples
         --------
-        >>> cc = mr.extract()
+        >>> cc = con.extract()
         >>> cc['c2'].score()
         0.3517964910888918
 
@@ -1195,7 +1195,7 @@ class SingleObsComparer(BaseComparer):
 
         Examples
         --------
-        >>> cc = mr.extract()
+        >>> cc = con.extract()
         >>> dfsub = cc['c2'].sel_df(model=0)
         >>> dfsub = cc['c2'].sel_df(start='2017-10-1', end='2017-11-1')
         >>> dfsub = cc['c2'].sel_df(area=[0.5,52.5,5,54])
@@ -1325,10 +1325,10 @@ class PointComparer(SingleObsComparer):
 
     Examples
     --------
-    >>> mr = ModelResult("Oresund2D.dfsu")
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
-    >>> mr.add_observation(o1, item=0)
-    >>> comparer = mr.extract()
+    >>> con = Connector(o1, mr)
+    >>> comparer = con.extract()
     >>> comparer['Klagshamn']
     """
 
@@ -1419,10 +1419,10 @@ class TrackComparer(SingleObsComparer):
 
     Examples
     --------
-    >>> mr = ModelResult("HKZN_local_2017.dfsu")
+    >>> mr = ModelResult("HKZN_local_2017.dfsu", item=2)
     >>> c2 = TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
-    >>> mr.add_observation(c2, item=0)
-    >>> comparer = mr.extract()
+    >>> con = Connector(c2, mr)
+    >>> comparer = con.extract()
     >>> comparer['c2']
     """
 
@@ -1486,12 +1486,13 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     Examples
     --------
-    >>> mr = ModelResult("Oresund2D.dfsu")
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
-    >>> mr.add_observation(o1, item=0)
-    >>> mr.add_observation(o2, item=0)
-    >>> comparer = mr.extract()
+    >>> con = Connector()
+    >>> con.add(o1, mr)
+    >>> con.add(o2, mr)
+    >>> comparer = con.extract()
 
     """
 
@@ -1702,7 +1703,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         Examples
         --------
-        >>> cc = mr.extract()
+        >>> cc = con.extract()
         >>> cc.mean_skill().round(2)
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
@@ -1857,7 +1858,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         Examples
         --------
-        >>> cc = mr.extract()
+        >>> cc = con.extract()
         >>> cc.score()
         0.30681206
         >>> cc.score(weights=[0.1,0.1,0.8])
