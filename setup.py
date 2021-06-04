@@ -8,7 +8,7 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="fmskill",
-    version="0.3.0",
+    version="0.4.dev",
     install_requires=[
         "numpy",
         "pandas",
