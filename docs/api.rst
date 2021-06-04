@@ -9,6 +9,11 @@ Model
 .. autoclass:: fmskill.model.ModelResult
 	:members:
 
+.. autoclass:: fmskill.model.dfs.DfsModelResult
+	:members:
+
+.. autoclass:: fmskill.model.dfs.DfsModelResultItem
+	:members:
 
 Observation
 -----------
