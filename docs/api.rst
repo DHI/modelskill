@@ -25,11 +25,16 @@ Observation
 	:members:
 	:inherited-members:
 
+
 Connector
 ---------
 .. automodule:: fmskill.connection
 	:members: compare
-	
+
+.. autoclass:: fmskill.connection.Connector
+	:members:
+	:inherited-members:
+	:exclude-members: keys, values, get, items, count, index
 
 .. autoclass:: fmskill.connection.PointConnector
 	:members:
@@ -39,10 +44,6 @@ Connector
 	:members:
 	:inherited-members:
 
-.. autoclass:: fmskill.connection.Connector
-	:members:
-	:inherited-members:
-	:exclude-members: keys, values, get, items, count, index
 
 Compare
 -------
@@ -59,16 +60,19 @@ Compare
 	:inherited-members:
 	:exclude-members: keys, values, get, items, count, index
 
+
 Skill
 -------------
 .. autoclass:: fmskill.skill.AggregatedSkill
 	:members:
 	:inherited-members:
 
+
 Spatial Skill
 -------------
 .. autoclass:: fmskill.spatial.SpatialSkill
 	:members:
+
 
 Metrics
 -------
