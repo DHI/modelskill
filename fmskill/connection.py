@@ -341,7 +341,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
     Note
     ----
     Only ModelResults with a single item can be added to the Connector.
-    Multi-item ModelResults 'mr' must be subset e.g. with 'mr[0]'
+    From a multi-item ModelResult 'mr' an item must selected e.g. with
+    'mr[0]' before adding
 
     Examples
     --------
@@ -385,6 +386,12 @@ class Connector(_BaseConnector, Mapping, Sequence):
     def add(self, obs, mod=None, weight=1.0, validate=True):
         """Add Observation-ModelResult-connections to Connector
 
+        Note
+        ----
+        Only ModelResults with a single item can be added to the Connector.
+        From a multi-item ModelResult 'mr' an item must selected e.g. with
+        'mr[0]' before adding
+
         Parameters
         ----------
         obs : (str, pd.DataFrame, Observation)
@@ -396,6 +403,17 @@ class Connector(_BaseConnector, Mapping, Sequence):
         validate : bool, optional
             Perform validation on eum type, observation-model
             overlap in space and time? by default True
+
+        Examples
+        --------
+        >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+        >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
+        >>> o2 = TrackObservation(df, item=2, name="altimeter")
+        >>> conA = Connector()
+        >>> conA.add([o1, o2], mr)
+        >>> conB = Connector()
+        >>> conB.add(o1, mr)
+        >>> conB.add(o2, mr)   # conA = conB
         """
         if is_iterable_not_str(obs):
             weight = self._parse_weights(len(obs), weight)
@@ -494,6 +512,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
         ----------
         figsize : (float, float), optional
             figure size, by default None
+
+        Examples
+        --------
+        >>> con.plot_observation_positions()
+        >>> con.plot_observation_positions(figsize=(10,10))
         """
         mod = list(self.modelresults.values())[0]
 
@@ -513,6 +536,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
         limit_to_model_period : bool, optional
             Show temporal coverage only for period covered
             by the model, by default True
+
+        Examples
+        --------
+        >>> con.plot_temporal_coverage()
+        >>> con.plot_temporal_coverage(limit_to_model_period=False)
         """
         # TODO: multiple model
         mod0 = list(self.modelresults.values())[0]
@@ -567,6 +595,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
         -------
         Connector
             A Connector object with the given configuration
+
+        Examples
+        --------
+        >>> con = Connector.from_config('Oresund.yml')
+        >>> cc = con.extract()
         """
         if isinstance(configuration, str):
             with open(configuration) as f:
