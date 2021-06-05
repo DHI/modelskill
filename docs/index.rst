@@ -24,6 +24,7 @@ Start by reading the `Getting started guide <getting_started.html>`_.
    :hidden:
 
    getting_started
+   simple_compare
    design
    vision
    api
