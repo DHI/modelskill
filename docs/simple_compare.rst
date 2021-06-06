@@ -3,7 +3,9 @@
 Simple time series comparison
 #############################
 
-If all you need to do is to compare two point time series, the workflow is very simple.
+If all you need to do is to compare two point time series, the workflow is 
+very simple and described below. The general many-to-many comparison is decribed 
+in the `getting started guide <getting_started.html>`_.
 
 
 Workflow

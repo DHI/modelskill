@@ -3,6 +3,10 @@
 Getting started
 ###############
 
+This page describes the typical fmskill workflow for comparing 
+model results and observations. If you just need a simple one-to-one 
+time series comparison, see the `simple time series comparison <simple_compare.html>`_.
+
 Workflow
 ********
 
