@@ -90,6 +90,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simple_compare.html">Simple time series comparison</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design.html">Design philosophy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vision.html">Vision</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API Documentation</a><ul>
@@ -204,6 +205,37 @@ before connecting to an observation.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mr_item</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="s2">&quot;Water Level&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fmskill.model.dfs.DfsModelResult">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.model.dfs.</span></span><span class="sig-name descname"><span class="pre">DfsModelResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.model.dfs.DfsModelResult" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="fmskill.model.dfs.DfsModelResultItem">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.model.dfs.</span></span><span class="sig-name descname"><span class="pre">DfsModelResultItem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">itemInfo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.model.dfs.DfsModelResultItem" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="fmskill.model.dfs.DfsModelResultItem.extract_observation">
+<span class="sig-name descname"><span class="pre">extract_observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#fmskill.observation.PointObservation" title="fmskill.observation.PointObservation"><span class="pre">fmskill.observation.PointObservation</span></a><span class="p"><span class="pre">,</span> </span><a class="reference internal" href="#fmskill.observation.TrackObservation" title="fmskill.observation.TrackObservation"><span class="pre">fmskill.observation.TrackObservation</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">fmskill.comparison.BaseComparer</span><a class="headerlink" href="#fmskill.model.dfs.DfsModelResultItem.extract_observation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract ModelResult at observation for comparison</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>observation</strong> (<em>&lt;PointObservation&gt;</em><em> or </em><em>&lt;TrackObservation&gt;</em>) – points and times at which modelresult should be extracted</p></li>
+<li><p><strong>validate</strong> (<em>bool</em><em>, </em><em>optional</em>) – Validate if observation is inside domain and that eum type
+and units match; Default: True</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A comparer object for further analysis or plotting</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>&lt;fmskill.BaseComparer&gt;</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -380,9 +412,195 @@ before connecting to an observation.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="fmskill.connection.Connector">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.connection.</span></span><span class="sig-name descname"><span class="pre">Connector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Connector is used for matching Observations and ModelResults</p>
+<p>It is one of the most important classes in fmskill. The connections are
+added either at construction of the Connector or by using the add()
+method.</p>
+<p>When observations and modelResults are added the connection is
+validated (inside domain? overlapping time? eum match?).</p>
+<p>The extract() method are then called to extract ModelResult data at
+the time and positions of each observation.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only ModelResults with a single item can be added to the Connector.
+From a multi-item ModelResult ‘mr’ an item must selected e.g. with
+‘mr[0]’ before adding</p>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o1</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;Drogden_Fyr.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">355568.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">6156863.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o2</span> <span class="o">=</span> <span class="n">TrackObservation</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;altimeter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conA</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">([</span><span class="n">o1</span><span class="p">,</span> <span class="n">o2</span><span class="p">],</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conB</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conB</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conB</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">o2</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>    <span class="c1"># conA = conB</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">conB</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add Observation-ModelResult-connections to Connector</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only ModelResults with a single item can be added to the Connector.
+From a multi-item ModelResult ‘mr’ an item must selected e.g. with
+‘mr[0]’ before adding</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>Observation</em><em>)</em>) – Observation(s) to be compared</p></li>
+<li><p><strong>mod</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><a class="reference internal" href="#fmskill.model.ModelResult" title="fmskill.model.ModelResult"><em>ModelResult</em></a><em>)</em>) – Model result(s) to be compared</p></li>
+<li><p><strong>weight</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative weight used in weighted skill calculation, default 1.0</p></li>
+<li><p><strong>validate</strong> (<em>bool</em><em>, </em><em>optional</em>) – Perform validation on eum type, observation-model
+overlap in space and time? by default True</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o1</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;Drogden_Fyr.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">355568.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">6156863.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o2</span> <span class="o">=</span> <span class="n">TrackObservation</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;altimeter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conA</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conA</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="n">o1</span><span class="p">,</span> <span class="n">o2</span><span class="p">],</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conB</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conB</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conB</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">o2</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>   <span class="c1"># conA = conB</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.extract">
+<span class="sig-name descname"><span class="pre">extract</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fmskill.comparison.ComparerCollection" title="fmskill.comparison.ComparerCollection"><span class="pre">fmskill.comparison.ComparerCollection</span></a><a class="headerlink" href="#fmskill.connection.Connector.extract" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract model results at times and positions of all observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A comparer object for further analysis and plotting.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#fmskill.comparison.ComparerCollection" title="fmskill.comparison.ComparerCollection">ComparerCollection</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.from_config">
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_eum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.from_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load Connector from a config file (or dict)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>configuration</strong> (<em>Union</em><em>[</em><em>atr</em><em>, </em><em>dict</em><em>]</em>) – path to config file or dict with configuration</p></li>
+<li><p><strong>validate_eum</strong> (<em>bool</em><em>, </em><em>optional</em>) – require eum to match, by default True</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A Connector object with the given configuration</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#fmskill.connection.Connector" title="fmskill.connection.Connector">Connector</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="s1">&#39;Oresund.yml&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.mod_names">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">mod_names</span></span><a class="headerlink" href="#fmskill.connection.Connector.mod_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of (unique) model results in Connector.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.n_models">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">n_models</span></span><a class="headerlink" href="#fmskill.connection.Connector.n_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of (unique) model results in Connector.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.n_observations">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">n_observations</span></span><a class="headerlink" href="#fmskill.connection.Connector.n_observations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of (unique) observations in Connector.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.obs_names">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">obs_names</span></span><a class="headerlink" href="#fmskill.connection.Connector.obs_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of (unique) observations in Connector.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.plot_observation_positions">
+<span class="sig-name descname"><span class="pre">plot_observation_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.plot_observation_positions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot observation points on a map showing the model domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – figure size, by default None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span><span class="o">.</span><span class="n">plot_observation_positions</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span><span class="o">.</span><span class="n">plot_observation_positions</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.plot_temporal_coverage">
+<span class="sig-name descname"><span class="pre">plot_temporal_coverage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">limit_to_model_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.plot_temporal_coverage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot graph showing temporal coverage for all observations</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>limit_to_model_period</strong> (<em>bool</em><em>, </em><em>optional</em>) – Show temporal coverage only for period covered
+by the model, by default True</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">con</span><span class="o">.</span><span class="n">plot_temporal_coverage</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span><span class="o">.</span><span class="n">plot_temporal_coverage</span><span class="p">(</span><span class="n">limit_to_model_period</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.connection.Connector.to_config">
+<span class="sig-name descname"><span class="pre">to_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.to_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save Connector to a config file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em><em> or </em><em>Path</em>) – Save configuration in yaml format</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ol class="arabic simple">
+<li><p>Manually create your skill assessment in fmskill as usual</p></li>
+<li><p>When you are satisfied, save config: cc.to_config(‘conf.yml’) or similar</p></li>
+<li><p>Later: run your reporting from the commandline e.g. directly after model execution</p></li>
+</ol>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="fmskill.connection.PointConnector">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.connection.</span></span><span class="sig-name descname"><span class="pre">PointConnector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.PointConnector" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="py method">
+<dd><p>Connector for a single PointObservation and ModelResults</p>
+<p>Typically, not constructed directly, but part of a Connector.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o1</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;Drogden_Fyr.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">355568.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">6156863.</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con1</span> <span class="o">=</span> <span class="n">PointConnector</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>    <span class="c1"># con[0] = con1</span>
+</pre></div>
+</div>
+<dl class="py method">
 <dt class="sig sig-object py" id="fmskill.connection.PointConnector.extract">
 <span class="sig-name descname"><span class="pre">extract</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fmskill.comparison.PointComparer" title="fmskill.comparison.PointComparer"><span class="pre">fmskill.comparison.PointComparer</span></a><a class="headerlink" href="#fmskill.connection.PointConnector.extract" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract model results at times and positions of observation.</p>
@@ -424,10 +642,19 @@ before connecting to an observation.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="fmskill.connection.TrackConnector">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.connection.</span></span><span class="sig-name descname"><span class="pre">TrackConnector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.TrackConnector" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="py method">
+<dd><p>Connector for a single TrackObservation and ModelResults</p>
+<p>Typically, not constructed directly, but part of a Connector.</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">o1</span> <span class="o">=</span> <span class="n">TrackObservation</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;altimeter&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con1</span> <span class="o">=</span> <span class="n">TrackConnector</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>    <span class="c1"># con[0] = con1</span>
+</pre></div>
+</div>
+<dl class="py method">
 <dt class="sig sig-object py" id="fmskill.connection.TrackConnector.extract">
 <span class="sig-name descname"><span class="pre">extract</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fmskill.comparison.TrackComparer" title="fmskill.comparison.TrackComparer"><span class="pre">fmskill.comparison.TrackComparer</span></a><a class="headerlink" href="#fmskill.connection.TrackConnector.extract" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extract model results at times and positions of observation.</p>
+<dd><p>Extract model results at times and positions of track observation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>A comparer object for further analysis and plotting.</p>
@@ -463,106 +690,6 @@ before connecting to an observation.</p>
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="fmskill.connection.Connector">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.connection.</span></span><span class="sig-name descname"><span class="pre">Connector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector" title="Permalink to this definition">¶</a></dt>
-<dd><p>A Connector object can have multiple single-obs-Connectors</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.add">
-<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.add" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add Observation-ModelResult-connections to Connector</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>Observation</em><em>)</em>) – Observation(s) to be compared</p></li>
-<li><p><strong>mod</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><a class="reference internal" href="#fmskill.model.ModelResult" title="fmskill.model.ModelResult"><em>ModelResult</em></a><em>)</em>) – Model result(s) to be compared</p></li>
-<li><p><strong>weight</strong> (<em>float</em><em>, </em><em>optional</em>) – Relative weight used in weighted skill calculation, default 1.0</p></li>
-<li><p><strong>validate</strong> (<em>bool</em><em>, </em><em>optional</em>) – Perform validation on eum type, observation-model
-overlap in space and time? by default True</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.extract">
-<span class="sig-name descname"><span class="pre">extract</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#fmskill.comparison.ComparerCollection" title="fmskill.comparison.ComparerCollection"><span class="pre">fmskill.comparison.ComparerCollection</span></a><a class="headerlink" href="#fmskill.connection.Connector.extract" title="Permalink to this definition">¶</a></dt>
-<dd><p>Extract model results at times and positions of all observations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>A comparer object for further analysis and plotting.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="#fmskill.comparison.ComparerCollection" title="fmskill.comparison.ComparerCollection">ComparerCollection</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.mod_names">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">mod_names</span></span><a class="headerlink" href="#fmskill.connection.Connector.mod_names" title="Permalink to this definition">¶</a></dt>
-<dd><p>Names of (unique) model results in Connector.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.n_models">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">n_models</span></span><a class="headerlink" href="#fmskill.connection.Connector.n_models" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of (unique) model results in Connector.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.n_observations">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">n_observations</span></span><a class="headerlink" href="#fmskill.connection.Connector.n_observations" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of (unique) observations in Connector.</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.obs_names">
-<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">obs_names</span></span><a class="headerlink" href="#fmskill.connection.Connector.obs_names" title="Permalink to this definition">¶</a></dt>
-<dd><p>Names of (unique) observations in Connector.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.plot_observation_positions">
-<span class="sig-name descname"><span class="pre">plot_observation_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.plot_observation_positions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot observation points on a map showing the model domain</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>figsize</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em><em>, </em><em>optional</em>) – figure size, by default None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.plot_temporal_coverage">
-<span class="sig-name descname"><span class="pre">plot_temporal_coverage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">limit_to_model_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.plot_temporal_coverage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot graph showing temporal coverage for all observations</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>limit_to_model_period</strong> (<em>bool</em><em>, </em><em>optional</em>) – Show temporal coverage only for period covered
-by the model, by default True</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="fmskill.connection.Connector.to_config">
-<span class="sig-name descname"><span class="pre">to_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.to_config" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>filename</strong> (<em>str</em><em> or </em><em>Path</em>) – Save configuration in yaml format</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<ol class="arabic simple">
-<li><p>Manually create your skill assessment in fmskill as usual</p></li>
-<li><p>When you are satisfied, save config: cc.to_config(‘conf.yml’) or similar</p></li>
-<li><p>Later: run your reporting from the commandline e.g. directly after model execution</p></li>
-</ol>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="compare">
 <h2>Compare<a class="headerlink" href="#compare" title="Permalink to this headline">¶</a></h2>
@@ -571,10 +698,10 @@ by the model, by default True</p>
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.comparison.</span></span><span class="sig-name descname"><span class="pre">PointComparer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modeldata</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.comparison.PointComparer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Comparer for observations from fixed locations</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">o1</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;klagshamn.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">366844</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">6154291</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Klagshamn&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span><span class="o">.</span><span class="n">add_observation</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="p">[</span><span class="s1">&#39;Klagshamn&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -691,7 +818,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">score</span><span class="p">()</span>
 <span class="go">0.3517964910888918</span>
 </pre></div>
@@ -737,7 +864,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2017-10-1&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;2017-11-1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">area</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">52.5</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">54</span><span class="p">])</span>
@@ -784,7 +911,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">skill</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">               n  bias  rmse  urmse   mae    cc    si    r2</span>
 <span class="go">observation</span>
@@ -854,7 +981,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">)</span>
 <span class="go">&lt;xarray.Dataset&gt;</span>
 <span class="go">Dimensions:      (x: 5, y: 5)</span>
@@ -918,10 +1045,10 @@ by default None</p></li>
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.comparison.</span></span><span class="sig-name descname"><span class="pre">TrackComparer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modeldata</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.comparison.TrackComparer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Comparer for observations from changing locations i.e. <cite>TrackObservation</cite></p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;HKZN_local_2017.dfsu&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;HKZN_local_2017.dfsu&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">c2</span> <span class="o">=</span> <span class="n">TrackObservation</span><span class="p">(</span><span class="s2">&quot;Alti_c2_Dutch.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span><span class="o">.</span><span class="n">add_observation</span><span class="p">(</span><span class="n">c2</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">(</span><span class="n">c2</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -1038,7 +1165,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">score</span><span class="p">()</span>
 <span class="go">0.3517964910888918</span>
 </pre></div>
@@ -1084,7 +1211,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2017-10-1&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;2017-11-1&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">area</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">52.5</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">54</span><span class="p">])</span>
@@ -1131,7 +1258,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="p">[</span><span class="s1">&#39;c2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">skill</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">               n  bias  rmse  urmse   mae    cc    si    r2</span>
 <span class="go">observation</span>
@@ -1201,7 +1328,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">)</span>
 <span class="go">&lt;xarray.Dataset&gt;</span>
 <span class="go">Dimensions:      (x: 5, y: 5)</span>
@@ -1265,12 +1392,13 @@ by default None</p></li>
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">fmskill.comparison.</span></span><span class="sig-name descname"><span class="pre">ComparerCollection</span></span><a class="headerlink" href="#fmskill.comparison.ComparerCollection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Collection of comparers, constructed by calling the <cite>ModelResult.extract</cite> method.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;Oresund2D.dfsu&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">o1</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;klagshamn.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">366844</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">6154291</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Klagshamn&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">o2</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;drogden.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">355568.0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">6156863.0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span><span class="o">.</span><span class="n">add_observation</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mr</span><span class="o">.</span><span class="n">add_observation</span><span class="p">(</span><span class="n">o2</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">con</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">o2</span><span class="p">,</span> <span class="n">mr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 </pre></div>
 </div>
 <dl class="py method">
@@ -1329,7 +1457,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">mean_skill</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">              n  bias  rmse  urmse   mae    cc    si    r2</span>
 <span class="go">HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99</span>
@@ -1457,7 +1585,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">score</span><span class="p">()</span>
 <span class="go">0.30681206</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.1</span><span class="p">,</span><span class="mf">0.8</span><span class="p">])</span>
@@ -1506,7 +1634,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">observation</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;EPL&#39;</span><span class="p">,</span><span class="s1">&#39;HKNA&#39;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">dfsub</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">sel_df</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2017-10-1&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;2017-11-1&#39;</span><span class="p">)</span>
@@ -1560,7 +1688,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">skill</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 <span class="go">               n  bias  rmse  urmse   mae    cc    si    r2</span>
 <span class="go">observation</span>
@@ -1640,7 +1768,7 @@ by default None</p></li>
 </dl>
 </div>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">extract</span><span class="p">()</span>  <span class="c1"># with satellite track measurements</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">spatial_skill</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="s1">&#39;bias&#39;</span><span class="p">)</span>
 <span class="go">&lt;xarray.Dataset&gt;</span>
 <span class="go">Dimensions:      (x: 5, y: 5)</span>

@@ -41,7 +41,7 @@
     
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Design philosophy" href="design.html" />
+    <link rel="next" title="Simple time series comparison" href="simple_compare.html" />
     <link rel="prev" title="fmskill: Assess the skill of your MIKE FM model" href="index.html" /> 
 </head>
 
@@ -93,7 +93,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#workflow">Workflow</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#define-modelresults">1. Define ModelResults</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#define-observations">2. Define Observations</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#connect-observations-and-modelresults">3. Connect observations and ModelResults</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#connect-observations-and-modelresults">3. Connect observations and ModelResults</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#note">Note</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#extract-modelresults-at-observation-positions">4. Extract ModelResults at observation positions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#do-analysis-plotting-etc-with-a-comparer">5. Do analysis, plotting, etc with a Comparer</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#filtering">Filtering</a></li>
@@ -103,6 +106,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="simple_compare.html">Simple time series comparison</a></li>
 <li class="toctree-l1"><a class="reference internal" href="design.html">Design philosophy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vision.html">Vision</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>
@@ -175,6 +179,9 @@
             
   <div class="section" id="getting-started">
 <span id="id1"></span><h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p>This page describes the typical fmskill workflow for comparing
+model results and observations. If you just need a simple one-to-one
+time series comparison, see the <a class="reference external" href="simple_compare.html">simple time series comparison</a>.</p>
 <div class="section" id="workflow">
 <h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
 <p>The typical fmskill workflow consists of these five steps:</p>
@@ -192,12 +199,15 @@ The most common formats are .dfsu for distributed data and .dfs0 for
 time series point data. A fmskill <a class="reference external" href="api.html#fmskill.model.ModelResult">ModelResult</a> is defined by the
 result file path and a name:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fmskill</span> <span class="kn">import</span> <span class="n">ModelResult</span>
-<span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;HKZN_local_2017.dfsu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKZN_local&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;HKZN_local_2017.dfsu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKZN_local&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Currently, ModelResult supports .dfs0 and .dfsu files.
+<p>Currently, ModelResult supports .dfs0 and .dfsu files and pandas DataFrame.
 Only the file header is read when the ModelResult object is created.
 The data will be read later.</p>
+<p>The ModelResult can be constructed without specifying a specific item as shown here.
+But the the item must be specified later (e.g. when connecting to an observation)
+by mr[0] or similar.</p>
 </div>
 <div class="section" id="define-observations">
 <h3>2. Define Observations<a class="headerlink" href="#define-observations" title="Permalink to this headline">¶</a></h3>
@@ -220,11 +230,17 @@ the item number (or item name) and a name. A PointObservation further needs to b
 </div>
 <div class="section" id="connect-observations-and-modelresults">
 <h3>3. Connect observations and ModelResults<a class="headerlink" href="#connect-observations-and-modelresults" title="Permalink to this headline">¶</a></h3>
-<p>The observations are connected with a model result one by one using the
-<a class="reference external" href="api.html#fmskill.connection.Connector">Connector</a> method like this:</p>
+<p>The observations are connected with a model result using the
+<a class="reference external" href="api.html#fmskill.connection.Connector">Connector</a> like this:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fmskill</span> <span class="kn">import</span> <span class="n">Connector</span>
-<span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">([</span><span class="n">HKNA</span><span class="p">,</span> <span class="n">c2</span><span class="p">],</span> <span class="n">mr</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">([</span><span class="n">HKNA</span><span class="p">,</span> <span class="n">c2</span><span class="p">],</span> <span class="n">mr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 </pre></div>
+</div>
+<div class="section" id="note">
+<h4>Note<a class="headerlink" href="#note" title="Permalink to this headline">¶</a></h4>
+<p>Only ModelResults with a single item can be added to the Connector.
+From a multi-item ModelResult ‘mr’ an item must selected e.g. with
+‘mr[0]’ before adding.</p>
 </div>
 </div>
 <div class="section" id="extract-modelresults-at-observation-positions">
@@ -267,7 +283,7 @@ for plotting and skill assessment.</p>
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="design.html" class="btn btn-neutral float-right" title="Design philosophy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="simple_compare.html" class="btn btn-neutral float-right" title="Simple time series comparison" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="index.html" class="btn btn-neutral float-left" title="fmskill: Assess the skill of your MIKE FM model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
