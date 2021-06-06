@@ -162,7 +162,7 @@ def test_comparison_from_dict():
 
     # o1 = PointObservation()
     # con = Connector(o1, mr[0])
-    # c = mr.extract()
+    # c = con.extract()
 
     configuration = dict(
         filename="tests/testdata/Oresund2D.dfsu",
@@ -188,8 +188,8 @@ def test_comparison_from_dict():
             ),
         ],
     )
-    mr = fmskill.from_config(configuration, validate_eum=False)
-    c = mr.extract()
+    con = fmskill.from_config(configuration, validate_eum=False)
+    c = con.extract()
     assert len(c) == 2
     assert c.n_comparers == 2
     assert c.n_models == 1
@@ -197,17 +197,10 @@ def test_comparison_from_dict():
 
 def test_comparison_from_yml():
 
-    # As an alternative to
-    # mr = ModelResult()
-
-    # o1 = PointObservation()
-    # mr.add_observation(o1, item=0)
-    # c = mr.extract()
-
-    mr = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
-    c = mr.extract()
+    con = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    c = con.extract()
 
     assert len(c) == 2
     assert c.n_comparers == 2
     assert c.n_models == 1
-    assert mr.observations["Klagshamn"].itemInfo.name == "Water Level"
+    assert con.observations["Klagshamn"].itemInfo.name == "Water Level"
