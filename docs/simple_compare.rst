@@ -41,7 +41,7 @@ It needs to have a single item only.
 
 3. compare()
 ============
-The compare() method will interpolate the modelresult to the time of the observation
+The `compare() <api.html#fmskill.connection.compare>`_ method will interpolate the modelresult to the time of the observation
 and return an object that can be used for analysis and plotting
 
 .. code-block:: python
@@ -53,7 +53,7 @@ and return an object that can be used for analysis and plotting
 4. Analysis and plotting
 ========================
 
-The returned object can make
+The returned `PointComparer <api.html#fmskill.comparison.PointComparer>`_ can make
 scatter plots, skill assessment, time series plots etc.
 
 
