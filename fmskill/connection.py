@@ -252,6 +252,18 @@ class _SingleObsConnector(_BaseConnector):
 
 
 class PointConnector(_SingleObsConnector):
+    """Connector for a single PointObservation and ModelResults
+
+    Typically, not constructed directly, but part of a Connector.
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+    >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
+    >>> con1 = PointConnector(o1, mr)
+    >>> con = Connector(o1, mr)    # con[0] = con1
+    """
+
     def _parse_observation(self, obs) -> PointObservation:
         if isinstance(obs, (pd.Series, pd.DataFrame)):
             return PointObservation(obs)
@@ -279,6 +291,18 @@ class PointConnector(_SingleObsConnector):
 
 
 class TrackConnector(_SingleObsConnector):
+    """Connector for a single TrackObservation and ModelResults
+
+    Typically, not constructed directly, but part of a Connector.
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+    >>> o1 = TrackObservation(df, item=2, name="altimeter")
+    >>> con1 = TrackConnector(o1, mr)
+    >>> con = Connector(o1, mr)    # con[0] = con1
+    """
+
     def _parse_observation(self, obs) -> TrackObservation:
         if isinstance(obs, TrackObservation):
             return obs
@@ -286,7 +310,7 @@ class TrackConnector(_SingleObsConnector):
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
     def extract(self) -> TrackComparer:
-        """Extract model results at times and positions of observation.
+        """Extract model results at times and positions of track observation.
 
         Returns
         -------
@@ -303,7 +327,35 @@ class TrackConnector(_SingleObsConnector):
 
 
 class Connector(_BaseConnector, Mapping, Sequence):
-    """A Connector object can have multiple single-obs-Connectors"""
+    """The Connector is used for matching Observations and ModelResults
+
+    It is one of the most important classes in fmskill. The connections are
+    added either at construction of the Connector or by using the add()
+    method.
+
+    When observations and modelResults are added the connection is
+    validated (inside domain? overlapping time? eum match?).
+
+    The extract() method are then called to extract ModelResult data at
+    the time and positions of each observation.
+
+    Note
+    ----
+    Only ModelResults with a single item can be added to the Connector.
+    From a multi-item ModelResult 'mr' an item must selected e.g. with
+    'mr[0]' before adding
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+    >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
+    >>> o2 = TrackObservation(df, item=2, name="altimeter")
+    >>> conA = Connector([o1, o2], mr)
+    >>> conB = Connector()
+    >>> conB.add(o1, mr)
+    >>> conB.add(o2, mr)    # conA = conB
+    >>> cc = conB.extract()
+    """
 
     @property
     def n_observations(self):
@@ -335,6 +387,12 @@ class Connector(_BaseConnector, Mapping, Sequence):
     def add(self, obs, mod=None, weight=1.0, validate=True):
         """Add Observation-ModelResult-connections to Connector
 
+        Note
+        ----
+        Only ModelResults with a single item can be added to the Connector.
+        From a multi-item ModelResult 'mr' an item must selected e.g. with
+        'mr[0]' before adding
+
         Parameters
         ----------
         obs : (str, pd.DataFrame, Observation)
@@ -346,6 +404,17 @@ class Connector(_BaseConnector, Mapping, Sequence):
         validate : bool, optional
             Perform validation on eum type, observation-model
             overlap in space and time? by default True
+
+        Examples
+        --------
+        >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+        >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
+        >>> o2 = TrackObservation(df, item=2, name="altimeter")
+        >>> conA = Connector()
+        >>> conA.add([o1, o2], mr)
+        >>> conB = Connector()
+        >>> conB.add(o1, mr)
+        >>> conB.add(o2, mr)   # conA = conB
         """
         if is_iterable_not_str(obs):
             weight = self._parse_weights(len(obs), weight)
@@ -444,6 +513,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
         ----------
         figsize : (float, float), optional
             figure size, by default None
+
+        Examples
+        --------
+        >>> con.plot_observation_positions()
+        >>> con.plot_observation_positions(figsize=(10,10))
         """
         mod = list(self.modelresults.values())[0]
 
@@ -463,6 +537,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
         limit_to_model_period : bool, optional
             Show temporal coverage only for period covered
             by the model, by default True
+
+        Examples
+        --------
+        >>> con.plot_temporal_coverage()
+        >>> con.plot_temporal_coverage(limit_to_model_period=False)
         """
         # TODO: multiple model
         mod0 = list(self.modelresults.values())[0]
@@ -486,7 +565,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
         return ax
 
     def to_config(self, filename: str):
-        """
+        """Save Connector to a config file.
+
         Parameters
         ----------
         filename: str or Path
@@ -503,7 +583,25 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
     @staticmethod
     def from_config(configuration: Union[dict, str], validate_eum=True):
+        """Load Connector from a config file (or dict)
 
+        Parameters
+        ----------
+        configuration : Union[atr, dict]
+            path to config file or dict with configuration
+        validate_eum : bool, optional
+            require eum to match, by default True
+
+        Returns
+        -------
+        Connector
+            A Connector object with the given configuration
+
+        Examples
+        --------
+        >>> con = Connector.from_config('Oresund.yml')
+        >>> cc = con.extract()
+        """
         if isinstance(configuration, str):
             with open(configuration) as f:
                 contents = f.read()

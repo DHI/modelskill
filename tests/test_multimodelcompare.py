@@ -43,7 +43,7 @@ def cc(mr1, mr2, o1, o2, o3):
     return con.extract()
 
 
-def test_add_observation(mr1, mr2, o1):
+def test_connector(mr1, mr2, o1):
     con = Connector(o1, [mr1[0], mr2[0]])
     assert len(con.observations) == 1
 

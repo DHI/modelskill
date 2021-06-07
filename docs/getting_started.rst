@@ -3,6 +3,10 @@
 Getting started
 ###############
 
+This page describes the typical fmskill workflow for comparing 
+model results and observations. If you just need a simple one-to-one 
+time series comparison, see the `simple time series comparison <simple_compare.html>`_.
+
 Workflow
 ********
 
@@ -26,11 +30,15 @@ result file path and a name:
 .. code-block:: python
 
    from fmskill import ModelResult
-   mr = ModelResult("HKZN_local_2017.dfsu", name="HKZN_local", item=0)
+   mr = ModelResult("HKZN_local_2017.dfsu", name="HKZN_local")
 
-Currently, ModelResult supports .dfs0 and .dfsu files. 
+Currently, ModelResult supports .dfs0 and .dfsu files and pandas DataFrame.  
 Only the file header is read when the ModelResult object is created. 
 The data will be read later. 
+
+The ModelResult can be constructed without specifying a specific item as shown here. 
+But the the item must be specified later (e.g. when connecting to an observation) 
+by mr[0] or similar.
 
 
 
@@ -63,14 +71,21 @@ the item number (or item name) and a name. A PointObservation further needs to b
 3. Connect observations and ModelResults
 ========================================
 
-The observations are connected with a model result one by one using the 
-`Connector <api.html#fmskill.connection.Connector>`_ method like this:
+The observations are connected with a model result using the 
+`Connector <api.html#fmskill.connection.Connector>`_ like this:
 
 
 .. code-block:: python
 
    from fmskill import Connector
-   con = Connector([HKNA, c2], mr, item=0)   
+   con = Connector([HKNA, c2], mr[0])
+
+Note
+----
+Only ModelResults with a single item can be added to the Connector.
+From a multi-item ModelResult 'mr' an item must selected e.g. with
+'mr[0]' before adding.
+
 
 
 4. Extract ModelResults at observation positions
