@@ -33,7 +33,7 @@ class _XarrayBase:
                 new_names[c] = "y"
             if ("time" in clow) or ("date" in clow):
                 new_names[c] = "time"
-        return coords
+        return new_names
 
     def _validate_time_axis(self, coords):
         if "time" not in coords:
@@ -89,8 +89,8 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
             else:
                 raise ValueError("Model ambiguous - please provide item")
 
-        self._selected_item = self._get_item_name(item)
         self.ds = ds
+        self._selected_item = self._get_item_name(item)
         self.name = name
 
     def __repr__(self):
