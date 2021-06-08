@@ -78,10 +78,8 @@ class _XarrayBase:
     def _extract_point(self, observation: PointObservation, item=None) -> pd.DataFrame:
         if item is None:
             item = self._selected_item
-        da = self.ds[item].interp(
-            coords=dict(x=observation.x, y=observation.y),
-            method="nearest",
-        )
+        x, y = observation.x, observation.y
+        da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
         return da.to_dataframe()
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
