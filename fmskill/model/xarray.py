@@ -78,22 +78,20 @@ class _XarrayBase:
     def _extract_point(self, observation: PointObservation, item=None) -> pd.DataFrame:
         if item is None:
             item = self._selected_item
-        xy = np.atleast_2d([observation.x, observation.y])
-        raise NotImplementedError()
-        # TODO
-        # elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
-        # df_model = self.dfs.read(elements=elemids, items=[item]).to_dataframe()
-        # df_model.items[0].name = self.name
-        # return df_model
+        da = self.ds[item].interp(
+            coords=dict(x=observation.x, y=observation.y),
+            method="linear",
+        )
+        return da.to_dataframe()
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
         if item is None:
             item = self._selected_item
-        raise NotImplementedError()
-        # TODO
-        # ds_model = self.dfs.extract_track(track=observation.df, items=[item])
-        # ds_model.items[-1].name = self.name
-        # return ds_model
+        t = xr.DataArray(observation.df.index, dims="track")
+        x = xr.DataArray(observation.df.Longitude, dims="track")
+        y = xr.DataArray(observation.df.Latitude, dims="track")
+        da = self.ds[item].interp(coords=dict(time=t, x=x, y=y), method="linear")
+        return da.to_dataframe()
 
     def _in_domain(self, x, y) -> bool:
         ok = True
