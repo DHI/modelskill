@@ -80,7 +80,7 @@ class _XarrayBase:
             item = self._selected_item
         da = self.ds[item].interp(
             coords=dict(x=observation.x, y=observation.y),
-            method="linear",
+            method="nearest",
         )
         return da.to_dataframe()
 
@@ -91,7 +91,9 @@ class _XarrayBase:
         x = xr.DataArray(observation.df.Longitude, dims="track")
         y = xr.DataArray(observation.df.Latitude, dims="track")
         da = self.ds[item].interp(coords=dict(time=t, x=x, y=y), method="linear")
-        return da.to_dataframe()
+        df = da.to_dataframe().drop(columns=["time"])
+        df.index.name = "time"
+        return df
 
     def _in_domain(self, x, y) -> bool:
         ok = True
