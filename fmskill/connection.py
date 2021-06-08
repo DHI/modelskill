@@ -544,7 +544,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         marker : str, optional
             plot marker for observations, by default "_"
         figsize : Tuple(float, float), optional
-            size of figure, by default (7, 0.45*)
+            size of figure, by default (7, 0.45*n_lines)
 
         Examples
         --------
