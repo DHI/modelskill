@@ -647,7 +647,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             yaml.dump(conf, f)  # , default_flow_style=False
 
     @staticmethod
-    def from_config(configuration: Union[dict, str], validate_eum=True):
+    def from_config(conf: Union[dict, str], validate_eum=True):
         """Load Connector from a config file (or dict)
 
         Parameters
@@ -667,17 +667,22 @@ class Connector(_BaseConnector, Mapping, Sequence):
         >>> con = Connector.from_config('Oresund.yml')
         >>> cc = con.extract()
         """
-        if isinstance(configuration, str):
-            with open(configuration) as f:
-                contents = f.read()
-            configuration = yaml.load(contents, Loader=yaml.FullLoader)
+        if isinstance(conf, str):
+            filename = conf
+            ext = os.path.splitext(filename)[-1]
+            if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
+                conf = Connector._yaml_to_dict(filename)
+            elif "xls" in ext:
+                conf = Connector._xls_to_dict(filename)
+            else:
+                raise ValueError("Filename extension not supported! Use .yml or .xlsx")
 
         con = Connector()
-        mr = ModelResult(configuration["filename"], name=configuration.get("name"))
-        for connection in configuration["observations"]:
+        mr = ModelResult(conf["filename"], name=conf.get("name"))
+        for connection in conf["observations"]:
             observation = connection["observation"]
-
-            if observation.get("type") == "track":
+            otype = observation.get("type")
+            if (otype is not None) and ("track" in otype.lower()):
                 obs = TrackObservation(**observation)
             else:
                 obs = PointObservation(**observation)
@@ -685,3 +690,16 @@ class Connector(_BaseConnector, Mapping, Sequence):
             con.add(obs, mr[connection["item"]], validate=validate_eum)
 
         return con
+
+    @staticmethod
+    def _yaml_to_dict(filename):
+        with open(filename) as f:
+            contents = f.read()
+        conf = yaml.load(contents, Loader=yaml.FullLoader)
+        return conf
+
+    @staticmethod
+    def _xls_to_dict(filename):
+        raise NotImplementedError()
+        conf = None
+        return conf
