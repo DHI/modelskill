@@ -606,7 +606,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
     @staticmethod
     def _modelresult_to_dict(mr):
         d = {}
-        # d["name"] = mr.name
+        # d["display_name"] = mr.name
         if mr.filename is None:
             raise ValueError(
                 f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
@@ -618,7 +618,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
     @staticmethod
     def _observation_to_dict(obs):
         d = {}
-        # d["name"] = obs.name
+        # d["display_name"] = obs.name
         d["type"] = obs.__class__.__name__
         if obs.filename is None:
             raise ValueError(
@@ -626,6 +626,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
             )
         d["filename"] = obs.filename
         d["item"] = obs._item
+        if isinstance(obs, PointObservation):
+            d["x"] = obs.x
+            d["y"] = obs.y
+        # d["variable_name"] = obs.variable_name
         return d
 
     @staticmethod
@@ -706,6 +710,13 @@ class Connector(_BaseConnector, Mapping, Sequence):
             dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
             dfo = pd.read_excel(xls, "observations", index_col=0).T
         conf = {}
-        conf["modelresults"] = dfmr.to_dict()
-        conf["observations"] = dfo.to_dict()
+        conf["modelresults"] = Connector._remove_keys_w_nan_value(dfmr.to_dict())
+        conf["observations"] = Connector._remove_keys_w_nan_value(dfo.to_dict())
         return conf
+
+    @staticmethod
+    def _remove_keys_w_nan_value(d):
+        dout = {}
+        for key, subdict in d.items():
+            dout[key] = {k: v for k, v in subdict.items() if pd.Series(v).notna().all()}
+        return dout
