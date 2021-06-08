@@ -80,7 +80,9 @@ class _XarrayBase:
             item = self._selected_item
         x, y = observation.x, observation.y
         da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
-        return da.to_dataframe()
+        df = da.to_dataframe()
+        df = df.rename(columns={df.columns[-1]: self.name})
+        return df
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
         if item is None:
@@ -91,6 +93,7 @@ class _XarrayBase:
         da = self.ds[item].interp(coords=dict(time=t, x=x, y=y), method="linear")
         df = da.to_dataframe().drop(columns=["time"])
         df.index.name = "time"
+        df = df.rename(columns={df.columns[-1]: self.name})
         return df
 
     def _in_domain(self, x, y) -> bool:
