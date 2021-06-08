@@ -529,38 +529,57 @@ class Connector(_BaseConnector, Mapping, Sequence):
         ax = plot_observation_positions(dfs=mod.dfs, observations=observations)
         return ax
 
-    def plot_temporal_coverage(self, limit_to_model_period=True):
+    def plot_temporal_coverage(
+        self, show_model=True, limit_to_model_period=True, marker="_", figsize=None
+    ):
         """Plot graph showing temporal coverage for all observations
 
         Parameters
         ----------
+        show_model : bool, optional
+            Show model(s) as separate lines on plot, by default True
         limit_to_model_period : bool, optional
             Show temporal coverage only for period covered
             by the model, by default True
+        marker : str, optional
+            plot marker for observations, by default "_"
+        figsize : Tuple(float, float), optional
+            size of figure, by default (7, 0.45*)
 
         Examples
         --------
         >>> con.plot_temporal_coverage()
+        >>> con.plot_temporal_coverage(show_model=False)
         >>> con.plot_temporal_coverage(limit_to_model_period=False)
+        >>> con.plot_temporal_coverage(marker=".")
+        >>> con.plot_temporal_coverage(figsize=(5,3))
         """
-        # TODO: multiple model
-        mod0 = list(self.modelresults.values())[0]
+        n_models = self.n_models if show_model else 0
+        n_lines = n_models + self.n_observations
+        if figsize is None:
+            ysize = max(2.0, 0.45 * n_lines)
+            figsize = (7, ysize)
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=figsize)
         y = np.repeat(0.0, 2)
-        x = mod0.start_time, mod0.end_time
-        plt.plot(x, y)
-        labels = ["Model"]
+        labels = []
 
-        plt.plot([mod0.start_time, mod0.end_time], y)
+        if show_model:
+            for key, mr in self.modelresults.items():
+                y += 1.0
+                plt.plot([mr.start_time, mr.end_time], y)
+                labels.append(key)
+
         for key, obs in self.observations.items():
             y += 1.0
-            plt.plot(obs.time, y[0] * np.ones_like(obs.values), "_", markersize=5)
+            plt.plot(obs.time, y[0] * np.ones_like(obs.values), marker, markersize=5)
             labels.append(key)
-        if limit_to_model_period:
-            plt.xlim([mod0.start_time, mod0.end_time])
 
-        plt.yticks(np.arange(0, len(self.observations) + 1), labels)
+        if limit_to_model_period:
+            mr = list(self.modelresults.values())[0]  # take first
+            plt.xlim([mr.start_time, mr.end_time])
+
+        plt.yticks(np.arange(n_lines) + 1, labels)
         fig.autofmt_xdate()
         return ax
 
