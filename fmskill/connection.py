@@ -226,16 +226,16 @@ class _SingleObsConnector(_BaseConnector):
         figsize : (float, float), optional
             figure size, by default None
         """
-        mod = self.modelresults[0]
+        mr = self.modelresults[0]
 
-        if mod.is_dfs0:
+        if (not isinstance(mr, DfsModelResultItem)) or (mr.is_dfs0):
             warnings.warn(
                 "Plotting observations is only supported for dfsu ModelResults"
             )
             return
 
         ax = plot_observation_positions(
-            dfs=mod.dfs, observations=[self.obs], figsize=figsize
+            dfs=mr.dfs, observations=[self.obs], figsize=figsize
         )
 
         return ax
