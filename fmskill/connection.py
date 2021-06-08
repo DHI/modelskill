@@ -563,7 +563,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         fig.autofmt_xdate()
         return ax
 
-    def to_config(self, filename: str= None):
+    def to_config(self, filename: str = None):
         """Save Connector to a config file.
 
         Parameters
@@ -574,7 +574,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         Notes
         -----
         1. Manually create your Connector in fmskill as usual
-        2. When you are satisfied, save config: connector.to_config('conf.yml') 
+        2. When you are satisfied, save config: connector.to_config('conf.yml')
         3. Later: run your reporting from the commandline e.g. directly after model execution
         """
         # write contents of connector to configuration file (yml or xlxs)
@@ -583,30 +583,42 @@ class Connector(_BaseConnector, Mapping, Sequence):
         # model results
         conf_mr = {}
         for name, mr in self.modelresults.items():
-            one_mr = {}
-            one_mr["name"] = mr.name
-            one_mr["filename"] = mr.filename
-            # one_mr["item"] = mr._item
-            conf_mr[name] = one_mr
+            conf_mr[name] = self._modelresult_to_dict(mr)
         conf["modelresults"] = conf_mr
 
         # observations
         conf_obs = {}
         for name, obs in self.observations.items():
-            one_obs = {}
-            one_obs["name"] = obs.name
-            one_obs["type"] = obs.__class__.__name__
-            if obs.filename is None:
-                raise ValueError(
-                    f"Cannot write Connector to conf file! Observation 'obs.name' has no filename."
-                )
-            one_obs["filename"] = obs.filename
-            one_obs["item"] = obs._item
-            conf_obs[name] = one_obs
+            conf_obs[name] = self._observation_to_dict(obs)
         conf["observations"] = conf_obs
-        
+
         if filename is None:
             return conf
+
+    @staticmethod
+    def _modelresult_to_dict(mr):
+        d = {}
+        d["name"] = mr.name
+        if mr.filename is None:
+            raise ValueError(
+                f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
+            )
+        d["filename"] = mr.filename
+        d["item"] = mr._selected_item
+        return d
+
+    @staticmethod
+    def _observation_to_dict(obs):
+        d = {}
+        d["name"] = obs.name
+        d["type"] = obs.__class__.__name__
+        if obs.filename is None:
+            raise ValueError(
+                f"Cannot write Connector to conf file! Observation '{obs.name}' has no filename."
+            )
+        d["filename"] = obs.filename
+        d["item"] = obs._item
+        return d
 
     @staticmethod
     def from_config(configuration: Union[dict, str], validate_eum=True):
