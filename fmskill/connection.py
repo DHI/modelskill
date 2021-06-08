@@ -606,7 +606,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
     @staticmethod
     def _modelresult_to_dict(mr):
         d = {}
-        d["name"] = mr.name
+        # d["name"] = mr.name
         if mr.filename is None:
             raise ValueError(
                 f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
@@ -618,7 +618,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
     @staticmethod
     def _observation_to_dict(obs):
         d = {}
-        d["name"] = obs.name
+        # d["name"] = obs.name
         d["type"] = obs.__class__.__name__
         if obs.filename is None:
             raise ValueError(
@@ -632,9 +632,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
     def _config_to_xls(filename, conf):
         with pd.ExcelWriter(filename) as writer:
             dfmr = pd.DataFrame(conf["modelresults"]).T
+            dfmr.index.name = "name"
             dfmr.to_excel(writer, sheet_name="modelresults")
 
             dfo = pd.DataFrame(conf["observations"]).T
+            dfo.index.name = "name"
             dfo.to_excel(writer, sheet_name="observations")
 
             # dfo = pd.DataFrame(conf["connector"]).T
@@ -700,9 +702,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
     @staticmethod
     def _xls_to_dict(filename):
-        raise NotImplementedError()
-        xls = pd.ExcelFile(filename)
-        dfmr = pd.read_excel(xls, "modelresults")
-        dfo = pd.read_excel(xls, "observations")
-        conf = None
+        with pd.ExcelFile(filename) as xls:
+            dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
+            dfo = pd.read_excel(xls, "observations", index_col=0).T
+        conf = {}
+        conf["modelresults"] = dfmr.to_dict()
+        conf["observations"] = dfo.to_dict()
         return conf
