@@ -701,5 +701,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
     @staticmethod
     def _xls_to_dict(filename):
         raise NotImplementedError()
+        xls = pd.ExcelFile(filename)
+        dfmr = pd.read_excel(xls, "modelresults")
+        dfo = pd.read_excel(xls, "observations")
         conf = None
         return conf
