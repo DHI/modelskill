@@ -29,15 +29,22 @@ class _XarrayBase:
     @staticmethod
     def _get_new_coord_names(coords):
         new_names = {}
-        for c in coords:
-            clow = c.lower()
-            if ("lon" in clow) or ("east" in clow) or ("x" in clow):
-                new_names[c] = "x"
-            if ("lat" in clow) or ("north" in clow) or ("y" in clow):
-                new_names[c] = "y"
-            if ("time" in clow) or ("date" in clow):
-                new_names[c] = "time"
+        for coord in coords:
+            c = coord.lower()
+            if ("x" not in new_names) and (("lon" in c) or ("east" in c)):
+                new_names[coord] = "x"
+            elif ("y" not in new_names) and (("lat" in c) or ("north" in c)):
+                new_names[coord] = "y"
+            elif ("time" not in new_names) and (("time" in c) or ("date" in c)):
+                new_names[coord] = "time"
         return new_names
+
+    @staticmethod
+    def _validate_coord_names(coords):
+        cnames = [c for c in coords]
+        for c in ["x", "y", "time"]:
+            if c not in coords:
+                raise ValueError(f"{c} not found in coords {cnames}")
 
     def _validate_time_axis(self, coords):
         if "time" not in coords:
@@ -196,6 +203,7 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
             )
 
         ds = self._rename_coords(ds)
+        self._validate_coord_names(ds.coords)
         self._validate_time_axis(ds.coords)
         self.ds = ds
         self.name = name
