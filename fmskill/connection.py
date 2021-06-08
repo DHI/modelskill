@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
+import os
 
 import yaml
 from fmskill.plot import plot_observation_positions
@@ -577,7 +578,6 @@ class Connector(_BaseConnector, Mapping, Sequence):
         2. When you are satisfied, save config: connector.to_config('conf.yml')
         3. Later: run your reporting from the commandline e.g. directly after model execution
         """
-        # write contents of connector to configuration file (yml or xlxs)
         conf = {}
 
         # model results
@@ -592,7 +592,15 @@ class Connector(_BaseConnector, Mapping, Sequence):
             conf_obs[name] = self._observation_to_dict(obs)
         conf["observations"] = conf_obs
 
-        if filename is None:
+        if filename is not None:
+            ext = os.path.splitext(filename)[-1]
+            if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
+                self._config_to_yml(filename, conf)
+            elif "xls" in ext:
+                self._config_to_xls(filename, conf)
+            else:
+                raise ValueError("Filename extension not supported! Use .yml or .xlsx")
+        else:
             return conf
 
     @staticmethod
@@ -619,6 +627,24 @@ class Connector(_BaseConnector, Mapping, Sequence):
         d["filename"] = obs.filename
         d["item"] = obs._item
         return d
+
+    @staticmethod
+    def _config_to_xls(filename, conf):
+        with pd.ExcelWriter(filename) as writer:
+            dfmr = pd.DataFrame(conf["modelresults"]).T
+            dfmr.to_excel(writer, sheet_name="modelresults")
+
+            dfo = pd.DataFrame(conf["observations"]).T
+            dfo.to_excel(writer, sheet_name="observations")
+
+            # dfo = pd.DataFrame(conf["connector"]).T
+            # dfo.to_excel(writer, sheet_name="connector")
+
+    @staticmethod
+    def _config_to_yml(filename, conf):
+        with open(filename, "w") as f:
+            # TODO: preserve order
+            yaml.dump(conf, f)  # , default_flow_style=False
 
     @staticmethod
     def from_config(configuration: Union[dict, str], validate_eum=True):
