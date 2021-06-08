@@ -41,13 +41,17 @@ class DMIOceanObsRepository:
 
         Examples
         ========
-        >>>
-        repo = DMIOceanObsRepository(apikey="e11...")
+        >>> repo = DMIOceanObsRepository(apikey="e11...")
 
-        df = repo.get_observations(
-            station_id="30336", start_time=datetime(2018, 3, 4, 0, 0)
-        )
-
+        >>> df = repo.get_observations(station_id="30336", start_time=datetime(2018, 3, 4, 0, 0))
+        >>> df.head()
+                            sealev_dvr
+        time
+        2021-06-01 18:20:00        0.06
+        2021-06-01 18:30:00        0.04
+        2021-06-01 18:40:00        0.03
+        2021-06-01 18:50:00        0.02
+        2021-06-01 19:00:00       -0.01
         """
 
         available_parameters = {"sea_reg", "sealev_dvr", "sealev_ln", "tw"}
