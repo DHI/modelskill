@@ -5,8 +5,8 @@ import xarray as xr
 import warnings
 
 from mikeio import eum
-from ..observation import PointObservation
-from ..comparison import PointComparer
+from ..observation import Observation, PointObservation, TrackObservation
+from ..comparison import PointComparer, TrackComparer
 from .abstract import ModelResultInterface, MultiItemModelResult
 
 
@@ -21,6 +21,10 @@ class _XarrayBase:
     @property
     def end_time(self):
         return pd.Timestamp(self.ds.time.values[-1])
+
+    @property
+    def filename(self):
+        return self._filename
 
     @staticmethod
     def _get_new_coord_names(coords):
@@ -71,13 +75,47 @@ class _XarrayBase:
         item_names = list(self.ds.data_vars)
         return item_names.index(item_name)
 
+    def _extract_point(self, observation: PointObservation, item=None) -> pd.DataFrame:
+        if item is None:
+            item = self._selected_item
+        xy = np.atleast_2d([observation.x, observation.y])
+        raise NotImplementedError()
+        # TODO
+        # elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
+        # df_model = self.dfs.read(elements=elemids, items=[item]).to_dataframe()
+        # df_model.items[0].name = self.name
+        # return df_model
+
+    def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+        if item is None:
+            item = self._selected_item
+        raise NotImplementedError()
+        # TODO
+        # ds_model = self.dfs.extract_track(track=observation.df, items=[item])
+        # ds_model.items[-1].name = self.name
+        # return ds_model
+
+    def _in_domain(self, x, y) -> bool:
+        ok = True
+        # TODO
+        # if self.is_dfsu:
+        #    ok = self.dfs.contains([x, y])
+        return ok
+
+    def _validate_start_end(self, observation: Observation) -> bool:
+        if observation.end_time < self.start_time:
+            return False
+        if observation.start_time > self.end_time:
+            return False
+        return True
+
 
 class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
     @property
     def item_name(self):
         return self._selected_item
 
-    def __init__(self, ds, name: str = None, item=None):
+    def __init__(self, ds, name: str = None, item=None, filename=None):
         if isinstance(ds, (xr.DataArray, xr.Dataset)):
             self._validate_time_axis(ds)
         else:
@@ -92,6 +130,7 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
         self.ds = ds
         self._selected_item = self._get_item_name(item)
         self.name = name
+        self._filename = filename
 
     def __repr__(self):
         txt = [f"<XArrayModelResultItem> '{self.name}'"]
@@ -111,11 +150,18 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
         <fmskill.PointComparer>
             A comparer object for further analysis or plotting
         """
-        raise NotImplementedError()
+        item = self._selected_item
+
+        # TODO: more validation?
+
         if isinstance(observation, PointObservation):
-            pass
+            df_model = self._extract_point(observation, item)
+            comparer = PointComparer(observation, df_model)
+        elif isinstance(observation, TrackObservation):
+            df_model = self._extract_track(observation, item)
+            comparer = TrackComparer(observation, df_model)
         else:
-            raise ValueError("Only point observation are supported!")
+            raise ValueError("Only point and track observation are supported!")
 
         if len(comparer.df) == 0:
             warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
@@ -131,6 +177,7 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         return list(self.ds.data_vars)
 
     def __init__(self, input, name: str = None, item=None, **kwargs):
+        self._filename = None
         if isinstance(input, str):
             self._filename = input
             ds = xr.open_dataset(input, **kwargs)
@@ -139,11 +186,9 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         elif isinstance(input, xr.Dataset):
             ds = input
             # TODO: name
-            self._filename = None
         elif isinstance(input, xr.DataArray):
             ds = input.to_dataset()
             # TODO: name
-            self._filename = None
         else:
             raise TypeError(
                 f"Unknown input type {type(input)}. Must be str or xarray.Dataset/DataArray."
@@ -156,8 +201,9 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
 
         self._mr_items = {}
         for it in self.item_names:
-            # TODO: add filename to args
-            self._mr_items[it] = XArrayModelResultItem(self.ds, self.name, it)
+            self._mr_items[it] = XArrayModelResultItem(
+                self.ds, self.name, it, self._filename
+            )
 
         if item is not None:
             self._selected_item = self._get_item_name(item)
