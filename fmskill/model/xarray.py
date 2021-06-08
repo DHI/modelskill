@@ -94,7 +94,7 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
         self.name = name
 
     def __repr__(self):
-        txt = [f"<XarrayModelResultItem> '{self.name}'"]
+        txt = [f"<XArrayModelResultItem> '{self.name}'"]
         txt.append(f"- Item: {self.item_name}")
         return "\n".join(txt)
 
@@ -138,9 +138,11 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
                 name = os.path.basename(input).split(".")[0]
         elif isinstance(input, xr.Dataset):
             ds = input
+            # TODO: name
             self._filename = None
         elif isinstance(input, xr.DataArray):
             ds = input.to_dataset()
+            # TODO: name
             self._filename = None
         else:
             raise TypeError(
@@ -171,7 +173,7 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         return ds
 
     def __repr__(self):
-        txt = [f"<XarrayModelResult> '{self.name}'"]
+        txt = [f"<XArrayModelResult> '{self.name}'"]
         for j, item in enumerate(self.item_names):
             txt.append(f"- Item: {j}: {item}")
         return "\n".join(txt)
