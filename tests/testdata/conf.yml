@@ -1,14 +1,14 @@
-filename: tests/testdata/Oresund2D.dfsu
+modelresults:
+  HD:
+    filename: tests/testdata/Oresund2D.dfsu
+    item: 0
 observations:
-- item: 0
-  observation:
+  Klagshamn:
     filename: tests/testdata/obs_two_items.dfs0
     item: 1
-    name: Klagshamn
     x: 366844
     y: 6154291
-- item: 0
-  observation:
+  Drogden:
     filename: tests/testdata/dmi_30357_Drogden_Fyr.dfs0
     item: 0
     x: 355568.0

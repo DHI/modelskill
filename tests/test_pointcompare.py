@@ -165,28 +165,27 @@ def test_comparison_from_dict():
     # c = con.extract()
 
     configuration = dict(
-        filename="tests/testdata/Oresund2D.dfsu",
-        observations=[
-            dict(
-                observation=dict(
-                    filename="tests/testdata/obs_two_items.dfs0",
-                    item=1,
-                    x=366844,
-                    y=6154291,
-                    name="Klagshamn",
-                ),
+        modelresults=dict(
+            HD=dict(
+                filename="tests/testdata/Oresund2D.dfsu",
                 item=0,
             ),
-            dict(
-                observation=dict(
-                    filename="tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
-                    item=0,
-                    x=355568.0,
-                    y=6156863.0,
-                ),
-                item=0,
+        ),
+        observations=dict(
+            klagshamn=dict(
+                filename="tests/testdata/obs_two_items.dfs0",
+                item=1,
+                x=366844,
+                y=6154291,
+                name="Klagshamn2",
             ),
-        ],
+            Drogden=dict(
+                filename="tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+                item=0,
+                x=355568.0,
+                y=6156863.0,
+            ),
+        ),
     )
     con = fmskill.from_config(configuration, validate_eum=False)
     c = con.extract()
