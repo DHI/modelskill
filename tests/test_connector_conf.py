@@ -1,6 +1,7 @@
 import os
 import pytest
 
+import fmskill
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
 from fmskill import Connector
@@ -39,6 +40,11 @@ def o3():
 @pytest.fixture
 def con32(o1, o2, o3, mr1, mr2):
     return Connector([o1, o2, o3], [mr1[0], mr2[0]])
+
+
+@pytest.fixture
+def conf_xlsx():
+    return "tests/testdata/SW/conf_SW.xlsx"
 
 
 def test_tofrom_config_dict(con32):
@@ -80,5 +86,12 @@ def test_tofrom_config_xlsx(tmpdir, con32):
 
     con = Connector.from_config(filename)
     assert con.n_models == 2
+    assert con.n_observations == 3
+    assert len(con) == 3
+
+
+def test_from_excel_include(conf_xlsx):
+    con = fmskill.from_config(conf_xlsx)
+    assert con.n_models == 1
     assert con.n_observations == 3
     assert len(con) == 3
