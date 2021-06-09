@@ -51,7 +51,7 @@ def test_tofrom_config_dict(con32):
     con = Connector.from_config(d)
     assert con.n_models == 2
     assert con.n_observations == 3
-    assert len(con) == 6
+    assert len(con) == 3
 
 
 def test_tofrom_config_yml(tmpdir, con32):
@@ -66,7 +66,7 @@ def test_tofrom_config_yml(tmpdir, con32):
     con = Connector.from_config(filename)
     assert con.n_models == 2
     assert con.n_observations == 3
-    assert len(con) == 6
+    assert len(con) == 3
 
 
 def test_tofrom_config_xlsx(tmpdir, con32):
@@ -81,4 +81,4 @@ def test_tofrom_config_xlsx(tmpdir, con32):
     con = Connector.from_config(filename)
     assert con.n_models == 2
     assert con.n_observations == 3
-    assert len(con) == 6
+    assert len(con) == 3
