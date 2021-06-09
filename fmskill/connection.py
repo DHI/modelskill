@@ -597,7 +597,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
                 self._config_to_yml(filename, conf)
             elif "xls" in ext:
-                self._config_to_xls(filename, conf)
+                self._config_to_excel(filename, conf)
             else:
                 raise ValueError("Filename extension not supported! Use .yml or .xlsx")
         else:
@@ -633,7 +633,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         return d
 
     @staticmethod
-    def _config_to_xls(filename, conf):
+    def _config_to_excel(filename, conf):
         with pd.ExcelWriter(filename) as writer:
             dfmr = pd.DataFrame(conf["modelresults"]).T
             dfmr.index.name = "name"
@@ -679,7 +679,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
                 conf = Connector._yaml_to_dict(filename)
             elif "xls" in ext:
-                conf = Connector._xls_to_dict(filename)
+                conf = Connector._excel_to_dict(filename)
             else:
                 raise ValueError("Filename extension not supported! Use .yml or .xlsx")
 
@@ -718,7 +718,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         return conf
 
     @staticmethod
-    def _xls_to_dict(filename):
+    def _excel_to_dict(filename):
         with pd.ExcelFile(filename) as xls:
             dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
             dfo = pd.read_excel(xls, "observations", index_col=0).T
