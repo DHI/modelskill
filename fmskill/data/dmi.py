@@ -1,14 +1,21 @@
+from typing import Dict
 import requests
 import pandas as pd
 from datetime import datetime
 
 
 class DMIOceanObsRepository:
-    """Get Ocean observations from DMI"""
+    """Get Ocean observations from DMI
+
+    Notes
+    =====
+    Get a API key here: https://confluence.govcloud.dk/pages/viewpage.action?pageId=26476690
+    """
 
     def __init__(self, apikey: str) -> None:
 
         self.__api__key = apikey
+        self._stations = None
 
     def get_observations(
         self,
@@ -17,7 +24,7 @@ class DMIOceanObsRepository:
         parameter_id="sealev_dvr",
         start_time: datetime = None,
         end_time: datetime = None,
-        n=1000,
+        limit=1000,
     ) -> pd.DataFrame:
         """
         Get ocean observations from DMI
@@ -32,7 +39,7 @@ class DMIOceanObsRepository:
             Start time of  interval.
         end_time: datetime, , optional
             Start time of  interval.
-        n: int
+        limit: int
             Max number of observations to return, default 1000, max value: 300000
 
         Returns
@@ -64,7 +71,7 @@ class DMIOceanObsRepository:
             "api-key": self.__api__key,
             "stationId": station_id,
             "parameterId": parameter_id,
-            "limit": n,
+            "limit": limit,
         }
 
         if start_time or end_time:
@@ -105,3 +112,35 @@ class DMIOceanObsRepository:
         df = df.sort_index()
 
         return df
+
+    def get_stations_raw(self) -> Dict:
+        resp = requests.get(
+            "https://dmigw.govcloud.dk/v2/oceanObs/collections/station/items",
+            params={"api-key": self.__api__key},
+        )
+        if not resp.ok:
+            raise Exception(
+                f"Failed to retrieve station info from DMI API. Response: {resp.text}"
+            )
+
+        data = resp.json()
+
+        return data
+
+    @property
+    def stations(self) -> pd.DataFrame:
+        if self._stations is None:
+            self._stations = self.get_stations_raw()
+
+        res = []
+        for s in self._stations["features"]:
+            pos = s["geometry"]["coordinates"]
+            row = dict(
+                station_id=s["properties"]["stationId"],
+                lon=pos[0],
+                lat=pos[1],
+                name=s["properties"]["name"],
+            )
+            res.append(row)
+
+        return pd.DataFrame(res)
