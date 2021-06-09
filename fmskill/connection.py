@@ -683,18 +683,31 @@ class Connector(_BaseConnector, Mapping, Sequence):
             else:
                 raise ValueError("Filename extension not supported! Use .yml or .xlsx")
 
-        con = Connector()
-        mr = ModelResult(conf["filename"], name=conf.get("name"))
-        for connection in conf["observations"]:
-            observation = connection["observation"]
-            otype = observation.get("type")
+        modelresults = {}
+        for name, mr_dict in conf["modelresults"].items():
+            fn = mr_dict["filename"]
+            item = mr_dict["item"]
+            mr = ModelResult(fn, name=name, item=item)
+            modelresults[name] = mr
+        mr_list = list(modelresults.values())
+
+        observations = {}
+        for name, value in conf["observations"].items():
+            obs_dict = dict(value)  # make copy because we pop element
+            otype = obs_dict.pop("type", None)
+            alt_name = obs_dict.pop("name", None)
+            name = name if alt_name is None else alt_name
             if (otype is not None) and ("track" in otype.lower()):
-                obs = TrackObservation(**observation)
+                obs = TrackObservation(**obs_dict, name=name)
             else:
-                obs = PointObservation(**observation)
+                obs = PointObservation(**obs_dict, name=name)
+            observations[name] = obs
+        obs_list = list(observations.values())
 
-            con.add(obs, mr[connection["item"]], validate=validate_eum)
-
+        if "connections" in conf:
+            raise NotImplementedError()
+        else:
+            con = Connector(obs_list, mr_list, validate=validate_eum)
         return con
 
     @staticmethod
@@ -716,6 +729,9 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
     @staticmethod
     def _remove_keys_w_nan_value(d):
+        """Loops through dicts in dict and removes all entries where value is NaN
+        e.g. x,y values of TrackObservations
+        """
         dout = {}
         for key, subdict in d.items():
             dout[key] = {k: v for k, v in subdict.items() if pd.Series(v).notna().all()}
