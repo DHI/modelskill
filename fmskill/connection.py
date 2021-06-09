@@ -722,7 +722,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
     @staticmethod
     def _excel_to_dict(filename):
-        with pd.ExcelFile(filename) as xls:
+        with pd.ExcelFile(filename, engine="openpyxl") as xls:
             dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
             dfo = pd.read_excel(xls, "observations", index_col=0).T
             # try: dfc = pd.read_excel(xls, "connections", index_col=0).T
