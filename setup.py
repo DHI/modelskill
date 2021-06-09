@@ -27,7 +27,7 @@ setuptools.setup(
             "shapely",
             "plotly >= 4.5",
         ],
-        "test": ["pytest", "shapely", "openpyxl"],
+        "test": ["pytest", "shapely", "openpyxl","xlrd"],
     },
     entry_points="""
         [console_scripts]
