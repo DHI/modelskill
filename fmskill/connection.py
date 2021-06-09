@@ -685,6 +685,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
         modelresults = {}
         for name, mr_dict in conf["modelresults"].items():
+            if not mr_dict.get("include", True):
+                continue
             filename = mr_dict["filename"]
             item = mr_dict.get("item")
             mr = ModelResult(filename, name=name, item=item)
@@ -693,6 +695,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
         observations = {}
         for name, obs_dict in conf["observations"].items():
+            if not obs_dict.get("include", True):
+                continue
             filename = obs_dict["filename"]
             item = obs_dict.get("item")
             alt_name = obs_dict.get("name")
