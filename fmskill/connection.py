@@ -643,8 +643,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             dfo.index.name = "name"
             dfo.to_excel(writer, sheet_name="observations")
 
-            # dfo = pd.DataFrame(conf["connector"]).T
-            # dfo.to_excel(writer, sheet_name="connector")
+            # dfo = pd.DataFrame(conf["connections"]).T
+            # dfo.to_excel(writer, sheet_name="connections")
 
     @staticmethod
     def _config_to_yml(filename, conf):
@@ -685,22 +685,25 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
         modelresults = {}
         for name, mr_dict in conf["modelresults"].items():
-            fn = mr_dict["filename"]
-            item = mr_dict["item"]
-            mr = ModelResult(fn, name=name, item=item)
+            filename = mr_dict["filename"]
+            item = mr_dict.get("item")
+            mr = ModelResult(filename, name=name, item=item)
             modelresults[name] = mr
         mr_list = list(modelresults.values())
 
         observations = {}
-        for name, value in conf["observations"].items():
-            obs_dict = dict(value)  # make copy because we pop element
-            otype = obs_dict.pop("type", None)
-            alt_name = obs_dict.pop("name", None)
+        for name, obs_dict in conf["observations"].items():
+            filename = obs_dict["filename"]
+            item = obs_dict.get("item")
+            alt_name = obs_dict.get("name")
             name = name if alt_name is None else alt_name
+
+            otype = obs_dict.get("type")
             if (otype is not None) and ("track" in otype.lower()):
-                obs = TrackObservation(**obs_dict, name=name)
+                obs = TrackObservation(filename, item=item, name=name)
             else:
-                obs = PointObservation(**obs_dict, name=name)
+                x, y = obs_dict.get("x"), obs_dict.get("y")
+                obs = PointObservation(filename, item=item, x=x, y=y, name=name)
             observations[name] = obs
         obs_list = list(observations.values())
 
@@ -722,6 +725,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         with pd.ExcelFile(filename) as xls:
             dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
             dfo = pd.read_excel(xls, "observations", index_col=0).T
+            # try: dfc = pd.read_excel(xls, "connections", index_col=0).T
         conf = {}
         conf["modelresults"] = Connector._remove_keys_w_nan_value(dfmr.to_dict())
         conf["observations"] = Connector._remove_keys_w_nan_value(dfo.to_dict())
