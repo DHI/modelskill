@@ -4,8 +4,10 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 
+import fmskill
 from fmskill.model import ModelResult
-from fmskill.model.abstract import ModelResultInterface
+
+# from fmskill.model.abstract import ModelResultInterface
 from fmskill.model import XArrayModelResult, XArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
@@ -63,7 +65,7 @@ def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
     assert isinstance(mr, XArrayModelResultItem)
 
 
-# ToDo
+# TODO
 # def test_XArrayModelResult_from_grib
 # def test_XArrayModelResult_from_mfdataset
 # def test_XArrayModelResult_options
@@ -80,20 +82,22 @@ def test_XArrayModelResultItem(modelresult):
     mr = modelresult
     mri = mr[0]
 
-    assert isinstance(mri.ds, xr.DataArray)
-    assert len(mri) == 1
+    assert isinstance(mri.ds, xr.Dataset)
+    # assert len(mri) == 1   # has no length (it's an item)
     assert len(mri.ds) == 1
     assert mri.name == "ERA5_DutchCoast"
-    assert mri.item_names == ["mwd"]  # ToDo: or "mwd"?
+    assert mri.item_name == "mwd"
 
 
 def test_XArrayModelResult_extract_point(modelresult, pointobs_epl_hm0):
     mr = modelresult
-    pc = mr.extract_observation(
-        pointobs_epl_hm0
-    )  # ToDo: should this be supported? Find o1 in mr?
+    # TODO: should this be supported? Find o1 in mr?
+    df = mr._extract_point(pointobs_epl_hm0, item="swh")
 
-    assert isinstance(pc, PointComparer)
+    assert isinstance(df, pd.DataFrame)
+    assert len(df.columns) == 1
+    assert pytest.approx(df.iloc[0,0]) == 0.875528
+
 
 
 def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
@@ -105,7 +109,7 @@ def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
     assert isinstance(pc, PointComparer)
     assert pc.start == datetime(
         2017, 10, 27, 0, 0, 0
-    )  # ToDo: start_time like ModelResult?
+    )  # TODO: start_time like ModelResult?
     assert pc.end == datetime(2017, 10, 29, 18, 0, 0)
     assert pc.n_models == 1
     assert pc.n_points == 67
@@ -134,16 +138,17 @@ def test_XArrayModelResultItem_extract_point_toutside(
     assert pc == None
 
 
+@pytest.mark.skip(
+    reason="validation not possible at the moment, allow item mapping for ModelResult and Observation and match on item name?"
+)
 def test_XArrayModelResultItem_extract_point_wrongitem(modelresult, pointobs_epl_hm0):
     mr = modelresult
     mri = mr["mwd"]
     pc = mri.extract_observation(pointobs_epl_hm0)
-
     assert pc == None
-    # ToDo: validation not possible at the moment, allow item mapping for ModelResult and Observation and match on item name?
 
 
-# ToDo: def test_ModelResultItem_extract_point_nanintime():
+# TODO: def test_ModelResultItem_extract_point_nanintime():
 
 
 def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
@@ -161,4 +166,10 @@ def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
     assert len(df.dropna()) == 298
 
 
-# ToDo: include connector test involving xarray in test_connector?
+def test_xarray_connector(modelresult, pointobs_epl_hm0, trackobs_c2_hm0):
+    con = fmskill.Connector([pointobs_epl_hm0, trackobs_c2_hm0], modelresult["swh"])
+    assert len(con) == 2
+    assert con.n_models == 1
+
+    cc = con.extract()
+    assert len(cc) == 2
