@@ -91,13 +91,10 @@ def test_XArrayModelResultItem(modelresult):
 
 def test_XArrayModelResult_extract_point(modelresult, pointobs_epl_hm0):
     mr = modelresult
-    # TODO: should this be supported? Find o1 in mr?
     df = mr._extract_point(pointobs_epl_hm0, item="swh")
-
     assert isinstance(df, pd.DataFrame)
     assert len(df.columns) == 1
-    assert pytest.approx(df.iloc[0,0]) == 0.875528
-
+    assert pytest.approx(df.iloc[0, 0]) == 0.875528
 
 
 def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
