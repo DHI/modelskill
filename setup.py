@@ -27,7 +27,7 @@ setuptools.setup(
             "shapely",
             "plotly >= 4.5",
         ],
-        "test": ["pytest", "shapely"],
+        "test": ["pytest", "shapely", "netCDF4"],
     },
     entry_points="""
         [console_scripts]
