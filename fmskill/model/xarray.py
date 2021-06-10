@@ -186,11 +186,15 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
 
     def __init__(self, input, name: str = None, item=None, **kwargs):
         self._filename = None
-        if isinstance(input, str):
+        if isinstance(input, str) and ("*" not in input):
             self._filename = input
             ds = xr.open_dataset(input, **kwargs)
             if name is None:
                 name = os.path.basename(input).split(".")[0]
+        elif isinstance(input, str) or isinstance(input, list):
+            # multi-file dataset; input is list of filenames or str with wildcard
+            self._filename = input if isinstance(input, str) else ";".join(input)
+            ds = xr.open_mfdataset(input, **kwargs)
         elif isinstance(input, xr.Dataset):
             ds = input
             # TODO: name
