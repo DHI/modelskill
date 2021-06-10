@@ -87,7 +87,7 @@ class _XarrayBase:
             item = self._selected_item
         x, y = observation.x, observation.y
         da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
-        df = da.to_dataframe()
+        df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
         return df
 
