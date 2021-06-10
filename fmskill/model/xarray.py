@@ -135,8 +135,11 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
             else:
                 raise ValueError("Model ambiguous - please provide item")
 
-        self.ds = ds
-        self._selected_item = self._get_item_name(item)
+        item = self._get_item_name(item, list(ds.data_vars))
+        self.ds = ds[[item]]
+        self._selected_item = item
+        if name is None:
+            name = self.item_name
         self.name = name
         self._filename = filename
 
