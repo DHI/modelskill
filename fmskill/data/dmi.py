@@ -34,8 +34,8 @@ class DMIOceanObsRepository:
         parameter_id="sealev_dvr",
         start_time: datetime = None,
         end_time: datetime = None,
-        limit=1000,
-        records_per_request=1000,
+        limit=100000,
+        records_per_request=10000,
     ) -> pd.DataFrame:
         """
         Get ocean observations from DMI
@@ -53,9 +53,9 @@ class DMIOceanObsRepository:
         end_time: datetime, optional
             End time of  interval.
         limit: int, optional
-            Max number of observations to return default 1000
+            Max number of observations to return default 10000
         records_per_request: int, optional
-            Tunable parameter for optimal performance, default value is 1000
+            Tunable parameter for optimal performance, default value is 100000
 
         Returns
         =======
@@ -131,12 +131,14 @@ class DMIOceanObsRepository:
         next_link = data["links"][1]["href"]
 
         while len(ts) < limit:
+
             resp = requests.get(next_link)
             data = resp.json()
             if data["numberReturned"] == 0:
                 break
             else:
                 ts = ts + self._data_to_ts(data, parameter_id)
+                next_link = data["links"][1]["href"]
 
         df = pd.DataFrame(ts)
 
