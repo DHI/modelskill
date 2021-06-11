@@ -38,6 +38,8 @@ jobs:
       run: |
         pip install .[test]
     - name: Test with pytest
+      env:
+        DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
       run: |
         pytest
     - name: Test docstrings with pytest
