@@ -258,6 +258,12 @@ and units match; Default: True</p></li>
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="fmskill.observation.PointObservation.filename">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">filename</span></span><a class="headerlink" href="#fmskill.observation.PointObservation.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filename of the observation input</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="fmskill.observation.PointObservation.geometry">
 <em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">geometry</span></span><em class="property"><span class="pre">:</span> <span class="pre">shapely.geometry.point.Point</span></em><a class="headerlink" href="#fmskill.observation.PointObservation.geometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coordinates of observation</p>
@@ -347,6 +353,12 @@ and units match; Default: True</p></li>
 <dt class="sig sig-object py" id="fmskill.observation.TrackObservation.end_time">
 <em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">end_time</span></span><em class="property"><span class="pre">:</span> <span class="pre">datetime.datetime</span></em><a class="headerlink" href="#fmskill.observation.TrackObservation.end_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Last time instance (as datetime)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="fmskill.observation.TrackObservation.filename">
+<em class="property"><span class="pre">property</span> </em><span class="sig-name descname"><span class="pre">filename</span></span><a class="headerlink" href="#fmskill.observation.TrackObservation.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filename of the observation input</p>
 </dd></dl>
 
 <dl class="py property">
@@ -489,7 +501,7 @@ overlap in space and time? by default True</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fmskill.connection.Connector.from_config">
-<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_eum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.from_config" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span> </em><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conf</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate_eum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.from_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load Connector from a config file (or dict)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -571,7 +583,7 @@ by the model, by default True</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="fmskill.connection.Connector.to_config">
-<span class="sig-name descname"><span class="pre">to_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.to_config" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">to_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.Connector.to_config" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save Connector to a config file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -580,8 +592,8 @@ by the model, by default True</p>
 </dl>
 <p class="rubric">Notes</p>
 <ol class="arabic simple">
-<li><p>Manually create your skill assessment in fmskill as usual</p></li>
-<li><p>When you are satisfied, save config: cc.to_config(‘conf.yml’) or similar</p></li>
+<li><p>Manually create your Connector in fmskill as usual</p></li>
+<li><p>When you are satisfied, save config: connector.to_config(‘conf.yml’)</p></li>
 <li><p>Later: run your reporting from the commandline e.g. directly after model execution</p></li>
 </ol>
 </dd></dl>
