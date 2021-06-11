@@ -1,4 +1,5 @@
 from typing import Dict
+import numpy as np
 import requests
 import pandas as pd
 from datetime import datetime
@@ -44,10 +45,10 @@ class DMIOceanObsRepository:
             Id of station, e.g. "30336" # Kbh. havn
         parameter_id: str, optional
             Select one of "sea_reg", "sealev_dvr", "sealev_ln", "tw", default  is "sealev_dvr"
-        start_time: datetime, optional
-            Start time of  interval.
-        end_time: datetime, , optional
-            Start time of  interval.
+        start_time: (str, datetime), optional
+            Start time of interval.
+        end_time: (str, datetime), optional
+            End time of interval.
         limit: int
             Max number of observations to return, default 1000, max value: 300000
 
@@ -161,14 +162,13 @@ class DMIOceanObsRepository:
 
         Examples
         --------
-        >>> dmi.stations
-            station_id      lon      lat              name
-        0      9007102   8.5739  55.2764          Mandø II
-        1        31572  11.3474  54.6551   Rødbyhavns Havn
-        2      9005110   8.1259  56.3716  Thorsminde Fjord
-        3        29392  11.1390  55.3355       Korsør Havn
-        4      9005201   8.1290  56.0005  Hvide Sande Havn
-        ..         ...      ...      ...               ...
+        >>> dmi.stations.head(5)
+          station_id      lon      lat              name      start end
+        0    9007102   8.5739  55.2764          Mandø II 2000-11-02 NaT
+        1      31572  11.3474  54.6551   Rødbyhavns Havn 1990-09-21 NaT
+        2    9005110   8.1259  56.3716  Thorsminde Fjord 1990-12-03 NaT
+        3      29392  11.1390  55.3355       Korsør Havn 1991-09-02 NaT
+        4    9005201   8.1290  56.0005  Hvide Sande Havn 1990-10-05 NaT        
         """
         if self._stations is None:
             self._stations = self.get_stations_raw()
@@ -176,12 +176,53 @@ class DMIOceanObsRepository:
         res = []
         for s in self._stations["features"]:
             pos = s["geometry"]["coordinates"]
+            end_time = s["properties"]["validTo"]
+            end_time = None if end_time is None else end_time[:-1]
             row = dict(
                 station_id=s["properties"]["stationId"],
                 lon=pos[0],
                 lat=pos[1],
                 name=s["properties"]["name"],
+                start=pd.to_datetime(s["properties"]["validFrom"][:-1]),
+                end=pd.to_datetime(end_time),
             )
             res.append(row)
+        df = pd.DataFrame(res)
 
-        return pd.DataFrame(res)
+        return df
+
+    def get_stations_in_interval(self, start_time=None, end_time=None) -> pd.DataFrame:
+        """Get DMI stations with data in time interval.
+
+        Parameters
+        ==========
+        start_time: (str, datetime), optional
+            Start time of interval. Keep only stations with end after this time.
+        end_time: (str, datetime), optional
+            End time of interval. Keep only stations with start before this time.
+
+        Returns
+        -------
+        pd.DataFrame
+            all stations with data in time interval
+
+        Examples
+        --------
+        >>> df = dmi.get_stations_in_interval(end_time="1990-1-1")
+        >>> df.head(5)
+        station_id      lon      lat              name      start end
+        0    9007102   8.5739  55.2764          Mandø II 2000-11-02 NaT
+        1      31572  11.3474  54.6551   Rødbyhavns Havn 1990-09-21 NaT
+        2    9005110   8.1259  56.3716  Thorsminde Fjord 1990-12-03 NaT
+        3      29392  11.1390  55.3355       Korsør Havn 1991-09-02 NaT
+        4    9005201   8.1290  56.0005  Hvide Sande Havn 1990-10-05 NaT
+        """
+        df = self.stations
+        if start_time:
+            start_time = pd.to_datetime(start_time)
+            df = df[np.logical_or(pd.isnull(df.end), df.end > start_time)]
+
+        if end_time:
+            end_time = pd.to_datetime(end_time)
+            df = df[df.start > end_time]
+        return df
