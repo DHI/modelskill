@@ -26,6 +26,13 @@ Observation
 	:inherited-members:
 
 
+Data
+----
+.. autoclass:: fmskill.data.DMIOceanObsRepository
+	:members:
+
+
+
 Connector
 ---------
 .. automodule:: fmskill.connection
