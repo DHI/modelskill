@@ -4,6 +4,7 @@ import xarray as xr
 
 from .dfs import DfsModelResult
 from .pandas import DataFrameModelResult
+from .xarray import XArrayModelResult
 
 
 class ModelResult:
@@ -42,21 +43,23 @@ class ModelResult:
             ext = os.path.splitext(filename)[-1]
             if "dfs" in ext:
                 mr = DfsModelResult(filename, *args, **kwargs)
-                if mr._selected_item is not None:
-                    return mr[mr._selected_item]
-                else:
-                    return mr
+                return self._mr_or_mr_item(mr)
             else:
-                # return XrModelResult(filename, *args, **kwargs)
-                raise NotImplementedError()
+                mr = XArrayModelResult(filename, *args, **kwargs)
+                return self._mr_or_mr_item(mr)
+
         elif isinstance(input, (pd.DataFrame, pd.Series)):
             mr = DataFrameModelResult(input, *args, **kwargs)
-            if mr._selected_item is not None:
-                return mr[mr._selected_item]
-            else:
-                return mr
+            return self._mr_or_mr_item(mr)
         elif isinstance(input, (xr.Dataset, xr.DataArray)):
-            raise NotImplementedError()
-            # return XrModelResult(input, *args, **kwargs)
+            mr = XArrayModelResult(input, *args, **kwargs)
+            return self._mr_or_mr_item(mr)
         else:
             raise ValueError("Input type not supported (filename or DataFrame)")
+
+    @staticmethod
+    def _mr_or_mr_item(mr):
+        if mr._selected_item is not None:
+            return mr[mr._selected_item]
+        else:
+            return mr

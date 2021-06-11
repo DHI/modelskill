@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
+import os
 
 import yaml
 from fmskill.plot import plot_observation_positions
@@ -13,6 +14,7 @@ from mikeio import Dfs0, eum
 from .model import ModelResult
 from .model.dfs import DfsModelResult, DfsModelResultItem
 from .model.pandas import DataFrameModelResultItem
+from .model.xarray import XArrayModelResult, XArrayModelResultItem
 from .model.abstract import ModelResultInterface, MultiItemModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
@@ -225,16 +227,16 @@ class _SingleObsConnector(_BaseConnector):
         figsize : (float, float), optional
             figure size, by default None
         """
-        mod = self.modelresults[0]
+        mr = self.modelresults[0]
 
-        if mod.is_dfs0:
+        if (not isinstance(mr, DfsModelResultItem)) or (mr.is_dfs0):
             warnings.warn(
                 "Plotting observations is only supported for dfsu ModelResults"
             )
             return
 
         ax = plot_observation_positions(
-            dfs=mod.dfs, observations=[self.obs], figsize=figsize
+            dfs=mr.dfs, observations=[self.obs], figsize=figsize
         )
 
         return ax
@@ -528,42 +530,61 @@ class Connector(_BaseConnector, Mapping, Sequence):
         ax = plot_observation_positions(dfs=mod.dfs, observations=observations)
         return ax
 
-    def plot_temporal_coverage(self, limit_to_model_period=True):
+    def plot_temporal_coverage(
+        self, show_model=True, limit_to_model_period=True, marker="_", figsize=None
+    ):
         """Plot graph showing temporal coverage for all observations
 
         Parameters
         ----------
+        show_model : bool, optional
+            Show model(s) as separate lines on plot, by default True
         limit_to_model_period : bool, optional
             Show temporal coverage only for period covered
             by the model, by default True
+        marker : str, optional
+            plot marker for observations, by default "_"
+        figsize : Tuple(float, float), optional
+            size of figure, by default (7, 0.45*n_lines)
 
         Examples
         --------
         >>> con.plot_temporal_coverage()
+        >>> con.plot_temporal_coverage(show_model=False)
         >>> con.plot_temporal_coverage(limit_to_model_period=False)
+        >>> con.plot_temporal_coverage(marker=".")
+        >>> con.plot_temporal_coverage(figsize=(5,3))
         """
-        # TODO: multiple model
-        mod0 = list(self.modelresults.values())[0]
+        n_models = self.n_models if show_model else 0
+        n_lines = n_models + self.n_observations
+        if figsize is None:
+            ysize = max(2.0, 0.45 * n_lines)
+            figsize = (7, ysize)
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=figsize)
         y = np.repeat(0.0, 2)
-        x = mod0.start_time, mod0.end_time
-        plt.plot(x, y)
-        labels = ["Model"]
+        labels = []
 
-        plt.plot([mod0.start_time, mod0.end_time], y)
+        if show_model:
+            for key, mr in self.modelresults.items():
+                y += 1.0
+                plt.plot([mr.start_time, mr.end_time], y)
+                labels.append(key)
+
         for key, obs in self.observations.items():
             y += 1.0
-            plt.plot(obs.time, y[0] * np.ones_like(obs.values), "_", markersize=5)
+            plt.plot(obs.time, y[0] * np.ones_like(obs.values), marker, markersize=5)
             labels.append(key)
-        if limit_to_model_period:
-            plt.xlim([mod0.start_time, mod0.end_time])
 
-        plt.yticks(np.arange(0, len(self.observations) + 1), labels)
+        if limit_to_model_period:
+            mr = list(self.modelresults.values())[0]  # take first
+            plt.xlim([mr.start_time, mr.end_time])
+
+        plt.yticks(np.arange(n_lines) + 1, labels)
         fig.autofmt_xdate()
         return ax
 
-    def to_config(self, filename: str):
+    def to_config(self, filename: str = None):
         """Save Connector to a config file.
 
         Parameters
@@ -573,15 +594,86 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
         Notes
         -----
-        1. Manually create your skill assessment in fmskill as usual
-        2. When you are satisfied, save config: cc.to_config('conf.yml') or similar
+        1. Manually create your Connector in fmskill as usual
+        2. When you are satisfied, save config: connector.to_config('conf.yml')
         3. Later: run your reporting from the commandline e.g. directly after model execution
         """
-        # write contents of connector to configuration file (yml or xlxs)
-        raise NotImplementedError()
+        conf = {}
+
+        # model results
+        conf_mr = {}
+        for name, mr in self.modelresults.items():
+            conf_mr[name] = self._modelresult_to_dict(mr)
+        conf["modelresults"] = conf_mr
+
+        # observations
+        conf_obs = {}
+        for name, obs in self.observations.items():
+            conf_obs[name] = self._observation_to_dict(obs)
+        conf["observations"] = conf_obs
+
+        if filename is not None:
+            ext = os.path.splitext(filename)[-1]
+            if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
+                self._config_to_yml(filename, conf)
+            elif "xls" in ext:
+                self._config_to_excel(filename, conf)
+            else:
+                raise ValueError("Filename extension not supported! Use .yml or .xlsx")
+        else:
+            return conf
 
     @staticmethod
-    def from_config(configuration: Union[dict, str], validate_eum=True):
+    def _modelresult_to_dict(mr):
+        d = {}
+        # d["display_name"] = mr.name
+        if mr.filename is None:
+            raise ValueError(
+                f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
+            )
+        d["filename"] = mr.filename
+        d["item"] = mr._selected_item
+        return d
+
+    @staticmethod
+    def _observation_to_dict(obs):
+        d = {}
+        # d["display_name"] = obs.name
+        d["type"] = obs.__class__.__name__
+        if obs.filename is None:
+            raise ValueError(
+                f"Cannot write Connector to conf file! Observation '{obs.name}' has no filename."
+            )
+        d["filename"] = obs.filename
+        d["item"] = obs._item
+        if isinstance(obs, PointObservation):
+            d["x"] = obs.x
+            d["y"] = obs.y
+        # d["variable_name"] = obs.variable_name
+        return d
+
+    @staticmethod
+    def _config_to_excel(filename, conf):
+        with pd.ExcelWriter(filename) as writer:
+            dfmr = pd.DataFrame(conf["modelresults"]).T
+            dfmr.index.name = "name"
+            dfmr.to_excel(writer, sheet_name="modelresults")
+
+            dfo = pd.DataFrame(conf["observations"]).T
+            dfo.index.name = "name"
+            dfo.to_excel(writer, sheet_name="observations")
+
+            # dfo = pd.DataFrame(conf["connections"]).T
+            # dfo.to_excel(writer, sheet_name="connections")
+
+    @staticmethod
+    def _config_to_yml(filename, conf):
+        with open(filename, "w") as f:
+            # TODO: preserve order
+            yaml.dump(conf, f)  # , default_flow_style=False
+
+    @staticmethod
+    def from_config(conf: Union[dict, str], validate_eum=True):
         """Load Connector from a config file (or dict)
 
         Parameters
@@ -601,21 +693,74 @@ class Connector(_BaseConnector, Mapping, Sequence):
         >>> con = Connector.from_config('Oresund.yml')
         >>> cc = con.extract()
         """
-        if isinstance(configuration, str):
-            with open(configuration) as f:
-                contents = f.read()
-            configuration = yaml.load(contents, Loader=yaml.FullLoader)
-
-        con = Connector()
-        mr = ModelResult(configuration["filename"], name=configuration.get("name"))
-        for connection in configuration["observations"]:
-            observation = connection["observation"]
-
-            if observation.get("type") == "track":
-                obs = TrackObservation(**observation)
+        if isinstance(conf, str):
+            filename = conf
+            ext = os.path.splitext(filename)[-1]
+            if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
+                conf = Connector._yaml_to_dict(filename)
+            elif "xls" in ext:
+                conf = Connector._excel_to_dict(filename)
             else:
-                obs = PointObservation(**observation)
+                raise ValueError("Filename extension not supported! Use .yml or .xlsx")
 
-            con.add(obs, mr[connection["item"]], validate=validate_eum)
+        modelresults = {}
+        for name, mr_dict in conf["modelresults"].items():
+            if not mr_dict.get("include", True):
+                continue
+            filename = mr_dict["filename"]
+            item = mr_dict.get("item")
+            mr = ModelResult(filename, name=name, item=item)
+            modelresults[name] = mr
+        mr_list = list(modelresults.values())
 
+        observations = {}
+        for name, obs_dict in conf["observations"].items():
+            if not obs_dict.get("include", True):
+                continue
+            filename = obs_dict["filename"]
+            item = obs_dict.get("item")
+            alt_name = obs_dict.get("name")
+            name = name if alt_name is None else alt_name
+
+            otype = obs_dict.get("type")
+            if (otype is not None) and ("track" in otype.lower()):
+                obs = TrackObservation(filename, item=item, name=name)
+            else:
+                x, y = obs_dict.get("x"), obs_dict.get("y")
+                obs = PointObservation(filename, item=item, x=x, y=y, name=name)
+            observations[name] = obs
+        obs_list = list(observations.values())
+
+        if "connections" in conf:
+            raise NotImplementedError()
+        else:
+            con = Connector(obs_list, mr_list, validate=validate_eum)
         return con
+
+    @staticmethod
+    def _yaml_to_dict(filename):
+        with open(filename) as f:
+            contents = f.read()
+        conf = yaml.load(contents, Loader=yaml.FullLoader)
+        return conf
+
+    @staticmethod
+    def _excel_to_dict(filename):
+        with pd.ExcelFile(filename, engine="openpyxl") as xls:
+            dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
+            dfo = pd.read_excel(xls, "observations", index_col=0).T
+            # try: dfc = pd.read_excel(xls, "connections", index_col=0).T
+        conf = {}
+        conf["modelresults"] = Connector._remove_keys_w_nan_value(dfmr.to_dict())
+        conf["observations"] = Connector._remove_keys_w_nan_value(dfo.to_dict())
+        return conf
+
+    @staticmethod
+    def _remove_keys_w_nan_value(d):
+        """Loops through dicts in dict and removes all entries where value is NaN
+        e.g. x,y values of TrackObservations
+        """
+        dout = {}
+        for key, subdict in d.items():
+            dout[key] = {k: v for k, v in subdict.items() if pd.Series(v).notna().all()}
+        return dout

@@ -79,6 +79,11 @@ class Observation:
         """Number of observations"""
         return len(self.df)
 
+    @property
+    def filename(self):
+        """Filename of the observation input"""
+        return self._filename
+
     def _unit_text(self):
         if self.itemInfo is None:
             return ""
@@ -159,6 +164,9 @@ class PointObservation(Observation):
         self.y = y
         self.z = z
 
+        self._filename = None
+        self._item = None
+
         if isinstance(filename, pd.Series):
             df = filename.to_frame()
             if name is None:
@@ -174,6 +182,7 @@ class PointObservation(Observation):
                     raise ValueError(
                         "item needs to be specified (more than one column in dataframe)"
                     )
+            self._item = item
 
             if isinstance(item, str):
                 df = df[[item]]
@@ -186,15 +195,22 @@ class PointObservation(Observation):
             if name is None:
                 name = default_name
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
-        else:
+        elif isinstance(filename, str):
+            assert os.path.exists(filename)
+            self._filename = filename
             if name is None:
                 name = os.path.basename(filename).split(".")[0]
 
             ext = os.path.splitext(filename)[-1]
             if ext == ".dfs0":
                 df, itemInfo = self._read_dfs0(Dfs0(filename), item)
+                self._item = itemInfo.name
             else:
-                raise NotImplementedError()
+                raise NotImplementedError("Only dfs0 files supported")
+        else:
+            raise TypeError(
+                f"input must be str, pandas Series/DataFrame! Given input has type {type(filename)}"
+            )
 
         if not df.index.is_unique:
             # TODO: duplicates_keep="mean","first","last"
@@ -303,11 +319,17 @@ class TrackObservation(Observation):
     def __init__(
         self, filename, item: int = 2, name: str = None, variable_name: str = None
     ):
+
+        self._filename = None
+        self._item = None
+
         if isinstance(filename, pd.DataFrame):  # or isinstance(filename, pd.Series):
             df = filename
             df = df.iloc[:, [0, 1, item]]
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
-        else:
+        elif isinstance(filename, str):
+            assert os.path.exists(filename)
+            self._filename = filename
             if name is None:
                 name = os.path.basename(filename).split(".")[0]
 
@@ -315,8 +337,13 @@ class TrackObservation(Observation):
             if ext == ".dfs0":
                 items = [0, 1, item]
                 df, itemInfo = self._read_dfs0(Dfs0(filename), items)
+                self._item = itemInfo.name
             else:
                 raise NotImplementedError()
+        else:
+            raise TypeError(
+                f"input must be str or pandas DataFrame! Given input has type {type(filename)}"
+            )
 
         if not df.index.is_unique:
             df.index = make_unique_index(df.index)
