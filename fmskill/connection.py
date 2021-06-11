@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
+import os
 
 import yaml
 from fmskill.plot import plot_observation_positions
@@ -583,7 +584,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         fig.autofmt_xdate()
         return ax
 
-    def to_config(self, filename: str):
+    def to_config(self, filename: str = None):
         """Save Connector to a config file.
 
         Parameters
@@ -593,15 +594,86 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
         Notes
         -----
-        1. Manually create your skill assessment in fmskill as usual
-        2. When you are satisfied, save config: cc.to_config('conf.yml') or similar
+        1. Manually create your Connector in fmskill as usual
+        2. When you are satisfied, save config: connector.to_config('conf.yml')
         3. Later: run your reporting from the commandline e.g. directly after model execution
         """
-        # write contents of connector to configuration file (yml or xlxs)
-        raise NotImplementedError()
+        conf = {}
+
+        # model results
+        conf_mr = {}
+        for name, mr in self.modelresults.items():
+            conf_mr[name] = self._modelresult_to_dict(mr)
+        conf["modelresults"] = conf_mr
+
+        # observations
+        conf_obs = {}
+        for name, obs in self.observations.items():
+            conf_obs[name] = self._observation_to_dict(obs)
+        conf["observations"] = conf_obs
+
+        if filename is not None:
+            ext = os.path.splitext(filename)[-1]
+            if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
+                self._config_to_yml(filename, conf)
+            elif "xls" in ext:
+                self._config_to_excel(filename, conf)
+            else:
+                raise ValueError("Filename extension not supported! Use .yml or .xlsx")
+        else:
+            return conf
 
     @staticmethod
-    def from_config(configuration: Union[dict, str], validate_eum=True):
+    def _modelresult_to_dict(mr):
+        d = {}
+        # d["display_name"] = mr.name
+        if mr.filename is None:
+            raise ValueError(
+                f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
+            )
+        d["filename"] = mr.filename
+        d["item"] = mr._selected_item
+        return d
+
+    @staticmethod
+    def _observation_to_dict(obs):
+        d = {}
+        # d["display_name"] = obs.name
+        d["type"] = obs.__class__.__name__
+        if obs.filename is None:
+            raise ValueError(
+                f"Cannot write Connector to conf file! Observation '{obs.name}' has no filename."
+            )
+        d["filename"] = obs.filename
+        d["item"] = obs._item
+        if isinstance(obs, PointObservation):
+            d["x"] = obs.x
+            d["y"] = obs.y
+        # d["variable_name"] = obs.variable_name
+        return d
+
+    @staticmethod
+    def _config_to_excel(filename, conf):
+        with pd.ExcelWriter(filename) as writer:
+            dfmr = pd.DataFrame(conf["modelresults"]).T
+            dfmr.index.name = "name"
+            dfmr.to_excel(writer, sheet_name="modelresults")
+
+            dfo = pd.DataFrame(conf["observations"]).T
+            dfo.index.name = "name"
+            dfo.to_excel(writer, sheet_name="observations")
+
+            # dfo = pd.DataFrame(conf["connections"]).T
+            # dfo.to_excel(writer, sheet_name="connections")
+
+    @staticmethod
+    def _config_to_yml(filename, conf):
+        with open(filename, "w") as f:
+            # TODO: preserve order
+            yaml.dump(conf, f)  # , default_flow_style=False
+
+    @staticmethod
+    def from_config(conf: Union[dict, str], validate_eum=True):
         """Load Connector from a config file (or dict)
 
         Parameters
@@ -621,21 +693,74 @@ class Connector(_BaseConnector, Mapping, Sequence):
         >>> con = Connector.from_config('Oresund.yml')
         >>> cc = con.extract()
         """
-        if isinstance(configuration, str):
-            with open(configuration) as f:
-                contents = f.read()
-            configuration = yaml.load(contents, Loader=yaml.FullLoader)
-
-        con = Connector()
-        mr = ModelResult(configuration["filename"], name=configuration.get("name"))
-        for connection in configuration["observations"]:
-            observation = connection["observation"]
-
-            if observation.get("type") == "track":
-                obs = TrackObservation(**observation)
+        if isinstance(conf, str):
+            filename = conf
+            ext = os.path.splitext(filename)[-1]
+            if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
+                conf = Connector._yaml_to_dict(filename)
+            elif "xls" in ext:
+                conf = Connector._excel_to_dict(filename)
             else:
-                obs = PointObservation(**observation)
+                raise ValueError("Filename extension not supported! Use .yml or .xlsx")
 
-            con.add(obs, mr[connection["item"]], validate=validate_eum)
+        modelresults = {}
+        for name, mr_dict in conf["modelresults"].items():
+            if not mr_dict.get("include", True):
+                continue
+            filename = mr_dict["filename"]
+            item = mr_dict.get("item")
+            mr = ModelResult(filename, name=name, item=item)
+            modelresults[name] = mr
+        mr_list = list(modelresults.values())
 
+        observations = {}
+        for name, obs_dict in conf["observations"].items():
+            if not obs_dict.get("include", True):
+                continue
+            filename = obs_dict["filename"]
+            item = obs_dict.get("item")
+            alt_name = obs_dict.get("name")
+            name = name if alt_name is None else alt_name
+
+            otype = obs_dict.get("type")
+            if (otype is not None) and ("track" in otype.lower()):
+                obs = TrackObservation(filename, item=item, name=name)
+            else:
+                x, y = obs_dict.get("x"), obs_dict.get("y")
+                obs = PointObservation(filename, item=item, x=x, y=y, name=name)
+            observations[name] = obs
+        obs_list = list(observations.values())
+
+        if "connections" in conf:
+            raise NotImplementedError()
+        else:
+            con = Connector(obs_list, mr_list, validate=validate_eum)
         return con
+
+    @staticmethod
+    def _yaml_to_dict(filename):
+        with open(filename) as f:
+            contents = f.read()
+        conf = yaml.load(contents, Loader=yaml.FullLoader)
+        return conf
+
+    @staticmethod
+    def _excel_to_dict(filename):
+        with pd.ExcelFile(filename, engine="openpyxl") as xls:
+            dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
+            dfo = pd.read_excel(xls, "observations", index_col=0).T
+            # try: dfc = pd.read_excel(xls, "connections", index_col=0).T
+        conf = {}
+        conf["modelresults"] = Connector._remove_keys_w_nan_value(dfmr.to_dict())
+        conf["observations"] = Connector._remove_keys_w_nan_value(dfo.to_dict())
+        return conf
+
+    @staticmethod
+    def _remove_keys_w_nan_value(d):
+        """Loops through dicts in dict and removes all entries where value is NaN
+        e.g. x,y values of TrackObservations
+        """
+        dout = {}
+        for key, subdict in d.items():
+            dout[key] = {k: v for k, v in subdict.items() if pd.Series(v).notna().all()}
+        return dout
