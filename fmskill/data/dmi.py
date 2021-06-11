@@ -10,6 +10,15 @@ class DMIOceanObsRepository:
     Notes
     =====
     Get a API key here: https://confluence.govcloud.dk/pages/viewpage.action?pageId=26476690
+
+    Examples
+    ========
+    >>> dmi = DMIOceanObsRepository(apikey="e11...")
+    >>> dmi.stations[dmi.stations.name.str.startswith('Køg')]
+       station_id      lon      lat          name
+    43      30478  12.1965  55.4555   Køge Havn I
+    54      30479  12.1965  55.4555  Køge Havn II
+    >>> df = dmi.get_observations(station_id="30478", start_time=datetime(2018, 3, 4))
     """
 
     def __init__(self, apikey: str) -> None:
@@ -48,11 +57,20 @@ class DMIOceanObsRepository:
 
         Examples
         ========
-        >>> repo = DMIOceanObsRepository(apikey="e11...")
-
-        >>> df = repo.get_observations(station_id="30336", start_time=datetime(2018, 3, 4, 0, 0))
+        >>> dmi = DMIOceanObsRepository(apikey="e11...")
+        >>> df = dmi.get_observations(station_id="30336", start_time="2018-3-4")
         >>> df.head()
-                            sealev_dvr
+                             sealev_dvr
+        time
+        2021-06-01 18:20:00        0.06
+        2021-06-01 18:30:00        0.04
+        2021-06-01 18:40:00        0.03
+        2021-06-01 18:50:00        0.02
+        2021-06-01 19:00:00       -0.01
+
+        >>> df = dmi.get_observations(station_id="30336", parameter_id="sea_reg", start_time="2018-3-4")
+        >>> df.head()
+                                sea_reg
         time
         2021-06-01 18:20:00        0.06
         2021-06-01 18:30:00        0.04
@@ -73,6 +91,11 @@ class DMIOceanObsRepository:
             "parameterId": parameter_id,
             "limit": limit,
         }
+
+        if start_time and isinstance(start_time, str):
+            start_time = pd.to_datetime(start_time)
+        if end_time and isinstance(end_time, str):
+            end_time = pd.to_datetime(end_time)
 
         if start_time or end_time:
 
@@ -129,6 +152,24 @@ class DMIOceanObsRepository:
 
     @property
     def stations(self) -> pd.DataFrame:
+        """Get DMI stations as a dataframe.
+
+        Returns
+        -------
+        pd.DataFrame
+            all stations in API
+
+        Examples
+        --------
+        >>> dmi.stations
+            station_id      lon      lat              name
+        0      9007102   8.5739  55.2764          Mandø II
+        1        31572  11.3474  54.6551   Rødbyhavns Havn
+        2      9005110   8.1259  56.3716  Thorsminde Fjord
+        3        29392  11.1390  55.3355       Korsør Havn
+        4      9005201   8.1290  56.0005  Hvide Sande Havn
+        ..         ...      ...      ...               ...
+        """
         if self._stations is None:
             self._stations = self.get_stations_raw()
 
