@@ -17,6 +17,7 @@ setuptools.setup(
         "xarray",
         "markdown",
         "jinja2",
+        "requests",
     ],
     extras_require={
         "dev": [
