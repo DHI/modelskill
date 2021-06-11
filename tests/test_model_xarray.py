@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 import pytest
 import xarray as xr
@@ -10,6 +11,8 @@ from fmskill.model import XArrayModelResult, XArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
 
+python3_7_or_above = pytest.mark.skipif(sys.version_info < (3, 7),
+                                  reason="requires Python3.7+")
 
 @pytest.fixture
 def ERA5_DutchCoast_nc():
@@ -73,6 +76,7 @@ def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
     assert not mr.filename
 
 
+@python3_7_or_above
 def test_XArrayModelResult_from_multifile(mf_modelresult):
     mr = mf_modelresult
 
@@ -112,6 +116,8 @@ def test_XArrayModelResult_extract_point(modelresult, pointobs_epl_hm0):
     assert pytest.approx(df.iloc[0, 0]) == 0.875528
 
 
+
+@python3_7_or_above
 def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
     mr = mf_modelresult
     mri = mr["VHM0"]
