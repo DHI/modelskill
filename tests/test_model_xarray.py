@@ -2,12 +2,10 @@ from datetime import datetime
 import pytest
 import xarray as xr
 import pandas as pd
-import numpy as np
 
 import fmskill
 from fmskill.model import ModelResult
 
-# from fmskill.model.abstract import ModelResultInterface
 from fmskill.model import XArrayModelResult, XArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
@@ -21,6 +19,12 @@ def ERA5_DutchCoast_nc():
 @pytest.fixture
 def modelresult(ERA5_DutchCoast_nc):
     return ModelResult(ERA5_DutchCoast_nc)
+
+
+@pytest.fixture
+def mf_modelresult():
+    fn = r"tests\testdata\SW\CMEMS_DutchCoast_*.nc"
+    return ModelResult(fn, name="CMEMS")
 
 
 @pytest.fixture
@@ -65,10 +69,14 @@ def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
     assert isinstance(mr, XArrayModelResultItem)
 
 
-# TODO
-# def test_XArrayModelResult_from_grib
-# def test_XArrayModelResult_from_mfdataset
-# def test_XArrayModelResult_options
+def test_XArrayModelResult_from_multifile(mf_modelresult):
+    mr = mf_modelresult
+
+    assert isinstance(mr, XArrayModelResult)
+    assert isinstance(mr.ds, xr.Dataset)
+    assert mr.name == "CMEMS"
+    assert mr.start_time == datetime(2017, 10, 28, 0, 0, 0)
+    assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
 
 
 def test_XArrayModelResult_select_item(modelresult):
@@ -104,9 +112,7 @@ def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
     df = pc.df
 
     assert isinstance(pc, PointComparer)
-    assert pc.start == datetime(
-        2017, 10, 27, 0, 0, 0
-    )  # TODO: start_time like ModelResult?
+    assert pc.start == datetime(2017, 10, 27, 0, 0, 0)
     assert pc.end == datetime(2017, 10, 29, 18, 0, 0)
     assert pc.n_models == 1
     assert pc.n_points == 67
@@ -143,9 +149,6 @@ def test_XArrayModelResultItem_extract_point_wrongitem(modelresult, pointobs_epl
     mri = mr["mwd"]
     pc = mri.extract_observation(pointobs_epl_hm0)
     assert pc == None
-
-
-# TODO: def test_ModelResultItem_extract_point_nanintime():
 
 
 def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
