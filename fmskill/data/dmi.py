@@ -19,7 +19,7 @@ class DMIOceanObsRepository:
        station_id      lon      lat          name
     43      30478  12.1965  55.4555   Køge Havn I
     54      30479  12.1965  55.4555  Køge Havn II
-    >>> df = dmi.get_observations(station_id="30478", start_time=datetime(2018, 3, 4))
+    >>> df = dmi.get_observed_data(station_id="30478", start_time=datetime(2018, 3, 4))
     """
 
     def __init__(self, apikey: str) -> None:
@@ -27,7 +27,7 @@ class DMIOceanObsRepository:
         self.__api__key = apikey
         self._stations = None
 
-    def get_observations(
+    def get_observed_data(
         self,
         *,
         station_id: str,
@@ -65,7 +65,7 @@ class DMIOceanObsRepository:
         ========
         >>> from fmskill.data.dmi import DMIOceanObsRepository
         >>> dmi = DMIOceanObsRepository(apikey="e11...")
-        >>> df = dmi.get_observations(station_id="30336", start_time="2018-03-04", end_time="2018-03-06")
+        >>> df = dmi.get_observed_data(station_id="30336", start_time="2018-03-04", end_time="2018-03-06")
         >>> df.head()
                             sealev_dvr
         time
@@ -75,7 +75,7 @@ class DMIOceanObsRepository:
         2018-03-04 00:30:00       -0.27
         2018-03-04 00:40:00       -0.28
 
-        >>> df = dmi.get_observations(station_id="30336", parameter_id = "tw", start_time="2018-07-01", end_time="2018-07-06")
+        >>> df = dmi.get_observed_data(station_id="30336", parameter_id = "tw", start_time="2018-07-01", end_time="2018-07-06")
         >>> df.head()
                             tw
         time

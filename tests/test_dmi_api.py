@@ -1,18 +1,17 @@
 from datetime import datetime
 import os
-import warnings
 
 from fmskill.data.dmi import DMIOceanObsRepository
 
 
-def test_get_observations():
+def test_get_observed_data():
 
     api_key = os.environ["DMI_API_KEY"]
     repo = DMIOceanObsRepository(apikey=api_key)
 
     station_id = "30336"  # Kbh havn
 
-    df = repo.get_observations(
+    df = repo.get_observed_data(
         station_id=station_id,
         start_time=datetime(2020, 1, 1),
         end_time=datetime(2020, 1, 2),
