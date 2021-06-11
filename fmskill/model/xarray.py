@@ -1,10 +1,12 @@
+import os
+import numpy as np
 import pandas as pd
 import xarray as xr
 import warnings
 
 from mikeio import eum
-from ..observation import PointObservation
-from ..comparison import PointComparer
+from ..observation import Observation, PointObservation, TrackObservation
+from ..comparison import PointComparer, TrackComparer
 from .abstract import ModelResultInterface, MultiItemModelResult
 
 
@@ -20,23 +22,129 @@ class _XarrayBase:
     def end_time(self):
         return pd.Timestamp(self.ds.time.values[-1])
 
+    @property
+    def filename(self):
+        return self._filename
+
+    @staticmethod
+    def _get_new_coord_names(coords):
+        new_names = {}
+        for coord in coords:
+            c = coord.lower()
+            if ("x" not in new_names) and (("lon" in c) or ("east" in c)):
+                new_names[coord] = "x"
+            elif ("y" not in new_names) and (("lat" in c) or ("north" in c)):
+                new_names[coord] = "y"
+            elif ("time" not in new_names) and (("time" in c) or ("date" in c)):
+                new_names[coord] = "time"
+        return new_names
+
+    @staticmethod
+    def _validate_coord_names(coords):
+        cnames = [c for c in coords]
+        for c in ["x", "y", "time"]:
+            if c not in coords:
+                raise ValueError(f"{c} not found in coords {cnames}")
+
+    def _validate_time_axis(self, coords):
+        if "time" not in coords:
+            raise ValueError(
+                f"Time coordinate could not be found in {[c for c in coords]}"
+            )
+        if not isinstance(coords["time"].to_index(), pd.DatetimeIndex):
+            raise ValueError(f"Time coordinate is not equivalent to DatetimeIndex")
+        # return coords["time"].dtype.type == np.datetime64
+
     def _get_item_name(self, item, item_names=None) -> str:
-        raise NotImplementedError()
+        if item_names is None:
+            item_names = list(self.ds.data_vars)
+        n_items = len(item_names)
+        if item is None:
+            if n_items == 1:
+                return item_names[0]
+            else:
+                return None
+        # if isinstance(item, eum.ItemInfo):
+        #     item = item.name
+        if isinstance(item, int):
+            if (item < 0) or (item >= n_items):
+                raise ValueError(f"item must be between 0 and {n_items-1}")
+            item = item_names[item]
+        elif isinstance(item, str):
+            if item not in item_names:
+                raise ValueError(f"item must be one of {item_names}")
+        else:
+            raise ValueError("item must be int or string")
+        return item
 
     def _get_item_num(self, item) -> int:
-        raise NotImplementedError()
+        item_name = self._get_item_name(item)
+        item_names = list(self.ds.data_vars)
+        return item_names.index(item_name)
+
+    def _extract_point(self, observation: PointObservation, item=None) -> pd.DataFrame:
+        if item is None:
+            item = self._selected_item
+        x, y = observation.x, observation.y
+        da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
+        df = da.to_dataframe().drop(columns=["x", "y"])
+        df = df.rename(columns={df.columns[-1]: self.name})
+        return df
+
+    def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+        if item is None:
+            item = self._selected_item
+        t = xr.DataArray(observation.df.index, dims="track")
+        x = xr.DataArray(observation.df.Longitude, dims="track")
+        y = xr.DataArray(observation.df.Latitude, dims="track")
+        da = self.ds[item].interp(coords=dict(time=t, x=x, y=y), method="linear")
+        df = da.to_dataframe().drop(columns=["time"])
+        df.index.name = "time"
+        df = df.rename(columns={df.columns[-1]: self.name})
+        return df
+
+    def _in_domain(self, x, y) -> bool:
+        ok = True
+        # TODO
+        # if self.is_dfsu:
+        #    ok = self.dfs.contains([x, y])
+        return ok
+
+    def _validate_start_end(self, observation: Observation) -> bool:
+        if observation.end_time < self.start_time:
+            return False
+        if observation.start_time > self.end_time:
+            return False
+        return True
 
 
-class XarrayModelResultItem(_XarrayBase, ModelResultInterface):
+class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
     @property
     def item_name(self):
-        raise NotImplementedError()
+        return self._selected_item
 
-    def __init__(self, ds, name: str = None, item=None):
-        raise NotImplementedError()
+    def __init__(self, ds, name: str = None, item=None, filename=None):
+        if isinstance(ds, (xr.DataArray, xr.Dataset)):
+            self._validate_time_axis(ds)
+        else:
+            raise TypeError("Input must be xarray Dataset or DataArray!")
+
+        if item is None:
+            if len(ds.data_vars) == 1:
+                item = list(ds.data_vars)[0]
+            else:
+                raise ValueError("Model ambiguous - please provide item")
+
+        item = self._get_item_name(item, list(ds.data_vars))
+        self.ds = ds[[item]]
+        self._selected_item = item
+        if name is None:
+            name = self.item_name
+        self.name = name
+        self._filename = filename
 
     def __repr__(self):
-        txt = [f"<XarrayModelResultItem> '{self.name}'"]
+        txt = [f"<XArrayModelResultItem> '{self.name}'"]
         txt.append(f"- Item: {self.item_name}")
         return "\n".join(txt)
 
@@ -53,11 +161,18 @@ class XarrayModelResultItem(_XarrayBase, ModelResultInterface):
         <fmskill.PointComparer>
             A comparer object for further analysis or plotting
         """
-        raise NotImplementedError()
+        item = self._selected_item
+
+        # TODO: more validation?
+
         if isinstance(observation, PointObservation):
-            pass
+            df_model = self._extract_point(observation, item)
+            comparer = PointComparer(observation, df_model)
+        elif isinstance(observation, TrackObservation):
+            df_model = self._extract_track(observation, item)
+            comparer = TrackComparer(observation, df_model)
         else:
-            raise ValueError("Only point observation are supported!")
+            raise ValueError("Only point and track observation are supported!")
 
         if len(comparer.df) == 0:
             warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
@@ -66,22 +181,61 @@ class XarrayModelResultItem(_XarrayBase, ModelResultInterface):
         return comparer
 
 
-class XarrayModelResult(_XarrayBase, MultiItemModelResult):
+class XArrayModelResult(_XarrayBase, MultiItemModelResult):
     @property
     def item_names(self):
         """List of item names (=data vars)"""
         return list(self.ds.data_vars)
 
-    def __init__(self, input, name: str = None, item=None):
-        raise NotImplementedError()
-        # TODO: make sure it has a time coordinate
-        # TODO: rename lat, lon, to x, y?
+    def __init__(self, input, name: str = None, item=None, **kwargs):
+        self._filename = None
+        if isinstance(input, str) and ("*" not in input):
+            self._filename = input
+            ds = xr.open_dataset(input, **kwargs)
+            if name is None:
+                name = os.path.basename(input).split(".")[0]
+        elif isinstance(input, str) or isinstance(input, list):
+            # multi-file dataset; input is list of filenames or str with wildcard
+            self._filename = input if isinstance(input, str) else ";".join(input)
+            ds = xr.open_mfdataset(input, **kwargs)
+        elif isinstance(input, xr.Dataset):
+            ds = input
+            # TODO: name
+        elif isinstance(input, xr.DataArray):
+            ds = input.to_dataset()
+            # TODO: name
+        else:
+            raise TypeError(
+                f"Unknown input type {type(input)}. Must be str or xarray.Dataset/DataArray."
+            )
+
+        ds = self._rename_coords(ds)
+        self._validate_coord_names(ds.coords)
+        self._validate_time_axis(ds.coords)
+        self.ds = ds
+        self.name = name
+
         self._mr_items = {}
         for it in self.item_names:
-            self._mr_items[it] = XarrayModelResultItem(self.df, self.name, it)
+            self._mr_items[it] = XArrayModelResultItem(
+                self.ds, self.name, it, self._filename
+            )
+
+        if item is not None:
+            self._selected_item = self._get_item_name(item)
+        elif len(self.item_names) == 1:
+            self._selected_item = 0
+        else:
+            self._selected_item = None
+
+    def _rename_coords(self, ds):
+        new_names = self._get_new_coord_names(ds.coords)
+        if len(new_names) > 0:
+            ds = ds.rename(new_names)
+        return ds
 
     def __repr__(self):
-        txt = [f"<XarrayModelResult> '{self.name}'"]
+        txt = [f"<XArrayModelResult> '{self.name}'"]
         for j, item in enumerate(self.item_names):
             txt.append(f"- Item: {j}: {item}")
         return "\n".join(txt)
