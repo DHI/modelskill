@@ -1,5 +1,8 @@
 import fmskill
 from fmskill.report import Reporter
+import matplotlib as mpl
+
+mpl.use("Agg")
 
 
 def test_markdown(tmpdir):
