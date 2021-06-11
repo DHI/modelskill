@@ -13,10 +13,15 @@ def test_get_observations():
     station_id = "30336"  # Kbh havn
 
     df = repo.get_observations(
-        station_id=station_id, start_time=datetime(2020, 1, 1), limit=100
+        station_id=station_id,
+        start_time=datetime(2020, 1, 1),
+        end_time=datetime(2020, 1, 2),
+        limit=10,
     )
 
     assert df.shape[0] > 0
+    assert df.index[0].year == 2020
+    assert df.index[-1].year == 2020
 
 
 def test_get_stations():
