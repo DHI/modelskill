@@ -35,9 +35,12 @@ class DMIOceanObsRepository:
         start_time: datetime = None,
         end_time: datetime = None,
         limit=1000,
+        records_per_request=1000,
     ) -> pd.DataFrame:
         """
         Get ocean observations from DMI
+
+        For historical data, always specify both a start_time and an end_time.
 
         Parameters
         ==========
@@ -45,12 +48,14 @@ class DMIOceanObsRepository:
             Id of station, e.g. "30336" # Kbh. havn
         parameter_id: str, optional
             Select one of "sea_reg", "sealev_dvr", "sealev_ln", "tw", default  is "sealev_dvr"
-        start_time: (str, datetime), optional
-            Start time of interval.
-        end_time: (str, datetime), optional
-            End time of interval.
-        limit: int
-            Max number of observations to return, default 1000, max value: 300000
+        start_time: datetime, optional
+            Start time of  interval.
+        end_time: datetime, optional
+            End time of  interval.
+        limit: int, optional
+            Max number of observations to return default 1000
+        records_per_request: int, optional
+            Tunable parameter for optimal performance, default value is 1000
 
         Returns
         =======
@@ -58,26 +63,27 @@ class DMIOceanObsRepository:
 
         Examples
         ========
+        >>> from fmskill.data.dmi import DMIOceanObsRepository
         >>> dmi = DMIOceanObsRepository(apikey="e11...")
-        >>> df = dmi.get_observations(station_id="30336", start_time="2018-3-4")
+        >>> df = dmi.get_observations(station_id="30336", start_time="2018-03-04", end_time="2018-03-06")
         >>> df.head()
-                             sealev_dvr
+                            sealev_dvr
         time
-        2021-06-01 18:20:00        0.06
-        2021-06-01 18:30:00        0.04
-        2021-06-01 18:40:00        0.03
-        2021-06-01 18:50:00        0.02
-        2021-06-01 19:00:00       -0.01
+        2018-03-04 00:00:00       -0.22
+        2018-03-04 00:10:00       -0.23
+        2018-03-04 00:20:00       -0.26
+        2018-03-04 00:30:00       -0.27
+        2018-03-04 00:40:00       -0.28
 
-        >>> df = dmi.get_observations(station_id="30336", parameter_id="sea_reg", start_time="2018-3-4")
+        >>> df = dmi.get_observations(station_id="30336", parameter_id = "tw", start_time="2018-07-01", end_time="2018-07-06")
         >>> df.head()
-                                sea_reg
+                            tw
         time
-        2021-06-01 18:20:00        0.06
-        2021-06-01 18:30:00        0.04
-        2021-06-01 18:40:00        0.03
-        2021-06-01 18:50:00        0.02
-        2021-06-01 19:00:00       -0.01
+        2018-07-01 00:00:00  18.2
+        2018-07-01 00:10:00  18.2
+        2018-07-01 00:20:00  18.2
+        2018-07-01 00:30:00  18.2
+        2018-07-01 00:40:00  18.2
         """
 
         available_parameters = {"sea_reg", "sealev_dvr", "sealev_ln", "tw"}
@@ -90,7 +96,7 @@ class DMIOceanObsRepository:
             "api-key": self.__api__key,
             "stationId": station_id,
             "parameterId": parameter_id,
-            "limit": limit,
+            "limit": records_per_request,
         }
 
         if start_time and isinstance(start_time, str):
@@ -119,13 +125,19 @@ class DMIOceanObsRepository:
             )
 
         data = resp.json()
-        ts = [
-            {
-                "time": p["properties"]["observed"].replace("Z", ""),
-                parameter_id: p["properties"]["value"],
-            }
-            for p in data["features"]
-        ]
+
+        ts = self._data_to_ts(data, parameter_id)
+
+        next_link = data["links"][1]["href"]
+
+        while len(ts) < limit:
+            resp = requests.get(next_link)
+            data = resp.json()
+            if data["numberReturned"] == 0:
+                break
+            else:
+                ts = ts + self._data_to_ts(data, parameter_id)
+
         df = pd.DataFrame(ts)
 
         if parameter_id in {"sea_reg", "sealev_dvr", "sealev_ln"}:
@@ -136,6 +148,16 @@ class DMIOceanObsRepository:
         df = df.sort_index()
 
         return df
+
+    def _data_to_ts(self, data, parameter_id):
+        ts = [
+            {
+                "time": p["properties"]["observed"].replace("Z", ""),
+                parameter_id: p["properties"]["value"],
+            }
+            for p in data["features"]
+        ]
+        return ts
 
     def get_stations_raw(self) -> Dict:
         resp = requests.get(
@@ -168,7 +190,7 @@ class DMIOceanObsRepository:
         1      31572  11.3474  54.6551   Rødbyhavns Havn 1990-09-21 NaT
         2    9005110   8.1259  56.3716  Thorsminde Fjord 1990-12-03 NaT
         3      29392  11.1390  55.3355       Korsør Havn 1991-09-02 NaT
-        4    9005201   8.1290  56.0005  Hvide Sande Havn 1990-10-05 NaT        
+        4    9005201   8.1290  56.0005  Hvide Sande Havn 1990-10-05 NaT
         """
         if self._stations is None:
             self._stations = self.get_stations_raw()
