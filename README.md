@@ -31,14 +31,13 @@ Or the development version:
 ## Example notebooks
 
 * [Quick_and_dirty_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Quick_and_dirty_compare.ipynb)
-* [Timeseries_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/timeseries_compare.ipynb)
-* [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Track_comparison.ipynb)
 * [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/SW_DutchCoast.ipynb)
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_model_comparison.ipynb)
 * [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
-* [Spatial_skill.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Spatial_skill.ipynb)
+* [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Track_comparison.ipynb) (including global wave model example)
+* [Spatial_skill.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Spatial_skill.ipynb) (satellite tracks, skill aggregated on spatial bins)
 * [NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/NetCDF_ModelResult.ipynb)
-* [DMI_observations.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/DMI_observations.ipynb)
+* [DMI_observations.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/DMI_observations.ipynb) (download data from REST api)
 
 
 ## Workflow
