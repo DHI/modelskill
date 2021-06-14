@@ -581,6 +581,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
             plt.xlim([mr.start_time, mr.end_time])
 
         plt.yticks(np.arange(n_lines) + 1, labels)
+        if show_model:
+            for j in range(n_models):
+                ax.get_yticklabels()[j].set_fontstyle("italic")
+                ax.get_yticklabels()[j].set_weight("bold")
+                # set_color("#004165")
         fig.autofmt_xdate()
         return ax
 
