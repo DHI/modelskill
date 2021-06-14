@@ -37,6 +37,8 @@ Or the development version:
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_model_comparison.ipynb)
 * [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
 * [Spatial_skill.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Spatial_skill.ipynb)
+* [NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/NetCDF_ModelResult.ipynb)
+* [DMI_observations.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/DMI_observations.ipynb)
 
 
 ## Workflow
