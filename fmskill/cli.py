@@ -17,8 +17,8 @@ def report(configuration: str, output_folder=None, output_format="md") -> None:
     fmskill: Automatic model skill assessment
     """
 
-    model_result = fmskill.from_config(configuration)
-    reporter = Reporter(model_result, output_folder)
+    con = fmskill.from_config(configuration)
+    reporter = Reporter(con, output_folder)
 
     if output_format == "md":
         filename = reporter.to_markdown()
