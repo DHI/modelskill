@@ -1308,8 +1308,15 @@ class SingleObsComparer(BaseComparer):
             title = f"Residuals  - {self.name}"
 
         if backend == "matplotlib":
-            fig, ax = plt.subplots(figsize=figsize)
+            import matplotlib.dates as mdates
+
+            _, ax = plt.subplots(figsize=figsize)
             tmp = self.residual
+
+            locator = mdates.AutoDateLocator(minticks=3, maxticks=7)
+            formatter = mdates.ConciseDateFormatter(locator)
+            ax.xaxis.set_major_locator(locator)
+            ax.xaxis.set_major_formatter(formatter)
             ax.fill_between(
                 tmp.index,
                 0.0,
@@ -1326,7 +1333,6 @@ class SingleObsComparer(BaseComparer):
                 interpolate=True,
                 color=neg_color,
             )
-            fig.autofmt_xdate()
 
             ax.set_ylabel(self._obs_unit_text)
             ax.set_ylim(ylim)
