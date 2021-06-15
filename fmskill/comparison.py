@@ -1344,13 +1344,10 @@ class SingleObsComparer(BaseComparer):
 
             df = self.residual
 
-            df["label"] = np.where(df.iloc[:, 0] > 0.0, 1, 0)
+            df["label"] = np.where(df.iloc[:, 0] >= 0.0, 1, 0)
             df["group"] = df["label"].ne(df["label"].shift()).cumsum()
             df["constant"] = 0.0
-            df = df.groupby("group")
-            dfs = []
-            for name, data in df:
-                dfs.append(data)
+            dfs = [data for _, data in df.groupby("group")]
 
             # custom function to set fill color
             def fillcol(label):
@@ -1361,23 +1358,31 @@ class SingleObsComparer(BaseComparer):
 
             fig = go.Figure()
 
-            for df in dfs:
+            for dfi in dfs:
                 fig.add_traces(
                     go.Scatter(
-                        x=df.index, y=df.iloc[:, 0], line=dict(color="rgba(0,0,0,0)")
+                        x=dfi.index, y=dfi.iloc[:, 0], line=dict(color="rgba(0,0,0,0)")
                     )
                 )
 
                 fig.add_traces(
                     go.Scatter(
-                        x=df.index,
-                        y=df.constant,
+                        x=dfi.index,
+                        y=dfi.constant,
                         line=dict(color="rgba(0,0,0,0)"),
                         fill="tonexty",
-                        fillcolor=fillcol(df["label"].iloc[0]),
+                        fillcolor=fillcol(dfi["label"].iloc[0]),
                     )
                 )
 
+            fig.add_traces(
+                go.Scatter(
+                    x=df.index,
+                    y=df.iloc[:, 0],
+                    mode="lines",
+                    line=dict(color="black", width=1),
+                )
+            )
             fig.update_layout(showlegend=False)
             fig.update_layout(title=title, yaxis_title=self._obs_unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
