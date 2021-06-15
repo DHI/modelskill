@@ -4,7 +4,7 @@ import requests
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from mikeio import eum
+from mikeio import Dfs0, eum
 
 
 class APIAuthenticationFailed(Exception):
@@ -19,83 +19,39 @@ class InvalidSatelliteName(Exception):
     pass
 
 
-class DHIAltimetryRepository:
-    API_URL = "https://altimetry-shop-data-api.dhigroup.com/"
-    HEADERS = None
-    # API_user = ""
-    # API_password = ""
-    # API_token = None
+class AltimetryData:
+
     area = None
     start_date = None
     end_date = None
 
-    api_key = None
-    df = None
+    def __init__(self, df, area=None):
+        self.df = df
+        self.area = area
 
-    def __init__(self, api_key):
-        # super().__init__()
-        self.api_key = api_key
-        self.HEADERS = {"authorization": api_key}
-        # self.API_user = user
-        # self.API_password = password
-        # if (user != "") & (password != ""):
-        #     self.API_token = self.get_access_token(user, password)
+    @property
+    def satellites(self):
+        return list(self.df.satellite.unique())
 
-    # def get_access_token(self, user="", password=""):
-    #     if user == "":
-    #         user = self.API_user
-    #     if password == "":
-    #         password = self.API_password
-    #     if (user == "") | (password == ""):
-    #         raise Exception("username and/or password has not been provided!")
+    @property
+    def start_time(self):
+        return self.df.index[0].to_pydatetime()
 
-    #     API_CREDENTIALS = (user, password)
-    #     r = requests.get((self.API_URL + "/get-token"), auth=API_CREDENTIALS)
-    #     r.raise_for_status()
-    #     token_data = r.json()
-    #     self.API_token = token_data
-    #     return token_data
+    @property
+    def end_time(self):
+        return self.df.index[0].to_pydatetime()
 
-    def check_connection(self):
-        """Check connection (and credentials) to altimetry api
-
-        Returns
-        -------
-        bool
-            True if connection is ok, otherwise False
-        """
-        url_query = self.create_altimetry_query(
-            area="lon=10.9&lat=55.9&radius=10000",
-            start_date="20180115",
-            end_date="20180201",
-            satellites=["3a"],
-        )
-        try:
-            df = self.get_altimetry_from_api(url_query, self.api_key)
-        except:
-            return False
-
-        return len(df) > 0
-
-    def save_to_dfs0(self, filename, df=None, satellite=None):
-        """[summary]
+    def to_dfs0(self, filename, satellite=None, quality=0):
+        """Save altimetry data to dfs0 file.
 
         Parameters
         ----------
-        filename : [type]
-            [description]
-        df : [type], optional
-            [description], by default None
-        satellite : [type], optional
-            [description], by default None
-
-        Raises
-        ------
-        Exception
-            [description]
+        filename : str
+            path to new dfs0 file
+        satellite : str, optional
+            short name of satellite to be saved, by default all
         """
-        if df is None:
-            df = self._data
+        df = self.df
         if satellite is not None:
             df = df[df.satellite == satellite]
 
@@ -114,54 +70,30 @@ class DHIAltimetryRepository:
 
         df[cols].to_dfs0(filename, items=items)
 
-    def get_data(
-        self,
-        area,
-        start_date="20180101",
-        end_date=datetime.now(),
-        satellites="",
-        quality_filter="",
-    ):
-        """Main function that creates url and retrieves altimetry data from api
+    def plot_map(self, fig_size=(12, 10)):
+        """plot map of altimetry data
 
-        Parameters
-        ----------
-        area : str
-            String specifying location of desired data.  The three forms allowed by the API are:
-                - polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
-                - bbox=115,28,150,52
-                - lon=10.9&lat=55.9&radius=100000
-            A few named domains can also be used:
-                - GS_NorthSea, GS_BalticSea, GS_SouthChinaSea
-        start_date : str, datetime, optional
-            Start of data to be retrieved, by default '20180101'
-        end_date : str, datetime, optional
-            End of data to be retrieved, by default datetime.now()
-        satellites : str, list of str, optional
-            Satellites to be downloaded, e.g. '', '3a', 'j3, by default ''
-        quality_filter : str, optional
-            Name of quality filter, e.g. 'dhi_combined', by default '' meaning no filter
-
-        Returns
-        -------
-        DataFrame
-            With columns 'lon', 'lat', 'adt', 'adt_dhi', 'swh', 'swh_rms' 'wind_speed', ...
+        Keyword Arguments:
+            df {dataframe} -- altimetry data (default: {None})
+            fig_size {tuple} -- size of figure (default: {(12,10)})
         """
-        url_query = self.create_altimetry_query(
-            area=area,
-            start_date=start_date,
-            end_date=end_date,
-            quality_filter=quality_filter,
-            satellites=satellites,
-        )
-        df = self.get_altimetry_from_api(url_query, self.api_key)
-        self.area = area
-        self.start_date = self.parse_date(start_date)
-        self.end_date = self.parse_date(end_date)
-        self._data = df
-        return df
+        df = self.df
 
-    def read_csv(self, filename):
+        plt.style.use("seaborn-whitegrid")
+        plt.figure(figsize=fig_size)
+        markers = ["o", "x", ".", ",", "+", "v", "^", "<", ">", "s", "d"]
+        j = 0
+        for sat in self.satellites:
+            dfsub = df[df.satellite == sat]
+            plt.plot(dfsub.lon, dfsub.lat, markers[j], label=sat, markersize=1)
+            j = j + 1
+        plt.legend(numpoints=1)
+        plt.title(f"Altimetry data between {self.start_time} and {self.end_time}")
+        plt.xlabel("Longitude")
+        plt.ylabel("Latitude")
+
+    @staticmethod
+    def from_csv(filename):
         """read altimetry data from csv file instead of api
 
         Parameters
@@ -176,16 +108,7 @@ class DHIAltimetryRepository:
         """
         df = pd.read_csv(filename, parse_dates=True, index_col="date")
         print(f"Succesfully read {len(df)} rows from file {filename}")
-
-        self.start_date = df.index.min().date()
-        self.end_date = df.index.max().date() + timedelta(days=1)
-        self._data = df
-        return df
-
-    def get_satellites(self, df=None):
-        if df is None:
-            df = self._data
-        return list(df.satellite.unique())
+        return AltimetryData(df)
 
     def get_dataframe_per_satellite(self, df=None):
         if df is None:
@@ -254,37 +177,95 @@ class DHIAltimetryRepository:
             if details > 1:
                 print(dfsub.drop(["lon", "lat"], axis=1).describe())
 
-    def plot_map(self, df=None, fig_size=(12, 10)):
-        """plot map of altimetry data
 
-        Keyword Arguments:
-            df {dataframe} -- altimetry data (default: {None})
-            fig_size {tuple} -- size of figure (default: {(12,10)})
+class DHIAltimetryRepository:
+    API_URL = "https://altimetry-shop-data-api.dhigroup.com/"
+    HEADERS = None
+    api_key = None
+
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.HEADERS = {"authorization": api_key}
+
+    def _check_connection(self):
+        """Check connection (and api_key) to altimetry api
+
+        Returns
+        -------
+        bool
+            True if connection is ok, otherwise False
         """
-        if df is None:
-            df = self._data
+        url_query = self.create_altimetry_query(
+            area="lon=10.9&lat=55.9&radius=10000",
+            start_date="20180115",
+            end_date="20180201",
+            satellites=["3a"],
+        )
+        try:
+            df = self.get_altimetry_data_raw(url_query, self.api_key)
+        except:
+            return False
 
-        plt.style.use("seaborn-whitegrid")
-        plt.figure(figsize=fig_size)
-        markers = ["o", "x", ".", ",", "+", "v", "^", "<", ">", "s", "d"]
-        j = 0
-        for sat in self.get_satellites():
-            dfsub = df[df.satellite == sat]
-            plt.plot(dfsub.lon, dfsub.lat, markers[j], label=sat, markersize=1)
-            j = j + 1
-        plt.legend(numpoints=1)
-        plt.title(f"Altimetry data between {self.start_date} and {self.end_date}")
-        plt.xlabel("Longitude")
-        plt.ylabel("Latitude")
+        return len(df) > 0
+
+    def get_altimetry_data(
+        self,
+        area,
+        start_date="20200101",
+        end_date=None,
+        satellites="",
+        quality_filter="",
+    ):
+        """Main function that creates url and retrieves altimetry data from api
+
+        Parameters
+        ----------
+        area : str
+            String specifying location of desired data.  The three forms allowed by the API are:
+                - polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
+                - bbox=115,28,150,52
+                - lon=10.9&lat=55.9&radius=100000
+            A few named domains can also be used:
+                - GS_NorthSea, GS_BalticSea, GS_SouthChinaSea
+        start_date : str, datetime, optional
+            Start of data to be retrieved, by default '20200101'
+        end_date : str, datetime, optional
+            End of data to be retrieved, by default datetime.now()
+        satellites : str, list of str, optional
+            Satellites to be downloaded, e.g. '', '3a', 'j3, by default ''
+        quality_filter : str, optional
+            Name of quality filter, e.g. 'dhi_combined', by default '' meaning no filter
+
+        Returns
+        -------
+        DataFrame
+            With columns 'lon', 'lat', 'adt', 'adt_dhi', 'swh', 'swh_rms' 'wind_speed', ...
+        """
+        if end_date is None:
+            end_date = datetime.now()
+        url_query = self.create_altimetry_query(
+            area=area,
+            start_date=start_date,
+            end_date=end_date,
+            quality_filter=quality_filter,
+            satellites=satellites,
+        )
+        df = self.get_altimetry_data_raw(url_query)
+        # self.area = area
+        # self.start_date = self.parse_date(start_date)
+        # self.end_date = self.parse_date(end_date)
+        # self._data = df
+        data = AltimetryData(df, area=area)
+        return data
 
     def create_altimetry_query(
         self,
         area="bbox=-11.913345,48.592117,12.411167,63.084148",
-        satellites="sentinels",
-        start_date="",
+        satellites="3a",
+        start_date="20200101",
         end_date="",
         nan_value="",
-        quality_filter="dhi_combined",
+        quality_filter="",
         numeric=False,
     ):
         """
@@ -301,13 +282,13 @@ class DHIAltimetryRepository:
                 - GS_NorthSea, GS_BalticSea, GS_SouthChinaSea
         satellites : Union[List[str], str], optional
             List of short or long names of satellite to include, an empty string, or the string 'sentinels' to specify
-                the two sentinel satellites 3a and 3b. Default: 'sentinels'.
+                the two sentinel satellites 3a and 3b. Default: '3a'.
         start_date : str or datetime, optional
             First date for which data is wanted, in the format '20100101' or as an empty string. If an empty string is
                 given, data starting from when it was first available is returned. Default: ''.
         end_date : str or datetime, optional
             Last date for which data is wanted, in the format '20100101' or as an empty string. If an empty string is
-                given, data until the last time available is returned. Default: ''.
+                given, data until the last time available is returned. Default: "20200101".
         nan_value : str, optional
             Value to use to indicate bad or missing data, or an empty string to use the default (-9999). Default: ''.
         quality_filter : str, optional
@@ -325,7 +306,7 @@ class DHIAltimetryRepository:
         """
 
         area = self.validate_area(area)
-        satellite_string = self.parse_satellite_list(satellites)
+        satellite_string = self.parse_satellites(satellites)
 
         query_url = self.API_URL + "query-csv?"
 
@@ -449,7 +430,7 @@ class DHIAltimetryRepository:
                 f"Filter {qa} is unknown (dhi_combined, qual_swh, qual_wind_speed)"
             )
 
-    def get_altimetry_from_api(self, url_query, access_token=None):
+    def get_altimetry_data_raw(self, url_query):
         """Request data from altimetry api
 
         Arguments:
@@ -464,16 +445,10 @@ class DHIAltimetryRepository:
         Returns:
             dataframe -- with altimetry data
         """
-        # if access_token == None:
-        #     access_token = self.API_token
-        #     if access_token == None:
-        #         self.API_token = self.get_access_token()
-        #         access_token = self.API_token
-
         t_start = time.time()
         r = requests.get(
             url_query,
-            headers={"authorization": "bearer {access_token}".format(**access_token)},
+            headers=self.HEADERS,
         )
         if r.status_code == 401:
             raise APIAuthenticationFailed
@@ -494,7 +469,7 @@ class DHIAltimetryRepository:
 
         return df
 
-    def parse_satellite_list(self, satellites):
+    def parse_satellites(self, satellites):
         """
         Parse a list of satellite names into an argument string to pass as part of a URL query.
 
@@ -517,11 +492,10 @@ class DHIAltimetryRepository:
                                 'Geosat', 'GFO', 'ERS-1', 'ERS-2', 'CryoSat-2', 'Sentinel-3A', 'Sentinel-3B']
             ['tx', 'ps', 'j1', 'n1', 'j2', 'sa', 'j3', 'gs', 'g1', 'e1', 'e2', 'c2', '3a', '3b']
         """
-        if satellites == "sentinels":
-            satellites = ["3a", "3b"]
-
-        if satellites == "":
+        if not satellites:
             return ""
+        if isinstance(satellites, str):
+            satellites = [satellites]
 
         satellite_long_names = [
             "TOPEX",
