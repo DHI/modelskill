@@ -19,11 +19,12 @@ class InvalidSatelliteName(Exception):
     pass
 
 
-class AltimetryDHI:
-    API_URL = "https://altimetry-api.dhigroup.com/"
-    API_user = ""
-    API_password = ""
-    API_token = None
+class DHIAltimetryRepository:
+    API_URL = "https://altimetry-shop-data-api.dhigroup.com/"
+    HEADERS = None
+    # API_user = ""
+    # API_password = ""
+    # API_token = None
     area = None
     start_date = None
     end_date = None
@@ -31,27 +32,29 @@ class AltimetryDHI:
     api_key = None
     df = None
 
-    def __init__(self, user="", password=""):
-        super().__init__()
-        self.API_user = user
-        self.API_password = password
-        if (user != "") & (password != ""):
-            self.API_token = self.get_access_token(user, password)
+    def __init__(self, api_key):
+        # super().__init__()
+        self.api_key = api_key
+        self.HEADERS = {"authorization": api_key}
+        # self.API_user = user
+        # self.API_password = password
+        # if (user != "") & (password != ""):
+        #     self.API_token = self.get_access_token(user, password)
 
-    def get_access_token(self, user="", password=""):
-        if user is "":
-            user = self.API_user
-        if password is "":
-            password = self.API_password
-        if (user == "") | (password == ""):
-            raise Exception("username and/or password has not been provided!")
+    # def get_access_token(self, user="", password=""):
+    #     if user == "":
+    #         user = self.API_user
+    #     if password == "":
+    #         password = self.API_password
+    #     if (user == "") | (password == ""):
+    #         raise Exception("username and/or password has not been provided!")
 
-        API_CREDENTIALS = (user, password)
-        r = requests.get((self.API_URL + "/get-token"), auth=API_CREDENTIALS)
-        r.raise_for_status()
-        token_data = r.json()
-        self.API_token = token_data
-        return token_data
+    #     API_CREDENTIALS = (user, password)
+    #     r = requests.get((self.API_URL + "/get-token"), auth=API_CREDENTIALS)
+    #     r.raise_for_status()
+    #     token_data = r.json()
+    #     self.API_token = token_data
+    #     return token_data
 
     def check_connection(self):
         """Check connection (and credentials) to altimetry api
@@ -332,14 +335,14 @@ class AltimetryDHI:
             numeric_string = "numeric=false"
 
         quality_filter = self.validate_quality_filter(quality_filter)
-        if quality_filter is not "":
+        if quality_filter != "":
             quality_filter = "qual_filters=" + quality_filter
 
-        if end_date is not "":
+        if end_date != "":
             end_date = self.parse_date(end_date)
             end_date = "end_date=" + end_date
 
-        if start_date is not "":
+        if start_date != "":
             start_date = self.parse_date(start_date)
             start_date = "start_date=" + start_date
 
@@ -354,7 +357,7 @@ class AltimetryDHI:
                 quality_filter,
                 numeric_string,
             ]
-            if arg_string is not ""
+            if arg_string != ""
         ]
 
         query_url = "".join([query_url, "&".join(argument_strings)])
@@ -406,7 +409,7 @@ class AltimetryDHI:
         if type(date) == datetime:
             date = date.strftime("%Y%m%d")
         elif type(date) == str:
-            if date is not "":
+            if date != "":
                 self._validate_date_str(date)
         else:
             raise TypeError(f"Date should be either str or datetime")
@@ -461,11 +464,11 @@ class AltimetryDHI:
         Returns:
             dataframe -- with altimetry data
         """
-        if access_token == None:
-            access_token = self.API_token
-            if access_token == None:
-                self.API_token = self.get_access_token()
-                access_token = self.API_token
+        # if access_token == None:
+        #     access_token = self.API_token
+        #     if access_token == None:
+        #         self.API_token = self.get_access_token()
+        #         access_token = self.API_token
 
         t_start = time.time()
         r = requests.get(
@@ -514,10 +517,10 @@ class AltimetryDHI:
                                 'Geosat', 'GFO', 'ERS-1', 'ERS-2', 'CryoSat-2', 'Sentinel-3A', 'Sentinel-3B']
             ['tx', 'ps', 'j1', 'n1', 'j2', 'sa', 'j3', 'gs', 'g1', 'e1', 'e2', 'c2', '3a', '3b']
         """
-        if satellites is "sentinels":
+        if satellites == "sentinels":
             satellites = ["3a", "3b"]
 
-        if satellites is "":
+        if satellites == "":
             return ""
 
         satellite_long_names = [
