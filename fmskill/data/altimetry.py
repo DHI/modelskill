@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import time
 import requests
 import pandas as pd
@@ -20,14 +20,11 @@ class InvalidSatelliteName(Exception):
 
 
 class AltimetryData:
-
-    area = None
-    start_date = None
-    end_date = None
-
-    def __init__(self, df, area=None):
+    def __init__(self, df, area=None, requested_start=None, requested_end=None):
         self.df = df
         self.area = area
+        self._requested_start = requested_start
+        self._requested_end = requested_end
 
     @property
     def satellites(self):
@@ -73,9 +70,10 @@ class AltimetryData:
     def plot_map(self, fig_size=(12, 10)):
         """plot map of altimetry data
 
-        Keyword Arguments:
-            df {dataframe} -- altimetry data (default: {None})
-            fig_size {tuple} -- size of figure (default: {(12,10)})
+        Parameters
+        ----------
+        fig_size : Tuple(float), optionally
+            size of figure, by default (12,10)
         """
         df = self.df
 
@@ -186,33 +184,97 @@ class DHIAltimetryRepository:
     def __init__(self, api_key):
         self.api_key = api_key
         self.HEADERS = {"authorization": api_key}
+        self._api_conf = None
 
-    def _check_connection(self):
-        """Check connection (and api_key) to altimetry api
+    @property
+    def _conf(self):
+        if self._api_conf is None:
+            self._api_conf = self._get_config()
+        return self._api_conf
 
-        Returns
-        -------
-        bool
-            True if connection is ok, otherwise False
-        """
-        url_query = self.create_altimetry_query(
-            area="lon=10.9&lat=55.9&radius=10000",
-            start_date="20180115",
-            end_date="20180201",
-            satellites=["3a"],
+    def _get_config(self):
+        r = requests.get((self.API_URL + "/config"), headers=self.HEADERS)
+        r.raise_for_status()
+        return r.json()
+
+    def get_satellites(self):
+        sats = self._conf.get("satellites")
+        return pd.DataFrame(sats).set_index("short_name")
+
+    def get_quality_filters(self):
+        sats = self._conf.get("quality_filters")
+        return pd.DataFrame(sats).set_index("short_name")
+
+    def get_observation_stats(self):
+        r = requests.get(
+            (self.API_URL + ("/observations-stats")),
+            headers=self.HEADERS,
         )
-        try:
-            df = self.get_altimetry_data_raw(url_query, self.api_key)
-        except:
-            return False
+        r.raise_for_status()
+        stats = r.json()["stats"]
+        df = pd.DataFrame(stats).set_index("short_name")
+        df["min_date"] = pd.to_datetime(df["min_date"])
+        df["max_date"] = pd.to_datetime(df["max_date"])
+        return df
 
-        return len(df) > 0
+    def get_temporal_coverage(
+        self, area, start_time="20200101", end_time=None, satellites=""
+    ):
+        query_url = self._create_coverage_query(
+            "temporal",
+            area=area,
+            start_time=start_time,
+            end_time=end_time,
+            satellites=satellites,
+        )
+        r = requests.get(query_url, headers=self.HEADERS)
+        r.raise_for_status()
+        data = r.json()
+        df = pd.DataFrame(data["temporal_coverage"])
+        df["date"] = pd.to_datetime(df["date"])
+        return df
+
+    def get_spatial_coverage(
+        self, area, start_time="20200101", end_time=None, satellites=""
+    ):
+        query_url = self._create_coverage_query(
+            "spatial",
+            area=area,
+            start_time=start_time,
+            end_time=end_time,
+            satellites=satellites,
+        )
+        r = requests.get(query_url, headers=self.HEADERS)
+        r.raise_for_status()
+        return r.json()
+
+    def _create_coverage_query(
+        self, type, area, start_time="20200101", end_time=None, satellites=""
+    ):
+
+        query = self.API_URL + f"{type}-coverage?"
+        query += self._validate_area(area)
+
+        satellites = self.parse_satellites(satellites)
+        if satellites:
+            query += "&satellites=" + ",".join(satellites) if satellites else ""
+
+        start_time = self._parse_datetime(start_time)
+        if start_time:
+            query += "&start_date=" + start_time
+
+        if end_time is None:
+            end_time = datetime.now()
+        end_time = self._parse_datetime(end_time)
+        if end_time:
+            query += "&end_date=" + end_time
+        return query
 
     def get_altimetry_data(
         self,
         area,
-        start_date="20200101",
-        end_date=None,
+        start_time="20200101",
+        end_time=None,
         satellites="",
         quality_filter="",
     ):
@@ -241,29 +303,24 @@ class DHIAltimetryRepository:
         DataFrame
             With columns 'lon', 'lat', 'adt', 'adt_dhi', 'swh', 'swh_rms' 'wind_speed', ...
         """
-        if end_date is None:
-            end_date = datetime.now()
-        url_query = self.create_altimetry_query(
+        if end_time is None:
+            end_time = datetime.now()
+        url_query = self._create_altimetry_query(
             area=area,
-            start_date=start_date,
-            end_date=end_date,
+            start_time=start_time,
+            end_time=end_time,
             quality_filter=quality_filter,
             satellites=satellites,
         )
         df = self.get_altimetry_data_raw(url_query)
-        # self.area = area
-        # self.start_date = self.parse_date(start_date)
-        # self.end_date = self.parse_date(end_date)
-        # self._data = df
-        data = AltimetryData(df, area=area)
-        return data
+        return AltimetryData(df, area=area)
 
-    def create_altimetry_query(
+    def _create_altimetry_query(
         self,
         area="bbox=-11.913345,48.592117,12.411167,63.084148",
         satellites="3a",
-        start_date="20200101",
-        end_date="",
+        start_time="20200101",
+        end_time="",
         nan_value="",
         quality_filter="",
         numeric=False,
@@ -283,10 +340,10 @@ class DHIAltimetryRepository:
         satellites : Union[List[str], str], optional
             List of short or long names of satellite to include, an empty string, or the string 'sentinels' to specify
                 the two sentinel satellites 3a and 3b. Default: '3a'.
-        start_date : str or datetime, optional
+        start_time : str or datetime, optional
             First date for which data is wanted, in the format '20100101' or as an empty string. If an empty string is
                 given, data starting from when it was first available is returned. Default: ''.
-        end_date : str or datetime, optional
+        end_time : str or datetime, optional
             Last date for which data is wanted, in the format '20100101' or as an empty string. If an empty string is
                 given, data until the last time available is returned. Default: "20200101".
         nan_value : str, optional
@@ -305,35 +362,36 @@ class DHIAltimetryRepository:
             URL pointing to the location of data in a CSV file.
         """
 
-        area = self.validate_area(area)
-        satellite_string = self.parse_satellites(satellites)
-
         query_url = self.API_URL + "query-csv?"
+
+        area = self._validate_area(area)
+        satellites = self.parse_satellites(satellites)
+        satellite_str = "satellites=" + ",".join(satellites) if satellites else ""
 
         if numeric:
             numeric_string = "numeric=true"
         else:
             numeric_string = "numeric=false"
 
-        quality_filter = self.validate_quality_filter(quality_filter)
+        quality_filter = self._validate_quality_filter(quality_filter)
         if quality_filter != "":
             quality_filter = "qual_filters=" + quality_filter
 
-        if end_date != "":
-            end_date = self.parse_date(end_date)
-            end_date = "end_date=" + end_date
+        if end_time:
+            end_time = self._parse_datetime(end_time)
+            end_time = "end_date=" + end_time
 
-        if start_date != "":
-            start_date = self.parse_date(start_date)
-            start_date = "start_date=" + start_date
+        if start_time:
+            start_time = self._parse_datetime(start_time)
+            start_time = "start_date=" + start_time
 
         argument_strings = [
             arg_string
             for arg_string in [
                 area,
-                satellite_string,
-                start_date,
-                end_date,
+                satellite_str,
+                start_time,
+                end_time,
                 nan_value,
                 quality_filter,
                 numeric_string,
@@ -344,11 +402,12 @@ class DHIAltimetryRepository:
         query_url = "".join([query_url, "&".join(argument_strings)])
         return query_url
 
-    def validate_area(self, area):
+    def _validate_area(self, area):
         # polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
-        # bbox=115,28,150,52
-        # lon=10.9&lat=55.9&radius=100000
+        # bbox=115.0,28.5,150.2,52.1
+        # lon=10.9&lat=55.9&radius=10.0
         parsed = True
+        message = None
         if area == "GS_NorthSea":
             area = "polygon=9.74351,55.87496,13.17873,56.09956,13.44641,56.96066,10.72500,60.56592,9.02970,63.01088,-12.29205,63.2,-12.64895,48.54273,-3.55120,47.97842,8.67280,50.31249,9.74351,55.87496"
         elif area == "GS_BalticSea":
@@ -358,24 +417,33 @@ class DHIAltimetryRepository:
         else:
             parsed = False
 
-        if (area[0:5] == "bbox=") & (area.count(",") == 3):
-            parsed = True
+        if area[0:5] == "bbox=":
+            if area.count(",") == 3:
+                parsed = True
+            else:
+                message = "bbox area should be provided as bbox=115.0,28.5,150.2,52.1"
 
-        if (area[0:8] == "polygon=") & (area.count(",") >= 7):
-            parsed = True
+        elif area[0:8] == "polygon=":
+            if area.count(",") >= 7:
+                parsed = True
+            else:
+                message = "polygon area should be provided as polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993"
 
-        if (
-            (area[0:4] == "lon=")
-            & (area.count("&lat=") == 1)
-            & (area.count("&radius=") == 1)
-        ):
-            parsed = True
+        elif area[0:4] == "lon=":
+            if (area.count("&lat=") == 1) & (area.count("&radius=") == 1):
+                parsed = True
+            else:
+                message = (
+                    "circle area should be provided as lon=10.9&lat=55.9&radius=10.0"
+                )
+        else:
+            message = "area must be given as bbox=115.0,28.5,150.2,52.1 or polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993 or lon=10.9&lat=55.9&radius=10.0"
 
         if not parsed:
-            raise Exception(f"Failed to parse area {area}")
+            raise Exception(f"Failed to parse area {area}! {message}")
         return area
 
-    def parse_date(self, date):
+    def _parse_datetime(self, date):
         """is the date accepted by the altimetry api?
 
         Arguments:
@@ -387,31 +455,20 @@ class DHIAltimetryRepository:
         Returns:
             date -- as yyyymmdd string
         """
-        if type(date) == datetime:
-            date = date.strftime("%Y%m%d")
-        elif type(date) == str:
-            if date != "":
-                self._validate_date_str(date)
-        else:
+        if date is None:
+            return None
+        if not isinstance(date, (datetime, str)):
             raise TypeError(f"Date should be either str or datetime")
-        return date
+        if isinstance(date, str):
+            date = pd.to_datetime(date)
 
-    def _validate_date_str(self, date_text):
-        try:
-            datetime.strptime(date_text, "%Y%m%d")
-        except ValueError:
-            raise ValueError(
-                f"Date format {date_text} is incorrect, should be YYYY-MM-DD"
-            )
+        return date.strftime("%Y%m%d")  # %M%H
 
-    def validate_quality_filter(self, qa):
+    def _validate_quality_filter(self, qa):
         """is the quality filter string allowed by the altimetry api
 
         Arguments:
             qa -- allowed strings: '', 'qual_swh', 'qual_wind', 'qual_combined'
-
-        Raises:
-            Exception: if filter is unknown
 
         Returns:
             qa -- the accepted string
@@ -430,20 +487,22 @@ class DHIAltimetryRepository:
                 f"Filter {qa} is unknown (dhi_combined, qual_swh, qual_wind_speed)"
             )
 
-    def get_altimetry_data_raw(self, url_query):
+    def get_altimetry_data_raw(self, url_query: str) -> pd.DataFrame:
         """Request data from altimetry api
 
-        Arguments:
-            url_query -- query build with create_altimetry_query()
+        Parameters
+        ----------
+        url_query : str
+            query build with create_altimetry_query()
 
-        Keyword Arguments (optional):
-            api_key -- if not already set at initialization then supply
+        Raises
+        ------
+        APIAuthenticationFailed: if api key is wrong
 
-        Raises:
-            APIAuthenticationFailed: if api key is wrong
-
-        Returns:
-            dataframe -- with altimetry data
+        Returns
+        -------
+        pd.DataFrame
+            with altimetry data
         """
         t_start = time.time()
         r = requests.get(
@@ -534,14 +593,11 @@ class DHIAltimetryRepository:
         satellite_dict = dict(zip(satellite_long_names, satellite_short_names))
 
         satellite_strings = []
-        for satellite in satellites:
-            if satellite in satellite_short_names:
-                satellite_strings.append(satellite)
-            elif satellite in satellite_long_names:
-                satellite_strings.append(satellite_dict[satellite])
+        for sat in satellites:
+            if sat in satellite_short_names:
+                satellite_strings.append(sat)
+            elif sat in satellite_long_names:
+                satellite_strings.append(satellite_dict[sat])
             else:
-                raise InvalidSatelliteName(
-                    "Invalid satellite name passed: " + satellite
-                )
-        satellite_string = ",".join(satellite_strings)
-        return "satellites=" + satellite_string
+                raise InvalidSatelliteName("Invalid satellite name: " + sat)
+        return satellite_strings
