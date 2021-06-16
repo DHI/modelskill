@@ -198,14 +198,35 @@ class DHIAltimetryRepository:
         return r.json()
 
     def get_satellites(self):
+        """Get short and long names for available satellites
+
+        Returns
+        -------
+        pd.DataFrame
+            short and long satellite names
+        """
         sats = self._conf.get("satellites")
         return pd.DataFrame(sats).set_index("short_name")
 
     def get_quality_filters(self):
+        """Get a list of available quality filters with descriptions.
+
+        Returns
+        -------
+        pd.DataFrame
+            available quality filters with descriptions
+        """
         sats = self._conf.get("quality_filters")
         return pd.DataFrame(sats).set_index("short_name")
 
     def get_observation_stats(self):
+        """Get a summary of the data per satellite missions
+
+        Returns
+        -------
+        pd.DataFrame
+            min and max date and observation count per satellite
+        """
         r = requests.get(
             (self.API_URL + ("/observations-stats")),
             headers=self.HEADERS,
@@ -220,6 +241,27 @@ class DHIAltimetryRepository:
     def get_temporal_coverage(
         self, area, start_time="20200101", end_time=None, satellites=""
     ):
+        """Get total number of daily observations for a given area
+
+        Parameters
+        ----------
+        area : str
+            area specification in one of three allowed formats:
+                - polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
+                - bbox=115,28,150,52
+                - lon=10.9&lat=55.9&radius=100
+        start_time : str or datetime, optional
+            start of time interval, by default "2020-01-01"
+        end_time : str or datetime, optional
+            end of time interval, by default datetime.now()
+        satellites : str, optional
+            Satellites to be downloaded, e.g. '', '3a', 'j3, by default '' (=all)
+
+        Returns
+        -------
+        pd.DataFrame
+            number of observations per day
+        """
         query_url = self._create_coverage_query(
             "temporal",
             area=area,
@@ -232,11 +274,32 @@ class DHIAltimetryRepository:
         data = r.json()
         df = pd.DataFrame(data["temporal_coverage"])
         df["date"] = pd.to_datetime(df["date"])
-        return df
+        return df.set_index("date")
 
     def get_spatial_coverage(
         self, area, start_time="20200101", end_time=None, satellites=""
     ):
+        """Get spatial observation coverage as count per spatial bin
+
+        Parameters
+        ----------
+        area : str
+            area specification in one of three allowed formats:
+                - polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
+                - bbox=115,28,150,52
+                - lon=10.9&lat=55.9&radius=100
+        start_time : str or datetime, optional
+            start of time interval, by default "2020-01-01"
+        end_time : str or datetime, optional
+            end of time interval, by default datetime.now()
+        satellites : str, optional
+            Satellites to be downloaded, e.g. '', '3a', 'j3, by default '' (=all)
+
+        Returns
+        -------
+        [type]
+            [description]
+        """
         query_url = self._create_coverage_query(
             "spatial",
             area=area,
@@ -278,7 +341,7 @@ class DHIAltimetryRepository:
         satellites="",
         quality_filter="",
     ):
-        """Main function that creates url and retrieves altimetry data from api
+        """Main function that retrieves altimetry data from api
 
         Parameters
         ----------
@@ -286,7 +349,7 @@ class DHIAltimetryRepository:
             String specifying location of desired data.  The three forms allowed by the API are:
                 - polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
                 - bbox=115,28,150,52
-                - lon=10.9&lat=55.9&radius=100000
+                - lon=10.9&lat=55.9&radius=100
             A few named domains can also be used:
                 - GS_NorthSea, GS_BalticSea, GS_SouthChinaSea
         start_date : str, datetime, optional
