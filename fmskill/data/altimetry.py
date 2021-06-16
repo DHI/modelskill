@@ -300,6 +300,13 @@ class DHIAltimetryRepository:
         [type]
             [description]
         """
+        try:
+            import geopandas as gpd
+        except ImportError:
+            raise ImportError(
+                "The geopandas package is required by the get_spatial_coverage() method. Install it with 'conda install geopandas' or 'pip install geopandas'"
+            )
+
         query_url = self._create_coverage_query(
             "spatial",
             area=area,
@@ -308,8 +315,15 @@ class DHIAltimetryRepository:
             satellites=satellites,
         )
         r = requests.get(query_url, headers=self.HEADERS)
+        if r.status_code != 200:
+            print(r.text)
         r.raise_for_status()
-        return r.json()
+        data = r.json()
+        if data and "coverage" in data:
+            gdf = gpd.GeoDataFrame.from_features(data["coverage"], crs="epsg:4326")
+            return gdf
+        else:
+            return None
 
     def _create_coverage_query(
         self, type, area, start_time="20200101", end_time=None, satellites=""
@@ -448,6 +462,8 @@ class DHIAltimetryRepository:
             start_time = self._parse_datetime(start_time)
             start_time = "start_date=" + start_time
 
+        # nan_value = "nan_value=-9999"
+
         argument_strings = [
             arg_string
             for arg_string in [
@@ -576,9 +592,13 @@ class DHIAltimetryRepository:
             raise APIAuthenticationFailed
         r.raise_for_status()
         response_data = r.json()
-        df = pd.read_csv(
-            response_data["download_url"], parse_dates=True, index_col="date"
-        )
+        if ("download_url" in response_data) and response_data["download_url"]:
+            df = pd.read_csv(
+                response_data["download_url"], parse_dates=True, index_col="date"
+            )
+        else:
+            print("No data retrieved!")
+            return None
 
         elapsed = time.time() - t_start
         nrecords = len(df)
