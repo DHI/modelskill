@@ -208,6 +208,10 @@ class BaseComparer:
             raise ValueError(
                 f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset or pd.DataFrame)"
             )
+        if len(mod_df) == 0:
+            warnings.warn("Cannot add zero-length modeldata")
+            return
+
         mod_name = mod_df.columns[-1]
         self.mod_data[mod_name] = mod_df
         self._mod_names = list(self.mod_data.keys())
