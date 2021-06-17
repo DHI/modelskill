@@ -325,7 +325,7 @@ class TrackConnector(_SingleObsConnector):
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
-                warnings.warn(f"Could not extract track from {mr.name}")
+                warnings.warn(f"Could not extract track from model '{mr.name}'")
 
         comparer = TrackComparer(self.obs, df_model)
         return self._comparer_or_None(comparer)
