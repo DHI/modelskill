@@ -186,7 +186,14 @@ class BaseComparer:
         if modeldata is not None:
             self.add_modeldata(modeldata)
 
+            if len(self.mod_data) == 0:
+                raise ValueError("Failed to add modeldata!")
+
     def add_modeldata(self, modeldata):
+        if modeldata is None:
+            warnings.warn("Cannot add 'None' modeldata")
+            return
+
         if isinstance(modeldata, list):
             for data in modeldata:
                 self.add_modeldata(data)
@@ -198,7 +205,9 @@ class BaseComparer:
             # TODO: add validation
             mod_df = modeldata
         else:
-            raise ValueError("Unknown modeldata type (mikeio.Dataset or pd.DataFrame)")
+            raise ValueError(
+                f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset or pd.DataFrame)"
+            )
         mod_name = mod_df.columns[-1]
         self.mod_data[mod_name] = mod_df
         self._mod_names = list(self.mod_data.keys())

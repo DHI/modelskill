@@ -321,7 +321,11 @@ class TrackConnector(_SingleObsConnector):
         assert isinstance(self.obs, TrackObservation)
         df_model = []
         for mr in self.modelresults:
-            df_model.append(mr._extract_track(self.obs))
+            df = mr._extract_track(self.obs)
+            if (df is not None) and (len(df) > 0):
+                df_model.append(df)
+            else:
+                warnings.warn(f"Could not extract track from {mr.name}")
 
         comparer = TrackComparer(self.obs, df_model)
         return self._comparer_or_None(comparer)
