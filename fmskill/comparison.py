@@ -276,7 +276,9 @@ class BaseComparer:
         return self._mod_names[self._get_mod_id(model)]
 
     def _get_mod_id(self, model):
-        if model is None or self.n_models <= 1:
+        if self.n_models == 0:
+            raise ValueError("Cannot select model as comparer contains 0 models!")
+        if model is None or self.n_models == 1:
             return 0
         elif isinstance(model, str):
             if model in self.mod_names:
@@ -416,6 +418,9 @@ class BaseComparer:
             area=area,
             df=df,
         )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
 
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
@@ -590,6 +595,9 @@ class BaseComparer:
             area=area,
             df=df,
         )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
 
         df = self._add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
@@ -1727,6 +1735,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             end=end,
             area=area,
         )
+        if len(df)==0:
+            warnings.warn("No data!")
+            return
+
         mod_names = df.model.unique()
         obs_names = df.observation.unique()
         var_names = self.var_names
