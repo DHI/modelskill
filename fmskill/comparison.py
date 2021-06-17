@@ -979,6 +979,8 @@ class BaseComparer:
             area=area,
             metrics=metrics,
         )
+        if s is None:
+            return
 
         df = s.df
         ref_std = df.iloc[0]["_std_obs"]
@@ -1157,14 +1159,17 @@ class SingleObsComparer(BaseComparer):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        df = self.skill(
+        s = self.skill(
             metrics=[metric],
             model=model,
             start=start,
             end=end,
             area=area,
             df=df,
-        ).df
+        )
+        if s is None:
+            return
+        df = s.df
         values = df[metric.__name__].values
         if len(values) == 1:
             values = values[0]
@@ -1275,7 +1280,8 @@ class SingleObsComparer(BaseComparer):
             area=area,
             metrics=metrics,
         )
-
+        if s is None:
+            return
         df = s.df
         ref_std = df.iloc[0]["_std_obs"]
 
@@ -1735,7 +1741,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             end=end,
             area=area,
         )
-        if len(df)==0:
+        if len(df) == 0:
             warnings.warn("No data!")
             return
 
@@ -1748,8 +1754,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         # skill assessment
         metrics = self._parse_metric(metrics, return_list=True)
-        skilldf = self.skill(df=df, metrics=metrics).df
-
+        s = self.skill(df=df, metrics=metrics)
+        if s is None:
+            return
+        skilldf = s.df
         # weights
         weights = self._parse_weights(weights, obs_names)
         skilldf["weights"] = (
@@ -1897,7 +1905,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             models = [self._get_mod_name(m) for m in models]
         n_models = len(models)
 
-        df = self.mean_skill(
+        skill = self.mean_skill(
             weights=weights,
             metrics=[metric],
             model=models,
@@ -1907,7 +1915,11 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             end=end,
             area=area,
             df=df,
-        ).df
+        )
+        if skill is None:
+            return
+
+        df = skill.df
 
         if n_models == 1:
             score = df[metric.__name__].values.mean()
