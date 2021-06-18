@@ -1,9 +1,16 @@
 from datetime import datetime
 import os
-
+import pytest
 from fmskill.data.dmi import DMIOceanObsRepository
 
 
+def requires_DMI_API_KEY():
+    api_key = os.environ.get("DMI_API_KEY")
+    reason = "Environment variable DMI_API_KEY not present"
+    return pytest.mark.skipif(api_key is None, reason=reason)
+
+
+@requires_DMI_API_KEY()
 def test_get_observed_data():
 
     api_key = os.environ["DMI_API_KEY"]
@@ -23,6 +30,7 @@ def test_get_observed_data():
     assert df.index[-1].year == 2020
 
 
+@requires_DMI_API_KEY()
 def test_get_stations():
     api_key = os.environ["DMI_API_KEY"]
     repo = DMIOceanObsRepository(apikey=api_key)

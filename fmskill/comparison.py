@@ -186,7 +186,14 @@ class BaseComparer:
         if modeldata is not None:
             self.add_modeldata(modeldata)
 
+            if len(self.mod_data) == 0:
+                raise ValueError("Failed to add modeldata!")
+
     def add_modeldata(self, modeldata):
+        if modeldata is None:
+            warnings.warn("Cannot add 'None' modeldata")
+            return
+
         if isinstance(modeldata, list):
             for data in modeldata:
                 self.add_modeldata(data)
@@ -198,7 +205,13 @@ class BaseComparer:
             # TODO: add validation
             mod_df = modeldata
         else:
-            raise ValueError("Unknown modeldata type (mikeio.Dataset or pd.DataFrame)")
+            raise ValueError(
+                f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset or pd.DataFrame)"
+            )
+        if len(mod_df) == 0:
+            warnings.warn("Cannot add zero-length modeldata")
+            return
+
         mod_name = mod_df.columns[-1]
         self.mod_data[mod_name] = mod_df
         self._mod_names = list(self.mod_data.keys())
@@ -267,7 +280,9 @@ class BaseComparer:
         return self._mod_names[self._get_mod_id(model)]
 
     def _get_mod_id(self, model):
-        if model is None or self.n_models <= 1:
+        if self.n_models == 0:
+            raise ValueError("Cannot select model as comparer contains 0 models!")
+        if model is None or self.n_models == 1:
             return 0
         elif isinstance(model, str):
             if model in self.mod_names:
@@ -407,6 +422,9 @@ class BaseComparer:
             area=area,
             df=df,
         )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
 
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
@@ -581,6 +599,9 @@ class BaseComparer:
             area=area,
             df=df,
         )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
 
         df = self._add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
@@ -962,6 +983,8 @@ class BaseComparer:
             area=area,
             metrics=metrics,
         )
+        if s is None:
+            return
 
         df = s.df
         ref_std = df.iloc[0]["_std_obs"]
@@ -1140,14 +1163,17 @@ class SingleObsComparer(BaseComparer):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        df = self.skill(
+        s = self.skill(
             metrics=[metric],
             model=model,
             start=start,
             end=end,
             area=area,
             df=df,
-        ).df
+        )
+        if s is None:
+            return
+        df = s.df
         values = df[metric.__name__].values
         if len(values) == 1:
             values = values[0]
@@ -1258,7 +1284,8 @@ class SingleObsComparer(BaseComparer):
             area=area,
             metrics=metrics,
         )
-
+        if s is None:
+            return
         df = s.df
         ref_std = df.iloc[0]["_std_obs"]
 
@@ -1437,9 +1464,7 @@ class TrackComparer(SingleObsComparer):
     def __init__(self, observation, modeldata):
         super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
-        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
-        mod_end = self._mod_end + timedelta(seconds=1)
-        self.observation.df = self.observation.df[mod_start:mod_end]
+        self.observation.df = self.observation.df[self._mod_start : self._mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
@@ -1720,6 +1745,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             end=end,
             area=area,
         )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
+
         mod_names = df.model.unique()
         obs_names = df.observation.unique()
         var_names = self.var_names
@@ -1729,8 +1758,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         # skill assessment
         metrics = self._parse_metric(metrics, return_list=True)
-        skilldf = self.skill(df=df, metrics=metrics).df
-
+        s = self.skill(df=df, metrics=metrics)
+        if s is None:
+            return
+        skilldf = s.df
         # weights
         weights = self._parse_weights(weights, obs_names)
         skilldf["weights"] = (
@@ -1878,7 +1909,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             models = [self._get_mod_name(m) for m in models]
         n_models = len(models)
 
-        df = self.mean_skill(
+        skill = self.mean_skill(
             weights=weights,
             metrics=[metric],
             model=models,
@@ -1888,7 +1919,11 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             end=end,
             area=area,
             df=df,
-        ).df
+        )
+        if skill is None:
+            return
+
+        df = skill.df
 
         if n_models == 1:
             score = df[metric.__name__].values.mean()
