@@ -321,7 +321,11 @@ class TrackConnector(_SingleObsConnector):
         assert isinstance(self.obs, TrackObservation)
         df_model = []
         for mr in self.modelresults:
-            df_model.append(mr._extract_track(self.obs))
+            df = mr._extract_track(self.obs)
+            if (df is not None) and (len(df) > 0):
+                df_model.append(df)
+            else:
+                warnings.warn(f"Could not extract track from model '{mr.name}'")
 
         comparer = TrackComparer(self.obs, df_model)
         return self._comparer_or_None(comparer)
@@ -581,6 +585,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
             plt.xlim([mr.start_time, mr.end_time])
 
         plt.yticks(np.arange(n_lines) + 1, labels)
+        if show_model:
+            for j in range(n_models):
+                ax.get_yticklabels()[j].set_fontstyle("italic")
+                ax.get_yticklabels()[j].set_weight("bold")
+                # set_color("#004165")
         fig.autofmt_xdate()
         return ax
 

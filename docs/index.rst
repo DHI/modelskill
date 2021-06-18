@@ -7,10 +7,10 @@
 
 |
  
-fmskill: Assess the skill of your MIKE FM model
+FMskill: Assess the skill of your MIKE FM model
 ===============================================
 
-Compare results from MIKE FM simulations with observations. `fmskill` would like to be your companion during the different phases of a MIKE FM modelling workflow.
+Compare results from MIKE FM simulations with observations. `FMskill <https://github.com/DHI/fmskill>`_ would like to be your companion during the different phases of a MIKE FM modelling workflow.
 
 This package is simple to install and deploy operationally and is accessible to everyone as open-source.
 
