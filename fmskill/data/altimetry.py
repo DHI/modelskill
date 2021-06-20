@@ -180,11 +180,14 @@ class DHIAltimetryRepository:
     API_URL = "https://altimetry-shop-data-api.dhigroup.com/"
     HEADERS = None
     api_key = None
+    NA_VALUE = -9999.0
 
     def __init__(self, api_key):
         self.api_key = api_key
         self.HEADERS = {"authorization": api_key}
         self._api_conf = None
+        self._satellites = None
+        self._sat_long_names = None
 
     @property
     def _conf(self):
@@ -193,9 +196,18 @@ class DHIAltimetryRepository:
         return self._api_conf
 
     def _get_config(self):
-        r = requests.get((self.API_URL + "/config"), headers=self.HEADERS)
+        r = requests.get(self.API_URL + "/config", headers=self.HEADERS)
         r.raise_for_status()
         return r.json()
+
+    @property
+    def satellites(self):
+        """List of avaiable satellites (short names)"""
+        if self._satellites is None:
+            df = self.get_satellites()
+            self._satellites = list(df.index)
+            self._sat_long_names = df.long_name.values
+        return self._satellites
 
     def get_satellites(self):
         """Get short and long names for available satellites
@@ -206,7 +218,8 @@ class DHIAltimetryRepository:
             short and long satellite names
         """
         sats = self._conf.get("satellites")
-        return pd.DataFrame(sats).set_index("short_name")
+        df = pd.DataFrame(sats).set_index("short_name")
+        return df[["long_name"]]
 
     def get_quality_filters(self):
         """Get a list of available quality filters with descriptions.
@@ -238,7 +251,49 @@ class DHIAltimetryRepository:
         df["max_date"] = pd.to_datetime(df["max_date"])
         return df
 
-    def get_temporal_coverage(
+    def plot_observation_stats(self):
+        """Plot graph showing temporal coverage for all satellites
+
+        Examples
+        --------
+        >>> repo.plot_observation_stats()
+        """
+        import matplotlib.dates as mdates
+
+        df = self.get_observation_stats()[["min_date", "max_date"]]
+        df = df.sort_values("min_date", ascending=False)
+
+        nsats = len(df)
+        ysize = max(2.0, 0.45 * nsats)
+        figsize = (10, ysize)
+
+        fig, ax = plt.subplots(figsize=figsize)
+        y = np.repeat(0.0, 2)
+        labels = []
+
+        for row in df.itertuples():
+            y += 1.0
+            plt.plot([row.min_date, row.max_date], y)
+            labels.append(row.Index)
+
+        plt.yticks(np.arange(nsats) + 1, labels)
+
+        yearly = pd.date_range(start="1984-1-1", end="2026-1-1", freq="2AS")
+        plt.xticks(yearly, labels=yearly.year)
+        fmt_year = mdates.YearLocator()
+        ax.xaxis.set_minor_locator(fmt_year)
+        plt.grid(True, which="both")
+        fig.autofmt_xdate()
+        ax.set_xlim([df.min_date.min(), df.max_date.max()])
+        ax.set_title("Satellite lifespan")
+        return ax
+
+    def time_of_newest_data(self):
+        """Time of the latest data in the altimetry database."""
+        df = self.get_observation_stats()[["max_date"]]
+        return df.max_date.max()
+
+    def get_daily_count(
         self, area, start_time="20200101", end_time=None, satellites=""
     ):
         """Get total number of daily observations for a given area
@@ -262,14 +317,11 @@ class DHIAltimetryRepository:
         pd.DataFrame
             number of observations per day
         """
-        query_url = self._create_coverage_query(
-            "temporal",
-            area=area,
-            start_time=start_time,
-            end_time=end_time,
-            satellites=satellites,
-        )
-        r = requests.get(query_url, headers=self.HEADERS)
+        url = self.API_URL + "temporal-coverage"
+        payload = self._area_time_sat_payload(area, start_time, end_time, satellites)
+        r = requests.get(url, params=payload, headers=self.HEADERS)
+        if r.status_code != 200:
+            print(r.text)
         r.raise_for_status()
         data = r.json()
         df = pd.DataFrame(data["temporal_coverage"])
@@ -279,7 +331,8 @@ class DHIAltimetryRepository:
     def get_spatial_coverage(
         self, area, start_time="20200101", end_time=None, satellites=""
     ):
-        """Get spatial observation coverage as count per spatial bin
+        """Get spatial observation coverage as count per spatial bin in a
+        rectangle covering the specified area
 
         Parameters
         ----------
@@ -297,8 +350,8 @@ class DHIAltimetryRepository:
 
         Returns
         -------
-        [type]
-            [description]
+        geopandas.GeoDataFrame
+            count per spatial bin
         """
         try:
             import geopandas as gpd
@@ -307,14 +360,9 @@ class DHIAltimetryRepository:
                 "The geopandas package is required by the get_spatial_coverage() method. Install it with 'conda install geopandas' or 'pip install geopandas'"
             )
 
-        query_url = self._create_coverage_query(
-            "spatial",
-            area=area,
-            start_time=start_time,
-            end_time=end_time,
-            satellites=satellites,
-        )
-        r = requests.get(query_url, headers=self.HEADERS)
+        url = self.API_URL + "spatial-coverage"
+        payload = self._area_time_sat_payload(area, start_time, end_time, satellites)
+        r = requests.get(url, params=payload, headers=self.HEADERS)
         if r.status_code != 200:
             print(r.text)
         r.raise_for_status()
@@ -322,30 +370,28 @@ class DHIAltimetryRepository:
         if data and "coverage" in data:
             gdf = gpd.GeoDataFrame.from_features(data["coverage"], crs="epsg:4326")
             return gdf
-        else:
-            return None
 
-    def _create_coverage_query(
-        self, type, area, start_time="20200101", end_time=None, satellites=""
-    ):
+    # def _create_coverage_query(
+    #     self, type, area, start_time="20200101", end_time=None, satellites=""
+    # ):
 
-        query = self.API_URL + f"{type}-coverage?"
-        query += self._validate_area(area)
+    #     query = self.API_URL + f"{type}-coverage?"
+    #     query += self._validate_area(area)
 
-        satellites = self.parse_satellites(satellites)
-        if satellites:
-            query += "&satellites=" + ",".join(satellites) if satellites else ""
+    #     satellites = self.parse_satellites(satellites)
+    #     if satellites:
+    #         query += "&satellites=" + ",".join(satellites) if satellites else ""
 
-        start_time = self._parse_datetime(start_time)
-        if start_time:
-            query += "&start_date=" + start_time
+    #     start_time = self._parse_datetime(start_time)
+    #     if start_time:
+    #         query += "&start_date=" + start_time
 
-        if end_time is None:
-            end_time = datetime.now()
-        end_time = self._parse_datetime(end_time)
-        if end_time:
-            query += "&end_date=" + end_time
-        return query
+    #     if end_time is None:
+    #         end_time = datetime.now()
+    #     end_time = self._parse_datetime(end_time)
+    #     if end_time:
+    #         query += "&end_date=" + end_time
+    #     return query
 
     def get_altimetry_data(
         self,
@@ -382,104 +428,149 @@ class DHIAltimetryRepository:
         """
         if end_time is None:
             end_time = datetime.now()
-        url_query = self._create_altimetry_query(
+        payload = self._create_query_payload(
             area=area,
             start_time=start_time,
             end_time=end_time,
             quality_filter=quality_filter,
             satellites=satellites,
         )
-        df = self.get_altimetry_data_raw(url_query)
+        df = self.get_altimetry_data_raw(payload)
         return AltimetryData(df, area=area)
 
-    def _create_altimetry_query(
+    # def _create_altimetry_query(
+    #     self,
+    #     area="bbox=-11.913345,48.592117,12.411167,63.084148",
+    #     satellites="3a",
+    #     start_time="20200101",
+    #     end_time="",
+    #     nan_value="",
+    #     quality_filter="",
+    #     numeric=False,
+    # ):
+    # """
+    # Create a query for satellite data as a URL pointing to the location of a CSV file with the data.
+
+    # Parameters
+    # ----------
+    # area : str
+    #     String specifying location of desired data.  The three forms allowed by the API are:
+    #         - polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
+    #         - bbox=115,28,150,52
+    #         - lon=10.9&lat=55.9&radius=100000
+    #     A few named domains can also be used:
+    #         - GS_NorthSea, GS_BalticSea, GS_SouthChinaSea
+    # satellites : Union[List[str], str], optional
+    #     List of short or long names of satellite to include, an empty string, or the string 'sentinels' to specify
+    #         the two sentinel satellites 3a and 3b. Default: '3a'.
+    # start_time : str or datetime, optional
+    #     First date for which data is wanted, in the format '20100101' or as an empty string. If an empty string is
+    #         given, data starting from when it was first available is returned. Default: ''.
+    # end_time : str or datetime, optional
+    #     Last date for which data is wanted, in the format '20100101' or as an empty string. If an empty string is
+    #         given, data until the last time available is returned. Default: "20200101".
+    # nan_value : str, optional
+    #     Value to use to indicate bad or missing data, or an empty string to use the default (-9999). Default: ''.
+    # quality_filter : str, optional
+    #     Type of filter to apply before returning data. Currently, only the value 'dhi_combined' is allowed. If the
+    #         empty string is given, no filter is applied. Default: 'dhi_combined'.
+    # numeric : bool, optional
+    #     If True, return columns as numeric and return fewer columns in order to comply with the Met-Ocean on Demand
+    #         analysis systems. If False, all columns are returned, and string types are preserved as such.
+    #         Default: False.
+
+    # Returns
+    # -------
+    # str
+    #     URL pointing to the location of data in a CSV file.
+    # """
+
+    # query_url = self.API_URL + "query-csv?"
+
+    # area = self._validate_area(area)
+    # satellites = self.parse_satellites(satellites)
+    # satellite_str = "satellites=" + ",".join(satellites) if satellites else ""
+
+    # if numeric:
+    #     numeric_string = "numeric=true"
+    # else:
+    #     numeric_string = "numeric=false"
+
+    # quality_filter = self._validate_quality_filter(quality_filter)
+    # if quality_filter != "":
+    #     quality_filter = "qual_filters=" + quality_filter
+
+    # if end_time:
+    #     end_time = self._parse_datetime(end_time)
+    #     end_time = "end_date=" + end_time
+
+    # if start_time:
+    #     start_time = self._parse_datetime(start_time)
+    #     start_time = "start_date=" + start_time
+
+    # argument_strings = [
+    #     arg_string
+    #     for arg_string in [
+    #         area,
+    #         satellite_str,
+    #         start_time,
+    #         end_time,
+    #         nan_value,
+    #         quality_filter,
+    #         numeric_string,
+    #     ]
+    #     if arg_string != ""
+    # ]
+
+    # query_url = "".join([query_url, "&".join(argument_strings)])
+    # return query_url
+
+    def _area_time_sat_payload(
         self,
-        area="bbox=-11.913345,48.592117,12.411167,63.084148",
-        satellites="3a",
-        start_time="20200101",
-        end_time="",
-        nan_value="",
-        quality_filter="",
-        numeric=False,
-    ):
-        """
-        Create a query for satellite data as a URL pointing to the location of a CSV file with the data.
+        area=None,
+        start_time=None,
+        end_time=None,
+        satellites=None,
+    ) -> dict:
+        d = self._validate_area(area)
 
-        Parameters
-        ----------
-        area : str
-            String specifying location of desired data.  The three forms allowed by the API are:
-                - polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
-                - bbox=115,28,150,52
-                - lon=10.9&lat=55.9&radius=100000
-            A few named domains can also be used:
-                - GS_NorthSea, GS_BalticSea, GS_SouthChinaSea
-        satellites : Union[List[str], str], optional
-            List of short or long names of satellite to include, an empty string, or the string 'sentinels' to specify
-                the two sentinel satellites 3a and 3b. Default: '3a'.
-        start_time : str or datetime, optional
-            First date for which data is wanted, in the format '20100101' or as an empty string. If an empty string is
-                given, data starting from when it was first available is returned. Default: ''.
-        end_time : str or datetime, optional
-            Last date for which data is wanted, in the format '20100101' or as an empty string. If an empty string is
-                given, data until the last time available is returned. Default: "20200101".
-        nan_value : str, optional
-            Value to use to indicate bad or missing data, or an empty string to use the default (-9999). Default: ''.
-        quality_filter : str, optional
-            Type of filter to apply before returning data. Currently, only the value 'dhi_combined' is allowed. If the
-                empty string is given, no filter is applied. Default: 'dhi_combined'.
-        numeric : bool, optional
-            If True, return columns as numeric and return fewer columns in order to comply with the Met-Ocean on Demand
-                analysis systems. If False, all columns are returned, and string types are preserved as such.
-                Default: False.
-
-        Returns
-        -------
-        str
-            URL pointing to the location of data in a CSV file.
-        """
-
-        query_url = self.API_URL + "query-csv?"
-
-        area = self._validate_area(area)
-        satellites = self.parse_satellites(satellites)
-        satellite_str = "satellites=" + ",".join(satellites) if satellites else ""
-
-        if numeric:
-            numeric_string = "numeric=true"
-        else:
-            numeric_string = "numeric=false"
-
-        quality_filter = self._validate_quality_filter(quality_filter)
-        if quality_filter != "":
-            quality_filter = "qual_filters=" + quality_filter
+        start_time = self._parse_datetime(start_time)
+        d["start_date"] = start_time.strftime("%Y%m%d")
 
         if end_time:
             end_time = self._parse_datetime(end_time)
-            end_time = "end_date=" + end_time
+        else:
+            end_time = datetime.now()
+        d["end_date"] = end_time.strftime("%Y%m%d")
 
-        if start_time:
-            start_time = self._parse_datetime(start_time)
-            start_time = "start_date=" + start_time
+        if start_time > end_time:
+            raise ValueError(
+                f"end time '{end_time}' must be greater than start time '{start_time}'!"
+            )
 
-        # nan_value = "nan_value=-9999"
+        if satellites:
+            satellites = self.parse_satellites(satellites)
+            d["satellites"] = ",".join(satellites)
+        return d
 
-        argument_strings = [
-            arg_string
-            for arg_string in [
-                area,
-                satellite_str,
-                start_time,
-                end_time,
-                nan_value,
-                quality_filter,
-                numeric_string,
-            ]
-            if arg_string != ""
-        ]
-
-        query_url = "".join([query_url, "&".join(argument_strings)])
-        return query_url
+    def _create_query_payload(
+        self,
+        area="bbox=-11.913345,48.592117,12.411167,63.084148",
+        start_time="20200101",
+        end_time=None,
+        satellites="3a",
+        nan_value=None,
+        quality_filter=None,
+        numeric=False,
+    ) -> dict:
+        d = self._area_time_sat_payload(area, start_time, end_time, satellites)
+        if nan_value:
+            d["nodata"] = nan_value
+        if quality_filter:
+            d["qual_filters"] = quality_filter
+        if numeric:
+            d["numeric"] = numeric
+        return d
 
     def _validate_area(self, area):
         # polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993
@@ -520,20 +611,18 @@ class DHIAltimetryRepository:
 
         if not parsed:
             raise Exception(f"Failed to parse area {area}! {message}")
-        return area
+        return self._area_str_to_dict(area)
 
-    def _parse_datetime(self, date):
-        """is the date accepted by the altimetry api?
+    @staticmethod
+    def _area_str_to_dict(area):
+        dd = {}
+        for token in area.split("&"):
+            key, val = token.split("=")
+            dd[key] = val
+        return dd
 
-        Arguments:
-            date -- datetime or string in format yyyymmdd are accepted
-
-        Raises:
-            TypeError: if neither string nor datetime
-
-        Returns:
-            date -- as yyyymmdd string
-        """
+    @staticmethod
+    def _parse_datetime(date):
         if date is None:
             return None
         if not isinstance(date, (datetime, str)):
@@ -541,9 +630,10 @@ class DHIAltimetryRepository:
         if isinstance(date, str):
             date = pd.to_datetime(date)
 
-        return date.strftime("%Y%m%d")  # %M%H
+        return date
 
-    def _validate_quality_filter(self, qa):
+    @staticmethod
+    def _validate_quality_filter(qa):
         """is the quality filter string allowed by the altimetry api
 
         Arguments:
@@ -566,13 +656,13 @@ class DHIAltimetryRepository:
                 f"Filter {qa} is unknown (dhi_combined, qual_swh, qual_wind_speed)"
             )
 
-    def get_altimetry_data_raw(self, url_query: str) -> pd.DataFrame:
+    def get_altimetry_data_raw(self, payload: dict) -> pd.DataFrame:
         """Request data from altimetry api
 
         Parameters
         ----------
-        url_query : str
-            query build with create_altimetry_query()
+        payload : dict
+            params dict build with _create_query_payload()
 
         Raises
         ------
@@ -585,16 +675,22 @@ class DHIAltimetryRepository:
         """
         t_start = time.time()
         r = requests.get(
-            url_query,
+            self.API_URL + "query-csv",
+            params=payload,
             headers=self.HEADERS,
         )
+        if r.status_code == 400:
+            print(r.text)
         if r.status_code == 401:
             raise APIAuthenticationFailed
         r.raise_for_status()
         response_data = r.json()
         if ("download_url" in response_data) and response_data["download_url"]:
             df = pd.read_csv(
-                response_data["download_url"], parse_dates=True, index_col="date"
+                response_data["download_url"],
+                parse_dates=True,
+                index_col="date",
+                na_values=self.NA_VALUE,
             )
         else:
             print("No data retrieved!")
@@ -639,47 +735,16 @@ class DHIAltimetryRepository:
         if isinstance(satellites, str):
             satellites = [satellites]
 
-        satellite_long_names = [
-            "TOPEX",
-            "Poseidon",
-            "Jason-1",
-            "Envisat",
-            "Jason-2",
-            "SARAL",
-            "Jason-3",
-            "Geosat",
-            "GFO",
-            "ERS-1",
-            "ERS-2",
-            "CryoSat-2",
-            "Sentinel-3A",
-            "Sentinel-3B",
-        ]
+        sat_short_names = self.satellites
+        sat_long_names = self._sat_long_names
 
-        satellite_short_names = [
-            "tx",
-            "ps",
-            "j1",
-            "n1",
-            "j2",
-            "sa",
-            "j3",
-            "gs",
-            "g1",
-            "e1",
-            "e2",
-            "c2",
-            "3a",
-            "3b",
-        ]
-
-        satellite_dict = dict(zip(satellite_long_names, satellite_short_names))
+        satellite_dict = dict(zip(sat_long_names, sat_short_names))
 
         satellite_strings = []
         for sat in satellites:
-            if sat in satellite_short_names:
+            if sat in sat_short_names:
                 satellite_strings.append(sat)
-            elif sat in satellite_long_names:
+            elif sat in sat_long_names:
                 satellite_strings.append(satellite_dict[sat])
             else:
                 raise InvalidSatelliteName("Invalid satellite name: " + sat)
