@@ -34,8 +34,6 @@ setuptools.setup(
             "netCDF4",
             "openpyxl",
             "dask",
-            "fiona",
-            "geopandas",
         ],
     },
     entry_points="""
