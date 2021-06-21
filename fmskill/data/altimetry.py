@@ -20,11 +20,12 @@ class InvalidSatelliteName(Exception):
 
 
 class AltimetryData:
-    def __init__(self, df, area=None, requested_start=None, requested_end=None):
+    def __init__(self, df, area=None, query_params=None):
         self.df = df
         self.area = area
-        self._requested_start = requested_start
-        self._requested_end = requested_end
+        self.query_params = query_params
+        # self._requested_start = requested_start
+        # self._requested_end = requested_end
 
     @property
     def satellites(self):
@@ -140,7 +141,9 @@ class AltimetryData:
             dfsub = df[df.satellite == sat]
             if len(dfsub) == 0:
                 continue
-            tvec = np.asarray([dt.timestamp() for dt in dfsub.index.to_pydatetime()]) # improve this
+            tvec = np.asarray(
+                [dt.timestamp() for dt in dfsub.index.to_pydatetime()]
+            )  # improve this
             # wl = dfsub.adt_dhi
             dtvec = np.zeros(np.size(tvec))
             nt = len(dtvec)
@@ -438,7 +441,7 @@ class DHIAltimetryRepository:
             satellites=satellites,
         )
         df = self.get_altimetry_data_raw(payload)
-        return AltimetryData(df, area=area)
+        return AltimetryData(df, area=area, query_params=payload)
 
     # def _create_altimetry_query(
     #     self,
