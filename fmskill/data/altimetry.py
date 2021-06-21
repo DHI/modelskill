@@ -36,7 +36,7 @@ class AltimetryData:
 
     @property
     def end_time(self):
-        return self.df.index[0].to_pydatetime()
+        return self.df.index[-1].to_pydatetime()
 
     def to_dfs0(self, filename, satellite=None, quality=0):
         """Save altimetry data to dfs0 file.
@@ -67,7 +67,7 @@ class AltimetryData:
 
         df[cols].to_dfs0(filename, items=items)
 
-    def plot_map(self, fig_size=(12, 10)):
+    def plot_map(self, fig_size=(9, 9), markersize=10):
         """plot map of altimetry data
 
         Parameters
@@ -79,11 +79,11 @@ class AltimetryData:
 
         plt.style.use("seaborn-whitegrid")
         plt.figure(figsize=fig_size)
-        markers = ["o", "x", ".", ",", "+", "v", "^", "<", ">", "s", "d"]
+        markers = ["o", "x", "+", "v", "^", "<", ">", "s", "d", ",", "."]
         j = 0
         for sat in self.satellites:
             dfsub = df[df.satellite == sat]
-            plt.plot(dfsub.lon, dfsub.lat, markers[j], label=sat, markersize=1)
+            plt.plot(dfsub.lon, dfsub.lat, markers[j], label=sat, markersize=markersize)
             j = j + 1
         plt.legend(numpoints=1)
         plt.title(f"Altimetry data between {self.start_time} and {self.end_time}")
@@ -110,9 +110,9 @@ class AltimetryData:
 
     def get_dataframe_per_satellite(self, df=None):
         if df is None:
-            df = self._data
+            df = self.df
         res = {}
-        sats = self.get_satellites(df)
+        sats = self.satellites
         for sat in sats:
             dfsub = df[df.satellite == sat]
             res[sat] = dfsub  # .drop(['satellite'], axis=1)
@@ -121,9 +121,9 @@ class AltimetryData:
     def assign_track_id(self, data=None, max_jump=3):
         # loop over missions, then time to find consecutive points
         if data is None:
-            data = self._data
-        id = 0
-        sats = self.get_satellites(data)
+            data = self.df
+        # id = 0
+        sats = self.satellites
 
         # 1 step (=1second = 7.2km)
         # max_jump = 10  # what is an acceptable skip length 60?
@@ -138,8 +138,10 @@ class AltimetryData:
         tot_tracks = 0
         for sat in sats:
             dfsub = df[df.satellite == sat]
-            tvec = np.asarray([dt.timestamp() for dt in dfsub.index.to_pydatetime()])
-            wl = dfsub.adt_dhi
+            if len(dfsub) == 0:
+                continue
+            tvec = np.asarray([dt.timestamp() for dt in dfsub.index.to_pydatetime()]) # improve this
+            # wl = dfsub.adt_dhi
             dtvec = np.zeros(np.size(tvec))
             nt = len(dtvec)
             dtvec[1:] = np.diff(tvec)
@@ -164,11 +166,11 @@ class AltimetryData:
 
         return df
 
-    def print_records_per_satellite(self, df, details=1):
+    def print_records_per_satellite(self, df=None, details=1):
         if df is None:
-            df = self._data
-        sats = self.get_satellites()
-        print(f"For the selected area between {self.start_date} and {self.end_date}:")
+            df = self.df
+        sats = self.satellites
+        print(f"For the selected area between {self.start_time} and {self.end_time}:")
         for sat in sats:
             dfsub = df[df.satellite == sat]
             print(f"Satellite {sat} has {len(dfsub)} records")
@@ -412,9 +414,9 @@ class DHIAltimetryRepository:
                 - lon=10.9&lat=55.9&radius=100
             A few named domains can also be used:
                 - GS_NorthSea, GS_BalticSea, GS_SouthChinaSea
-        start_date : str, datetime, optional
+        start_time : str, datetime, optional
             Start of data to be retrieved, by default '20200101'
-        end_date : str, datetime, optional
+        end_time : str, datetime, optional
             End of data to be retrieved, by default datetime.now()
         satellites : str, list of str, optional
             Satellites to be downloaded, e.g. '', '3a', 'j3, by default ''
