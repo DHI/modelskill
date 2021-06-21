@@ -32,22 +32,26 @@ def test_get_daily_count(repo):
     assert df.loc["2021-1-4"].values == 4
 
 
+@requires_DHI_ALTIMETRY_API_KEY()
 def test_parse_satellites(repo):
     sats = repo.parse_satellites("3b")
     assert sats[0] == "3b"
 
 
+@requires_DHI_ALTIMETRY_API_KEY()
 def test_time_of_newest_data(repo):
     latest = repo.time_of_newest_data()
     day_before_yesterday = datetime.now() - timedelta(days=2)
     assert latest > day_before_yesterday
 
 
+@requires_DHI_ALTIMETRY_API_KEY()
 def test_plot_observation_stats(repo):
     repo.plot_observation_stats()
     assert True
 
 
+@requires_DHI_ALTIMETRY_API_KEY()
 def test_get_spatial_coverage(repo):
     gdf = repo.get_spatial_coverage(
         area="lon=10.9&lat=55.9&radius=40", start_time="2021-1-1", end_time="2021-1-5"
@@ -58,6 +62,7 @@ def test_get_spatial_coverage(repo):
     assert True
 
 
+@requires_DHI_ALTIMETRY_API_KEY()
 def test_get_altimetry_data(repo):
     ad = repo.get_altimetry_data(
         area="lon=10.9&lat=55.9&radius=50", start_time="1985", end_time="1985-5-1"
