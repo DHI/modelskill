@@ -31,6 +31,9 @@ Data
 .. autoclass:: fmskill.data.DMIOceanObsRepository
 	:members:
 
+.. autoclass:: fmskill.data.DHIAltimetryRepository
+	:members:
+
 
 
 Connector
