@@ -376,28 +376,6 @@ class DHIAltimetryRepository:
             gdf = gpd.GeoDataFrame.from_features(data["coverage"], crs="epsg:4326")
             return gdf
 
-    # def _create_coverage_query(
-    #     self, type, area, start_time="20200101", end_time=None, satellites=""
-    # ):
-
-    #     query = self.API_URL + f"{type}-coverage?"
-    #     query += self._validate_area(area)
-
-    #     satellites = self.parse_satellites(satellites)
-    #     if satellites:
-    #         query += "&satellites=" + ",".join(satellites) if satellites else ""
-
-    #     start_time = self._parse_datetime(start_time)
-    #     if start_time:
-    #         query += "&start_date=" + start_time
-
-    #     if end_time is None:
-    #         end_time = datetime.now()
-    #     end_time = self._parse_datetime(end_time)
-    #     if end_time:
-    #         query += "&end_date=" + end_time
-    #     return query
-
     def get_altimetry_data(
         self,
         area,
@@ -443,17 +421,34 @@ class DHIAltimetryRepository:
         df = self.get_altimetry_data_raw(payload)
         return AltimetryData(df, area=area, query_params=payload)
 
-    # def _create_altimetry_query(
-    #     self,
-    #     area="bbox=-11.913345,48.592117,12.411167,63.084148",
-    #     satellites="3a",
-    #     start_time="20200101",
-    #     end_time="",
-    #     nan_value="",
-    #     quality_filter="",
-    #     numeric=False,
-    # ):
-    # """
+    def _area_time_sat_payload(
+        self,
+        area=None,
+        start_time=None,
+        end_time=None,
+        satellites=None,
+    ) -> dict:
+        d = self._validate_area(area)
+
+        start_time = self._parse_datetime(start_time)
+        d["start_date"] = start_time.strftime("%Y%m%d")
+
+        if end_time:
+            end_time = self._parse_datetime(end_time)
+        else:
+            end_time = datetime.now()
+        d["end_date"] = end_time.strftime("%Y%m%d")
+
+        if start_time > end_time:
+            raise ValueError(
+                f"end time '{end_time}' must be greater than start time '{start_time}'!"
+            )
+
+        if satellites:
+            satellites = self.parse_satellites(satellites)
+            d["satellites"] = ",".join(satellites)
+        return d
+
     # Create a query for satellite data as a URL pointing to the location of a CSV file with the data.
 
     # Parameters
@@ -483,80 +478,6 @@ class DHIAltimetryRepository:
     #     If True, return columns as numeric and return fewer columns in order to comply with the Met-Ocean on Demand
     #         analysis systems. If False, all columns are returned, and string types are preserved as such.
     #         Default: False.
-
-    # Returns
-    # -------
-    # str
-    #     URL pointing to the location of data in a CSV file.
-    # """
-
-    # query_url = self.API_URL + "query-csv?"
-
-    # area = self._validate_area(area)
-    # satellites = self.parse_satellites(satellites)
-    # satellite_str = "satellites=" + ",".join(satellites) if satellites else ""
-
-    # if numeric:
-    #     numeric_string = "numeric=true"
-    # else:
-    #     numeric_string = "numeric=false"
-
-    # quality_filter = self._validate_quality_filter(quality_filter)
-    # if quality_filter != "":
-    #     quality_filter = "qual_filters=" + quality_filter
-
-    # if end_time:
-    #     end_time = self._parse_datetime(end_time)
-    #     end_time = "end_date=" + end_time
-
-    # if start_time:
-    #     start_time = self._parse_datetime(start_time)
-    #     start_time = "start_date=" + start_time
-
-    # argument_strings = [
-    #     arg_string
-    #     for arg_string in [
-    #         area,
-    #         satellite_str,
-    #         start_time,
-    #         end_time,
-    #         nan_value,
-    #         quality_filter,
-    #         numeric_string,
-    #     ]
-    #     if arg_string != ""
-    # ]
-
-    # query_url = "".join([query_url, "&".join(argument_strings)])
-    # return query_url
-
-    def _area_time_sat_payload(
-        self,
-        area=None,
-        start_time=None,
-        end_time=None,
-        satellites=None,
-    ) -> dict:
-        d = self._validate_area(area)
-
-        start_time = self._parse_datetime(start_time)
-        d["start_date"] = start_time.strftime("%Y%m%d")
-
-        if end_time:
-            end_time = self._parse_datetime(end_time)
-        else:
-            end_time = datetime.now()
-        d["end_date"] = end_time.strftime("%Y%m%d")
-
-        if start_time > end_time:
-            raise ValueError(
-                f"end time '{end_time}' must be greater than start time '{start_time}'!"
-            )
-
-        if satellites:
-            satellites = self.parse_satellites(satellites)
-            d["satellites"] = ",".join(satellites)
-        return d
 
     def _create_query_payload(
         self,
