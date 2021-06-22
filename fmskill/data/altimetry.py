@@ -48,15 +48,21 @@ class AltimetryData:
             path to new dfs0 file
         satellite : str, optional
             short name of satellite to be saved, by default all
+        quality : int, optional
+            highest quality flag to include: 0=good, 1=acceptable, 2=bad,
+            if 1 is given as argument data with flag 0 and 1 will be written to
+            file, by default 0 (i.e. only good data)
         """
         df = self.df
         if satellite is not None:
             df = df[df.satellite == satellite]
+        if quality is not None:
+            df = df[df.quality <= quality]
 
         if len(df) < 1:
             raise Exception("No data in data frame")
 
-        cols = ["lon", "lat", "adt_dhi", "swh", "wind_speed"]
+        cols = ["lon", "lat", "water_level", "swh", "wind_speed_abdalla_adjusted"]
         items = []
         items.append(eum.ItemInfo("Longitude", eum.EUMType.Latitude_longitude))
         items.append(eum.ItemInfo("Latitude", eum.EUMType.Latitude_longitude))
