@@ -135,9 +135,31 @@ class BaseComparer:
         if not isinstance(other, BaseComparer):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        cc = ComparerCollection()
-        cc.add_comparer(self)
-        cc.add_comparer(other)
+        if (
+            isinstance(self, SingleObsComparer)
+            and isinstance(other, SingleObsComparer)
+            and (self.name == other.name)
+        ):
+            assert type(self) == type(other)
+            missing_models = set(self.mod_names) - set(other.mod_names)
+            if len(missing_models) == 0:
+                # same obs name and same model names
+                cc = self.copy()
+                cc.df = cc.df.append(other.df)
+
+            else:
+                cols = ["x", "y"] if isinstance(self, TrackComparer) else []
+                mod_data = [self.df[cols + [m]] for m in self.mod_names]
+                for m in other.mod_names:
+                    mod_data.append(other.df[cols + [m]])
+
+                cls = self.__class__
+                cc = cls.__new__(cls)
+                cc.__init__(self.observation, mod_data)
+        else:
+            cc = ComparerCollection()
+            cc.add_comparer(self)
+            cc.add_comparer(other)
 
         return cc
 
@@ -1655,7 +1677,14 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             self._add_comparer(comparer)
 
     def _add_comparer(self, comparer: SingleObsComparer):
-        self.comparers[comparer.name] = comparer
+        if comparer.name in self.comparers:
+            # comparer with this name already exists!
+            # maybe the user is trying to add a new model
+            # or a new time period
+            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer
+        else:
+            self.comparers[comparer.name] = comparer
+
         for mod_name in comparer.mod_names:
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
