@@ -1546,22 +1546,24 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
     _all_df = None
     _start = datetime(2900, 1, 1)
     _end = datetime(1, 1, 1)
-    _n_points = 0
-
+    
     @property
     def name(self) -> str:
         return "Observations"
 
     @property
     def n_points(self) -> int:
-        return self._n_points
+        """number of compared points"""
+        return len(self.all_df)
 
     @property
     def start(self) -> datetime:
+        """start datetime of compared data"""
         return self._start
 
     @property
     def end(self) -> datetime:
+        """end datetime of compared data"""
         return self._end
 
     @property
@@ -1695,7 +1697,6 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         # check if already in...
         self._itemInfos.append(comparer.observation.itemInfo)
 
-        self._n_points = self._n_points + comparer.n_points
         if comparer.start < self.start:
             self._start = comparer.start
         if comparer.end > self.end:
