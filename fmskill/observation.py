@@ -12,6 +12,7 @@ import pandas as pd
 from datetime import datetime
 from shapely.geometry import Point, MultiPoint
 from mikeio import Dfs0, eum
+from copy import deepcopy
 from .utils import make_unique_index
 
 
@@ -100,6 +101,11 @@ class Observation:
         ax.set_xlabel(self._unit_text())
         return ax
 
+    def __copy__(self):
+        return deepcopy(self)
+
+    def copy(self):
+        return self.__copy__()
 
 class PointObservation(Observation):
     """Class for observations of fixed locations
