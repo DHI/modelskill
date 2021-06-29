@@ -146,6 +146,7 @@ class BaseComparer:
                 # same obs name and same model names
                 cc = self.copy()
                 cc.df = cc.df.append(other.df)
+                cc.df = cc.df[~cc.df.index.duplicated(keep="last")]  # 'first'
 
             else:
                 cols = ["x", "y"] if isinstance(self, TrackComparer) else []
@@ -1546,7 +1547,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
     _all_df = None
     _start = datetime(2900, 1, 1)
     _end = datetime(1, 1, 1)
-    
+
     @property
     def name(self) -> str:
         return "Observations"
