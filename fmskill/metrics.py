@@ -320,6 +320,29 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     return 1 - SSr / SSt
 
 
+def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
+    """Fraction within obs ± acceptable deviation
+
+    .. math::
+
+        HR = \\frac{1}{n}\\sum_{i=1}^n I_{|(model_i - obs_i)|} < a
+
+
+    Examples
+    --------
+    >>> obs = np.array([1.0,1.1,1.2,1.3,1.4, 1.4, 1.3])
+    >>> model = np.array([1.02, 1.16, 1.3 , 1.38, 1.49, 1.45, 1.32])
+    >>> hit_ratio(obs, model, a=0.05)
+    0.2857142857142857
+    >>> hit_ratio(obs, model, a=0.1)
+    0.8571428571428571
+    >>> hit_ratio(obs, model, a=0.15)
+    1.0
+    """
+
+    return np.mean(np.abs(obs - model) < a)
+
+
 def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
     """Slope of the regression line.
 
