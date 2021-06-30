@@ -135,9 +135,32 @@ class BaseComparer:
         if not isinstance(other, BaseComparer):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        cc = ComparerCollection()
-        cc.add_comparer(self)
-        cc.add_comparer(other)
+        if (
+            isinstance(self, SingleObsComparer)
+            and isinstance(other, SingleObsComparer)
+            and (self.name == other.name)
+        ):
+            assert type(self) == type(other)
+            missing_models = set(self.mod_names) - set(other.mod_names)
+            if len(missing_models) == 0:
+                # same obs name and same model names
+                cc = self.copy()
+                cc.df = cc.df.append(other.df)
+                cc.df = cc.df[~cc.df.index.duplicated(keep="last")]  # 'first'
+
+            else:
+                cols = ["x", "y"] if isinstance(self, TrackComparer) else []
+                mod_data = [self.df[cols + [m]] for m in self.mod_names]
+                for m in other.mod_names:
+                    mod_data.append(other.df[cols + [m]])
+
+                cls = self.__class__
+                cc = cls.__new__(cls)
+                cc.__init__(self.observation, mod_data)
+        else:
+            cc = ComparerCollection()
+            cc.add_comparer(self)
+            cc.add_comparer(other)
 
         return cc
 
@@ -1524,7 +1547,6 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
     _all_df = None
     _start = datetime(2900, 1, 1)
     _end = datetime(1, 1, 1)
-    _n_points = 0
 
     @property
     def name(self) -> str:
@@ -1532,14 +1554,17 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     @property
     def n_points(self) -> int:
-        return self._n_points
+        """number of compared points"""
+        return len(self.all_df)
 
     @property
     def start(self) -> datetime:
+        """start datetime of compared data"""
         return self._start
 
     @property
     def end(self) -> datetime:
+        """end datetime of compared data"""
         return self._end
 
     @property
@@ -1655,7 +1680,14 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             self._add_comparer(comparer)
 
     def _add_comparer(self, comparer: SingleObsComparer):
-        self.comparers[comparer.name] = comparer
+        if comparer.name in self.comparers:
+            # comparer with this name already exists!
+            # maybe the user is trying to add a new model
+            # or a new time period
+            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer
+        else:
+            self.comparers[comparer.name] = comparer
+
         for mod_name in comparer.mod_names:
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
@@ -1666,7 +1698,6 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         # check if already in...
         self._itemInfos.append(comparer.observation.itemInfo)
 
-        self._n_points = self._n_points + comparer.n_points
         if comparer.start < self.start:
             self._start = comparer.start
         if comparer.end > self.end:
