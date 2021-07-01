@@ -68,7 +68,7 @@ def test_parse_satellites(repo):
 
 @requires_DHI_ALTIMETRY_API_KEY()
 def test_time_of_newest_data(repo):
-    latest = repo.time_of_newest_data()
+    latest = repo.time_of_newest_data
     day_before_yesterday = datetime.now() - timedelta(days=2)
     assert latest > day_before_yesterday
 
