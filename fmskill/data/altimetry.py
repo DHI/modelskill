@@ -29,15 +29,23 @@ class AltimetryData:
 
     @property
     def satellites(self):
+        """Satellites for this data"""
         return list(self.df.satellite.unique())
 
     @property
     def start_time(self):
+        """Start time for this data"""
         return self.df.index[0].to_pydatetime()
 
     @property
     def end_time(self):
+        """End time for this data"""
         return self.df.index[-1].to_pydatetime()
+
+    @property
+    def n_points(self):
+        """Number of points in this dataset"""
+        return len(self.df)
 
     def to_dfs0(self, filename, satellite=None, quality=0):
         """Save altimetry data to dfs0 file.
@@ -240,8 +248,8 @@ class DHIAltimetryRepository:
         pd.DataFrame
             available quality filters with descriptions
         """
-        sats = self._conf.get("quality_filters")
-        return pd.DataFrame(sats).set_index("short_name")
+        qf = self._conf.get("quality_filters")
+        return pd.DataFrame(qf).set_index("short_name")
 
     def get_observation_stats(self):
         """Get a summary of the data per satellite missions
