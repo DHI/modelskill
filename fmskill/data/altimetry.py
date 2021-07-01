@@ -534,7 +534,7 @@ class DHIAltimetryRepository:
                 message = "bbox area should be provided as bbox=115.0,28.5,150.2,52.1"
 
         elif area[0:8] == "polygon=":
-            if area.count(",") >= 7:
+            if area.count(",") >= 5:
                 parsed = True
             else:
                 message = "polygon area should be provided as polygon=6.811,54.993,8.009,54.993,8.009,57.154,6.811,57.154,6.811,54.993"
