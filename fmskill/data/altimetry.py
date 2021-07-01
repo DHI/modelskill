@@ -11,10 +11,6 @@ class APIAuthenticationFailed(Exception):
     pass
 
 
-class DownloadDataFromAPIFailed(Exception):
-    pass
-
-
 class InvalidSatelliteName(Exception):
     pass
 
@@ -24,8 +20,6 @@ class AltimetryData:
         self.df = df
         self.area = area
         self.query_params = query_params
-        # self._requested_start = requested_start
-        # self._requested_end = requested_end
 
     @property
     def satellites(self):
@@ -133,15 +127,30 @@ class AltimetryData:
             res[sat] = dfsub  # .drop(['satellite'], axis=1)
         return res
 
-    def assign_track_id(self, data=None, max_jump=3):
-        # loop over missions, then time to find consecutive points
+    def assign_track_id(self, data=None, max_jump=3.0, verbose=True):
+        """Identify individual passings by finding gaps in data for each satellite.
+
+        The track_id will be numbered 0, 1, ... for each satellite.
+
+        Parameters
+        ----------
+        data : pd.DataFrame, optional
+            altimetry data (assumed to have a "satellite" column), by default None
+        max_jump : float, optional
+            split passings if jump larger than this number of seconds, by default 3.0
+        verbose : bool, optional
+            print status information?, by default True
+
+        Returns
+        -------
+        pd.DataFrame
+            as input data but with a new column "track_id"
+        """
         if data is None:
             data = self.df
-        # id = 0
         sats = self.satellites
 
         # 1 step (=1second = 7.2km)
-        # max_jump = 10  # what is an acceptable skip length 60?
 
         df = data.copy()
 
@@ -155,31 +164,24 @@ class AltimetryData:
             dfsub = df[df.satellite == sat]
             if len(dfsub) == 0:
                 continue
-            tvec = np.asarray(
-                [dt.timestamp() for dt in dfsub.index.to_pydatetime()]
-            )  # improve this
-            # wl = dfsub.adt_dhi
-            dtvec = np.zeros(np.size(tvec))
-            nt = len(dtvec)
+
+            tt = dfsub.index
+            tvec = (tt - tt[0]).total_seconds().values
+
+            nt = len(tvec)
+            dtvec = np.zeros(nt)
             dtvec[1:] = np.diff(tvec)
 
-            ids = np.zeros(tvec.shape, dtype=int) - 1  # default is -1
-            idx = 0
-            ni = 0
-            for j in range(nt):
-                if (dtvec[j] > max_jump) & (ni > 0):
-                    idx = idx + 1
-                    ni = 0
+            ids = np.zeros(nt, dtype=int)
+            ijump = np.where(dtvec > max_jump)
+            ids[ijump] = 1
+            ids = np.cumsum(ids)
 
-                # only assign track id if actual data?
-                # if not np.isnan(wl[j]):
-                ids[j] = idx
-                ni = ni + 1
-
-            tot_tracks = tot_tracks + idx
+            tot_tracks = tot_tracks + len(ijump) + 1
             df.loc[df.satellite == sat, "track_id"] = ids
 
-        print(f"Identified {tot_tracks} individual passings")
+        if verbose:
+            print(f"Identified {tot_tracks} individual passings")
 
         return df
 
