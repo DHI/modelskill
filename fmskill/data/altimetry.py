@@ -16,6 +16,30 @@ class InvalidSatelliteName(Exception):
 
 
 class AltimetryData:
+    """Class returned by DHIAltimetryRepository's get_altimetry_data() method
+
+    Examples
+    ========
+    >>> repo = DHIAltimetryRepository(api_key="...")
+    >>> data = repo.get_altimetry_data("lon=10.9&lat=55.9&radius=10.0", start_time="2021")
+    Succesfully retrieved 133 records from API in 0.69 seconds
+    >>> data.satellites
+    ['j3', '3a', 'c2', 'sa']
+    >>> data.df.columns
+    Index(['lon', 'lat', 'water_level', 'adt', 'wind_speed', 'wind_speed_abdalla',
+           'wind_speed_abdalla_adjusted', 'swh', 'swh_adjusted',
+           'distance_from_land', 'water_depth', 'satellite', 'quality', 'wl_rms',
+           'swh_rms'],
+           dtype='object')
+    >>> data.df.water_level.head(3)
+    date
+    2021-01-04 15:30:45.051    0.0531
+    2021-01-04 15:30:46.070    0.0394
+    2021-01-04 15:30:47.088    0.0294
+    Name: water_level, dtype: float64
+    >>> data.to_dfs0('alti_data.dfs0')
+    """
+
     def __init__(self, df, area=None, query_params=None):
         self.df = df
         self.area = area
@@ -198,6 +222,36 @@ class AltimetryData:
 
 
 class DHIAltimetryRepository:
+    """Get altimetry observations from DHI
+
+    Notes
+    =====
+    Get a API key by contacting https://www.dhi-gras.com/
+    API documentation: https://altimetry-shop-data-api.dhigroup.com/apidoc
+
+    Examples
+    ========
+    >>> repo = DHIAltimetryRepository(api_key="...")
+    >>> repo.satellites
+    ['gs',
+     'e1',
+     'tx',
+     'pn',
+     'e2',
+     'g1',
+     'j1',
+     'n1',
+     'j2',
+     'c2',
+     'sa',
+     'j3',
+     '3a',
+     '3b']
+    >>> df = repo.get_daily_count("lon=10.9&lat=55.9&radius=10.0", start_time="2021")
+    >>> data = repo.get_altimetry_data("lon=10.9&lat=55.9&radius=10.0", start_time="2021")
+    >>> data.to_dfs0('alti_data.dfs0')
+    """
+
     API_URL = "https://altimetry-shop-data-api.dhigroup.com/"
     HEADERS = None
     api_key = None
@@ -309,6 +363,7 @@ class DHIAltimetryRepository:
         ax.set_title("Satellite lifespan")
         return ax
 
+    @property
     def time_of_newest_data(self):
         """Time of the latest data in the altimetry database."""
         df = self.get_observation_stats()[["max_date"]]
@@ -419,6 +474,12 @@ class DHIAltimetryRepository:
             Satellites to be downloaded, e.g. '', '3a', 'j3, by default ''
         quality_filter : str, optional
             Name of quality filter, e.g. 'dhi_combined', by default '' meaning no filter
+
+        Examples
+        --------
+        >>> repo = DHIAltimetryRepository(api_key="...")
+        >>> data = repo.get_altimetry_data("lon=10.9&lat=55.9&radius=10.0", start_time="2021")
+        Succesfully retrieved 133 records from API in 0.69 seconds
 
         Returns
         -------

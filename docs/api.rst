@@ -34,6 +34,8 @@ Data
 .. autoclass:: fmskill.data.DHIAltimetryRepository
 	:members:
 
+.. autoclass:: fmskill.data.altimetry.AltimetryData
+	:members:
 
 
 Connector
