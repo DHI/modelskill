@@ -102,7 +102,8 @@ def test_get_altimetry_data_1985(ad85):
 
 @requires_DHI_ALTIMETRY_API_KEY()
 def test_get_altimetry_data_no_end(repo):
-    area = "lon=10.9&lat=55.9&radius=50"
+    # area = "lon=10.9&lat=55.9&radius=50"
+    area = "polygon=10.5,55.5,11.3,55.5,11.0,57.0"
     start = datetime.now() - timedelta(days=7)  # latest 7days
 
     ad = repo.get_altimetry_data(area=area, start_time=start)
@@ -124,17 +125,27 @@ def test_AltimetryData_properties(ad):
 @requires_DHI_ALTIMETRY_API_KEY()
 def test_AltimetryData_to_dfs0(ad, tmpdir):
 
-    outfilename = os.path.join(tmpdir, "out.dfs0")
+    outfilename = os.path.join(tmpdir, "all_alti.dfs0")
     ad.to_dfs0(outfilename)
     assert os.path.exists(outfilename)
     dfs = Dfs0(outfilename)
     assert dfs.items[0].type == eum.EUMType.Latitude_longitude
     assert dfs.items[2].type == eum.EUMType.Water_Level
 
+    outfilename = os.path.join(tmpdir, "alti_c2.dfs0")
+    ad.to_dfs0(outfilename, satellite="c2")
+    assert os.path.exists(outfilename)
+
 
 @requires_DHI_ALTIMETRY_API_KEY()
 def test_AltimetryData_plot_map(ad):
     ad.plot_map()
+
+
+@requires_DHI_ALTIMETRY_API_KEY()
+def test_AltimetryData_get_dataframe_per_satellite(ad):
+    df_sat = ad.get_dataframe_per_satellite()
+    assert "3a" in df_sat
 
 
 @requires_DHI_ALTIMETRY_API_KEY()
