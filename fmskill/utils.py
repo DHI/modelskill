@@ -48,5 +48,6 @@ def make_unique_index(df_index, offset_in_seconds=0.01, warn=True):
 
     # np.median(np.diff(df.index.values))/100
     offset_in_ns = offset_in_seconds * 1e9
-    new_index = df_index + offset_in_ns * np.cumsum(values).astype(np.timedelta64)
+    tmp = np.timedelta64(np.cumsum(values), 'ns')
+    new_index = df_index + offset_in_ns * tmp #np.cumsum(values).astype(np.timedelta64)
     return new_index
