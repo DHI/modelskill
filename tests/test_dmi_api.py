@@ -14,7 +14,7 @@ def requires_DMI_API_KEY():
 def test_get_observed_data():
 
     api_key = os.environ["DMI_API_KEY"]
-    repo = DMIOceanObsRepository(apikey=api_key)
+    repo = DMIOceanObsRepository(api_key=api_key)
 
     station_id = "30336"  # Kbh havn
 
@@ -33,7 +33,7 @@ def test_get_observed_data():
 @requires_DMI_API_KEY()
 def test_get_stations():
     api_key = os.environ["DMI_API_KEY"]
-    repo = DMIOceanObsRepository(apikey=api_key)
+    repo = DMIOceanObsRepository(api_key=api_key)
 
     assert repo.stations.shape[0] > 0
 

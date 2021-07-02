@@ -14,7 +14,7 @@ class DMIOceanObsRepository:
 
     Examples
     ========
-    >>> dmi = DMIOceanObsRepository(apikey="e11...")
+    >>> dmi = DMIOceanObsRepository(api_key="e11...")
     >>> dmi.stations[dmi.stations.name.str.startswith('Køg')]
        station_id      lon      lat          name
     43      30478  12.1965  55.4555   Køge Havn I
@@ -22,9 +22,9 @@ class DMIOceanObsRepository:
     >>> df = dmi.get_observed_data(station_id="30478", start_time=datetime(2018, 3, 4))
     """
 
-    def __init__(self, apikey: str) -> None:
+    def __init__(self, api_key: str) -> None:
 
-        self.__api__key = apikey
+        self.__api__key = api_key
         self._stations = None
 
     def get_observed_data(
@@ -64,7 +64,7 @@ class DMIOceanObsRepository:
         Examples
         ========
         >>> from fmskill.data.dmi import DMIOceanObsRepository
-        >>> dmi = DMIOceanObsRepository(apikey="e11...")
+        >>> dmi = DMIOceanObsRepository(api_key="e11...")
         >>> df = dmi.get_observed_data(station_id="30336", start_time="2018-03-04", end_time="2018-03-06")
         >>> df.head()
                             sealev_dvr

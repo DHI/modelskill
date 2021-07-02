@@ -11,7 +11,7 @@ def is_iterable_not_str(obj):
     if isinstance(obj, Iterable):
         return True
     return False
-    
+
 
 def make_unique_index(df_index, offset_in_seconds=0.01, warn=True):
     """Given a non-unique DatetimeIndex, create a unique index by adding
@@ -48,5 +48,6 @@ def make_unique_index(df_index, offset_in_seconds=0.01, warn=True):
 
     # np.median(np.diff(df.index.values))/100
     offset_in_ns = offset_in_seconds * 1e9
-    new_index = df_index + offset_in_ns * np.cumsum(values).astype(np.timedelta64)
+    tmp = np.cumsum(values.astype(int)).astype("timedelta64[ns]")
+    new_index = df_index + offset_in_ns * tmp
     return new_index

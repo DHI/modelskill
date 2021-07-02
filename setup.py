@@ -28,7 +28,13 @@ setuptools.setup(
             "shapely",
             "plotly >= 4.5",
         ],
-        "test": ["pytest", "shapely", "netCDF4", "openpyxl", "dask"],
+        "test": [
+            "pytest",
+            "shapely",
+            "netCDF4",
+            "openpyxl",
+            "dask",
+        ],
     },
     entry_points="""
         [console_scripts]
