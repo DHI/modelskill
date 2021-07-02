@@ -37,6 +37,7 @@ Or the development version:
 * [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Track_comparison.ipynb) (including global wave model example)
 * [Spatial_skill.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Spatial_skill.ipynb) (satellite tracks, skill aggregated on spatial bins)
 * [NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/NetCDF_ModelResult.ipynb)
+* [Combine_comparers.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Combine_comparers.ipynb)
 * [DMI_observations.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/DMI_observations.ipynb) (download data from REST api)
 
 
