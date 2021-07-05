@@ -37,7 +37,6 @@ setuptools.setup(
     author="Jesper Sandvig Mariegaard",
     author_email="jem@dhigroup.com",
     description="Compare results from MIKE FM simulations with observations.",
-    platform="windows_x64",
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
