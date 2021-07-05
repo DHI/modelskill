@@ -179,12 +179,12 @@
             
   <div class="section" id="getting-started">
 <span id="id1"></span><h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
-<p>This page describes the typical fmskill workflow for comparing
+<p>This page describes the typical FMskill workflow for comparing
 model results and observations. If you just need a simple one-to-one
 time series comparison, see the <a class="reference external" href="simple_compare.html">simple time series comparison</a>.</p>
 <div class="section" id="workflow">
 <h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
-<p>The typical fmskill workflow consists of these five steps:</p>
+<p>The typical FMskill workflow consists of these five steps:</p>
 <ol class="arabic simple">
 <li><p>Define <strong>ModelResults</strong></p></li>
 <li><p>Define <strong>Observations</strong></p></li>
@@ -196,7 +196,7 @@ time series comparison, see the <a class="reference external" href="simple_compa
 <h3>1. Define ModelResults<a class="headerlink" href="#define-modelresults" title="Permalink to this headline">¶</a></h3>
 <p>The result of a MIKE 21/3 simulation is stored in one or more dfs files.
 The most common formats are .dfsu for distributed data and .dfs0 for
-time series point data. A fmskill <a class="reference external" href="api.html#fmskill.model.ModelResult">ModelResult</a> is defined by the
+time series point data. A FMskill <a class="reference external" href="api.html#fmskill.model.ModelResult">ModelResult</a> is defined by the
 result file path and a name:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fmskill</span> <span class="kn">import</span> <span class="n">ModelResult</span>
 <span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;HKZN_local_2017.dfsu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKZN_local&quot;</span><span class="p">)</span>
