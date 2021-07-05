@@ -39,7 +39,7 @@ def Hm0_HKNA():
 
 @pytest.fixture
 def wind_HKNA():
-    fn = "tests/testdata/SW/HKNA_Wind.dfs0"
+    fn = "tests/testdata/SW/HKNA_wind.dfs0"
     return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
 
 

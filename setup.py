@@ -12,7 +12,7 @@ setuptools.setup(
     install_requires=[
         "numpy",
         "pandas",
-        "mikeio >= 0.6",
+        "mikeio >= 0.7",
         "matplotlib",
         "xarray",
         "markdown",
@@ -28,13 +28,7 @@ setuptools.setup(
             "shapely",
             "plotly >= 4.5",
         ],
-        "test": [
-            "pytest",
-            "shapely",
-            "netCDF4",
-            "openpyxl",
-            "dask",
-        ],
+        "test": ["pytest", "shapely", "netCDF4", "openpyxl", "dask",],
     },
     entry_points="""
         [console_scripts]
@@ -43,7 +37,6 @@ setuptools.setup(
     author="Jesper Sandvig Mariegaard",
     author_email="jem@dhigroup.com",
     description="Compare results from MIKE FM simulations with observations.",
-    platform="windows_x64",
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -59,7 +52,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Operating System :: Microsoft :: Windows",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering",
     ],
 )
