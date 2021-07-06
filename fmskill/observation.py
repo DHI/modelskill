@@ -107,6 +107,7 @@ class Observation:
     def copy(self):
         return self.__copy__()
 
+
 class PointObservation(Observation):
     """Class for observations of fixed locations
 
@@ -329,7 +330,7 @@ class TrackObservation(Observation):
         self._filename = None
         self._item = None
 
-        if isinstance(filename, pd.DataFrame):  # or isinstance(filename, pd.Series):
+        if isinstance(filename, pd.DataFrame):
             df = filename
             df = df.iloc[:, [0, 1, item]]
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
