@@ -1,15 +1,18 @@
+from fmskill.utils import make_unique_index
 import pandas as pd
 import warnings
 
 from mikeio import eum
-from ..observation import PointObservation
-from ..comparison import PointComparer
+from ..observation import PointObservation, TrackObservation
+from ..comparison import PointComparer, TrackComparer
 from .abstract import ModelResultInterface, MultiItemModelResult
 
 
 class _DataFrameBase:
-    df = None
-    itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+    def __init__(self) -> None:
+        self.df = None
+        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+        self.is_point = True
 
     @property
     def start_time(self):
@@ -41,9 +44,10 @@ class _DataFrameBase:
             raise ValueError("item must be int or string")
         return item
 
-    def _get_item_num(self, item) -> int:
-        item_name = self._get_item_name(item)
-        item_names = list(self.df.columns)
+    def _get_item_num(self, item, item_names=None) -> int:
+        item_name = self._get_item_name(item, item_names)
+        if item_names is None:
+            item_names = list(self.df.columns)
         return item_names.index(item_name)
 
 
@@ -68,9 +72,11 @@ class DataFrameModelResultItem(_DataFrameBase, ModelResultInterface):
                 item = df.columns[0]
             else:
                 raise ValueError("Model ambiguous - please provide item")
+
         item = self._get_item_name(item, df.columns)
         self.df = df[[item]]
         self._selected_item = item
+
         if name is None:
             name = self.item_name
         self.name = name
@@ -142,6 +148,108 @@ class DataFrameModelResult(_DataFrameBase, MultiItemModelResult):
 
     def __repr__(self):
         txt = [f"<DataFrameModelResult> '{self.name}'"]
+        for j, item in enumerate(self.item_names):
+            txt.append(f"- Item: {j}: {item}")
+        return "\n".join(txt)
+
+
+class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
+    @property
+    def item_name(self):
+        return self.df.columns[-1]
+
+    def __init__(self, df, name: str = None, item=None):
+        if isinstance(df, pd.DataFrame):
+            if not isinstance(df.index, pd.DatetimeIndex):
+                raise TypeError("Index must be DatetimeIndex!")
+        else:
+            raise TypeError("Input must be pandas DataFrame!")
+
+        if item is None:
+            if len(df.columns) == 3:
+                item = df.columns[-1]
+            else:
+                raise ValueError("Model ambiguous - please provide item")
+
+        if not df.index.is_unique:
+            df.index = make_unique_index(df.index)
+
+        item_num = self._get_item_num(item, list(df.columns))
+        self.df = df.iloc[:, [0, 1, item_num]]
+        item = self._get_item_name(item, df.columns)
+        self._selected_item = item
+
+        if name is None:
+            name = self.item_name
+        self.name = name
+
+    def __repr__(self):
+        txt = [f"<DataFrameTrackModelResultItem> '{self.name}'"]
+        txt.append(f"- Item: {self.item_name}")
+        return "\n".join(txt)
+
+    def extract_observation(self, observation: TrackObservation) -> TrackComparer:
+        """Compare this ModelResult with an observation
+
+        Parameters
+        ----------
+        observation : <TrackObservation>
+            Observation to be compared
+
+        Returns
+        -------
+        <fmskill.PointComparer>
+            A comparer object for further analysis or plotting
+        """
+        if isinstance(observation, TrackObservation):
+            comparer = TrackComparer(observation, self.df)
+        else:
+            raise ValueError("Only track observation are supported!")
+
+        if len(comparer.df) == 0:
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+            comparer = None
+
+        return comparer
+
+
+class DataFrameTrackModelResult(_DataFrameBase, MultiItemModelResult):
+    @property
+    def item_names(self):
+        return list(self.df.columns[2:])
+
+    def __init__(self, df, name: str = None, item=None):
+        if isinstance(df, pd.DataFrame):
+            if not isinstance(df.index, pd.DatetimeIndex):
+                raise TypeError("Index must be DatetimeIndex!")
+        else:
+            raise TypeError("Input must be pandas DataFrame!")
+
+        if not df.index.is_unique:
+            df.index = make_unique_index(df.index)
+
+        self.df = df
+
+        self._selected_item = None
+        if item is None:
+            if len(df.columns) == 3:
+                self._selected_item = df.columns[-1]
+        else:
+            self._selected_item = self._get_item_name(item)
+
+        if name is None:
+            if self._selected_item is None:
+                name = "model"
+            else:
+                name = self.df.columns[self._selected_item]
+        self.name = name
+
+        self._mr_items = {}
+        for it in self.item_names:
+            self._mr_items[it] = DataFrameTrackModelResultItem(self.df, self.name, it)
+
+    def __repr__(self):
+        txt = [f"<DataFrameTrackModelResult> '{self.name}'"]
         for j, item in enumerate(self.item_names):
             txt.append(f"- Item: {j}: {item}")
         return "\n".join(txt)
