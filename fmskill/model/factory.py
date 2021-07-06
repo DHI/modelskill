@@ -3,7 +3,7 @@ import pandas as pd
 import xarray as xr
 
 from .dfs import DfsModelResult
-from .pandas import DataFrameModelResult
+from .pandas import DataFrameModelResult, DataFrameTrackModelResult
 from .xarray import XArrayModelResult
 
 
@@ -49,7 +49,11 @@ class ModelResult:
                 return self._mr_or_mr_item(mr)
 
         elif isinstance(input, (pd.DataFrame, pd.Series)):
-            mr = DataFrameModelResult(input, *args, **kwargs)
+            type = kwargs.get("type", "point")
+            if type == "point":
+                mr = DataFrameModelResult(input, *args, **kwargs)
+            else:
+                mr = DataFrameTrackModelResult(input, *args, **kwargs)
             return self._mr_or_mr_item(mr)
         elif isinstance(input, (xr.Dataset, xr.DataArray)):
             mr = XArrayModelResult(input, *args, **kwargs)
