@@ -49,11 +49,13 @@ class ModelResult:
                 return self._mr_or_mr_item(mr)
 
         elif isinstance(input, (pd.DataFrame, pd.Series)):
-            type = kwargs.get("type", "point")
+            type = kwargs.pop("type", "point")
             if type == "point":
                 mr = DataFrameModelResult(input, *args, **kwargs)
-            else:
+            elif type == "track":
                 mr = DataFrameTrackModelResult(input, *args, **kwargs)
+            else:
+                raise ValueError(f"type '{type}' unknown (point, track)")
             return self._mr_or_mr_item(mr)
         elif isinstance(input, (xr.Dataset, xr.DataArray)):
             mr = XArrayModelResult(input, *args, **kwargs)
