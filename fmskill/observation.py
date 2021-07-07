@@ -38,6 +38,8 @@ class Observation:
     def __init__(
         self, name: str = None, df=None, itemInfo=None, variable_name: str = None
     ):
+        if name is None:
+            name = "Observation"
         self.name = name
         if not isinstance(df.index, pd.DatetimeIndex):
             raise TypeError(
