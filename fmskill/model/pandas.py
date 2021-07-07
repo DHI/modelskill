@@ -50,6 +50,19 @@ class _DataFrameBase:
             item_names = list(self.df.columns)
         return item_names.index(item_name)
 
+    def _extract_point(self, observation: PointObservation, item=None) -> pd.DataFrame:
+        if item is None:
+            item = self._selected_item
+        else:
+            item = self._get_item_name(item)
+        return self.df[[item]]
+
+    def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+        if item is None:
+            item = self._selected_item
+        item_num = self._get_item_num(item)
+        return self.df.iloc[:, [0, 1, item_num]]
+
 
 class DataFrameModelResultItem(_DataFrameBase, ModelResultInterface):
     @property
@@ -100,7 +113,8 @@ class DataFrameModelResultItem(_DataFrameBase, ModelResultInterface):
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, PointObservation):
-            comparer = PointComparer(observation, self.df)
+            df_model = self._extract_point(observation)
+            comparer = PointComparer(observation, df_model)
         else:
             raise ValueError("Only point observation are supported!")
 
@@ -202,7 +216,8 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, TrackObservation):
-            comparer = TrackComparer(observation, self.df)
+            df_model = self._extract_track(observation)
+            comparer = TrackComparer(observation, df_model)
         else:
             raise ValueError("Only track observation are supported!")
 
@@ -241,7 +256,7 @@ class DataFrameTrackModelResult(_DataFrameBase, MultiItemModelResult):
             if self._selected_item is None:
                 name = "model"
             else:
-                name = self.df.columns[self._selected_item]
+                name = self._selected_item
         self.name = name
 
         self._mr_items = {}
