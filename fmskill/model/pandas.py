@@ -139,7 +139,7 @@ class DataFrameModelResult(_DataFrameBase, MultiItemModelResult):
             if self._selected_item is None:
                 name = "model"
             else:
-                name = self.df.columns[self._selected_item]
+                name = self._selected_item
         self.name = name
 
         self._mr_items = {}
