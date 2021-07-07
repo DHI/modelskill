@@ -77,7 +77,7 @@ def test_track_df_modelresultitem(track_df):
     assert "Item: surface_elevation" in repr(mr1)
 
     # item as string
-    mr2 = DataFrameModelResultItem(df, item="surface_elevation")
+    mr2 = ModelResult(df, item="surface_elevation")
     assert len(mr2.df) == len(mr1.df)
 
     mr3 = DataFrameModelResultItem(df[["surface_elevation"]])
@@ -94,6 +94,11 @@ def test_track_df_modelresult(track_df):
     mr2 = mr1["surface_elevation"]
     assert len(mr2.df) == len(mr1.df)
     assert isinstance(mr2, ModelResultInterface)
+
+    mr3 = ModelResult(df, type="track")
+    mr4 = mr3["surface_elevation"]
+    assert len(mr4.df) == len(mr1.df)
+    assert isinstance(mr4, ModelResultInterface)
 
 
 def test_track_df_model_extract(track_df):
