@@ -13,7 +13,7 @@ from fmskill.model.pandas import (
 
 
 @pytest.fixture
-def klagshamn():
+def point_df():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
     df = Dfs0(fn).to_dataframe()
     return df
@@ -25,8 +25,8 @@ def track_df():
     return pd.read_csv(fn, index_col=0, parse_dates=True)
 
 
-def test_df_modelresultitem(klagshamn):
-    df = klagshamn
+def test_df_modelresultitem(point_df):
+    df = point_df
     df["ones"] = 1.0
 
     mr1 = DataFrameModelResultItem(df, item=0)
@@ -43,12 +43,12 @@ def test_df_modelresultitem(klagshamn):
     assert len(mr3.df) == len(mr1.df)
 
     # Series
-    mr4 = DataFrameModelResultItem(df["Water Level"])
+    mr4 = ModelResult(df["Water Level"])
     assert len(mr4.df) == len(mr1.df)
 
 
-def test_df_modelresult(klagshamn):
-    df = klagshamn
+def test_df_modelresult(point_df):
+    df = point_df
     df["ones"] = 1.0
 
     mr1 = DataFrameModelResult(df)
@@ -59,6 +59,15 @@ def test_df_modelresult(klagshamn):
 
     mr2 = mr1["Water Level"]
     assert len(mr2.df) == len(mr1.df)
+
+
+def test_point_df_model_extract(point_df):
+    df = point_df
+    mr1 = DataFrameModelResultItem(df, item=0)
+    o1 = PointObservation(df, item=0)
+    c = mr1.extract_observation(o1)
+    assert c.score() == 0.0  # o1=mr1
+    assert c.n_points == len(o1.df.dropna())
 
 
 def test_track_df_modelresultitem(track_df):
@@ -92,4 +101,6 @@ def test_track_df_model_extract(track_df):
     mr1 = DataFrameTrackModelResultItem(df, item=2)
     o1 = TrackObservation(df, item=2)
     c = mr1.extract_observation(o1)
-    assert c is not None
+    assert c.score() == 0.0  # o1=mr1
+    assert len(o1.df.dropna()) == 1110
+    assert c.n_points == 1110
