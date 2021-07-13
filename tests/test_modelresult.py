@@ -4,7 +4,7 @@ import pytest
 from mikeio import eum
 from fmskill.model import ModelResult
 from fmskill.model.abstract import ModelResultInterface
-from fmskill.model import DataFrameModelResult, DataFrameModelResultItem
+from fmskill.model import DataFramePointModelResult, DataFramePointModelResultItem
 from fmskill.observation import PointObservation
 
 

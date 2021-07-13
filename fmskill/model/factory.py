@@ -3,7 +3,7 @@ import pandas as pd
 import xarray as xr
 
 from .dfs import DfsModelResult
-from .pandas import DataFrameModelResult, DataFrameTrackModelResult
+from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
 from .xarray import XArrayModelResult
 
 
@@ -51,7 +51,7 @@ class ModelResult:
         elif isinstance(input, (pd.DataFrame, pd.Series)):
             type = kwargs.pop("type", "point")
             if type == "point":
-                mr = DataFrameModelResult(input, *args, **kwargs)
+                mr = DataFramePointModelResult(input, *args, **kwargs)
             elif type == "track":
                 mr = DataFrameTrackModelResult(input, *args, **kwargs)
             else:

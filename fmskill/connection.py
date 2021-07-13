@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from mikeio import Dfs0, eum
 from .model import ModelResult
 from .model.dfs import DfsModelResult, DfsModelResultItem
-from .model.pandas import DataFrameModelResultItem
+from .model.pandas import DataFramePointModelResultItem
 from .model.xarray import XArrayModelResult, XArrayModelResultItem
 from .model.abstract import ModelResultInterface, MultiItemModelResult
 from .observation import Observation, PointObservation, TrackObservation
@@ -150,7 +150,7 @@ class _SingleObsConnector(_BaseConnector):
             raise ValueError(f"Unknown model result type {type(mod)}")
 
     def _parse_pandas_model(self, df, item=None) -> ModelResultInterface:
-        return DataFrameModelResultItem(df, item=item)
+        return DataFramePointModelResultItem(df, item=item)
 
     def _parse_filename_model(self, filename, item=None) -> ModelResultInterface:
         return ModelResult(filename, item=item)

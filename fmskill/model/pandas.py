@@ -13,6 +13,7 @@ class _DataFrameBase:
         self.df = None
         self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         self.is_point = True
+        self._selected_item = None
 
     @property
     def start_time(self):
@@ -21,6 +22,30 @@ class _DataFrameBase:
     @property
     def end_time(self):
         return self.df.index[-1].to_pydatetime()
+
+    @staticmethod
+    def _check_dataframe(df):
+        if isinstance(df, pd.DataFrame):
+            if not isinstance(df.index, pd.DatetimeIndex):
+                raise TypeError("Index must be DatetimeIndex!")
+        else:
+            raise TypeError("Input must be pandas DataFrame!")
+
+    def _get_selected_item(self, cols, item):
+        sel_item = None
+        if item is None:
+            if len(cols) == 1:
+                sel_item = cols[0]
+        else:
+            sel_item = self._get_item_name(item)
+        return sel_item
+
+    @staticmethod
+    def _get_default_item(cols):
+        if len(cols) == 1:
+            return cols[0]
+        else:
+            raise ValueError("Model ambiguous - please provide item")
 
     def _get_item_name(self, item, item_names=None) -> str:
         if item_names is None:
@@ -51,6 +76,7 @@ class _DataFrameBase:
         return item_names.index(item_name)
 
     def _extract_point(self, observation: PointObservation, item=None) -> pd.DataFrame:
+        assert isinstance(self, DataFramePointModelResultItem)
         if item is None:
             item = self._selected_item
         else:
@@ -58,33 +84,26 @@ class _DataFrameBase:
         return self.df[[item]]
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+        assert isinstance(self, DataFrameTrackModelResultItem)
         if item is None:
             item = self._selected_item
         item_num = self._get_item_num(item)
         return self.df.iloc[:, [0, 1, item_num]]
 
 
-class DataFrameModelResultItem(_DataFrameBase, ModelResultInterface):
+class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
     @property
     def item_name(self):
         return self.df.columns[0]
 
     def __init__(self, df, name: str = None, item=None):
-        if isinstance(df, (pd.Series, pd.DataFrame)):
-            if not isinstance(df.index, pd.DatetimeIndex):
-                raise TypeError("Index must be DatetimeIndex!")
-        else:
-            raise TypeError("Input must be pandas Series or DataFrame!")
-
         if isinstance(df, pd.Series):
             df = df.to_frame()
             df.columns = ["model"] if name is None else name
+        self._check_dataframe(df)
 
         if item is None:
-            if len(df.columns) == 1:
-                item = df.columns[0]
-            else:
-                raise ValueError("Model ambiguous - please provide item")
+            item = self._get_default_item(df.columns)
 
         item = self._get_item_name(item, df.columns)
         self.df = df[[item]]
@@ -93,11 +112,6 @@ class DataFrameModelResultItem(_DataFrameBase, ModelResultInterface):
         if name is None:
             name = self.item_name
         self.name = name
-
-    def __repr__(self):
-        txt = [f"<DataFrameModelResultItem> '{self.name}'"]
-        txt.append(f"- Item: {self.item_name}")
-        return "\n".join(txt)
 
     def extract_observation(self, observation: PointObservation) -> PointComparer:
         """Compare this ModelResult with an observation
@@ -125,46 +139,27 @@ class DataFrameModelResultItem(_DataFrameBase, ModelResultInterface):
         return comparer
 
 
-class DataFrameModelResult(_DataFrameBase, MultiItemModelResult):
+class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
     @property
     def item_names(self):
         return list(self.df.columns)
 
     def __init__(self, df, name: str = None, item=None):
-        if isinstance(df, (pd.Series, pd.DataFrame)):
-            if not isinstance(df.index, pd.DatetimeIndex):
-                raise TypeError("Index must be DatetimeIndex!")
-        else:
-            raise TypeError("Input must be pandas Series or DataFrame!")
-
         if isinstance(df, pd.Series):
             df = df.to_frame()
             df.columns = ["model"] if name is None else name
+        self._check_dataframe(df)
         self.df = df
 
-        self._selected_item = None
-        if item is None:
-            if len(df.columns) == 1:
-                self._selected_item = df.columns[0]
-        else:
-            self._selected_item = self._get_item_name(item)
+        self._selected_item = self._get_selected_item(df.columns, item)
 
         if name is None:
-            if self._selected_item is None:
-                name = "model"
-            else:
-                name = self._selected_item
+            name = self._selected_item if self._selected_item else "model"
         self.name = name
 
         self._mr_items = {}
         for it in self.item_names:
-            self._mr_items[it] = DataFrameModelResultItem(self.df, self.name, it)
-
-    def __repr__(self):
-        txt = [f"<DataFrameModelResult> '{self.name}'"]
-        for j, item in enumerate(self.item_names):
-            txt.append(f"- Item: {j}: {item}")
-        return "\n".join(txt)
+            self._mr_items[it] = DataFramePointModelResultItem(self.df, self.name, it)
 
 
 class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
@@ -173,17 +168,9 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
         return self.df.columns[-1]
 
     def __init__(self, df, name: str = None, item=None):
-        if isinstance(df, pd.DataFrame):
-            if not isinstance(df.index, pd.DatetimeIndex):
-                raise TypeError("Index must be DatetimeIndex!")
-        else:
-            raise TypeError("Input must be pandas DataFrame!")
-
+        self._check_dataframe(df)
         if item is None:
-            if len(df.columns) == 3:
-                item = df.columns[-1]
-            else:
-                raise ValueError("Model ambiguous - please provide item")
+            item = self._get_default_item(df.columns[2:])
 
         if not df.index.is_unique:
             df.index = make_unique_index(df.index)
@@ -196,11 +183,6 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
         if name is None:
             name = self.item_name
         self.name = name
-
-    def __repr__(self):
-        txt = [f"<DataFrameTrackModelResultItem> '{self.name}'"]
-        txt.append(f"- Item: {self.item_name}")
-        return "\n".join(txt)
 
     def extract_observation(self, observation: TrackObservation) -> TrackComparer:
         """Compare this ModelResult with an observation
@@ -234,37 +216,18 @@ class DataFrameTrackModelResult(_DataFrameBase, MultiItemModelResult):
         return list(self.df.columns[2:])
 
     def __init__(self, df, name: str = None, item=None):
-        if isinstance(df, pd.DataFrame):
-            if not isinstance(df.index, pd.DatetimeIndex):
-                raise TypeError("Index must be DatetimeIndex!")
-        else:
-            raise TypeError("Input must be pandas DataFrame!")
-
+        self._check_dataframe(df)
         if not df.index.is_unique:
             df.index = make_unique_index(df.index)
 
         self.df = df
-
-        self._selected_item = None
-        if item is None:
-            if len(df.columns) == 3:
-                self._selected_item = df.columns[-1]
-        else:
-            self._selected_item = self._get_item_name(item)
+        self._selected_item = self._get_selected_item(df.columns[2:], item)
 
         if name is None:
-            if self._selected_item is None:
-                name = "model"
-            else:
-                name = self._selected_item
+            name = self._selected_item if self._selected_item else "model"
         self.name = name
 
         self._mr_items = {}
         for it in self.item_names:
             self._mr_items[it] = DataFrameTrackModelResultItem(self.df, self.name, it)
 
-    def __repr__(self):
-        txt = [f"<DataFrameTrackModelResult> '{self.name}'"]
-        for j, item in enumerate(self.item_names):
-            txt.append(f"- Item: {j}: {item}")
-        return "\n".join(txt)
