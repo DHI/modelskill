@@ -33,7 +33,7 @@ class BaseComparer:
 
     # observation = None
     obs_name = "Observation"
-    _obs_names: List[str]
+    # _obs_names: List[str]
     _mod_names: List[str]
     _mod_colors = [
         "#004165",
@@ -98,6 +98,10 @@ class BaseComparer:
     def name(self) -> str:
         """name of comparer (=observation)"""
         return self.observation.name
+
+    @property
+    def _obs_names(self):
+        return [self.observation.name]
 
     @property
     def residual(self):
@@ -202,7 +206,7 @@ class BaseComparer:
         self.observation = deepcopy(observation)
         self._obs_unit_text = self.observation._unit_text()
         self.mod_data = {}
-        self._obs_names = [observation.name]
+        # self._obs_names = [observation.name]
         self._var_names = [observation.variable_name]
         self._itemInfos = [observation.itemInfo]
 
@@ -1125,13 +1129,7 @@ class SingleObsComparer(BaseComparer):
         """
         # only for improved documentation
         return super().skill(
-            model=model,
-            by=by,
-            start=start,
-            end=end,
-            area=area,
-            df=df,
-            metrics=metrics,
+            model=model, by=by, start=start, end=end, area=area, df=df, metrics=metrics,
         )
 
     def score(
@@ -1187,12 +1185,7 @@ class SingleObsComparer(BaseComparer):
             raise ValueError("metric must be a string or a function")
 
         s = self.skill(
-            metrics=[metric],
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-            df=df,
+            metrics=[metric], model=model, start=start, end=end, area=area, df=df,
         )
         if s is None:
             return
@@ -1300,13 +1293,7 @@ class SingleObsComparer(BaseComparer):
         """
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        s = self.skill(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-            metrics=metrics,
-        )
+        s = self.skill(model=model, start=start, end=end, area=area, metrics=metrics,)
         if s is None:
             return
         df = s.df
@@ -1593,6 +1580,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._var_names = value
 
     @property
+    def _obs_names(self):
+        return [c.observation.name for c in self.comparers.values()]
+
+    @property
     def obs_names(self):
         """List of observation names"""
         return self._obs_names
@@ -1631,7 +1622,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
     def __init__(self):
         self.comparers = {}
         self._mod_names = []
-        self._obs_names = []
+        # self._obs_names = []
         self._var_names = []
         self._itemInfos = []
 
@@ -1691,7 +1682,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         for mod_name in comparer.mod_names:
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
-        self._obs_names.append(comparer.observation.name)
+        # self._obs_names.append(comparer.observation.name)
         if comparer.observation.variable_name not in self._var_names:
             self._var_names.append(comparer.observation.variable_name)
 
@@ -1829,7 +1820,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
     def _parse_weights(self, weights, observations):
 
         if observations is None:
-            observations = self._obs_names
+            observations = self.obs_names
         else:
             observations = [observations] if np.isscalar(observations) else observations
             observations = [self._get_obs_name(o) for o in observations]
