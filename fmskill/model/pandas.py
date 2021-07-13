@@ -194,7 +194,7 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
 
         Returns
         -------
-        <fmskill.PointComparer>
+        <fmskill.TrackComparer>
             A comparer object for further analysis or plotting
         """
         if isinstance(observation, TrackObservation):
