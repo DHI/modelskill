@@ -58,7 +58,7 @@ class _DataFrameBase:
                 return None
         if isinstance(item, eum.ItemInfo):
             item = item.name
-        if isinstance(item, int):
+        elif isinstance(item, int):
             if item < 0:
                 item = n_items + item
             if (item < 0) or (item >= n_items):
@@ -86,13 +86,6 @@ class _DataFrameBase:
         else:
             item = self._get_item_name(item)
         return self.df[[item]]
-
-    def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
-        assert isinstance(self, DataFrameTrackModelResultItem)
-        if item is None:
-            item = self._selected_item
-        item_num = self._get_item_num(item)
-        return self.df.iloc[:, [self._x, self._y, item_num]]
 
 
 class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
@@ -223,6 +216,13 @@ class _DataFrameTrackBase(_DataFrameBase):
         """All columns except x- and y- column"""
         col_ids = [j for j in range(len(cols)) if (j != self._x and j != self._y)]
         return cols[col_ids]
+
+    def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+        assert isinstance(self, DataFrameTrackModelResultItem)
+        if item is None:
+            item = self._selected_item
+        item_num = self._get_item_num(item)
+        return self.df.iloc[:, [self._x, self._y, item_num]]
 
 
 class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
