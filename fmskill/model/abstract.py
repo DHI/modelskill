@@ -28,6 +28,11 @@ class ModelResultInterface(ABC):  # pragma: no cover
     def extract_observation(self, observation) -> BaseComparer:
         pass
 
+    def __repr__(self):
+        txt = [f"<{self.__class__.__name__}> '{self.name}'"]
+        txt.append(f"- Item: {self.item_name}")
+        return "\n".join(txt)
+
 
 class MultiItemModelResult(ABC, Mapping):  # pragma: no cover
     _mr_items = None
@@ -62,3 +67,9 @@ class MultiItemModelResult(ABC, Mapping):  # pragma: no cover
     @abstractmethod
     def end_time(self):
         pass
+
+    def __repr__(self):
+        txt = [f"<{self.__class__.__name__}> '{self.name}'"]
+        for j, item in enumerate(self.item_names):
+            txt.append(f"- Item: {j}: {item}")
+        return "\n".join(txt)

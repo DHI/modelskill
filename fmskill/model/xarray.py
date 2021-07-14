@@ -67,8 +67,12 @@ class _XarrayBase:
         # if isinstance(item, eum.ItemInfo):
         #     item = item.name
         if isinstance(item, int):
+            if item < 0:
+                item = n_items + item
             if (item < 0) or (item >= n_items):
-                raise ValueError(f"item must be between 0 and {n_items-1}")
+                raise ValueError(
+                    f"item must be between 0 and {n_items-1} (or {-n_items} and -1)"
+                )
             item = item_names[item]
         elif isinstance(item, str):
             if item not in item_names:
@@ -142,11 +146,6 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
             name = self.item_name
         self.name = name
         self._filename = filename
-
-    def __repr__(self):
-        txt = [f"<XArrayModelResultItem> '{self.name}'"]
-        txt.append(f"- Item: {self.item_name}")
-        return "\n".join(txt)
 
     def extract_observation(self, observation: PointObservation) -> PointComparer:
         """Compare this ModelResult with an observation
@@ -233,9 +232,3 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         if len(new_names) > 0:
             ds = ds.rename(new_names)
         return ds
-
-    def __repr__(self):
-        txt = [f"<XArrayModelResult> '{self.name}'"]
-        for j, item in enumerate(self.item_names):
-            txt.append(f"- Item: {j}: {item}")
-        return "\n".join(txt)

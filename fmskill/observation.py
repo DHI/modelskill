@@ -38,6 +38,8 @@ class Observation:
     def __init__(
         self, name: str = None, df=None, itemInfo=None, variable_name: str = None
     ):
+        if name is None:
+            name = "Observation"
         self.name = name
         if not isinstance(df.index, pd.DatetimeIndex):
             raise TypeError(
@@ -106,6 +108,7 @@ class Observation:
 
     def copy(self):
         return self.__copy__()
+
 
 class PointObservation(Observation):
     """Class for observations of fixed locations
@@ -194,6 +197,8 @@ class PointObservation(Observation):
                 df = df[[item]]
                 default_name = item
             elif isinstance(item, int):
+                if item < 0:
+                    item = len(df.columns) + item
                 default_name = df.columns[item]
                 df = df.iloc[:, item]
             else:
@@ -329,7 +334,7 @@ class TrackObservation(Observation):
         self._filename = None
         self._item = None
 
-        if isinstance(filename, pd.DataFrame):  # or isinstance(filename, pd.Series):
+        if isinstance(filename, pd.DataFrame):
             df = filename
             df = df.iloc[:, [0, 1, item]]
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
