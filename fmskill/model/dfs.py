@@ -54,8 +54,12 @@ class _DfsBase:
         if isinstance(item, eum.ItemInfo):
             item = item.name
         if isinstance(item, int):
+            if item < 0:
+                item = n_items + item
             if (item < 0) or (item >= n_items):
-                raise ValueError(f"item must be between 0 and {n_items-1}")
+                raise ValueError(
+                    f"item must be between 0 and {n_items-1} (or {-n_items} and -1)"
+                )
         elif isinstance(item, str):
             item_names = [i.name for i in items]
             if item not in item_names:
