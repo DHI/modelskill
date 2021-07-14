@@ -104,23 +104,24 @@ def test_track_df_modelresult(track_df):
 def test_track_df_tweak_modelresult(track_df):
     df = track_df
     # Reorder columns
-    df = df[
-        [
-            "surface_elevation",
-            "lon",
-            "lat",
-        ]
-    ]
+    df = df[["surface_elevation", "lon", "lat",]]
 
     # Which columns are used for position, lon and lat?
-    mr1 = ModelResult(df, type="track")
+    with pytest.raises(ValueError):
+        ModelResult(df, type="track")
+
+    mr1 = ModelResult(df, type="track", x=1, y="lat")
     assert isinstance(mr1, ModelResultInterface)
     assert mr1.item_name == "surface_elevation"
 
     # Rename
     df.columns = ["wl", "longitude", "latitude"]
-
-    mr3 = ModelResult(df, type="track")
+    df["ones"] = 1.0  # add extra column
+    
+    with pytest.raises(ValueError):
+        ModelResult(df, type="track")
+    
+    mr3 = ModelResult(df, type="track", x="longitude", y="latitude")
     mr4 = mr3["wl"]
     assert isinstance(mr4, ModelResultInterface)
 
