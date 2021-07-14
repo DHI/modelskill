@@ -59,8 +59,12 @@ class _DataFrameBase:
         if isinstance(item, eum.ItemInfo):
             item = item.name
         if isinstance(item, int):
+            if item < 0:
+                item = n_items + item
             if (item < 0) or (item >= n_items):
-                raise ValueError(f"item must be between 0 and {n_items-1}")
+                raise ValueError(
+                    f"item must be between 0 and {n_items-1} (or {-n_items} and -1)"
+                )
             item = item_names[item]
         elif isinstance(item, str):
             if item not in item_names:
@@ -88,7 +92,7 @@ class _DataFrameBase:
         if item is None:
             item = self._selected_item
         item_num = self._get_item_num(item)
-        return self.df.iloc[:, [0, 1, item_num]]
+        return self.df.iloc[:, [self._x, self._y, item_num]]
 
 
 class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
@@ -162,22 +166,83 @@ class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
             self._mr_items[it] = DataFramePointModelResultItem(self.df, self.name, it)
 
 
-class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
+class _DataFrameTrackBase(_DataFrameBase):
+    def _parse_x_y_columns(self, df, x, y):
+        if x is None:
+            x = _DataFrameTrackBase._get_default_x_idx(df.columns[0])
+        else:
+            x = _DataFrameTrackBase._get_col_idx(df.columns, x)
+
+        if y is None:
+            y = _DataFrameTrackBase._get_default_y_idx(df.columns[1])
+        else:
+            y = _DataFrameTrackBase._get_col_idx(df.columns, y)
+        return x, y
+
+    @staticmethod
+    def _get_default_x_idx(n):
+        n = n.lower()
+        if (n == "x") or ("lon" in n) or ("east" in n):
+            return 0
+        else:
+            raise ValueError(
+                f"First column '{n}' does not seem like a plausible x-coordinate column name. Please provide explicitly using the 'x' keyword."
+            )
+
+    @staticmethod
+    def _get_default_y_idx(n):
+        n = n.lower()
+        if (n == "y") or ("lat" in n) or ("north" in n):
+            return 1
+        else:
+            raise ValueError(
+                f"Second column '{n}' does not seem like a plausible y-coordinate column name. Please provide explicitly using the 'y' keyword."
+            )
+
+    @staticmethod
+    def _get_col_idx(cols, col):
+        if isinstance(col, str):
+            col = list(cols).index(col)
+        elif isinstance(col, int):
+            if col < 0:
+                col = len(cols) + col
+            if (col < 0) or (col >= len(cols)):
+                raise ValueError(
+                    f"column must be between 0 and {len(cols)-1} (or {-len(cols)} and -1)"
+                )
+        else:
+            raise TypeError("column must be given as int or str")
+        return col
+
+    @property
+    def _val_cols(self):
+        """All columns except x- and y- column"""
+        return self._get_val_cols(self.df.columns)
+
+    def _get_val_cols(self, cols):
+        """All columns except x- and y- column"""
+        col_ids = [j for j in range(len(cols)) if (j != self._x and j != self._y)]
+        return cols[col_ids]
+
+
+class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
     @property
     def item_name(self):
-        return self.df.columns[-1]
+        return self._selected_item
 
-    def __init__(self, df, name: str = None, item=None):
+    def __init__(self, df, name: str = None, item=None, x=None, y=None):
+        self._x, self._y = self._parse_x_y_columns(df, x, y)
         self._check_dataframe(df)
         if item is None:
-            item = self._get_default_item(df.columns[2:])
+            val_cols = self._get_val_cols(df.columns)
+            item = self._get_default_item(val_cols)
 
         if not df.index.is_unique:
             df.index = make_unique_index(df.index)
 
         item_num = self._get_item_num(item, list(df.columns))
-        self.df = df.iloc[:, [0, 1, item_num]]
-        item = self._get_item_name(item, df.columns)
+        self.df = df.iloc[:, [self._x, self._y, item_num]]
+        item = self._get_item_name(item, self.df.columns)
         self._selected_item = item
 
         if name is None:
@@ -210,18 +275,19 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
         return comparer
 
 
-class DataFrameTrackModelResult(_DataFrameBase, MultiItemModelResult):
+class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
     @property
     def item_names(self):
-        return list(self.df.columns[2:])
+        return list(self._val_cols)
 
-    def __init__(self, df, name: str = None, item=None):
+    def __init__(self, df, name: str = None, item=None, x=None, y=None):
+        self._x, self._y = self._parse_x_y_columns(df, x, y)
         self._check_dataframe(df)
         if not df.index.is_unique:
             df.index = make_unique_index(df.index)
 
         self.df = df
-        self._selected_item = self._get_selected_item(df.columns[2:], item)
+        self._selected_item = self._get_selected_item(self._val_cols, item)
 
         if name is None:
             name = self._selected_item if self._selected_item else "model"
@@ -229,5 +295,7 @@ class DataFrameTrackModelResult(_DataFrameBase, MultiItemModelResult):
 
         self._mr_items = {}
         for it in self.item_names:
-            self._mr_items[it] = DataFrameTrackModelResultItem(self.df, self.name, it)
+            self._mr_items[it] = DataFrameTrackModelResultItem(
+                self.df, name=self.name, item=it, x=x, y=y
+            )
 
