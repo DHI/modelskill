@@ -197,6 +197,8 @@ class PointObservation(Observation):
                 df = df[[item]]
                 default_name = item
             elif isinstance(item, int):
+                if item < 0:
+                    item = len(df.columns) + item
                 default_name = df.columns[item]
                 df = df.iloc[:, item]
             else:
