@@ -1,10 +1,11 @@
 from datetime import datetime
+import numpy as np
 import pandas as pd
 import pytest
 
 from mikeio import Dfs0, eum
 from fmskill import ModelResult, PointObservation, TrackObservation
-from fmskill.model.abstract import ModelResultInterface
+from fmskill.model.abstract import ModelResultInterface, MultiItemModelResult
 from fmskill.model import DataFramePointModelResult, DataFramePointModelResultItem
 from fmskill.model.pandas import (
     DataFrameTrackModelResult,
@@ -23,6 +24,12 @@ def point_df():
 def track_df():
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     return pd.read_csv(fn, index_col=0, parse_dates=True)
+
+
+@pytest.fixture
+def track_from_dfs0():
+    fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"
+    return Dfs0(fn).to_dataframe()
 
 
 def test_df_modelresultitem(point_df):
@@ -101,6 +108,24 @@ def test_track_df_modelresult(track_df):
     assert isinstance(mr4, ModelResultInterface)
 
 
+def test_track_from_dfs0_df_modelresult(track_from_dfs0):
+    df = track_from_dfs0
+    mr1 = ModelResult(df, type="track")
+    assert isinstance(mr1, MultiItemModelResult)
+    assert isinstance(mr1, DataFrameTrackModelResult)
+    assert len(df.columns) == 4
+    assert len(mr1.item_names) == 2
+
+    mr2 = mr1[-1]
+    assert len(mr2.df) == len(mr1.df)
+    assert isinstance(mr2, ModelResultInterface)
+    assert mr2.item_name == "Model_wind_speed"
+
+    mr3 = mr1["Model_wind_speed"]
+    assert np.nansum(mr3.df.to_numpy()) == np.nansum(mr2.df.to_numpy())
+    assert mr3.item_name == "Model_wind_speed"
+
+
 def test_track_df_tweak_modelresult(track_df):
     df = track_df
     # Reorder columns
@@ -117,10 +142,10 @@ def test_track_df_tweak_modelresult(track_df):
     # Rename
     df.columns = ["wl", "longitude", "latitude"]
     df["ones"] = 1.0  # add extra column
-    
+
     with pytest.raises(ValueError):
         ModelResult(df, type="track")
-    
+
     mr3 = ModelResult(df, type="track", x="longitude", y="latitude")
     mr4 = mr3["wl"]
     assert isinstance(mr4, ModelResultInterface)
