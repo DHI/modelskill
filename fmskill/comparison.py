@@ -272,7 +272,9 @@ class BaseComparer:
             if obs >= 0 and obs < self.n_observations:
                 obs_id = obs
             else:
-                raise IndexError(f"obs id {obs} is out of range (0, {self.n_observations-1})")
+                raise IndexError(
+                    f"obs id {obs} is out of range (0, {self.n_observations-1})"
+                )
 
         else:
             raise TypeError("observation must be None, str or int")
@@ -295,7 +297,9 @@ class BaseComparer:
             if var >= 0 and var < self.n_variables:
                 var_id = var
             else:
-                raise IndexError(f"var id {var} is out of range (0, {self.n_variables-1})")
+                raise IndexError(
+                    f"var id {var} is out of range (0, {self.n_variables-1})"
+                )
         else:
             raise TypeError("variable must be None, str or int")
         return var_id
@@ -1627,6 +1631,12 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         return str.join("\n", out)
 
     def __getitem__(self, x):
+        if isinstance(x, slice):
+            cc = ComparerCollection()
+            for xi in range(*x.indices(len(self))):
+                cc.add_comparer(self[xi])
+            return cc
+
         if isinstance(x, int):
             x = self._get_obs_name(x)
 
