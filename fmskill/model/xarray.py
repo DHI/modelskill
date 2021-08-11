@@ -67,18 +67,16 @@ class _XarrayBase:
         # if isinstance(item, eum.ItemInfo):
         #     item = item.name
         if isinstance(item, int):
-            if item < 0:
+            if item < 0:  # Handle negative indices
                 item = n_items + item
             if (item < 0) or (item >= n_items):
-                raise ValueError(
-                    f"item must be between 0 and {n_items-1} (or {-n_items} and -1)"
-                )
+                raise IndexError(f"item {item} out of range (0, {n_items-1})")
             item = item_names[item]
         elif isinstance(item, str):
             if item not in item_names:
-                raise ValueError(f"item must be one of {item_names}")
+                raise KeyError(f"item must be one of {item_names}")
         else:
-            raise ValueError("item must be int or string")
+            raise TypeError("item must be int or string")
         return item
 
     def _get_item_num(self, item) -> int:
