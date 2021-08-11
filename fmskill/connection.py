@@ -473,11 +473,13 @@ class Connector(_BaseConnector, Mapping, Sequence):
                     f"connection {obs} could not be found in {self.obs_names}"
                 )
         elif isinstance(obs, int):
+            if obs < 0:  # Handle negative indices
+                obs += n_con
             if obs >= 0 and obs < n_con:
                 obs_id = obs
             else:
                 raise IndexError(
-                    f"connection id was {obs} - must be within 0 and {n_con-1}"
+                    f"connection id {obs} is out of range (0, {n_con-1})"
                 )
         else:
             raise KeyError("connection must be None, str or int")
