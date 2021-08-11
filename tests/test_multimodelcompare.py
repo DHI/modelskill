@@ -95,13 +95,13 @@ def test_mm_skill_model(cc):
 
 
 def test_mm_skill_missing_model(cc):
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         cc.skill(model="SW_3")
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         cc.skill(model=999)
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, IndexError)):
         cc.skill(model=[999, "SW_2"])
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         cc.skill(model=[0.1])
 
 
@@ -121,7 +121,7 @@ def test_mm_skill_missing_obs(cc, o1):
         cc.skill(observation=999)
     with pytest.raises((KeyError, IndexError)):
         cc.skill(observation=["c2", 999])
-    with pytest.raises(KeyError):
+    with pytest.raises(TypeError):
         cc.skill(observation=[o1])
 
 
@@ -195,7 +195,7 @@ def test_mm_skill_metrics(cc):
         cc.skill(model="SW_1", metrics=["mean_se"])
     with pytest.raises(AttributeError):
         cc.skill(model="SW_1", metrics=[mtr.fake])
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         cc.skill(model="SW_1", metrics=[47])
 
 
