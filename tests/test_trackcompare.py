@@ -43,7 +43,10 @@ def test_extract_no_time_overlap(modelresult, observation_df):
     df.index = df.index + np.timedelta64(100, "D")
     o = TrackObservation(df, item=2, name="alti")
 
-    con = Connector(o, mr[2])
+    with pytest.raises(ValueError, match="Validation failed"):
+        Connector(o, mr[2])
+
+    con = Connector(o, mr[2], validate=False)
     cc = con.extract()
 
     assert cc.n_comparers == 0
