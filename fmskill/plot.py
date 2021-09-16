@@ -226,7 +226,7 @@ def plot_observation_positions(
     return ax
 
 
-TaylorPoint = namedtuple("TaylorPoint", "name std cc marker marker_size")
+TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size")
 
 
 def taylor_diagram(obs_std, points, figsize=(7, 7), obs_text="Observations"):

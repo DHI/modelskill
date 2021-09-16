@@ -1019,7 +1019,9 @@ class BaseComparer:
         df.columns = ["std", "cc"]
         # df["marker"] = "o"
         # df["marker_size"] = 6
-        pts = [TaylorPoint(r.Index, r.std, r.cc, "o", 6) for r in df.itertuples()]
+        pts = [
+            TaylorPoint(r.Index, ref_std, r.std, r.cc, "o", 6) for r in df.itertuples()
+        ]
 
         taylor_diagram(obs_std=ref_std, points=pts, figsize=figsize)
 
@@ -1316,7 +1318,9 @@ class SingleObsComparer(BaseComparer):
         df.columns = ["std", "cc"]
         # df["marker"] = "o"
         # df["marker_size"] = 6
-        pts = [TaylorPoint(r.Index, r.std, r.cc, "o", 6) for r in df.itertuples()]
+        pts = [
+            TaylorPoint(r.Index, ref_std, r.std, r.cc, "o", 6) for r in df.itertuples()
+        ]
 
         taylor_diagram(
             obs_std=ref_std, points=pts, figsize=figsize, obs_text=f"Obs: {self.name}"
