@@ -959,6 +959,8 @@ class BaseComparer:
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
+        normalized: bool = False,
+        aggregate: bool = True,
         figsize: List[float] = (7, 7),
     ):
         """Taylor diagram showing model std and correlation to observation
@@ -982,6 +984,11 @@ class BaseComparer:
             by default None
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
+        normalized : bool, optional
+            plot std normalized with observation std, default False
+        aggregate : bool, optional
+            should multiple observations be aggregated before plotting
+            (or shown individually), default True
         figsize : tuple, optional
             width and height of the figure (should be square), by default (7, 7)
 
@@ -1010,20 +1017,23 @@ class BaseComparer:
             return
 
         df = s.df
-        ref_std = df.iloc[0]["_std_obs"]
+        ref_std = 1.0 if normalized else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
             df.index = df.index.map("_".join)
 
-        df = df[["_std_mod", "cc"]].copy()
-        df.columns = ["std", "cc"]
+        df = df[["_std_obs", "_std_mod", "cc"]].copy()
+        df.columns = ["obs_std", "std", "cc"]
         # df["marker"] = "o"
         # df["marker_size"] = 6
         pts = [
-            TaylorPoint(r.Index, ref_std, r.std, r.cc, "o", 6) for r in df.itertuples()
+            TaylorPoint(r.Index, r.obs_std, r.std, r.cc, "o", 6)
+            for r in df.itertuples()
         ]
 
-        taylor_diagram(obs_std=ref_std, points=pts, figsize=figsize)
+        taylor_diagram(
+            obs_std=ref_std, points=pts, figsize=figsize, normalized=normalized
+        )
 
 
 class SingleObsComparer(BaseComparer):
@@ -1269,6 +1279,7 @@ class SingleObsComparer(BaseComparer):
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
+        normalized: bool = False,
         figsize: List[float] = (7, 7),
     ):
         """Taylor diagram showing model std and correlation to observation
@@ -1288,6 +1299,8 @@ class SingleObsComparer(BaseComparer):
             by default None
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
+        normalized : bool, optional
+            plot std normalized with observation std, default False
         figsize : tuple, optional
             width and height of the figure (should be square), by default (7, 7)
 
@@ -1312,18 +1325,23 @@ class SingleObsComparer(BaseComparer):
         if s is None:
             return
         df = s.df
-        ref_std = df.iloc[0]["_std_obs"]
+        ref_std = 1.0 if normalized else df.iloc[0]["_std_obs"]
 
-        df = df[["_std_mod", "cc"]].copy()
-        df.columns = ["std", "cc"]
+        df = df[["_std_obs", "_std_mod", "cc"]].copy()
+        df.columns = ["obs_std", "std", "cc"]
         # df["marker"] = "o"
         # df["marker_size"] = 6
         pts = [
-            TaylorPoint(r.Index, ref_std, r.std, r.cc, "o", 6) for r in df.itertuples()
+            TaylorPoint(r.Index, r.obs_std, r.std, r.cc, "o", 6)
+            for r in df.itertuples()
         ]
 
         taylor_diagram(
-            obs_std=ref_std, points=pts, figsize=figsize, obs_text=f"Obs: {self.name}"
+            obs_std=ref_std,
+            points=pts,
+            figsize=figsize,
+            obs_text=f"Obs: {self.name}",
+            normalized=normalized,
         )
 
     def remove_bias(self, correct="Model"):
