@@ -44,9 +44,6 @@ Examples
 from typing import Tuple
 import warnings
 import numpy as np
-from scipy.stats import linregress as _linregress
-import scipy.stats
-from scipy import odr
 
 
 def bias(obs, model) -> float:
@@ -268,6 +265,8 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     --------
     corrcoef
     """
+    import scipy.stats
+
     return scipy.stats.spearmanr(obs, model)[0]
 
 
@@ -363,10 +362,14 @@ def _linear_regression(
         return np.nan
 
     if reg_method == "ols":
+        from scipy.stats import linregress as _linregress
+
         reg = _linregress(obs, model)
         intercept = reg.intercept
         slope = reg.slope
     elif reg_method == "odr":
+        from scipy import odr
+
         data = odr.Data(obs, model)
         odr_obj = odr.ODR(data, odr.unilinear)
         output = odr_obj.run()
