@@ -13,6 +13,7 @@ setuptools.setup(
         "numpy",
         "pandas",
         "mikeio >= 0.7",
+        "shapely >= 1.7.0",
         "matplotlib",
         "xarray",
         "markdown",
@@ -25,10 +26,14 @@ setuptools.setup(
             "sphinx",
             "sphinx-rtd-theme",
             "black==20.8b1",
-            "shapely",
             "plotly >= 4.5",
         ],
-        "test": ["pytest", "shapely", "netCDF4", "openpyxl", "dask",],
+        "test": [
+            "pytest",
+            "netCDF4",
+            "openpyxl",
+            "dask",
+        ],
     },
     entry_points="""
         [console_scripts]
