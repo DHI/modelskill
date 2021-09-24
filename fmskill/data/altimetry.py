@@ -231,7 +231,7 @@ class AltimetryData:
             dfsub = df[df.satellite == sat]
             print(f"Satellite {sat} has {len(dfsub)} records")
             if details > 1:
-                print(dfsub.drop(["lon", "lat"], axis=1).describe())
+                print(dfsub.drop(["longitude", "latitude"], axis=1).describe())
 
 
 class DHIAltimetryRepository:
@@ -497,7 +497,7 @@ class DHIAltimetryRepository:
         Returns
         -------
         DataFrame
-            With columns 'lon', 'lat', 'adt', 'adt_dhi', 'swh', 'swh_rms' 'wind_speed', ...
+            With columns 'longitude', 'latitude', 'water_level', ...
         """
         if end_time is None:
             end_time = datetime.now()
