@@ -57,7 +57,7 @@ def test_quality_filters(repo):
 def test_get_daily_count(repo):
     area = "lon=10.9&lat=55.9&radius=10.0"
     df = repo.get_daily_count(area, start_time="2021", end_time="2021-1-7")
-    assert df.loc["2021-1-4"].values == 4
+    assert df.loc["2021-1-4"].values > 0
 
 
 @requires_DHI_ALTIMETRY_API_KEY()
@@ -84,7 +84,7 @@ def test_get_spatial_coverage(repo):
     gdf = repo.get_spatial_coverage(
         area="lon=10.9&lat=55.9&radius=40", start_time="2021-1-1", end_time="2021-1-5"
     )
-    assert gdf[["count"]].loc[0].values[0] == 8
+    assert gdf[["count"]].loc[0].values[0] > 0
     gdf.plot("count")
     assert True
 
