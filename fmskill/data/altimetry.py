@@ -26,11 +26,12 @@ class AltimetryData:
     >>> data.satellites
     ['j3', '3a', 'c2', 'sa']
     >>> data.df.columns
-    Index(['lon', 'lat', 'water_level', 'adt', 'wind_speed', 'wind_speed_abdalla',
-           'wind_speed_abdalla_adjusted', 'swh', 'swh_adjusted',
-           'distance_from_land', 'water_depth', 'satellite', 'quality', 'wl_rms',
-           'swh_rms'],
-           dtype='object')
+    Index(['longitude', 'latitude', 'water_level', 'significant_wave_height',
+       'wind_speed', 'distance_from_land', 'water_depth', 'satellite',
+       'quality', 'absolute_dynamic_topography', 'water_level_rms',
+       'significant_wave_height_raw', 'significant_wave_height_rms',
+       'wind_speed_raw', 'wind_speed_rads'],
+      dtype='object')
     >>> data.df.water_level.head(3)
     date
     2021-01-04 15:30:45.051    0.0531
@@ -88,7 +89,13 @@ class AltimetryData:
         if len(df) < 1:
             raise Exception("No data in data frame")
 
-        cols = ["lon", "lat", "water_level", "swh", "wind_speed_abdalla_adjusted"]
+        cols = [
+            "longitude",
+            "latitude",
+            "water_level",
+            "significant_wave_height",
+            "wind_speed",
+        ]
         items = []
         items.append(eum.ItemInfo("Longitude", eum.EUMType.Latitude_longitude))
         items.append(eum.ItemInfo("Latitude", eum.EUMType.Latitude_longitude))
@@ -116,7 +123,13 @@ class AltimetryData:
         j = 0
         for sat in self.satellites:
             dfsub = df[df.satellite == sat]
-            plt.plot(dfsub.lon, dfsub.lat, markers[j], label=sat, markersize=markersize)
+            plt.plot(
+                dfsub.longitude,
+                dfsub.latitude,
+                markers[j],
+                label=sat,
+                markersize=markersize,
+            )
             j = j + 1
         plt.legend(numpoints=1)
         plt.title(f"Altimetry data between {self.start_time} and {self.end_time}")
@@ -137,7 +150,7 @@ class AltimetryData:
         DataFrame
             With datetime index containing the altimetry data
         """
-        df = pd.read_csv(filename, parse_dates=True, index_col="date")
+        df = pd.read_csv(filename, parse_dates=True, index_col="datetime")
         print(f"Succesfully read {len(df)} rows from file {filename}")
         return AltimetryData(df)
 
@@ -684,7 +697,7 @@ class DHIAltimetryRepository:
             df = pd.read_csv(
                 response_data["download_url"],
                 parse_dates=True,
-                index_col="date",
+                index_col="datetime",
                 na_values=self.NA_VALUE,
             )
         else:
