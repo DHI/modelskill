@@ -498,7 +498,7 @@ API documentation: <a class="reference external" href="https://altimetry-shop-da
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>With columns ‘lon’, ‘lat’, ‘adt’, ‘adt_dhi’, ‘swh’, ‘swh_rms’ ‘wind_speed’, …</p>
+<dd class="field-odd"><p>With columns ‘longitude’, ‘latitude’, ‘water_level’, …</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p>DataFrame</p>
@@ -691,11 +691,12 @@ rectangle covering the specified area</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">satellites</span>
 <span class="go">[&#39;j3&#39;, &#39;3a&#39;, &#39;c2&#39;, &#39;sa&#39;]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
-<span class="go">Index([&#39;lon&#39;, &#39;lat&#39;, &#39;water_level&#39;, &#39;adt&#39;, &#39;wind_speed&#39;, &#39;wind_speed_abdalla&#39;,</span>
-<span class="go">       &#39;wind_speed_abdalla_adjusted&#39;, &#39;swh&#39;, &#39;swh_adjusted&#39;,</span>
-<span class="go">       &#39;distance_from_land&#39;, &#39;water_depth&#39;, &#39;satellite&#39;, &#39;quality&#39;, &#39;wl_rms&#39;,</span>
-<span class="go">       &#39;swh_rms&#39;],</span>
-<span class="go">       dtype=&#39;object&#39;)</span>
+<span class="go">Index([&#39;longitude&#39;, &#39;latitude&#39;, &#39;water_level&#39;, &#39;significant_wave_height&#39;,</span>
+<span class="go">   &#39;wind_speed&#39;, &#39;distance_from_land&#39;, &#39;water_depth&#39;, &#39;satellite&#39;,</span>
+<span class="go">   &#39;quality&#39;, &#39;absolute_dynamic_topography&#39;, &#39;water_level_rms&#39;,</span>
+<span class="go">   &#39;significant_wave_height_raw&#39;, &#39;significant_wave_height_rms&#39;,</span>
+<span class="go">   &#39;wind_speed_raw&#39;, &#39;wind_speed_rads&#39;],</span>
+<span class="go">  dtype=&#39;object&#39;)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">water_level</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
 <span class="go">date</span>
 <span class="go">2021-01-04 15:30:45.051    0.0531</span>
