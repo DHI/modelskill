@@ -14,7 +14,6 @@ from mikeio import Dfs0, eum
 from .model import ModelResult
 from .model.dfs import DfsModelResult, DfsModelResultItem
 from .model.pandas import DataFramePointModelResultItem
-from .model.xarray import XArrayModelResult, XArrayModelResultItem
 from .model.abstract import ModelResultInterface, MultiItemModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
