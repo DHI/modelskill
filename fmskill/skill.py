@@ -170,7 +170,7 @@ class AggregatedSkill(SkillDataFrame):
             # raise ValueError(f"name {name} not in index {list(self.index.names)}")
 
     def _id_to_name(self, index, id):
-        """Assumes that index is valid and id is int """
+        """Assumes that index is valid and id is int"""
         if isinstance(id, Iterable):
             name_list = []
             for i in id:
@@ -506,7 +506,7 @@ class AggregatedSkill(SkillDataFrame):
                         f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        sdf = self.df.style.set_precision(precision)
+        sdf = self.df.style.format(precision=precision)
 
         # apply background gradient
         bg_cols = list(set(columns) & set(float_cols))
