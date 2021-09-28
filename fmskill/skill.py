@@ -1,3 +1,4 @@
+import sys
 import warnings
 from collections.abc import Iterable
 import numpy as np
@@ -506,7 +507,11 @@ class AggregatedSkill(SkillDataFrame):
                         f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        sdf = self.df.style.format(precision=precision)
+        sdf = (
+            self.df.style.format(precision=precision)
+            if sys.version_info >= (3, 7)
+            else self.df.style.set_precision(precision)
+        )
 
         # apply background gradient
         bg_cols = list(set(columns) & set(float_cols))
