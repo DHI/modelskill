@@ -804,13 +804,14 @@ file, by default 0 (i.e. only good data)</p></li>
 <span id="connector"></span><h2>Connector<a class="headerlink" href="#module-fmskill.connection" title="Permalink to this headline"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="fmskill.connection.compare">
-<span class="sig-prename descclassname"><span class="pre">fmskill.connection.</span></span><span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.compare" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">fmskill.connection.</span></span><span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.connection.compare" title="Permalink to this definition"></a></dt>
 <dd><p>Quick-and-dirty compare of observation and model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obs</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>Observation</em><em>)</em>) – Observation to be compared</p></li>
 <li><p><strong>mod</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>ModelResultInterface</em><em>)</em>) – Model result to be compared</p></li>
+<li><p><strong>obs_item</strong> (<em>(</em><em>int</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) – observation item, by default None</p></li>
 <li><p><strong>mod_item</strong> (<em>(</em><em>int</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) – model item, by default None</p></li>
 </ul>
 </dd>
