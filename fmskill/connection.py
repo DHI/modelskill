@@ -20,7 +20,7 @@ from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 
 
-def compare(obs, mod, mod_item=None):
+def compare(obs, mod, obs_item=None, mod_item=None):
     """Quick-and-dirty compare of observation and model
 
     Parameters
@@ -29,6 +29,8 @@ def compare(obs, mod, mod_item=None):
         Observation to be compared
     mod : (str, pd.DataFrame, ModelResultInterface)
         Model result to be compared
+    obs_item : (int, str), optional
+        observation item, by default None
     mod_item : (int, str), optional
         model item, by default None
 
@@ -38,8 +40,13 @@ def compare(obs, mod, mod_item=None):
         A comparer object for further analysis and plotting
     """
     # return SingleConnection(obs, mod).extract()
-    if not isinstance(obs, Observation):
-        obs = PointObservation(obs)
+    if isinstance(obs, Observation):
+        if obs_item is not None:
+            raise ValueError(
+                "obs_item argument not allowed if obs is an fmskill.Observation type"
+            )
+    else:
+        obs = PointObservation(obs, item=obs_item)
 
     mod = _parse_model(mod, mod_item)
     return PointComparer(obs, mod)
