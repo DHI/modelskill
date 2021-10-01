@@ -176,7 +176,7 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
     error = 1 - (
         np.sum((obs.ravel() - model.ravel()) ** 2)
-        / np.sum((model.ravel() - np.mean(model.ravel())) ** 2)
+        / np.sum((obs.ravel() - np.mean(obs.ravel())) ** 2)
     )
 
     return error
