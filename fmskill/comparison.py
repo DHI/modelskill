@@ -1130,7 +1130,13 @@ class SingleObsComparer(BaseComparer):
         """
         # only for improved documentation
         return super().skill(
-            model=model, by=by, start=start, end=end, area=area, df=df, metrics=metrics,
+            model=model,
+            by=by,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
+            metrics=metrics,
         )
 
     def score(
@@ -1186,7 +1192,12 @@ class SingleObsComparer(BaseComparer):
             raise ValueError("metric must be a string or a function")
 
         s = self.skill(
-            metrics=[metric], model=model, start=start, end=end, area=area, df=df,
+            metrics=[metric],
+            model=model,
+            start=start,
+            end=end,
+            area=area,
+            df=df,
         )
         if s is None:
             return
@@ -1294,7 +1305,13 @@ class SingleObsComparer(BaseComparer):
         """
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        s = self.skill(model=model, start=start, end=end, area=area, metrics=metrics,)
+        s = self.skill(
+            model=model,
+            start=start,
+            end=end,
+            area=area,
+            metrics=metrics,
+        )
         if s is None:
             return
         df = s.df
@@ -1616,7 +1633,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         self._all_df = None
         self._start = datetime(2900, 1, 1)
-        self._end = datetime(1, 1, 1)        
+        self._end = datetime(1, 1, 1)
         self.comparers = {}
         self._mod_names = []
         self._obs_names = []
