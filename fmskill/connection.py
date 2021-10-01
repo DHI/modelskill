@@ -50,7 +50,7 @@ def _parse_model(mod, item=None):
         dfs = Dfs0(mod)
         if (len(dfs.items) > 1) and (item is None):
             raise ValueError("Model ambiguous - please provide item")
-        mod = dfs.read().to_dataframe()
+        mod = dfs.read(items=item).to_dataframe()
     elif isinstance(mod, pd.DataFrame):
         if len(mod.columns) > 1:
             raise ValueError("Model ambiguous - please provide item")
@@ -67,6 +67,9 @@ def _parse_model(mod, item=None):
         if mod.item is None:
             raise ValueError("Model ambiguous - please provide item")
         mod = mod._extract_point_dfs0(mod.item).to_dataframe()
+
+    assert mod.shape[1] == 1  # A single item
+
     return mod
 
 
