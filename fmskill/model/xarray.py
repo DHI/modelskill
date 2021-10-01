@@ -10,9 +10,6 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 
 
 class _XarrayBase:
-    ds = None
-    itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
-
     @property
     def start_time(self):
         return pd.Timestamp(self.ds.time.values[0])
@@ -131,6 +128,8 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
     def __init__(self, ds, name: str = None, item=None, filename=None):
         import xarray as xr
 
+        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+
         if isinstance(ds, (xr.DataArray, xr.Dataset)):
             self._validate_time_axis(ds)
         else:
@@ -191,6 +190,8 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
 
     def __init__(self, input, name: str = None, item=None, **kwargs):
         import xarray as xr
+
+        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
 
         self._filename = None
         if isinstance(input, str) and ("*" not in input):
