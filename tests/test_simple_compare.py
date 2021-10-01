@@ -3,6 +3,7 @@ import numpy as np
 from mikeio import Dfs0
 from datetime import datetime
 import fmskill
+from fmskill.observation import PointObservation
 
 
 @pytest.fixture
@@ -25,9 +26,7 @@ def test_compare(fn_obs, fn_mod):
 
 def test_compare_mod_item(fn_obs, fn_mod):
     c = fmskill.compare(fn_obs, fn_mod, mod_item=0)
-
     dfs = Dfs0(fn_mod)
-
     assert c.mod_names[0] == dfs.items[0].name
 
 
@@ -62,3 +61,48 @@ def test_compare_fail(fn_obs, fn_mod):
     with pytest.raises(ValueError):
         # multiple items in obs df -> ambigous
         fmskill.compare(df_obs2, fn_mod2)
+
+
+def test_compare_obs_item(fn_mod):
+
+    c = fmskill.compare(
+        "tests/testdata/SW/eur_Hm0.dfs0", fn_mod, mod_item=0
+    )  # obs file has only 1 item, not necessary to specify obs_item
+    assert c.n_points == 67
+
+    with pytest.raises(ValueError):
+        fmskill.compare(
+            "tests/testdata/SW/eur_Hm0.dfs0", fn_mod, mod_item=0, obs_item=1
+        )  # file has only 1 item
+
+    c = fmskill.compare(
+        "tests/testdata/SW/eur_Hm0_Quality.dfs0", fn_mod, mod_item=0, obs_item=0
+    )
+    assert c.n_points == 67
+
+    with pytest.raises(ValueError):
+        fmskill.compare(
+            "tests/testdata/SW/eur_Hm0_Quality.dfs0", fn_mod
+        )  # Obs file has multiple items, but we did not specify one
+
+
+def test_compare_obs_item_pointobs(fn_mod):
+
+    o1 = PointObservation("tests/testdata/SW/eur_Hm0_Quality.dfs0", item=0)
+
+    c = fmskill.compare(o1, fn_mod, mod_item=0)
+    assert c.n_points == 67
+
+
+def test_compare_obs_item_pointobs_inconsistent_item_error(fn_mod):
+
+    o1 = PointObservation("tests/testdata/SW/eur_Hm0_Quality.dfs0", item=0)
+
+    with pytest.raises(ValueError):
+        fmskill.compare(o1, fn_mod, mod_item=0, obs_item=1)  # item=0 != obs_item==1
+
+
+def test_compare_mod_item(fn_obs, fn_mod):
+    df_mod = Dfs0(fn_mod).read(items=[0, 1, 2]).to_dataframe()
+    c = fmskill.compare(fn_obs, df_mod, mod_item=0)
+    assert c.n_points > 0
