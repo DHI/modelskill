@@ -50,14 +50,14 @@ def test_get_satellites(repo):
 @requires_DHI_ALTIMETRY_API_KEY()
 def test_quality_filters(repo):
     qf = repo.get_quality_filters()
-    assert "qual_wind_speed" in qf.index
+    assert "1" in qf.index
 
 
 @requires_DHI_ALTIMETRY_API_KEY()
 def test_get_daily_count(repo):
     area = "lon=10.9&lat=55.9&radius=10.0"
-    df = repo.get_daily_count(area, start_time="2021")
-    assert df.loc["2021-1-4"].values == 4
+    df = repo.get_daily_count(area, start_time="2021", end_time="2021-1-7")
+    assert df.loc["2021-1-4"].values > 0
 
 
 @requires_DHI_ALTIMETRY_API_KEY()
@@ -84,8 +84,7 @@ def test_get_spatial_coverage(repo):
     gdf = repo.get_spatial_coverage(
         area="lon=10.9&lat=55.9&radius=40", start_time="2021-1-1", end_time="2021-1-5"
     )
-    assert gdf[["count"]].loc[0].values[0] == 8
-    # assert isinstance(gdf, gpd.GeoDataFrame)
+    assert gdf[["count"]].loc[0].values[0] > 0
     gdf.plot("count")
     assert True
 
@@ -95,9 +94,9 @@ def test_get_altimetry_data_1985(ad85):
     assert isinstance(ad85, AltimetryData)
     assert ad85.df.index.is_unique
     row = ad85.df.iloc[0]
-    assert row.lon == 10.795129
+    assert row.longitude == 10.795129
     assert np.isnan(row.water_level)
-    assert row.wind_speed == 2.2
+    assert row.wind_speed_rads == 2.2
 
 
 @requires_DHI_ALTIMETRY_API_KEY()

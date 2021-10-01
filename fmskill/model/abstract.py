@@ -35,8 +35,6 @@ class ModelResultInterface(ABC):  # pragma: no cover
 
 
 class MultiItemModelResult(ABC, Mapping):  # pragma: no cover
-    _mr_items = None
-
     @property
     @abstractmethod
     def item_names(self):

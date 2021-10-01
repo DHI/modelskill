@@ -19,8 +19,6 @@ from .utils import make_unique_index
 class Observation:
     "Base class for all types of observations"
 
-    color = "#d62728"
-
     # DHI: darkblue: #004165,
     #      midblue:  #0098DB,
     #      gray:     #8B8D8E,
@@ -38,6 +36,8 @@ class Observation:
     def __init__(
         self, name: str = None, df=None, itemInfo=None, variable_name: str = None
     ):
+        self.color = "#d62728"
+
         if name is None:
             name = "Observation"
         self.name = name
@@ -120,10 +120,6 @@ class PointObservation(Observation):
     >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o1 = PointObservation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     """
-
-    x = None
-    y = None
-    z = None
 
     @property
     def geometry(self) -> Point:
