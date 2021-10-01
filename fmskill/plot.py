@@ -230,7 +230,7 @@ TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size"
 
 
 def taylor_diagram(
-    obs_std, points, figsize=(7, 7), obs_text="Observations", normalize=False
+    obs_std, points, figsize=(7, 7), obs_text="Observations", normalize_std=False
 ):
     if np.isscalar(figsize):
         figsize = (figsize, figsize)
@@ -244,7 +244,9 @@ def taylor_diagram(
     if len(obs_text) > 30:
         obs_text = obs_text[:25] + "..."
 
-    td = TaylorDiagram(obs_std, fig=fig, rect=111, label=obs_text, normalize=normalize)
+    td = TaylorDiagram(
+        obs_std, fig=fig, rect=111, label=obs_text, normalize_std=normalize_std
+    )
     contours = td.add_contours(levels=8, colors="0.5", linestyles="dotted")
     plt.clabel(contours, inline=1, fontsize=10, fmt="%.2f")
 
@@ -254,7 +256,7 @@ def taylor_diagram(
         assert isinstance(p, TaylorPoint)
         m = "o" if p.marker is None else p.marker
         ms = "6" if p.marker_size is None else p.marker_size
-        std = p.std / p.obs_std if normalize else p.std
+        std = p.std / p.obs_std if normalize_std else p.std
         td.add_sample(std, p.cc, marker=m, ms=ms, ls="", label=p.name)
         # marker=f"${1}$",
         # td.add_sample(0.2, 0.8, marker="+", ms=15, mew=1.2, ls="", label="m2")

@@ -959,8 +959,8 @@ class BaseComparer:
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-        normalize: bool = False,
-        aggregate: bool = True,
+        normalize_std: bool = False,
+        aggregate_observations: bool = True,
         figsize: List[float] = (7, 7),
     ):
         """Taylor diagram showing model std and correlation to observation
@@ -984,9 +984,9 @@ class BaseComparer:
             by default None
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
-        normalize : bool, optional
-            plot std normalized with observation std, default False
-        aggregate : bool, optional
+        normalize_std : bool, optional
+            plot model std normalized with observation std, default False
+        aggregate_observations : bool, optional
             should multiple observations be aggregated before plotting
             (or shown individually), default True
         figsize : tuple, optional
@@ -1003,8 +1003,13 @@ class BaseComparer:
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
 
+        if (not aggregate_observations) and (not normalize_std):
+            raise ValueError(
+                "aggregate_observations and normalize_std cannot both be False!"
+            )
+
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        if aggregate:
+        if aggregate_observations:
             s = self.mean_skill(
                 model=model,
                 observation=observation,
@@ -1026,7 +1031,7 @@ class BaseComparer:
             return
 
         df = s.df
-        ref_std = 1.0 if normalize else df.iloc[0]["_std_obs"]
+        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
             df.index = df.index.map("_".join)
@@ -1041,7 +1046,7 @@ class BaseComparer:
         ]
 
         taylor_diagram(
-            obs_std=ref_std, points=pts, figsize=figsize, normalize=normalize
+            obs_std=ref_std, points=pts, figsize=figsize, normalize_std=normalize_std
         )
 
 
@@ -1288,7 +1293,7 @@ class SingleObsComparer(BaseComparer):
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
-        normalize: bool = False,
+        normalize_std: bool = False,
         figsize: List[float] = (7, 7),
     ):
         """Taylor diagram showing model std and correlation to observation
@@ -1308,8 +1313,8 @@ class SingleObsComparer(BaseComparer):
             by default None
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
-        normalize : bool, optional
-            plot std normalized with observation std, default False
+        normalize_std : bool, optional
+            plot model std normalized with observation std, default False
         figsize : tuple, optional
             width and height of the figure (should be square), by default (7, 7)
 
@@ -1334,7 +1339,7 @@ class SingleObsComparer(BaseComparer):
         if s is None:
             return
         df = s.df
-        ref_std = 1.0 if normalize else df.iloc[0]["_std_obs"]
+        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
         df.columns = ["obs_std", "std", "cc"]
@@ -1350,7 +1355,7 @@ class SingleObsComparer(BaseComparer):
             points=pts,
             figsize=figsize,
             obs_text=f"Obs: {self.name}",
-            normalize=normalize,
+            normalize_std=normalize_std,
         )
 
     def remove_bias(self, correct="Model"):
