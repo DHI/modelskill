@@ -12,11 +12,6 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 
 
 class _DfsBase:
-    dfs = None
-    name = None
-    _filename = None
-    _selected_item = None
-
     @property
     def start_time(self):
         return self.dfs.start_time

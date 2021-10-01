@@ -57,7 +57,7 @@ def _parse_model(mod, item=None):
         dfs = Dfs0(mod)
         if (len(dfs.items) > 1) and (item is None):
             raise ValueError("Model ambiguous - please provide item")
-        mod = dfs.read().to_dataframe()
+        mod = dfs.read(items=item).to_dataframe()
     elif isinstance(mod, pd.DataFrame):
         mod = DataFramePointModelResultItem(mod, item=item).df
     elif isinstance(mod, pd.Series):
@@ -72,13 +72,17 @@ def _parse_model(mod, item=None):
         if mod.item is None:
             raise ValueError("Model ambiguous - please provide item")
         mod = mod._extract_point_dfs0(mod.item).to_dataframe()
+
+    assert mod.shape[1] == 1  # A single item
+
     return mod
 
 
 class _BaseConnector:
-    modelresults = {}
-    name = None
-    obs = None
+    def __init__(self) -> None:
+        self.modelresults = {}
+        self.name = None
+        self.obs = None
 
     @property
     def n_models(self):
@@ -114,6 +118,7 @@ class _SingleObsConnector(_BaseConnector):
         return f"<{self.__class__.__name__}> {txt}"
 
     def __init__(self, obs, mod, weight=1.0, validate=True):
+        super().__init__()
         obs = self._parse_observation(obs)
         self.name = obs.name
         modelresults = self._parse_model(mod)
@@ -381,6 +386,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
     def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
+        super().__init__()
         self.connections = {}
         self.observations = {}
         self.modelresults = {}

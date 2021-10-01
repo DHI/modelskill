@@ -24,6 +24,12 @@ def test_compare(fn_obs, fn_mod):
     assert c.end == datetime(2017, 10, 29, 18, 0, 0)
 
 
+def test_compare_mod_item(fn_obs, fn_mod):
+    c = fmskill.compare(fn_obs, fn_mod, mod_item=0)
+    dfs = Dfs0(fn_mod)
+    assert c.mod_names[0] == dfs.items[0].name
+
+
 def test_compare_fn(fn_obs):
     c = fmskill.compare(fn_obs, fn_obs)
     assert c.n_points == 95
