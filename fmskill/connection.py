@@ -14,14 +14,13 @@ from mikeio import Dfs0, eum
 from .model import ModelResult
 from .model.dfs import DfsModelResult, DfsModelResultItem
 from .model.pandas import DataFramePointModelResultItem
-from .model.xarray import XArrayModelResult, XArrayModelResultItem
 from .model.abstract import ModelResultInterface, MultiItemModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 
 
-def compare(obs, mod, mod_item=None):
+def compare(obs, mod, obs_item=None, mod_item=None):
     """Quick-and-dirty compare of observation and model
 
     Parameters
@@ -30,6 +29,8 @@ def compare(obs, mod, mod_item=None):
         Observation to be compared
     mod : (str, pd.DataFrame, ModelResultInterface)
         Model result to be compared
+    obs_item : (int, str), optional
+        observation item, by default None
     mod_item : (int, str), optional
         model item, by default None
 
@@ -39,8 +40,13 @@ def compare(obs, mod, mod_item=None):
         A comparer object for further analysis and plotting
     """
     # return SingleConnection(obs, mod).extract()
-    if not isinstance(obs, Observation):
-        obs = PointObservation(obs)
+    if isinstance(obs, Observation):
+        if obs_item is not None:
+            raise ValueError(
+                "obs_item argument not allowed if obs is an fmskill.Observation type"
+            )
+    else:
+        obs = PointObservation(obs, item=obs_item)
 
     mod = _parse_model(mod, mod_item)
     return PointComparer(obs, mod)
@@ -51,11 +57,9 @@ def _parse_model(mod, item=None):
         dfs = Dfs0(mod)
         if (len(dfs.items) > 1) and (item is None):
             raise ValueError("Model ambiguous - please provide item")
-        mod = dfs.read().to_dataframe()
+        mod = dfs.read(items=item).to_dataframe()
     elif isinstance(mod, pd.DataFrame):
-        if len(mod.columns) > 1:
-            raise ValueError("Model ambiguous - please provide item")
-        mod.index = pd.DatetimeIndex(mod.index.round(freq="ms"), freq="infer")
+        mod = DataFramePointModelResultItem(mod, item=item).df
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
     elif isinstance(mod, DfsModelResultItem):
@@ -68,13 +72,17 @@ def _parse_model(mod, item=None):
         if mod.item is None:
             raise ValueError("Model ambiguous - please provide item")
         mod = mod._extract_point_dfs0(mod.item).to_dataframe()
+
+    assert mod.shape[1] == 1  # A single item
+
     return mod
 
 
 class _BaseConnector:
-    modelresults = {}
-    name = None
-    obs = None
+    def __init__(self) -> None:
+        self.modelresults = {}
+        self.name = None
+        self.obs = None
 
     @property
     def n_models(self):
@@ -110,6 +118,7 @@ class _SingleObsConnector(_BaseConnector):
         return f"<{self.__class__.__name__}> {txt}"
 
     def __init__(self, obs, mod, weight=1.0, validate=True):
+        super().__init__()
         obs = self._parse_observation(obs)
         self.name = obs.name
         modelresults = self._parse_model(mod)
@@ -377,6 +386,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
     def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
+        super().__init__()
         self.connections = {}
         self.observations = {}
         self.modelresults = {}

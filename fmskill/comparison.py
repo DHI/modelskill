@@ -31,46 +31,6 @@ from .spatial import SpatialSkill
 class BaseComparer:
     """Abstract base class for all comparers, only used to inherit from, not to be used directly"""
 
-    # observation = None
-    obs_name = "Observation"
-    _obs_names: List[str]
-    _mod_names: List[str]
-    _mod_colors = [
-        "#004165",
-        "#63CEFF",
-        "#8B8D8E",
-        "#0098DB",
-        "#93509E",
-        "#61C250",
-        "#a6cee3",
-        "#1f78b4",
-        "#b2df8a",
-        "#33a02c",
-        "#fb9a99",
-        "#e31a1c",
-        "#fdbf6f",
-        "#ff7f00",
-        "#cab2d6",
-        "#003f5c",
-        "#2f4b7c",
-        "#665191",
-    ]
-
-    _resi_color = "#8B8D8E"
-    _obs_unit_text = ""
-    #      darkblue: #004165
-    #      midblue:  #0098DB,
-    #      gray:     #8B8D8E,
-    #      lightblue:#63CEFF,
-    #      green:    #61C250
-    #      purple:   #93509E
-    mod_data = None
-    df = None
-    _all_df = None
-
-    _mod_start = datetime(2900, 1, 1)
-    _mod_end = datetime(1, 1, 1)
-
     @property
     def n_points(self) -> int:
         """number of compared points"""
@@ -199,6 +159,46 @@ class BaseComparer:
         self._all_df = res.sort_index()
 
     def __init__(self, observation, modeldata=None):
+
+        self.obs_name = "Observation"
+        self._obs_names: List[str]
+        self._mod_names: List[str]
+        self._mod_colors = [
+            "#004165",
+            "#63CEFF",
+            "#8B8D8E",
+            "#0098DB",
+            "#93509E",
+            "#61C250",
+            "#a6cee3",
+            "#1f78b4",
+            "#b2df8a",
+            "#33a02c",
+            "#fb9a99",
+            "#e31a1c",
+            "#fdbf6f",
+            "#ff7f00",
+            "#cab2d6",
+            "#003f5c",
+            "#2f4b7c",
+            "#665191",
+        ]
+
+        self._resi_color = "#8B8D8E"
+        self._obs_unit_text = ""
+        #      darkblue: #004165
+        #      midblue:  #0098DB,
+        #      gray:     #8B8D8E,
+        #      lightblue:#63CEFF,
+        #      green:    #61C250
+        #      purple:   #93509E
+        self.mod_data = None
+        self.df = None
+        self._all_df = None
+
+        self._mod_start = datetime(2900, 1, 1)
+        self._mod_end = datetime(1, 1, 1)
+
         self.observation = deepcopy(observation)
         self._obs_unit_text = self.observation._unit_text()
         self.mod_data = {}
@@ -1580,10 +1580,6 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     """
 
-    _all_df = None
-    _start = datetime(2900, 1, 1)
-    _end = datetime(1, 1, 1)
-
     @property
     def name(self) -> str:
         return "Observations"
@@ -1665,6 +1661,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._all_df.index.name = "datetime"
 
     def __init__(self):
+
+        self._all_df = None
+        self._start = datetime(2900, 1, 1)
+        self._end = datetime(1, 1, 1)        
         self.comparers = {}
         self._mod_names = []
         self._obs_names = []
