@@ -23,7 +23,14 @@ class TaylorDiagram(object):
     """
 
     def __init__(
-        self, refstd, fig=None, rect=111, label="_", srange=(0, 1.5), extend=False
+        self,
+        refstd,
+        fig=None,
+        rect=111,
+        label="_",
+        srange=(0, 1.5),
+        extend=False,
+        normalize_std=False,
     ):
         """
         Set up Taylor diagram axes, i.e. single quadrant polar
@@ -35,6 +42,7 @@ class TaylorDiagram(object):
         * label: reference label
         * srange: stddev axis extension, in units of *refstd*
         * extend: extend diagram to negative correlations
+        * normalize_std: normalize std axis?
         """
 
         from matplotlib.projections import PolarAxes
@@ -83,7 +91,10 @@ class TaylorDiagram(object):
         ax.axis["top"].label.set_text("Correlation")
 
         ax.axis["left"].set_axis_direction("bottom")  # "X axis"
-        ax.axis["left"].label.set_text("Standard deviation")
+        std_txt = (
+            "Standard deviation, normalized" if normalize_std else "Standard deviation"
+        )
+        ax.axis["left"].label.set_text(std_txt)
 
         ax.axis["right"].set_axis_direction("top")  # "Y-axis"
         ax.axis["right"].toggle(ticklabels=True)

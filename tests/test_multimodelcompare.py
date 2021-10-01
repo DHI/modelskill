@@ -234,7 +234,7 @@ def test_mm_scatter(cc):
 
 def test_mm_taylor(cc):
     cc.taylor(model="SW_1", observation=[0, 1])
-    cc.taylor()
+    cc.taylor(normalize_std=True)
     cc.taylor(figsize=(4, 4))
     cc.taylor(model="SW_2", start="2017-10-28")
     cc[0].taylor(model=0, end="2017-10-29")
