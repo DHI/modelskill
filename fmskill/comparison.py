@@ -267,14 +267,17 @@ class BaseComparer:
             else:
                 raise KeyError(f"obs {obs} could not be found in {self._obs_names}")
         elif isinstance(obs, int):
+            if obs < 0:  # Handle negative indices
+                obs += self.n_observations
             if obs >= 0 and obs < self.n_observations:
                 obs_id = obs
             else:
                 raise IndexError(
-                    f"obs id was {obs} - must be within 0 and {self.n_observations-1}"
+                    f"obs id {obs} is out of range (0, {self.n_observations-1})"
                 )
+
         else:
-            raise KeyError("observation must be None, str or int")
+            raise TypeError("observation must be None, str or int")
         return obs_id
 
     def _get_var_name(self, var):
@@ -287,16 +290,18 @@ class BaseComparer:
             if var in self._var_names:
                 var_id = self._var_names.index(var)
             else:
-                raise ValueError(f"var {var} could not be found in {self._var_names}")
+                raise KeyError(f"var {var} could not be found in {self._var_names}")
         elif isinstance(var, int):
+            if var < 0:  # Handle negative indices
+                var += self.n_variables
             if var >= 0 and var < self.n_variables:
                 var_id = var
             else:
-                raise ValueError(
-                    f"var id was {var} - must be within 0 and {self.n_variables-1}"
+                raise IndexError(
+                    f"var id {var} is out of range (0, {self.n_variables-1})"
                 )
         else:
-            raise ValueError("variable must be None, str or int")
+            raise TypeError("variable must be None, str or int")
         return var_id
 
     def _get_mod_name(self, model):
@@ -311,18 +316,18 @@ class BaseComparer:
             if model in self.mod_names:
                 mod_id = self.mod_names.index(model)
             else:
-                raise ValueError(
-                    f"model {model} could not be found in {self.mod_names}"
-                )
+                raise KeyError(f"model {model} could not be found in {self.mod_names}")
         elif isinstance(model, int):
+            if model < 0:  # Handle negative indices
+                model += self.n_models
             if model >= 0 and model < self.n_models:
                 mod_id = model
             else:
-                raise ValueError(
+                raise IndexError(
                     f"model id was {model} - must be within 0 and {self.n_models-1}"
                 )
         else:
-            raise ValueError("model must be None, str or int")
+            raise TypeError("model must be None, str or int")
         return mod_id
 
     def _parse_metric(self, metric, return_list=False):
@@ -344,7 +349,7 @@ class BaseComparer:
             metrics = [self._parse_metric(m) for m in metric]
             return metrics
         elif not callable(metric):
-            raise ValueError(
+            raise TypeError(
                 f"Invalid metric: {metric}. Must be either string or callable."
             )
         if return_list:
@@ -1664,7 +1669,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         self._all_df = None
         self._start = datetime(2900, 1, 1)
-        self._end = datetime(1, 1, 1)        
+        self._end = datetime(1, 1, 1)
         self.comparers = {}
         self._mod_names = []
         self._obs_names = []
@@ -1679,6 +1684,12 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         return str.join("\n", out)
 
     def __getitem__(self, x):
+        if isinstance(x, slice):
+            cc = ComparerCollection()
+            for xi in range(*x.indices(len(self))):
+                cc.add_comparer(self[xi])
+            return cc
+
         if isinstance(x, int):
             x = self._get_obs_name(x)
 

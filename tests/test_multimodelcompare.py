@@ -93,15 +93,18 @@ def test_mm_skill_model(cc):
     assert df.loc["EPL"].n == 67
     assert df.loc["c2"].n == 113
 
+    df2 = cc.skill(model=-2).df
+    assert df2.loc["c2"].rmse == df.loc["c2"].rmse
+
 
 def test_mm_skill_missing_model(cc):
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         cc.skill(model="SW_3")
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         cc.skill(model=999)
-    with pytest.raises(ValueError):
+    with pytest.raises((KeyError, IndexError)):
         cc.skill(model=[999, "SW_2"])
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         cc.skill(model=[0.1])
 
 
@@ -109,6 +112,9 @@ def test_mm_skill_obs(cc):
     s = cc.skill(observation="c2")
     assert len(s) == 2
     assert pytest.approx(s.loc["SW_2"].bias) == 0.081431053
+
+    s2 = cc.skill(observation=-1)
+    assert s.loc["SW_2"].bias == s2.loc["SW_2"].bias
 
     df = cc.mean_skill(model=0, observation=[0, "c2"]).df
     assert pytest.approx(df.si[0]) == 0.10358979
@@ -121,7 +127,7 @@ def test_mm_skill_missing_obs(cc, o1):
         cc.skill(observation=999)
     with pytest.raises((KeyError, IndexError)):
         cc.skill(observation=["c2", 999])
-    with pytest.raises(KeyError):
+    with pytest.raises(TypeError):
         cc.skill(observation=[o1])
 
 
@@ -195,7 +201,7 @@ def test_mm_skill_metrics(cc):
         cc.skill(model="SW_1", metrics=["mean_se"])
     with pytest.raises(AttributeError):
         cc.skill(model="SW_1", metrics=[mtr.fake])
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         cc.skill(model="SW_1", metrics=[47])
 
 
