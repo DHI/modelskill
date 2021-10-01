@@ -54,3 +54,16 @@ def test_compare_fail(fn_obs, fn_mod):
     with pytest.raises(ValueError):
         # multiple items in obs df -> ambigous
         fmskill.compare(df_obs2, fn_mod2)
+
+
+def test_compare_obs_item(fn_obs, fn_mod):
+    df_mod = Dfs0(fn_mod).read(items=[0, 1, 2]).to_dataframe()
+    df_obs2, fn_mod2 = df_mod, fn_obs
+    c = fmskill.compare(df_obs2, fn_mod2, obs_item=0)
+    assert c.n_points > 0
+
+
+def test_compare_mod_item(fn_obs, fn_mod):
+    df_mod = Dfs0(fn_mod).read(items=[0, 1, 2]).to_dataframe()
+    c = fmskill.compare(fn_obs, df_mod, mod_item=0)
+    assert c.n_points > 0
