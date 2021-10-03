@@ -9,6 +9,7 @@ difference between a model and an observation.
 * nash_sutcliffe_efficiency (nse)
 * model_efficiency_factor (mef)
 * scatter_index (si)
+* corrcoef (cc)
 * spearmanr (rho)
 * r2
 * lin_slope
