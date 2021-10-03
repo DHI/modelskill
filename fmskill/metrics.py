@@ -104,6 +104,14 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
 def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
     """Unbiased Root Mean Squared Error (uRMSE)
 
+    .. math::
+
+        res_i = model_i - obs_i
+
+        res_{u,i} = res_i - \\overline {res}
+
+        uRMSE = \\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
+
     See Also
     --------
     root_mean_squared_error
