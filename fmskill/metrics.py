@@ -3,6 +3,7 @@ difference between a model and an observation.
 
 * bias
 * root_mean_squared_error (rmse)    
+* urmse
 * mean_absolute_error (mae)
 * mean_absolute_percentage_error (mape)
 * nash_sutcliffe_efficiency (nse)
@@ -11,6 +12,7 @@ difference between a model and an observation.
 * spearmanr (rho)
 * r2
 * lin_slope
+* hit_ratio
 
 The names in parentheses are shorthand aliases for the different metrics.
 
