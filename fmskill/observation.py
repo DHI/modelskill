@@ -272,6 +272,8 @@ class TrackObservation(Observation):
     --------
     >>> o1 = TrackObservation("track.dfs0", item=2, name="c2")
 
+    >>> o1 = TrackObservation("track.dfs0", item="wind_speed", name="c2")
+
     >>> df = pd.DataFrame(
     ...         {
     ...             "t": pd.date_range("2010-01-01", freq="10s", periods=n),
