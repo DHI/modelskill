@@ -115,3 +115,10 @@ def test_max_error():
     mod = np.array([1.0, 0.0, 0.5])
 
     assert mtr.max_error(obs, mod) == 0.5
+
+
+def test_wilmott():
+    obs = np.array([1.0, 0.5, 0])  # mean 0.5
+    mod = np.array([1.0, 0.0, 0.5])  # mean 0.5
+
+    assert mtr.wilmott(obs, mod) == pytest.approx(1 - 0.5 / 1.5)
