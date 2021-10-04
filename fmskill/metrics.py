@@ -61,7 +61,7 @@ def bias(obs, model) -> float:
     .. math::
         bias=\\frac{1}{n}\\sum_{i=1}^n (model_i - obs_i)
 
-    Range: -infinity to infinity; Best: 0.0
+    Range: :math:`-\\infty` to :math:`\\infty`; Best: 0.0
     """
 
     assert obs.size == model.size
@@ -74,7 +74,7 @@ def max_error(obs, model) -> float:
     .. math::
         max_error = max(|model_i - obs_i|)
 
-    Range: 0.0 to infinity; Best: 0.0
+    Range: 0.0 to :math:`\\infty`; Best: 0.0
     """
 
     assert obs.size == model.size
@@ -95,7 +95,7 @@ def mean_absolute_error(
     .. math::
         MAE=\\frac{1}{n}\\sum_{i=1}^n|model_i - obs_i|
 
-    Range: 0.0 to infinity; Best: 0.0
+    Range: 0.0 to :math:`\\infty`; Best: 0.0
     """
     assert obs.size == model.size
 
@@ -115,7 +115,7 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
     .. math::
         MAPE=\\frac{1}{n}\\sum_{i=1}^n\\frac{|model_i - obs_i|}{obs_i}*100
 
-    Range: 0.0 to infinity; Best: 0.0
+    Range: 0.0 to :math:`\\infty`; Best: 0.0
     """
 
     assert obs.size == model.size
@@ -140,7 +140,7 @@ def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> flo
 
         uRMSE = \\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
 
-    Range: 0.0 to infinity; Best: 0.0
+    Range: 0.0 to :math:`\\infty`; Best: 0.0
 
     See Also
     --------
@@ -180,7 +180,7 @@ def root_mean_squared_error(
 
         uRMSE=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
 
-    Range: 0.0 to infinity; Best: 0.0
+    Range: 0.0 to :math:`\\infty`; Best: 0.0
 
     """
     assert obs.size == model.size
@@ -206,7 +206,7 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
         NSE = 1 - \\frac {\\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}
                        {\\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}
 
-    Range: -infinity to 1.0; Best: 1.0
+    Range: :math:`-\\infty` to 1.0; Best: 1.0
 
     Note
     ----
@@ -238,7 +238,7 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
         R^2 = 1 - \\frac{\\sum_{i=1}^n (model_i - obs_i)^2}
                     {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
 
-    Range: -infinity to 1.0; Best: 1.0
+    Range: :math:`-\\infty` to 1.0; Best: 1.0
 
     Note
     ----
@@ -277,7 +277,7 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
         MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}}
                                         {\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(obs_i - \\overline{obs})^2}}=\\sqrt{1-NSE}
 
-    Range: 0.0 to infinity; Best: 0.0
+    Range: 0.0 to :math:`\\infty`; Best: 0.0
 
     See Also
     --------
@@ -447,7 +447,7 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
         slope = \\frac{\\sum_{i=1}^n (model_i - \\overline {model})(obs_i - \\overline {obs})}
                       {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
 
-    Range: -infinity to infinity; Best: 1.0
+    Range: :math:`-\\infty` to :math:`\\infty`; Best: 1.0
     """
     return _linear_regression(obs, model, reg_method)[0]
 
