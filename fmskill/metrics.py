@@ -45,7 +45,7 @@ Examples
 0.637783218973691
 >>> lin_slope(obs, mod)
 0.4724896836313617
->>> wilmott(obs, mod)
+>>> willmott(obs, mod)
 0.7484604452865941
 >>> hit_ratio(obs, mod, a=0.5)
 0.6666666666666666
@@ -380,14 +380,14 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     )
 
 
-def wilmott(obs: np.ndarray, model: np.ndarray) -> float:
-    """Wilmott's Index of Agreement
+def willmott(obs: np.ndarray, model: np.ndarray) -> float:
+    """willmott's Index of Agreement
 
     A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.
 
     .. math::
 
-        wilmott = 1 - \\frac{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}
+        willmott = 1 - \\frac{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}
                            {\\frac{1}{n} \\sum_{i=1}^n(|model_i - \\overline{obs}| + |obs_i - \\overline{obs}|)^2}
 
     Range: [0, 1]; Best: 1
@@ -396,7 +396,7 @@ def wilmott(obs: np.ndarray, model: np.ndarray) -> float:
     --------
     >>> obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])
     >>> model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])
-    >>> wilmott(obs, model)
+    >>> willmott(obs, model)
     0.9501403174479723
 
     References
