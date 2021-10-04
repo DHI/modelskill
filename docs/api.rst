@@ -111,6 +111,7 @@ Metrics
 	fmskill.metrics.rho
 	fmskill.metrics.r2
 	fmskill.metrics.lin_slope
+	fmskill.metrics.willmott
 	fmskill.metrics.hit_ratio
 	
 .. automodule:: fmskill.metrics
