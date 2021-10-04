@@ -42,7 +42,34 @@ def test_non_unique_index():
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
     assert not df.index.is_unique
     assert df.index[160] == df.index[161]
-    o = TrackObservation(df)
+
+    o = TrackObservation(df, item=2)
     assert o.df.index.is_unique
     assert o.df.index[160].to_pydatetime().microsecond == 10000
     assert o.df.index[161].to_pydatetime().microsecond == 20000
+
+
+def test_trackobservation_item_dfs0(c2):
+    with pytest.raises(ValueError, match="Input has more than 3 items"):
+        TrackObservation(c2)
+
+    o1 = TrackObservation(c2, item=2)
+    assert o1.n_points == 298
+
+    o2 = TrackObservation(c2, item="swh")
+    assert o2.n_points == 298
+
+
+def test_trackobservation_item_csv(c2):
+    fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
+    df = pd.read_csv(fn, index_col=0, parse_dates=True)
+
+    with pytest.raises(ValueError, match="Input has more than 3 items"):
+        TrackObservation(df)
+
+    o1 = TrackObservation(df, item=-1)
+    assert o1.n_points == 1115
+    assert o1.df.columns[-1] == "wind_speed"
+
+    o2 = TrackObservation(df, item="significant_wave_height")
+    assert o2.n_points == 1115

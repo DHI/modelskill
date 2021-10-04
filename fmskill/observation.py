@@ -272,6 +272,8 @@ class TrackObservation(Observation):
     --------
     >>> o1 = TrackObservation("track.dfs0", item=2, name="c2")
 
+    >>> o1 = TrackObservation("track.dfs0", item="wind_speed", name="c2")
+
     >>> df = pd.DataFrame(
     ...         {
     ...             "t": pd.date_range("2010-01-01", freq="10s", periods=n),
@@ -324,32 +326,37 @@ class TrackObservation(Observation):
         return self.df.iloc[:, 2].values
 
     def __init__(
-        self, filename, item: int = 2, name: str = None, variable_name: str = None
+        self, input, item: int = None, name: str = None, variable_name: str = None
     ):
 
         self._filename = None
         self._item = None
 
-        if isinstance(filename, pd.DataFrame):
-            df = filename
+        if isinstance(input, pd.DataFrame):
+            df = input
+            item = self._parse_track_item(df.columns.to_list(), item)
             df = df.iloc[:, [0, 1, item]]
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
-        elif isinstance(filename, str):
-            assert os.path.exists(filename)
-            self._filename = filename
+        elif isinstance(input, str):
+            assert os.path.exists(input)
+            self._filename = input
             if name is None:
-                name = os.path.basename(filename).split(".")[0]
+                name = os.path.basename(input).split(".")[0]
 
-            ext = os.path.splitext(filename)[-1]
+            ext = os.path.splitext(input)[-1]
             if ext == ".dfs0":
+                dfs = Dfs0(input)
+                item = self._parse_track_item([i.name for i in dfs.items], item)
                 items = [0, 1, item]
-                df, itemInfo = self._read_dfs0(Dfs0(filename), items)
+                df, itemInfo = self._read_dfs0(dfs, items)
                 self._item = itemInfo.name
             else:
-                raise NotImplementedError()
+                raise NotImplementedError(
+                    "Only dfs0 files and DataFrames are supported"
+                )
         else:
             raise TypeError(
-                f"input must be str or pandas DataFrame! Given input has type {type(filename)}"
+                f"input must be str or pandas DataFrame! Given input has type {type(input)}"
             )
 
         if not df.index.is_unique:
@@ -358,6 +365,22 @@ class TrackObservation(Observation):
         super().__init__(
             name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
         )
+
+    @staticmethod
+    def _parse_track_item(items, item):
+        """If input has exactly 3 items we accept item=None"""
+        if len(items) < 3:
+            raise ValueError(
+                f"Input has only {len(items)} items. It should have at least 3."
+            )
+        if item is None:
+            if len(items) == 3:
+                item = 2
+            elif len(items) > 3:
+                raise ValueError("Input has more than 3 items, but item was not given!")
+        if isinstance(item, str):
+            item = items.index(item)
+        return item
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
