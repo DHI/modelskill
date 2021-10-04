@@ -66,6 +66,19 @@ def bias(obs, model) -> float:
     return np.mean(model.ravel() - obs.ravel())
 
 
+def max_error(obs, model) -> float:
+    """Max (absolute) error
+
+    .. math::
+        max_error = max(|model_i - obs_i|)
+
+    Range: 0.0 to infinity; Best: 0.0
+    """
+
+    assert obs.size == model.size
+    return np.max(np.abs(model.ravel() - obs.ravel()))
+
+
 def mae(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
     """alias for mean_absolute_error"""
     assert obs.size == model.size
@@ -214,9 +227,9 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def r2(obs: np.ndarray, model: np.ndarray) -> float:
-    """Coefficient of determination (R2) - pronounced 'R-squared'
+    """Coefficient of determination (R2)
 
-    The proportion of the variation in the dependent variable that is predictable from the independent variable(s), e.g. the proportion of explained variance.
+    Pronounced 'R-squared'; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.
 
     .. math::
 
@@ -292,7 +305,7 @@ def corrcoef(obs, model, weights=None) -> float:
 
     See Also
     --------
-    numpy.corrcoef
+    np.corrcoef
     """
     assert obs.size == model.size
     if len(obs) <= 1:
