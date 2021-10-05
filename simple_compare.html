@@ -95,17 +95,15 @@ in the <a class="reference external" href="getting_started.html">getting started
 </ol>
 <section id="specify-model-result">
 <h3>1. Specify model result<a class="headerlink" href="#specify-model-result" title="Permalink to this headline"></a></h3>
-<p>The model result can be either a dfs0 or a DataFrame. It needs to have a single item only.</p>
+<p>The model result can be either a dfs0 or a DataFrame.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mikeio</span> <span class="kn">import</span> <span class="n">Dfs0</span>
 <span class="n">fn_mod</span> <span class="o">=</span> <span class="s1">&#39;../tests/testdata/SW/ts_storm_4.dfs0&#39;</span>
-<span class="n">df_mod</span> <span class="o">=</span> <span class="n">Dfs0</span><span class="p">(</span><span class="n">fn_mod</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
 </pre></div>
 </div>
 </section>
 <section id="specify-observation">
 <h3>2. Specify Observation<a class="headerlink" href="#specify-observation" title="Permalink to this headline"></a></h3>
-<p>The observation can be either a dfs0, a DataFrame or a PointObservation object.
-It needs to have a single item only.</p>
+<p>The observation can be either a dfs0, a DataFrame or a PointObservation object.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fn_obs</span> <span class="o">=</span> <span class="s1">&#39;../tests/testdata/SW/eur_Hm0.dfs0&#39;</span>
 </pre></div>
 </div>
@@ -115,7 +113,7 @@ It needs to have a single item only.</p>
 <p>The <a class="reference external" href="api.html#fmskill.connection.compare">compare()</a> method will interpolate the modelresult to the time of the observation
 and return an object that can be used for analysis and plotting</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">fmskill</span>
-<span class="n">c</span> <span class="o">=</span> <span class="n">fmskill</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">fn_obs</span><span class="p">,</span> <span class="n">df_mod</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">fmskill</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">fn_obs</span><span class="p">,</span> <span class="n">fn_mod</span><span class="p">,</span> <span class="n">mod_item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -123,9 +121,18 @@ and return an object that can be used for analysis and plotting</p>
 <h3>4. Analysis and plotting<a class="headerlink" href="#analysis-and-plotting" title="Permalink to this headline"></a></h3>
 <p>The returned <a class="reference external" href="api.html#fmskill.comparison.PointComparer">PointComparer</a> can make
 scatter plots, skill assessment, time series plots etc.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">.</span><span class="n">plot_timeseries</span><span class="p">()</span>
-<span class="n">c</span><span class="o">.</span><span class="n">skill</span><span class="p">()</span>
-<span class="n">c</span><span class="o">.</span><span class="n">scatter</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">plot_timeseries</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/ts_plot.png" src="_images/ts_plot.png" />
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">scatter</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/scatter_plot.png" src="_images/scatter_plot.png" />
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">skill</span><span class="p">()</span>
+<span class="go">            n     bias      rmse     urmse       mae        cc        si        r2</span>
+<span class="go">observation</span>
+<span class="go">eur_Hm0      66  0.05321  0.229957  0.223717  0.177321  0.967972  0.081732  0.929005</span>
 </pre></div>
 </div>
 </section>
