@@ -115,6 +115,8 @@ def scatter(
             label=reglabel,
         )
         if show_hist:
+            if "cmap" not in kwargs:
+                kwargs["cmap"] = "YlOrRd"
             plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
         plt.legend()
         plt.xlabel(xlabel)
@@ -153,11 +155,12 @@ def scatter(
                     y=y,
                     xbins=dict(size=binsize),
                     ybins=dict(size=binsize),
+                    # colorscale="ylorrd",
                     colorscale=[
                         [0.0, "rgba(0,0,0,0)"],
-                        [0.1, "purple"],
-                        [0.5, "green"],
-                        [1.0, "yellow"],
+                        [0.01, "rgba(1.0, 1.0, 0.8, 0.1)"],
+                        [0.5, "rgba(0.99221, 0.555217, 0.236278, 0.8)"],
+                        [1.0, "rgba(0.5019607, 0.0, 0.14901960, 1.0)"],
                     ],
                 )
             )
