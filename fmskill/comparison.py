@@ -1445,6 +1445,27 @@ class PointComparer(SingleObsComparer):
     def plot_timeseries(
         self, title=None, ylim=None, figsize=None, backend="matplotlib", **kwargs
     ):
+        """Timeseries plot showing compared data: observation vs modelled
+
+        Parameters
+        ----------
+        title : str, optional
+            plot title, by default None
+        ylim : tuple, optional
+            plot range for the model (ymin, ymax), by default None
+        figsize : (float, float), optional
+            figure size, by default None
+        backend : str, optional
+            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"backend:
+
+        Examples
+        ------
+        >>> comparer.plot_timeseries()
+        >>> comparer.plot_timeseries(title="")
+        >>> comparer.plot_timeseries(ylim=[0,6])
+        >>> comparer.plot_timeseries(backend="plotly")
+        >>> comparer.plot_timeseries(backend="plotly", showlegend=False)
+        """
 
         if title is None:
             title = self.name
