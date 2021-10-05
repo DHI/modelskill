@@ -450,14 +450,14 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
 
     Range: :math:`(-\\infty, \\infty )`; Best: 1
     """
-    return _linear_regression(obs, model, reg_method)[0]
+    assert obs.size == model.size
+    return _linear_regression(obs.ravel(), model.ravel(), reg_method)[0]
 
 
 def _linear_regression(
     obs: np.ndarray, model: np.ndarray, reg_method="ols"
 ) -> Tuple[float, float]:
 
-    assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
 
