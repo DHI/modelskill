@@ -59,6 +59,22 @@ scatter plots, skill assessment, time series plots etc.
 
 .. code-block:: python
 
-    c.plot_timeseries()
-    c.skill()
-    c.scatter()
+    >>> c.plot_timeseries()
+
+.. image:: images/ts_plot.png
+
+
+.. code-block:: python
+
+    >>> c.scatter()
+
+.. image:: images/scatter_plot.png
+
+.. code-block:: python
+
+    >>> c.skill()
+                n     bias      rmse     urmse       mae        cc        si        r2
+    observation
+    eur_Hm0      66  0.05321  0.229957  0.223717  0.177321  0.967972  0.081732  0.929005
+
+
