@@ -357,6 +357,39 @@ class AggregatedSkill(SkillDataFrame):
                 kwargs["title"] = field
         return df.plot.bar(**kwargs)
 
+    def plot_barh(self, field, level=0, **kwargs):
+        """plot statistic as horizontal bar chart using pd.DataFrame.plot.barh()
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        level : int or str, optional
+            level to unstack, by default 0
+        kwargs : dict, optional
+            key word arguments to be passed to pd.DataFrame.plot.bar()
+            e.g. color, title, figsize, ...
+
+        Returns
+        -------
+        AxesSubplot
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot_barh("rmse")
+        >>> s.plot_barh("mae", level="observation")
+        >>> s.plot_barh(field="si", title="scatter index")
+        """
+        if isinstance(self.index, pd.MultiIndex):
+            df = self.df[field].unstack(level=level)
+        else:
+            df = self.df[field]
+        if "title" not in kwargs:
+            if isinstance(field, str):
+                kwargs["title"] = field
+        return df.plot.barh(**kwargs)
+
     def plot_grid(
         self,
         field,
