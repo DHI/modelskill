@@ -435,8 +435,9 @@ def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
     >>> hit_ratio(obs, model, a=0.15)
     1.0
     """
+    assert obs.size == model.size
 
-    return np.mean(np.abs(obs - model) < a)
+    return np.mean(np.abs(obs.ravel() - model.ravel()) < a)
 
 
 def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
