@@ -75,6 +75,8 @@ def _parse_model(mod, item=None):
 
     assert mod.shape[1] == 1  # A single item
 
+    mod.columns = ["Model"]
+
     return mod
 
 
@@ -488,9 +490,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             if obs >= 0 and obs < n_con:
                 obs_id = obs
             else:
-                raise IndexError(
-                    f"connection id {obs} is out of range (0, {n_con-1})"
-                )
+                raise IndexError(f"connection id {obs} is out of range (0, {n_con-1})")
         else:
             raise KeyError("connection must be None, str or int")
         return obs_id
