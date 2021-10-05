@@ -22,19 +22,17 @@ The simplified fmskill workflow consists of these four steps:
 1. Specify model result
 =======================
 
-The model result can be either a dfs0 or a DataFrame. It needs to have a single item only.
+The model result can be either a dfs0 or a DataFrame.
 
 .. code-block:: python
 
     from mikeio import Dfs0
     fn_mod = '../tests/testdata/SW/ts_storm_4.dfs0'
-    df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
 
 
 2. Specify Observation
 ======================
 The observation can be either a dfs0, a DataFrame or a PointObservation object. 
-It needs to have a single item only.
 
 .. code-block:: python
 
@@ -49,7 +47,7 @@ and return an object that can be used for analysis and plotting
 .. code-block:: python
 
     import fmskill
-    c = fmskill.compare(fn_obs, df_mod)
+    c = fmskill.compare(fn_obs, fn_mod, mod_item=0)
 
 
 4. Analysis and plotting
