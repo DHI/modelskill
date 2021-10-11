@@ -694,7 +694,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             yaml.dump(conf, f)  # , default_flow_style=False
 
     @staticmethod
-    def from_config(conf: Union[dict, str], validate_eum=True):
+    def from_config(conf: Union[dict, str], validate_eum=True, relative_path=True):
         """Load Connector from a config file (or dict)
 
         Parameters
@@ -703,6 +703,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             path to config file or dict with configuration
         validate_eum : bool, optional
             require eum to match, by default True
+        relative_path: bool, optional
+             file path are relative to configuration file, and not current directory
 
         Returns
         -------
@@ -717,18 +719,24 @@ class Connector(_BaseConnector, Mapping, Sequence):
         if isinstance(conf, str):
             filename = conf
             ext = os.path.splitext(filename)[-1]
+            dirname = os.path.dirname(filename)
             if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
                 conf = Connector._yaml_to_dict(filename)
             elif "xls" in ext:
                 conf = Connector._excel_to_dict(filename)
             else:
                 raise ValueError("Filename extension not supported! Use .yml or .xlsx")
+        else:
+            dirname = ""
 
         modelresults = {}
         for name, mr_dict in conf["modelresults"].items():
             if not mr_dict.get("include", True):
                 continue
-            filename = mr_dict["filename"]
+            if relative_path:
+                filename = os.path.join(dirname, mr_dict["filename"])
+            else:
+                filename = mr_dict["filename"]
             item = mr_dict.get("item")
             mr = ModelResult(filename, name=name, item=item)
             modelresults[name] = mr
@@ -738,7 +746,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
         for name, obs_dict in conf["observations"].items():
             if not obs_dict.get("include", True):
                 continue
-            filename = obs_dict["filename"]
+            if relative_path:
+                filename = os.path.join(dirname, obs_dict["filename"])
+            else:
+                filename = obs_dict["filename"]
             item = obs_dict.get("item")
             alt_name = obs_dict.get("name")
             name = name if alt_name is None else alt_name

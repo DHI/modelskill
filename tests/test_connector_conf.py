@@ -69,7 +69,7 @@ def test_tofrom_config_yml(tmpdir, con32):
     assert "observations" in d
     assert len(d["observations"]) == 3
 
-    con = Connector.from_config(filename)
+    con = Connector.from_config(filename, relative_path=False)
     assert con.n_models == 2
     assert con.n_observations == 3
     assert len(con) == 3
@@ -84,14 +84,14 @@ def test_tofrom_config_xlsx(tmpdir, con32):
     assert "observations" in d
     assert len(d["observations"]) == 3
 
-    con = Connector.from_config(filename)
+    con = Connector.from_config(filename, relative_path=False)
     assert con.n_models == 2
     assert con.n_observations == 3
     assert len(con) == 3
 
 
 def test_from_excel_include(conf_xlsx):
-    con = fmskill.from_config(conf_xlsx)
+    con = fmskill.from_config(conf_xlsx, relative_path=True)
     assert con.n_models == 1
     assert con.n_observations == 3
     assert len(con) == 3
