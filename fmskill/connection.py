@@ -240,7 +240,7 @@ class _SingleObsConnector(_BaseConnector):
         """
         mr = self.modelresults[0]
 
-        if (not isinstance(mr, DfsModelResultItem)) or (mr.is_dfs0):
+        if (not isinstance(mr, DfsModelResultItem)) or mr.is_dfs0:
             warnings.warn(
                 "Plotting observations is only supported for dfsu ModelResults"
             )
@@ -538,7 +538,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         mod = list(self.modelresults.values())[0]
 
-        if mod.is_dfs0:
+        if (not isinstance(mod, DfsModelResultItem)) or mod.is_dfs0:
             warnings.warn("Only supported for dfsu ModelResults")
             return
 
