@@ -110,11 +110,15 @@ class _XarrayBase:
         return df
 
     def _in_domain(self, x, y) -> bool:
-        ok = True
-        # TODO
-        # if self.is_dfsu:
-        #    ok = self.dfs.contains([x, y])
-        return ok
+        if (x is None) or (y is None):
+            raise ValueError(
+                "PointObservation has None position - cannot determine if inside xarray domain!"
+            )
+        xmin = self.ds.x.values.min()
+        xmax = self.ds.x.values.max()
+        ymin = self.ds.y.values.min()
+        ymax = self.ds.y.values.max()
+        return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def _validate_start_end(self, observation: Observation) -> bool:
         if observation.end_time < self.start_time:
