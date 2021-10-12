@@ -95,3 +95,14 @@ def test_from_excel_include(conf_xlsx):
     assert con.n_models == 1
     assert con.n_observations == 3
     assert len(con) == 3
+
+
+def test_from_excel_save_new_relative(conf_xlsx):
+    con = fmskill.from_config(conf_xlsx, relative_path=True)
+    assert con.n_models == 1
+    assert con.n_observations == 3
+    assert len(con) == 3
+
+    fn = "tests/testdata/tmp/conf_SW.xlsx"
+    con.to_config(fn)
+    con2 = fmskill.from_config(fn, relative_path=True)
