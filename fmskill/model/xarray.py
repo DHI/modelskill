@@ -84,6 +84,12 @@ class _XarrayBase:
         if item is None:
             item = self._selected_item
         x, y = observation.x, observation.y
+        if (x is None) or (y is None):
+            raise ValueError(
+                "PointObservation '{observation.name}' cannot be used for extraction "
+                + "because it has None position x={x}, y={y}. Please provide position "
+                + "when creating PointObservation."
+            )
         da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
