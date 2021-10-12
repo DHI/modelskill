@@ -605,13 +605,15 @@ class Connector(_BaseConnector, Mapping, Sequence):
         fig.autofmt_xdate()
         return ax
 
-    def to_config(self, filename: str = None):
+    def to_config(self, filename: str = None, relative_path=True):
         """Save Connector to a config file.
 
         Parameters
         ----------
         filename: str or Path
             Save configuration in yaml format
+        relative_path: bool, default=True
+            Use filenames relative to config file location
 
         Notes
         -----
@@ -621,16 +623,20 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         conf = {}
 
+        folder = None
+        if relative_path and filename is not None:
+            folder = os.path.dirname(filename)
+
         # model results
         conf_mr = {}
         for name, mr in self.modelresults.items():
-            conf_mr[name] = self._modelresult_to_dict(mr)
+            conf_mr[name] = self._modelresult_to_dict(mr, folder)
         conf["modelresults"] = conf_mr
 
         # observations
         conf_obs = {}
         for name, obs in self.observations.items():
-            conf_obs[name] = self._observation_to_dict(obs)
+            conf_obs[name] = self._observation_to_dict(obs, folder)
         conf["observations"] = conf_obs
 
         if filename is not None:
@@ -645,19 +651,22 @@ class Connector(_BaseConnector, Mapping, Sequence):
             return conf
 
     @staticmethod
-    def _modelresult_to_dict(mr):
+    def _modelresult_to_dict(mr, folder):
         d = {}
         # d["display_name"] = mr.name
         if mr.filename is None:
             raise ValueError(
                 f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
             )
-        d["filename"] = mr.filename
+        if folder is None:
+            d["filename"] = mr.filename
+        else:
+            d["filename"] = os.path.relpath(mr.filename, start=folder)
         d["item"] = mr._selected_item
         return d
 
     @staticmethod
-    def _observation_to_dict(obs):
+    def _observation_to_dict(obs, folder):
         d = {}
         # d["display_name"] = obs.name
         d["type"] = obs.__class__.__name__
@@ -665,7 +674,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
             raise ValueError(
                 f"Cannot write Connector to conf file! Observation '{obs.name}' has no filename."
             )
-        d["filename"] = obs.filename
+        if folder is None:
+            d["filename"] = obs.filename
+        else:
+            d["filename"] = os.path.relpath(obs.filename, start=folder)
         d["item"] = obs._item
         if isinstance(obs, PointObservation):
             d["x"] = obs.x
@@ -694,7 +706,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             yaml.dump(conf, f)  # , default_flow_style=False
 
     @staticmethod
-    def from_config(conf: Union[dict, str], validate_eum=True):
+    def from_config(conf: Union[dict, str], validate_eum=True, relative_path=True):
         """Load Connector from a config file (or dict)
 
         Parameters
@@ -703,6 +715,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             path to config file or dict with configuration
         validate_eum : bool, optional
             require eum to match, by default True
+        relative_path: bool, optional
+             file path are relative to configuration file, and not current directory
 
         Returns
         -------
@@ -717,18 +731,24 @@ class Connector(_BaseConnector, Mapping, Sequence):
         if isinstance(conf, str):
             filename = conf
             ext = os.path.splitext(filename)[-1]
+            dirname = os.path.dirname(filename)
             if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
                 conf = Connector._yaml_to_dict(filename)
             elif "xls" in ext:
                 conf = Connector._excel_to_dict(filename)
             else:
                 raise ValueError("Filename extension not supported! Use .yml or .xlsx")
+        else:
+            dirname = ""
 
         modelresults = {}
         for name, mr_dict in conf["modelresults"].items():
             if not mr_dict.get("include", True):
                 continue
-            filename = mr_dict["filename"]
+            if relative_path:
+                filename = os.path.join(dirname, mr_dict["filename"])
+            else:
+                filename = mr_dict["filename"]
             item = mr_dict.get("item")
             mr = ModelResult(filename, name=name, item=item)
             modelresults[name] = mr
@@ -738,7 +758,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
         for name, obs_dict in conf["observations"].items():
             if not obs_dict.get("include", True):
                 continue
-            filename = obs_dict["filename"]
+            if relative_path:
+                filename = os.path.join(dirname, obs_dict["filename"])
+            else:
+                filename = obs_dict["filename"]
             item = obs_dict.get("item")
             alt_name = obs_dict.get("name")
             name = name if alt_name is None else alt_name
