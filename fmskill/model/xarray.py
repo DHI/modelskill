@@ -86,7 +86,7 @@ class _XarrayBase:
         x, y = observation.x, observation.y
         if (x is None) or (y is None):
             raise ValueError(
-                "PointObservation '{observation.name}' cannot be used for extraction "
+                f"PointObservation '{observation.name}' cannot be used for extraction "
                 + "because it has None position x={x}, y={y}. Please provide position "
                 + "when creating PointObservation."
             )

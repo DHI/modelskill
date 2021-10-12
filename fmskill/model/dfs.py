@@ -102,7 +102,7 @@ class _DfsBase:
         if self.is_dfsu:
             if (observation.x is None) or (observation.y is None):
                 raise ValueError(
-                    "PointObservation '{observation.name}' cannot be used for extraction "
+                    f"PointObservation '{observation.name}' cannot be used for extraction "
                     + "because it has None position x={observation.x}, y={observation.y}. "
                     + "Please provide position when creating PointObservation."
                 )
