@@ -87,7 +87,7 @@ class _XarrayBase:
         if (x is None) or (y is None):
             raise ValueError(
                 f"PointObservation '{observation.name}' cannot be used for extraction "
-                + "because it has None position x={x}, y={y}. Please provide position "
+                + f"because it has None position x={x}, y={y}. Please provide position "
                 + "when creating PointObservation."
             )
         da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
