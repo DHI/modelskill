@@ -204,7 +204,7 @@ class _SingleObsConnector(_BaseConnector):
     @staticmethod
     def _validate_in_domain(obs, mod):
         in_domain = True
-        if isinstance(mod, ModelResult) and isinstance(obs, PointObservation):
+        if isinstance(mod, ModelResultInterface) and isinstance(obs, PointObservation):
             in_domain = mod._in_domain(obs.x, obs.y)
             if not in_domain:
                 warnings.warn(
