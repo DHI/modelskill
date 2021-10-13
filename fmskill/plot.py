@@ -230,7 +230,12 @@ TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size"
 
 
 def taylor_diagram(
-    obs_std, points, figsize=(7, 7), obs_text="Observations", normalize_std=False
+    obs_std,
+    points,
+    figsize=(7, 7),
+    obs_text="Observations",
+    normalize_std=False,
+    **kwargs,
 ):
     if np.isscalar(figsize):
         figsize = (figsize, figsize)
@@ -268,4 +273,5 @@ def taylor_diagram(
         prop=dict(size="medium"),
         loc="upper right",
     )
-    fig.suptitle("Taylor diagram", size="x-large")
+    title = kwargs["title"] if ("title" in kwargs) else "Taylor diagram"
+    fig.suptitle(title, size="x-large")
