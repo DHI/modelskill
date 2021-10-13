@@ -97,9 +97,28 @@ class Observation:
         return txt
 
     def hist(self, bins=100, **kwargs):
-        """plot histogram"""
-        ax = self.df.iloc[:, -1].hist(bins=bins, color=self.color, **kwargs)
-        ax.set_title(self.name)
+        """plot histogram of observation values
+        
+        Wraps pandas.DataFrame hist() method.
+
+        Parameters
+        ----------
+        bins : int, optional
+            specification of bins, by default 100
+        title : str, optional
+            plot title, default: observation name
+        kwargs : other keyword arguments to df.hist()
+
+        Returns
+        -------
+        matplotlib axes
+        """
+        if "color" not in kwargs:
+            kwargs["color"] = self.color
+        title = kwargs.pop("title") if ("title" in kwargs) else self.name
+
+        ax = self.df.iloc[:, -1].hist(bins=bins, **kwargs)
+        ax.set_title(title)
         ax.set_xlabel(self._unit_text())
         return ax
 
