@@ -967,6 +967,7 @@ class BaseComparer:
         normalize_std: bool = False,
         aggregate_observations: bool = True,
         figsize: List[float] = (7, 7),
+        **kwargs,
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
@@ -996,6 +997,12 @@ class BaseComparer:
             (or shown individually), default True
         figsize : tuple, optional
             width and height of the figure (should be square), by default (7, 7)
+        marker : str, optional
+            marker type e.g. "x", "*", by default "o"
+        marker_size : float, optional
+            size of the marker, by default 6
+        title : str, optional
+            title of the plot, by default "Taylor diagram"
 
         Examples
         ------
@@ -1010,7 +1017,7 @@ class BaseComparer:
 
         if (not aggregate_observations) and (not normalize_std):
             raise ValueError(
-                "aggregate_observations and normalize_std cannot both be False!"
+                "aggregate_observations=False is only possible if normalize_std=True!"
             )
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
@@ -1027,6 +1034,8 @@ class BaseComparer:
         else:
             s = self.skill(
                 model=model,
+                observation=observation,
+                variable=variable,
                 start=start,
                 end=end,
                 area=area,
@@ -1043,15 +1052,21 @@ class BaseComparer:
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
         df.columns = ["obs_std", "std", "cc"]
-        # df["marker"] = "o"
-        # df["marker_size"] = 6
+        marker = kwargs.pop("marker") if ("marker" in kwargs) else "o"
+        marker_size = kwargs.pop("marker_size") if ("marker_size" in kwargs) else 6
         pts = [
-            TaylorPoint(r.Index, r.obs_std, r.std, r.cc, "o", 6)
+            TaylorPoint(
+                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+            )
             for r in df.itertuples()
         ]
 
         taylor_diagram(
-            obs_std=ref_std, points=pts, figsize=figsize, normalize_std=normalize_std
+            obs_std=ref_std,
+            points=pts,
+            figsize=figsize,
+            normalize_std=normalize_std,
+            **kwargs,
         )
 
 
@@ -1300,6 +1315,7 @@ class SingleObsComparer(BaseComparer):
         df: pd.DataFrame = None,
         normalize_std: bool = False,
         figsize: List[float] = (7, 7),
+        **kwargs,
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
@@ -1322,6 +1338,12 @@ class SingleObsComparer(BaseComparer):
             plot model std normalized with observation std, default False
         figsize : tuple, optional
             width and height of the figure (should be square), by default (7, 7)
+        marker : str, optional
+            marker type e.g. "x", "*", by default "o"
+        marker_size : float, optional
+            size of the marker, by default 6
+        title : str, optional
+            title of the plot, by default "Taylor diagram"
 
         Examples
         ------
@@ -1348,10 +1370,13 @@ class SingleObsComparer(BaseComparer):
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
         df.columns = ["obs_std", "std", "cc"]
-        # df["marker"] = "o"
-        # df["marker_size"] = 6
+
+        marker = kwargs.pop("marker") if ("marker" in kwargs) else "o"
+        marker_size = kwargs.pop("marker_size") if ("marker_size" in kwargs) else 6
         pts = [
-            TaylorPoint(r.Index, r.obs_std, r.std, r.cc, "o", 6)
+            TaylorPoint(
+                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+            )
             for r in df.itertuples()
         ]
 
@@ -1361,6 +1386,7 @@ class SingleObsComparer(BaseComparer):
             figsize=figsize,
             obs_text=f"Obs: {self.name}",
             normalize_std=normalize_std,
+            **kwargs,
         )
 
     def remove_bias(self, correct="Model"):
@@ -1380,13 +1406,31 @@ class SingleObsComparer(BaseComparer):
             )
         return bias
 
-    def residual_hist(self, bins=100):
-        plt.hist(self.residual, bins=bins, color=self._resi_color)
-        plt.title(f"Residuals, {self.name}")
+    def residual_hist(self, bins=100, **kwargs):
+        """plot histogram of residual values
+
+        Wraps pandas.DataFrame hist() method.
+
+        Parameters
+        ----------
+        bins : int, optional
+            specification of bins, by default 100
+        title : str, optional
+            plot title, default: Residuals, name
+        kwargs : other keyword arguments to df.hist()
+        """
+        if "color" not in kwargs:
+            kwargs["color"] = self._resi_color
+        title = (
+            kwargs.pop("title") if ("title" in kwargs) else f"Residuals, {self.name}"
+        )
+        plt.hist(self.residual, bins=bins, **kwargs)
+        plt.title(title)
         plt.xlabel(f"Residuals of {self._obs_unit_text}")
 
-    def hist(self, model=None, bins=100):
+    def hist(self, model=None, bins=100, **kwargs):
         """Plot histogram of model data and observations.
+
         Wraps pandas.DataFrame hist() method.
 
         Parameters
@@ -1395,18 +1439,30 @@ class SingleObsComparer(BaseComparer):
             name or id of model to be plotted, by default None
         bins : int, optional
             number of bins, by default 100
+        title : str, optional
+            plot title, default: observation name
+        kwargs : other keyword arguments to df.hist()
+
+        Returns
+        -------
+        matplotlib axes
         """
         mod_id = self._get_mod_id(model)
         mod_name = self.mod_names[mod_id]
 
-        ax = self.df[mod_name].hist(
-            bins=bins, color=self._mod_colors[mod_id], alpha=0.5
-        )
+        if "alpha" not in kwargs:
+            kwargs["alpha"] = 0.5
+        if "title" in kwargs:
+            title = kwargs.pop("title")
+        else:
+            title = f"{mod_name} vs {self.name}"
+
+        ax = self.df[mod_name].hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
         self.df[self.obs_name].hist(
-            bins=bins, color=self.observation.color, alpha=0.5, ax=ax
+            bins=bins, color=self.observation.color, ax=ax, **kwargs
         )
         ax.legend([mod_name, self.obs_name])
-        plt.title(f"{mod_name} vs {self.name}")
+        plt.title(title)
         plt.xlabel(f"{self._obs_unit_text}")
 
 
