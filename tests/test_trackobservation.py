@@ -80,3 +80,9 @@ def test_hist(c2):
     o1.hist()
 
     o1.hist(bins=20, title="new_title", color="red")
+
+
+def test_force_keyword_args(c2):
+
+    with pytest.raises(TypeError):
+        TrackObservation(c2, 2, "c2")

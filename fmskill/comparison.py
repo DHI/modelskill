@@ -1499,7 +1499,7 @@ class PointComparer(SingleObsComparer):
         self.df.dropna(inplace=True)
 
     def plot_timeseries(
-        self, title=None, ylim=None, figsize=None, backend="matplotlib", **kwargs
+        self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
     ):
         """Timeseries plot showing compared data: observation vs modelled
 

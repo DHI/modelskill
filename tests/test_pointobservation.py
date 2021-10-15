@@ -49,3 +49,9 @@ def test_hist(klagshamn):
     o1.hist()
 
     o1.hist(bins=20, title="new_title", color="red")
+
+
+def test_force_keyword_args(klagshamn):
+
+    with pytest.raises(TypeError):
+        PointObservation(klagshamn, 0, 366844, 6154291, "Klagshamn")

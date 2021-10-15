@@ -15,6 +15,7 @@ from .plot_taylor import TaylorDiagram
 def scatter(
     x,
     y,
+    *,
     binsize: float = None,
     nbins: int = 20,
     show_points: bool = None,
