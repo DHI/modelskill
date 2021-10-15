@@ -1830,6 +1830,80 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         self._all_df = None
 
+    def hist(
+        self,
+        bins=100,
+        model: Union[str, int] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+        **kwargs,
+    ):
+        """Plot histogram of specific model and all observations.
+
+        Wraps pandas.DataFrame hist() method.
+
+        Parameters
+        ----------
+        bins : int, optional
+            number of bins, by default 100
+        model : (str, int), optional
+            name or id of specific model to be plotted, by default 0
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            user-provided data instead of the comparers own data, by default None
+        title : str, optional
+            plot title, default: observation name
+        kwargs : other keyword arguments to df.hist()
+
+        Returns
+        -------
+        matplotlib axes
+        """
+        mod_id = self._get_mod_id(model)
+        mod_name = self.mod_names[mod_id]
+
+        # filter data
+        df = self.sel_df(
+            df=df,
+            model=mod_name,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+        )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
+
+        if "alpha" not in kwargs:
+            kwargs["alpha"] = 0.5
+        if "title" in kwargs:
+            title = kwargs.pop("title")
+        else:
+            title = f"{mod_name} vs Observations"
+
+        ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
+        df.obs_val.hist(bins=bins, color=self[0].observation.color, ax=ax, **kwargs)
+        ax.legend([mod_name, "observations"])
+        plt.title(title)
+        plt.xlabel(f"{self._obs_unit_text}")
+
     def mean_skill(
         self,
         weights: Union[str, List[float]] = None,
