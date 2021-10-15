@@ -139,6 +139,8 @@ def test_spatial_skill_misc(comparer):
 def test_hist(comparer):
     cc = comparer
 
+    cc.hist(bins=np.linspace(0, 7, num=15))
+
     cc[0].hist(bins=10)
     cc[0].hist(model=0, title="new_title", alpha=0.2)
     cc[0].residual_hist()
