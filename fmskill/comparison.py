@@ -1436,7 +1436,7 @@ class SingleObsComparer(BaseComparer):
         Parameters
         ----------
         model : (str, int), optional
-            name or id of model to be plotted, by default None
+            name or id of model to be plotted, by default 0
         bins : int, optional
             number of bins, by default 100
         title : str, optional
