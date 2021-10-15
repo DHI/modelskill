@@ -73,3 +73,9 @@ def test_trackobservation_item_csv(c2):
 
     o2 = TrackObservation(df, item="significant_wave_height")
     assert o2.n_points == 1115
+
+
+def test_force_keyword_args(c2):
+
+    with pytest.raises(TypeError):
+        TrackObservation(c2, 2, "c2")
