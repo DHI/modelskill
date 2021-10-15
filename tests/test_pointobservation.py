@@ -42,3 +42,10 @@ def test_coordinates(klagshamn):
     assert isinstance(o1.geometry, Point)
     assert o1.geometry.x == x0
     assert o1.geometry.y == y0
+
+
+def test_hist(klagshamn):
+    o1 = PointObservation(klagshamn, item=0, x=366844, y=6154291, name="Klagshamn1")
+    o1.hist()
+
+    o1.hist(bins=20, title="new_title", color="red")

@@ -73,3 +73,10 @@ def test_trackobservation_item_csv(c2):
 
     o2 = TrackObservation(df, item="significant_wave_height")
     assert o2.n_points == 1115
+
+
+def test_hist(c2):
+    o1 = TrackObservation(c2, item=2)
+    o1.hist()
+
+    o1.hist(bins=20, title="new_title", color="red")
