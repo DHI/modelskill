@@ -16,6 +16,18 @@ from copy import deepcopy
 from .utils import make_unique_index
 
 
+def _parse_item(items, item, item_str="item"):
+    if isinstance(item, int):
+        item = len(items) + item if (item < 0) else item
+        if (item < 0) or (item >= len(items)):
+            raise IndexError(f"{item_str} is out of range (0, {len(items)})")
+    elif isinstance(item, str):
+        item = items.index(item)
+    else:
+        raise TypeError(f"{item_str} must be int or string")
+    return item
+
+
 class Observation:
     "Base class for all types of observations"
 
@@ -402,8 +414,16 @@ class TrackObservation(Observation):
                 item = 2
             elif len(items) > 3:
                 raise ValueError("Input has more than 3 items, but item was not given!")
-        if isinstance(item, str):
-            item = items.index(item)
+        else:
+            item = _parse_item(items, item)
+
+        x_item = _parse_item(items, x_item, "x_item")
+        y_item = _parse_item(items, y_item, "y_item")
+
+        if (item == x_item) or (item == y_item) or (x_item == y_item):
+            raise ValueError(
+                f"x-item ({x_item}), y-item ({y_item}) and value-item ({item}) must be different!"
+            )
         return [x_item, y_item, item]
 
     def __repr__(self):
