@@ -42,3 +42,9 @@ def test_coordinates(klagshamn):
     assert isinstance(o1.geometry, Point)
     assert o1.geometry.x == x0
     assert o1.geometry.y == y0
+
+
+def test_force_keyword_args(klagshamn):
+
+    with pytest.raises(TypeError):
+        PointObservation(klagshamn, 0, 366844, 6154291, "Klagshamn")
