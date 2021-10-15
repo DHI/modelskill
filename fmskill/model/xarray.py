@@ -84,6 +84,12 @@ class _XarrayBase:
         if item is None:
             item = self._selected_item
         x, y = observation.x, observation.y
+        if (x is None) or (y is None):
+            raise ValueError(
+                f"PointObservation '{observation.name}' cannot be used for extraction "
+                + f"because it has None position x={x}, y={y}. Please provide position "
+                + "when creating PointObservation."
+            )
         da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
@@ -104,11 +110,15 @@ class _XarrayBase:
         return df
 
     def _in_domain(self, x, y) -> bool:
-        ok = True
-        # TODO
-        # if self.is_dfsu:
-        #    ok = self.dfs.contains([x, y])
-        return ok
+        if (x is None) or (y is None):
+            raise ValueError(
+                "PointObservation has None position - cannot determine if inside xarray domain!"
+            )
+        xmin = self.ds.x.values.min()
+        xmax = self.ds.x.values.max()
+        ymin = self.ds.y.values.min()
+        ymax = self.ds.y.values.max()
+        return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def _validate_start_end(self, observation: Observation) -> bool:
         if observation.end_time < self.start_time:
