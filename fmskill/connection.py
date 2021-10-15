@@ -20,7 +20,7 @@ from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 
 
-def compare(obs, mod, obs_item=None, mod_item=None):
+def compare(obs, mod, *, obs_item=None, mod_item=None):
     """Quick-and-dirty compare of observation and model
 
     Parameters
@@ -547,7 +547,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         return ax
 
     def plot_temporal_coverage(
-        self, show_model=True, limit_to_model_period=True, marker="_", figsize=None
+        self, *, show_model=True, limit_to_model_period=True, marker="_", figsize=None
     ):
         """Plot graph showing temporal coverage for all observations
 
@@ -694,7 +694,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             yaml.dump(conf, f)  # , default_flow_style=False
 
     @staticmethod
-    def from_config(conf: Union[dict, str], validate_eum=True):
+    def from_config(conf: Union[dict, str], *, validate_eum=True):
         """Load Connector from a config file (or dict)
 
         Parameters

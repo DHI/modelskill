@@ -132,6 +132,7 @@ class PointObservation(Observation):
     def __init__(
         self,
         filename,
+        *,
         item=None,
         x: float = None,
         y: float = None,
@@ -326,7 +327,7 @@ class TrackObservation(Observation):
         return self.df.iloc[:, 2].values
 
     def __init__(
-        self, input, item: int = None, name: str = None, variable_name: str = None
+        self, input, *, item: int = None, name: str = None, variable_name: str = None
     ):
 
         self._filename = None

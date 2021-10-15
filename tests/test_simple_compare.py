@@ -106,3 +106,9 @@ def test_compare_mod_item(fn_obs, fn_mod):
     df_mod = Dfs0(fn_mod).read(items=[0, 1, 2]).to_dataframe()
     c = fmskill.compare(fn_obs, df_mod, mod_item=0)
     assert c.n_points > 0
+
+
+def test_force_keyword_args(fn_obs, fn_mod):
+
+    with pytest.raises(TypeError):
+        fmskill.compare(fn_obs, fn_mod, 0, 0)

@@ -28,6 +28,6 @@ from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector
 
 
-def from_config(configuration: Union[dict, str], validate_eum=True):
+def from_config(configuration: Union[dict, str], *, validate_eum=True):
 
-    return Connector.from_config(configuration, validate_eum)
+    return Connector.from_config(configuration, validate_eum=validate_eum)
