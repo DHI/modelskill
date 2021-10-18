@@ -10,7 +10,6 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from shapely.geometry import Point, MultiPoint
 from mikeio import Dfs0, eum
 from copy import deepcopy
 from .utils import make_unique_index
@@ -122,7 +121,9 @@ class PointObservation(Observation):
     """
 
     @property
-    def geometry(self) -> Point:
+    def geometry(self):
+        from shapely.geometry import Point
+
         """Coordinates of observation"""
         if self.z is None:
             return Point(self.x, self.y)
@@ -309,7 +310,9 @@ class TrackObservation(Observation):
     """
 
     @property
-    def geometry(self) -> MultiPoint:
+    def geometry(self):
+        from shapely.geometry import MultiPoint
+
         """Coordinates of observation"""
         return MultiPoint(self.df.iloc[:, 0:2].values)
 

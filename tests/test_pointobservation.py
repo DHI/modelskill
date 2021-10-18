@@ -1,7 +1,6 @@
 import pandas as pd
 import pytest
 
-from shapely.geometry import Point
 from fmskill.observation import PointObservation
 
 
@@ -37,6 +36,8 @@ def test_from_df(klagshamn):
 
 
 def test_coordinates(klagshamn):
+    from shapely.geometry import Point
+
     x0, y0 = 366844, 6154291
     o1 = PointObservation(klagshamn, item=0, x=x0, y=y0, name="Klagshamn")
     assert isinstance(o1.geometry, Point)
