@@ -13,7 +13,6 @@ setuptools.setup(
         "numpy",
         "pandas",
         "mikeio >= 0.7",
-        "shapely >= 1.7.0",
         "matplotlib",
         "xarray",
         "markdown",
