@@ -16,6 +16,18 @@ from copy import deepcopy
 from .utils import make_unique_index
 
 
+def _parse_item(items, item, item_str="item"):
+    if isinstance(item, int):
+        item = len(items) + item if (item < 0) else item
+        if (item < 0) or (item >= len(items)):
+            raise IndexError(f"{item_str} is out of range (0, {len(items)})")
+    elif isinstance(item, str):
+        item = items.index(item)
+    else:
+        raise TypeError(f"{item_str} must be int or string")
+    return item
+
+
 class Observation:
     "Base class for all types of observations"
 
@@ -132,12 +144,31 @@ class Observation:
 class PointObservation(Observation):
     """Class for observations of fixed locations
 
-    Can be created from a dfs0 file or from a pd.DataFrame
+    Create a PointObservation from a dfs0 file or a pd.DataFrame.
+
+    Parameters
+    ----------
+    input : (str, pd.DataFrame, pd.Series)
+        dfs0 filename or dataframe with the data
+    item : (int, str), optional
+        index or name of the wanted item, by default None
+    x : float, optional
+        x-coordinate of the observation point, by default None
+    y : float, optional
+        y-coordinate of the observation point, by default None
+    z : float, optional
+        z-coordinate of the observation point, by default None
+    name : str, optional
+        user-defined name for easy identification in plots etc, by default file basename
+    variable_name : str, optional
+        user-defined variable name in case of multiple variables, by default eumType name
 
     Examples
     --------
     >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o1 = PointObservation("klagshamn.dfs0", item="Water Level", x=366844, y=6154291)
     >>> o1 = PointObservation(df, item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o1 = PointObservation(df["Water Level"], x=366844, y=6154291)
     """
 
     @property
@@ -159,32 +190,7 @@ class PointObservation(Observation):
         name: str = None,
         variable_name: str = None,
     ):
-        """Create a PointObservation from a dfs0 file or a pd.DataFrame.
 
-        Parameters
-        ----------
-        input : (str, pd.DataFrame, pd.Series)
-            dfs0 filename or dataframe with the data
-        item : (int, str), optional
-            index or name of the wanted item, by default None
-        x : float, optional
-            x-coordinate of the observation point, by default None
-        y : float, optional
-            y-coordinate of the observation point, by default None
-        z : float, optional
-            z-coordinate of the observation point, by default None
-        name : str, optional
-            user-defined name for easy identification in plots etc, by default file basename
-        variable_name : str, optional
-            user-defined variable name in case of multiple variables, by default eumType name
-
-        Examples
-        --------
-        >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
-        >>> o1 = PointObservation("klagshamn.dfs0", item="Water Level", x=366844, y=6154291)
-        >>> o1 = PointObservation(df, item=0, x=366844, y=6154291, name="Klagshamn")
-        >>> o1 = PointObservation(df["Water Level"], x=366844, y=6154291)
-        """
         self.x = x
         self.y = y
         self.z = z
@@ -288,11 +294,32 @@ class TrackObservation(Observation):
 
     The data needs in addition to the datetime of each single observation point also, x and y coordinates.
 
+    Create TrackObservation from dfs0 or DataFrame
+
+    Parameters
+    ----------
+    input : (str, pd.DataFrame)
+        path to dfs0 file or DataFrame with track data
+    item : (str, int), optional
+        item name or index of values, by default 2
+    name : str, optional
+        user-defined name for easy identification in plots etc, by default file basename
+    variable_name : str, optional
+        user-defined variable name in case of multiple variables, by default eumType name
+    x_item : (str, int), optional
+        item name or index of x-coordinate, by default 0
+    y_item : (str, int), optional
+        item name or index of y-coordinate, by default 1
+
     Examples
     --------
     >>> o1 = TrackObservation("track.dfs0", item=2, name="c2")
 
     >>> o1 = TrackObservation("track.dfs0", item="wind_speed", name="c2")
+
+    >>> o1 = TrackObservation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
+
+    >>> o1 = TrackObservation("track_wl.dfs0", item="wl", x_item="lon", y_item="lat")
 
     >>> df = pd.DataFrame(
     ...         {
@@ -346,7 +373,14 @@ class TrackObservation(Observation):
         return self.df.iloc[:, 2].values
 
     def __init__(
-        self, input, *, item: int = None, name: str = None, variable_name: str = None
+        self,
+        input,
+        *,
+        item: int = None,
+        name: str = None,
+        variable_name: str = None,
+        x_item=0,
+        y_item=1,
     ):
 
         self._filename = None
@@ -354,8 +388,9 @@ class TrackObservation(Observation):
 
         if isinstance(input, pd.DataFrame):
             df = input
-            item = self._parse_track_item(df.columns.to_list(), item)
-            df = df.iloc[:, [0, 1, item]]
+            df_items = df.columns.to_list()
+            items = self._parse_track_items(df_items, x_item, y_item, item)
+            df = df.iloc[:, items]
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         elif isinstance(input, str):
             assert os.path.exists(input)
@@ -366,8 +401,8 @@ class TrackObservation(Observation):
             ext = os.path.splitext(input)[-1]
             if ext == ".dfs0":
                 dfs = Dfs0(input)
-                item = self._parse_track_item([i.name for i in dfs.items], item)
-                items = [0, 1, item]
+                file_items = [i.name for i in dfs.items]
+                items = self._parse_track_items(file_items, x_item, y_item, item)
                 df, itemInfo = self._read_dfs0(dfs, items)
                 self._item = itemInfo.name
             else:
@@ -387,7 +422,7 @@ class TrackObservation(Observation):
         )
 
     @staticmethod
-    def _parse_track_item(items, item):
+    def _parse_track_items(items, x_item, y_item, item):
         """If input has exactly 3 items we accept item=None"""
         if len(items) < 3:
             raise ValueError(
@@ -398,9 +433,17 @@ class TrackObservation(Observation):
                 item = 2
             elif len(items) > 3:
                 raise ValueError("Input has more than 3 items, but item was not given!")
-        if isinstance(item, str):
-            item = items.index(item)
-        return item
+        else:
+            item = _parse_item(items, item)
+
+        x_item = _parse_item(items, x_item, "x_item")
+        y_item = _parse_item(items, y_item, "y_item")
+
+        if (item == x_item) or (item == y_item) or (x_item == y_item):
+            raise ValueError(
+                f"x-item ({x_item}), y-item ({y_item}) and value-item ({item}) must be different!"
+            )
+        return [x_item, y_item, item]
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
