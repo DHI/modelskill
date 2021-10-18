@@ -60,9 +60,12 @@ def test_trackobservation_item_dfs0(c2):
     assert o2.n_points == 298
 
 
-def test_trackobservation_item_csv(c2):
+def test_trackobservation_item_csv():
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
+
+    with pytest.raises(ValueError, match="It should have at least 3"):
+        TrackObservation(df[["lon", "surface_elevation"]])
 
     with pytest.raises(ValueError, match="Input has more than 3 items"):
         TrackObservation(df)
@@ -73,6 +76,31 @@ def test_trackobservation_item_csv(c2):
 
     o2 = TrackObservation(df, item="significant_wave_height")
     assert o2.n_points == 1115
+
+
+def test_trackobservation_x_y_item(c2):
+    fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
+    df_in = pd.read_csv(fn, index_col=0, parse_dates=True)
+    cols = ["lat", "surface_elevation", "lon", "wind_speed"]
+    df = df_in[cols]  # re-order columns
+
+    with pytest.raises(ValueError, match="Input has more than 3 items"):
+        TrackObservation(df)
+
+    o1 = TrackObservation(df, item=-1, x_item="lon", y_item="lat")
+    assert o1.n_points == 1115
+    assert o1.df.columns[-1] == "wind_speed"
+
+    o2 = TrackObservation(df, item="surface_elevation", x_item=2, y_item=0)
+    assert o2.n_points == 1115
+
+    with pytest.raises(ValueError, match="must be different!"):
+        TrackObservation(df, item=-1, x_item="lon", y_item="lon")
+
+    cols = ["lat", "surface_elevation", "lon"]
+    df = df_in[cols]
+    with pytest.raises(ValueError, match="must be different!"):
+        TrackObservation(df, x_item="lon", y_item="lat")
 
 
 def test_force_keyword_args(c2):
