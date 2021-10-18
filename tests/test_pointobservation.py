@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+import sys
 
 from fmskill.observation import PointObservation
 
@@ -35,6 +36,7 @@ def test_from_df(klagshamn):
     assert o1.n_points == o3.n_points
 
 
+@pytest.mark.skipif("shapely" not in sys.modules, reason="requires the shapely")
 def test_coordinates(klagshamn):
     from shapely.geometry import Point
 
