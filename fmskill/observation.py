@@ -110,7 +110,7 @@ class Observation:
 
     def hist(self, bins=100, **kwargs):
         """plot histogram of observation values
-        
+
         Wraps pandas.DataFrame hist() method.
 
         Parameters
@@ -281,10 +281,13 @@ class PointObservation(Observation):
         df.dropna(inplace=True)
         return df, itemInfo
 
-    def plot(self, **kwargs):
+    def plot(self, title=None, **kwargs):
         """plot timeseries"""
         ax = self.df.plot(marker=".", color=self.color, linestyle="None", **kwargs)
-        ax.set_title(self.name)
+        if title:
+            ax.set_title(title)
+        else:
+            ax.set_title(self.name)
         ax.set_ylabel(self._unit_text())
         return ax
 

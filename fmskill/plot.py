@@ -197,7 +197,7 @@ def scatter(
 
 
 def plot_observation_positions(
-    dfs: Dfsu, observations: List[Observation], figsize: Tuple = None
+    dfs: Dfsu, observations: List[Observation], figsize: Tuple = None, title=None
 ):
     """Plot observation points on a map showing the model domain
 
@@ -209,6 +209,8 @@ def plot_observation_positions(
         Observation collection
     figsize : (float, float), optional
         figure size, by default None
+    title: str, optional
+        plot title, default empty
     """
 
     xn = dfs.node_coordinates[:, 0]
@@ -224,6 +226,8 @@ def plot_observation_positions(
             else:
                 print("Too many points to plot")
                 # TODO: group by lonlat bin
+    if title:
+        ax.set_title(title)
     return ax
 
 
