@@ -1079,7 +1079,7 @@ class SingleObsComparer(BaseComparer):
         assert new_time.is_unique
         new_df = (
             df.reindex(df.index.union(new_time))
-            .interpolate(method="time")
+            .interpolate(method="time", limit_area="inside")
             .reindex(new_time)
         )
         return new_df
