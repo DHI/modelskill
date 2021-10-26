@@ -83,7 +83,7 @@ class _DataFrameBase:
             item = self._selected_item
         else:
             item = self._get_item_name(item)
-        return self.df[[item]]
+        return self.df[[item]].dropna()
 
 
 class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
@@ -220,7 +220,7 @@ class _DataFrameTrackBase(_DataFrameBase):
         if item is None:
             item = self._selected_item
         item_num = self._get_item_num(item)
-        return self.df.iloc[:, [self._x_item, self._y_item, item_num]]
+        return self.df.iloc[:, [self._x_item, self._y_item, item_num]].dropna()
 
 
 class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):

@@ -110,7 +110,7 @@ class _DfsBase:
         elif self.is_dfs0:
             ds_model = self._extract_point_dfs0(item)
 
-        return ds_model.to_dataframe()
+        return ds_model.to_dataframe().dropna()
 
     def _extract_point_dfsu(self, x, y, item) -> Dataset:
         xy = np.atleast_2d([x, y])
