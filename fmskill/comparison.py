@@ -196,8 +196,8 @@ class BaseComparer:
         self.df = None
         self._all_df = None
 
-        self._mod_start = datetime(2900, 1, 1)
-        self._mod_end = datetime(1, 1, 1)
+        self._mod_start = datetime(2250, 1, 1)
+        self._mod_end = datetime(1700, 1, 1)
 
         self.observation = deepcopy(observation)
         self._obs_unit_text = self.observation._unit_text()
@@ -209,8 +209,8 @@ class BaseComparer:
         if modeldata is not None:
             self.add_modeldata(modeldata)
 
-            if len(self.mod_data) == 0:
-                raise ValueError("Failed to add modeldata!")
+            # if len(self.mod_data) == 0:
+            #     raise ValueError("Failed to add modeldata!")
 
     def add_modeldata(self, modeldata):
         if modeldata is None:
