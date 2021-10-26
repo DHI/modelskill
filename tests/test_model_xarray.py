@@ -182,11 +182,11 @@ def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
 
     assert isinstance(tc, TrackComparer)
     assert tc.start.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
-    assert tc.end.replace(microsecond=0) == datetime(2017, 10, 29, 12, 52, 51)
+    assert tc.end.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tc.n_models == 1
-    assert tc.n_points == 298
+    assert tc.n_points == 99
     assert tc.n_variables == 1
-    assert len(df.dropna()) == 298
+    assert len(df.dropna()) == 99
 
 
 def test_xarray_connector(modelresult, pointobs_epl_hm0, trackobs_c2_hm0):
