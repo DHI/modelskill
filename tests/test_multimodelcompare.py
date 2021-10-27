@@ -208,17 +208,34 @@ def test_mm_skill_metrics(cc):
 def test_mm_mean_skill(cc):
     s = cc.mean_skill()
     assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+
     s = cc.mean_skill(weights=[0.2, 0.3, 1.0])
     assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.334736617)
+
+    s = cc.mean_skill(weights=[100000000000.0, 1.0, 1.0])
+    assert s.loc["SW_1"].rmse < 1.0
+
     s = cc.mean_skill(weights="points")
     assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.3367349)
+
     s = cc.mean_skill(weights=1)
     assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+
     s = cc.mean_skill(weights="equal")
     assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+
     with pytest.raises(ValueError):
         # too many weights
         cc.mean_skill(weights=[0.2, 0.3, 0.4, 0.5])
+
+
+def test_mm_mean_skill_weights(cc):
+    pass
 
 
 def test_mm_scatter(cc):
