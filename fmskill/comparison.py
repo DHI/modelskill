@@ -1916,8 +1916,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                 weights = np.ones(n_obs)  # equal weight to all
             elif isinstance(weights, dict):
                 w_dict = weights
-                weights = [w_dict.get(name, 1.0) for name in (self.obs_names):
-                
+                weights = [w_dict.get(name, 1.0) for name in (self.obs_names)]
 
             elif isinstance(weights, str):
                 if weights.lower() == "equal":
@@ -1939,7 +1938,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                     raise ValueError(
                         f"weights must have same length as observations: {observations}"
                     )
-        assert len(weights) == n_obs
+        if weights is not None:
+            assert len(weights) == n_obs
         return weights
 
     def score(
