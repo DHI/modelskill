@@ -219,7 +219,7 @@ def test_mm_mean_skill(cc):
 
     s = cc.mean_skill(weights="points")
     assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.3367349)
+    assert s.loc["SW_1"].rmse == pytest.approx(0.33927729)
 
     s = cc.mean_skill(weights=1)
     assert len(s) == 2
