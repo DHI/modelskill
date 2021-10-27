@@ -1786,7 +1786,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> AggregatedSkill:
-        """Weighted mean skill of model(s) over all observations (of same variable)
+        """Weighted mean skill of model(s) as a weighted mean of the skill
+        of each observation
+
+        Note: this is not equal to the mean skill of all observational points!
 
         Parameters
         ----------
