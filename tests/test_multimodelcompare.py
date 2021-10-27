@@ -210,6 +210,10 @@ def test_mm_mean_skill(cc):
     assert len(s) == 2
     s = cc.mean_skill(weights=[0.2, 0.3, 1.0])
     assert len(s) == 2
+    s = cc.mean_skill(weights={"EPL": 0.2, "c2": 1.0, "HKNA": 0.3})
+    assert len(s) == 2
+    s = cc.mean_skill(weights={"EPL": 2.0})
+    assert len(s) == 2
     s = cc.mean_skill(weights="points")
     assert len(s) == 2
     s = cc.mean_skill(weights=1)
