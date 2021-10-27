@@ -1858,17 +1858,22 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             var_names = df.variable.unique()
         n_models = len(mod_names)
 
+        # weights
+        weights = self._parse_weights(weights, obs_names)
+
+        if weights is None:
+            dfall = df.copy()
+            dfall["observation"] = "all"
+            return self.skill(df=dfall, metrics=metrics)
+
         # skill assessment
         metrics = self._parse_metric(metrics, return_list=True)
         s = self.skill(df=df, metrics=metrics)
         if s is None:
             return
         skilldf = s.df
-        # weights
-        weights = self._parse_weights(weights, obs_names)
-        skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, n_models)
-        )
+
+        skilldf["weights"] = np.tile(weights, n_models)
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
