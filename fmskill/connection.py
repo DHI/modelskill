@@ -539,11 +539,13 @@ class Connector(_BaseConnector, Mapping, Sequence):
                 cc.add_comparer(comparer)
         return cc
 
-    def plot_observation_positions(self, figsize=None):
+    def plot_observation_positions(self, title=None, figsize=None):
         """Plot observation points on a map showing the model domain
 
         Parameters
         ----------
+        title: str, optional
+            plot title, default empty
         figsize : (float, float), optional
             figure size, by default None
 
@@ -551,6 +553,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         --------
         >>> con.plot_observation_positions()
         >>> con.plot_observation_positions(figsize=(10,10))
+        >>> con.plot_observation_positions("A Map")
         """
         mod = list(self.modelresults.values())[0]
 
@@ -559,11 +562,19 @@ class Connector(_BaseConnector, Mapping, Sequence):
             return
 
         observations = list(self.observations.values())
-        ax = plot_observation_positions(dfs=mod.dfs, observations=observations)
+        ax = plot_observation_positions(
+            dfs=mod.dfs, observations=observations, title=title, figsize=figsize
+        )
         return ax
 
     def plot_temporal_coverage(
-        self, *, show_model=True, limit_to_model_period=True, marker="_", figsize=None
+        self,
+        *,
+        show_model=True,
+        limit_to_model_period=True,
+        marker="_",
+        title=None,
+        figsize=None,
     ):
         """Plot graph showing temporal coverage for all observations
 
@@ -576,6 +587,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             by the model, by default True
         marker : str, optional
             plot marker for observations, by default "_"
+        title: str, optional
+            plot title, default empty
         figsize : Tuple(float, float), optional
             size of figure, by default (7, 0.45*n_lines)
 
@@ -619,6 +632,9 @@ class Connector(_BaseConnector, Mapping, Sequence):
                 ax.get_yticklabels()[j].set_weight("bold")
                 # set_color("#004165")
         fig.autofmt_xdate()
+
+        if title:
+            ax.set_title(title)
         return ax
 
     def to_config(self, filename: str = None, relative_path=True):
