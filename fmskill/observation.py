@@ -108,7 +108,7 @@ class Observation:
             txt = f"{txt} [{unit_display_name(unit)}]"
         return txt
 
-    def hist(self, bins=100, **kwargs):
+    def hist(self, bins=100, title=None, color=None, **kwargs):
         """plot histogram of observation values
 
         Wraps pandas.DataFrame hist() method.
@@ -119,15 +119,16 @@ class Observation:
             specification of bins, by default 100
         title : str, optional
             plot title, default: observation name
+        color : str, optional
+            plot color, by default "#d62728"
         kwargs : other keyword arguments to df.hist()
 
         Returns
         -------
         matplotlib axes
         """
-        if "color" not in kwargs:
-            kwargs["color"] = self.color
-        title = kwargs.pop("title") if ("title" in kwargs) else self.name
+        title = self.name if title is None else title
+        kwargs["color"] = self.color if color is None else color
 
         ax = self.df.iloc[:, -1].hist(bins=bins, **kwargs)
         ax.set_title(title)
@@ -281,13 +282,29 @@ class PointObservation(Observation):
         df.dropna(inplace=True)
         return df, itemInfo
 
-    def plot(self, title=None, **kwargs):
-        """plot timeseries"""
-        ax = self.df.plot(marker=".", color=self.color, linestyle="None", **kwargs)
-        if title:
-            ax.set_title(title)
-        else:
-            ax.set_title(self.name)
+    def plot(self, title=None, color=None, marker=".", linestyle="None", **kwargs):
+        """plot observation timeseries
+
+        Wraps pandas.DataFrame plot() method.
+
+        Parameters
+        ----------
+        title : str, optional
+            plot title, default: [name]
+        color : str, optional
+            plot color, by default '#d62728'
+        marker : str, optional
+            plot marker, by default '.'
+        linestyle : str, optional
+            line style, by default None
+        kwargs: other keyword arguments to df.plot()        
+        """
+        kwargs["color"] = self.color if color is None else color
+        ax = self.df.plot(marker=marker, linestyle=linestyle, **kwargs)
+
+        title = self.name if title is None else title
+        ax.set_title(title)
+
         ax.set_ylabel(self._unit_text())
         return ax
 
