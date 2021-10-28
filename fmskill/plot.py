@@ -240,7 +240,7 @@ def taylor_diagram(
     figsize=(7, 7),
     obs_text="Observations",
     normalize_std=False,
-    **kwargs,
+    title="Taylor diagram", 
 ):
     if np.isscalar(figsize):
         figsize = (figsize, figsize)
@@ -278,5 +278,4 @@ def taylor_diagram(
         prop=dict(size="medium"),
         loc="upper right",
     )
-    title = kwargs["title"] if ("title" in kwargs) else "Taylor diagram"
     fig.suptitle(title, size="x-large")

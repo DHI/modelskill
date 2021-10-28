@@ -967,7 +967,9 @@ class BaseComparer:
         normalize_std: bool = False,
         aggregate_observations: bool = True,
         figsize: List[float] = (7, 7),
-        **kwargs,
+        marker: str = "o",
+        marker_size: float = 6.0,
+        title: str = "Taylor diagram",
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
@@ -1052,8 +1054,6 @@ class BaseComparer:
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
         df.columns = ["obs_std", "std", "cc"]
-        marker = kwargs.pop("marker") if ("marker" in kwargs) else "o"
-        marker_size = kwargs.pop("marker_size") if ("marker_size" in kwargs) else 6
         pts = [
             TaylorPoint(
                 r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
@@ -1066,7 +1066,7 @@ class BaseComparer:
             points=pts,
             figsize=figsize,
             normalize_std=normalize_std,
-            **kwargs,
+            title=title,
         )
 
 
@@ -1315,7 +1315,9 @@ class SingleObsComparer(BaseComparer):
         df: pd.DataFrame = None,
         normalize_std: bool = False,
         figsize: List[float] = (7, 7),
-        **kwargs,
+        marker: str = "o",
+        marker_size: float = 6.0,
+        title: str = "Taylor diagram",
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
@@ -1371,8 +1373,6 @@ class SingleObsComparer(BaseComparer):
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
         df.columns = ["obs_std", "std", "cc"]
 
-        marker = kwargs.pop("marker") if ("marker" in kwargs) else "o"
-        marker_size = kwargs.pop("marker_size") if ("marker_size" in kwargs) else 6
         pts = [
             TaylorPoint(
                 r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
@@ -1386,7 +1386,7 @@ class SingleObsComparer(BaseComparer):
             figsize=figsize,
             obs_text=f"Obs: {self.name}",
             normalize_std=normalize_std,
-            **kwargs,
+            title=title,
         )
 
     def remove_bias(self, correct="Model"):
@@ -1406,7 +1406,7 @@ class SingleObsComparer(BaseComparer):
             )
         return bias
 
-    def residual_hist(self, bins=100, **kwargs):
+    def residual_hist(self, bins=100, title=None, color=None, **kwargs):
         """plot histogram of residual values
 
         Wraps pandas.DataFrame hist() method.
@@ -1416,19 +1416,18 @@ class SingleObsComparer(BaseComparer):
         bins : int, optional
             specification of bins, by default 100
         title : str, optional
-            plot title, default: Residuals, name
+            plot title, default: Residuals, [name]
+        color : str, optional
+            residual color, by default "#8B8D8E"
         kwargs : other keyword arguments to df.hist()
         """
-        if "color" not in kwargs:
-            kwargs["color"] = self._resi_color
-        title = (
-            kwargs.pop("title") if ("title" in kwargs) else f"Residuals, {self.name}"
-        )
-        plt.hist(self.residual, bins=bins, **kwargs)
+        color = self._resi_color if color is None else color
+        title = f"Residuals, {self.name}" if title is None else title
+        plt.hist(self.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
         plt.xlabel(f"Residuals of {self._obs_unit_text}")
 
-    def hist(self, model=None, bins=100, **kwargs):
+    def hist(self, model=None, bins=100, title=None, alpha=0.5, **kwargs):
         """Plot histogram of model data and observations.
 
         Wraps pandas.DataFrame hist() method.
@@ -1440,7 +1439,9 @@ class SingleObsComparer(BaseComparer):
         bins : int, optional
             number of bins, by default 100
         title : str, optional
-            plot title, default: observation name
+            plot title, default: [model name] vs [observation name]
+        alpha : float, optional
+            alpha transparency fraction, by default 0.5
         kwargs : other keyword arguments to df.hist()
 
         Returns
@@ -1450,13 +1451,9 @@ class SingleObsComparer(BaseComparer):
         mod_id = self._get_mod_id(model)
         mod_name = self.mod_names[mod_id]
 
-        if "alpha" not in kwargs:
-            kwargs["alpha"] = 0.5
-        if "title" in kwargs:
-            title = kwargs.pop("title")
-        else:
-            title = f"{mod_name} vs {self.name}"
+        title = f"{mod_name} vs {self.name}" if title is None else title
 
+        kwargs["alpha"] = alpha
         ax = self.df[mod_name].hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
         self.df[self.obs_name].hist(
             bins=bins, color=self.observation.color, ax=ax, **kwargs
@@ -1840,6 +1837,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
+        title: str = None,
+        alpha: float = 0.5,
         **kwargs,
     ):
         """Plot histogram of specific model and all observations.
@@ -1868,6 +1867,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             user-provided data instead of the comparers own data, by default None
         title : str, optional
             plot title, default: observation name
+        alpha : float, optional
+            alpha transparency fraction, by default 0.5
         kwargs : other keyword arguments to df.hist()
 
         Returns
@@ -1891,13 +1892,9 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             warnings.warn("No data!")
             return
 
-        if "alpha" not in kwargs:
-            kwargs["alpha"] = 0.5
-        if "title" in kwargs:
-            title = kwargs.pop("title")
-        else:
-            title = f"{mod_name} vs Observations"
+        title = f"{mod_name} vs Observations" if title is None else title
 
+        kwargs["alpha"] = alpha
         ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
         df.obs_val.hist(bins=bins, color=self[0].observation.color, ax=ax, **kwargs)
         ax.legend([mod_name, "observations"])
