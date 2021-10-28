@@ -196,8 +196,8 @@ class BaseComparer:
         self.df = None
         self._all_df = None
 
-        self._mod_start = datetime(2250, 1, 1)
-        self._mod_end = datetime(1700, 1, 1)
+        self._mod_start = pd.Timestamp.max
+        self._mod_end = pd.Timestamp.min
 
         self.observation = deepcopy(observation)
         self._obs_unit_text = self.observation._unit_text()
