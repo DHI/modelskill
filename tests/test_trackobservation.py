@@ -78,6 +78,13 @@ def test_trackobservation_item_csv():
     assert o2.n_points == 1115
 
 
+def test_hist(c2):
+    o1 = TrackObservation(c2, item=2)
+    o1.hist()
+
+    o1.hist(bins=20, title="new_title", color="red")
+
+
 def test_trackobservation_x_y_item(c2):
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df_in = pd.read_csv(fn, index_col=0, parse_dates=True)

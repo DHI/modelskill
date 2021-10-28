@@ -197,7 +197,7 @@ def scatter(
 
 
 def plot_observation_positions(
-    dfs: Dfsu, observations: List[Observation], figsize: Tuple = None
+    dfs: Dfsu, observations: List[Observation], figsize: Tuple = None, title=None
 ):
     """Plot observation points on a map showing the model domain
 
@@ -209,6 +209,8 @@ def plot_observation_positions(
         Observation collection
     figsize : (float, float), optional
         figure size, by default None
+    title: str, optional
+        plot title, default empty
     """
 
     xn = dfs.node_coordinates[:, 0]
@@ -224,6 +226,8 @@ def plot_observation_positions(
             else:
                 print("Too many points to plot")
                 # TODO: group by lonlat bin
+    if title:
+        ax.set_title(title)
     return ax
 
 
@@ -231,7 +235,12 @@ TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size"
 
 
 def taylor_diagram(
-    obs_std, points, figsize=(7, 7), obs_text="Observations", normalize_std=False
+    obs_std,
+    points,
+    figsize=(7, 7),
+    obs_text="Observations",
+    normalize_std=False,
+    title="Taylor diagram", 
 ):
     if np.isscalar(figsize):
         figsize = (figsize, figsize)
@@ -269,4 +278,4 @@ def taylor_diagram(
         prop=dict(size="medium"),
         loc="upper right",
     )
-    fig.suptitle("Taylor diagram", size="x-large")
+    fig.suptitle(title, size="x-large")
