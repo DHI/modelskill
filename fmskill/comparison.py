@@ -1861,6 +1861,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         # weights
         weights = self._parse_weights(weights, obs_names)
 
+        # skill assessment for all
         if weights is None:
             dfall = df.copy()
             dfall["observation"] = "all"
