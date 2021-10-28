@@ -1913,7 +1913,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> AggregatedSkill:
-        """Weighted mean skill of model(s) over all observations (of same variable)
+        """Weighted mean skill of model(s) as a weighted mean of the skill
+        of each observation
+
+        Note: this is not equal to the mean skill of all observational points!
 
         Parameters
         ----------
@@ -1991,7 +1994,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         # weights
         weights = self._parse_weights(weights, obs_names)
         skilldf["weights"] = (
-            skilldf.n if weights is None else np.repeat(weights, n_models)
+            skilldf.n if weights is None else np.tile(weights, n_models)
         )
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
