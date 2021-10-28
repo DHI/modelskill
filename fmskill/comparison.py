@@ -1409,8 +1409,6 @@ class SingleObsComparer(BaseComparer):
     def residual_hist(self, bins=100, title=None, color=None, **kwargs):
         """plot histogram of residual values
 
-        Wraps pandas.DataFrame hist() method.
-
         Parameters
         ----------
         bins : int, optional
@@ -1419,7 +1417,7 @@ class SingleObsComparer(BaseComparer):
             plot title, default: Residuals, [name]
         color : str, optional
             residual color, by default "#8B8D8E"
-        kwargs : other keyword arguments to df.hist()
+        kwargs : other keyword arguments to plt.hist()
         """
         color = self._resi_color if color is None else color
         title = f"Residuals, {self.name}" if title is None else title
@@ -1461,6 +1459,7 @@ class SingleObsComparer(BaseComparer):
         ax.legend([mod_name, self.obs_name])
         plt.title(title)
         plt.xlabel(f"{self._obs_unit_text}")
+        return ax
 
 
 class PointComparer(SingleObsComparer):
@@ -1900,6 +1899,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         ax.legend([mod_name, "observations"])
         plt.title(title)
         plt.xlabel(f"{self._obs_unit_text}")
+        return ax
 
     def mean_skill(
         self,
