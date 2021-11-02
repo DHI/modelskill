@@ -35,6 +35,9 @@ setuptools.setup(
             "dask",
         ],
         "notebooks": [
+            "nbformat",
+            "nbconvert",
+            "jupyter",
             "folium",
         ],
     },
