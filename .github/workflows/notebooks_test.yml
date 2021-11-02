@@ -22,6 +22,7 @@ jobs:
         pip install .[test,notebooks]    
     - name: Test notebooks
       env:
-        DMI_API_KEY: ${{ secrets.DMI_API_KEY}}    
+        DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
+        DHI_ALTIMETRY_API_KEY: ${{ secrets.DHI_ALTIMETRY_API_KEY}}        
       run: |
         pytest tests/notebooks/
