@@ -39,6 +39,7 @@ setuptools.setup(
             "nbconvert",
             "jupyter",
             "folium",
+            "plotly",
         ],
     },
     entry_points="""
