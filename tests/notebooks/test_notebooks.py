@@ -7,7 +7,7 @@ from nbconvert.preprocessors import CellExecutionError
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.join(_TEST_DIR, "../..")
-SKIP_LIST = ["Altimetry_data","DMI_observations","download","Track_comparison"]
+SKIP_LIST = ["download","Track_comparison"]
 
 
 def _process_notebook(notebook_filename, notebook_path="notebooks"):
