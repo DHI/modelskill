@@ -34,6 +34,9 @@ setuptools.setup(
             "openpyxl",
             "dask",
         ],
+        "notebooks": [
+            "folium",
+        ],
     },
     entry_points="""
         [console_scripts]
