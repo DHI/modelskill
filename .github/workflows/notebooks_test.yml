@@ -21,5 +21,7 @@ jobs:
       run: |
         pip install .[test,notebooks]    
     - name: Test notebooks
+      env:
+        DMI_API_KEY: ${{ secrets.DMI_API_KEY}}    
       run: |
         pytest tests/notebooks/
