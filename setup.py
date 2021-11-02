@@ -29,7 +29,7 @@ setuptools.setup(
         ],
         "test": [
             "pytest",
-            "netCDF4",
+            "netCDF4 >= 1.5.8",
             "openpyxl",
             "dask",
         ],
