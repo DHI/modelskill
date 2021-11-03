@@ -410,7 +410,7 @@ class TrackObservation(Observation):
             df = input
             df_items = df.columns.to_list()
             items = self._parse_track_items(df_items, x_item, y_item, item)
-            df = df.iloc[:, items]
+            df = df.iloc[:, items].copy()
             itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
         elif isinstance(input, str):
             assert os.path.exists(input)

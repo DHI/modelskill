@@ -236,6 +236,7 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
             item = self._get_default_item(val_cols)
 
         if not df.index.is_unique:
+            df = df.copy()
             df.index = make_unique_index(df.index)
 
         item_num = self._get_item_num(item, list(df.columns))
@@ -282,6 +283,7 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
         self._x, self._y = self._parse_x_y_columns(df, x, y)
         self._check_dataframe(df)
         if not df.index.is_unique:
+            df = df.copy()
             df.index = make_unique_index(df.index)
 
         self.df = df
