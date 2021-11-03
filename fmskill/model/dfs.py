@@ -100,6 +100,12 @@ class _DfsBase:
             item = self._selected_item
         ds_model = None
         if self.is_dfsu:
+            if (observation.x is None) or (observation.y is None):
+                raise ValueError(
+                    f"PointObservation '{observation.name}' cannot be used for extraction "
+                    + f"because it has None position x={observation.x}, y={observation.y}. "
+                    + "Please provide position when creating PointObservation."
+                )
             ds_model = self._extract_point_dfsu(observation.x, observation.y, item)
         elif self.is_dfs0:
             ds_model = self._extract_point_dfs0(item)
