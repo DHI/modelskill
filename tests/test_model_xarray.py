@@ -160,7 +160,7 @@ def test_XArrayModelResultItem_extract_point_toutside(
     da = ds["swh"].isel(time=slice(10, 15))
     da["time"] = pd.Timedelta("365D") + da.time
     mr = ModelResult(da)
-    with pytest.warns(UserWarning, match="No overlapping data in found")
+    with pytest.warns(UserWarning, match="No overlapping data in found"):
         pc = mr.extract_observation(pointobs_epl_hm0)
 
     assert pc == None
