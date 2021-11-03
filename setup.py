@@ -34,6 +34,14 @@ setuptools.setup(
             "openpyxl",
             "dask",
         ],
+        "notebooks": [
+            "nbformat",
+            "nbconvert",
+            "jupyter",
+            "folium",
+            "plotly",
+            "geopandas",
+        ],
     },
     entry_points="""
         [console_scripts]

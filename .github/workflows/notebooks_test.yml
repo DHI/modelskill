@@ -1,0 +1,28 @@
+name: Notebooks test
+
+on:
+  push:
+    branches: [ main]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'    
+    - name: Install fmskill
+      run: |
+        pip install .[test,notebooks]    
+    - name: Test notebooks
+      env:
+        DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
+        DHI_ALTIMETRY_API_KEY: ${{ secrets.DHI_ALTIMETRY_API_KEY}}        
+      run: |
+        pytest tests/notebooks/
