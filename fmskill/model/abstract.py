@@ -33,6 +33,9 @@ class ModelResultInterface(ABC):  # pragma: no cover
         txt.append(f"- Item: {self.item_name}")
         return "\n".join(txt)
 
+    def _in_domain(self, x, y) -> bool:
+        return True
+
 
 class MultiItemModelResult(ABC, Mapping):  # pragma: no cover
     @property
