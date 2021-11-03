@@ -71,11 +71,13 @@ def test_trackobservation_item_csv():
     with pytest.raises(ValueError, match="Input has more than 3 items"):
         TrackObservation(df)
 
-    o1 = TrackObservation(df, item=-1)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o1 = TrackObservation(df, item=-1)
     assert o1.n_points == 1115
     assert o1.df.columns[-1] == "wind_speed"
 
-    o2 = TrackObservation(df, item="significant_wave_height")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o2 = TrackObservation(df, item="significant_wave_height")
     assert o2.n_points == 1115
 
 
@@ -95,11 +97,13 @@ def test_trackobservation_x_y_item(c2):
     with pytest.raises(ValueError, match="Input has more than 3 items"):
         TrackObservation(df)
 
-    o1 = TrackObservation(df, item=-1, x_item="lon", y_item="lat")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o1 = TrackObservation(df, item=-1, x_item="lon", y_item="lat")
     assert o1.n_points == 1115
     assert o1.df.columns[-1] == "wind_speed"
 
-    o2 = TrackObservation(df, item="surface_elevation", x_item=2, y_item=0)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o2 = TrackObservation(df, item="surface_elevation", x_item=2, y_item=0)
     assert o2.n_points == 1115
 
     with pytest.raises(ValueError, match="must be different!"):

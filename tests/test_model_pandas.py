@@ -79,7 +79,8 @@ def test_point_df_model_extract(point_df):
 
 def test_track_df_modelresultitem(track_df):
     df = track_df
-    mr1 = DataFrameTrackModelResultItem(df, item=2)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr1 = DataFrameTrackModelResultItem(df, item=2)
     assert isinstance(mr1, ModelResultInterface)
     assert "Item: surface_elevation" in repr(mr1)
 
@@ -93,7 +94,8 @@ def test_track_df_modelresultitem(track_df):
 
 def test_track_df_modelresult(track_df):
     df = track_df
-    mr1 = DataFrameTrackModelResult(df)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr1 = DataFrameTrackModelResult(df)
     assert not isinstance(mr1, ModelResultInterface)
     assert len(df.columns) == 5
     assert len(mr1.item_names) == 3
@@ -102,7 +104,8 @@ def test_track_df_modelresult(track_df):
     assert len(mr2.df) == len(mr1.df)
     assert isinstance(mr2, ModelResultInterface)
 
-    mr3 = ModelResult(df, type="track")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr3 = ModelResult(df, type="track")
     mr4 = mr3["surface_elevation"]
     assert len(mr4.df) == len(mr1.df)
     assert isinstance(mr4, ModelResultInterface)
@@ -110,7 +113,8 @@ def test_track_df_modelresult(track_df):
 
 def test_track_from_dfs0_df_modelresult(track_from_dfs0):
     df = track_from_dfs0
-    mr1 = ModelResult(df, type="track")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr1 = ModelResult(df, type="track")
     assert isinstance(mr1, MultiItemModelResult)
     assert isinstance(mr1, DataFrameTrackModelResult)
     assert len(df.columns) == 4
@@ -129,32 +133,43 @@ def test_track_from_dfs0_df_modelresult(track_from_dfs0):
 def test_track_df_tweak_modelresult(track_df):
     df = track_df
     # Reorder columns
-    df = df[["surface_elevation", "lon", "lat",]]
+    df = df[
+        [
+            "surface_elevation",
+            "lon",
+            "lat",
+        ]
+    ]
 
     # Which columns are used for position, lon and lat?
     with pytest.raises(ValueError):
         ModelResult(df, type="track")
 
-    mr1 = ModelResult(df, type="track", x=1, y="lat")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr1 = ModelResult(df, type="track", x=1, y="lat")
     assert isinstance(mr1, ModelResultInterface)
     assert mr1.item_name == "surface_elevation"
 
     # Rename
+    df = df.copy()
     df.columns = ["wl", "longitude", "latitude"]
     df["ones"] = 1.0  # add extra column
 
     with pytest.raises(ValueError):
         ModelResult(df, type="track")
 
-    mr3 = ModelResult(df, type="track", x="longitude", y="latitude")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr3 = ModelResult(df, type="track", x="longitude", y="latitude")
     mr4 = mr3["wl"]
     assert isinstance(mr4, ModelResultInterface)
 
 
 def test_track_df_model_extract(track_df):
     df = track_df
-    mr1 = DataFrameTrackModelResultItem(df, item=2)
-    o1 = TrackObservation(df, item=2)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr1 = DataFrameTrackModelResultItem(df, item=2)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o1 = TrackObservation(df, item=2)
     c = mr1.extract_observation(o1)
     assert c.score() == 0.0  # o1=mr1
     assert len(o1.df.dropna()) == 1110
