@@ -1900,6 +1900,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     def mean_skill(
         self,
+        *,
         weights: Union[str, List[float], Dict[str, float]] = None,
         metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
@@ -1910,10 +1911,13 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> AggregatedSkill:
-        """Weighted mean skill of model(s) as a weighted mean of the skill
-        of each observation
+        """Weighted mean of skills
 
-        Note: this is NOT the mean skill of all observational points!
+        First, the skill is calculated per observation,
+        the weighted mean of the skills is then found.
+
+        .. warning::
+            This method is NOT the mean skill of all observational points! (mean_skill_points)
 
         Parameters
         ----------
@@ -1951,7 +1955,9 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         See also
         --------
         skill
-            a method for skill assessment observation by observation
+            skill assessment per observation
+        mean_skill_points
+            skill assessment pooling all observation points together
 
         Examples
         --------
@@ -1963,7 +1969,6 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         >>> s = cc.mean_skill(weights="points")
         >>> s = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
-        # TODO: how to handle by=freq:D?
 
         # filter data
         df = self.sel_df(
@@ -1992,11 +1997,13 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         if s is None:
             return
         skilldf = s.df
+
         # weights
         weights = self._parse_weights(weights, obs_names)
         skilldf["weights"] = (
             skilldf.n if weights is None else np.tile(weights, n_models)
         )
+
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
@@ -2009,6 +2016,87 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         # output
         res = self._add_as_field_if_not_in_index(df, res, fields=["model", "variable"])
         return AggregatedSkill(res.astype({"n": int}))
+
+    def mean_skill_points(
+        self,
+        *,
+        metrics: list = None,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+    ) -> AggregatedSkill:
+        """Mean skill of all observational points
+
+        All data points are pooled (disregarding which observation they belong to),
+        the skill is then found (for each model).
+
+        .. note::
+            No weighting can be applied with this method,
+            use mean_skill() if you need to apply weighting
+
+        .. warning::
+            This method is NOT the mean of skills (mean_skill)
+
+        Parameters
+        ----------
+        metrics : list, optional
+            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+        model : (str, int, List[str], List[int]), optional
+            name or ids of models to be compared, by default all
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            user-provided data instead of the comparers own data, by default None
+
+        Returns
+        -------
+        AggregatedSkill
+            mean skill assessment as a skill object
+
+        See also
+        --------
+        skill
+            skill assessment per observation
+        mean_skill
+            weighted mean of skills (not the same as this method)
+
+        Examples
+        --------
+        >>> cc = con.extract()
+        >>> cc.mean_skill_points()
+        """
+
+        # filter data
+        df = self.sel_df(
+            df=df,
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+        )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
+
+        dfall = df.copy()
+        dfall["observation"] = "all"
+        return self.skill(df=dfall, metrics=metrics)
 
     def _mean_skill_by(self, skilldf, mod_names, var_names):
         by = []
@@ -2071,7 +2159,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     def score(
         self,
-        weights: Union[str, List[float]] = None,
+        *,
+        weights: Union[str, List[float], Dict[str, float]] = None,
         metric=mtr.rmse,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
@@ -2082,16 +2171,20 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         df: pd.DataFrame = None,
     ) -> float:
         """Weighted mean score of model(s) over all observations
+
+        Wrapping mean_skill() with a single metric.
+
         NOTE: will take simple mean over different variables
 
         Parameters
         ----------
-        weights : (str, List(float)), optional
-            None: use assigned weights from observations
+        weights : (str, List(float), Dict(str, float)), optional
+            None: use observations weight attribute
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
             list of weights e.g. [0.3, 0.3, 0.4] per observation,
-            by default None
+            dictionary of observations with special weigths, others will be set to 1.0
+            by default None (i.e. observations weight attribute if assigned else "equal")
         metric : list, optional
             a single metric from fmskill.metrics, by default rmse
         model : (str, int, List[str], List[int]), optional
@@ -2114,14 +2207,16 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         Returns
         -------
         float
-            mean skill score as a single number (for each model)
+            mean of skills score as a single number (for each model)
 
         See also
         --------
         skill
-            a method for skill assessment observation by observation
+            skill assessment per observation
         mean_skill
-            a method for weighted mean skill assessment
+            weighted mean of skills assessment
+        mean_skill_points
+            skill assessment pooling all observation points together
 
         Examples
         --------

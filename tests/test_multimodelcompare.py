@@ -257,6 +257,12 @@ def test_mm_mean_skill_weights_dict(cc):
     assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
 
 
+def test_mean_skill_points(cc):
+    s = cc.mean_skill_points()
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.33927729)
+
+
 def test_mm_scatter(cc):
     cc.scatter(model="SW_1", observation=[0, 1])
     cc.scatter(model="SW_2", show_points=False)
