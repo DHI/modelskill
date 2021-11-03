@@ -40,6 +40,7 @@ setuptools.setup(
             "jupyter",
             "folium",
             "plotly",
+            "geopandas",
         ],
     },
     entry_points="""
