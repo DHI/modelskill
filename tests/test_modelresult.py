@@ -120,8 +120,7 @@ def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     with pytest.raises(Exception):
         c = mr[0].extract_observation(klagshamn, validate=True)
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        c = mr[0].extract_observation(klagshamn, validate=False)
+    c = mr[0].extract_observation(klagshamn, validate=False)
     assert c.n_points > 0
 
 
