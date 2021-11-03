@@ -258,7 +258,7 @@ class _SingleObsConnector(_BaseConnector):
         if len(comparer.df) == 0:
             if warn:
                 name = comparer.observation.name
-                warnings.warn(f"No overlapping data in found for {name}!")
+                warnings.warn(f"No overlapping data was found for {name}!")
             return None
         return comparer
 
@@ -303,10 +303,13 @@ class PointConnector(_SingleObsConnector):
                 df_model.append(df)
             else:
                 warnings.warn(
-                    f"Could not extract point {self.obs.name} from model '{mr.name}'"
+                    f"No data found when extracting '{self.obs.name}' from model '{mr.name}'"
                 )
 
         if len(df_model) == 0:
+            warnings.warn(
+                f"No overlapping data was found for PointObservation '{self.obs.name}'!"
+            )
             return None
 
         comparer = PointComparer(self.obs, df_model)
@@ -348,10 +351,13 @@ class TrackConnector(_SingleObsConnector):
                 df_model.append(df)
             else:
                 warnings.warn(
-                    f"Could not extract track {self.obs.name} from model '{mr.name}'"
+                    f"No data in extracted track '{self.obs.name}' from model '{mr.name}'"
                 )
 
         if len(df_model) == 0:
+            warnings.warn(
+                f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
+            )
             return None
 
         comparer = TrackComparer(self.obs, df_model)
