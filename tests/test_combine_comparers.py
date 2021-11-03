@@ -181,3 +181,6 @@ def test_concat_time_overlap(o123, mrmike):
     assert cc2.start > cc12.start
     assert cc2.end == cc12.end
     assert cc2.n_points < cc12.n_points
+
+    cc12a = cc2 + cc26
+    assert cc12a.n_points == cc12.n_points

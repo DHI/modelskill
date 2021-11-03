@@ -54,12 +54,12 @@ class AltimetryData:
     @property
     def start_time(self):
         """Start time for this data"""
-        return self.df.index[0].to_pydatetime()
+        return self.df.index[0]
 
     @property
     def end_time(self):
         """End time for this data"""
-        return self.df.index[-1].to_pydatetime()
+        return self.df.index[-1]
 
     @property
     def n_points(self):
@@ -633,12 +633,8 @@ class DHIAltimetryRepository:
     def _parse_datetime(date):
         if date is None:
             return None
-        if not isinstance(date, (datetime, str)):
-            raise TypeError(f"Date should be either str or datetime")
-        if isinstance(date, str):
-            date = pd.to_datetime(date)
 
-        return date
+        return pd.to_datetime(date)
 
     @staticmethod
     def _validate_quality_filter(qa):

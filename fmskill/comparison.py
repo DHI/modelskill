@@ -196,8 +196,8 @@ class BaseComparer:
         self.df = None
         self._all_df = None
 
-        self._mod_start = datetime(2900, 1, 1)
-        self._mod_end = datetime(1, 1, 1)
+        self._mod_start = pd.Timestamp.max
+        self._mod_end = pd.Timestamp.min
 
         self.observation = deepcopy(observation)
         self._obs_unit_text = self.observation._unit_text()
@@ -208,9 +208,6 @@ class BaseComparer:
 
         if modeldata is not None:
             self.add_modeldata(modeldata)
-
-            if len(self.mod_data) == 0:
-                raise ValueError("Failed to add modeldata!")
 
     def add_modeldata(self, modeldata):
         if modeldata is None:
@@ -1094,7 +1091,7 @@ class SingleObsComparer(BaseComparer):
         assert new_time.is_unique
         new_df = (
             df.reindex(df.index.union(new_time))
-            .interpolate(method="time")
+            .interpolate(method="time", limit_area="inside")
             .reindex(new_time)
         )
         return new_df

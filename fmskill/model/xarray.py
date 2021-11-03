@@ -11,11 +11,11 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 
 class _XarrayBase:
     @property
-    def start_time(self):
+    def start_time(self) -> pd.Timestamp:
         return pd.Timestamp(self.ds.time.values[0])
 
     @property
-    def end_time(self):
+    def end_time(self) -> pd.Timestamp:
         return pd.Timestamp(self.ds.time.values[-1])
 
     @property
@@ -93,7 +93,7 @@ class _XarrayBase:
         da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
-        return df
+        return df.dropna()
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
         import xarray as xr
@@ -107,7 +107,7 @@ class _XarrayBase:
         df = da.to_dataframe().drop(columns=["time"])
         df.index.name = "time"
         df = df.rename(columns={df.columns[-1]: self.name})
-        return df
+        return df.dropna()
 
     def _in_domain(self, x, y) -> bool:
         if (x is None) or (y is None):

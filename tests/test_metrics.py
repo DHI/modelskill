@@ -106,7 +106,12 @@ def test_mape():
     obs[5] = 0.0  # MAPE does not like zeros
     mod = obs + 1.0
 
-    res = mtr.mean_absolute_percentage_error(obs, mod)
+    with pytest.warns(
+        UserWarning,
+        match="Observation is zero, consider to use another metric than MAPE",
+    ):
+        res = mtr.mean_absolute_percentage_error(obs, mod)
+
     assert np.isnan(res)
 
 

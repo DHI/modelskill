@@ -1,4 +1,5 @@
 import pytest
+import matplotlib.pyplot as plt
 
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
@@ -118,6 +119,7 @@ def test_mv_mm_mean_skill(cc):
 def test_mv_mm_scatter(cc):
     cc.scatter(model="SW_1", variable="Wind_speed")
     assert True
+    plt.close("all")
 
 
 def test_mv_mm_taylor(cc):
@@ -125,3 +127,4 @@ def test_mv_mm_taylor(cc):
     cc.taylor(figsize=(4, 4))
     cc.taylor(model="SW_2", start="2017-10-28")
     assert True
+    plt.close("all")
