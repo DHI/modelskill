@@ -210,22 +210,16 @@ def test_mm_mean_skill(cc):
     assert len(s) == 2
     assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
 
-    s = cc.mean_skill(weights=[0.2, 0.3, 1.0])
+
+def test_mm_mean_skill_weights_list(cc):
+    s = cc.mean_skill(weights=[0.3, 0.2, 1.0])
     assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.334736617)
+    assert s.loc["SW_1"].rmse == pytest.approx(0.3261788143)
 
     s = cc.mean_skill(weights=[100000000000.0, 1.0, 1.0])
     assert s.loc["SW_1"].rmse < 1.0
 
-    s = cc.mean_skill(weights="points")
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.3367349)
-
     s = cc.mean_skill(weights=1)
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
-
-    s = cc.mean_skill(weights="equal")
     assert len(s) == 2
     assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
 
@@ -234,8 +228,32 @@ def test_mm_mean_skill(cc):
         cc.mean_skill(weights=[0.2, 0.3, 0.4, 0.5])
 
 
-def test_mm_mean_skill_weights(cc):
-    pass
+def test_mm_mean_skill_weights_str(cc):
+    s = cc.mean_skill(weights="points")
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.3367349)
+
+    s = cc.mean_skill(weights="equal")
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+
+
+def test_mm_mean_skill_weights_dict(cc):
+    s = cc.mean_skill(weights={"EPL": 0.2, "c2": 1.0, "HKNA": 0.3})
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.3261788143)
+
+    s2 = cc.mean_skill(weights=[0.3, 0.2, 1.0])
+    assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
+    assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
+
+    s = cc.mean_skill(weights={"EPL": 2.0})
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.319830126)
+
+    s2 = cc.mean_skill(weights={"EPL": 2.0, "c2": 1.0, "HKNA": 1.0})
+    assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
+    assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
 
 
 def test_mm_scatter(cc):

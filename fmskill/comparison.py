@@ -11,7 +11,7 @@ Examples
 >>> comparer = con.extract()
 """
 from collections.abc import Mapping, Iterable, Sequence
-from typing import List, Union
+from typing import Dict, List, Union
 import warnings
 from inspect import getmembers, isfunction
 import numpy as np
@@ -1903,7 +1903,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     def mean_skill(
         self,
-        weights: Union[str, List[float]] = None,
+        weights: Union[str, List[float], Dict[str, float]] = None,
         metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
@@ -1916,16 +1916,17 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         """Weighted mean skill of model(s) as a weighted mean of the skill
         of each observation
 
-        Note: this is not equal to the mean skill of all observational points!
+        Note: this is NOT the mean skill of all observational points!
 
         Parameters
         ----------
-        weights : (str, List(float)), optional
-            None: use assigned weights from observations
+        weights : (str, List(float), Dict(str, float)), optional
+            None: use observations weight attribute
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
             list of weights e.g. [0.3, 0.3, 0.4] per observation,
-            by default None
+            dictionary of observations with special weigths, others will be set to 1.0
+            by default None (i.e. observations weight attribute if assigned else "equal")
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
         model : (str, int, List[str], List[int]), optional
@@ -1961,6 +1962,9 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         >>> cc.mean_skill().round(2)
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
+        >>> s = cc.mean_skill(weights="equal")
+        >>> s = cc.mean_skill(weights="points")
+        >>> s = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
         # TODO: how to handle by=freq:D?
 
@@ -2040,6 +2044,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         else:
             if isinstance(weights, int):
                 weights = np.ones(n_obs)  # equal weight to all
+            elif isinstance(weights, dict):
+                w_dict = weights
+                weights = [w_dict.get(name, 1.0) for name in (self.obs_names)]
+
             elif isinstance(weights, str):
                 if weights.lower() == "equal":
                     weights = np.ones(n_obs)  # equal weight to all
@@ -2060,6 +2068,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                     raise ValueError(
                         f"weights must have same length as observations: {observations}"
                     )
+        if weights is not None:
+            assert len(weights) == n_obs
         return weights
 
     def score(
