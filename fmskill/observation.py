@@ -75,14 +75,14 @@ class Observation:
         return self.df.index
 
     @property
-    def start_time(self) -> datetime:
-        """First time instance (as datetime)"""
-        return self.time[0].to_pydatetime()
+    def start_time(self) -> pd.Timestamp:
+        """First time instance (as pd.Timestamp)"""
+        return self.time[0]
 
     @property
-    def end_time(self) -> datetime:
-        """Last time instance (as datetime)"""
-        return self.time[-1].to_pydatetime()
+    def end_time(self) -> pd.Timestamp:
+        """Last time instance (as pd.Timestamp)"""
+        return self.time[-1]
 
     @property
     def values(self) -> np.ndarray:
@@ -297,7 +297,7 @@ class PointObservation(Observation):
             plot marker, by default '.'
         linestyle : str, optional
             line style, by default None
-        kwargs: other keyword arguments to df.plot()        
+        kwargs: other keyword arguments to df.plot()
         """
         kwargs["color"] = self.color if color is None else color
         ax = self.df.plot(marker=marker, linestyle=linestyle, **kwargs)

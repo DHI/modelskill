@@ -16,12 +16,12 @@ class _DataFrameBase:
         self._selected_item = None
 
     @property
-    def start_time(self):
-        return self.df.index[0].to_pydatetime()
+    def start_time(self) -> pd.Timestamp:
+        return self.df.index[0]
 
     @property
-    def end_time(self):
-        return self.df.index[-1].to_pydatetime()
+    def end_time(self) -> pd.Timestamp:
+        return self.df.index[-1]
 
     @staticmethod
     def _check_dataframe(df):
