@@ -89,19 +89,22 @@ def test_add_fail(o2, mr1):
 
     con = Connector()
     with pytest.raises(Exception):
-        # item not specified
-        con.add(o2, mr1)
+        with pytest.warns(UserWarning):
+            # item not specified
+            con.add(o2, mr1)
 
     eumHm0 = eum.EUMType.Significant_wave_height
     o2.itemInfo = eum.ItemInfo(eumHm0, unit=eum.EUMUnit.feet)
     with pytest.raises(Exception):
-        # EUM unit doesn't match
-        con.add(o2, mr1[0])
+        with pytest.warns(UserWarning):
+            # EUM unit doesn't match
+            con.add(o2, mr1[0])
 
     o2.itemInfo = eum.ItemInfo(eum.EUMType.Water_Level, unit=eum.EUMUnit.meter)
     with pytest.raises(Exception):
-        # EUM type doesn't match
-        con.add(o2, mr1[0])
+        with pytest.warns(UserWarning):
+            # EUM type doesn't match
+            con.add(o2, mr1[0])
 
 
 def test_extract(con32):
