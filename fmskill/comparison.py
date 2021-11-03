@@ -209,9 +209,6 @@ class BaseComparer:
         if modeldata is not None:
             self.add_modeldata(modeldata)
 
-            # if len(self.mod_data) == 0:
-            #     raise ValueError("Failed to add modeldata!")
-
     def add_modeldata(self, modeldata):
         if modeldata is None:
             warnings.warn("Cannot add 'None' modeldata")
