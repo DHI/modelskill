@@ -147,7 +147,8 @@ def test_XArrayModelResultItem_extract_point_xoutside(modelresult, pointobs_epl_
     mr = modelresult
     mri = mr["swh"]
     pointobs_epl_hm0.x = -50
-    pc = mri.extract_observation(pointobs_epl_hm0)
+    with pytest.warns(UserWarning, match="Cannot add zero-length modeldata"):
+        pc = mri.extract_observation(pointobs_epl_hm0)
 
     assert pc == None
 
@@ -157,9 +158,10 @@ def test_XArrayModelResultItem_extract_point_toutside(
 ):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     da = ds["swh"].isel(time=slice(10, 15))
-    da["time"] = pd.Timedelta("1Y") + da.time
+    da["time"] = pd.Timedelta("365D") + da.time
     mr = ModelResult(da)
-    pc = mr.extract_observation(pointobs_epl_hm0)
+    with pytest.warns(UserWarning, match="No overlapping data in found")
+        pc = mr.extract_observation(pointobs_epl_hm0)
 
     assert pc == None
 
