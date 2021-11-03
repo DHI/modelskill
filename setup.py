@@ -24,7 +24,7 @@ setuptools.setup(
         "dev": [
             "pytest",
             "sphinx",
-            "sphinx-rtd-theme",
+            "sphinx-book-theme",
             "black==20.8b1",
             "plotly >= 4.5",
         ],
@@ -33,6 +33,14 @@ setuptools.setup(
             "netCDF4",
             "openpyxl",
             "dask",
+        ],
+        "notebooks": [
+            "nbformat",
+            "nbconvert",
+            "jupyter",
+            "folium",
+            "plotly",
+            "geopandas",
         ],
     },
     entry_points="""

@@ -302,8 +302,8 @@ class AggregatedSkill(SkillDataFrame):
         --------
         >>> s = comparer.skill()
         >>> s.plot_line("rmse")
-        >>> s.plot_line("mae", marker="o")
-        >>> s.plot_line(field="bias", precision=1)
+        >>> s.plot_line("mae", marker="o", linestyle=':')
+        >>> s.plot_line(field="bias", color=['0.2', '0.4', '0.6'])
         """
         if isinstance(self.index, pd.MultiIndex):
             df = self.df[field].unstack(level=level)
@@ -347,6 +347,7 @@ class AggregatedSkill(SkillDataFrame):
         >>> s.plot_bar("rmse")
         >>> s.plot_bar("mae", level="observation")
         >>> s.plot_bar(field="si", title="scatter index")
+        >>> s.plot_bar("si", color=["red","blue"])
         """
         if isinstance(self.index, pd.MultiIndex):
             df = self.df[field].unstack(level=level)
@@ -367,7 +368,7 @@ class AggregatedSkill(SkillDataFrame):
         level : int or str, optional
             level to unstack, by default 0
         kwargs : dict, optional
-            key word arguments to be passed to pd.DataFrame.plot.bar()
+            key word arguments to be passed to pd.DataFrame.plot.barh()
             e.g. color, title, figsize, ...
 
         Returns
