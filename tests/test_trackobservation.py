@@ -43,7 +43,8 @@ def test_non_unique_index():
     assert not df.index.is_unique
     assert df.index[160] == df.index[161]
 
-    o = TrackObservation(df, item=2)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2)
     assert o.df.index.is_unique
     assert o.df.index[160].to_pydatetime().microsecond == 10000
     assert o.df.index[161].to_pydatetime().microsecond == 20000
