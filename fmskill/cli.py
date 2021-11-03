@@ -9,16 +9,16 @@ from fmskill.report import Reporter
 @click.option(
     "--output_format",
     type=click.Choice(["md", "html"]),
-    default="md",
-    help="Output format, default is markdown",
+    default="html",
+    help="Output format, default is html",
 )
-def report(configuration: str, output_folder=None, output_format="md") -> None:
+def report(configuration: str, output_folder=None, output_format="html") -> None:
     """
     fmskill: Automatic model skill assessment
     """
 
-    model_result = fmskill.from_config(configuration)
-    reporter = Reporter(model_result, output_folder)
+    con = fmskill.from_config(configuration)
+    reporter = Reporter(con, output_folder)
 
     if output_format == "md":
         filename = reporter.to_markdown()
