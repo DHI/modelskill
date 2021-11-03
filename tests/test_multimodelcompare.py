@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import matplotlib.pyplot as plt
 
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
@@ -265,6 +266,7 @@ def test_mm_scatter(cc):
     cc.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
     # cc.scatter(model="SW_2", binsize=0.5, backend="plotly")
     assert True
+    plt.close("all")
 
 
 def test_mm_taylor(cc):
@@ -274,6 +276,7 @@ def test_mm_taylor(cc):
     cc.taylor(model="SW_2", start="2017-10-28")
     cc[0].taylor(model=0, end="2017-10-29")
     assert True
+    plt.close("all")
 
 
 def test_mm_plot_timeseries(cc):
@@ -283,3 +286,4 @@ def test_mm_plot_timeseries(cc):
     # cc["EPL"].plot_timeseries(backend="plotly")
     with pytest.raises(ValueError):
         cc["EPL"].plot_timeseries(backend="mpl")
+    plt.close("all")
