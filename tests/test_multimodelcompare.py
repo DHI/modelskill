@@ -231,7 +231,7 @@ def test_mm_mean_skill_weights_list(cc):
 def test_mm_mean_skill_weights_str(cc):
     s = cc.mean_skill(weights="points")
     assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.33927729)
+    assert s.loc["SW_1"].rmse == pytest.approx(0.3367349)
 
     s = cc.mean_skill(weights="equal")
     assert len(s) == 2
@@ -254,6 +254,12 @@ def test_mm_mean_skill_weights_dict(cc):
     s2 = cc.mean_skill(weights={"EPL": 2.0, "c2": 1.0, "HKNA": 1.0})
     assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
     assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
+
+
+def test_mean_skill_points(cc):
+    s = cc.mean_skill_points()
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.33927729)
 
 
 def test_mm_scatter(cc):
