@@ -14,7 +14,7 @@ Compare results from MIKE FM simulations with observations. `FMskill <https://gi
 
 This package is simple to install and deploy operationally and is accessible to everyone as open-source.
 
-Start by reading the `Getting started guide <getting_started.html>`_.
+Start by reading the `Getting started guide <getting_started.html>`_ and browsing the `example notebooks <https://nbviewer.jupyter.org/github/DHI/fmskill/tree/main/notebooks/>`_.
 
 
 
