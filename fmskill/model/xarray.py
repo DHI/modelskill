@@ -11,11 +11,11 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 
 class _XarrayBase:
     @property
-    def start_time(self):
+    def start_time(self) -> pd.Timestamp:
         return pd.Timestamp(self.ds.time.values[0])
 
     @property
-    def end_time(self):
+    def end_time(self) -> pd.Timestamp:
         return pd.Timestamp(self.ds.time.values[-1])
 
     @property
