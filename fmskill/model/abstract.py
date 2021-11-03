@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
+import pandas as pd
 
 from ..comparison import BaseComparer
 
@@ -7,12 +8,12 @@ from ..comparison import BaseComparer
 class ModelResultInterface(ABC):  # pragma: no cover
     @property
     @abstractmethod
-    def start_time(self):
+    def start_time(self) -> pd.Timestamp:
         pass
 
     @property
     @abstractmethod
-    def end_time(self):
+    def end_time(self) -> pd.Timestamp:
         pass
 
     @property
