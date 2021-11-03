@@ -15,7 +15,9 @@ def observation_df():
 
 @pytest.fixture
 def observation(observation_df):
-    return TrackObservation(observation_df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(observation_df, item=2, name="alti")
+    return o
 
 
 @pytest.fixture
@@ -43,7 +45,8 @@ def test_extract_no_time_overlap(modelresult, observation_df):
     mr = modelresult
     df = observation_df.copy(deep=True)
     df.index = df.index + np.timedelta64(100, "D")
-    o = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2, name="alti")
 
     with pytest.raises(ValueError, match="Validation failed"):
         with pytest.warns(UserWarning, match="No time overlap!"):
@@ -62,7 +65,8 @@ def test_extract_obs_start_before(modelresult, observation_df):
     mr = modelresult
     df = observation_df.copy(deep=True)
     df.index = df.index - np.timedelta64(1, "D")
-    o = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2, name="alti")
     con = Connector(o, mr[2])
     with pytest.warns(UserWarning, match="No overlapping data"):
         cc = con.extract()
@@ -73,7 +77,8 @@ def test_extract_obs_end_after(modelresult, observation_df):
     mr = modelresult
     df = observation_df.copy(deep=True)
     df.index = df.index + np.timedelta64(1, "D")
-    o = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2, name="alti")
     con = Connector(o, mr[2])
     with pytest.warns(UserWarning, match="No overlapping data"):
         cc = con.extract()
@@ -85,7 +90,8 @@ def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
     df = observation_df.copy(deep=True)
     df.lon = -100
     df.lat = -50
-    o = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2, name="alti")
     con = Connector(o, mr[2])
     with pytest.warns(UserWarning, match="No overlapping data"):
         cc = con.extract()
