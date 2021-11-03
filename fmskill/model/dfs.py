@@ -13,12 +13,12 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 
 class _DfsBase:
     @property
-    def start_time(self):
-        return self.dfs.start_time
+    def start_time(self) -> pd.Timestamp:
+        return pd.Timestamp(self.dfs.start_time)
 
     @property
-    def end_time(self):
-        return self.dfs.end_time
+    def end_time(self) -> pd.Timestamp:
+        return pd.Timestamp(self.dfs.end_time)
 
     @property
     def filename(self):
