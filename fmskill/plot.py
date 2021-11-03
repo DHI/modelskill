@@ -240,7 +240,7 @@ def taylor_diagram(
     figsize=(7, 7),
     obs_text="Observations",
     normalize_std=False,
-    title="Taylor diagram", 
+    title="Taylor diagram",
 ):
     if np.isscalar(figsize):
         figsize = (figsize, figsize)
