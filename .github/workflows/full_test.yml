@@ -12,10 +12,11 @@ on:
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        os: [ubuntu-latest, windows-latest]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -41,7 +42,7 @@ jobs:
       env:
         DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
       run: |
-        pytest
+        pytest --cov=fmskill --ignore tests/notebooks/
     - name: Test docstrings with pytest
       run: |
         pytest ./fmskill/metrics.py --doctest-modules

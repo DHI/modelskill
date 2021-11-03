@@ -8,11 +8,12 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="fmskill",
-    version="0.4.dev2",
+    version="0.5.dev3",
     install_requires=[
         "numpy",
         "pandas",
-        "mikeio >= 0.6",
+        "mikeio >= 0.7",
+        "shapely >= 1.7.0",
         "matplotlib",
         "xarray",
         "markdown",
@@ -25,10 +26,22 @@ setuptools.setup(
             "sphinx",
             "sphinx-rtd-theme",
             "black==20.8b1",
-            "shapely",
             "plotly >= 4.5",
         ],
-        "test": ["pytest", "shapely", "netCDF4", "openpyxl", "dask"],
+        "test": [
+            "pytest",
+            "netCDF4",
+            "openpyxl",
+            "dask",
+        ],
+        "notebooks": [
+            "nbformat",
+            "nbconvert",
+            "jupyter",
+            "folium",
+            "plotly",
+            "geopandas",
+        ],
     },
     entry_points="""
         [console_scripts]
@@ -37,7 +50,6 @@ setuptools.setup(
     author="Jesper Sandvig Mariegaard",
     author_email="jem@dhigroup.com",
     description="Compare results from MIKE FM simulations with observations.",
-    platform="windows_x64",
     license="MIT",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -53,7 +65,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
-        "Operating System :: Microsoft :: Windows",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Scientific/Engineering",
     ],
 )

@@ -43,7 +43,10 @@ def test_extract_no_time_overlap(modelresult, observation_df):
     df.index = df.index + np.timedelta64(100, "D")
     o = TrackObservation(df, item=2, name="alti")
 
-    con = Connector(o, mr[2])
+    with pytest.raises(ValueError, match="Validation failed"):
+        Connector(o, mr[2])
+
+    con = Connector(o, mr[2], validate=False)
     cc = con.extract()
 
     assert cc.n_comparers == 0
@@ -131,3 +134,14 @@ def test_spatial_skill_misc(comparer):
     df = ds.to_dataframe()
     assert df.loc[df.n < 20, ["bias", "rmse"]].size == 30
     assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
+
+
+def test_hist(comparer):
+    cc = comparer
+
+    cc.hist(bins=np.linspace(0, 7, num=15))
+
+    cc[0].hist(bins=10)
+    cc[0].hist(model=0, title="new_title", alpha=0.2)
+    cc[0].residual_hist()
+    cc[0].residual_hist(bins=10, title="new_title", color="blue")

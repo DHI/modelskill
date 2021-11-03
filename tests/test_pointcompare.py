@@ -4,7 +4,7 @@ import numpy as np
 import fmskill
 from fmskill import ModelResult, PointObservation, Connector
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
-from fmskill.comparison import PointComparer
+from fmskill.comparison import PointComparer, ComparerCollection
 
 
 @pytest.fixture
@@ -26,6 +26,13 @@ def modelresult_oresund_2d():
     return ModelResult("tests/testdata/Oresund2D.dfsu")
 
 
+@pytest.fixture
+def cc(modelresult_oresund_2d, klagshamn, drogden):
+    mr = modelresult_oresund_2d
+    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    return con.extract()
+
+
 def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
@@ -36,6 +43,20 @@ def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
     assert "Klagshamn" in cc.keys()
     assert "dmi_30357_Drogden_Fyr" in cc.keys()
     assert "Atlantis" not in cc.keys()
+
+
+def test_get_comparer_slice(cc):
+    cc0 = cc[0]
+    assert isinstance(cc0, PointComparer)
+    assert cc0.name == "Klagshamn"
+
+    cc1 = cc[-1]
+    assert isinstance(cc1, PointComparer)
+    assert cc1.name == "dmi_30357_Drogden_Fyr"
+
+    ccs = cc[0:2]
+    assert len(ccs) == 2
+    assert isinstance(ccs, ComparerCollection)
 
 
 def test_iterate_over_comparers(modelresult_oresund_2d, klagshamn, drogden):
@@ -165,12 +186,7 @@ def test_comparison_from_dict():
     # c = con.extract()
 
     configuration = dict(
-        modelresults=dict(
-            HD=dict(
-                filename="tests/testdata/Oresund2D.dfsu",
-                item=0,
-            ),
-        ),
+        modelresults=dict(HD=dict(filename="tests/testdata/Oresund2D.dfsu", item=0,),),
         observations=dict(
             klagshamn=dict(
                 filename="tests/testdata/obs_two_items.dfs0",

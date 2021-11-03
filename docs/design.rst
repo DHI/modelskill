@@ -39,19 +39,19 @@ Examples are available in two forms:
 Open Source​
 ------------
 
-fmskill is an open source project licensed under the `MIT license <https://github.com/DHI/fmskill/blob/main/License>`_.
+FMskill is an open source project licensed under the `MIT license <https://github.com/DHI/fmskill/blob/main/License>`_.
 The software is provided free of charge with the source code available for inspection and modification.
 
 
 Easy to collaborate​
 --------------------
 
-By developing `fmskill` on GitHub along with a completely open discussion, we believe that the collaboration between developers and end-users results in a useful library.
+By developing `FMskill` on GitHub along with a completely open discussion, we believe that the collaboration between developers and end-users results in a useful library.
 
 Reproducible
 ------------
 
-By providing the historical versions of `fmskill` on PyPI it is possible to reproduce the behaviour of an older existing system, based on an older version.
+By providing the historical versions of `FMskill` on PyPI it is possible to reproduce the behaviour of an older existing system, based on an older version.
 
 Install specific version::
 

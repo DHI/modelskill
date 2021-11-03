@@ -1,3 +1,4 @@
+import sys
 import warnings
 from collections.abc import Iterable
 import numpy as np
@@ -170,7 +171,7 @@ class AggregatedSkill(SkillDataFrame):
             # raise ValueError(f"name {name} not in index {list(self.index.names)}")
 
     def _id_to_name(self, index, id):
-        """Assumes that index is valid and id is int """
+        """Assumes that index is valid and id is int"""
         if isinstance(id, Iterable):
             name_list = []
             for i in id:
@@ -301,8 +302,8 @@ class AggregatedSkill(SkillDataFrame):
         --------
         >>> s = comparer.skill()
         >>> s.plot_line("rmse")
-        >>> s.plot_line("mae", marker="o")
-        >>> s.plot_line(field="bias", precision=1)
+        >>> s.plot_line("mae", marker="o", linestyle=':')
+        >>> s.plot_line(field="bias", color=['0.2', '0.4', '0.6'])
         """
         if isinstance(self.index, pd.MultiIndex):
             df = self.df[field].unstack(level=level)
@@ -346,6 +347,7 @@ class AggregatedSkill(SkillDataFrame):
         >>> s.plot_bar("rmse")
         >>> s.plot_bar("mae", level="observation")
         >>> s.plot_bar(field="si", title="scatter index")
+        >>> s.plot_bar("si", color=["red","blue"])
         """
         if isinstance(self.index, pd.MultiIndex):
             df = self.df[field].unstack(level=level)
@@ -355,6 +357,39 @@ class AggregatedSkill(SkillDataFrame):
             if isinstance(field, str):
                 kwargs["title"] = field
         return df.plot.bar(**kwargs)
+
+    def plot_barh(self, field, level=0, **kwargs):
+        """plot statistic as horizontal bar chart using pd.DataFrame.plot.barh()
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        level : int or str, optional
+            level to unstack, by default 0
+        kwargs : dict, optional
+            key word arguments to be passed to pd.DataFrame.plot.barh()
+            e.g. color, title, figsize, ...
+
+        Returns
+        -------
+        AxesSubplot
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot_barh("rmse")
+        >>> s.plot_barh("mae", level="observation")
+        >>> s.plot_barh(field="si", title="scatter index")
+        """
+        if isinstance(self.index, pd.MultiIndex):
+            df = self.df[field].unstack(level=level)
+        else:
+            df = self.df[field]
+        if "title" not in kwargs:
+            if isinstance(field, str):
+                kwargs["title"] = field
+        return df.plot.barh(**kwargs)
 
     def plot_grid(
         self,
@@ -506,7 +541,11 @@ class AggregatedSkill(SkillDataFrame):
                         f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        sdf = self.df.style.set_precision(precision)
+        sdf = (
+            self.df.style.format(precision=precision)
+            if sys.version_info >= (3, 7)
+            else self.df.style.set_precision(precision)
+        )
 
         # apply background gradient
         bg_cols = list(set(columns) & set(float_cols))

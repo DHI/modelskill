@@ -3,14 +3,14 @@
 Getting started
 ###############
 
-This page describes the typical fmskill workflow for comparing 
+This page describes the typical FMskill workflow for comparing 
 model results and observations. If you just need a simple one-to-one 
 time series comparison, see the `simple time series comparison <simple_compare.html>`_.
 
 Workflow
 ********
 
-The typical fmskill workflow consists of these five steps:
+The typical FMskill workflow consists of these five steps:
 
 #. Define **ModelResults**
 #. Define **Observations**
@@ -24,7 +24,7 @@ The typical fmskill workflow consists of these five steps:
 
 The result of a MIKE 21/3 simulation is stored in one or more dfs files. 
 The most common formats are .dfsu for distributed data and .dfs0 for 
-time series point data. A fmskill `ModelResult <api.html#fmskill.model.ModelResult>`_ is defined by the 
+time series point data. A FMskill `ModelResult <api.html#fmskill.model.ModelResult>`_ is defined by the 
 result file path and a name:
 
 .. code-block:: python

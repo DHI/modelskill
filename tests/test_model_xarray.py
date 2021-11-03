@@ -11,12 +11,14 @@ from fmskill.model import XArrayModelResult, XArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
 
-python3_7_or_above = pytest.mark.skipif(sys.version_info < (3, 7),
-                                  reason="requires Python3.7+")
+python3_7_or_above = pytest.mark.skipif(
+    sys.version_info < (3, 7), reason="requires Python3.7+"
+)
+
 
 @pytest.fixture
 def ERA5_DutchCoast_nc():
-    return r"tests\testdata\SW\ERA5_DutchCoast.nc"
+    return "tests/testdata/SW/ERA5_DutchCoast.nc"
 
 
 @pytest.fixture
@@ -26,7 +28,7 @@ def modelresult(ERA5_DutchCoast_nc):
 
 @pytest.fixture
 def mf_modelresult():
-    fn = r"tests\testdata\SW\CMEMS_DutchCoast_*.nc"
+    fn = "tests/testdata/SW/CMEMS_DutchCoast_*.nc"
     return ModelResult(fn, name="CMEMS")
 
 
@@ -114,7 +116,6 @@ def test_XArrayModelResult_extract_point(modelresult, pointobs_epl_hm0):
     assert isinstance(df, pd.DataFrame)
     assert len(df.columns) == 1
     assert pytest.approx(df.iloc[0, 0]) == 0.875528
-
 
 
 @python3_7_or_above

@@ -4,7 +4,7 @@ import pytest
 from mikeio import eum
 from fmskill.model import ModelResult
 from fmskill.model.abstract import ModelResultInterface
-from fmskill.model import DataFrameModelResult, DataFrameModelResultItem
+from fmskill.model import DataFramePointModelResult, DataFramePointModelResultItem
 from fmskill.observation import PointObservation
 
 
@@ -39,7 +39,7 @@ def Hm0_HKNA():
 
 @pytest.fixture
 def wind_HKNA():
-    fn = "tests/testdata/SW/HKNA_Wind.dfs0"
+    fn = "tests/testdata/SW/HKNA_wind.dfs0"
     return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
 
 
@@ -57,42 +57,6 @@ def sw_dutch_coast():
 @pytest.fixture
 def sw_total_windsea():
     return "tests/testdata/SW/SW_Tot_Wind_Swell.dfsu"
-
-
-def test_df_modelresultitem(klagshamn):
-    df = klagshamn.df
-    df["ones"] = 1.0
-
-    mr1 = DataFrameModelResultItem(df, item=0)
-    assert isinstance(mr1, ModelResultInterface)
-    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
-    assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
-    assert mr1.name == "Water Level"
-
-    # item as string
-    mr2 = DataFrameModelResultItem(df, item="Water Level")
-    assert len(mr2.df) == len(mr1.df)
-
-    mr3 = DataFrameModelResultItem(df[["Water Level"]])
-    assert len(mr3.df) == len(mr1.df)
-
-    # Series
-    mr4 = DataFrameModelResultItem(df["Water Level"])
-    assert len(mr4.df) == len(mr1.df)
-
-
-def test_df_modelresult(klagshamn):
-    df = klagshamn.df
-    df["ones"] = 1.0
-
-    mr1 = DataFrameModelResult(df)
-    assert not isinstance(mr1, ModelResultInterface)
-    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
-    assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
-    assert mr1.name == "model"
-
-    mr2 = mr1["Water Level"]
-    assert len(mr2.df) == len(mr1.df)
 
 
 def test_repr(hd_oresund_2d):

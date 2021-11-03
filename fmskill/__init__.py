@@ -18,7 +18,7 @@ from typing import Union
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = "0.4.dev2"
+__version__ = "0.5.dev3"
 
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
@@ -28,6 +28,10 @@ from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector
 
 
-def from_config(configuration: Union[dict, str], validate_eum=True):
+def from_config(
+    configuration: Union[dict, str], *, validate_eum=True, relative_path=True
+):
 
-    return Connector.from_config(configuration, validate_eum)
+    return Connector.from_config(
+        configuration, validate_eum=validate_eum, relative_path=relative_path
+    )
