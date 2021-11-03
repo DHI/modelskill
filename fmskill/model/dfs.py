@@ -12,11 +12,6 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 
 
 class _DfsBase:
-    dfs = None
-    name = None
-    _filename = None
-    _selected_item = None
-
     @property
     def start_time(self):
         return self.dfs.start_time
@@ -54,19 +49,17 @@ class _DfsBase:
         if isinstance(item, eum.ItemInfo):
             item = item.name
         if isinstance(item, int):
-            if item < 0:
+            if item < 0:  # Handle negative indices
                 item = n_items + item
             if (item < 0) or (item >= n_items):
-                raise ValueError(
-                    f"item must be between 0 and {n_items-1} (or {-n_items} and -1)"
-                )
+                raise IndexError(f"item {item} out of range (0, {n_items-1})")
         elif isinstance(item, str):
             item_names = [i.name for i in items]
             if item not in item_names:
-                raise ValueError(f"item must be one of {item_names}")
+                raise KeyError(f"item must be one of {item_names}")
             item = item_names.index(item)
         else:
-            raise ValueError("item must be int or string")
+            raise TypeError("item must be int or string")
         return item
 
     def _get_item_name(self, item) -> str:
@@ -107,6 +100,12 @@ class _DfsBase:
             item = self._selected_item
         ds_model = None
         if self.is_dfsu:
+            if (observation.x is None) or (observation.y is None):
+                raise ValueError(
+                    f"PointObservation '{observation.name}' cannot be used for extraction "
+                    + f"because it has None position x={observation.x}, y={observation.y}. "
+                    + "Please provide position when creating PointObservation."
+                )
             ds_model = self._extract_point_dfsu(observation.x, observation.y, item)
         elif self.is_dfs0:
             ds_model = self._extract_point_dfs0(item)

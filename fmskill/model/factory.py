@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import xarray as xr
 
 from .dfs import DfsModelResult
 from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
@@ -38,6 +37,8 @@ class ModelResult:
     """
 
     def __new__(self, input, *args, **kwargs):
+        import xarray as xr
+
         if isinstance(input, str):
             filename = input
             ext = os.path.splitext(filename)[-1]

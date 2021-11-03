@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-import xarray as xr
 import warnings
 
 from mikeio import eum
@@ -11,9 +10,6 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 
 
 class _XarrayBase:
-    ds = None
-    itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
-
     @property
     def start_time(self):
         return pd.Timestamp(self.ds.time.values[0])
@@ -67,18 +63,16 @@ class _XarrayBase:
         # if isinstance(item, eum.ItemInfo):
         #     item = item.name
         if isinstance(item, int):
-            if item < 0:
+            if item < 0:  # Handle negative indices
                 item = n_items + item
             if (item < 0) or (item >= n_items):
-                raise ValueError(
-                    f"item must be between 0 and {n_items-1} (or {-n_items} and -1)"
-                )
+                raise IndexError(f"item {item} out of range (0, {n_items-1})")
             item = item_names[item]
         elif isinstance(item, str):
             if item not in item_names:
-                raise ValueError(f"item must be one of {item_names}")
+                raise KeyError(f"item must be one of {item_names}")
         else:
-            raise ValueError("item must be int or string")
+            raise TypeError("item must be int or string")
         return item
 
     def _get_item_num(self, item) -> int:
@@ -90,12 +84,20 @@ class _XarrayBase:
         if item is None:
             item = self._selected_item
         x, y = observation.x, observation.y
+        if (x is None) or (y is None):
+            raise ValueError(
+                f"PointObservation '{observation.name}' cannot be used for extraction "
+                + f"because it has None position x={x}, y={y}. Please provide position "
+                + "when creating PointObservation."
+            )
         da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
         return df
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+        import xarray as xr
+
         if item is None:
             item = self._selected_item
         t = xr.DataArray(observation.df.index, dims="track")
@@ -108,11 +110,15 @@ class _XarrayBase:
         return df
 
     def _in_domain(self, x, y) -> bool:
-        ok = True
-        # TODO
-        # if self.is_dfsu:
-        #    ok = self.dfs.contains([x, y])
-        return ok
+        if (x is None) or (y is None):
+            raise ValueError(
+                "PointObservation has None position - cannot determine if inside xarray domain!"
+            )
+        xmin = self.ds.x.values.min()
+        xmax = self.ds.x.values.max()
+        ymin = self.ds.y.values.min()
+        ymax = self.ds.y.values.max()
+        return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def _validate_start_end(self, observation: Observation) -> bool:
         if observation.end_time < self.start_time:
@@ -128,6 +134,10 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
         return self._selected_item
 
     def __init__(self, ds, name: str = None, item=None, filename=None):
+        import xarray as xr
+
+        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+
         if isinstance(ds, (xr.DataArray, xr.Dataset)):
             self._validate_time_axis(ds)
         else:
@@ -187,6 +197,10 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         return list(self.ds.data_vars)
 
     def __init__(self, input, name: str = None, item=None, **kwargs):
+        import xarray as xr
+
+        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+
         self._filename = None
         if isinstance(input, str) and ("*" not in input):
             self._filename = input

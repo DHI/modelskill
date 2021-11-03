@@ -8,11 +8,12 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="fmskill",
-    version="0.4.dev5",
+    version="0.5.dev3",
     install_requires=[
         "numpy",
         "pandas",
         "mikeio >= 0.7",
+        "shapely >= 1.7.0",
         "matplotlib",
         "xarray",
         "markdown",
@@ -25,10 +26,22 @@ setuptools.setup(
             "sphinx",
             "sphinx-rtd-theme",
             "black==20.8b1",
-            "shapely",
             "plotly >= 4.5",
         ],
-        "test": ["pytest", "shapely", "netCDF4", "openpyxl", "dask",],
+        "test": [
+            "pytest",
+            "netCDF4",
+            "openpyxl",
+            "dask",
+        ],
+        "notebooks": [
+            "nbformat",
+            "nbconvert",
+            "jupyter",
+            "folium",
+            "plotly",
+            "geopandas",
+        ],
     },
     entry_points="""
         [console_scripts]

@@ -105,10 +105,13 @@ Metrics
 	fmskill.metrics.mef
 	fmskill.metrics.scatter_index
 	fmskill.metrics.si
+	fmskill.metrics.corrcoef
+	fmskill.metrics.cc
 	fmskill.metrics.spearmanr
 	fmskill.metrics.rho
 	fmskill.metrics.r2
 	fmskill.metrics.lin_slope
+	fmskill.metrics.willmott
 	fmskill.metrics.hit_ratio
 	
 .. automodule:: fmskill.metrics

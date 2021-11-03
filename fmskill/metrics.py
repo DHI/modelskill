@@ -3,14 +3,17 @@ difference between a model and an observation.
 
 * bias
 * root_mean_squared_error (rmse)    
+* urmse
 * mean_absolute_error (mae)
 * mean_absolute_percentage_error (mape)
 * nash_sutcliffe_efficiency (nse)
+* r2 (r2=nse)
 * model_efficiency_factor (mef)
 * scatter_index (si)
+* corrcoef (cc)
 * spearmanr (rho)
-* r2
 * lin_slope
+* hit_ratio
 
 The names in parentheses are shorthand aliases for the different metrics.
 
@@ -29,24 +32,27 @@ Examples
 >>> mape(obs, mod)
 103.17460317460316
 >>> nse(obs, mod)
--0.5526315789473688
+0.14786795048143053
+>>> r2(obs, mod)
+0.14786795048143053
 >>> mef(obs, mod)
 0.9231099877688299
 >>> si(obs, mod)
 0.7294663886165093
 >>> spearmanr(obs, mod)
 0.5
->>> r2(obs, mod)
-0.14786795048143053
+>>> cc(obs, mod)
+0.637783218973691
 >>> lin_slope(obs, mod)
 0.4724896836313617
+>>> willmott(obs, mod)
+0.7484604452865941
+>>> hit_ratio(obs, mod, a=0.5)
+0.6666666666666666
 """
 from typing import Tuple
 import warnings
 import numpy as np
-from scipy.stats import linregress as _linregress
-import scipy.stats
-from scipy import odr
 
 
 def bias(obs, model) -> float:
@@ -54,10 +60,25 @@ def bias(obs, model) -> float:
 
     .. math::
         bias=\\frac{1}{n}\\sum_{i=1}^n (model_i - obs_i)
+
+    Range: :math:`(-\\infty, \\infty)`; Best: 0
     """
 
     assert obs.size == model.size
     return np.mean(model.ravel() - obs.ravel())
+
+
+def max_error(obs, model) -> float:
+    """Max (absolute) error
+
+    .. math::
+        max_error = max(|model_i - obs_i|)
+
+    Range: :math:`[0, \\infty)`; Best: 0
+    """
+
+    assert obs.size == model.size
+    return np.max(np.abs(model.ravel() - obs.ravel()))
 
 
 def mae(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
@@ -73,6 +94,8 @@ def mean_absolute_error(
 
     .. math::
         MAE=\\frac{1}{n}\\sum_{i=1}^n|model_i - obs_i|
+
+    Range: :math:`[0, \\infty)`; Best: 0
     """
     assert obs.size == model.size
 
@@ -91,6 +114,8 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
 
     .. math::
         MAPE=\\frac{1}{n}\\sum_{i=1}^n\\frac{|model_i - obs_i|}{obs_i}*100
+
+    Range: :math:`[0, \\infty)`; Best: 0
     """
 
     assert obs.size == model.size
@@ -106,6 +131,16 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
 
 def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
     """Unbiased Root Mean Squared Error (uRMSE)
+
+    .. math::
+
+        res_i = model_i - obs_i
+
+        res_{u,i} = res_i - \\overline {res}
+
+        uRMSE = \\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
+
+    Range: :math:`[0, \\infty)`; Best: 0
 
     See Also
     --------
@@ -143,7 +178,9 @@ def root_mean_squared_error(
 
         res_{u,i} = res_i - \\overline {res}
 
-        RMSE_u=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
+        uRMSE=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
+
+    Range: :math:`[0, \\infty)`; Best: 0
 
     """
     assert obs.size == model.size
@@ -169,6 +206,12 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
         NSE = 1 - \\frac {\\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}
                        {\\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}
 
+    Range: :math:`(-\\infty, 1]`; Best: 1
+
+    Note
+    ----
+    r2 = nash_sutcliffe_efficiency
+
     References
     ----------
     Nash, J. E.; Sutcliffe, J. V. (1970). "River flow forecasting through conceptual models part I — A discussion of principles". Journal of Hydrology. 10 (3): 282–290.
@@ -179,10 +222,44 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
     error = 1 - (
         np.sum((obs.ravel() - model.ravel()) ** 2)
-        / np.sum((model.ravel() - np.mean(model.ravel())) ** 2)
+        / np.sum((obs.ravel() - np.mean(obs.ravel())) ** 2)
     )
 
     return error
+
+
+def r2(obs: np.ndarray, model: np.ndarray) -> float:
+    """Coefficient of determination (R2)
+
+    Pronounced 'R-squared'; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.
+
+    .. math::
+
+        R^2 = 1 - \\frac{\\sum_{i=1}^n (model_i - obs_i)^2}
+                    {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
+
+    Range: :math:`(-\\infty, 1]`; Best: 1
+
+    Note
+    ----
+    r2 = nash_sutcliffe_efficiency
+
+    Examples
+    --------
+    >>> obs = np.array([1.0,1.1,1.2,1.3,1.4])
+    >>> model = np.array([1.09, 1.16, 1.3 , 1.38, 1.49])
+    >>> r2(obs,model)
+    0.6379999999999998
+    """
+    assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
+
+    residual = model.ravel() - obs.ravel()
+    SSr = np.sum(residual ** 2)
+    SSt = np.sum((obs - obs.mean()) ** 2)
+
+    return 1 - SSr / SSt
 
 
 def mef(obs: np.ndarray, model: np.ndarray) -> float:
@@ -199,6 +276,8 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
 
         MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}}
                                         {\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(obs_i - \\overline{obs})^2}}=\\sqrt{1-NSE}
+
+    Range: :math:`[0, \\infty)`; Best: 0
 
     See Also
     --------
@@ -224,9 +303,11 @@ def corrcoef(obs, model, weights=None) -> float:
                    {\\sqrt{\\sum_{i=1}^n (model_i - \\overline{model})^2}
                     \\sqrt{\\sum_{i=1}^n (obs_i - \\overline{obs})^2} }
 
+    Range: [-1, 1]; Best: 1
+
     See Also
     --------
-    numpy.corrcoef
+    np.corrcoef
     """
     assert obs.size == model.size
     if len(obs) <= 1:
@@ -255,6 +336,8 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
                       {\\sqrt{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})^2}
                        \\sqrt{\\sum_{i=1}^n (robs_i - \\overline{robs})^2} }
 
+    Range: [-1, 1]; Best: 1
+
     Examples
     --------
     >>> obs = np.linspace(-20,20, 100)
@@ -268,6 +351,8 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     --------
     corrcoef
     """
+    import scipy.stats
+
     return scipy.stats.spearmanr(obs, model)[0]
 
 
@@ -283,6 +368,7 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
         \\sqrt {\\frac{\\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2}
         {\\sum_{i=1}^n obs_i^2}}
 
+    Range: [0, 100]; Best: 0
     """
     assert obs.size == model.size
     if len(obs) == 0:
@@ -294,30 +380,39 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     )
 
 
-def r2(obs: np.ndarray, model: np.ndarray) -> float:
-    """Coefficient of determination (R2)
+def willmott(obs: np.ndarray, model: np.ndarray) -> float:
+    """willmott's Index of Agreement
+
+    A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.
 
     .. math::
 
-        R^2 = 1 - \\frac{\\sum_{i=1}^n (model_i - obs_i)^2}
-                    {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
+        willmott = 1 - \\frac{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}
+                           {\\frac{1}{n} \\sum_{i=1}^n(|model_i - \\overline{obs}| + |obs_i - \\overline{obs}|)^2}
+
+    Range: [0, 1]; Best: 1
 
     Examples
     --------
-    >>> obs = np.array([1.0,1.1,1.2,1.3,1.4])
-    >>> model = np.array([1.09, 1.16, 1.3 , 1.38, 1.49])
-    >>> r2(obs,model)
-    0.6379999999999998
+    >>> obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])
+    >>> model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])
+    >>> willmott(obs, model)
+    0.9501403174479723
+
+    References
+    ----------
+    Willmott, C. J. 1981. "On the validation of models". Physical Geography, 2, 184–194.
     """
+
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
 
     residual = model.ravel() - obs.ravel()
-    SSr = np.sum(residual ** 2)
-    SSt = np.sum((obs - obs.mean()) ** 2)
+    nominator = np.sum(residual ** 2)
+    denominator = np.sum((np.abs(model - obs.mean()) + np.abs(obs - obs.mean())) ** 2)
 
-    return 1 - SSr / SSt
+    return 1 - nominator / denominator
 
 
 def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
@@ -327,11 +422,12 @@ def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
 
         HR = \\frac{1}{n}\\sum_{i=1}^n I_{|(model_i - obs_i)|} < a
 
+    Range: [0, 1]; Best: 1
 
     Examples
     --------
-    >>> obs = np.array([1.0,1.1,1.2,1.3,1.4, 1.4, 1.3])
-    >>> model = np.array([1.02, 1.16, 1.3 , 1.38, 1.49, 1.45, 1.32])
+    >>> obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])
+    >>> model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])
     >>> hit_ratio(obs, model, a=0.05)
     0.2857142857142857
     >>> hit_ratio(obs, model, a=0.1)
@@ -339,8 +435,9 @@ def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
     >>> hit_ratio(obs, model, a=0.15)
     1.0
     """
+    assert obs.size == model.size
 
-    return np.mean(np.abs(obs - model) < a)
+    return np.mean(np.abs(obs.ravel() - model.ravel()) < a)
 
 
 def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
@@ -350,23 +447,29 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
 
         slope = \\frac{\\sum_{i=1}^n (model_i - \\overline {model})(obs_i - \\overline {obs})}
                       {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
+
+    Range: :math:`(-\\infty, \\infty )`; Best: 1
     """
-    return _linear_regression(obs, model, reg_method)[0]
+    assert obs.size == model.size
+    return _linear_regression(obs.ravel(), model.ravel(), reg_method)[0]
 
 
 def _linear_regression(
     obs: np.ndarray, model: np.ndarray, reg_method="ols"
 ) -> Tuple[float, float]:
 
-    assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
 
     if reg_method == "ols":
+        from scipy.stats import linregress as _linregress
+
         reg = _linregress(obs, model)
         intercept = reg.intercept
         slope = reg.slope
     elif reg_method == "odr":
+        from scipy import odr
+
         data = odr.Data(obs, model)
         odr_obj = odr.ODR(data, odr.unilinear)
         output = odr_obj.run()

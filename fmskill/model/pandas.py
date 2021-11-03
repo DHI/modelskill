@@ -59,18 +59,16 @@ class _DataFrameBase:
         if isinstance(item, eum.ItemInfo):
             item = item.name
         elif isinstance(item, int):
-            if item < 0:
+            if item < 0:  # Handle negative indices
                 item = n_items + item
             if (item < 0) or (item >= n_items):
-                raise ValueError(
-                    f"item must be between 0 and {n_items-1} (or {-n_items} and -1)"
-                )
+                raise IndexError(f"item {item} out of range (0, {n_items-1})")
             item = item_names[item]
         elif isinstance(item, str):
             if item not in item_names:
-                raise ValueError(f"item must be one of {item_names}")
+                raise KeyError(f"item must be one of {item_names}")
         else:
-            raise ValueError("item must be int or string")
+            raise TypeError("item must be int or string")
         return item
 
     def _get_item_num(self, item, item_names=None) -> int:
@@ -222,7 +220,7 @@ class _DataFrameTrackBase(_DataFrameBase):
         if item is None:
             item = self._selected_item
         item_num = self._get_item_num(item)
-        return self.df.iloc[:, [self._x, self._y, item_num]]
+        return self.df.iloc[:, [self._x_item, self._y_item, item_num]]
 
 
 class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
@@ -230,8 +228,8 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
     def item_name(self):
         return self._selected_item
 
-    def __init__(self, df, name: str = None, item=None, x=None, y=None):
-        self._x, self._y = self._parse_x_y_columns(df, x, y)
+    def __init__(self, df, name: str = None, item=None, x_item=None, y_item=None):
+        self._x_item, self._y_item = self._parse_x_y_columns(df, x_item, y_item)
         self._check_dataframe(df)
         if item is None:
             val_cols = self._get_val_cols(df.columns)
@@ -241,7 +239,7 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
             df.index = make_unique_index(df.index)
 
         item_num = self._get_item_num(item, list(df.columns))
-        self.df = df.iloc[:, [self._x, self._y, item_num]]
+        self.df = df.iloc[:, [self._x_item, self._y_item, item_num]]
         item = self._get_item_name(item, self.df.columns)
         self._selected_item = item
 
@@ -296,6 +294,5 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.item_names:
             self._mr_items[it] = DataFrameTrackModelResultItem(
-                self.df, name=self.name, item=it, x=x, y=y
+                self.df, name=self.name, item=it, x_item=x, y_item=y
             )
-
