@@ -1916,17 +1916,17 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         """Weighted mean skill of model(s) as a weighted mean of the skill
         of each observation
 
-        Note: this is not equal to the mean skill of all observational points!
+        Note: this is NOT the mean skill of all observational points!
 
         Parameters
         ----------
         weights : (str, List(float), Dict(str, float)), optional
-            None: use assigned weights from observations
+            None: use observations weight attribute
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
             list of weights e.g. [0.3, 0.3, 0.4] per observation,
             dictionary of observations with special weigths, others will be set to 1.0
-            by default None
+            by default None (i.e. observations weight attribute if assigned else "equal")
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
         model : (str, int, List[str], List[int]), optional
