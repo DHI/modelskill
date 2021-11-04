@@ -35,7 +35,7 @@ jobs:
         DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
         DHI_ALTIMETRY_API_KEY: ${{ secrets.DHI_ALTIMETRY_API_KEY}}
       run: |
-        pytest --cov=fmskill --ignore tests/notebooks/
+        pytest --ignore tests/notebooks/
     - name: Test notebooks
       env:
         DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
