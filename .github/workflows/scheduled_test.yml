@@ -29,7 +29,7 @@ jobs:
         
     - name: Install fmskill
       run: |
-        pip install .[test]
+        pip install .[test,notebooks]
     - name: Test with pytest
       env:
         DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
