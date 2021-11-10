@@ -28,10 +28,16 @@ jobs:
         pip install flake8 pytest pytest-cov
     - name: Install fmskill
       run: |
-        pip install .[test]
+        pip install .[test,notebooks]
     - name: Test with pytest
       env:
         DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
         DHI_ALTIMETRY_API_KEY: ${{ secrets.DHI_ALTIMETRY_API_KEY}}
       run: |
         pytest --ignore tests/notebooks/
+    - name: Test notebooks
+      env:
+        DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
+        DHI_ALTIMETRY_API_KEY: ${{ secrets.DHI_ALTIMETRY_API_KEY}}        
+      run: |
+        pytest tests/notebooks/
