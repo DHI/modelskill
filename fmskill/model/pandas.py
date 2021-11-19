@@ -9,11 +9,11 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 
 
 class _DataFrameBase:
-    def __init__(self) -> None:
-        self.df = None
-        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
-        self.is_point = True
-        self._selected_item = None
+    # def __init__(self) -> None:
+    #     self.df = None
+    #     self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+    #     self.is_point = True
+    #     self._selected_item = None
 
     @property
     def start_time(self) -> pd.Timestamp:
@@ -92,6 +92,8 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
         return self.df.columns[0]
 
     def __init__(self, df, name: str = None, item=None):
+        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+        self.is_point = True
         if isinstance(df, pd.Series):
             df = df.to_frame()
             df.columns = ["model"] if name is None else name
@@ -140,6 +142,7 @@ class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
         return list(self.df.columns)
 
     def __init__(self, df, name: str = None, item=None):
+        self.is_point = True
         if isinstance(df, pd.Series):
             df = df.to_frame()
             df.columns = ["model"] if name is None else name
@@ -229,6 +232,8 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
         return self._selected_item
 
     def __init__(self, df, name: str = None, item=None, x_item=None, y_item=None):
+        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+        self.is_point = False
         self._x_item, self._y_item = self._parse_x_y_columns(df, x_item, y_item)
         self._check_dataframe(df)
         if item is None:
@@ -280,6 +285,7 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
         return list(self._val_cols)
 
     def __init__(self, df, name: str = None, item=None, x=None, y=None):
+        self.is_point = False
         self._x, self._y = self._parse_x_y_columns(df, x, y)
         self._check_dataframe(df)
         if not df.index.is_unique:
