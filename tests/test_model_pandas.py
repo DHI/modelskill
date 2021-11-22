@@ -146,7 +146,7 @@ def test_track_df_tweak_modelresult(track_df):
         ModelResult(df, type="track")
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = ModelResult(df, type="track", x=1, y="lat")
+        mr1 = ModelResult(df, type="track", x_item=1, y_item="lat")
     assert isinstance(mr1, ModelResultInterface)
     assert mr1.item_name == "surface_elevation"
 
@@ -159,7 +159,7 @@ def test_track_df_tweak_modelresult(track_df):
         ModelResult(df, type="track")
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr3 = ModelResult(df, type="track", x="longitude", y="latitude")
+        mr3 = ModelResult(df, type="track", x_item="longitude", y_item="latitude")
     mr4 = mr3["wl"]
     assert isinstance(mr4, ModelResultInterface)
 
