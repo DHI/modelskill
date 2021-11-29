@@ -343,8 +343,10 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.linspace(-20,20, 100)
     >>> mod = np.tanh(obs)
     >>> corrcoef(obs, mod)
-    0.8865141786249244
+    0.886514178624924
     >>> rho(obs, mod)
+    0.9999759973116955
+    >>> spearmanr(obs, mod)
     0.9999759973116955
 
     See Also
