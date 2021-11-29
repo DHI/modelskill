@@ -118,7 +118,8 @@ def test_extract_observation_total_windsea_swell_not_possible(
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d)
     with pytest.raises(Exception):
-        c = mr[0].extract_observation(klagshamn, validate=True)
+        with pytest.warns(UserWarning, match="Item type should match"):
+            c = mr[0].extract_observation(klagshamn, validate=True)
 
     c = mr[0].extract_observation(klagshamn, validate=False)
     assert c.n_points > 0

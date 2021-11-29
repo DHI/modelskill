@@ -92,6 +92,7 @@ Metrics
 	:nosignatures:
 	
 	fmskill.metrics.bias	
+	fmskill.metrics.max_error
 	fmskill.metrics.root_mean_squared_error
 	fmskill.metrics.rmse
 	fmskill.metrics.urmse

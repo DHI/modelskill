@@ -115,8 +115,8 @@ def test_get_altimetry_data_no_end(repo):
 def test_AltimetryData_properties(ad):
     assert len(ad.satellites) == 5
     assert "3b" in ad.satellites
-    assert datetime.date(ad.start_time) == pd.to_datetime(ad.query_params["start_date"])
-    assert datetime.date(ad.end_time) + timedelta(days=1) == pd.to_datetime(
+    assert ad.start_time.normalize() == pd.Timestamp(ad.query_params["start_date"])
+    assert ad.end_time.normalize() + pd.Timedelta("1D") == pd.Timestamp(
         ad.query_params["end_date"]
     )
 

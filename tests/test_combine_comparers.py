@@ -59,7 +59,8 @@ def o123():
 @python3_7_or_above
 def test_concat_time(o123, mr28, mr29, mr2days):
     con1 = Connector(o123, mr28)
-    cc1 = con1.extract()
+    with pytest.warns(UserWarning, match="No overlapping data"):
+        cc1 = con1.extract()
     con2 = Connector(o123, mr29)
     cc2 = con2.extract()
 
@@ -180,3 +181,6 @@ def test_concat_time_overlap(o123, mrmike):
     assert cc2.start > cc12.start
     assert cc2.end == cc12.end
     assert cc2.n_points < cc12.n_points
+
+    cc12a = cc2 + cc26
+    assert cc12a.n_points == cc12.n_points

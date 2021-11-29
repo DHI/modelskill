@@ -11,7 +11,7 @@ Examples
 >>> comparer = con.extract()
 """
 from collections.abc import Mapping, Iterable, Sequence
-from typing import List, Union
+from typing import Dict, List, Union
 import warnings
 from inspect import getmembers, isfunction
 import numpy as np
@@ -196,8 +196,8 @@ class BaseComparer:
         self.df = None
         self._all_df = None
 
-        self._mod_start = datetime(2900, 1, 1)
-        self._mod_end = datetime(1, 1, 1)
+        self._mod_start = pd.Timestamp.max
+        self._mod_end = pd.Timestamp.min
 
         self.observation = deepcopy(observation)
         self._obs_unit_text = self.observation._unit_text()
@@ -208,9 +208,6 @@ class BaseComparer:
 
         if modeldata is not None:
             self.add_modeldata(modeldata)
-
-            if len(self.mod_data) == 0:
-                raise ValueError("Failed to add modeldata!")
 
     def add_modeldata(self, modeldata):
         if modeldata is None:
@@ -967,6 +964,9 @@ class BaseComparer:
         normalize_std: bool = False,
         aggregate_observations: bool = True,
         figsize: List[float] = (7, 7),
+        marker: str = "o",
+        marker_size: float = 6.0,
+        title: str = "Taylor diagram",
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
@@ -996,6 +996,12 @@ class BaseComparer:
             (or shown individually), default True
         figsize : tuple, optional
             width and height of the figure (should be square), by default (7, 7)
+        marker : str, optional
+            marker type e.g. "x", "*", by default "o"
+        marker_size : float, optional
+            size of the marker, by default 6
+        title : str, optional
+            title of the plot, by default "Taylor diagram"
 
         Examples
         ------
@@ -1010,7 +1016,7 @@ class BaseComparer:
 
         if (not aggregate_observations) and (not normalize_std):
             raise ValueError(
-                "aggregate_observations and normalize_std cannot both be False!"
+                "aggregate_observations=False is only possible if normalize_std=True!"
             )
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
@@ -1027,6 +1033,8 @@ class BaseComparer:
         else:
             s = self.skill(
                 model=model,
+                observation=observation,
+                variable=variable,
                 start=start,
                 end=end,
                 area=area,
@@ -1043,15 +1051,19 @@ class BaseComparer:
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
         df.columns = ["obs_std", "std", "cc"]
-        # df["marker"] = "o"
-        # df["marker_size"] = 6
         pts = [
-            TaylorPoint(r.Index, r.obs_std, r.std, r.cc, "o", 6)
+            TaylorPoint(
+                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+            )
             for r in df.itertuples()
         ]
 
         taylor_diagram(
-            obs_std=ref_std, points=pts, figsize=figsize, normalize_std=normalize_std
+            obs_std=ref_std,
+            points=pts,
+            figsize=figsize,
+            normalize_std=normalize_std,
+            title=title,
         )
 
 
@@ -1079,7 +1091,7 @@ class SingleObsComparer(BaseComparer):
         assert new_time.is_unique
         new_df = (
             df.reindex(df.index.union(new_time))
-            .interpolate(method="time")
+            .interpolate(method="time", limit_area="inside")
             .reindex(new_time)
         )
         return new_df
@@ -1300,6 +1312,9 @@ class SingleObsComparer(BaseComparer):
         df: pd.DataFrame = None,
         normalize_std: bool = False,
         figsize: List[float] = (7, 7),
+        marker: str = "o",
+        marker_size: float = 6.0,
+        title: str = "Taylor diagram",
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
@@ -1322,6 +1337,12 @@ class SingleObsComparer(BaseComparer):
             plot model std normalized with observation std, default False
         figsize : tuple, optional
             width and height of the figure (should be square), by default (7, 7)
+        marker : str, optional
+            marker type e.g. "x", "*", by default "o"
+        marker_size : float, optional
+            size of the marker, by default 6
+        title : str, optional
+            title of the plot, by default "Taylor diagram"
 
         Examples
         ------
@@ -1348,10 +1369,11 @@ class SingleObsComparer(BaseComparer):
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
         df.columns = ["obs_std", "std", "cc"]
-        # df["marker"] = "o"
-        # df["marker_size"] = 6
+
         pts = [
-            TaylorPoint(r.Index, r.obs_std, r.std, r.cc, "o", 6)
+            TaylorPoint(
+                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+            )
             for r in df.itertuples()
         ]
 
@@ -1361,6 +1383,7 @@ class SingleObsComparer(BaseComparer):
             figsize=figsize,
             obs_text=f"Obs: {self.name}",
             normalize_std=normalize_std,
+            title=title,
         )
 
     def remove_bias(self, correct="Model"):
@@ -1380,34 +1403,60 @@ class SingleObsComparer(BaseComparer):
             )
         return bias
 
-    def residual_hist(self, bins=100):
-        plt.hist(self.residual, bins=bins, color=self._resi_color)
-        plt.title(f"Residuals, {self.name}")
+    def residual_hist(self, bins=100, title=None, color=None, **kwargs):
+        """plot histogram of residual values
+
+        Parameters
+        ----------
+        bins : int, optional
+            specification of bins, by default 100
+        title : str, optional
+            plot title, default: Residuals, [name]
+        color : str, optional
+            residual color, by default "#8B8D8E"
+        kwargs : other keyword arguments to plt.hist()
+        """
+        color = self._resi_color if color is None else color
+        title = f"Residuals, {self.name}" if title is None else title
+        plt.hist(self.residual, bins=bins, color=color, **kwargs)
+        plt.title(title)
         plt.xlabel(f"Residuals of {self._obs_unit_text}")
 
-    def hist(self, model=None, bins=100):
+    def hist(self, model=None, bins=100, title=None, alpha=0.5, **kwargs):
         """Plot histogram of model data and observations.
+
         Wraps pandas.DataFrame hist() method.
 
         Parameters
         ----------
         model : (str, int), optional
-            name or id of model to be plotted, by default None
+            name or id of model to be plotted, by default 0
         bins : int, optional
             number of bins, by default 100
+        title : str, optional
+            plot title, default: [model name] vs [observation name]
+        alpha : float, optional
+            alpha transparency fraction, by default 0.5
+        kwargs : other keyword arguments to df.hist()
+
+        Returns
+        -------
+        matplotlib axes
         """
         mod_id = self._get_mod_id(model)
         mod_name = self.mod_names[mod_id]
 
-        ax = self.df[mod_name].hist(
-            bins=bins, color=self._mod_colors[mod_id], alpha=0.5
-        )
+        title = f"{mod_name} vs {self.name}" if title is None else title
+
+        kwargs["alpha"] = alpha
+        ax = self.df[mod_name].hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
         self.df[self.obs_name].hist(
-            bins=bins, color=self.observation.color, alpha=0.5, ax=ax
+            bins=bins, color=self.observation.color, ax=ax, **kwargs
         )
         ax.legend([mod_name, self.obs_name])
-        plt.title(f"{mod_name} vs {self.name}")
+        plt.title(title)
         plt.xlabel(f"{self._obs_unit_text}")
+        return ax
 
 
 class PointComparer(SingleObsComparer):
@@ -1443,7 +1492,7 @@ class PointComparer(SingleObsComparer):
         self.df.dropna(inplace=True)
 
     def plot_timeseries(
-        self, title=None, ylim=None, figsize=None, backend="matplotlib", **kwargs
+        self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
     ):
         """Timeseries plot showing compared data: observation vs modelled
 
@@ -1774,9 +1823,85 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
         self._all_df = None
 
+    def hist(
+        self,
+        bins=100,
+        model: Union[str, int] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+        title: str = None,
+        alpha: float = 0.5,
+        **kwargs,
+    ):
+        """Plot histogram of specific model and all observations.
+
+        Wraps pandas.DataFrame hist() method.
+
+        Parameters
+        ----------
+        bins : int, optional
+            number of bins, by default 100
+        model : (str, int), optional
+            name or id of specific model to be plotted, by default 0
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            user-provided data instead of the comparers own data, by default None
+        title : str, optional
+            plot title, default: observation name
+        alpha : float, optional
+            alpha transparency fraction, by default 0.5
+        kwargs : other keyword arguments to df.hist()
+
+        Returns
+        -------
+        matplotlib axes
+        """
+        mod_id = self._get_mod_id(model)
+        mod_name = self.mod_names[mod_id]
+
+        # filter data
+        df = self.sel_df(
+            df=df,
+            model=mod_name,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+        )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
+
+        title = f"{mod_name} vs Observations" if title is None else title
+
+        kwargs["alpha"] = alpha
+        ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
+        df.obs_val.hist(bins=bins, color=self[0].observation.color, ax=ax, **kwargs)
+        ax.legend([mod_name, "observations"])
+        plt.title(title)
+        plt.xlabel(f"{self._obs_unit_text}")
+        return ax
+
     def mean_skill(
         self,
-        weights: Union[str, List[float]] = None,
+        *,
+        weights: Union[str, List[float], Dict[str, float]] = None,
         metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
@@ -1786,16 +1911,23 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
     ) -> AggregatedSkill:
-        """Weighted mean skill of model(s) over all observations (of same variable)
+        """Weighted mean of skills
+
+        First, the skill is calculated per observation,
+        the weighted mean of the skills is then found.
+
+        .. warning::
+            This method is NOT the mean skill of all observational points! (mean_skill_points)
 
         Parameters
         ----------
-        weights : (str, List(float)), optional
-            None: use assigned weights from observations
+        weights : (str, List(float), Dict(str, float)), optional
+            None: use observations weight attribute
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
             list of weights e.g. [0.3, 0.3, 0.4] per observation,
-            by default None
+            dictionary of observations with special weigths, others will be set to 1.0
+            by default None (i.e. observations weight attribute if assigned else "equal")
         metrics : list, optional
             list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
         model : (str, int, List[str], List[int]), optional
@@ -1823,7 +1955,9 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         See also
         --------
         skill
-            a method for skill assessment observation by observation
+            skill assessment per observation
+        mean_skill_points
+            skill assessment pooling all observation points together
 
         Examples
         --------
@@ -1831,8 +1965,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         >>> cc.mean_skill().round(2)
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
+        >>> s = cc.mean_skill(weights="equal")
+        >>> s = cc.mean_skill(weights="points")
+        >>> s = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
-        # TODO: how to handle by=freq:D?
 
         # filter data
         df = self.sel_df(
@@ -1861,11 +1997,13 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         if s is None:
             return
         skilldf = s.df
+
         # weights
         weights = self._parse_weights(weights, obs_names)
         skilldf["weights"] = (
-            skilldf.n if weights is None else np.repeat(weights, n_models)
+            skilldf.n if weights is None else np.tile(weights, n_models)
         )
+
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
@@ -1878,6 +2016,87 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         # output
         res = self._add_as_field_if_not_in_index(df, res, fields=["model", "variable"])
         return AggregatedSkill(res.astype({"n": int}))
+
+    def mean_skill_points(
+        self,
+        *,
+        metrics: list = None,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+    ) -> AggregatedSkill:
+        """Mean skill of all observational points
+
+        All data points are pooled (disregarding which observation they belong to),
+        the skill is then found (for each model).
+
+        .. note::
+            No weighting can be applied with this method,
+            use mean_skill() if you need to apply weighting
+
+        .. warning::
+            This method is NOT the mean of skills (mean_skill)
+
+        Parameters
+        ----------
+        metrics : list, optional
+            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+        model : (str, int, List[str], List[int]), optional
+            name or ids of models to be compared, by default all
+        observation : (str, int, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        variable : (str, int, List[str], List[int])), optional
+            name or ids of variables to be compared, by default all
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            user-provided data instead of the comparers own data, by default None
+
+        Returns
+        -------
+        AggregatedSkill
+            mean skill assessment as a skill object
+
+        See also
+        --------
+        skill
+            skill assessment per observation
+        mean_skill
+            weighted mean of skills (not the same as this method)
+
+        Examples
+        --------
+        >>> cc = con.extract()
+        >>> cc.mean_skill_points()
+        """
+
+        # filter data
+        df = self.sel_df(
+            df=df,
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+        )
+        if len(df) == 0:
+            warnings.warn("No data!")
+            return
+
+        dfall = df.copy()
+        dfall["observation"] = "all"
+        return self.skill(df=dfall, metrics=metrics)
 
     def _mean_skill_by(self, skilldf, mod_names, var_names):
         by = []
@@ -1910,6 +2129,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         else:
             if isinstance(weights, int):
                 weights = np.ones(n_obs)  # equal weight to all
+            elif isinstance(weights, dict):
+                w_dict = weights
+                weights = [w_dict.get(name, 1.0) for name in (self.obs_names)]
+
             elif isinstance(weights, str):
                 if weights.lower() == "equal":
                     weights = np.ones(n_obs)  # equal weight to all
@@ -1930,11 +2153,14 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                     raise ValueError(
                         f"weights must have same length as observations: {observations}"
                     )
+        if weights is not None:
+            assert len(weights) == n_obs
         return weights
 
     def score(
         self,
-        weights: Union[str, List[float]] = None,
+        *,
+        weights: Union[str, List[float], Dict[str, float]] = None,
         metric=mtr.rmse,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
@@ -1945,16 +2171,20 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         df: pd.DataFrame = None,
     ) -> float:
         """Weighted mean score of model(s) over all observations
+
+        Wrapping mean_skill() with a single metric.
+
         NOTE: will take simple mean over different variables
 
         Parameters
         ----------
-        weights : (str, List(float)), optional
-            None: use assigned weights from observations
+        weights : (str, List(float), Dict(str, float)), optional
+            None: use observations weight attribute
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
             list of weights e.g. [0.3, 0.3, 0.4] per observation,
-            by default None
+            dictionary of observations with special weigths, others will be set to 1.0
+            by default None (i.e. observations weight attribute if assigned else "equal")
         metric : list, optional
             a single metric from fmskill.metrics, by default rmse
         model : (str, int, List[str], List[int]), optional
@@ -1977,14 +2207,16 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         Returns
         -------
         float
-            mean skill score as a single number (for each model)
+            mean of skills score as a single number (for each model)
 
         See also
         --------
         skill
-            a method for skill assessment observation by observation
+            skill assessment per observation
         mean_skill
-            a method for weighted mean skill assessment
+            weighted mean of skills assessment
+        mean_skill_points
+            skill assessment pooling all observation points together
 
         Examples
         --------

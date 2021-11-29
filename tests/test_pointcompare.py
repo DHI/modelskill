@@ -29,14 +29,16 @@ def modelresult_oresund_2d():
 @pytest.fixture
 def cc(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
-    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector([klagshamn, drogden], mr[0], validate=False)
     return con.extract()
 
 
 def test_get_comparer_by_name(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -62,7 +64,8 @@ def test_get_comparer_slice(cc):
 def test_iterate_over_comparers(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -99,14 +102,16 @@ def test_extraction_no_overlap(modelresult_oresund_2d):
     assert "No time overlap" in str(wn[0].message)
     # assert "Could not add observation" in str(wn[1].message)
     assert len(con.observations) == 1
-    c = con.extract()
+    with pytest.warns(UserWarning, match="No overlapping data"):
+        c = con.extract()
     assert c.n_comparers == 0
 
 
 def test_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     assert cc.score(metric=root_mean_squared_error) > 0.0
@@ -116,19 +121,22 @@ def test_score(modelresult_oresund_2d, klagshamn, drogden):
 def test_weighted_score(modelresult_oresund_2d, klagshamn, drogden):
     mr = modelresult_oresund_2d
 
-    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
     unweighted_skill = cc.score()
 
     con = Connector()
-    con.add(klagshamn, mr[0], weight=0.9, validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con.add(klagshamn, mr[0], weight=0.9, validate=False)
     con.add(drogden, mr[0], weight=0.1, validate=False)
     cc = con.extract()
     weighted_skill = cc.score()
     assert unweighted_skill != weighted_skill
 
     obs = [klagshamn, drogden]
-    con = Connector(obs, mr[0], weight=[0.9, 0.1], validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector(obs, mr[0], weight=[0.9, 0.1], validate=False)
     cc = con.extract()
     weighted_skill2 = cc.score()
 
@@ -139,7 +147,8 @@ def test_misc_properties(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -165,7 +174,8 @@ def test_skill(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu")
 
-    con = Connector([klagshamn, drogden], mr[0], validate=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector([klagshamn, drogden], mr[0], validate=False)
     cc = con.extract()
 
     df = cc.skill().df
@@ -186,7 +196,12 @@ def test_comparison_from_dict():
     # c = con.extract()
 
     configuration = dict(
-        modelresults=dict(HD=dict(filename="tests/testdata/Oresund2D.dfsu", item=0,),),
+        modelresults=dict(
+            HD=dict(
+                filename="tests/testdata/Oresund2D.dfsu",
+                item=0,
+            ),
+        ),
         observations=dict(
             klagshamn=dict(
                 filename="tests/testdata/obs_two_items.dfs0",
@@ -203,7 +218,8 @@ def test_comparison_from_dict():
             ),
         ),
     )
-    con = fmskill.from_config(configuration, validate_eum=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = fmskill.from_config(configuration, validate_eum=False)
     c = con.extract()
     assert len(c) == 2
     assert c.n_comparers == 2
@@ -212,7 +228,8 @@ def test_comparison_from_dict():
 
 def test_comparison_from_yml():
 
-    con = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     c = con.extract()
 
     assert len(c) == 2

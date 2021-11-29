@@ -15,7 +15,8 @@ def cc1():
     mr = ModelResult(fn, name="HD")
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
-    o1 = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o1 = TrackObservation(df, item=2, name="alti")
     con = Connector(o1, mr[0])
     return con.extract()
 

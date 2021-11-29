@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import matplotlib.pyplot as plt
 
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
@@ -208,17 +209,58 @@ def test_mm_skill_metrics(cc):
 def test_mm_mean_skill(cc):
     s = cc.mean_skill()
     assert len(s) == 2
-    s = cc.mean_skill(weights=[0.2, 0.3, 1.0])
+    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+
+
+def test_mm_mean_skill_weights_list(cc):
+    s = cc.mean_skill(weights=[0.3, 0.2, 1.0])
     assert len(s) == 2
-    s = cc.mean_skill(weights="points")
-    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.3261788143)
+
+    s = cc.mean_skill(weights=[100000000000.0, 1.0, 1.0])
+    assert s.loc["SW_1"].rmse < 1.0
+
     s = cc.mean_skill(weights=1)
     assert len(s) == 2
-    s = cc.mean_skill(weights="equal")
-    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+
     with pytest.raises(ValueError):
         # too many weights
         cc.mean_skill(weights=[0.2, 0.3, 0.4, 0.5])
+
+
+def test_mm_mean_skill_weights_str(cc):
+    s = cc.mean_skill(weights="points")
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.3367349)
+
+    s = cc.mean_skill(weights="equal")
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+
+
+def test_mm_mean_skill_weights_dict(cc):
+    s = cc.mean_skill(weights={"EPL": 0.2, "c2": 1.0, "HKNA": 0.3})
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.3261788143)
+
+    s2 = cc.mean_skill(weights=[0.3, 0.2, 1.0])
+    assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
+    assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
+
+    s = cc.mean_skill(weights={"EPL": 2.0})
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.319830126)
+
+    s2 = cc.mean_skill(weights={"EPL": 2.0, "c2": 1.0, "HKNA": 1.0})
+    assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
+    assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
+
+
+def test_mean_skill_points(cc):
+    s = cc.mean_skill_points()
+    assert len(s) == 2
+    assert s.loc["SW_1"].rmse == pytest.approx(0.33927729)
 
 
 def test_mm_scatter(cc):
@@ -230,6 +272,7 @@ def test_mm_scatter(cc):
     cc.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
     # cc.scatter(model="SW_2", binsize=0.5, backend="plotly")
     assert True
+    plt.close("all")
 
 
 def test_mm_taylor(cc):
@@ -239,6 +282,7 @@ def test_mm_taylor(cc):
     cc.taylor(model="SW_2", start="2017-10-28")
     cc[0].taylor(model=0, end="2017-10-29")
     assert True
+    plt.close("all")
 
 
 def test_mm_plot_timeseries(cc):
@@ -248,3 +292,4 @@ def test_mm_plot_timeseries(cc):
     # cc["EPL"].plot_timeseries(backend="plotly")
     with pytest.raises(ValueError):
         cc["EPL"].plot_timeseries(backend="mpl")
+    plt.close("all")

@@ -15,7 +15,9 @@ def observation_df():
 
 @pytest.fixture
 def observation(observation_df):
-    return TrackObservation(observation_df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(observation_df, item=2, name="alti")
+    return o
 
 
 @pytest.fixture
@@ -27,7 +29,9 @@ def modelresult():
 @pytest.fixture
 def comparer(observation, modelresult):
     con = Connector(observation, modelresult[2])
-    return con.extract()
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        cc = con.extract()
+    return cc
 
 
 def test_skill(comparer):
@@ -41,13 +45,18 @@ def test_extract_no_time_overlap(modelresult, observation_df):
     mr = modelresult
     df = observation_df.copy(deep=True)
     df.index = df.index + np.timedelta64(100, "D")
-    o = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2, name="alti")
 
     with pytest.raises(ValueError, match="Validation failed"):
-        Connector(o, mr[2])
+        with pytest.warns(UserWarning, match="No time overlap!"):
+            Connector(o, mr[2])
 
-    con = Connector(o, mr[2], validate=False)
-    cc = con.extract()
+    with pytest.warns(UserWarning, match="No time overlap!"):
+        con = Connector(o, mr[2], validate=False)
+
+    with pytest.warns(UserWarning, match="No overlapping data"):
+        cc = con.extract()
 
     assert cc.n_comparers == 0
 
@@ -56,9 +65,11 @@ def test_extract_obs_start_before(modelresult, observation_df):
     mr = modelresult
     df = observation_df.copy(deep=True)
     df.index = df.index - np.timedelta64(1, "D")
-    o = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2, name="alti")
     con = Connector(o, mr[2])
-    cc = con.extract()
+    with pytest.warns(UserWarning, match="No overlapping data"):
+        cc = con.extract()
     assert cc.n_comparers == 0
 
 
@@ -66,9 +77,11 @@ def test_extract_obs_end_after(modelresult, observation_df):
     mr = modelresult
     df = observation_df.copy(deep=True)
     df.index = df.index + np.timedelta64(1, "D")
-    o = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2, name="alti")
     con = Connector(o, mr[2])
-    cc = con.extract()
+    with pytest.warns(UserWarning, match="No overlapping data"):
+        cc = con.extract()
     assert cc.n_comparers == 0
 
 
@@ -77,9 +90,11 @@ def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
     df = observation_df.copy(deep=True)
     df.lon = -100
     df.lat = -50
-    o = TrackObservation(df, item=2, name="alti")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        o = TrackObservation(df, item=2, name="alti")
     con = Connector(o, mr[2])
-    cc = con.extract()
+    with pytest.warns(UserWarning, match="No overlapping data"):
+        cc = con.extract()
 
     assert cc.n_comparers == 0
     assert len(cc.all_df) == 0
@@ -134,3 +149,14 @@ def test_spatial_skill_misc(comparer):
     df = ds.to_dataframe()
     assert df.loc[df.n < 20, ["bias", "rmse"]].size == 30
     assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
+
+
+def test_hist(comparer):
+    cc = comparer
+
+    cc.hist(bins=np.linspace(0, 7, num=15))
+
+    cc[0].hist(bins=10)
+    cc[0].hist(model=0, title="new_title", alpha=0.2)
+    cc[0].residual_hist()
+    cc[0].residual_hist(bins=10, title="new_title", color="blue")

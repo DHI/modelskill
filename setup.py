@@ -8,7 +8,7 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="fmskill",
-    version="0.5.dev2",
+    version="0.6.dev0",
     install_requires=[
         "numpy",
         "pandas",
@@ -23,7 +23,7 @@ setuptools.setup(
         "dev": [
             "pytest",
             "sphinx",
-            "sphinx-rtd-theme",
+            "sphinx-book-theme",
             "black==20.8b1",
             "plotly >= 4.5",
         ],
@@ -32,6 +32,14 @@ setuptools.setup(
             "netCDF4",
             "openpyxl",
             "dask",
+        ],
+        "notebooks": [
+            "nbformat",
+            "nbconvert",
+            "jupyter",
+            "folium",
+            "plotly",
+            "geopandas",
         ],
     },
     entry_points="""

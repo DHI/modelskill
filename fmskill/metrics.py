@@ -2,6 +2,7 @@
 difference between a model and an observation. 
 
 * bias
+* max_error
 * root_mean_squared_error (rmse)    
 * urmse
 * mean_absolute_error (mae)
@@ -23,6 +24,8 @@ Examples
 >>> mod = np.array([0.0, 2.3, 1.0])
 >>> bias(obs, mod)
 0.6333333333333332
+>>> max_error(obs, mod)
+2.0
 >>> rmse(obs, mod)
 1.173314393786536
 >>> urmse(obs, mod)
@@ -72,7 +75,7 @@ def max_error(obs, model) -> float:
     """Max (absolute) error
 
     .. math::
-        max_error = max(|model_i - obs_i|)
+        max_{error} = max(|model_i - obs_i|)
 
     Range: :math:`[0, \\infty)`; Best: 0
     """
@@ -383,7 +386,7 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def willmott(obs: np.ndarray, model: np.ndarray) -> float:
-    """willmott's Index of Agreement
+    """Willmott's Index of Agreement
 
     A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.
 

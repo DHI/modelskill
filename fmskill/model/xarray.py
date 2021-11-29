@@ -6,16 +6,16 @@ import warnings
 from mikeio import eum
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer
-from .abstract import ModelResultInterface, MultiItemModelResult
+from .abstract import ModelResultInterface, MultiItemModelResult, _parse_itemInfo
 
 
 class _XarrayBase:
     @property
-    def start_time(self):
+    def start_time(self) -> pd.Timestamp:
         return pd.Timestamp(self.ds.time.values[0])
 
     @property
-    def end_time(self):
+    def end_time(self) -> pd.Timestamp:
         return pd.Timestamp(self.ds.time.values[-1])
 
     @property
@@ -84,10 +84,16 @@ class _XarrayBase:
         if item is None:
             item = self._selected_item
         x, y = observation.x, observation.y
+        if (x is None) or (y is None):
+            raise ValueError(
+                f"PointObservation '{observation.name}' cannot be used for extraction "
+                + f"because it has None position x={x}, y={y}. Please provide position "
+                + "when creating PointObservation."
+            )
         da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
-        return df
+        return df.dropna()
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
         import xarray as xr
@@ -101,14 +107,18 @@ class _XarrayBase:
         df = da.to_dataframe().drop(columns=["time"])
         df.index.name = "time"
         df = df.rename(columns={df.columns[-1]: self.name})
-        return df
+        return df.dropna()
 
     def _in_domain(self, x, y) -> bool:
-        ok = True
-        # TODO
-        # if self.is_dfsu:
-        #    ok = self.dfs.contains([x, y])
-        return ok
+        if (x is None) or (y is None):
+            raise ValueError(
+                "PointObservation has None position - cannot determine if inside xarray domain!"
+            )
+        xmin = self.ds.x.values.min()
+        xmax = self.ds.x.values.max()
+        ymin = self.ds.y.values.min()
+        ymax = self.ds.y.values.max()
+        return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def _validate_start_end(self, observation: Observation) -> bool:
         if observation.end_time < self.start_time:
@@ -123,10 +133,10 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
     def item_name(self):
         return self._selected_item
 
-    def __init__(self, ds, name: str = None, item=None, filename=None):
+    def __init__(self, ds, name: str = None, item=None, itemInfo=None, filename=None):
         import xarray as xr
 
-        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+        self.itemInfo = _parse_itemInfo(itemInfo)
 
         if isinstance(ds, (xr.DataArray, xr.Dataset)):
             self._validate_time_axis(ds)
@@ -186,10 +196,8 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         """List of item names (=data vars)"""
         return list(self.ds.data_vars)
 
-    def __init__(self, input, name: str = None, item=None, **kwargs):
+    def __init__(self, input, name: str = None, item=None, itemInfo=None, **kwargs):
         import xarray as xr
-
-        self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
 
         self._filename = None
         if isinstance(input, str) and ("*" not in input):
@@ -218,18 +226,21 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         self.ds = ds
         self.name = name
 
-        self._mr_items = {}
-        for it in self.item_names:
-            self._mr_items[it] = XArrayModelResultItem(
-                self.ds, self.name, it, self._filename
-            )
-
         if item is not None:
             self._selected_item = self._get_item_name(item)
         elif len(self.item_names) == 1:
             self._selected_item = 0
         else:
             self._selected_item = None
+
+        if (itemInfo is not None) and (self._selected_item is None):
+            raise ValueError("itemInfo can only be supplied if item is non-ambigious")
+
+        self._mr_items = {}
+        for it in self.item_names:
+            self._mr_items[it] = XArrayModelResultItem(
+                self.ds, self.name, item=it, itemInfo=itemInfo, filename=self._filename
+            )
 
     def _rename_coords(self, ds):
         new_names = self._get_new_coord_names(ds.coords)

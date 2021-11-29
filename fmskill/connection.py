@@ -20,7 +20,7 @@ from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 
 
-def compare(obs, mod, obs_item=None, mod_item=None):
+def compare(obs, mod, *, obs_item=None, mod_item=None):
     """Quick-and-dirty compare of observation and model
 
     Parameters
@@ -204,7 +204,7 @@ class _SingleObsConnector(_BaseConnector):
     @staticmethod
     def _validate_in_domain(obs, mod):
         in_domain = True
-        if isinstance(mod, ModelResult) and isinstance(obs, PointObservation):
+        if isinstance(mod, ModelResultInterface) and isinstance(obs, PointObservation):
             in_domain = mod._in_domain(obs.x, obs.y)
             if not in_domain:
                 warnings.warn(
@@ -240,7 +240,7 @@ class _SingleObsConnector(_BaseConnector):
         """
         mr = self.modelresults[0]
 
-        if (not isinstance(mr, DfsModelResultItem)) or (mr.is_dfs0):
+        if (not isinstance(mr, DfsModelResultItem)) or mr.is_dfs0:
             warnings.warn(
                 "Plotting observations is only supported for dfsu ModelResults"
             )
@@ -258,7 +258,7 @@ class _SingleObsConnector(_BaseConnector):
         if len(comparer.df) == 0:
             if warn:
                 name = comparer.observation.name
-                warnings.warn(f"No overlapping data in found for {name}!")
+                warnings.warn(f"No overlapping data was found for {name}!")
             return None
         return comparer
 
@@ -292,11 +292,25 @@ class PointConnector(_SingleObsConnector):
         Returns
         -------
         PointComparer
-            A comparer object for further analysis and plotting."""
+            A comparer object for further analysis and plotting.
+        """
+
         assert isinstance(self.obs, PointObservation)
         df_model = []
         for mr in self.modelresults:
-            df_model.append(mr._extract_point(self.obs))
+            df = mr._extract_point(self.obs)
+            if (df is not None) and (len(df) > 0):
+                df_model.append(df)
+            else:
+                warnings.warn(
+                    f"No data found when extracting '{self.obs.name}' from model '{mr.name}'"
+                )
+
+        if len(df_model) == 0:
+            warnings.warn(
+                f"No overlapping data was found for PointObservation '{self.obs.name}'!"
+            )
+            return None
 
         comparer = PointComparer(self.obs, df_model)
         return self._comparer_or_None(comparer)
@@ -336,7 +350,15 @@ class TrackConnector(_SingleObsConnector):
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
-                warnings.warn(f"Could not extract track from model '{mr.name}'")
+                warnings.warn(
+                    f"No data in extracted track '{self.obs.name}' from model '{mr.name}'"
+                )
+
+        if len(df_model) == 0:
+            warnings.warn(
+                f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
+            )
+            return None
 
         comparer = TrackComparer(self.obs, df_model)
         return self._comparer_or_None(comparer)
@@ -523,11 +545,13 @@ class Connector(_BaseConnector, Mapping, Sequence):
                 cc.add_comparer(comparer)
         return cc
 
-    def plot_observation_positions(self, figsize=None):
+    def plot_observation_positions(self, title=None, figsize=None):
         """Plot observation points on a map showing the model domain
 
         Parameters
         ----------
+        title: str, optional
+            plot title, default empty
         figsize : (float, float), optional
             figure size, by default None
 
@@ -535,19 +559,28 @@ class Connector(_BaseConnector, Mapping, Sequence):
         --------
         >>> con.plot_observation_positions()
         >>> con.plot_observation_positions(figsize=(10,10))
+        >>> con.plot_observation_positions("A Map")
         """
         mod = list(self.modelresults.values())[0]
 
-        if mod.is_dfs0:
+        if (not isinstance(mod, DfsModelResultItem)) or mod.is_dfs0:
             warnings.warn("Only supported for dfsu ModelResults")
             return
 
         observations = list(self.observations.values())
-        ax = plot_observation_positions(dfs=mod.dfs, observations=observations)
+        ax = plot_observation_positions(
+            dfs=mod.dfs, observations=observations, title=title, figsize=figsize
+        )
         return ax
 
     def plot_temporal_coverage(
-        self, show_model=True, limit_to_model_period=True, marker="_", figsize=None
+        self,
+        *,
+        show_model=True,
+        limit_to_model_period=True,
+        marker="_",
+        title=None,
+        figsize=None,
     ):
         """Plot graph showing temporal coverage for all observations
 
@@ -560,6 +593,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             by the model, by default True
         marker : str, optional
             plot marker for observations, by default "_"
+        title: str, optional
+            plot title, default empty
         figsize : Tuple(float, float), optional
             size of figure, by default (7, 0.45*n_lines)
 
@@ -603,15 +638,20 @@ class Connector(_BaseConnector, Mapping, Sequence):
                 ax.get_yticklabels()[j].set_weight("bold")
                 # set_color("#004165")
         fig.autofmt_xdate()
+
+        if title:
+            ax.set_title(title)
         return ax
 
-    def to_config(self, filename: str = None):
+    def to_config(self, filename: str = None, relative_path=True):
         """Save Connector to a config file.
 
         Parameters
         ----------
         filename: str or Path
             Save configuration in yaml format
+        relative_path: bool, default=True
+            Use filenames relative to config file location
 
         Notes
         -----
@@ -621,16 +661,20 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         conf = {}
 
+        folder = None
+        if relative_path and filename is not None:
+            folder = os.path.dirname(filename)
+
         # model results
         conf_mr = {}
         for name, mr in self.modelresults.items():
-            conf_mr[name] = self._modelresult_to_dict(mr)
+            conf_mr[name] = self._modelresult_to_dict(mr, folder)
         conf["modelresults"] = conf_mr
 
         # observations
         conf_obs = {}
         for name, obs in self.observations.items():
-            conf_obs[name] = self._observation_to_dict(obs)
+            conf_obs[name] = self._observation_to_dict(obs, folder)
         conf["observations"] = conf_obs
 
         if filename is not None:
@@ -645,19 +689,22 @@ class Connector(_BaseConnector, Mapping, Sequence):
             return conf
 
     @staticmethod
-    def _modelresult_to_dict(mr):
+    def _modelresult_to_dict(mr, folder):
         d = {}
         # d["display_name"] = mr.name
         if mr.filename is None:
             raise ValueError(
                 f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
             )
-        d["filename"] = mr.filename
+        if folder is None:
+            d["filename"] = mr.filename
+        else:
+            d["filename"] = os.path.relpath(mr.filename, start=folder)
         d["item"] = mr._selected_item
         return d
 
     @staticmethod
-    def _observation_to_dict(obs):
+    def _observation_to_dict(obs, folder):
         d = {}
         # d["display_name"] = obs.name
         d["type"] = obs.__class__.__name__
@@ -665,7 +712,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
             raise ValueError(
                 f"Cannot write Connector to conf file! Observation '{obs.name}' has no filename."
             )
-        d["filename"] = obs.filename
+        if folder is None:
+            d["filename"] = obs.filename
+        else:
+            d["filename"] = os.path.relpath(obs.filename, start=folder)
         d["item"] = obs._item
         if isinstance(obs, PointObservation):
             d["x"] = obs.x
@@ -694,7 +744,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             yaml.dump(conf, f)  # , default_flow_style=False
 
     @staticmethod
-    def from_config(conf: Union[dict, str], validate_eum=True):
+    def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True):
         """Load Connector from a config file (or dict)
 
         Parameters
@@ -703,6 +753,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             path to config file or dict with configuration
         validate_eum : bool, optional
             require eum to match, by default True
+        relative_path: bool, optional
+             file path are relative to configuration file, and not current directory
 
         Returns
         -------
@@ -717,18 +769,24 @@ class Connector(_BaseConnector, Mapping, Sequence):
         if isinstance(conf, str):
             filename = conf
             ext = os.path.splitext(filename)[-1]
+            dirname = os.path.dirname(filename)
             if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
                 conf = Connector._yaml_to_dict(filename)
             elif "xls" in ext:
                 conf = Connector._excel_to_dict(filename)
             else:
                 raise ValueError("Filename extension not supported! Use .yml or .xlsx")
+        else:
+            dirname = ""
 
         modelresults = {}
         for name, mr_dict in conf["modelresults"].items():
             if not mr_dict.get("include", True):
                 continue
-            filename = mr_dict["filename"]
+            if relative_path:
+                filename = os.path.join(dirname, mr_dict["filename"])
+            else:
+                filename = mr_dict["filename"]
             item = mr_dict.get("item")
             mr = ModelResult(filename, name=name, item=item)
             modelresults[name] = mr
@@ -738,7 +796,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
         for name, obs_dict in conf["observations"].items():
             if not obs_dict.get("include", True):
                 continue
-            filename = obs_dict["filename"]
+            if relative_path:
+                filename = os.path.join(dirname, obs_dict["filename"])
+            else:
+                filename = obs_dict["filename"]
             item = obs_dict.get("item")
             alt_name = obs_dict.get("name")
             name = name if alt_name is None else alt_name

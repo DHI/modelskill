@@ -4,6 +4,8 @@ import pytest
 import xarray as xr
 import pandas as pd
 
+from mikeio import eum
+
 import fmskill
 from fmskill.model import ModelResult
 
@@ -57,6 +59,7 @@ def test_XArrayModelResult_from_nc(modelresult):
     assert mr.item_names == ["mwd", "mwp", "mp2", "pp1d", "swh"]
     assert mr.start_time == datetime(2017, 10, 27, 0, 0, 0)
     assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert mr[0].itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
 
 
 def test_XArrayModelResult_from_ds(ERA5_DutchCoast_nc):
@@ -67,6 +70,7 @@ def test_XArrayModelResult_from_ds(ERA5_DutchCoast_nc):
     assert isinstance(mr.ds, xr.Dataset)
     assert mr.item_names == ["mwd", "mwp", "mp2", "pp1d", "swh"]
     assert not mr.filename
+    assert mr[0].itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
 
 
 def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
@@ -97,7 +101,31 @@ def test_XArrayModelResult_select_item(modelresult):
     assert isinstance(mr[0], XArrayModelResultItem)
 
 
-def test_XArrayModelResultItem(modelresult):
+def test_XArrayModelResultItem(ERA5_DutchCoast_nc):
+    mri1 = ModelResult(ERA5_DutchCoast_nc, item="pp1d")
+    assert isinstance(mri1, XArrayModelResultItem)
+
+    mri2 = ModelResult(ERA5_DutchCoast_nc, item=3)
+    assert isinstance(mri2, XArrayModelResultItem)
+
+    assert mri1.name == mri2.name
+    assert mri1._selected_item == mri2._selected_item
+
+
+def test_XArrayModelResultItem_itemInfo(ERA5_DutchCoast_nc):
+    mri1 = ModelResult(ERA5_DutchCoast_nc, item="pp1d")
+    assert mri1.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
+
+    itemInfo = eum.EUMType.Wave_period
+    mri3 = ModelResult(ERA5_DutchCoast_nc, item="pp1d", itemInfo=itemInfo)
+    mri3.itemInfo == eum.ItemInfo(eum.EUMType.Wave_period)
+
+    itemInfo = eum.ItemInfo("Peak period", eum.EUMType.Wave_period)
+    mri3 = ModelResult(ERA5_DutchCoast_nc, item="pp1d", itemInfo=itemInfo)
+    mri3.itemInfo == eum.ItemInfo("Peak period", eum.EUMType.Wave_period)
+
+
+def test_XArrayModelResult_getitem(modelresult):
     mr = modelresult
     mri = mr[0]
 
@@ -147,7 +175,8 @@ def test_XArrayModelResultItem_extract_point_xoutside(modelresult, pointobs_epl_
     mr = modelresult
     mri = mr["swh"]
     pointobs_epl_hm0.x = -50
-    pc = mri.extract_observation(pointobs_epl_hm0)
+    with pytest.warns(UserWarning, match="Cannot add zero-length modeldata"):
+        pc = mri.extract_observation(pointobs_epl_hm0)
 
     assert pc == None
 
@@ -157,9 +186,10 @@ def test_XArrayModelResultItem_extract_point_toutside(
 ):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     da = ds["swh"].isel(time=slice(10, 15))
-    da["time"] = pd.Timedelta("1Y") + da.time
+    da["time"] = pd.Timedelta("365D") + da.time
     mr = ModelResult(da)
-    pc = mr.extract_observation(pointobs_epl_hm0)
+    with pytest.warns(UserWarning, match="No overlapping data in found"):
+        pc = mr.extract_observation(pointobs_epl_hm0)
 
     assert pc == None
 
@@ -182,11 +212,11 @@ def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
 
     assert isinstance(tc, TrackComparer)
     assert tc.start.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
-    assert tc.end.replace(microsecond=0) == datetime(2017, 10, 29, 12, 52, 51)
+    assert tc.end.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tc.n_models == 1
-    assert tc.n_points == 298
+    assert tc.n_points == 99
     assert tc.n_variables == 1
-    assert len(df.dropna()) == 298
+    assert len(df.dropna()) == 99
 
 
 def test_xarray_connector(modelresult, pointobs_epl_hm0, trackobs_c2_hm0):
