@@ -340,12 +340,6 @@ and units match; Default: True</p></li>
 <dd><p>Filename of the observation input</p>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="fmskill.observation.PointObservation.geometry">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">geometry</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">shapely.geometry.point.Point</span></em><a class="headerlink" href="#fmskill.observation.PointObservation.geometry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Coordinates of observation</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="fmskill.observation.PointObservation.hist">
 <span class="sig-name descname"><span class="pre">hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fmskill.observation.PointObservation.hist" title="Permalink to this definition">¶</a></dt>
@@ -487,12 +481,6 @@ and units match; Default: True</p></li>
 <dt class="sig sig-object py" id="fmskill.observation.TrackObservation.filename">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">filename</span></span><a class="headerlink" href="#fmskill.observation.TrackObservation.filename" title="Permalink to this definition">¶</a></dt>
 <dd><p>Filename of the observation input</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="fmskill.observation.TrackObservation.geometry">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">geometry</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">shapely.geometry.multipoint.MultiPoint</span></em><a class="headerlink" href="#fmskill.observation.TrackObservation.geometry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Coordinates of observation</p>
 </dd></dl>
 
 <dl class="py method">
@@ -3357,11 +3345,11 @@ applied to ranked quantities and is useful to quantify a monotonous relationship
                \sqrt{\sum_{i=1}^n (robs_i - \overline{robs})^2} }\]</div>
 <p>Range: [-1, 1]; Best: 1</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">corrcoef</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
-<span class="go">0.8865141786249244</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rho</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
+<span class="go">0.9999759973116955</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spearmanr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
 <span class="go">0.9999759973116955</span>
 </pre></div>
 </div>
