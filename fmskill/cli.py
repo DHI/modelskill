@@ -1,27 +1,31 @@
-import click
+import typer
 import fmskill
 from fmskill.report import Reporter
+from pathlib import Path
 
 
-@click.command()
-@click.argument("configuration")
-@click.option("--output_folder", help="Folder to write output to")
-@click.option(
-    "--output_format",
-    type=click.Choice(["md", "html"]),
-    default="html",
-    help="Output format, default is html",
-)
-def report(configuration: str, output_folder=None, output_format="html") -> None:
+app = typer.Typer(add_completion=False)
+
+
+@app.command()
+def report(
+    config_file: Path,
+    output_folder: Path,
+    output_format: str = typer.Argument(default="html", help="Choose: html or md"),
+):
     """
     fmskill: Automatic model skill assessment
     """
 
-    con = fmskill.from_config(configuration)
+    con = fmskill.from_config(str(config_file), validate_eum=False)
     reporter = Reporter(con, output_folder)
 
     if output_format == "md":
         filename = reporter.to_markdown()
     else:
         filename = reporter.to_html()
-    print(f"Report created at: {filename}")
+    typer.echo(f"Report created at: {filename}")
+
+
+if __name__ == "__main__":
+    app()

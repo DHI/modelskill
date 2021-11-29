@@ -26,6 +26,7 @@ setuptools.setup(
             "sphinx-book-theme",
             "black==20.8b1",
             "plotly >= 4.5",
+            "typer",
         ],
         "test": [
             "pytest",
@@ -44,7 +45,7 @@ setuptools.setup(
     },
     entry_points="""
         [console_scripts]
-            fmskill=fmskill.cli:report
+            fmskill=fmskill.cli:app
     """,
     author="Jesper Sandvig Mariegaard",
     author_email="jem@dhigroup.com",
