@@ -128,9 +128,14 @@ class DMIOceanObsRepository:
 
         ts = self._data_to_ts(data, parameter_id)
 
-        next_link = data["links"][1]["href"]
+        if len(ts) == 0:
+            return pd.DataFrame({parameter_id: []})
 
-        while len(ts) < limit:
+        next_link = None
+        if len(data["links"]) > 1:
+            next_link = data["links"][1]["href"]
+
+        while next_link and (len(ts) < limit):
 
             resp = requests.get(next_link)
             data = resp.json()
@@ -152,6 +157,7 @@ class DMIOceanObsRepository:
         return df
 
     def _data_to_ts(self, data, parameter_id):
+
         ts = [
             {
                 "time": p["properties"]["observed"].replace("Z", ""),
