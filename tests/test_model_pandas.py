@@ -41,10 +41,12 @@ def test_df_modelresultitem(point_df):
     assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
     assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
     assert mr1.name == "Water Level"
+    assert mr1.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
 
     # item as string
     mr2 = DataFramePointModelResultItem(df, item="Water Level")
     assert len(mr2.df) == len(mr1.df)
+    assert mr2.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
 
     mr3 = DataFramePointModelResultItem(df[["Water Level"]])
     assert len(mr3.df) == len(mr1.df)
@@ -52,6 +54,18 @@ def test_df_modelresultitem(point_df):
     # Series
     mr4 = ModelResult(df["Water Level"])
     assert len(mr4.df) == len(mr1.df)
+
+
+def test_df_modelresultitem_itemInfo(point_df):
+    df = point_df
+    df["ones"] = 1.0
+    itemInfo = eum.EUMType.Surface_Elevation
+    mr1 = ModelResult(df, item="Water Level", itemInfo=itemInfo)
+    assert mr1.itemInfo == eum.ItemInfo(eum.EUMType.Surface_Elevation)
+
+    itemInfo = eum.ItemInfo("WL", eum.EUMType.Surface_Elevation)
+    mr2 = ModelResult(df, item=0, itemInfo=itemInfo)
+    assert mr2.itemInfo == eum.ItemInfo("WL", eum.EUMType.Surface_Elevation)
 
 
 def test_df_modelresult(point_df):
@@ -87,9 +101,22 @@ def test_track_df_modelresultitem(track_df):
     # item as string
     mr2 = ModelResult(df, item="surface_elevation")
     assert len(mr2.df) == len(mr1.df)
+    assert mr2.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
 
     mr3 = DataFramePointModelResultItem(df[["surface_elevation"]])
     assert len(mr3.df) == len(mr1.df)
+    assert mr3.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
+
+
+def test_track_df_modelresultitem_iteminfo(track_df):
+    df = track_df
+    itemInfo = eum.EUMType.Surface_Elevation
+    mr1 = ModelResult(df, item="surface_elevation", itemInfo=itemInfo)
+    assert mr1.itemInfo == eum.ItemInfo(eum.EUMType.Surface_Elevation)
+
+    itemInfo = eum.ItemInfo("WL", eum.EUMType.Surface_Elevation)
+    mr2 = ModelResult(df, item="surface_elevation", itemInfo=itemInfo)
+    assert mr2.itemInfo == eum.ItemInfo("WL", eum.EUMType.Surface_Elevation)
 
 
 def test_track_df_modelresult(track_df):
