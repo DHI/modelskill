@@ -17,8 +17,8 @@ class OutputFormat(str, Enum):
 
 @app.command()
 def report(
-    config_file: Path,
-    output_folder: Path,
+    config_file: Path = typer.Argument(..., exists=True),
+    output_folder: Path = typer.Argument(...),
     format: OutputFormat = OutputFormat.html,
 ):
     """
