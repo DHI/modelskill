@@ -124,7 +124,7 @@ class SpatialSkill:
         extra_dims = [d for d in ds.coords.dims if d not in ["x", "y"]]
         if len(extra_dims) == 2:
             ax = ds.plot(col=extra_dims[0], row=extra_dims[1], **kwargs)
-        if len(extra_dims) == 1:
+        elif len(extra_dims) == 1:
             ax = ds.plot(col=extra_dims[0], **kwargs)
         else:
             ax = ds.plot(**kwargs)
