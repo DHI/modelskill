@@ -135,3 +135,6 @@ tests/testdata/tmp
 # ignore .bak files
 *.bak
 fmskill/*.bak
+
+# .ini 
+*.ini
