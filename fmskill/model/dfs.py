@@ -5,6 +5,7 @@ import pandas as pd
 import warnings
 
 from mikeio import Dfs0, Dfsu, Dataset, eum
+from mikeio.dfsu import _UnstructuredFile
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from ..utils import make_unique_index
@@ -26,7 +27,7 @@ class _DfsBase:
 
     @property
     def is_dfsu(self):
-        return isinstance(self.dfs, Dfsu)
+        return isinstance(self.dfs, _UnstructuredFile)
 
     @property
     def is_dfs0(self):
@@ -116,12 +117,14 @@ class _DfsBase:
         xy = np.atleast_2d([x, y])
         elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
         ds_model = self.dfs.read(elements=elemids, items=[item])
-        ds_model.items[0].name = self.name
+        # ds_model.items[0].name = self.name
+        ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
         return ds_model
 
     def _extract_point_dfs0(self, item) -> Dataset:
         ds_model = self.dfs.read(items=[item])
-        ds_model.items[0].name = self.name
+        # ds_model.items[0].name = self.name
+        ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
         return ds_model
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
@@ -133,14 +136,16 @@ class _DfsBase:
             df = ds_model.to_dataframe().dropna()
         elif self.is_dfs0:
             ds_model = self.dfs.read(items=[0, 1, item])
-            ds_model.items[-1].name = self.name
+            # ds_model.items[-1].name = self.name
+            ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
             df = ds_model.to_dataframe().dropna()
             df.index = make_unique_index(df.index, offset_in_seconds=0.01)
         return df
 
     def _extract_track_dfsu(self, observation: TrackObservation, item) -> Dataset:
         ds_model = self.dfs.extract_track(track=observation.df, items=[item])
-        ds_model.items[-1].name = self.name
+        # ds_model.items[-1].name = self.name
+        ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
         return ds_model
 
     @staticmethod
