@@ -17,7 +17,7 @@ def scatter(
     y,
     *,
     binsize: float = None,
-    nbins: int = 20,
+    nbins: int = None,
     show_points: bool = None,
     show_hist: bool = True,
     backend: str = "matplotlib",
@@ -42,7 +42,7 @@ def scatter(
     binsize : float, optional
         the size of each bin in the 2d histogram, by default None
     nbins : int, optional
-        number of bins (if binsize is not given), by default 20
+        number of bins (if binsize is not given), by default None and will depend on the scatter length (10,100 or 1000)
     show_points : bool, optional
         Should the scatter points be displayed?
         None means: only show points if fewer than threshold, by default None
@@ -87,6 +87,14 @@ def scatter(
     if ylim is None:
         ylim = [xymin, xymax]
 
+    if nbins is None:
+        if len(x) >= 3000:
+            nbins=1000
+        elif len(x) >= 300:
+            nbins=100
+        else:
+            nbins=10
+
     if binsize is None:
         binsize = (xmax - xmin) / nbins
     else:
@@ -108,7 +116,7 @@ def scatter(
 
         plt.figure(figsize=figsize)
         plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
-        plt.plot(xq, yq, label="Q-Q", c="gray")
+        plt.plot(xq, yq,'o',label="Q-Q", c="darkturquoise",markeredgecolor=(0,0,0,0.4))
         plt.plot(
             x,
             intercept + slope * x,
