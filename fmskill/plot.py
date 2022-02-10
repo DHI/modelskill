@@ -46,7 +46,7 @@ def scatter(
     show_points : (bool, int, str), optional
         Should the scatter points be displayed?
         None means: only show points if fewer than threshold, by default None.
-        'sample': will display a random sample of 10,000 points.
+        float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
         int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
         show the data density as a a 2d histogram, by default True
@@ -83,11 +83,14 @@ def scatter(
             show_points = True
         else:
             show_points = False
-    elif show_points == "sample":
-        np.random.seed(20)
-        ran_index = np.random.choice(range(len(x)), 10000)
-        x_sample = x[ran_index]
-        y_sample = y[ran_index]
+    elif type(show_points) == float:
+        if show_points < 0 or show_points > 1:
+            raise TypeError(" `show_points` fraction must be in [0,1]")
+        else:
+            np.random.seed(20)
+            ran_index = np.random.choice(range(len(x)), len(x) * show_points)
+            x_sample = x[ran_index]
+            y_sample = y[ran_index]
     # if show_points is an int
     elif type(show_points) == int:
         np.random.seed(20)
@@ -97,7 +100,7 @@ def scatter(
     elif type(show_points) == bool:
         pass
     else:
-        raise TypeError(" `show_points` must be either bool, int or 'sample' ")
+        raise TypeError(" `show_points` must be either bool, int or float")
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
