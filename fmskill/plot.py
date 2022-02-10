@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 import warnings
 import numpy as np
 from collections import namedtuple
@@ -18,7 +18,7 @@ def scatter(
     *,
     binsize: float = None,
     nbins: int = 20,
-    show_points: bool = None,
+    show_points: Union[bool, int, str] = None,
     show_hist: bool = True,
     backend: str = "matplotlib",
     figsize: List[float] = (8, 8),
@@ -43,9 +43,11 @@ def scatter(
         the size of each bin in the 2d histogram, by default None
     nbins : int, optional
         number of bins (if binsize is not given), by default 20
-    show_points : bool, optional
+    show_points : (bool, int, str), optional
         Should the scatter points be displayed?
-        None means: only show points if fewer than threshold, by default None
+        None means: only show points if fewer than threshold, by default None.
+        'sample': will display a random sample of 10,000 points.
+        int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
         show the data density as a a 2d histogram, by default True
     backend : str, optional
@@ -73,8 +75,23 @@ def scatter(
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
 
+    x_sample = x
+    y_sample = y
     if show_points is None:
-        show_points = len(x) < 1e4
+        # If nothing given, and more than 10k points, nothing will be shown
+        if len(x) < 1e4:
+            show_points = True
+        else:
+            show_points = False
+    elif show_points == "sample":
+        np.random.seed(20)
+        x_sample = np.random.choice(x, 1e4)
+        y_sample = np.random.choice(y, 1e4)
+    # if show_points is an int
+    elif type(show_points) == int:
+        np.random.seed(20)
+        x_sample = np.random.choice(x, show_points)
+        y_sample = np.random.choice(y, show_points)
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
@@ -127,7 +144,9 @@ def scatter(
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
         if show_points:
-            plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
+            plt.scatter(
+                x_sample, y_sample, c="0.25", s=20, alpha=0.5, marker=".", label=None
+            )
         plt.title(title)
 
     elif backend == "plotly":  # pragma: no cover
@@ -166,8 +185,8 @@ def scatter(
         if show_points:
             data.append(
                 go.Scatter(
-                    x=x,
-                    y=y,
+                    x=x_sample,
+                    y=y_sample,
                     mode="markers",
                     name="Data",
                     marker=dict(color="black"),
