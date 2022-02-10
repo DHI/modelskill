@@ -94,12 +94,10 @@ def scatter(
         ran_index = np.random.choice(range(len(x)), show_points)
         x_sample = x[ran_index]
         y_sample = y[ran_index]
-    elif show_points == True:
+    elif type(show_points) == bool:
         pass
     else:
         raise TypeError(" `show_points` must be either bool, int or 'sample' ")
-
-    print(len(x_sample))
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
