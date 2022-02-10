@@ -88,7 +88,7 @@ def scatter(
             raise TypeError(" `show_points` fraction must be in [0,1]")
         else:
             np.random.seed(20)
-            ran_index = np.random.choice(range(len(x)), len(x) * show_points)
+            ran_index = np.random.choice(range(len(x)), int(len(x) * show_points))
             x_sample = x[ran_index]
             y_sample = y[ran_index]
     # if show_points is an int
