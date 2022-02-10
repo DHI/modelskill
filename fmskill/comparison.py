@@ -164,24 +164,24 @@ class BaseComparer:
         self._obs_names: List[str]
         self._mod_names: List[str]
         self._mod_colors = [
-            "#1f78b4", 
-            "#33a02c", 
-            "#ff7f00", 
-            "#93509E", 
-            "#63CEFF", 
-            "#fdbf6f", 
-            "#004165", 
-            "#8B8D8E", 
-            "#0098DB", 
-            "#61C250", 
-            "#a6cee3", 
-            "#b2df8a", 
-            "#fb9a99", 
-            "#cab2d6", 
-            "#003f5c", 
-            "#2f4b7c", 
-            "#665191", 
-            "#e31a1c", 
+            "#1f78b4",
+            "#33a02c",
+            "#ff7f00",
+            "#93509E",
+            "#63CEFF",
+            "#fdbf6f",
+            "#004165",
+            "#8B8D8E",
+            "#0098DB",
+            "#61C250",
+            "#a6cee3",
+            "#b2df8a",
+            "#fb9a99",
+            "#cab2d6",
+            "#003f5c",
+            "#2f4b7c",
+            "#665191",
+            "#e31a1c",
         ]
 
         self._resi_color = "#8B8D8E"
@@ -814,7 +814,7 @@ class BaseComparer:
         self,
         *,
         binsize: float = None,
-        nbins: int = 20,
+        nbins: int = None,
         show_points: bool = None,
         show_hist: bool = True,
         backend: str = "matplotlib",
@@ -842,7 +842,7 @@ class BaseComparer:
         binsize : float, optional
             the size of each bin in the 2d histogram, by default None
         nbins : int, optional
-            number of bins (if binsize is not given), by default 20
+            number of bins (if binsize is not given), by default None and will depend on the scatter length (10,100 or 1000)
         show_points : bool, optional
             Should the scatter points be displayed?
             None means: only show points if fewer than threshold, by default None

@@ -89,11 +89,11 @@ def scatter(
 
     if nbins is None:
         if len(x) >= 3000:
-            nbins=1000
+            nbins = 1000
         elif len(x) >= 300:
-            nbins=100
+            nbins = 100
         else:
-            nbins=10
+            nbins = 10
 
     if binsize is None:
         binsize = (xmax - xmin) / nbins
@@ -116,7 +116,9 @@ def scatter(
 
         plt.figure(figsize=figsize)
         plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
-        plt.plot(xq, yq,'o',label="Q-Q", c="darkturquoise",markeredgecolor=(0,0,0,0.4))
+        plt.plot(
+            xq, yq, "o", label="Q-Q", c="darkturquoise", markeredgecolor=(0, 0, 0, 0.4)
+        )
         plt.plot(
             x,
             intercept + slope * x,
