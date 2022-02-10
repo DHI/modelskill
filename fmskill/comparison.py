@@ -164,24 +164,24 @@ class BaseComparer:
         self._obs_names: List[str]
         self._mod_names: List[str]
         self._mod_colors = [
-            "#1f78b4", 
-            "#33a02c", 
-            "#ff7f00", 
-            "#93509E", 
-            "#63CEFF", 
-            "#fdbf6f", 
-            "#004165", 
-            "#8B8D8E", 
-            "#0098DB", 
-            "#61C250", 
-            "#a6cee3", 
-            "#b2df8a", 
-            "#fb9a99", 
-            "#cab2d6", 
-            "#003f5c", 
-            "#2f4b7c", 
-            "#665191", 
-            "#e31a1c", 
+            "#1f78b4",
+            "#33a02c",
+            "#ff7f00",
+            "#93509E",
+            "#63CEFF",
+            "#fdbf6f",
+            "#004165",
+            "#8B8D8E",
+            "#0098DB",
+            "#61C250",
+            "#a6cee3",
+            "#b2df8a",
+            "#fb9a99",
+            "#cab2d6",
+            "#003f5c",
+            "#2f4b7c",
+            "#665191",
+            "#e31a1c",
         ]
 
         self._resi_color = "#8B8D8E"
@@ -815,7 +815,7 @@ class BaseComparer:
         *,
         binsize: float = None,
         nbins: int = 20,
-        show_points: bool = None,
+        show_points: Union[bool, int, str] = None,
         show_hist: bool = True,
         backend: str = "matplotlib",
         figsize: List[float] = (8, 8),
@@ -843,9 +843,11 @@ class BaseComparer:
             the size of each bin in the 2d histogram, by default None
         nbins : int, optional
             number of bins (if binsize is not given), by default 20
-        show_points : bool, optional
+        show_points : (bool, int, str), optional
             Should the scatter points be displayed?
-            None means: only show points if fewer than threshold, by default None
+            None means: only show points if fewer than threshold, by default None.
+            'sample': will display a random sample of 10,000 points.
+            int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default True
         backend : str, optional
@@ -930,9 +932,6 @@ class BaseComparer:
 
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
-
-        if show_points is None:
-            show_points = len(x) < 1e4
 
         scatter(
             x=x,

@@ -85,13 +85,21 @@ def scatter(
             show_points = False
     elif show_points == "sample":
         np.random.seed(20)
-        x_sample = np.random.choice(x, 1e4)
-        y_sample = np.random.choice(y, 1e4)
+        ran_index = np.random.choice(range(len(x)), 10000)
+        x_sample = x[ran_index]
+        y_sample = y[ran_index]
     # if show_points is an int
     elif type(show_points) == int:
         np.random.seed(20)
-        x_sample = np.random.choice(x, show_points)
-        y_sample = np.random.choice(y, show_points)
+        ran_index = np.random.choice(range(len(x)), show_points)
+        x_sample = x[ran_index]
+        y_sample = y[ran_index]
+    elif show_points == True:
+        pass
+    else:
+        raise TypeError(" `show_points` must be either bool, int or 'sample' ")
+
+    print(len(x_sample))
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
