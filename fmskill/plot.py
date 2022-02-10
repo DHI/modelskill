@@ -17,6 +17,7 @@ def scatter(
     y,
     *,
     binsize: float = None,
+    nbins_hist: int = 20,
     nbins: int = None,
     show_points: bool = None,
     show_hist: bool = True,
@@ -41,8 +42,10 @@ def scatter(
         Y values e.g observation values, must be same length as x
     binsize : float, optional
         the size of each bin in the 2d histogram, by default None
+    nbins_hist: int, optional
+        number of bins (if binsize is not given) for 2D histogram. By default 20.
     nbins : int, optional
-        number of bins (if binsize is not given), by default None and will depend on the scatter length (10,100 or 1000)
+        number of bins (if binsize is not given) for QQ-plot, by default None and will depend on the scatter length (10, 100 or 1000)
     show_points : bool, optional
         Should the scatter points be displayed?
         None means: only show points if fewer than threshold, by default None
@@ -96,9 +99,10 @@ def scatter(
             nbins = 10
 
     if binsize is None:
-        binsize = (xmax - xmin) / nbins
+        binsize = (xmax - xmin) / nbins_hist
     else:
         nbins = int((xmax - xmin) / binsize)
+        nbins_hist = nbins
 
     xq = np.quantile(x, q=np.linspace(0, 1, num=nbins))
     yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
@@ -126,7 +130,7 @@ def scatter(
             label=reglabel,
         )
         if show_hist:
-            plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
+            plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, **kwargs)
         plt.legend()
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)

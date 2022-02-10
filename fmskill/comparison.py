@@ -814,6 +814,7 @@ class BaseComparer:
         self,
         *,
         binsize: float = None,
+        nbins_hist: int = 20,
         nbins: int = None,
         show_points: bool = None,
         show_hist: bool = True,
@@ -841,8 +842,10 @@ class BaseComparer:
         ----------
         binsize : float, optional
             the size of each bin in the 2d histogram, by default None
+        nbins_hist: int, optional
+            number of bins (if binsize is not given) for 2D histogram. By default 20.
         nbins : int, optional
-            number of bins (if binsize is not given), by default None and will depend on the scatter length (10,100 or 1000)
+            number of bins (if binsize is not given) for QQ-plot, by default None and will depend on the scatter length (10,100 or 1000)
         show_points : bool, optional
             Should the scatter points be displayed?
             None means: only show points if fewer than threshold, by default None
@@ -938,6 +941,7 @@ class BaseComparer:
             x=x,
             y=y,
             binsize=binsize,
+            nbins_hist=nbins_hist,
             nbins=nbins,
             show_points=show_points,
             show_hist=show_hist,
