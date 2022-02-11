@@ -815,7 +815,7 @@ class BaseComparer:
         *,
         binsize: float = None,
         nbins: int = 20,
-        show_points: Union[bool, int, str] = None,
+        show_points: Union[bool, int, float] = None,
         show_hist: bool = True,
         backend: str = "matplotlib",
         figsize: List[float] = (8, 8),
@@ -843,10 +843,10 @@ class BaseComparer:
             the size of each bin in the 2d histogram, by default None
         nbins : int, optional
             number of bins (if binsize is not given), by default 20
-        show_points : (bool, int, str), optional
+        show_points : (bool, int, float), optional
             Should the scatter points be displayed?
-            None means: only show points if fewer than threshold, by default None.
-            'sample': will display a random sample of 10,000 points.
+            None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
+            float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
             int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default True

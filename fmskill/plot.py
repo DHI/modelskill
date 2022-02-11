@@ -1,3 +1,4 @@
+from dataclasses import replace
 from typing import List, Tuple, Union
 import warnings
 import numpy as np
@@ -18,7 +19,7 @@ def scatter(
     *,
     binsize: float = None,
     nbins: int = 20,
-    show_points: Union[bool, int, str] = None,
+    show_points: Union[bool, int, float] = None,
     show_hist: bool = True,
     backend: str = "matplotlib",
     figsize: List[float] = (8, 8),
@@ -43,9 +44,9 @@ def scatter(
         the size of each bin in the 2d histogram, by default None
     nbins : int, optional
         number of bins (if binsize is not given), by default 20
-    show_points : (bool, int, str), optional
+    show_points : (bool, int, float), optional
         Should the scatter points be displayed?
-        None means: only show points if fewer than threshold, by default None.
+        None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
         float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
         int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
@@ -78,23 +79,25 @@ def scatter(
     x_sample = x
     y_sample = y
     if show_points is None:
-        # If nothing given, and more than 10k points, nothing will be shown
+        # If nothing given, and more than 10k points, 10k sample will be shown
         if len(x) < 1e4:
             show_points = True
         else:
-            show_points = False
-    elif type(show_points) == float:
+            show_points = 10000
+    if type(show_points) == float:
         if show_points < 0 or show_points > 1:
-            raise TypeError(" `show_points` fraction must be in [0,1]")
+            raise ValueError(" `show_points` fraction must be in [0,1]")
         else:
             np.random.seed(20)
-            ran_index = np.random.choice(range(len(x)), int(len(x) * show_points))
+            ran_index = np.random.choice(
+                range(len(x)), int(len(x) * show_points), replace=False
+            )
             x_sample = x[ran_index]
             y_sample = y[ran_index]
     # if show_points is an int
     elif type(show_points) == int:
         np.random.seed(20)
-        ran_index = np.random.choice(range(len(x)), show_points)
+        ran_index = np.random.choice(range(len(x)), show_points, replace=False)
         x_sample = x[ran_index]
         y_sample = y[ran_index]
     elif type(show_points) == bool:
