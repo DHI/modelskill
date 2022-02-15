@@ -817,6 +817,7 @@ class BaseComparer:
         quantiles: Union[int, List[float]] = None,
         show_points: Union[bool, int, float] = None,
         show_hist: bool = True,
+        density: bool = False,
         backend: str = "matplotlib",
         figsize: List[float] = (8, 8),
         xlim: List[float] = None,
@@ -857,6 +858,9 @@ class BaseComparer:
             int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default True
+        density: bool, optional
+            show the data density as a colormap of the scatter, by default False.
+            for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
         figsize : tuple, optional
@@ -947,6 +951,7 @@ class BaseComparer:
             quantiles=quantiles,
             show_points=show_points,
             show_hist=show_hist,
+            density=density,
             backend=backend,
             figsize=figsize,
             xlim=xlim,

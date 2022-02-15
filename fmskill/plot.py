@@ -2,6 +2,7 @@ from typing import List, Tuple, Union
 import warnings
 import numpy as np
 from collections import namedtuple
+from scipy import interpolate
 
 import matplotlib.pyplot as plt
 
@@ -20,6 +21,7 @@ def scatter(
     quantiles: Union[int, List[float]] = None,
     show_points: Union[bool, int, float] = None,
     show_hist: bool = True,
+    density: bool = False,
     backend: str = "matplotlib",
     figsize: List[float] = (8, 8),
     xlim: List[float] = None,
@@ -56,7 +58,10 @@ def scatter(
         float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
         int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
-        show the data density as a a 2d histogram, by default True
+        show the data density as a 2d histogram, by default True
+    density: bool, optional
+        show the data density as a colormap of the scatter, by default False.
+        for binning the data, the previous kword `bins=Float` is used
     backend : str, optional
         use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
     figsize : tuple, optional
@@ -168,6 +173,19 @@ def scatter(
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
 
+    if density:
+        if type(bins) != float:
+            raise TypeError("if `density=True` then bins must be a float")
+        # if point density is wanted, then 2D histogram is not shown
+        show_hist = False
+        # calculate density data
+        z = scatter_density(x_sample, y_sample, binsize=bins)
+        idx = z.argsort()
+        # Sort data by colormaps
+        x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]
+        # scale Z by sample size
+        z = z * len(x) / len(x_sample)
+
     # linear fit
     slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
 
@@ -188,15 +206,20 @@ def scatter(
             zorder=3,
         )
         if show_points:
+            if density:
+                c = z
+            else:
+                c = "0.25"
             plt.scatter(
-                x,
-                y,
-                c="0.25",
+                x_sample,
+                y_sample,
+                c=c,
                 s=20,
                 alpha=0.5,
                 marker=".",
                 label=None,
                 zorder=1,
+                **kwargs,
             )
         plt.plot(
             xq,
@@ -215,13 +238,14 @@ def scatter(
         )
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
+
         plt.legend()
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
         plt.xlim(xlim)
         plt.ylim(ylim)
-        if show_hist:
+        if show_hist or density:
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
         plt.title(title)
@@ -255,17 +279,25 @@ def scatter(
                         [0.5, "green"],
                         [1.0, "yellow"],
                     ],
+                    colorbar=dict(title="# of points"),
                 )
             )
 
         if show_points:
+
+            if density:
+                c = z
+                cbar = dict(thickness=20, title="# of points")
+            else:
+                c = "black"
+                cbar = None
             data.append(
                 go.Scatter(
                     x=x_sample,
                     y=y_sample,
                     mode="markers",
                     name="Data",
-                    marker=dict(color="black", opacity=0.5, size=3.0),
+                    marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
                 )
             )
         data.append(
@@ -379,3 +411,55 @@ def taylor_diagram(
         loc="upper right",
     )
     fig.suptitle(title, size="x-large")
+
+
+def scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
+    """Interpolates scatter data on a 2D histogram (gridded) based on data density.
+
+    Parameters
+    ----------
+    x: np.array
+        X values e.g model values, must be same length as y
+    y: np.array
+        Y values e.g observation values, must be same length as x
+    binsize: float, optional
+        2D grid resolution, by default = 0.1
+    method: str, optional
+        Scipy griddata interpolation method, by default 'linear'
+
+    Returns
+    ----------
+    Z_grid: np.array
+        Array with the colors based on histogram density
+    """
+
+    # Make linear-grid for interpolation
+    minxy = min(min(x), min(y))
+    maxxy = max(max(x), max(y))
+    # Center points of the bins
+    cxy = np.arange(minxy, maxxy, binsize)
+
+    # Edges of the bins
+    exy = np.arange(minxy - binsize * 0.5, maxxy + binsize * 0.5, binsize)
+
+    # Calculate 2D histogram
+    histoData, exh, eyh = np.histogram2d(x, y, [exy, exy], normed=False)
+
+    # Histogram values
+    hist = []
+    for j in range(len(cxy)):
+        for i in range(len(cxy)):
+            hist.append(histoData[i, j])
+
+    # Grid-data
+    xg, yg = np.meshgrid(cxy, cxy)
+    xg = xg.ravel()
+    yg = yg.ravel()
+
+    ## Interpolate histogram density data to scatter data
+    Z_grid = interpolate.griddata((xg, yg), hist, (x, y), method=method)
+
+    # Replace negative values (should there be some) in case of 'cubic' interpolation
+    Z_grid[(Z_grid < 0)] = 0
+
+    return Z_grid
