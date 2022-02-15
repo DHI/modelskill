@@ -28,6 +28,8 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
+    binsize: float = None,
+    nbins: int = None,
     **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled
@@ -75,6 +77,16 @@ def scatter(
     kwargs
     """
 
+    if (binsize is not None) or (nbins is not None):
+        warnings.warn(
+            "`binsize` and `nbins` are deprecated and will be removed soon, use `bins` instead",
+        )
+        binsize_aux = binsize
+        nbins_aux = nbins
+    else:
+        binsize_aux = None
+        nbins_aux = None
+
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
 
@@ -107,14 +119,18 @@ def scatter(
         binsize = bins
         nbins_hist = int((xymax - xymin) / binsize)
     else:
-        # bins = Sequence
+        # Then bins = Sequence
         binsize = bins
         nbins_hist = bins
 
-    # if binsize is None:
-    #     binsize = (xmax - xmin) / nbins_hist
-    # else:
-    #     nbins_hist = int((xmax - xmin) / binsize)
+    # Check deprecated kwords; Remove this verification in future release
+    if (binsize_aux is not None) or (nbins_aux is not None):
+        if binsize_aux is None:
+            binsize = (xmax - xmin) / nbins_aux
+            nbins_hist = nbins_aux
+        else:
+            nbins_hist = int((xmax - xmin) / binsize_aux)
+    # Remove previous piece of code when nbins and bin_size are deprecated.
 
     if type(quantiles) == int:
         xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
@@ -136,9 +152,32 @@ def scatter(
     if backend == "matplotlib":
 
         plt.figure(figsize=figsize)
-        plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
         plt.plot(
-            xq, yq, "o", label="Q-Q", c="darkturquoise", markeredgecolor=(0, 0, 0, 0.4)
+            [xlim[0], xlim[1]],
+            [xlim[0], xlim[1]],
+            label="1:1",
+            c="blue",
+            zorder=3,
+        )
+        if show_points:
+            plt.scatter(
+                x,
+                y,
+                c="0.25",
+                s=20,
+                alpha=0.5,
+                marker=".",
+                label=None,
+                zorder=1,
+            )
+        plt.plot(
+            xq,
+            yq,
+            "o",
+            label="Q-Q",
+            c="darkturquoise",
+            markeredgecolor=(0, 0, 0, 0.4),
+            zorder=2,
         )
         plt.plot(
             x,
@@ -147,7 +186,7 @@ def scatter(
             label=reglabel,
         )
         if show_hist:
-            plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, **kwargs)
+            plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
         plt.legend()
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
@@ -157,8 +196,7 @@ def scatter(
         if show_hist:
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
-        if show_points:
-            plt.scatter(x, y, c="0.25", s=20, alpha=0.5, marker=".", label=None)
+
         plt.title(title)
 
     elif backend == "plotly":  # pragma: no cover
@@ -174,9 +212,6 @@ def scatter(
             ),
             go.Scatter(
                 x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
-            ),
-            go.Scatter(
-                x=xq, y=yq, name="Q-Q", mode="markers", line=dict(color="darkturquoise")
             ),
         ]
 
@@ -203,9 +238,14 @@ def scatter(
                     y=y,
                     mode="markers",
                     name="Data",
-                    marker=dict(color="black"),
+                    marker=dict(color="black", opacity=0.5, size=3.0),
                 )
             )
+        data.append(
+            go.Scatter(
+                x=xq, y=yq, name="Q-Q", mode="markers", line=dict(color="darkturquoise")
+            )
+        )
 
         defaults = {"width": 600, "height": 600}
         defaults = {**defaults, **kwargs}

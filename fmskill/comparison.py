@@ -832,6 +832,8 @@ class BaseComparer:
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
+        binsize: float = None,
+        nbins: int = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -954,6 +956,8 @@ class BaseComparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
+            binsize=binsize,
+            nbins=nbins,
             **kwargs,
         )
 
