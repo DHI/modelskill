@@ -813,9 +813,8 @@ class BaseComparer:
     def scatter(
         self,
         *,
-        binsize: float = None,
-        nbins_hist: int = 20,
-        nbins: int = None,
+        bins: Union[int, float, List[int], List[float]] = 20,
+        quantiles: Union[int, List[float]] = None,
         show_points: bool = None,
         show_hist: bool = True,
         backend: str = "matplotlib",
@@ -840,12 +839,15 @@ class BaseComparer:
 
         Parameters
         ----------
-        binsize : float, optional
-            the size of each bin in the 2d histogram, by default None
-        nbins_hist: int, optional
-            number of bins (if binsize is not given) for 2D histogram. By default 20.
-        nbins : int, optional
-            number of bins (if binsize is not given) for QQ-plot, by default None and will depend on the scatter length (10,100 or 1000)
+        bins: (int, float, sequence), optional
+            bins for the 2D histogram on the background. By default 20 bins.
+            if int, represents the number of bins of 2D
+            if float, represents the bin size
+            if sequence (list of int or float), represents the bin edges
+        quantiles: (int, sequence), optional
+            number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
+            if int, this is the number of points
+            if sequence (list of floats), represents the desired quantiles (from 0 to 1)
         show_points : bool, optional
             Should the scatter points be displayed?
             None means: only show points if fewer than threshold, by default None
@@ -940,9 +942,8 @@ class BaseComparer:
         scatter(
             x=x,
             y=y,
-            binsize=binsize,
-            nbins_hist=nbins_hist,
-            nbins=nbins,
+            bins=bins,
+            quantiles=quantiles,
             show_points=show_points,
             show_hist=show_hist,
             backend=backend,

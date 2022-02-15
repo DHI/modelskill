@@ -16,7 +16,7 @@ def scatter(
     x,
     y,
     *,
-    bins: Union[int, float, List[int], List[float]] = None,
+    bins: Union[int, float, List[int], List[float]] = 20,
     quantiles: Union[int, List[float]] = None,
     show_points: bool = None,
     show_hist: bool = True,
@@ -102,23 +102,27 @@ def scatter(
 
     if type(bins) == int:
         nbins_hist = bins
-        binsize = None
+        binsize = int((xymax - xymin) / nbins_hist)
     elif type(bins) == float:
         binsize = bins
-
-    if binsize is None:
-        binsize = (xmax - xmin) / nbins_hist
+        nbins_hist = int((xymax - xymin) / binsize)
     else:
-        nbins_hist = int((xmax - xmin) / binsize)
+        # bins = Sequence
+        binsize = bins
+        nbins_hist = bins
+
+    # if binsize is None:
+    #     binsize = (xmax - xmin) / nbins_hist
+    # else:
+    #     nbins_hist = int((xmax - xmin) / binsize)
 
     if type(quantiles) == int:
         xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
         yq = np.quantile(y, q=np.linspace(0, 1, num=quantiles))
     else:
         # if not an int nor None, it must be a squence of floats
-        # TODO
-        xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
-        yq = np.quantile(y, q=np.linspace(0, 1, num=quantiles))
+        xq = np.quantile(x, q=quantiles)
+        yq = np.quantile(y, q=quantiles)
 
     # linear fit
     slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
@@ -171,7 +175,9 @@ def scatter(
             go.Scatter(
                 x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
             ),
-            go.Scatter(x=xq, y=yq, name="Q-Q", mode="lines", line=dict(color="gray")),
+            go.Scatter(
+                x=xq, y=yq, name="Q-Q", mode="markers", line=dict(color="darkturquoise")
+            ),
         ]
 
         if show_hist:
