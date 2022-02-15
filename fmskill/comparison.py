@@ -813,8 +813,8 @@ class BaseComparer:
     def scatter(
         self,
         *,
-        binsize: float = None,
-        nbins: int = 20,
+        bins: Union[int, float, List[int], List[float]] = 20,
+        quantiles: Union[int, List[float]] = None,
         show_points: Union[bool, int, float] = None,
         show_hist: bool = True,
         backend: str = "matplotlib",
@@ -832,6 +832,8 @@ class BaseComparer:
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
+        binsize: float = None,
+        nbins: int = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -839,10 +841,15 @@ class BaseComparer:
 
         Parameters
         ----------
-        binsize : float, optional
-            the size of each bin in the 2d histogram, by default None
-        nbins : int, optional
-            number of bins (if binsize is not given), by default 20
+        bins: (int, float, sequence), optional
+            bins for the 2D histogram on the background. By default 20 bins.
+            if int, represents the number of bins of 2D
+            if float, represents the bin size
+            if sequence (list of int or float), represents the bin edges
+        quantiles: (int, sequence), optional
+            number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
+            if int, this is the number of points
+            if sequence (list of floats), represents the desired quantiles (from 0 to 1)
         show_points : (bool, int, float), optional
             Should the scatter points be displayed?
             None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
@@ -936,8 +943,8 @@ class BaseComparer:
         scatter(
             x=x,
             y=y,
-            binsize=binsize,
-            nbins=nbins,
+            bins=bins,
+            quantiles=quantiles,
             show_points=show_points,
             show_hist=show_hist,
             backend=backend,
@@ -948,6 +955,8 @@ class BaseComparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
+            binsize=binsize,
+            nbins=nbins,
             **kwargs,
         )
 

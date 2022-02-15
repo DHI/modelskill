@@ -16,8 +16,8 @@ def scatter(
     x,
     y,
     *,
-    binsize: float = None,
-    nbins: int = 20,
+    bins: Union[int, float, List[int], List[float]] = 20,
+    quantiles: Union[int, List[float]] = None,
     show_points: Union[bool, int, float] = None,
     show_hist: bool = True,
     backend: str = "matplotlib",
@@ -28,6 +28,8 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
+    binsize: float = None,
+    nbins: int = None,
     **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled
@@ -39,10 +41,15 @@ def scatter(
         X values e.g model values, must be same length as y
     y: np.array
         Y values e.g observation values, must be same length as x
-    binsize : float, optional
-        the size of each bin in the 2d histogram, by default None
-    nbins : int, optional
-        number of bins (if binsize is not given), by default 20
+    bins: (int, float, sequence), optional
+        bins for the 2D histogram on the background. By default 20 bins.
+        if int, represents the number of bins of 2D
+        if float, represents the bin size
+        if sequence (list of int or float), represents the bin edges
+    quantiles: (int, sequence), optional
+        number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
+        if int, this is the number of points
+        if sequence (list of floats), represents the desired quantiles (from 0 to 1)
     show_points : (bool, int, float), optional
         Should the scatter points be displayed?
         None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
@@ -71,6 +78,16 @@ def scatter(
         y-label text on plot, by default None
     kwargs
     """
+
+    if (binsize is not None) or (nbins is not None):
+        warnings.warn(
+            "`binsize` and `nbins` are deprecated and will be removed soon, use `bins` instead",
+        )
+        binsize_aux = binsize
+        nbins_aux = nbins
+    else:
+        binsize_aux = None
+        nbins_aux = None
 
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
@@ -115,13 +132,41 @@ def scatter(
     if ylim is None:
         ylim = [xymin, xymax]
 
-    if binsize is None:
-        binsize = (xmax - xmin) / nbins
-    else:
-        nbins = int((xmax - xmin) / binsize)
+    if quantiles is None:
+        if len(x) >= 3000:
+            quantiles = 1000
+        elif len(x) >= 300:
+            quantiles = 100
+        else:
+            quantiles = 10
 
-    xq = np.quantile(x, q=np.linspace(0, 1, num=nbins))
-    yq = np.quantile(y, q=np.linspace(0, 1, num=nbins))
+    if type(bins) == int:
+        nbins_hist = bins
+        binsize = int((xymax - xymin) / nbins_hist)
+    elif type(bins) == float:
+        binsize = bins
+        nbins_hist = int((xymax - xymin) / binsize)
+    else:
+        # Then bins = Sequence
+        binsize = bins
+        nbins_hist = bins
+
+    # Check deprecated kwords; Remove this verification in future release
+    if (binsize_aux is not None) or (nbins_aux is not None):
+        if binsize_aux is None:
+            binsize = (xmax - xmin) / nbins_aux
+            nbins_hist = nbins_aux
+        else:
+            nbins_hist = int((xmax - xmin) / binsize_aux)
+    # Remove previous piece of code when nbins and bin_size are deprecated.
+
+    if type(quantiles) == int:
+        xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
+        yq = np.quantile(y, q=np.linspace(0, 1, num=quantiles))
+    else:
+        # if not an int nor None, it must be a squence of floats
+        xq = np.quantile(x, q=quantiles)
+        yq = np.quantile(y, q=quantiles)
 
     # linear fit
     slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
@@ -135,8 +180,33 @@ def scatter(
     if backend == "matplotlib":
 
         plt.figure(figsize=figsize)
-        plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], label="1:1", c="blue")
-        plt.plot(xq, yq, label="Q-Q", c="gray")
+        plt.plot(
+            [xlim[0], xlim[1]],
+            [xlim[0], xlim[1]],
+            label="1:1",
+            c="blue",
+            zorder=3,
+        )
+        if show_points:
+            plt.scatter(
+                x,
+                y,
+                c="0.25",
+                s=20,
+                alpha=0.5,
+                marker=".",
+                label=None,
+                zorder=1,
+            )
+        plt.plot(
+            xq,
+            yq,
+            "o",
+            label="Q-Q",
+            c="darkturquoise",
+            markeredgecolor=(0, 0, 0, 0.4),
+            zorder=2,
+        )
         plt.plot(
             x,
             intercept + slope * x,
@@ -144,7 +214,7 @@ def scatter(
             label=reglabel,
         )
         if show_hist:
-            plt.hist2d(x, y, bins=nbins, cmin=0.01, **kwargs)
+            plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
         plt.legend()
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
@@ -154,10 +224,6 @@ def scatter(
         if show_hist:
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
-        if show_points:
-            plt.scatter(
-                x_sample, y_sample, c="0.25", s=20, alpha=0.5, marker=".", label=None
-            )
         plt.title(title)
 
     elif backend == "plotly":  # pragma: no cover
@@ -174,7 +240,6 @@ def scatter(
             go.Scatter(
                 x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
             ),
-            go.Scatter(x=xq, y=yq, name="Q-Q", mode="lines", line=dict(color="gray")),
         ]
 
         if show_hist:
@@ -200,9 +265,14 @@ def scatter(
                     y=y_sample,
                     mode="markers",
                     name="Data",
-                    marker=dict(color="black"),
+                    marker=dict(color="black", opacity=0.5, size=3.0),
                 )
             )
+        data.append(
+            go.Scatter(
+                x=xq, y=yq, name="Q-Q", mode="markers", line=dict(color="darkturquoise")
+            )
+        )
 
         defaults = {"width": 600, "height": 600}
         defaults = {**defaults, **kwargs}
