@@ -815,7 +815,7 @@ class BaseComparer:
         *,
         bins: Union[int, float, List[int], List[float]] = 20,
         quantiles: Union[int, List[float]] = None,
-        show_points: bool = None,
+        show_points: Union[bool, int, float] = None,
         show_hist: bool = True,
         backend: str = "matplotlib",
         figsize: List[float] = (8, 8),
@@ -850,9 +850,11 @@ class BaseComparer:
             number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
             if int, this is the number of points
             if sequence (list of floats), represents the desired quantiles (from 0 to 1)
-        show_points : bool, optional
+        show_points : (bool, int, float), optional
             Should the scatter points be displayed?
-            None means: only show points if fewer than threshold, by default None
+            None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
+            float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
+            int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default True
         backend : str, optional
@@ -937,9 +939,6 @@ class BaseComparer:
 
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
-
-        if show_points is None:
-            show_points = len(x) < 1e4
 
         scatter(
             x=x,

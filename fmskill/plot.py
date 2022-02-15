@@ -18,7 +18,7 @@ def scatter(
     *,
     bins: Union[int, float, List[int], List[float]] = 20,
     quantiles: Union[int, List[float]] = None,
-    show_points: bool = None,
+    show_points: Union[bool, int, float] = None,
     show_hist: bool = True,
     backend: str = "matplotlib",
     figsize: List[float] = (8, 8),
@@ -50,9 +50,11 @@ def scatter(
         number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
         if int, this is the number of points
         if sequence (list of floats), represents the desired quantiles (from 0 to 1)
-    show_points : bool, optional
+    show_points : (bool, int, float), optional
         Should the scatter points be displayed?
-        None means: only show points if fewer than threshold, by default None
+        None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
+        float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
+        int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
         show the data density as a a 2d histogram, by default True
     backend : str, optional
@@ -90,8 +92,34 @@ def scatter(
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
 
+    x_sample = x
+    y_sample = y
     if show_points is None:
-        show_points = len(x) < 1e4
+        # If nothing given, and more than 10k points, 10k sample will be shown
+        if len(x) < 1e4:
+            show_points = True
+        else:
+            show_points = 10000
+    if type(show_points) == float:
+        if show_points < 0 or show_points > 1:
+            raise ValueError(" `show_points` fraction must be in [0,1]")
+        else:
+            np.random.seed(20)
+            ran_index = np.random.choice(
+                range(len(x)), int(len(x) * show_points), replace=False
+            )
+            x_sample = x[ran_index]
+            y_sample = y[ran_index]
+    # if show_points is an int
+    elif type(show_points) == int:
+        np.random.seed(20)
+        ran_index = np.random.choice(range(len(x)), show_points, replace=False)
+        x_sample = x[ran_index]
+        y_sample = y[ran_index]
+    elif type(show_points) == bool:
+        pass
+    else:
+        raise TypeError(" `show_points` must be either bool, int or float")
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
@@ -196,7 +224,6 @@ def scatter(
         if show_hist:
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
-
         plt.title(title)
 
     elif backend == "plotly":  # pragma: no cover
@@ -234,8 +261,8 @@ def scatter(
         if show_points:
             data.append(
                 go.Scatter(
-                    x=x,
-                    y=y,
+                    x=x_sample,
+                    y=y_sample,
                     mode="markers",
                     name="Data",
                     marker=dict(color="black", opacity=0.5, size=3.0),
