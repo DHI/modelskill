@@ -99,6 +99,7 @@ def scatter(
 
     x_sample = x
     y_sample = y
+
     if show_points is None:
         # If nothing given, and more than 10k points, 10k sample will be shown
         if len(x) < 1e4:
@@ -147,7 +148,7 @@ def scatter(
 
     if type(bins) == int:
         nbins_hist = bins
-        binsize = int((xymax - xymin) / nbins_hist)
+        binsize = (xymax - xymin) / nbins_hist
     elif type(bins) == float:
         binsize = bins
         nbins_hist = int((xymax - xymin) / binsize)
@@ -174,12 +175,12 @@ def scatter(
         yq = np.quantile(y, q=quantiles)
 
     if density:
-        if type(bins) != float:
-            raise TypeError("if `density=True` then bins must be a float")
+        if not ((type(bins) == float) or (type(bins) == int)):
+            raise TypeError("if `density=True` then bins must be either float or int")
         # if point density is wanted, then 2D histogram is not shown
         show_hist = False
         # calculate density data
-        z = scatter_density(x_sample, y_sample, binsize=bins)
+        z = scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
         # Sort data by colormaps
         x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]
@@ -443,13 +444,13 @@ def scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     exy = np.arange(minxy - binsize * 0.5, maxxy + binsize * 0.5, binsize)
 
     # Calculate 2D histogram
-    histoData, exh, eyh = np.histogram2d(x, y, [exy, exy], normed=False)
+    histodata, exh, eyh = np.histogram2d(x, y, [exy, exy])
 
     # Histogram values
     hist = []
     for j in range(len(cxy)):
         for i in range(len(cxy)):
-            hist.append(histoData[i, j])
+            hist.append(histodata[i, j])
 
     # Grid-data
     xg, yg = np.meshgrid(cxy, cxy)
