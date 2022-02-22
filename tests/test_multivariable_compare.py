@@ -118,6 +118,7 @@ def test_mv_mm_mean_skill(cc):
 
 def test_mv_mm_scatter(cc):
     cc.scatter(model="SW_1", variable="Wind_speed")
+    cc.scatter(model="SW_1", variable="Wind_speed", show_density=True)
     assert True
     plt.close("all")
 
