@@ -105,7 +105,7 @@ class BaseComparer:
             if len(missing_models) == 0:
                 # same obs name and same model names
                 cc = self.copy()
-                cc.df = cc.df.append(other.df)
+                cc.df = pd.concat([cc.df, other.df])
                 cc.df = cc.df[~cc.df.index.duplicated(keep="last")]  # 'first'
 
             else:
@@ -142,6 +142,7 @@ class BaseComparer:
     def _construct_all_df(self):
         # TODO: var_name
         res = self._all_df_template()
+        frames = []
         cols = res.keys()
         for j in range(self.n_models):
             mod_name = self.mod_names[j]
@@ -154,7 +155,10 @@ class BaseComparer:
             df["x"] = self.x
             df["y"] = self.y
             df["obs_val"] = self.obs
-            res = res.append(df[cols])
+            frames.append(df[cols])
+
+        if len(frames) > 0:
+            res = pd.concat(frames)
 
         self._all_df = res.sort_index()
 
@@ -1730,6 +1734,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
     def _construct_all_df(self):
         # TODO: var_name
         res = self._all_df_template()
+        frames = []
         cols = res.keys()
         for cmp in self.comparers.values():
             for j in range(cmp.n_models):
@@ -1743,8 +1748,9 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
-                res = res.append(df[cols])
-
+                frames.append(df[cols])
+        if len(frames) > 0:
+            res = pd.concat(frames)
         self._all_df = res.sort_index()
         self._all_df.index.name = "datetime"
 
