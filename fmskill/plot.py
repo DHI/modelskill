@@ -21,7 +21,7 @@ def scatter(
     quantiles: Union[int, List[float]] = None,
     show_points: Union[bool, int, float] = None,
     show_hist: bool = True,
-    density: bool = False,
+    show_density: bool = False,
     backend: str = "matplotlib",
     figsize: List[float] = (8, 8),
     xlim: List[float] = None,
@@ -59,7 +59,7 @@ def scatter(
         int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
         show the data density as a 2d histogram, by default True
-    density: bool, optional
+    show_density: bool, optional
         show the data density as a colormap of the scatter, by default False.
         for binning the data, the previous kword `bins=Float` is used
     backend : str, optional
@@ -174,13 +174,15 @@ def scatter(
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
 
-    if density:
+    if show_density:
         if not ((type(bins) == float) or (type(bins) == int)):
-            raise TypeError("if `density=True` then bins must be either float or int")
+            raise TypeError(
+                "if `show_density=True` then bins must be either float or int"
+            )
         # if point density is wanted, then 2D histogram is not shown
         show_hist = False
         # calculate density data
-        z = scatter_density(x_sample, y_sample, binsize=binsize)
+        z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
         # Sort data by colormaps
         x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]
@@ -207,7 +209,7 @@ def scatter(
             zorder=3,
         )
         if show_points:
-            if density:
+            if show_density:
                 c = z
             else:
                 c = "0.25"
@@ -246,7 +248,7 @@ def scatter(
         plt.axis("square")
         plt.xlim(xlim)
         plt.ylim(ylim)
-        if show_hist or density:
+        if show_hist or show_density:
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
         plt.title(title)
@@ -286,7 +288,7 @@ def scatter(
 
         if show_points:
 
-            if density:
+            if show_density:
                 c = z
                 cbar = dict(thickness=20, title="# of points")
             else:
@@ -414,7 +416,7 @@ def taylor_diagram(
     fig.suptitle(title, size="x-large")
 
 
-def scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
+def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     """Interpolates scatter data on a 2D histogram (gridded) based on data density.
 
     Parameters

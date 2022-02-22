@@ -270,6 +270,11 @@ def test_mm_scatter(cc):
     cc.scatter(model="SW_2", binsize=0.5)
     cc.scatter(model="SW_2", nbins=5, reg_method="odr")
     cc.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
+    cc.scatter(model="SW_2", show_points=True)
+    cc.scatter(model="SW_2", show_points=100)
+    cc.scatter(model="SW_2", show_points=0.75)
+    cc.scatter(model="SW_2", show_density=True)
+    cc.scatter(model="SW_2", show_points=0.75, show_density=True)
     # cc.scatter(model="SW_2", binsize=0.5, backend="plotly")
     assert True
     plt.close("all")
