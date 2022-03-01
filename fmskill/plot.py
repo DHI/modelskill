@@ -227,17 +227,18 @@ def scatter(
         plt.plot(
             xq,
             yq,
-            "o",
+            "X",
             label="Q-Q",
             c="darkturquoise",
-            markeredgecolor=(0, 0, 0, 0.4),
-            zorder=2,
+            markeredgecolor=(0, 0, 0, 0.6),
+            zorder=4,
         )
         plt.plot(
             x,
             intercept + slope * x,
             "r",
             label=reglabel,
+            zorder=2,
         )
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
@@ -248,6 +249,10 @@ def scatter(
         plt.axis("square")
         plt.xlim(xlim)
         plt.ylim(ylim)
+        plt.minorticks_on()
+        plt.grid(
+            which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
+        )
         if show_hist or show_density:
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
@@ -305,7 +310,14 @@ def scatter(
             )
         data.append(
             go.Scatter(
-                x=xq, y=yq, name="Q-Q", mode="markers", line=dict(color="darkturquoise")
+                x=xq,
+                y=yq,
+                name="Q-Q",
+                mode="markers",
+                marker_symbol="x",
+                marker_color="darkturquoise",
+                marker_line_color="midnightblue",
+                marker_line_width=0.6,
             )
         )
 
