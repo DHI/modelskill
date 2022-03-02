@@ -331,6 +331,9 @@ class TrackObservation(Observation):
         item name or index of x-coordinate, by default 0
     y_item : (str, int), optional
         item name or index of y-coordinate, by default 1
+    offset_in_seconds : float, optional
+        in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.01
+
 
     Examples
     --------
@@ -404,6 +407,7 @@ class TrackObservation(Observation):
         variable_name: str = None,
         x_item=0,
         y_item=1,
+        offset_in_seconds: float = 0.01,
     ):
 
         self._filename = None
@@ -437,8 +441,9 @@ class TrackObservation(Observation):
                 f"input must be str or pandas DataFrame! Given input has type {type(input)}"
             )
 
+        # A unique index makes lookup much faster O(1)
         if not df.index.is_unique:
-            df.index = make_unique_index(df.index)
+            df.index = make_unique_index(df.index, offset_in_seconds=offset_in_seconds)
 
         super().__init__(
             name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
