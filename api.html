@@ -1511,7 +1511,7 @@ None means: show all points if fewer than 1e4, otherwise show 1e4 sample points,
 float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
 int: if ‘n’ (int) given, then ‘n’ points will be displayed, randomly selected</p></li>
 <li><p><strong>show_hist</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a a 2d histogram, by default True</p></li>
-<li><p><strong>density</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a colormap of the scatter, by default False.
+<li><p><strong>show_density</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a colormap of the scatter, by default False.
 for binning the data, the previous kword <cite>bins=Float</cite> is used</p></li>
 <li><p><strong>backend</strong> (<em>str</em><em>, </em><em>optional</em>) – use “plotly” (interactive) or “matplotlib” backend, by default “matplotlib”</p></li>
 <li><p><strong>figsize</strong> (<em>tuple</em><em>, </em><em>optional</em>) – width and height of the figure, by default (8, 8)</p></li>
@@ -1539,7 +1539,7 @@ by default None</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">binsize</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">show_points</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;no points&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;all observations&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;my model&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;HKZN_v2&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
@@ -1893,7 +1893,7 @@ None means: show all points if fewer than 1e4, otherwise show 1e4 sample points,
 float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
 int: if ‘n’ (int) given, then ‘n’ points will be displayed, randomly selected</p></li>
 <li><p><strong>show_hist</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a a 2d histogram, by default True</p></li>
-<li><p><strong>density</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a colormap of the scatter, by default False.
+<li><p><strong>show_density</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a colormap of the scatter, by default False.
 for binning the data, the previous kword <cite>bins=Float</cite> is used</p></li>
 <li><p><strong>backend</strong> (<em>str</em><em>, </em><em>optional</em>) – use “plotly” (interactive) or “matplotlib” backend, by default “matplotlib”</p></li>
 <li><p><strong>figsize</strong> (<em>tuple</em><em>, </em><em>optional</em>) – width and height of the figure, by default (8, 8)</p></li>
@@ -1921,7 +1921,7 @@ by default None</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">binsize</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">show_points</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;no points&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;all observations&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;my model&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;HKZN_v2&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
@@ -2410,7 +2410,7 @@ None means: show all points if fewer than 1e4, otherwise show 1e4 sample points,
 float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
 int: if ‘n’ (int) given, then ‘n’ points will be displayed, randomly selected</p></li>
 <li><p><strong>show_hist</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a a 2d histogram, by default True</p></li>
-<li><p><strong>density</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a colormap of the scatter, by default False.
+<li><p><strong>show_density</strong> (<em>bool</em><em>, </em><em>optional</em>) – show the data density as a colormap of the scatter, by default False.
 for binning the data, the previous kword <cite>bins=Float</cite> is used</p></li>
 <li><p><strong>backend</strong> (<em>str</em><em>, </em><em>optional</em>) – use “plotly” (interactive) or “matplotlib” backend, by default “matplotlib”</p></li>
 <li><p><strong>figsize</strong> (<em>tuple</em><em>, </em><em>optional</em>) – width and height of the figure, by default (8, 8)</p></li>
@@ -2438,7 +2438,7 @@ by default None</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">binsize</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">show_points</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;no points&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;all observations&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;my model&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">comparer</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s1">&#39;HKZN_v2&#39;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
