@@ -105,7 +105,7 @@ class BaseComparer:
             if len(missing_models) == 0:
                 # same obs name and same model names
                 cc = self.copy()
-                cc.df = cc.df.append(other.df)
+                cc.df = pd.concat([cc.df, other.df])
                 cc.df = cc.df[~cc.df.index.duplicated(keep="last")]  # 'first'
 
             else:
@@ -142,6 +142,7 @@ class BaseComparer:
     def _construct_all_df(self):
         # TODO: var_name
         res = self._all_df_template()
+        frames = []
         cols = res.keys()
         for j in range(self.n_models):
             mod_name = self.mod_names[j]
@@ -154,7 +155,10 @@ class BaseComparer:
             df["x"] = self.x
             df["y"] = self.y
             df["obs_val"] = self.obs
-            res = res.append(df[cols])
+            frames.append(df[cols])
+
+        if len(frames) > 0:
+            res = pd.concat(frames)
 
         self._all_df = res.sort_index()
 
@@ -164,24 +168,24 @@ class BaseComparer:
         self._obs_names: List[str]
         self._mod_names: List[str]
         self._mod_colors = [
-            "#004165",
+            "#1f78b4",
+            "#33a02c",
+            "#ff7f00",
+            "#93509E",
             "#63CEFF",
+            "#fdbf6f",
+            "#004165",
             "#8B8D8E",
             "#0098DB",
-            "#93509E",
             "#61C250",
             "#a6cee3",
-            "#1f78b4",
             "#b2df8a",
-            "#33a02c",
             "#fb9a99",
-            "#e31a1c",
-            "#fdbf6f",
-            "#ff7f00",
             "#cab2d6",
             "#003f5c",
             "#2f4b7c",
             "#665191",
+            "#e31a1c",
         ]
 
         self._resi_color = "#8B8D8E"
@@ -813,10 +817,11 @@ class BaseComparer:
     def scatter(
         self,
         *,
-        binsize: float = None,
-        nbins: int = 20,
-        show_points: bool = None,
+        bins: Union[int, float, List[int], List[float]] = 20,
+        quantiles: Union[int, List[float]] = None,
+        show_points: Union[bool, int, float] = None,
         show_hist: bool = True,
+        show_density: bool = False,
         backend: str = "matplotlib",
         figsize: List[float] = (8, 8),
         xlim: List[float] = None,
@@ -832,6 +837,8 @@ class BaseComparer:
         end: Union[str, datetime] = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
+        binsize: float = None,
+        nbins: int = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -839,15 +846,25 @@ class BaseComparer:
 
         Parameters
         ----------
-        binsize : float, optional
-            the size of each bin in the 2d histogram, by default None
-        nbins : int, optional
-            number of bins (if binsize is not given), by default 20
-        show_points : bool, optional
+        bins: (int, float, sequence), optional
+            bins for the 2D histogram on the background. By default 20 bins.
+            if int, represents the number of bins of 2D
+            if float, represents the bin size
+            if sequence (list of int or float), represents the bin edges
+        quantiles: (int, sequence), optional
+            number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
+            if int, this is the number of points
+            if sequence (list of floats), represents the desired quantiles (from 0 to 1)
+        show_points : (bool, int, float), optional
             Should the scatter points be displayed?
-            None means: only show points if fewer than threshold, by default None
+            None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
+            float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
+            int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default True
+        density: bool, optional
+            show the data density as a colormap of the scatter, by default False.
+            for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
         figsize : tuple, optional
@@ -931,16 +948,14 @@ class BaseComparer:
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
 
-        if show_points is None:
-            show_points = len(x) < 1e4
-
         scatter(
             x=x,
             y=y,
-            binsize=binsize,
-            nbins=nbins,
+            bins=bins,
+            quantiles=quantiles,
             show_points=show_points,
             show_hist=show_hist,
+            show_density=show_density,
             backend=backend,
             figsize=figsize,
             xlim=xlim,
@@ -949,6 +964,8 @@ class BaseComparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
+            binsize=binsize,
+            nbins=nbins,
             **kwargs,
         )
 
@@ -1717,6 +1734,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
     def _construct_all_df(self):
         # TODO: var_name
         res = self._all_df_template()
+        frames = []
         cols = res.keys()
         for cmp in self.comparers.values():
             for j in range(cmp.n_models):
@@ -1730,8 +1748,9 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
-                res = res.append(df[cols])
-
+                frames.append(df[cols])
+        if len(frames) > 0:
+            res = pd.concat(frames)
         self._all_df = res.sort_index()
         self._all_df.index.name = "datetime"
 
