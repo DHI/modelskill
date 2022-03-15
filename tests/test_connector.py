@@ -1,5 +1,6 @@
 from mikeio import eum
 import pytest
+import pandas as pd
 
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
@@ -62,6 +63,58 @@ def test_connector_add(o1, mr1):
     con = Connector()
     con.add(o1, mr1[0], validate=False)
     assert len(con.observations) == 1
+
+
+def test_connector_add_two_models(
+    o1: PointObservation, mr1: ModelResult, mr2: ModelResult
+):
+
+    con = Connector(o1, [mr1[0], mr2[0]])
+
+    assert con.n_models == 2
+    cc = con.extract()
+    assert cc.n_models == 2
+
+    # Alternative specification using .add() should be identical
+    con2 = Connector()
+    con2.add(o1, mr1[0])
+    con2.add(o1, mr2[0])
+
+    assert con2.n_models == 2
+    cc2 = con2.extract()
+    assert cc2.n_models == 2
+
+
+def test_connector_add_two_model_dataframes(
+    o1: PointObservation, mr1: ModelResult, mr2: ModelResult
+):
+
+    mr1_df = mr1[0]._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
+    mr2_df = mr2[0]._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
+
+    assert isinstance(mr1_df, pd.DataFrame)
+    assert isinstance(mr2_df, pd.DataFrame)
+
+    assert len(mr1_df.columns == 1)
+    assert len(mr2_df.columns == 1)
+
+    assert len(mr1_df) > 1  # Number of rows
+    assert len(mr2_df) > 1  # Number of rows
+
+    con = Connector(o1, [mr1_df, mr2_df])
+
+    assert con.n_models == 2
+    cc = con.extract()
+    assert cc.n_models == 2
+
+    # Alternative specification using .add() should be identical
+    con2 = Connector()
+    con2.add(o1, mr1_df)
+    con2.add(o1, mr2_df)
+
+    assert con2.n_models == 2
+    cc2 = con2.extract()
+    assert cc2.n_models == 2
 
 
 # def test_add_observation_eum_validation(hd_oresund_2d, klagshamn):
