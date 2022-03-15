@@ -141,6 +141,15 @@ class _SingleObsConnector(_BaseConnector):
             self.obs.weight = weight
 
     def _parse_model(self, mod) -> List[ModelResultInterface]:
+
+        if isinstance(mod, pd.DataFrame):
+            if len(mod.columns) == 1:
+                return [self._parse_single_model(mod)]
+            else:
+                raise NotImplementedError(
+                    "Only data frames with a single column are allowed"
+                )
+
         if is_iterable_not_str(mod):
             mr = []
             for m in mod:
@@ -467,9 +476,13 @@ class Connector(_BaseConnector, Mapping, Sequence):
                 con = TrackConnector(obs, mod, weight=weight, validate=validate)
             else:
                 con = PointConnector(obs, mod, weight=weight, validate=validate)
-        if con.n_models > 0:
-            self.connections[con.name] = con
-            self._add_observation(con.obs)
+        if con.n_models > 0:  # What other option is there??
+            if con.name not in self.connections:
+                self.connections[con.name] = con
+                self._add_observation(con.obs)
+            else:
+                self.connections[con.name].modelresults.append(con.modelresults[0])
+
             self._add_modelresults(con.modelresults)
 
     @staticmethod
