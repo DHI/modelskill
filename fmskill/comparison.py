@@ -862,7 +862,7 @@ class BaseComparer:
             int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default True
-        density: bool, optional
+        show_density: bool, optional
             show the data density as a colormap of the scatter, by default False.
             for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
@@ -905,7 +905,7 @@ class BaseComparer:
         Examples
         ------
         >>> comparer.scatter()
-        >>> comparer.scatter(binsize=0.2, backend='plotly')
+        >>> comparer.scatter(bins=0.2, backend='plotly')
         >>> comparer.scatter(show_points=False, title='no points')
         >>> comparer.scatter(xlabel='all observations', ylabel='my model')
         >>> comparer.scatter(model='HKZN_v2', figsize=(10, 10))
