@@ -135,7 +135,7 @@ class _DfsBase:
             ds_model = self.dfs.read(items=[0, 1, item])
             ds_model.items[-1].name = self.name
             df = ds_model.to_dataframe().dropna()
-            df.index = make_unique_index(df.index, offset_in_seconds=0.01)
+            df.index = make_unique_index(df.index, offset_duplicates=0.001)
         return df
 
     def _extract_track_dfsu(self, observation: TrackObservation, item) -> Dataset:
