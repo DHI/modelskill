@@ -56,7 +56,7 @@ class Observation:
             raise TypeError(
                 f"Input must have a datetime index! Provided index was {type(df.index)}"
             )
-        time = df.index.round(freq="ms")  # 0.001s accuracy
+        time = df.index.round(freq="100us")  # 0.0001s accuracy
         df.index = pd.DatetimeIndex(time, freq="infer")
         self.df = df
         if itemInfo is None:

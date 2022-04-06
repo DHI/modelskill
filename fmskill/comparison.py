@@ -236,7 +236,7 @@ class BaseComparer:
         self.mod_data[mod_name] = mod_df
         self._mod_names = list(self.mod_data.keys())
 
-        time = mod_df.index.round(freq="ms")  # 0.001s accuracy
+        time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
 
         if mod_df.index[0] < self._mod_start:
