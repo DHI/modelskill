@@ -34,12 +34,12 @@ class ModelResult:
     >>> mr = ModelResult(df)
     >>> mr = mr["Water Level"]
     >>> mr_item = ModelResult(df, item="Water Level")
-    >>> mr_item = ModelResult(df, item="Water Level", itemInfo=eum.EUMType.Water_Level)
+    >>> mr_item = ModelResult(df, item="Water Level", itemInfo=mikeio.EUMType.Water_Level)
 
     >>> mr = ModelResult("ThirdParty.nc")
     >>> mr = mr["WL"]
     >>> mr_item = ModelResult("ThirdParty.nc", item="WL")
-    >>> mr_item = ModelResult("ThirdParty.nc", item="WL", itemInfo=eum.EUMType.Water_Level)
+    >>> mr_item = ModelResult("ThirdParty.nc", item="WL", itemInfo=mikeio.EUMType.Water_Level)
     """
 
     def __new__(self, input, *args, **kwargs):
