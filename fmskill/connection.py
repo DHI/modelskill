@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from mikeio import Dfs0, eum
+import mikeio
 from .model import ModelResult
 from .model.dfs import DfsModelResult, DfsModelResultItem
 from .model.pandas import DataFramePointModelResultItem
@@ -54,7 +54,7 @@ def compare(obs, mod, *, obs_item=None, mod_item=None):
 
 def _parse_model(mod, item=None):
     if isinstance(mod, str):
-        dfs = Dfs0(mod)
+        dfs = mikeio.open(mod)
         if (len(dfs.items) > 1) and (item is None):
             raise ValueError("Model ambiguous - please provide item")
         mod = dfs.read(items=item).to_dataframe()
@@ -193,7 +193,7 @@ class _SingleObsConnector(_BaseConnector):
         assert isinstance(mod, ModelResultInterface)
         ok = True
         _has_eum = lambda x: (x.itemInfo is not None) and (
-            x.itemInfo.type != eum.EUMType.Undefined
+            x.itemInfo.type != mikeio.EUMType.Undefined
         )
 
         # we can only check if both have eum itemInfo

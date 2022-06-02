@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
 
-from mikeio import Dataset
+import mikeio
 import fmskill.metrics as mtr
 from .observation import PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
@@ -223,7 +223,7 @@ class BaseComparer:
                 self.add_modeldata(data)
             return
 
-        if isinstance(modeldata, Dataset):
+        if isinstance(modeldata, mikeio.Dataset):
             mod_df = modeldata.to_dataframe()
         elif isinstance(modeldata, pd.DataFrame):
             # TODO: add validation

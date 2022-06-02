@@ -10,7 +10,7 @@ import os
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from mikeio import Dfs0, eum
+import mikeio
 from copy import deepcopy
 from .utils import make_unique_index
 
@@ -60,7 +60,7 @@ class Observation:
         df.index = pd.DatetimeIndex(time, freq="infer")
         self.df = df
         if itemInfo is None:
-            self.itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+            self.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         else:
             self.itemInfo = itemInfo
         self.weight = 1.0
@@ -102,7 +102,7 @@ class Observation:
         if self.itemInfo is None:
             return ""
         txt = f"{self.itemInfo.type.display_name}"
-        if self.itemInfo.type != eum.EUMType.Undefined:
+        if self.itemInfo.type != mikeio.EUMType.Undefined:
             unit = self.itemInfo.unit.display_name
             txt = f"{txt} [{unit_display_name(unit)}]"
         return txt
@@ -204,7 +204,7 @@ class PointObservation(Observation):
             df = filename.to_frame()
             if name is None:
                 name = "Observation"
-            itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(filename, pd.DataFrame):
             df = filename
             default_name = "Observation"
@@ -229,7 +229,7 @@ class PointObservation(Observation):
                 raise TypeError("item must be int or string")
             if name is None:
                 name = default_name
-            itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(filename, str):
             assert os.path.exists(filename)
             self._filename = filename
@@ -238,7 +238,7 @@ class PointObservation(Observation):
 
             ext = os.path.splitext(filename)[-1]
             if ext == ".dfs0":
-                df, itemInfo = self._read_dfs0(Dfs0(filename), item)
+                df, itemInfo = self._read_dfs0(mikeio.open(filename), item)
                 self._item = itemInfo.name
             else:
                 raise NotImplementedError("Only dfs0 files supported")
@@ -418,7 +418,7 @@ class TrackObservation(Observation):
             df_items = df.columns.to_list()
             items = self._parse_track_items(df_items, x_item, y_item, item)
             df = df.iloc[:, items].copy()
-            itemInfo = eum.ItemInfo(eum.EUMType.Undefined)
+            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(input, str):
             assert os.path.exists(input)
             self._filename = input
@@ -427,7 +427,7 @@ class TrackObservation(Observation):
 
             ext = os.path.splitext(input)[-1]
             if ext == ".dfs0":
-                dfs = Dfs0(input)
+                dfs = mikeio.open(input)
                 file_items = [i.name for i in dfs.items]
                 items = self._parse_track_items(file_items, x_item, y_item, item)
                 df, itemInfo = self._read_dfs0(dfs, items)

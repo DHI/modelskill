@@ -2,7 +2,7 @@ from fmskill.utils import make_unique_index
 import pandas as pd
 import warnings
 
-from mikeio import eum
+import mikeio
 from ..observation import PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer
 from .abstract import ModelResultInterface, MultiItemModelResult, _parse_itemInfo
@@ -50,7 +50,7 @@ class _DataFrameBase:
                 return item_names[0]
             else:
                 return None
-        if isinstance(item, eum.ItemInfo):
+        if isinstance(item, mikeio.ItemInfo):
             item = item.name
         elif isinstance(item, int):
             if item < 0:  # Handle negative indices

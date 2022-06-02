@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mikeio import Dfs0, eum
+import mikeio
 from fmskill import ModelResult, PointObservation, TrackObservation
 from fmskill.model.abstract import ModelResultInterface, MultiItemModelResult
 from fmskill.model import DataFramePointModelResult, DataFramePointModelResultItem
@@ -16,7 +16,7 @@ from fmskill.model.pandas import (
 @pytest.fixture
 def point_df():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
-    df = Dfs0(fn).to_dataframe()
+    df = mikeio.open(fn).to_dataframe()
     return df
 
 
@@ -29,7 +29,7 @@ def track_df():
 @pytest.fixture
 def track_from_dfs0():
     fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"
-    return Dfs0(fn).to_dataframe()
+    return mikeio.open(fn).to_dataframe()
 
 
 def test_df_modelresultitem(point_df):
@@ -41,12 +41,12 @@ def test_df_modelresultitem(point_df):
     assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
     assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
     assert mr1.name == "Water Level"
-    assert mr1.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
+    assert mr1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     # item as string
     mr2 = DataFramePointModelResultItem(df, item="Water Level")
     assert len(mr2.df) == len(mr1.df)
-    assert mr2.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
+    assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     mr3 = DataFramePointModelResultItem(df[["Water Level"]])
     assert len(mr3.df) == len(mr1.df)
@@ -59,13 +59,13 @@ def test_df_modelresultitem(point_df):
 def test_df_modelresultitem_itemInfo(point_df):
     df = point_df
     df["ones"] = 1.0
-    itemInfo = eum.EUMType.Surface_Elevation
+    itemInfo = mikeio.EUMType.Surface_Elevation
     mr1 = ModelResult(df, item="Water Level", itemInfo=itemInfo)
-    assert mr1.itemInfo == eum.ItemInfo(eum.EUMType.Surface_Elevation)
+    assert mr1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
 
-    itemInfo = eum.ItemInfo("WL", eum.EUMType.Surface_Elevation)
+    itemInfo = mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
     mr2 = ModelResult(df, item=0, itemInfo=itemInfo)
-    assert mr2.itemInfo == eum.ItemInfo("WL", eum.EUMType.Surface_Elevation)
+    assert mr2.itemInfo == mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
 
 
 def test_df_modelresult(point_df):
@@ -101,22 +101,22 @@ def test_track_df_modelresultitem(track_df):
     # item as string
     mr2 = ModelResult(df, item="surface_elevation")
     assert len(mr2.df) == len(mr1.df)
-    assert mr2.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
+    assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     mr3 = DataFramePointModelResultItem(df[["surface_elevation"]])
     assert len(mr3.df) == len(mr1.df)
-    assert mr3.itemInfo == eum.ItemInfo(eum.EUMType.Undefined)
+    assert mr3.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
 def test_track_df_modelresultitem_iteminfo(track_df):
     df = track_df
-    itemInfo = eum.EUMType.Surface_Elevation
+    itemInfo = mikeio.EUMType.Surface_Elevation
     mr1 = ModelResult(df, item="surface_elevation", itemInfo=itemInfo)
-    assert mr1.itemInfo == eum.ItemInfo(eum.EUMType.Surface_Elevation)
+    assert mr1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
 
-    itemInfo = eum.ItemInfo("WL", eum.EUMType.Surface_Elevation)
+    itemInfo = mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
     mr2 = ModelResult(df, item="surface_elevation", itemInfo=itemInfo)
-    assert mr2.itemInfo == eum.ItemInfo("WL", eum.EUMType.Surface_Elevation)
+    assert mr2.itemInfo == mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
 
 
 def test_track_df_modelresult(track_df):
