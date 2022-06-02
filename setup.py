@@ -12,7 +12,7 @@ setuptools.setup(
     install_requires=[
         "numpy",
         "pandas",
-        "mikeio == 1.0b0",
+        "mikeio >= 1.0",
         "matplotlib",
         "xarray",
         "markdown",
