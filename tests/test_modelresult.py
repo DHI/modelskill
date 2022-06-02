@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytest
 
-from mikeio import eum
+import mikeio
 from fmskill.model import ModelResult
 from fmskill.model.abstract import ModelResultInterface
 from fmskill.model import DataFramePointModelResult, DataFramePointModelResultItem
@@ -128,7 +128,7 @@ def test_extract_observation_validation(hd_oresund_2d, klagshamn):
 def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d)
     # correct eum, but outside domain
-    klagshamn.itemInfo = eum.ItemInfo(eum.EUMType.Surface_Elevation)
+    klagshamn.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
     klagshamn.y = -10
     with pytest.raises(ValueError):
         _ = mr[0].extract_observation(klagshamn, validate=True)

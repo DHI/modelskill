@@ -8,11 +8,11 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="fmskill",
-    version="0.7.dev0",
+    version="0.7.dev1",
     install_requires=[
         "numpy",
         "pandas",
-        "mikeio >= 0.7",
+        "mikeio >= 1.0",
         "matplotlib",
         "xarray",
         "markdown",
@@ -24,7 +24,7 @@ setuptools.setup(
             "pytest",
             "sphinx",
             "sphinx-book-theme",
-            "black==20.8b1",
+            "black==22.3.0",
             "plotly >= 4.5",
         ],
         "test": [

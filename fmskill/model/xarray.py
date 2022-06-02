@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import warnings
 
-from mikeio import eum
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer
 from .abstract import ModelResultInterface, MultiItemModelResult, _parse_itemInfo
@@ -60,7 +59,7 @@ class _XarrayBase:
                 return item_names[0]
             else:
                 return None
-        # if isinstance(item, eum.ItemInfo):
+        # if isinstance(item, mikeio.ItemInfo):
         #     item = item.name
         if isinstance(item, int):
             if item < 0:  # Handle negative indices

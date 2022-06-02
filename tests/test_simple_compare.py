@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from mikeio import Dfs0
+import mikeio
 from datetime import datetime
 import fmskill
 from fmskill.observation import PointObservation
@@ -17,7 +17,7 @@ def fn_obs():
 
 
 def test_compare(fn_obs, fn_mod):
-    df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
+    df_mod = mikeio.open(fn_mod).read(items=0).to_dataframe()
     c = fmskill.compare(fn_obs, df_mod)
     assert c.n_points == 67
     assert c.start == datetime(2017, 10, 27, 0, 0, 0)
@@ -26,7 +26,7 @@ def test_compare(fn_obs, fn_mod):
 
 def test_compare_mod_item(fn_obs, fn_mod):
     c = fmskill.compare(fn_obs, fn_mod, mod_item=0)
-    dfs = Dfs0(fn_mod)
+    dfs = mikeio.open(fn_mod)
     assert c.mod_names[0] == dfs.items[0].name
 
 
@@ -36,8 +36,8 @@ def test_compare_fn(fn_obs):
 
 
 def test_compare_df(fn_obs, fn_mod):
-    df_obs = Dfs0(fn_obs).read().to_dataframe()
-    df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
+    df_obs = mikeio.open(fn_obs).read().to_dataframe()
+    df_mod = mikeio.open(fn_mod).read(items=0).to_dataframe()
     c = fmskill.compare(df_obs, df_mod)
     assert c.n_points == 67
     assert c.start == datetime(2017, 10, 27, 0, 0, 0)
@@ -46,13 +46,13 @@ def test_compare_df(fn_obs, fn_mod):
 
 def test_compare_point_obs(fn_obs, fn_mod):
     obs = fmskill.PointObservation(fn_obs, name="EPL")
-    df_mod = Dfs0(fn_mod).read(items=0).to_dataframe()
+    df_mod = mikeio.open(fn_mod).read(items=0).to_dataframe()
     c = fmskill.compare(obs, df_mod)
     assert c.n_points == 67
 
 
 def test_compare_fail(fn_obs, fn_mod):
-    df_mod = Dfs0(fn_mod).read(items=[0, 1, 2]).to_dataframe()
+    df_mod = mikeio.open(fn_mod).read(items=[0, 1, 2]).to_dataframe()
     with pytest.raises(ValueError):
         # multiple items in model df -> ambigous
         fmskill.compare(fn_obs, df_mod)
@@ -103,7 +103,7 @@ def test_compare_obs_item_pointobs_inconsistent_item_error(fn_mod):
 
 
 def test_compare_mod_item(fn_obs, fn_mod):
-    df_mod = Dfs0(fn_mod).read(items=[0, 1, 2]).to_dataframe()
+    df_mod = mikeio.open(fn_mod).read(items=[0, 1, 2]).to_dataframe()
     c = fmskill.compare(fn_obs, df_mod, mod_item=0)
     assert c.n_points > 0
 

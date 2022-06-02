@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import warnings
 
-from mikeio import Dfs0, Dfsu, Dataset, eum
+import mikeio
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from ..utils import make_unique_index
@@ -26,11 +26,11 @@ class _DfsBase:
 
     @property
     def is_dfsu(self):
-        return isinstance(self.dfs, Dfsu)
+        return isinstance(self.dfs, mikeio.dfsu._Dfsu)
 
     @property
     def is_dfs0(self):
-        return isinstance(self.dfs, Dfs0)
+        return isinstance(self.dfs, mikeio.Dfs0)
 
     def _in_domain(self, x, y) -> bool:
         ok = True
@@ -46,7 +46,7 @@ class _DfsBase:
                 return 0
             else:
                 return None
-        if isinstance(item, eum.ItemInfo):
+        if isinstance(item, mikeio.ItemInfo):
             item = item.name
         if isinstance(item, int):
             if item < 0:  # Handle negative indices
@@ -112,16 +112,16 @@ class _DfsBase:
 
         return ds_model.to_dataframe().dropna()
 
-    def _extract_point_dfsu(self, x, y, item) -> Dataset:
+    def _extract_point_dfsu(self, x, y, item) -> mikeio.Dataset:
         xy = np.atleast_2d([x, y])
-        elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
+        elemids = self.dfs.geometry.find_index(coords=xy)
         ds_model = self.dfs.read(elements=elemids, items=[item])
-        ds_model.items[0].name = self.name
+        ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
         return ds_model
 
-    def _extract_point_dfs0(self, item) -> Dataset:
+    def _extract_point_dfs0(self, item) -> mikeio.Dataset:
         ds_model = self.dfs.read(items=[item])
-        ds_model.items[0].name = self.name
+        ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
         return ds_model
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
@@ -133,14 +133,16 @@ class _DfsBase:
             df = ds_model.to_dataframe().dropna()
         elif self.is_dfs0:
             ds_model = self.dfs.read(items=[0, 1, item])
-            ds_model.items[-1].name = self.name
+            ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
             df = ds_model.to_dataframe().dropna()
             df.index = make_unique_index(df.index, offset_duplicates=0.001)
         return df
 
-    def _extract_track_dfsu(self, observation: TrackObservation, item) -> Dataset:
+    def _extract_track_dfsu(
+        self, observation: TrackObservation, item
+    ) -> mikeio.Dataset:
         ds_model = self.dfs.extract_track(track=observation.df, items=[item])
-        ds_model.items[-1].name = self.name
+        ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
         return ds_model
 
     @staticmethod
@@ -232,7 +234,7 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         """Check that observation and model item eum match"""
         ok = True
         obs_item = observation.itemInfo
-        if obs_item.type == eum.EUMType.Undefined:
+        if obs_item.type == mikeio.EUMType.Undefined:
             warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
             return ok
 
@@ -264,11 +266,11 @@ class DfsModelResult(_DfsBase, MultiItemModelResult):
         self._filename = filename
         ext = os.path.splitext(filename)[-1]
         if ext == ".dfsu":
-            self.dfs = Dfsu(filename)
+            self.dfs = mikeio.open(filename)
         # elif ext == '.dfs2':
-        #    self.dfs = Dfs2(filename)
+        #    self.dfs = mikeio.open(filename)
         elif ext == ".dfs0":
-            self.dfs = Dfs0(filename)
+            self.dfs = mikeio.open(filename)
         else:
             raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
 
@@ -300,7 +302,7 @@ class DfsModelResult(_DfsBase, MultiItemModelResult):
 #     def _infer_model_item(
 #         self,
 #         observation: Observation,
-#         mod_items: List[eum.ItemInfo] = None,
+#         mod_items: List[mikeio.ItemInfo] = None,
 #     ) -> int:
 #         """Attempt to infer model item by matching observation eum with model eum"""
 #         if mod_items is None:

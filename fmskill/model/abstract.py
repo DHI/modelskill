@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 import pandas as pd
-from mikeio import eum
+import mikeio
 
 from ..comparison import BaseComparer
 
 
 def _parse_itemInfo(itemInfo):
     if itemInfo is None:
-        return eum.ItemInfo(eum.EUMType.Undefined)
-    if isinstance(itemInfo, eum.ItemInfo):
+        return mikeio.ItemInfo(mikeio.EUMType.Undefined)
+    if isinstance(itemInfo, mikeio.ItemInfo):
         return itemInfo
-    return eum.ItemInfo(itemInfo)
+    return mikeio.ItemInfo(itemInfo)
 
 
 class ModelResultInterface(ABC):  # pragma: no cover

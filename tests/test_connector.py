@@ -1,6 +1,7 @@
-from mikeio import eum
 import pytest
 import pandas as pd
+
+import mikeio
 
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
@@ -123,13 +124,13 @@ def test_connector_add_two_model_dataframes(
 #         # EUM type doesn't match
 #         mr.add_observation(klagshamn, item=0)
 
-#     klagshamn.itemInfo = eum.ItemInfo(eum.EUMType.Surface_Elevation)
+#     klagshamn.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
 #     mr = ModelResult(hd_oresund_2d)
 #     mr.add_observation(klagshamn, item=0)
 #     assert len(mr.observations) == 1
 
-#     klagshamn.itemInfo = eum.ItemInfo(
-#         eum.EUMType.Surface_Elevation, unit=eum.EUMUnit.feet
+#     klagshamn.itemInfo = mikeio.ItemInfo(
+#         mikeio.EUMType.Surface_Elevation, unit=mikeio.EUMUnit.feet
 #     )
 #     with pytest.raises(ValueError):
 #         # EUM unit doesn't match
@@ -146,14 +147,14 @@ def test_add_fail(o2, mr1):
             # item not specified
             con.add(o2, mr1)
 
-    eumHm0 = eum.EUMType.Significant_wave_height
-    o2.itemInfo = eum.ItemInfo(eumHm0, unit=eum.EUMUnit.feet)
+    eumHm0 = mikeio.EUMType.Significant_wave_height
+    o2.itemInfo = mikeio.ItemInfo(eumHm0, unit=mikeio.EUMUnit.feet)
     with pytest.raises(Exception):
         with pytest.warns(UserWarning):
             # EUM unit doesn't match
             con.add(o2, mr1[0])
 
-    o2.itemInfo = eum.ItemInfo(eum.EUMType.Water_Level, unit=eum.EUMUnit.meter)
+    o2.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Water_Level, unit=mikeio.EUMUnit.meter)
     with pytest.raises(Exception):
         with pytest.warns(UserWarning):
             # EUM type doesn't match
