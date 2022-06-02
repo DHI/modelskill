@@ -6,7 +6,7 @@ from scipy import interpolate
 
 import matplotlib.pyplot as plt
 
-from mikeio import Dfsu
+import mikeio
 
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
@@ -344,7 +344,7 @@ def scatter(
 
 
 def plot_observation_positions(
-    dfs: Dfsu, observations: List[Observation], figsize: Tuple = None, title=None
+    dfs: mikeio.dfsu._Dfsu, observations: List[Observation], figsize: Tuple = None, title=None
 ):
     """Plot observation points on a map showing the model domain
 
