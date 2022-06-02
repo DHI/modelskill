@@ -24,7 +24,7 @@ setuptools.setup(
             "pytest",
             "sphinx",
             "sphinx-book-theme",
-            "black==20.8b1",
+            "black==22.3.0",
             "plotly >= 4.5",
         ],
         "test": [
