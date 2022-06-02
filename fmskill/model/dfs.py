@@ -114,15 +114,13 @@ class _DfsBase:
 
     def _extract_point_dfsu(self, x, y, item) -> mikeio.Dataset:
         xy = np.atleast_2d([x, y])
-        elemids, _ = self.dfs.get_2d_interpolant(xy, n_nearest=1)
+        elemids = self.dfs.geometry.find_index(coords=xy)
         ds_model = self.dfs.read(elements=elemids, items=[item])
-        # ds_model.items[0].name = self.name
         ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
         return ds_model
 
     def _extract_point_dfs0(self, item) -> mikeio.Dataset:
         ds_model = self.dfs.read(items=[item])
-        # ds_model.items[0].name = self.name
         ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
         return ds_model
 
@@ -145,7 +143,6 @@ class _DfsBase:
         self, observation: TrackObservation, item
     ) -> mikeio.Dataset:
         ds_model = self.dfs.extract_track(track=observation.df, items=[item])
-        # ds_model.items[-1].name = self.name
         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
         return ds_model
 
