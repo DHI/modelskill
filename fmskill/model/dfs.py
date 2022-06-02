@@ -133,7 +133,6 @@ class _DfsBase:
             df = ds_model.to_dataframe().dropna()
         elif self.is_dfs0:
             ds_model = self.dfs.read(items=[0, 1, item])
-            # ds_model.items[-1].name = self.name
             ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
             df = ds_model.to_dataframe().dropna()
             df.index = make_unique_index(df.index, offset_duplicates=0.001)
