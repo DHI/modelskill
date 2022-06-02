@@ -35,7 +35,7 @@ Scope
 
 * It should be general enough to cover >90% of MIKE FM simulations
 * But specific enough to be useful
-    - Primarily support dfs files (using `mikeio <https://github.com/DHI/mikeio>`_)
+    - Support dfs files (using `mikeio <https://github.com/DHI/mikeio>`_)
     - Handle circular variables such as wave direction
     - Handle vector variables such as u- and v-components of current
     - Tidal analysis

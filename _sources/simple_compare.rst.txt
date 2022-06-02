@@ -26,7 +26,7 @@ The model result can be either a dfs0 or a DataFrame.
 
 .. code-block:: python
 
-    from mikeio import Dfs0
+    import mikeio
     fn_mod = '../tests/testdata/SW/ts_storm_4.dfs0'
 
 
