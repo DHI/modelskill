@@ -74,6 +74,7 @@ Create a web app that wraps this library
 Interface to observation APIs
 =============================
 Easy to get observation data from `DHI's altimetry portal <https://altimetry.dhigroup.com>`_, CMEMS, etc. 
+See the sister package `WatObs <https://github.com/DHI/WatObs>`_ .
 
 
 Interface to alternative models
