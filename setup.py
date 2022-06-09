@@ -8,7 +8,7 @@ with open("LICENSE") as fh:
 
 setuptools.setup(
     name="fmskill",
-    version="0.7.dev1",
+    version="0.7.dev2",
     install_requires=[
         "numpy",
         "pandas",
@@ -17,7 +17,6 @@ setuptools.setup(
         "xarray",
         "markdown",
         "jinja2",
-        "requests",
     ],
     extras_require={
         "dev": [
@@ -37,9 +36,7 @@ setuptools.setup(
             "nbformat",
             "nbconvert",
             "jupyter",
-            "folium",
             "plotly",
-            "geopandas",
         ],
     },
     entry_points="""
@@ -61,7 +58,6 @@ setuptools.setup(
         "Intended Audience :: Science/Research",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
