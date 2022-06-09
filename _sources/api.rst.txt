@@ -26,18 +26,6 @@ Observation
 	:inherited-members:
 
 
-Data
-----
-.. autoclass:: fmskill.data.DMIOceanObsRepository
-	:members:
-
-.. autoclass:: fmskill.data.DHIAltimetryRepository
-	:members:
-
-.. autoclass:: fmskill.data.altimetry.AltimetryData
-	:members:
-
-
 Connector
 ---------
 .. automodule:: fmskill.connection
