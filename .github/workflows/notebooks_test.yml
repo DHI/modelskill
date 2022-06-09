@@ -20,9 +20,6 @@ jobs:
     - name: Install fmskill
       run: |
         pip install .[test,notebooks]    
-    - name: Test notebooks
-      env:
-        DMI_API_KEY: ${{ secrets.DMI_API_KEY}}
-        DHI_ALTIMETRY_API_KEY: ${{ secrets.DHI_ALTIMETRY_API_KEY}}        
+    - name: Test notebooks    
       run: |
         pytest tests/notebooks/
