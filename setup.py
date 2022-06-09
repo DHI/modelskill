@@ -37,6 +37,7 @@ setuptools.setup(
             "nbconvert",
             "jupyter",
             "plotly",
+            "shapely",
         ],
     },
     entry_points="""
