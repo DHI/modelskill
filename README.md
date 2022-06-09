@@ -6,7 +6,7 @@
 
 [FMskill](https://github.com/DHI/fmskill) is a python package for scoring [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) models. 
 
-Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/fmskill/discussions), report an [issue](https://github.com/DHI/fmskill/issues) or browse the [API documentation](https://dhi.github.io/fmskill/api.html).
+Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/fmskill/discussions), report an [issue](https://github.com/DHI/fmskill/issues) or browse the [API documentation](https://dhi.github.io/fmskill/api.html). Access observational data (e.g. altimetry data) from the sister library [WatObs](https://github.com/DHI/watobs). 
 
 
 ## Use cases
