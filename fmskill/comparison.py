@@ -839,6 +839,7 @@ class BaseComparer:
         df: pd.DataFrame = None,
         binsize: float = None,
         nbins: int = None,
+        skill_table: bool = False,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -900,6 +901,9 @@ class BaseComparer:
             by default None
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
+        skill_table : bool, optional
+            calculates the main skills (bias, rmse, si, r2, etc) and adds a box at
+            the right of the scatter plot, by default False
         kwargs
 
         Examples
@@ -968,6 +972,37 @@ class BaseComparer:
             nbins=nbins,
             **kwargs,
         )
+        if skill_table:
+            # Calculate Skill if it was requested to add as table on the right of plot
+            skill_df = self.skill(
+                metrics=["bias", "rmse", "urmse", "mae", "cc", "si", "r2"], df=df
+            )  # df is filtered to matching subset
+            lines = []
+
+            max_str_len = skill_df.df.columns.str.len().max()
+
+            for col in skill_df.df.columns:
+                if col == "model":
+                    continue
+                lines.append(
+                    f"{col.ljust(max_str_len)} {np.round(skill_df.df[col].values[0],3)}"
+                )
+
+            text_ = "\n".join(lines)
+
+            plt.gcf().text(
+                0.97,
+                0.6,
+                text_,
+                bbox={
+                    "facecolor": "blue",
+                    "edgecolor": "k",
+                    "boxstyle": "round",
+                    "alpha": 0.05,
+                },
+                fontsize=12,
+                family="monospace",
+            )
 
     def taylor(
         self,
