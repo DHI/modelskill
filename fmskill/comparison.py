@@ -840,6 +840,7 @@ class BaseComparer:
         binsize: float = None,
         nbins: int = None,
         skill_table: bool = False,
+        units: str = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -904,6 +905,9 @@ class BaseComparer:
         skill_table : bool, optional
             calculates the main skills (bias, rmse, si, r2, etc) and adds a box at
             the right of the scatter plot, by default False
+        units : str, optional
+            add units to plots. By default will use units of dfs0 file. If dataframe is provided,
+            then a str can be specified. By default None
         kwargs
 
         Examples
@@ -977,15 +981,37 @@ class BaseComparer:
             skill_df = self.skill(
                 metrics=["bias", "rmse", "urmse", "mae", "cc", "si", "r2"], df=df
             )  # df is filtered to matching subset
+            stats_with_units=["bias", "rmse", "urmse", "mae"]
+            
             lines = []
-
+            if units==None:
+                #Check for units
+                try:
+                    #Extract first letter of most common dfs0 units in SI;
+                    #either (m)eter, (s)econd, (deg)gree, or (m/s). Rest of units can
+                    #always be assigned by user with `units=str` keyword
+                    units_=self._itemInfos[0].unit.display_name
+                    if units_=='meter' or units_=='second':
+                        units_=units_[0]
+                    elif units_=='degree':
+                        units_='°'
+                    elif units_=='meter per sec':
+                        units_='m/s'
+                except:
+                    #Dimensionless
+                    units_=''
             max_str_len = skill_df.df.columns.str.len().max()
 
             for col in skill_df.df.columns:
                 if col == "model":
                     continue
-                lines.append(
-                    f"{col.ljust(max_str_len)} {np.round(skill_df.df[col].values[0],3)}"
+                if col in stats_with_units:
+                    lines.append(
+                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],3)} {units_}"
+                )
+                else:
+                    lines.append(
+                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],3)}"
                 )
 
             text_ = "\n".join(lines)
