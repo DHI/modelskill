@@ -987,16 +987,7 @@ class BaseComparer:
             if units==None:
                 #Check for units
                 try:
-                    #Extract first letter of most common dfs0 units in SI;
-                    #either (m)eter, (s)econd, (deg)gree, or (m/s). Rest of units can
-                    #always be assigned by user with `units=str` keyword
-                    units_=self._itemInfos[0].unit.display_name
-                    if units_=='meter' or units_=='second':
-                        units_=units_[0]
-                    elif units_=='degree':
-                        units_='°'
-                    elif units_=='meter per sec':
-                        units_='m/s'
+                    units_=unit_text.split('[')[1].split(']')[0]
                 except:
                     #Dimensionless
                     units_=''
@@ -1006,12 +997,14 @@ class BaseComparer:
                 if col == "model":
                     continue
                 if col in stats_with_units:
-                    lines.append(
-                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],3)} {units_}"
-                )
+                    #if statistic has dimensions, then add units
+                    item_unit=units_
                 else:
-                    lines.append(
-                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],3)}"
+                    #else, add empty space (for fomatting)
+                    item_unit=' '
+
+                lines.append(
+                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],3)} {item_unit}"
                 )
 
             text_ = "\n".join(lines)
