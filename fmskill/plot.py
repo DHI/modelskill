@@ -20,8 +20,8 @@ def scatter(
     bins: Union[int, float, List[int], List[float]] = 20,
     quantiles: Union[int, List[float]] = None,
     show_points: Union[bool, int, float] = None,
-    show_hist: bool = True,
-    show_density: bool = False,
+    show_hist: bool = False,
+    show_density: bool = True,
     backend: str = "matplotlib",
     figsize: List[float] = (8, 8),
     xlim: List[float] = None,
@@ -58,9 +58,9 @@ def scatter(
         float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
         int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
-        show the data density as a 2d histogram, by default True
+        show the data density as a 2d histogram, by default False
     show_density: bool, optional
-        show the data density as a colormap of the scatter, by default False.
+        show the data density as a colormap of the scatter, by default True.
         for binning the data, the previous kword `bins=Float` is used
     backend : str, optional
         use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
@@ -101,11 +101,11 @@ def scatter(
     y_sample = y
 
     if show_points is None:
-        # If nothing given, and more than 10k points, 10k sample will be shown
-        if len(x) < 1e4:
+        # If nothing given, and more than 50k points, 50k sample will be shown
+        if len(x) < 5e4:
             show_points = True
         else:
-            show_points = 10000
+            show_points = 50000
     if type(show_points) == float:
         if show_points < 0 or show_points > 1:
             raise ValueError(" `show_points` fraction must be in [0,1]")
