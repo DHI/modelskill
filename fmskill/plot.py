@@ -173,7 +173,11 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-
+    
+    if show_hist:
+        #if histogram is wanted (explicit non-default flag) then density is off
+        show_density=False
+        
     if show_density:
         if not ((type(bins) == float) or (type(bins) == int)):
             raise TypeError(
