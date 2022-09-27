@@ -1004,7 +1004,7 @@ class BaseComparer:
                     item_unit=' '
 
                 lines.append(
-                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],3)} {item_unit}"
+                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],2):.2f} {item_unit}"
                 )
 
             text_ = "\n".join(lines)
