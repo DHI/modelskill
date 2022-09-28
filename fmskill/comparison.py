@@ -979,7 +979,8 @@ class BaseComparer:
         if skill_table:
             # Calculate Skill if it was requested to add as table on the right of plot
             skill_df = self.skill(
-                metrics=["bias", "rmse", "urmse", "mae", "cc", "si", "r2"], df=df
+                #default metrics
+                metrics=["bias", "rmse", "mae", "cc", "si", "r2"], df=df
             )  # df is filtered to matching subset
             stats_with_units=["bias", "rmse", "urmse", "mae"]
             
@@ -1002,9 +1003,13 @@ class BaseComparer:
                 else:
                     #else, add empty space (for fomatting)
                     item_unit=' '
-
+                if col=="n":
+                    # Number of samples, integer, else, 2 decimals
+                    decimals=f'.{0}f'
+                else:
+                    decimals=f'.{2}f'
                 lines.append(
-                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],2):.2f} {item_unit}"
+                    f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df.df[col].values[0],2):{decimals}} {item_unit}"
                 )
 
             text_ = "\n".join(lines)
