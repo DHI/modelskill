@@ -46,6 +46,18 @@ def test_kge_bad():
     assert mtr.kling_gupta_efficiency(obs, mod) < 0.0
 
 
+def test_kge_climatology_model():
+    """Predicting the mean value results in a KGE=-0.41
+
+    Knoben et al, 2019, Hydrol. Earth Syst. Sci., 23, 4323-4331, 2019
+    https://doi.org/10.5194/hess-23-4323-2019
+    """
+    obs = np.random.normal(loc=10.0, scale=1.0, size=100)
+    mod = np.full_like(obs, fill_value=obs.mean())
+
+    assert mtr.kling_gupta_efficiency(obs, mod) == pytest.approx(-0.41, abs=1e-2)
+
+
 def test_nse_suboptimal():
 
     obs = np.array([1.0, 0.5, 0])
