@@ -238,9 +238,10 @@ def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     .. math::
 
-        KGE = 1 - \\sqrt{(r-1})^2 + \\left(\\frac{\\sigma_{mod}}{\\sigma_{obs} - 1\\right)^2 + \\left(\\frac{\\mu_{mod}}{\\mu_{obs} - 1\\right)^2,
+        KGE = 1 - \\sqrt{(r-1)^2 + \\left(\\frac{\\sigma_{mod}}{\\sigma_{obs}} - 1\\right)^2 +
+                                   \\left(\\frac{\\mu_{mod}}{\\mu_{obs}} - 1\\right)^2 }
 
-        where r is the pearson correlation coefficient, \\mu_{obs},\\mu_{mod} and \\sigma_{obs},\\sigma_{mod} is the mean and standard deviation of model and observations.
+    where :math:`r` is the pearson correlation coefficient, :math:`\\mu_{obs},\\mu_{mod}` and :math:`\\sigma_{obs},\\sigma_{mod}` is the mean and standard deviation of observations and model.
 
     Range: :math:`(-\\infty, 1]`; Best: 1
 
