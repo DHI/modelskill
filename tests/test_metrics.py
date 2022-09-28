@@ -52,6 +52,7 @@ def test_kge_climatology_model():
     Knoben et al, 2019, Hydrol. Earth Syst. Sci., 23, 4323-4331, 2019
     https://doi.org/10.5194/hess-23-4323-2019
     """
+    np.random.seed(42)
     obs = np.random.normal(loc=10.0, scale=1.0, size=100)
     mod = np.full_like(obs, fill_value=obs.mean())
 

@@ -257,6 +257,8 @@ def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
 
     r = corrcoef(obs, model)
+    if np.isnan(r):
+        r = 0.0
 
     res = 1 - np.sqrt(
         (r - 1) ** 2
