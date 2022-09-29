@@ -268,7 +268,7 @@ def scatter(
         plt.grid(
             which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
         )
-        if (show_hist or show_density):
+        if (show_hist or (show_density and show_points)):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
         plt.title(title)
