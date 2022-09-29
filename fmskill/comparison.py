@@ -28,6 +28,9 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 
 
+DEFAULT_METRICS = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+
+
 class BaseComparer:
     """Abstract base class for all comparers, only used to inherit from, not to be used directly"""
 
@@ -89,6 +92,14 @@ class BaseComparer:
         if self._all_df is None:
             self._construct_all_df()
         return self._all_df
+
+    @property
+    def metrics(self):
+        return self._metrics
+
+    @metrics.setter
+    def metrics(self, values) -> None:
+        self._metrics = self._parse_metric(values)
 
     def __add__(self, other: "BaseComparer") -> "ComparerCollection":
 
@@ -164,6 +175,7 @@ class BaseComparer:
 
     def __init__(self, observation, modeldata=None):
 
+        self._metrics = DEFAULT_METRICS
         self.obs_name = "Observation"
         self._obs_names: List[str]
         self._mod_names: List[str]
@@ -333,7 +345,7 @@ class BaseComparer:
 
     def _parse_metric(self, metric, return_list=False):
         if metric is None:
-            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+            return self._metrics
 
         if isinstance(metric, str):
             valid_metrics = [
@@ -974,9 +986,7 @@ class BaseComparer:
         )
         if skill_table:
             # Calculate Skill if it was requested to add as table on the right of plot
-            skill_df = self.skill(
-                metrics=["bias", "rmse", "urmse", "mae", "cc", "si", "r2"], df=df
-            )  # df is filtered to matching subset
+            skill_df = self.skill(df=df)  # df is filtered to matching subset
             lines = []
 
             max_str_len = skill_df.df.columns.str.len().max()
@@ -1120,6 +1130,9 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
+    def __init__(self, observation, model):
+        super().__init__(observation, model)
+
     def __copy__(self):
         # cls = self.__class__
         # cp = cls.__new__(cls)
@@ -1790,7 +1803,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._all_df.index.name = "datetime"
 
     def __init__(self):
-
+        # super().__init__(observation=None, modeldata=None)  # Not possible since init signature is different compared to BaseComparer
+        self._metrics = DEFAULT_METRICS
         self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
