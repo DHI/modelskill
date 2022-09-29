@@ -20,8 +20,8 @@ def scatter(
     bins: Union[int, float, List[int], List[float]] = 20,
     quantiles: Union[int, List[float]] = None,
     show_points: Union[bool, int, float] = None,
-    show_hist: bool = False,
-    show_density: bool = True,
+    show_hist: bool = None,
+    show_density: bool = None,
     backend: str = "matplotlib",
     figsize: List[float] = (8, 8),
     xlim: List[float] = None,
@@ -58,9 +58,10 @@ def scatter(
         float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
         int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
-        show the data density as a 2d histogram, by default False
+        show the data density as a 2d histogram, by default None
     show_density: bool, optional
-        show the data density as a colormap of the scatter, by default True.
+        show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
+        are None, then `show_density` is used by default.
         for binning the data, the previous kword `bins=Float` is used
     backend : str, optional
         use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
@@ -83,6 +84,10 @@ def scatter(
         y-label text on plot, by default None
     kwargs
     """
+    if show_hist==None and show_density==None:
+        #Default: points density
+        show_density=True
+
 
     if (binsize is not None) or (nbins is not None):
         warnings.warn(
@@ -176,7 +181,10 @@ def scatter(
     
     if show_hist:
         #if histogram is wanted (explicit non-default flag) then density is off
-        show_density=False
+        if show_density == True:
+            raise TypeError(
+                "if `show_hist=True` then `show_density` must be either `False` or `None`"
+            )        
         
     if show_density:
         if not ((type(bins) == float) or (type(bins) == int)):
@@ -184,7 +192,10 @@ def scatter(
                 "if `show_density=True` then bins must be either float or int"
             )
         # if point density is wanted, then 2D histogram is not shown
-        show_hist = False
+        if show_hist == True:
+            raise TypeError(
+                "if `show_density=True` then `show_hist` must be either `False` or `None`"
+            )    
         # calculate density data
         z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
@@ -234,7 +245,7 @@ def scatter(
             "X",
             label="Q-Q",
             c="darkturquoise",
-            markeredgecolor=(0, 0, 0, 0.6),
+            markeredgecolor=(0, 0, 0, 0.4),
             zorder=4,
         )
         plt.plot(
@@ -257,7 +268,7 @@ def scatter(
         plt.grid(
             which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
         )
-        if (show_hist or show_density) and show_points:
+        if (show_hist or show_density):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
         plt.title(title)
