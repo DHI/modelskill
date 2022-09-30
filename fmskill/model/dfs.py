@@ -166,6 +166,53 @@ class _DfsBase:
         raise NotImplementedError("Deprecated! Use Connector instead.")
 
 
+class DataArrayModelResultItem(ModelResultInterface):
+    @property
+    def start_time(self) -> pd.Timestamp:
+        return self._da.time[0]
+
+    @property
+    def end_time(self) -> pd.Timestamp:
+        return self._da.time[-1]
+
+    @property
+    def name(self):
+        self._name
+
+    @property
+    def item_name(self):
+        self._da.name
+
+    def __init__(self, da: mikeio.DataArray, name=None):
+        self._da = da
+        if name is None:
+            self._name = self._da.name
+        else:
+            self._name = name
+
+    @property
+    def itemInfo(self):
+        return self._da.item
+
+    def _extract_point(self, observation: PointObservation) -> pd.DataFrame:
+
+        dap = self._da.sel(x=observation.x, y=observation.y)
+
+        return (
+            mikeio.Dataset(dap).to_dataframe().dropna()
+        )  # Why is there no .to_dataframe() on DataArray?
+
+    def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+        raise NotImplementedError("Only PointObservations are supported")
+
+    def extract_observation(self, observation: PointObservation) -> PointComparer:
+
+        if isinstance(observation, PointObservation):
+            return self._extract_point(observation)
+        else:
+            raise NotImplementedError("Only PointObservations are supported")
+
+
 class DfsModelResultItem(_DfsBase, ModelResultInterface):
     @property
     def item_name(self):

@@ -66,6 +66,18 @@ def test_connector_add(o1, mr1):
     assert len(con.observations) == 1
 
 
+def test_connector_dataarray(o1):
+
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    # return ModelResult(fn, name="SW_1")
+    da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]  # Skip warm-up period
+    c = Connector(o1, da)
+    assert c.n_models == 1
+
+    cc = c.extract()
+    assert cc.n_models == 1
+
+
 def test_connector_add_two_models(
     o1: PointObservation, mr1: ModelResult, mr2: ModelResult
 ):

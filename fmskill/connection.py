@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 import mikeio
 from .model import ModelResult
-from .model.dfs import DfsModelResult, DfsModelResultItem
+from .model.dfs import DfsModelResult, DfsModelResultItem, DataArrayModelResultItem
 from .model.pandas import DataFramePointModelResultItem
 from .model.abstract import ModelResultInterface, MultiItemModelResult
 from .observation import Observation, PointObservation, TrackObservation
@@ -166,6 +166,8 @@ class _SingleObsConnector(_BaseConnector):
             return mod
         elif isinstance(mod, MultiItemModelResult):
             raise ValueError("Please select model item! e.g. mr[0]")
+        elif isinstance(mod, mikeio.DataArray):
+            return DataArrayModelResultItem(mod)
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
 
@@ -550,12 +552,9 @@ class Connector(_BaseConnector, Mapping, Sequence):
         ComparerCollection
             A comparer object for further analysis and plotting.
         """
-        cc = ComparerCollection()
 
-        for con in self.connections.values():
-            comparer = con.extract()
-            if comparer is not None:
-                cc.add_comparer(comparer)
+        cmps = [con.extract() for con in self.connections.values()]
+        cc = ComparerCollection(cmps)
         return cc
 
     def plot_observation_positions(self, title=None, figsize=None):
