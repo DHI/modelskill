@@ -90,6 +90,8 @@ Metrics
 	fmskill.metrics.mape
 	fmskill.metrics.nash_sutcliffe_efficiency
 	fmskill.metrics.nse
+	fmskill.metrics.kling_gupta_efficiency
+	fmskill.metrics.kge
 	fmskill.metrics.model_efficiency_factor
 	fmskill.metrics.mef
 	fmskill.metrics.scatter_index

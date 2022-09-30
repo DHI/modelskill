@@ -2686,6 +2686,12 @@ which can be accessed from the attribute ds.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#fmskill.metrics.nse" title="fmskill.metrics.nse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmskill.metrics.nse</span></code></a></p></td>
 <td><p>alias for nash_sutcliffe_efficiency</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#fmskill.metrics.kling_gupta_efficiency" title="fmskill.metrics.kling_gupta_efficiency"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmskill.metrics.kling_gupta_efficiency</span></code></a></p></td>
+<td><p>Kling-Gupta Efficiency (KGE)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#fmskill.metrics.kge" title="fmskill.metrics.kge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmskill.metrics.kge</span></code></a></p></td>
+<td><p>alias for kling_gupta_efficiency</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#fmskill.metrics.model_efficiency_factor" title="fmskill.metrics.model_efficiency_factor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fmskill.metrics.model_efficiency_factor</span></code></a></p></td>
 <td><p>Model Efficiency Factor (MEF)</p></td>
 </tr>
@@ -2734,6 +2740,7 @@ difference between a model and an observation.</p>
 <li><p>mean_absolute_error (mae)</p></li>
 <li><p>mean_absolute_percentage_error (mape)</p></li>
 <li><p>nash_sutcliffe_efficiency (nse)</p></li>
+<li><p>kling_gupta_efficiency (kge)</p></li>
 <li><p>r2 (r2=nse)</p></li>
 <li><p>model_efficiency_factor (mef)</p></li>
 <li><p>scatter_index (si)</p></li>
@@ -2826,6 +2833,26 @@ difference between a model and an observation.</p>
 <span class="go">1.0</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fmskill.metrics.kge">
+<span class="sig-prename descclassname"><span class="pre">fmskill.metrics.</span></span><span class="sig-name descname"><span class="pre">kge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fmskill.metrics.kge" title="Permalink to this definition">#</a></dt>
+<dd><p>alias for kling_gupta_efficiency</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fmskill.metrics.kling_gupta_efficiency">
+<span class="sig-prename descclassname"><span class="pre">fmskill.metrics.</span></span><span class="sig-name descname"><span class="pre">kling_gupta_efficiency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fmskill.metrics.kling_gupta_efficiency" title="Permalink to this definition">#</a></dt>
+<dd><p>Kling-Gupta Efficiency (KGE)</p>
+<div class="math notranslate nohighlight">
+\[KGE = 1 - \sqrt{(r-1)^2 + \left(\frac{\sigma_{mod}}{\sigma_{obs}} - 1\right)^2 +
+                           \left(\frac{\mu_{mod}}{\mu_{obs}} - 1\right)^2 }\]</div>
+<p>where <span class="math notranslate nohighlight">\(r\)</span> is the pearson correlation coefficient, <span class="math notranslate nohighlight">\(\mu_{obs},\mu_{mod}\)</span> and <span class="math notranslate nohighlight">\(\sigma_{obs},\sigma_{mod}\)</span> is the mean and standard deviation of observations and model.</p>
+<p>Range: <span class="math notranslate nohighlight">\((-\infty, 1]\)</span>; Best: 1</p>
+<p class="rubric">References</p>
+<p>Gupta, H. V., Kling, H., Yilmaz, K. K. and Martinez, G. F., (2009), Decomposition of the mean squared error and NSE performance criteria: Implications for improving hydrological modelling, J. Hydrol., 377(1-2), 80-91</p>
+<p>Knoben, W. J. M., Freer, J. E., and Woods, R. A. (2019) Technical note: Inherent benchmark or not? Comparing Nash–Sutcliffe and Kling–Gupta efficiency scores, Hydrol. Earth Syst. Sci., 23, 4323-4331</p>
 </dd></dl>
 
 <dl class="py function">
