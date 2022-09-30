@@ -32,6 +32,7 @@ def scatter(
     ylabel: str = "",
     binsize: float = None,
     nbins: int = None,
+    return_fig=False,
     **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled
@@ -84,10 +85,9 @@ def scatter(
         y-label text on plot, by default None
     kwargs
     """
-    if show_hist==None and show_density==None:
-        #Default: points density
-        show_density=True
-
+    if show_hist == None and show_density == None:
+        # Default: points density
+        show_density = True
 
     if (binsize is not None) or (nbins is not None):
         warnings.warn(
@@ -178,14 +178,14 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-    
+
     if show_hist:
-        #if histogram is wanted (explicit non-default flag) then density is off
+        # if histogram is wanted (explicit non-default flag) then density is off
         if show_density == True:
             raise TypeError(
                 "if `show_hist=True` then `show_density` must be either `False` or `None`"
-            )        
-        
+            )
+
     if show_density:
         if not ((type(bins) == float) or (type(bins) == int)):
             raise TypeError(
@@ -195,7 +195,7 @@ def scatter(
         if show_hist == True:
             raise TypeError(
                 "if `show_density=True` then `show_hist` must be either `False` or `None`"
-            )    
+            )
         # calculate density data
         z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
@@ -268,7 +268,7 @@ def scatter(
         plt.grid(
             which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
         )
-        if (show_hist or (show_density and show_points)):
+        if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             cbar.set_label("# points")
         plt.title(title)
@@ -351,7 +351,10 @@ def scatter(
         fig = go.Figure(data=data, layout=layout)
         fig.update_xaxes(range=xlim)
         fig.update_yaxes(range=ylim)
-        fig.show()  # Should this be here
+        if return_fig:
+            return fig
+        else:
+            fig.show()  # Should this be here
 
     else:
 

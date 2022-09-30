@@ -840,6 +840,7 @@ class BaseComparer:
         binsize: float = None,
         nbins: int = None,
         skill_table: bool = False,
+        return_fig=False,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -953,7 +954,7 @@ class BaseComparer:
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
 
-        scatter(
+        fig = scatter(
             x=x,
             y=y,
             bins=bins,
@@ -971,6 +972,7 @@ class BaseComparer:
             ylabel=ylabel,
             binsize=binsize,
             nbins=nbins,
+            return_fig=return_fig,
             **kwargs,
         )
         if skill_table:
@@ -1004,6 +1006,9 @@ class BaseComparer:
                 fontsize=12,
                 family="monospace",
             )
+
+        if return_fig:
+            return fig
 
     def taylor(
         self,
@@ -1545,7 +1550,14 @@ class PointComparer(SingleObsComparer):
         self.df.dropna(inplace=True)
 
     def plot_timeseries(
-        self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
+        self,
+        title=None,
+        *,
+        ylim=None,
+        figsize=None,
+        backend="matplotlib",
+        return_fig=False,
+        **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
 
@@ -1622,7 +1634,10 @@ class PointComparer(SingleObsComparer):
             fig.update_layout(title=title, yaxis_title=self._obs_unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
 
-            fig.show()
+            if return_fig:
+                return fig
+            else:
+                fig.show()
         else:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
