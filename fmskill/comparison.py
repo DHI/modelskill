@@ -118,7 +118,9 @@ class BaseComparer:
                 cc = cls.__new__(cls)
                 cc.__init__(self.observation, mod_data)
         else:
-            cc = ComparerCollection(comparers=[self, other])
+            cc = ComparerCollection()
+            cc.add_comparer(self)
+            cc.add_comparer(other)
 
         return cc
 
