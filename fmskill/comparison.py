@@ -1790,7 +1790,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._all_df = res.sort_index()
         self._all_df.index.name = "datetime"
 
-    def __init__(self, comparers: Optional[Iterable[BaseComparer]] = None):
+    def __init__(self, comparers=None):
 
         self._all_df = None
         self._start = datetime(2900, 1, 1)
