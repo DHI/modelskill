@@ -500,8 +500,12 @@ def _plot_summary_table(skill_df,units,max_cbar):
     stats_with_units=["bias", "rmse", "urmse", "mae"]
     max_str_len = skill_df.columns.str.len().max()
     lines = []
+    if len(skill_df)>1:
+        raise Exception('''`skill_table` kword can only be used for comparisons between 1 model and 1 measurement. 
+        Please add `model`, `variable` and `observation` kwords where required''')
+
     for col in skill_df.columns:
-        if col == "model":
+        if col == "model" or col == "variable":
             continue
         if col in stats_with_units:
             #if statistic has dimensions, then add units
@@ -522,8 +526,12 @@ def _plot_summary_table(skill_df,units,max_cbar):
 
     if max_cbar==None:
         x=0.93
+    elif max_cbar<1e3:
+        x=0.99
+    elif max_cbar<1e4:
+        x=1.01
     elif max_cbar<1e5:
-        x=0.97
+        x=1.03
     elif max_cbar<1e6:
         x=1.05
     else:

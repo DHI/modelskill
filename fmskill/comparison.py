@@ -956,9 +956,9 @@ class BaseComparer:
         if skill_table != None:
             # Calculate Skill if it was requested to add as table on the right of plot
             if skill_table==True:
-                skill_df = self.skill(df=df)  
+                skill_df = self.skill(df=df,model=model,observation=observation,variable=variable)  
             elif type(skill_table)==list:
-                skill_df = self.skill(df=df,metrics=skill_table)  
+                skill_df = self.skill(df=df,metrics=skill_table,model=model,observation=observation,variable=variable)  
             stats_with_units=["bias", "rmse", "urmse", "mae","max_error"]
             # Check for units
             try:
