@@ -524,8 +524,12 @@ def _plot_summary_table(skill_df,units,max_cbar):
         x=0.93
     elif max_cbar<1e5:
         x=0.97
-    else:
+    elif max_cbar<1e6:
         x=1.05
+    else:
+        #When more than 1e6 samples, matplotlib changes to scientific notation
+        x=0.97
+
     plt.gcf().text(
                 x,
                 0.6,
