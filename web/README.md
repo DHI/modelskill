@@ -11,3 +11,5 @@ Usage:
 $streamlit run web/app.py
 ```
 
+![](screenshot.png)
+
