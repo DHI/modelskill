@@ -1024,11 +1024,10 @@ class BaseComparer:
             max_str_len = skill_df.df.columns.str.len().max()
 
             for col in skill_df.df.columns:
-                if col == "model":
-                    continue
-                lines.append(
-                    f"{col.ljust(max_str_len)} {np.round(skill_df.df[col].values[0],3)}"
-                )
+                if col not in ("model", "variable"):  # translates to if col is a metric
+                    lines.append(
+                        f"{col.ljust(max_str_len)} {np.round(skill_df.df[col].values[0],3)}"
+                    )
 
             text_ = "\n".join(lines)
 
