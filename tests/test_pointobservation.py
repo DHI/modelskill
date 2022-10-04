@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 import sys
+import mikeio
 
 from fmskill.observation import PointObservation
 
@@ -16,6 +17,18 @@ def test_from_dfs0(klagshamn):
 
     o2 = PointObservation(klagshamn, item="Water Level", x=366844, y=6154291)
     assert o1.n_points == o2.n_points
+
+    o3 = PointObservation(klagshamn, item="Water Level", x=366844, y=6154291, units='meter')
+    assert o3.override_units == o2.itemInfo.unit.name
+
+    o4 = PointObservation(klagshamn, item="Water Level", x=366844, y=6154291)
+    assert o4.override_units == None
+
+    o5 = PointObservation(klagshamn, item="Water Level", x=366844, y=6154291)
+    assert o5._unit_text() == 'Water Level [m]'
+
+    o6 = PointObservation(klagshamn, item="Water Level", x=366844, y=6154291, units='inches')
+    assert o6._unit_text() == "Water Level [inches]"
 
 
 def test_from_df(klagshamn):
@@ -34,6 +47,13 @@ def test_from_df(klagshamn):
     assert isinstance(s, pd.Series)
     o3 = PointObservation(s, x=366844, y=6154291, name="Klagshamn3")
     assert o1.n_points == o3.n_points
+
+    o4 = PointObservation(df, item="Water Level", x=366844, y=6154291, units='metre')
+    assert o4.override_units == 'metre'
+
+    o5 = PointObservation(df, item="Water Level", x=366844, y=6154291, units='inches')
+    o5.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Water_Level) 
+    assert o5._unit_text() == "Water Level [inches]"
 
 
 @pytest.mark.skipif("shapely" not in sys.modules, reason="requires the shapely")
