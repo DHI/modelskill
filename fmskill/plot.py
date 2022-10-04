@@ -30,6 +30,8 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
+    skill_df: object = None,
+    units: str = "",
     binsize: float = None,
     nbins: int = None,
     return_fig=False,
@@ -83,6 +85,10 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
+    skill_df : dataframe, optional
+        dataframe with skill (stats) results to be added to plot, by default None
+    units : str, optional
+        user default units to override default units, eg 'metre', by default None
     kwargs
     """
     if show_hist == None and show_density == None:
@@ -268,10 +274,17 @@ def scatter(
         plt.grid(
             which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
         )
+        max_cbar = None
         if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
+            ticks = cbar.ax.get_yticks()
+            max_cbar = ticks[-1]
             cbar.set_label("# points")
+
         plt.title(title)
+        # Add skill table
+        if skill_df != None:
+            _plot_summary_table(skill_df, units, max_cbar=max_cbar)
 
     elif backend == "plotly":  # pragma: no cover
         import plotly.graph_objects as go
@@ -499,3 +512,62 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     Z_grid[(Z_grid < 0)] = 0
 
     return Z_grid
+
+
+def _plot_summary_table(skill_df, units, max_cbar):
+    stats_with_units = ["bias", "rmse", "urmse", "mae"]
+    max_str_len = skill_df.columns.str.len().max()
+    lines = []
+    if len(skill_df) > 1:
+        raise Exception(
+            """`skill_table` kword can only be used for comparisons between 1 model and 1 measurement. 
+        Please add `model`, `variable` and `observation` kwords where required"""
+        )
+
+    for col in skill_df.columns:
+        if col == "model" or col == "variable":
+            continue
+        if col in stats_with_units:
+            # if statistic has dimensions, then add units
+            item_unit = units
+        else:
+            # else, add empty space (for fomatting)
+            item_unit = " "
+        if col == "n":
+            # Number of samples, integer, else, 2 decimals
+            decimals = f".{0}f"
+        else:
+            decimals = f".{2}f"
+        lines.append(
+            f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df[col].values[0],2):{decimals}} {item_unit}"
+        )
+
+    text_ = "\n".join(lines)
+
+    if max_cbar == None:
+        x = 0.93
+    elif max_cbar < 1e3:
+        x = 0.99
+    elif max_cbar < 1e4:
+        x = 1.01
+    elif max_cbar < 1e5:
+        x = 1.03
+    elif max_cbar < 1e6:
+        x = 1.05
+    else:
+        # When more than 1e6 samples, matplotlib changes to scientific notation
+        x = 0.97
+
+    plt.gcf().text(
+        x,
+        0.6,
+        text_,
+        bbox={
+            "facecolor": "blue",
+            "edgecolor": "k",
+            "boxstyle": "round",
+            "alpha": 0.05,
+        },
+        fontsize=12,
+        family="monospace",
+    )

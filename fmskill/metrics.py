@@ -8,6 +8,7 @@ difference between a model and an observation.
 * mean_absolute_error (mae)
 * mean_absolute_percentage_error (mape)
 * nash_sutcliffe_efficiency (nse)
+* kling_gupta_efficiency (kge)
 * r2 (r2=nse)
 * model_efficiency_factor (mef)
 * scatter_index (si)
@@ -191,7 +192,7 @@ def root_mean_squared_error(
     residual = obs.ravel() - model.ravel()
     if unbiased:
         residual = residual - residual.mean()
-    error = np.sqrt(np.average(residual ** 2, weights=weights))
+    error = np.sqrt(np.average(residual**2, weights=weights))
 
     return error
 
@@ -231,6 +232,48 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     return error
 
 
+def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
+    """
+    Kling-Gupta Efficiency (KGE)
+
+    .. math::
+
+        KGE = 1 - \\sqrt{(r-1)^2 + \\left(\\frac{\\sigma_{mod}}{\\sigma_{obs}} - 1\\right)^2 +
+                                   \\left(\\frac{\\mu_{mod}}{\\mu_{obs}} - 1\\right)^2 }
+
+    where :math:`r` is the pearson correlation coefficient, :math:`\\mu_{obs},\\mu_{mod}` and :math:`\\sigma_{obs},\\sigma_{mod}` is the mean and standard deviation of observations and model.
+
+    Range: :math:`(-\\infty, 1]`; Best: 1
+
+    References
+    ----------
+    Gupta, H. V., Kling, H., Yilmaz, K. K. and Martinez, G. F., (2009), Decomposition of the mean squared error and NSE performance criteria: Implications for improving hydrological modelling, J. Hydrol., 377(1-2), 80-91
+
+    Knoben, W. J. M., Freer, J. E., and Woods, R. A. (2019) Technical note: Inherent benchmark or not? Comparing Nash–Sutcliffe and Kling–Gupta efficiency scores, Hydrol. Earth Syst. Sci., 23, 4323-4331
+    """
+    assert obs.size == model.size
+
+    if len(obs) == 0 or obs.std() == 0.0:
+        return np.nan
+
+    r = corrcoef(obs, model)
+    if np.isnan(r):
+        r = 0.0
+
+    res = 1 - np.sqrt(
+        (r - 1) ** 2
+        + (model.std() / obs.std() - 1.0) ** 2
+        + (model.mean() / obs.mean() - 1.0) ** 2
+    )
+
+    return res
+
+
+def kge(obs: np.ndarray, model: np.ndarray) -> float:
+    """alias for kling_gupta_efficiency"""
+    return kling_gupta_efficiency(obs, model)
+
+
 def r2(obs: np.ndarray, model: np.ndarray) -> float:
     """Coefficient of determination (R2)
 
@@ -259,7 +302,7 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
 
     residual = model.ravel() - obs.ravel()
-    SSr = np.sum(residual ** 2)
+    SSr = np.sum(residual**2)
     SSt = np.sum((obs - obs.mean()) ** 2)
 
     return 1 - SSr / SSt
@@ -412,7 +455,7 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
 
     residual = model.ravel() - obs.ravel()
-    nominator = np.sum(residual ** 2)
+    nominator = np.sum(residual**2)
     denominator = np.sum((np.abs(model - obs.mean()) + np.abs(obs - obs.mean())) ** 2)
 
     return 1 - nominator / denominator

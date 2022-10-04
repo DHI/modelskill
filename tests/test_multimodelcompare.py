@@ -275,6 +275,7 @@ def test_mm_scatter(cc):
     cc.scatter(model="SW_2", show_points=0.75)
     cc.scatter(model="SW_2", show_density=True)
     cc.scatter(model="SW_2", show_points=0.75, show_density=True)
+    cc.scatter(model="SW_2", observation='HKNA',skill_table=True)
     # cc.scatter(model="SW_2", binsize=0.5, backend="plotly")
     assert True
     plt.close("all")
