@@ -832,8 +832,8 @@ class BaseComparer:
         bins: Union[int, float, List[int], List[float]] = 20,
         quantiles: Union[int, List[float]] = None,
         show_points: Union[bool, int, float] = None,
-        show_hist: bool = True,
-        show_density: bool = False,
+        show_hist: bool = None,
+        show_density: bool = None,
         backend: str = "matplotlib",
         figsize: List[float] = (8, 8),
         xlim: List[float] = None,
@@ -851,7 +851,7 @@ class BaseComparer:
         df: pd.DataFrame = None,
         binsize: float = None,
         nbins: int = None,
-        skill_table: bool = False,
+        skill_table: Union[str, List[str], bool] = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -874,9 +874,10 @@ class BaseComparer:
             float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
             int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
-            show the data density as a a 2d histogram, by default True
+            show the data density as a a 2d histogram, by default None
         show_density: bool, optional
-            show the data density as a colormap of the scatter, by default False.
+            show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
+        are None, then `show_density` is used by default.
             for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
@@ -913,9 +914,10 @@ class BaseComparer:
             by default None
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
-        skill_table : bool, optional
-            calculates the main skills (bias, rmse, si, r2, etc) and adds a box at
-            the right of the scatter plot, by default False
+        skill_table : str, List[str], bool, optional
+            list of fmskill.metrics or boolean, if True then by default [bias, rmse, urmse, mae, cc, si, r2].
+            This kword adds a box at the right of the scatter plot,
+            by default False
         kwargs
 
         Examples
@@ -964,6 +966,34 @@ class BaseComparer:
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
 
+        if skill_table != None:
+            # Calculate Skill if it was requested to add as table on the right of plot
+            if skill_table == True:
+                skill_df = self.skill(
+                    df=df, model=model, observation=observation, variable=variable
+                )
+            elif isinstance(skill_table, (list, tuple)):
+                skill_df = self.skill(
+                    df=df,
+                    metrics=skill_table,
+                    model=model,
+                    observation=observation,
+                    variable=variable,
+                )
+            # Check for units
+            try:
+                units = unit_text.split("[")[1].split("]")[0]
+            except:
+                #     Dimensionless
+                units = ""
+            if skill_table == False:
+                skill_df = None
+                units = None
+        else:
+            # skill_table is None
+            skill_df = None
+            units = None
+
         scatter(
             x=x,
             y=y,
@@ -980,6 +1010,8 @@ class BaseComparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
+            skill_df=skill_df,
+            units=units,
             binsize=binsize,
             nbins=nbins,
             **kwargs,

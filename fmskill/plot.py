@@ -20,8 +20,8 @@ def scatter(
     bins: Union[int, float, List[int], List[float]] = 20,
     quantiles: Union[int, List[float]] = None,
     show_points: Union[bool, int, float] = None,
-    show_hist: bool = True,
-    show_density: bool = False,
+    show_hist: bool = None,
+    show_density: bool = None,
     backend: str = "matplotlib",
     figsize: List[float] = (8, 8),
     xlim: List[float] = None,
@@ -30,6 +30,8 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
+    skill_df: object = None,
+    units: str = "",
     binsize: float = None,
     nbins: int = None,
     **kwargs,
@@ -58,9 +60,10 @@ def scatter(
         float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
         int: if 'n' (int) given, then 'n' points will be displayed, randomly selected.
     show_hist : bool, optional
-        show the data density as a 2d histogram, by default True
+        show the data density as a 2d histogram, by default None
     show_density: bool, optional
-        show the data density as a colormap of the scatter, by default False.
+        show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
+        are None, then `show_density` is used by default.
         for binning the data, the previous kword `bins=Float` is used
     backend : str, optional
         use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
@@ -81,8 +84,16 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
+    skill_df : dataframe, optional
+        dataframe with skill (stats) results to be added to plot, by default None
+    units : str, optional
+        user default units to override default units, eg 'metre', by default None
     kwargs
     """
+    if show_hist==None and show_density==None:
+        #Default: points density
+        show_density=True
+
 
     if (binsize is not None) or (nbins is not None):
         warnings.warn(
@@ -101,11 +112,11 @@ def scatter(
     y_sample = y
 
     if show_points is None:
-        # If nothing given, and more than 10k points, 10k sample will be shown
-        if len(x) < 1e4:
+        # If nothing given, and more than 50k points, 50k sample will be shown
+        if len(x) < 5e4:
             show_points = True
         else:
-            show_points = 10000
+            show_points = 50000
     if type(show_points) == float:
         if show_points < 0 or show_points > 1:
             raise ValueError(" `show_points` fraction must be in [0,1]")
@@ -173,14 +184,24 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-
+    
+    if show_hist:
+        #if histogram is wanted (explicit non-default flag) then density is off
+        if show_density == True:
+            raise TypeError(
+                "if `show_hist=True` then `show_density` must be either `False` or `None`"
+            )        
+        
     if show_density:
         if not ((type(bins) == float) or (type(bins) == int)):
             raise TypeError(
                 "if `show_density=True` then bins must be either float or int"
             )
         # if point density is wanted, then 2D histogram is not shown
-        show_hist = False
+        if show_hist == True:
+            raise TypeError(
+                "if `show_density=True` then `show_hist` must be either `False` or `None`"
+            )    
         # calculate density data
         z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
@@ -230,7 +251,7 @@ def scatter(
             "X",
             label="Q-Q",
             c="darkturquoise",
-            markeredgecolor=(0, 0, 0, 0.6),
+            markeredgecolor=(0, 0, 0, 0.4),
             zorder=4,
         )
         plt.plot(
@@ -253,10 +274,18 @@ def scatter(
         plt.grid(
             which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
         )
-        if show_hist or show_density:
+        max_cbar=None
+        if (show_hist or (show_density and show_points)):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
-            cbar.set_label("# points")
+            ticks = cbar.ax.get_yticks()
+            max_cbar=ticks[-1]
+            cbar.set_label("# points")        
+            
         plt.title(title)
+        # Add skill table
+        if skill_df != None:
+            _plot_summary_table(skill_df,units,max_cbar=max_cbar)
+        
 
     elif backend == "plotly":  # pragma: no cover
         import plotly.graph_objects as go
@@ -481,3 +510,59 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     Z_grid[(Z_grid < 0)] = 0
 
     return Z_grid
+
+def _plot_summary_table(skill_df,units,max_cbar):
+    stats_with_units=["bias", "rmse", "urmse", "mae"]
+    max_str_len = skill_df.columns.str.len().max()
+    lines = []
+    if len(skill_df)>1:
+        raise Exception('''`skill_table` kword can only be used for comparisons between 1 model and 1 measurement. 
+        Please add `model`, `variable` and `observation` kwords where required''')
+
+    for col in skill_df.columns:
+        if col == "model" or col == "variable":
+            continue
+        if col in stats_with_units:
+            #if statistic has dimensions, then add units
+            item_unit=units
+        else:
+            #else, add empty space (for fomatting)
+            item_unit=' '
+        if col=="n":
+            # Number of samples, integer, else, 2 decimals
+            decimals=f'.{0}f'
+        else:
+            decimals=f'.{2}f'
+        lines.append(
+            f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df[col].values[0],2):{decimals}} {item_unit}"
+                )
+
+    text_ = "\n".join(lines)
+
+    if max_cbar==None:
+        x=0.93
+    elif max_cbar<1e3:
+        x=0.99
+    elif max_cbar<1e4:
+        x=1.01
+    elif max_cbar<1e5:
+        x=1.03
+    elif max_cbar<1e6:
+        x=1.05
+    else:
+        #When more than 1e6 samples, matplotlib changes to scientific notation
+        x=0.97
+
+    plt.gcf().text(
+                x,
+                0.6,
+                text_,
+                bbox={
+                    "facecolor": "blue",
+                    "edgecolor": "k",
+                    "boxstyle": "round",
+                    "alpha": 0.05,
+                },
+                fontsize=12,
+                family="monospace",
+            )
