@@ -1169,6 +1169,8 @@ class SingleObsComparer(BaseComparer):
         by: Union[str, List[str]] = None,
         metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
+        observation=None,  # Only used to have a compatible interface with other skill mehod TODO refactor to a new sel() method
+        variable=None,  # Only used to have a compatible interface with other skill mehod TODO refactor to a new sel() method
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
