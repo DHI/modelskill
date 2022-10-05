@@ -1016,35 +1016,6 @@ class BaseComparer:
             nbins=nbins,
             **kwargs,
         )
-        if skill_table:
-            # Calculate Skill if it was requested to add as table on the right of plot
-            skill_df = self.skill(df=df)  # df is filtered to matching subset
-            lines = []
-
-            max_str_len = skill_df.df.columns.str.len().max()
-
-            for col in skill_df.df.columns:
-                if col == "model":
-                    continue
-                lines.append(
-                    f"{col.ljust(max_str_len)} {np.round(skill_df.df[col].values[0],3)}"
-                )
-
-            text_ = "\n".join(lines)
-
-            plt.gcf().text(
-                0.97,
-                0.6,
-                text_,
-                bbox={
-                    "facecolor": "blue",
-                    "edgecolor": "k",
-                    "boxstyle": "round",
-                    "alpha": 0.05,
-                },
-                fontsize=12,
-                family="monospace",
-            )
 
     def taylor(
         self,
