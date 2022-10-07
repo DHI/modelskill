@@ -208,6 +208,25 @@ def test_skill_choose_metrics(klagshamn, drogden):
     assert "rmse" not in df.columns
 
 
+def test_skill_choose_metrics_back_defaults(cc):
+
+    cc.metrics = ["kge", "nse", "max_error"]
+
+    df = cc.skill().df
+    assert "kge" in df.columns
+    assert "rmse" not in df.columns
+
+    df = cc.mean_skill().df
+    assert "kge" in df.columns
+    assert "rmse" not in df.columns
+
+    cc.metrics = None  # go back to defaults
+
+    df = cc.mean_skill().df
+    assert "kge" not in df.columns
+    assert "rmse" in df.columns
+
+
 def test_comparison_from_dict():
 
     # As an alternative to
