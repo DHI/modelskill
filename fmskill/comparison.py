@@ -99,7 +99,10 @@ class BaseComparer:
 
     @metrics.setter
     def metrics(self, values) -> None:
-        self._metrics = self._parse_metric(values)
+        if values is None:
+            self._metrics = DEFAULT_METRICS
+        else:
+            self._metrics = self._parse_metric(values)
 
     def __add__(self, other: "BaseComparer") -> "ComparerCollection":
 
