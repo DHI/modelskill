@@ -28,6 +28,9 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 
 
+DEFAULT_METRICS = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+
+
 class BaseComparer:
     """Abstract base class for all comparers, only used to inherit from, not to be used directly"""
 
@@ -89,6 +92,17 @@ class BaseComparer:
         if self._all_df is None:
             self._construct_all_df()
         return self._all_df
+
+    @property
+    def metrics(self):
+        return self._metrics
+
+    @metrics.setter
+    def metrics(self, values) -> None:
+        if values is None:
+            self._metrics = DEFAULT_METRICS
+        else:
+            self._metrics = self._parse_metric(values)
 
     def __add__(self, other: "BaseComparer") -> "ComparerCollection":
 
@@ -164,6 +178,7 @@ class BaseComparer:
 
     def __init__(self, observation, modeldata=None):
 
+        self._metrics = DEFAULT_METRICS
         self.obs_name = "Observation"
         self._obs_names: List[str]
         self._mod_names: List[str]
@@ -333,7 +348,7 @@ class BaseComparer:
 
     def _parse_metric(self, metric, return_list=False):
         if metric is None:
-            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+            return self._metrics
 
         if isinstance(metric, str):
             valid_metrics = [
@@ -904,8 +919,8 @@ class BaseComparer:
             show user-provided data instead of the comparers own data, by default None
         skill_table : str, List[str], bool, optional
             list of fmskill.metrics or boolean, if True then by default [bias, rmse, urmse, mae, cc, si, r2].
-            This kword adds a box at the right of the scatter plot, 
-            by default False 
+            This kword adds a box at the right of the scatter plot,
+            by default False
         kwargs
 
         Examples
@@ -953,27 +968,34 @@ class BaseComparer:
 
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
-        
+
         if skill_table != None:
             # Calculate Skill if it was requested to add as table on the right of plot
-            if skill_table==True:
-                skill_df = self.skill(df=df,model=model,observation=observation,variable=variable)  
-            elif type(skill_table)==list:
-                skill_df = self.skill(df=df,metrics=skill_table,model=model,observation=observation,variable=variable)  
-            stats_with_units=["bias", "rmse", "urmse", "mae","max_error"]
+            if skill_table == True:
+                skill_df = self.skill(
+                    df=df, model=model, observation=observation, variable=variable
+                )
+            elif isinstance(skill_table, (list, tuple)):
+                skill_df = self.skill(
+                    df=df,
+                    metrics=skill_table,
+                    model=model,
+                    observation=observation,
+                    variable=variable,
+                )
             # Check for units
             try:
-                units=unit_text.split('[')[1].split(']')[0]
+                units = unit_text.split("[")[1].split("]")[0]
             except:
                 #     Dimensionless
-                units=''
-            if skill_table==False:
-                skill_df=None
-                units=None
+                units = ""
+            if skill_table == False:
+                skill_df = None
+                units = None
         else:
             # skill_table is None
-            skill_df=None
-            units=None
+            skill_df = None
+            units = None
 
         scatter(
             x=x,
@@ -991,7 +1013,7 @@ class BaseComparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
-            skill_df= skill_df,
+            skill_df=skill_df,
             units=units,
             binsize=binsize,
             nbins=nbins,
@@ -1114,6 +1136,9 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
+    def __init__(self, observation, model):
+        super().__init__(observation, model)
+
     def __copy__(self):
         # cls = self.__class__
         # cp = cls.__new__(cls)
@@ -1147,6 +1172,8 @@ class SingleObsComparer(BaseComparer):
         by: Union[str, List[str]] = None,
         metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
+        observation=None,  # Only used to have a compatible interface with other skill mehod TODO refactor to a new sel() method
+        variable=None,  # Only used to have a compatible interface with other skill mehod TODO refactor to a new sel() method
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -1784,7 +1811,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._all_df.index.name = "datetime"
 
     def __init__(self):
-
+        # super().__init__(observation=None, modeldata=None)  # Not possible since init signature is different compared to BaseComparer
+        self._metrics = DEFAULT_METRICS
         self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
