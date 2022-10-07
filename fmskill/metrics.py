@@ -410,6 +410,26 @@ def si(obs: np.ndarray, model: np.ndarray) -> float:
 def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     """Scatter index (SI)
 
+    Which is the same as the unbiased-RMSE normalized by the mean of the observations. 
+
+    .. math::
+        \\sqrt {\frac{1}{n} \\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2
+        {\frac{1}{n} \\sum_{i=1}^n obs_i^2}}
+
+    Range: [0, 100]; Best: 0
+    """
+    assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
+
+    residual = obs.ravel() - model.ravel()
+    residual = residual - residual.mean()  # unbiased
+    return np.sqrt(np.mean(residual**2)) / np.mean(obs.ravel())
+
+
+def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
+    """Alternative formulation of the scatter index (SI)
+
     .. math::
         \\sqrt {\\frac{\\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2}
         {\\sum_{i=1}^n obs_i^2}}
