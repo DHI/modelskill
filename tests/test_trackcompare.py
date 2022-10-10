@@ -157,6 +157,7 @@ def test_hist(comparer):
     cc.hist(bins=np.linspace(0, 7, num=15))
 
     cc[0].hist(bins=10)
+    cc[0].hist(density=False)
     cc[0].hist(model=0, title="new_title", alpha=0.2)
     cc[0].residual_hist()
     cc[0].residual_hist(bins=10, title="new_title", color="blue")
