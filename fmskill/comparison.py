@@ -1495,7 +1495,9 @@ class SingleObsComparer(BaseComparer):
         plt.title(title)
         plt.xlabel(f"Residuals of {self._obs_unit_text}")
 
-    def hist(self, model=None, bins=100, title=None, alpha=0.5, **kwargs):
+    def hist(
+        self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
+    ):
         """Plot histogram of model data and observations.
 
         Wraps pandas.DataFrame hist() method.
@@ -1508,6 +1510,8 @@ class SingleObsComparer(BaseComparer):
             number of bins, by default 100
         title : str, optional
             plot title, default: [model name] vs [observation name]
+        density: bool, optional
+            If True, draw and return a probability density
         alpha : float, optional
             alpha transparency fraction, by default 0.5
         kwargs : other keyword arguments to df.hist()
@@ -1515,6 +1519,12 @@ class SingleObsComparer(BaseComparer):
         Returns
         -------
         matplotlib axes
+
+        See also
+        --------
+        pandas.Series.hist
+        matplotlib.axes.Axes.hist
+
         """
         mod_id = self._get_mod_id(model)
         mod_name = self.mod_names[mod_id]
@@ -1522,6 +1532,7 @@ class SingleObsComparer(BaseComparer):
         title = f"{mod_name} vs {self.name}" if title is None else title
 
         kwargs["alpha"] = alpha
+        kwargs["density"] = density
         ax = self.df[mod_name].hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
         self.df[self.obs_name].hist(
             bins=bins, color=self.observation.color, ax=ax, **kwargs
@@ -1529,6 +1540,11 @@ class SingleObsComparer(BaseComparer):
         ax.legend([mod_name, self.obs_name])
         plt.title(title)
         plt.xlabel(f"{self._obs_unit_text}")
+        if density:
+            plt.ylabel("density")
+        else:
+            plt.ylabel("count")
+
         return ax
 
 
