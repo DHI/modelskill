@@ -1926,6 +1926,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
         title: str = None,
+        density=True,
         alpha: float = 0.5,
         **kwargs,
     ):
@@ -1955,6 +1956,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             user-provided data instead of the comparers own data, by default None
         title : str, optional
             plot title, default: observation name
+        density: bool, optional
+            If True, draw and return a probability density
         alpha : float, optional
             alpha transparency fraction, by default 0.5
         kwargs : other keyword arguments to df.hist()
@@ -1962,6 +1965,11 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         Returns
         -------
         matplotlib axes
+
+        See also
+        --------
+        pandas.Series.hist
+        matplotlib.axes.Axes.hist
         """
         mod_id = self._get_mod_id(model)
         mod_name = self.mod_names[mod_id]
@@ -1983,11 +1991,18 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         title = f"{mod_name} vs Observations" if title is None else title
 
         kwargs["alpha"] = alpha
+        kwargs["density"] = density
         ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
         df.obs_val.hist(bins=bins, color=self[0].observation.color, ax=ax, **kwargs)
         ax.legend([mod_name, "observations"])
         plt.title(title)
         plt.xlabel(f"{self._obs_unit_text}")
+
+        if density:
+            plt.ylabel("density")
+        else:
+            plt.ylabel("count")
+
         return ax
 
     def mean_skill(
