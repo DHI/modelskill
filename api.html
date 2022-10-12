@@ -2792,7 +2792,7 @@ difference between a model and an observation.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mef</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
 <span class="go">0.9231099877688299</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">si</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
-<span class="go">0.7294663886165093</span>
+<span class="go">0.8715019052958266</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spearmanr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
 <span class="go">0.5</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
@@ -3017,6 +3017,17 @@ difference between a model and an observation.</p>
 <dt class="sig sig-object py" id="fmskill.metrics.scatter_index">
 <span class="sig-prename descclassname"><span class="pre">fmskill.metrics.</span></span><span class="sig-name descname"><span class="pre">scatter_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fmskill.metrics.scatter_index" title="Permalink to this definition">#</a></dt>
 <dd><p>Scatter index (SI)</p>
+<p>Which is the same as the unbiased-RMSE normalized by the absolute mean of the observations.</p>
+<div class="math notranslate nohighlight">
+\[\frac{ \sqrt{ \frac{1}{n} \sum_{i=1}^n \left( (model_i - \overline {model}) - (obs_i - \overline {obs}) \right)^2} }
+{\frac{1}{n} \sum_{i=1}^n | obs_i | }\]</div>
+<p>Range: [0, infty); Best: 0</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="fmskill.metrics.scatter_index2">
+<span class="sig-prename descclassname"><span class="pre">fmskill.metrics.</span></span><span class="sig-name descname"><span class="pre">scatter_index2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#fmskill.metrics.scatter_index2" title="Permalink to this definition">#</a></dt>
+<dd><p>Alternative formulation of the scatter index (SI)</p>
 <div class="math notranslate nohighlight">
 \[\sqrt {\frac{\sum_{i=1}^n \left( (model_i - \overline {model}) - (obs_i - \overline {obs}) \right)^2}
 {\sum_{i=1}^n obs_i^2}}\]</div>
