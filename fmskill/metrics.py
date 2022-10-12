@@ -42,7 +42,7 @@ Examples
 >>> mef(obs, mod)
 0.9231099877688299
 >>> si(obs, mod)
-0.7294663886165093
+0.8715019052958266
 >>> spearmanr(obs, mod)
 0.5
 >>> cc(obs, mod)
@@ -409,6 +409,26 @@ def si(obs: np.ndarray, model: np.ndarray) -> float:
 
 def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     """Scatter index (SI)
+
+    Which is the same as the unbiased-RMSE normalized by the absolute mean of the observations.
+
+    .. math::
+        \\frac{ \\sqrt{ \\frac{1}{n} \\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2} }
+        {\\frac{1}{n} \\sum_{i=1}^n | obs_i | }
+
+    Range: [0, \\infty); Best: 0
+    """
+    assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
+
+    residual = obs.ravel() - model.ravel()
+    residual = residual - residual.mean()  # unbiased
+    return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs.ravel()))
+
+
+def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
+    """Alternative formulation of the scatter index (SI)
 
     .. math::
         \\sqrt {\\frac{\\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2}
