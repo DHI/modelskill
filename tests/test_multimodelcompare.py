@@ -118,7 +118,7 @@ def test_mm_skill_obs(cc):
     assert s.loc["SW_2"].bias == s2.loc["SW_2"].bias
 
     df = cc.mean_skill(model=0, observation=[0, "c2"]).df
-    assert pytest.approx(df.si[0]) == 0.10358979
+    assert pytest.approx(df.si[0]) == 0.11113215
 
 
 def test_mm_skill_missing_obs(cc, o1):
