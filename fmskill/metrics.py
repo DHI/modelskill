@@ -42,7 +42,7 @@ Examples
 >>> mef(obs, mod)
 0.9231099877688299
 >>> si(obs, mod)
-0.7294663886165093
+0.8715019052958266
 >>> spearmanr(obs, mod)
 0.5
 >>> cc(obs, mod)
