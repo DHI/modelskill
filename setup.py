@@ -39,6 +39,9 @@ setuptools.setup(
             "plotly",
             "shapely",
         ],
+        "web": [
+            "streamlit"
+        ],
     },
     entry_points="""
         [console_scripts]
