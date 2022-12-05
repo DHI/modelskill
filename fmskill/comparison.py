@@ -176,7 +176,7 @@ class BaseComparer:
 
         self._all_df = res.sort_index()
 
-    def __init__(self, observation, modeldata=None):
+    def __init__(self, observation, modeldata=None,max_gap=None):
 
         self._metrics = DEFAULT_METRICS
         self.obs_name = "Observation"
@@ -224,6 +224,7 @@ class BaseComparer:
         self._obs_names = [observation.name]
         self._var_names = [observation.variable_name]
         self._itemInfos = [observation.itemInfo]
+        self.max_gap = max_gap
 
         if modeldata is not None:
             self.add_modeldata(modeldata)
@@ -1136,8 +1137,8 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
-    def __init__(self, observation, model):
-        super().__init__(observation, model)
+    def __init__(self, observation, model,max_gap):
+        super().__init__(observation, model,max_gap)
 
     def __copy__(self):
         # cls = self.__class__
@@ -1149,20 +1150,29 @@ class SingleObsComparer(BaseComparer):
     def copy(self):
         return self.__copy__()
 
-    def _model2obs_interp(self, obs, mod_df):
+    def _model2obs_interp(self, obs, mod_df,max_gap):
         """interpolate model to measurement time"""
-        df = self._interp_df(mod_df, obs.time)
+        df = self._interp_df(mod_df, obs.time,max_gap)
         # mod_ds.interp_time(obs.time).to_dataframe()
         df[self.obs_name] = obs.values
         return df
 
     @staticmethod
-    def _interp_df(df, new_time):
+    def _interp_df(df, new_time,max_gap):
         assert df.index.is_unique
         assert new_time.is_unique
+        #Calculate the mode of dt
+        ix=new_time[1:]-new_time[0:-1]
+        vals, counts = np.unique(ix, return_counts=True)
+        mode_value_ix = np.argwhere(counts == np.max(counts))
+        dt_meas= vals[mode_value_ix][0][0]/np.timedelta64(1, 's')
+        if max_gap is not None:
+            limit=int(max_gap/dt_meas)
+        else:
+            limit=None
         new_df = (
             df.reindex(df.index.union(new_time))
-            .interpolate(method="time", limit_area="inside")
+            .interpolate(method="time", limit_area="inside",limit=limit)
             .reindex(new_time)
         )
         return new_df
@@ -1561,8 +1571,8 @@ class PointComparer(SingleObsComparer):
     >>> comparer['Klagshamn']
     """
 
-    def __init__(self, observation, modeldata):
-        super().__init__(observation, modeldata)
+    def __init__(self, observation, modeldata,max_gap):
+        super().__init__(observation, modeldata,max_gap)
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
         mod_end = self._mod_end + timedelta(seconds=1)
@@ -1571,7 +1581,7 @@ class PointComparer(SingleObsComparer):
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
         for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data).iloc[:, ::-1]
+            df = self._model2obs_interp(self.observation, data,self.max_gap).iloc[:, ::-1]
             if j == 0:
                 self.df = df
             else:
@@ -1684,15 +1694,15 @@ class TrackComparer(SingleObsComparer):
     def y(self):
         return self.df.iloc[:, 1]
 
-    def __init__(self, observation, modeldata):
-        super().__init__(observation, modeldata)
+    def __init__(self, observation, modeldata,max_gap):
+        super().__init__(observation, modeldata,max_gap)
         assert isinstance(observation, TrackObservation)
         self.observation.df = self.observation.df[self._mod_start : self._mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
         for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data)
+            df = self._model2obs_interp(self.observation, data,self.max_gap)
             # rename first columns to x, y
             df.columns = ["x", "y", *list(df.columns)[2:]]
             if (len(df) > 0) and (len(df) == len(self.observation.df)):

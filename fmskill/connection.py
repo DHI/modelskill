@@ -119,7 +119,7 @@ class _SingleObsConnector(_BaseConnector):
 
         return f"<{self.__class__.__name__}> {txt}"
 
-    def __init__(self, obs, mod, weight=1.0, validate=True):
+    def __init__(self, obs, mod, weight=1.0, validate=True,max_gap=None):
         super().__init__()
         obs = self._parse_observation(obs)
         self.name = obs.name
@@ -139,6 +139,7 @@ class _SingleObsConnector(_BaseConnector):
             self.modelresults = modelresults
             self.obs = obs
             self.obs.weight = weight
+            self.obs.max_gap = max_gap
 
     def _parse_model(self, mod) -> List[ModelResultInterface]:
 
@@ -321,7 +322,7 @@ class PointConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = PointComparer(self.obs, df_model)
+        comparer = PointComparer(self.obs, df_model,self.max_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -418,7 +419,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         txt = "<Connector> with \n"
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
-    def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
+    def __init__(self, obs=None, mod=None, weight=1.0, validate=True,max_gap=None):
         super().__init__()
         self.connections = {}
         self.observations = {}
@@ -428,11 +429,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
                 obs = [obs]
             weight = self._parse_weights(len(obs), weight)
             for j, o in enumerate(obs):
-                self.add(o, mod, weight=weight[j], validate=validate)
+                self.add(o, mod, weight=weight[j], validate=validate,max_gap=max_gap)
         elif (mod is not None) or (obs is not None):
             raise ValueError("obs and mod must both be specified (or both None)")
 
-    def add(self, obs, mod=None, weight=1.0, validate=True):
+    def add(self, obs, mod=None, weight=1.0, validate=True,max_gap=None):
         """Add Observation-ModelResult-connections to Connector
 
         Note
@@ -467,15 +468,15 @@ class Connector(_BaseConnector, Mapping, Sequence):
         if is_iterable_not_str(obs):
             weight = self._parse_weights(len(obs), weight)
             for j, o in enumerate(obs):
-                self.add(o, mod, weight=weight[j], validate=validate)
+                self.add(o, mod, weight=weight[j], validate=validate,max_gap=max_gap)
             return
         elif isinstance(obs, _SingleObsConnector):
             con = obs
         else:
             if isinstance(obs, TrackObservation):
-                con = TrackConnector(obs, mod, weight=weight, validate=validate)
+                con = TrackConnector(obs, mod, weight=weight, validate=validate,max_gap=max_gap)
             else:
-                con = PointConnector(obs, mod, weight=weight, validate=validate)
+                con = PointConnector(obs, mod, weight=weight, validate=validate,max_gap=max_gap)
         if con.n_models > 0:  # What other option is there??
             if con.name not in self.connections:
                 self.connections[con.name] = con
