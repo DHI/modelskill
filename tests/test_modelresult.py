@@ -1,11 +1,14 @@
 from datetime import datetime
 import pytest
+import numpy as np
+import pandas as pd
 
 import mikeio
 from fmskill.model import ModelResult
 from fmskill.model.abstract import ModelResultInterface
 from fmskill.model import DataFramePointModelResult, DataFramePointModelResultItem
 from fmskill.observation import PointObservation
+from fmskill.connection import compare
 
 
 @pytest.fixture
@@ -57,6 +60,12 @@ def sw_dutch_coast():
 @pytest.fixture
 def sw_total_windsea():
     return "tests/testdata/SW/SW_Tot_Wind_Swell.dfsu"
+
+
+@pytest.fixture
+def sw_Hm0_df():
+    fn = "tests/testdata/SW/ts_storm_4.dfs0"
+    return mikeio.read(fn, items=0).to_dataframe()
 
 
 def test_repr(hd_oresund_2d):
@@ -132,6 +141,19 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     klagshamn.y = -10
     with pytest.raises(ValueError):
         _ = mr[0].extract_observation(klagshamn, validate=True)
+
+
+def test_extract_from_model_result_with_nan(sw_Hm0_df, Hm0_EPL):
+    df_mod_nan = sw_Hm0_df.copy()
+    df_mod_nan.loc["2017-10-28"] = np.nan
+    c = compare(Hm0_EPL, df_mod_nan)
+    assert all(c.df["Model"]["2017-10-28"].isna())
+
+
+def test_extract_from_model_result_with_gap(sw_Hm0_df, Hm0_EPL):
+    df_mod_gap = pd.concat([sw_Hm0_df.loc["2017-10-27"], sw_Hm0_df.loc["2017-10-29"]])
+    c = compare(Hm0_EPL, df_mod_gap)
+    assert all(c.df["Model"]["2017-10-28"].isna())
 
 
 from fmskill.model import DfsModelResultItem, DfsModelResult  # , ModelResultFactory
