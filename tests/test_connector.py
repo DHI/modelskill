@@ -20,6 +20,10 @@ def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     return ModelResult(fn, name="SW_2")
 
+@pytest.fixture
+def mr3():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
+    return ModelResult(fn, name="SW_3")
 
 @pytest.fixture
 def o1():
@@ -53,6 +57,9 @@ def con31(o1, o2, o3, mr1):
 def con32(o1, o2, o3, mr1, mr2):
     return Connector([o1, o2, o3], [mr1[0], mr2[0]])
 
+@pytest.fixture
+def con33(o1,mr3):
+    return Connector([o1], mr3[0])
 
 def test_point_connector_repr(o1, mr1):
     con = PointConnector(o1, mr1[0])
@@ -172,3 +179,9 @@ def test_plot_positions(con32):
 
 def test_plot_data_coverage(con31):
     con31.plot_temporal_coverage()
+
+def test_extract_gaps(con33):
+    collection = con33.extract(max_gap=3600)
+    assert collection.n_points==28
+    collection = con33.extract(max_gap=None)
+    assert collection.n_points==278

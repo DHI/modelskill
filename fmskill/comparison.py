@@ -1162,6 +1162,7 @@ class SingleObsComparer(BaseComparer):
         assert df.index.is_unique
         assert new_time.is_unique
         limit = max_gap
+        interpolation=True
         # Calculate the mode of dt
         if max_gap is not None and (len(new_time) > 0):
             ix = new_time[1:] - new_time[0:-1]
@@ -1169,12 +1170,20 @@ class SingleObsComparer(BaseComparer):
             mode_value_ix = np.argwhere(counts == np.max(counts))
             dt_meas = vals[mode_value_ix][0][0] / np.timedelta64(1, "s")
             limit = int(max_gap / dt_meas)
+            if limit==0:
+                interpolation=False
 
-        new_df = (
+        if interpolation is False:
+            new_df = (
+            df.reindex(df.index.union(new_time)).reindex(new_time)
+            )
+            warnings.warn(f'max gap = {max_gap}s < Measurement dt (mode) = {dt_meas}s; No model interpolation was performed. Increase or remove `max_gap` if model interpolation is wanted')
+        else:
+            new_df = (
             df.reindex(df.index.union(new_time))
             .interpolate(method="time", limit_area="inside", limit=limit)
             .reindex(new_time)
-        )
+            )
         return new_df
 
     def skill(
