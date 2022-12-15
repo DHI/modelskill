@@ -225,8 +225,8 @@ def scatter(
         plt.plot(
             [xlim[0], xlim[1]],
             [xlim[0], xlim[1]],
-            label="1:1",
-            c="blue",
+            label="1:1 Line (45°)",
+            c="darkorange",
             zorder=3,
         )
         if show_points:
@@ -238,33 +238,37 @@ def scatter(
                 x_sample,
                 y_sample,
                 c=c,
-                s=20,
-                alpha=0.5,
+                s=10,
+                alpha=0.9,
                 marker=".",
-                label=None,
+                label='Data',
                 zorder=1,
                 **kwargs,
             )
         plt.plot(
             xq,
             yq,
-            "X",
-            label="Q-Q",
-            c="darkturquoise",
-            markeredgecolor=(0, 0, 0, 0.4),
+            "o",
+            label="Quantiles (0.0 - 100.0%)",
+            c=(0,0,0,0),
+            markeredgecolor=(0,152/255,219/255),
+            markeredgewidth=1.2,
+            markersize=3.5,
             zorder=4,
         )
         plt.plot(
             x,
             intercept + slope * x,
-            "r",
+            "r--",
+            dashes=(2, 5),
+            c=(0,152/255,219/255),
             label=reglabel,
             zorder=2,
         )
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
 
-        plt.legend()
+        plt.legend(bbox_to_anchor=(1.6, 0.2),edgecolor='k')
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
@@ -534,7 +538,7 @@ def _plot_summary_table(skill_df,units,max_cbar):
         else:
             decimals=f'.{2}f'
         lines.append(
-            f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df[col].values[0],2):{decimals}} {item_unit}"
+            f"{(col.ljust(max_str_len)).upper()} = {np.round(skill_df[col].values[0],2):{decimals}} {item_unit}"
                 )
 
     text_ = "\n".join(lines)
@@ -558,10 +562,9 @@ def _plot_summary_table(skill_df,units,max_cbar):
                 0.6,
                 text_,
                 bbox={
-                    "facecolor": "blue",
+                    "facecolor": "w",
                     "edgecolor": "k",
-                    "boxstyle": "round",
-                    "alpha": 0.05,
+                    "alpha": 0.99,
                 },
                 fontsize=12,
                 family="monospace",
