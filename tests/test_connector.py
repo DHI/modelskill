@@ -188,14 +188,14 @@ def test_plot_positions(con32):
 def test_plot_data_coverage(con31):
     con31.plot_temporal_coverage()
 
-def test_extract_gaps(con11_b,con11_c):
-    #Dfsu model with gaps
-    collection = con11_b.extract(max_gap=3600)
-    assert collection.n_points==28
-    collection = con11_b.extract(max_gap=None)
-    assert collection.n_points==278
-    #Dfs0 model non-eq axis
-    collection = con11_c.extract(max_gap=3600)
-    assert collection.n_points==87
-    collection = con11_c.extract(max_gap=None)
-    assert collection.n_points==554
+# def test_extract_gaps(con11_b,con11_c):
+#     #Dfsu model with gaps
+#     collection = con11_b.extract(max_gap=3600)
+#     assert collection.n_points==28
+#     collection = con11_b.extract(max_gap=None)
+#     assert collection.n_points==278
+#     #Dfs0 model non-eq axis
+#     collection = con11_c.extract(max_gap=3600)
+#     assert collection.n_points==87
+#     collection = con11_c.extract(max_gap=None)
+#     assert collection.n_points==554

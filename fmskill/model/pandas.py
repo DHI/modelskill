@@ -135,13 +135,14 @@ class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
     def item_names(self):
         return list(self.df.columns)
 
-    def __init__(self, df, name: str = None, item=None, itemInfo=None):
+    def __init__(self, df, name: str = None, item=None, itemInfo=None,max_gap=None):
         self.is_point = True
         if isinstance(df, pd.Series):
             df = df.to_frame()
             df.columns = ["model"] if name is None else name
         self._check_dataframe(df)
         self.df = df
+        self.max_gap=max_gap
 
         self._selected_item = self._get_selected_item(df.columns, item)
 
@@ -286,7 +287,7 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
         return list(self._val_cols)
 
     def __init__(
-        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None
+        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None,max_gap=None,
     ):
         self.is_point = False
         self._x, self._y = self._parse_x_y_columns(df, x_item, y_item)
@@ -296,6 +297,7 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
             df.index = make_unique_index(df.index)
 
         self.df = df
+        self.max_gap=max_gap
         self._selected_item = self._get_selected_item(self._val_cols, item)
 
         if (itemInfo is not None) and (self._selected_item is None):

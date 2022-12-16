@@ -63,6 +63,10 @@ class BaseComparer:
         return self.observation.name
 
     @property
+    def max_gap(self) -> float:
+        return self.mod.max_gap
+
+    @property
     def residual(self):
         # TODO
         return self.mod - np.vstack(self.obs)
@@ -176,7 +180,7 @@ class BaseComparer:
 
         self._all_df = res.sort_index()
 
-    def __init__(self, observation, modeldata=None, max_gap=None):
+    def __init__(self, observation, modeldata=None):
 
         self._metrics = DEFAULT_METRICS
         self.obs_name = "Observation"
@@ -224,7 +228,6 @@ class BaseComparer:
         self._obs_names = [observation.name]
         self._var_names = [observation.variable_name]
         self._itemInfos = [observation.itemInfo]
-        self.max_gap = max_gap
 
         if modeldata is not None:
             self.add_modeldata(modeldata)
@@ -1137,8 +1140,9 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
-    def __init__(self, observation, model, max_gap):
-        super().__init__(observation, model, max_gap)
+    def __init__(self, observation, model,max_gap):
+        super().__init__(observation, model)
+
 
     def __copy__(self):
         # cls = self.__class__
@@ -1150,9 +1154,9 @@ class SingleObsComparer(BaseComparer):
     def copy(self):
         return self.__copy__()
 
-    def _model2obs_interp(self, obs, mod_df):
+    def _model2obs_interp(self, obs, mod_df,max_gap):
         """interpolate model to measurement time"""
-        df = self._interp_df(mod_df, obs.time, self.max_gap)
+        df = self._interp_df(mod_df, obs.time, max_gap)
         # mod_ds.interp_time(obs.time).to_dataframe()
         df[self.obs_name] = obs.values
         return df
@@ -1161,10 +1165,24 @@ class SingleObsComparer(BaseComparer):
     def _interp_df(df, new_time, max_gap):
         assert df.index.is_unique
         assert new_time.is_unique
-        limit = max_gap
+        limit = None
         interpolation=True
-        # Calculate the mode of dt
-        if max_gap is not None and (len(new_time) > 0):
+        #Long list of checks for the minimum value that can be interpolated if different values are given, since,
+        #for a fair model comparison, all model results must share same index
+        if max_gap ==[None]:
+            max_gap=None
+        # if multi model then max_gap is list of values or None's
+        if type(max_gap)==list:
+            #We assume a large number to find the minimum `max_gap` 
+            min_gap=1e19
+            for t in max_gap:
+                if t is not None:
+                    min_gap=min(min_gap,t)
+            max_gap=min_gap
+            if max_gap==1e19:
+                max_gap=None 
+        # Calculate the `mode` of dt
+        if (len(new_time) > 0) and interpolation and (max_gap is not None):
             ix = new_time[1:] - new_time[0:-1]
             vals, counts = np.unique(ix, return_counts=True)
             mode_value_ix = np.argwhere(counts == np.max(counts))
@@ -1172,7 +1190,7 @@ class SingleObsComparer(BaseComparer):
             limit = int(max_gap / dt_meas)
             if limit==0:
                 interpolation=False
-
+        
         if interpolation is False:
             new_df = (
             df.reindex(df.index.union(new_time)).reindex(new_time)
@@ -1580,8 +1598,8 @@ class PointComparer(SingleObsComparer):
     >>> comparer['Klagshamn']
     """
 
-    def __init__(self, observation, modeldata, *, max_gap=None):
-        super().__init__(observation, modeldata, max_gap=max_gap)
+    def __init__(self, observation, modeldata,max_gap):
+        super().__init__(observation, modeldata,max_gap)
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
         mod_end = self._mod_end + timedelta(seconds=1)
@@ -1589,8 +1607,8 @@ class PointComparer(SingleObsComparer):
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
-        for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data).iloc[:, ::-1]
+        for j, (data,gaps) in enumerate(list(zip(modeldata,[max_gap]))):
+            df = self._model2obs_interp(self.observation, data,gaps).iloc[:, ::-1]
             if j == 0:
                 self.df = df
             else:
@@ -1703,15 +1721,15 @@ class TrackComparer(SingleObsComparer):
     def y(self):
         return self.df.iloc[:, 1]
 
-    def __init__(self, observation, modeldata, *, max_gap=None):
-        super().__init__(observation, modeldata, max_gap)
+    def __init__(self, observation, modeldata,max_gap):
+        super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
         self.observation.df = self.observation.df[self._mod_start : self._mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
-        for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data)
+        for j, (data,gaps) in enumerate(list(zip(modeldata,[max_gap]))):
+            df = self._model2obs_interp(self.observation, data,gaps)
             # rename first columns to x, y
             df.columns = ["x", "y", *list(df.columns)[2:]]
             if (len(df) > 0) and (len(df) == len(self.observation.df)):

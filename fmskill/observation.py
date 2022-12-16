@@ -262,7 +262,7 @@ class PointObservation(Observation):
             )
 
         super().__init__(
-            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name, override_units=units, 
+            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name, override_units=units,
         )
 
     def __repr__(self):

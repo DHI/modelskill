@@ -195,7 +195,7 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         """List of item names (=data vars)"""
         return list(self.ds.data_vars)
 
-    def __init__(self, input, name: str = None, item=None, itemInfo=None, **kwargs):
+    def __init__(self, input, name: str = None, item=None, itemInfo=None,max_gap=None, **kwargs):
         import xarray as xr
 
         self._filename = None
@@ -224,6 +224,7 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         self._validate_time_axis(ds.coords)
         self.ds = ds
         self.name = name
+        self.max_gap=max_gap
 
         if item is not None:
             self._selected_item = self._get_item_name(item)

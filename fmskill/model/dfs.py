@@ -25,6 +25,10 @@ class _DfsBase:
         return self._filename
 
     @property
+    def max_gap(self):
+        return self._max_gap
+
+    @property
     def is_dfsu(self):
         return isinstance(self.dfs, mikeio.dfsu._Dfsu)
 
@@ -171,12 +175,13 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
     def item_name(self):
         return self.itemInfo.name
 
-    def __init__(self, dfs, itemInfo, filename, name):
+    def __init__(self, dfs, itemInfo, filename, name,max_gap):
         self.dfs = dfs
         self.itemInfo = itemInfo
         self._selected_item = self._get_item_num(itemInfo)
         self._filename = filename
         self.name = name
+        self._max_gap = max_gap
 
     def __repr__(self):
         txt = [f"<DfsModelResultItem> '{self.name}'"]
@@ -261,9 +266,10 @@ class DfsModelResult(_DfsBase, MultiItemModelResult):
     def n_items(self):
         return len(self.dfs.items)
 
-    def __init__(self, filename: str, name: str = None, item=None):
+    def __init__(self, filename: str, name: str = None, item=None,max_gap=None):
         # TODO: add "start" as user may wish to disregard start from comparison
         self._filename = filename
+        self._max_gap = max_gap
         ext = os.path.splitext(filename)[-1]
         if ext == ".dfsu":
             self.dfs = mikeio.open(filename)
@@ -281,7 +287,7 @@ class DfsModelResult(_DfsBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.dfs.items:
             self._mr_items[it.name] = DfsModelResultItem(
-                self.dfs, it, self._filename, self.name
+                self.dfs, it, self._filename, self.name,self.max_gap,
             )
 
         if item is not None:
