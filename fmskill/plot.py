@@ -268,7 +268,7 @@ def scatter(
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
 
-        plt.legend(bbox_to_anchor=(1.6, 0.2),edgecolor='k')
+        plt.legend(loc='center left',bbox_to_anchor=(1.2, 0.2),edgecolor='k')
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
