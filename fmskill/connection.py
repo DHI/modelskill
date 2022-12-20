@@ -50,7 +50,7 @@ def compare(obs, mod, *, obs_item=None, mod_item=None):
 
     mod = _parse_model(mod, mod_item)
     
-    return PointComparer(obs, mod,max_gap=None)
+    return PointComparer(obs, mod, max_model_gap=None)
 
 
 def _parse_model(mod, item=None):
@@ -310,7 +310,8 @@ class PointConnector(_SingleObsConnector):
         max_gap = []
         for mr in self.modelresults:
             df = mr._extract_point(self.obs)
-            max_gap.append(mr.max_gap)
+            model_max_gap = mr._max_gap if hasattr(mr, "_max_gap") else None
+            max_gap.append(model_max_gap)
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -324,7 +325,7 @@ class PointConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = PointComparer(self.obs, df_model,max_gap)
+        comparer = PointComparer(self.obs, df_model, max_model_gap=max_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -360,7 +361,8 @@ class TrackConnector(_SingleObsConnector):
         max_gap = []
         for mr in self.modelresults:
             df = mr._extract_track(self.obs)
-            max_gap.append(mr.max_gap)
+            model_max_gap = mr._max_gap if hasattr(mr, "_max_gap") else None
+            max_gap.append(model_max_gap)
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -374,7 +376,7 @@ class TrackConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = TrackComparer(self.obs, df_model,max_gap)
+        comparer = TrackComparer(self.obs, df_model, max_model_gap=max_gap)
         return self._comparer_or_None(comparer)
 
 
