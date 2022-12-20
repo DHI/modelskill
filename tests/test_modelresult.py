@@ -1,13 +1,9 @@
-from datetime import datetime
 import pytest
-import numpy as np
-import pandas as pd
 
 import mikeio
 from fmskill.model import ModelResult
 from fmskill.model import DfsModelResultItem, DfsModelResult
 from fmskill.observation import PointObservation
-from fmskill.connection import compare
 
 
 @pytest.fixture
