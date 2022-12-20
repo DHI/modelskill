@@ -972,17 +972,14 @@ class BaseComparer:
         if skill_table != None:
             # Calculate Skill if it was requested to add as table on the right of plot
             if skill_table == True:
-                skill_df = self.skill(
-                    df=df, model=model, observation=observation, variable=variable
-                )
-            elif isinstance(skill_table, (list, tuple)):
-                skill_df = self.skill(
-                    df=df,
-                    metrics=skill_table,
-                    model=model,
-                    observation=observation,
-                    variable=variable,
-                )
+                if self.n_observations>1:
+                    skill_df = self.mean_skill(
+                        df=df, model=model, observation=observation, variable=variable
+                    )
+                else:
+                    skill_df = self.skill(
+                        df=df, model=model, observation=observation, variable=variable
+                    )
             # Check for units
             try:
                 units = unit_text.split("[")[1].split("]")[0]
