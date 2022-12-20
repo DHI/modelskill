@@ -23,7 +23,7 @@ def mr2():
 @pytest.fixture
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
-    return ModelResult(fn, name="SW_3")
+    return ModelResult(fn, name="SW_3",max_gap=3600)
 
 @pytest.fixture
 def mr4():
@@ -68,6 +68,10 @@ def con31(o1, o2, o3, mr1):
 @pytest.fixture
 def con32(o1, o2, o3, mr1, mr2):
     return Connector([o1, o2, o3], [mr1[0], mr2[0]])
+
+@pytest.fixture
+def con33(o1,mr3):
+    return Connector([o1], mr3[0])
 
 def test_point_connector_repr(o1, mr1):
     con = PointConnector(o1, mr1[0])
@@ -188,14 +192,7 @@ def test_plot_positions(con32):
 def test_plot_data_coverage(con31):
     con31.plot_temporal_coverage()
 
-# def test_extract_gaps(con11_b,con11_c):
-#     #Dfsu model with gaps
-#     collection = con11_b.extract(max_gap=3600)
-#     assert collection.n_points==28
-#     collection = con11_b.extract(max_gap=None)
-#     assert collection.n_points==278
-#     #Dfs0 model non-eq axis
-#     collection = con11_c.extract(max_gap=3600)
-#     assert collection.n_points==87
-#     collection = con11_c.extract(max_gap=None)
-#     assert collection.n_points==554
+def test_extract_gaps(con33):
+    collection = con33.extract()
+    assert collection.n_points==28
+
