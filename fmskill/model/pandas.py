@@ -85,7 +85,7 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
     def item_name(self):
         return self.df.columns[0]
 
-    def __init__(self, df, name: str = None, item=None, itemInfo=None):
+    def __init__(self, df, name: str = None, item=None, itemInfo=None,max_gap=None):
         self.itemInfo = _parse_itemInfo(itemInfo)
         self.is_point = True
         if isinstance(df, pd.Series):
@@ -103,6 +103,7 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
         if name is None:
             name = self.item_name
         self.name = name
+        self.max_gap=max_gap
 
     def extract_observation(self, observation: PointObservation) -> PointComparer:
         """Compare this ModelResult with an observation
@@ -156,7 +157,7 @@ class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.item_names:
             self._mr_items[it] = DataFramePointModelResultItem(
-                self.df, self.name, item=it, itemInfo=itemInfo
+                self.df, self.name, item=it, itemInfo=itemInfo, max_gap=max_gap,
             )
 
 
