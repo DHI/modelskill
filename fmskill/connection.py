@@ -20,7 +20,7 @@ from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 
 
-def compare(obs, mod, *, obs_item=None, mod_item=None):
+def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
     """Quick-and-dirty compare of observation and model
 
     Parameters
@@ -50,7 +50,7 @@ def compare(obs, mod, *, obs_item=None, mod_item=None):
 
     mod = _parse_model(mod, mod_item)
     
-    return PointComparer(obs, mod, max_model_gap=None)
+    return PointComparer(obs, mod, max_model_gap=max_model_gap)
 
 
 def _parse_model(mod, item=None):
@@ -296,7 +296,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self) -> PointComparer:
+    def extract(self, max_model_gap: float=None) -> PointComparer:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -307,11 +307,8 @@ class PointConnector(_SingleObsConnector):
 
         assert isinstance(self.obs, PointObservation)
         df_model = []
-        max_gap = []
         for mr in self.modelresults:
             df = mr._extract_point(self.obs)
-            model_max_gap = mr._max_gap if hasattr(mr, "_max_gap") else None
-            max_gap.append(model_max_gap)
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -325,7 +322,7 @@ class PointConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = PointComparer(self.obs, df_model, max_model_gap=max_gap)
+        comparer = PointComparer(self.obs, df_model, max_model_gap=max_model_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -348,7 +345,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self) -> TrackComparer:
+    def extract(self, max_model_gap: float=None) -> TrackComparer:
         """Extract model results at times and positions of track observation.
 
         Returns
@@ -358,11 +355,8 @@ class TrackConnector(_SingleObsConnector):
 
         assert isinstance(self.obs, TrackObservation)
         df_model = []
-        max_gap = []
         for mr in self.modelresults:
             df = mr._extract_track(self.obs)
-            model_max_gap = mr._max_gap if hasattr(mr, "_max_gap") else None
-            max_gap.append(model_max_gap)
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -376,7 +370,7 @@ class TrackConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = TrackComparer(self.obs, df_model, max_model_gap=max_gap)
+        comparer = TrackComparer(self.obs, df_model, max_model_gap=max_model_gap)
         return self._comparer_or_None(comparer)
 
 
