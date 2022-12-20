@@ -85,7 +85,7 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
     def item_name(self):
         return self.df.columns[0]
 
-    def __init__(self, df, name: str = None, item=None, itemInfo=None, max_gap=None):
+    def __init__(self, df, name: str = None, item=None, itemInfo=None):
         self.itemInfo = _parse_itemInfo(itemInfo)
         self.is_point = True
         if isinstance(df, pd.Series):
@@ -103,9 +103,8 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
         if name is None:
             name = self.item_name
         self.name = name
-        self._max_gap = max_gap
 
-    def extract_observation(self, observation: PointObservation) -> PointComparer:
+    def extract_observation(self, observation: PointObservation, **kwargs) -> PointComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -120,7 +119,7 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
         """
         if isinstance(observation, PointObservation):
             df_model = self._extract_point(observation)
-            comparer = PointComparer(observation, df_model, max_model_gap=self._max_gap)
+            comparer = PointComparer(observation, df_model, **kwargs)
         else:
             raise ValueError("Only point observation are supported!")
 
@@ -136,14 +135,13 @@ class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
     def item_names(self):
         return list(self.df.columns)
 
-    def __init__(self, df, name: str = None, item=None, itemInfo=None, max_gap=None):
+    def __init__(self, df, name: str = None, item=None, itemInfo=None):
         self.is_point = True
         if isinstance(df, pd.Series):
             df = df.to_frame()
             df.columns = ["model"] if name is None else name
         self._check_dataframe(df)
         self.df = df
-        self._max_gap = max_gap
 
         self._selected_item = self._get_selected_item(df.columns, item)
 
@@ -157,7 +155,7 @@ class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.item_names:
             self._mr_items[it] = DataFramePointModelResultItem(
-                self.df, self.name, item=it, itemInfo=itemInfo, max_gap=max_gap,
+                self.df, self.name, item=it, itemInfo=itemInfo, 
             )
 
 
@@ -233,7 +231,7 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
         return self._selected_item
 
     def __init__(
-        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None, max_gap=None,
+        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None,
     ):
         self.itemInfo = _parse_itemInfo(itemInfo)
         self.is_point = False
@@ -251,13 +249,12 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
         self.df = df.iloc[:, [self._x_item, self._y_item, item_num]]
         item = self._get_item_name(item, self.df.columns)
         self._selected_item = item
-        self._max_gap = max_gap
 
         if name is None:
             name = self.item_name
         self.name = name
 
-    def extract_observation(self, observation: TrackObservation) -> TrackComparer:
+    def extract_observation(self, observation: TrackObservation, **kwargs) -> TrackComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -272,7 +269,7 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
         """
         if isinstance(observation, TrackObservation):
             df_model = self._extract_track(observation)
-            comparer = TrackComparer(observation, df_model, max_model_gap=self._max_gap)
+            comparer = TrackComparer(observation, df_model, **kwargs)
         else:
             raise ValueError("Only track observation are supported!")
 
@@ -289,7 +286,7 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
         return list(self._val_cols)
 
     def __init__(
-        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None, max_gap=None,
+        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None,
     ):
         self.is_point = False
         self._x, self._y = self._parse_x_y_columns(df, x_item, y_item)
@@ -299,7 +296,6 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
             df.index = make_unique_index(df.index)
 
         self.df = df
-        self._max_gap = max_gap
         self._selected_item = self._get_selected_item(self._val_cols, item)
 
         if (itemInfo is not None) and (self._selected_item is None):
@@ -318,5 +314,4 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
                 itemInfo=itemInfo,
                 x_item=x_item,
                 y_item=y_item,
-                max_gap=max_gap,
             )

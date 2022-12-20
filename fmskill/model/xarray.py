@@ -132,7 +132,7 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
     def item_name(self):
         return self._selected_item
 
-    def __init__(self, ds, name: str = None, item=None, itemInfo=None, filename=None, max_gap=None):
+    def __init__(self, ds, name: str = None, item=None, itemInfo=None, filename=None):
         import xarray as xr
 
         self.itemInfo = _parse_itemInfo(itemInfo)
@@ -155,9 +155,8 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
             name = self.item_name
         self.name = name
         self._filename = filename
-        self._max_gap = max_gap
 
-    def extract_observation(self, observation: PointObservation) -> PointComparer:
+    def extract_observation(self, observation: PointObservation, **kwargs) -> PointComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -176,10 +175,10 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
 
         if isinstance(observation, PointObservation):
             df_model = self._extract_point(observation, item)
-            comparer = PointComparer(observation, df_model, max_model_gap=self._max_gap)
+            comparer = PointComparer(observation, df_model, **kwargs)
         elif isinstance(observation, TrackObservation):
             df_model = self._extract_track(observation, item)
-            comparer = TrackComparer(observation, df_model, max_model_gap=self._max_gap)
+            comparer = TrackComparer(observation, df_model, **kwargs)
         else:
             raise ValueError("Only point and track observation are supported!")
 
@@ -196,7 +195,7 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         """List of item names (=data vars)"""
         return list(self.ds.data_vars)
 
-    def __init__(self, input, name: str = None, item=None, itemInfo=None, max_gap=None, **kwargs):
+    def __init__(self, input, name: str = None, item=None, itemInfo=None, **kwargs):
         import xarray as xr
 
         self._filename = None
@@ -225,7 +224,6 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         self._validate_time_axis(ds.coords)
         self.ds = ds
         self.name = name
-        self._max_gap = max_gap
 
         if item is not None:
             self._selected_item = self._get_item_name(item)
@@ -240,7 +238,7 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.item_names:
             self._mr_items[it] = XArrayModelResultItem(
-                self.ds, self.name, item=it, itemInfo=itemInfo, filename=self._filename, max_gap=max_gap,
+                self.ds, self.name, item=it, itemInfo=itemInfo, filename=self._filename,
             )
 
     def _rename_coords(self, ds):
