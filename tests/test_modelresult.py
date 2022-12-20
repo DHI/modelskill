@@ -5,8 +5,7 @@ import pandas as pd
 
 import mikeio
 from fmskill.model import ModelResult
-from fmskill.model.abstract import ModelResultInterface
-from fmskill.model import DataFramePointModelResult, DataFramePointModelResultItem
+from fmskill.model import DfsModelResultItem, DfsModelResult
 from fmskill.observation import PointObservation
 from fmskill.connection import compare
 
@@ -141,22 +140,6 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     klagshamn.y = -10
     with pytest.raises(ValueError):
         _ = mr[0].extract_observation(klagshamn, validate=True)
-
-
-def test_extract_from_model_result_with_nan(sw_Hm0_df, Hm0_EPL):
-    df_mod_nan = sw_Hm0_df.copy()
-    df_mod_nan.loc["2017-10-28"] = np.nan
-    c = compare(Hm0_EPL, df_mod_nan)
-    assert all(c.df["Model"]["2017-10-28"].isna())
-
-
-def test_extract_from_model_result_with_gap(sw_Hm0_df, Hm0_EPL):
-    df_mod_gap = pd.concat([sw_Hm0_df.loc["2017-10-27"], sw_Hm0_df.loc["2017-10-29"]])
-    c = compare(Hm0_EPL, df_mod_gap)
-    assert all(c.df["Model"]["2017-10-28"].isna())
-
-
-from fmskill.model import DfsModelResultItem, DfsModelResult  # , ModelResultFactory
 
 
 def test_dfs_model_result(hd_oresund_2d):
