@@ -7,11 +7,11 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 import mikeio
-
+import sys
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
-
+sys.modules['fmskill'].plot_style='default' #default style by default
 
 def scatter(
     x,
@@ -93,7 +93,25 @@ def scatter(
     if show_hist==None and show_density==None:
         #Default: points density
         show_density=True
-
+    
+    #Define plot styles
+    if sys.modules['fmskill'].plot_style=='MOOD':
+        _style='MOOD'
+        _legend={'loc':'center left','bbox_to_anchor':(1.2, 0.1),'edgecolor':'k'}
+        _label=['1:1 Line (45°)','Data','Quantiles (0.0 - 100.0%)'] 
+        _color=['darkorange',(0,0,0,0)]
+        _size=10
+        _style={'dashes':(2, 5),'c':(0,152/255,219/255)}
+        _bbox={"facecolor": "w","alpha": 0.99,}
+        
+    else:
+        _style='default'
+        _legend={'edgecolor':'lightgrey'}  
+        _label=['1:1',None,'Q-Q'] 
+        _color=['blue','darkturquoise',]
+        _size=20
+        _style={'c':'r'}
+        _bbox={"facecolor": "blue","alpha": 0.05,"boxstyle": "round",}
 
     if (binsize is not None) or (nbins is not None):
         warnings.warn(
@@ -225,8 +243,8 @@ def scatter(
         plt.plot(
             [xlim[0], xlim[1]],
             [xlim[0], xlim[1]],
-            label="1:1 Line (45°)",
-            c="darkorange",
+            label=_label[0],
+            c=_color[0],
             zorder=3,
         )
         if show_points:
@@ -238,10 +256,10 @@ def scatter(
                 x_sample,
                 y_sample,
                 c=c,
-                s=10,
+                s=_size,
                 alpha=0.9,
                 marker=".",
-                label='Data',
+                label=_label[1],
                 zorder=1,
                 **kwargs,
             )
@@ -249,8 +267,8 @@ def scatter(
             xq,
             yq,
             "o",
-            label="Quantiles (0.0 - 100.0%)",
-            c=(0,0,0,0),
+            label=_label[2],
+            c=_color[1],
             markeredgecolor=(0,152/255,219/255),
             markeredgewidth=1.2,
             markersize=3.5,
@@ -259,16 +277,15 @@ def scatter(
         plt.plot(
             x,
             intercept + slope * x,
-            "r--",
-            dashes=(2, 5),
-            c=(0,152/255,219/255),
+            '-',
+            **_style,
             label=reglabel,
             zorder=2,
         )
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
 
-        plt.legend(loc='center left',bbox_to_anchor=(1.2, 0.2),edgecolor='k')
+        plt.legend(**_legend)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
@@ -288,7 +305,7 @@ def scatter(
         plt.title(title)
         # Add skill table
         if skill_df != None:
-            _plot_summary_table(skill_df,units,max_cbar=max_cbar)
+            _plot_summary_table(skill_df,units,max_cbar=max_cbar,_bbox=_bbox)
         
 
     elif backend == "plotly":  # pragma: no cover
@@ -515,7 +532,7 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 
     return Z_grid
 
-def _plot_summary_table(skill_df,units,max_cbar):
+def _plot_summary_table(skill_df,units,max_cbar,_bbox):
     stats_with_units=["bias", "rmse", "urmse", "mae"]
     max_str_len = skill_df.columns.str.len().max()
     lines = []
@@ -561,11 +578,7 @@ def _plot_summary_table(skill_df,units,max_cbar):
                 x,
                 0.6,
                 text_,
-                bbox={
-                    "facecolor": "w",
-                    "edgecolor": "k",
-                    "alpha": 0.99,
-                },
                 fontsize=12,
                 family="monospace",
+                bbox=_bbox,
             )
