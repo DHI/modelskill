@@ -203,7 +203,7 @@ class DataArrayModelResultItem(ModelResultInterface):
         )  # Why is there no .to_dataframe() on DataArray?
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
-        raise NotImplementedError("Only PointObservations are supported")
+        return self._da.extract_track(observation.df).to_dataframe()
 
     def extract_observation(self, observation: PointObservation) -> PointComparer:
 
