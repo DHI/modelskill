@@ -12,6 +12,53 @@ def test_nse_optimal():
     assert mtr.nash_sutcliffe_efficiency(obs, obs) == 1.0
 
 
+def test_kge_optimal():
+
+    np.random.seed(42)
+    obs = np.random.uniform(size=100)
+
+    assert mtr.kling_gupta_efficiency(obs, obs) == 1.0
+
+
+def test_kge_suboptimal():
+
+    obs = np.array([1.0, 0.5, 0])
+    mod = np.array([1.0, 0.0, 0.5])
+
+    assert 0.0 < mtr.kling_gupta_efficiency(obs, mod) < 1.0
+
+
+def test_kge_no_variation_in_obs_returns_nan():
+
+    obs = np.ones(10)
+    np.random.seed(42)
+    mod = np.random.uniform(size=10)
+
+    assert np.isnan(mtr.kling_gupta_efficiency(obs, mod))
+
+
+def test_kge_bad():
+
+    np.random.seed(42)
+    obs = np.random.normal(loc=10.0, scale=1.0, size=1000)
+    mod = np.random.normal(scale=0.1, size=1000)
+
+    assert mtr.kling_gupta_efficiency(obs, mod) < 0.0
+
+
+def test_kge_climatology_model():
+    """Predicting the mean value results in a KGE=-0.41
+
+    Knoben et al, 2019, Hydrol. Earth Syst. Sci., 23, 4323-4331, 2019
+    https://doi.org/10.5194/hess-23-4323-2019
+    """
+    np.random.seed(42)
+    obs = np.random.normal(loc=10.0, scale=1.0, size=100)
+    mod = np.full_like(obs, fill_value=obs.mean())
+
+    assert mtr.kling_gupta_efficiency(obs, mod) == pytest.approx(-0.41, abs=1e-2)
+
+
 def test_nse_suboptimal():
 
     obs = np.array([1.0, 0.5, 0])

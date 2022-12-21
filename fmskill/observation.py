@@ -45,7 +45,7 @@ class Observation:
     # matplotlib: red=#d62728
 
     def __init__(
-        self, name: str = None, df=None, itemInfo=None, variable_name: str = None
+        self, name: str = None, df=None, itemInfo=None, variable_name: str = None, override_units: str = None,
     ):
         self.color = "#d62728"
 
@@ -67,7 +67,7 @@ class Observation:
         if variable_name is None:
             variable_name = self.itemInfo.type.name
         self.variable_name = variable_name
-
+        self.override_units= override_units
     @property
     def time(self) -> pd.DatetimeIndex:
         "Time index"
@@ -99,12 +99,17 @@ class Observation:
         return self._filename
 
     def _unit_text(self):
+        override_units=self.override_units
         if self.itemInfo is None:
             return ""
         txt = f"{self.itemInfo.type.display_name}"
         if self.itemInfo.type != mikeio.EUMType.Undefined:
-            unit = self.itemInfo.unit.display_name
-            txt = f"{txt} [{unit_display_name(unit)}]"
+            if override_units==None:
+                unit = self.itemInfo.unit.display_name
+                txt = f"{txt} [{unit_display_name(unit)}]"
+            else:
+                unit = override_units
+                txt = f"{txt} [{override_units}]"
         return txt
 
     def hist(self, bins=100, title=None, color=None, **kwargs):
@@ -162,6 +167,8 @@ class PointObservation(Observation):
         user-defined name for easy identification in plots etc, by default file basename
     variable_name : str, optional
         user-defined variable name in case of multiple variables, by default eumType name
+    units : str, optional
+        user-defined units name in case user wants to override eumUnits 
 
     Examples
     --------
@@ -191,6 +198,7 @@ class PointObservation(Observation):
         z: float = None,
         name: str = None,
         variable_name: str = None,
+        units: str = None,
     ):
 
         self.x = x
@@ -254,7 +262,7 @@ class PointObservation(Observation):
             )
 
         super().__init__(
-            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
+            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name, override_units=units, 
         )
 
     def __repr__(self):
@@ -333,6 +341,8 @@ class TrackObservation(Observation):
         item name or index of y-coordinate, by default 1
     offset_duplicates : float, optional
         in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001
+    units : str, optional
+        user-defined units name in case user wants to override eumUnits 
 
 
     Examples
@@ -408,6 +418,7 @@ class TrackObservation(Observation):
         x_item=0,
         y_item=1,
         offset_duplicates: float = 0.001,
+        units: str = None,
     ):
 
         self._filename = None
@@ -446,7 +457,7 @@ class TrackObservation(Observation):
             df.index = make_unique_index(df.index, offset_duplicates=offset_duplicates)
 
         super().__init__(
-            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name
+            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name,override_units=units,
         )
 
     @staticmethod
@@ -494,6 +505,6 @@ def unit_display_name(name: str) -> str:
     m
     """
 
-    res = name.replace("meter", "m").replace("_per_", "/").replace("sec", "s")
+    res = name.replace("meter", "m").replace("_per_", "/").replace("second", "s").replace("sec", "s")
 
     return res

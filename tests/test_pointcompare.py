@@ -186,6 +186,47 @@ def test_skill(klagshamn, drogden):
     assert df.loc["Klagshamn"].n == 167
 
 
+def test_skill_choose_metrics(klagshamn, drogden):
+
+    mr = ModelResult("tests/testdata/Oresund2D.dfsu")
+
+    with pytest.warns(UserWarning, match="Item type mismatch!"):
+        con = Connector([klagshamn, drogden], mr[0], validate=False)
+    cc = con.extract()
+
+    cc.metrics = ["mae", "si"]
+
+    df = cc.skill().df
+
+    assert "mae" in df.columns
+    assert "rmse" not in df.columns
+
+    # Override defaults
+    df = cc.skill(metrics=["urmse", "r2"]).df
+
+    assert "r2" in df.columns
+    assert "rmse" not in df.columns
+
+
+def test_skill_choose_metrics_back_defaults(cc):
+
+    cc.metrics = ["kge", "nse", "max_error"]
+
+    df = cc.skill().df
+    assert "kge" in df.columns
+    assert "rmse" not in df.columns
+
+    df = cc.mean_skill().df
+    assert "kge" in df.columns
+    assert "rmse" not in df.columns
+
+    cc.metrics = None  # go back to defaults
+
+    df = cc.mean_skill().df
+    assert "kge" not in df.columns
+    assert "rmse" in df.columns
+
+
 def test_comparison_from_dict():
 
     # As an alternative to

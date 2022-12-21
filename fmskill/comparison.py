@@ -28,6 +28,9 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 
 
+DEFAULT_METRICS = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+
+
 class BaseComparer:
     """Abstract base class for all comparers, only used to inherit from, not to be used directly"""
 
@@ -89,6 +92,17 @@ class BaseComparer:
         if self._all_df is None:
             self._construct_all_df()
         return self._all_df
+
+    @property
+    def metrics(self):
+        return self._metrics
+
+    @metrics.setter
+    def metrics(self, values) -> None:
+        if values is None:
+            self._metrics = DEFAULT_METRICS
+        else:
+            self._metrics = self._parse_metric(values)
 
     def __add__(self, other: "BaseComparer") -> "ComparerCollection":
 
@@ -164,6 +178,7 @@ class BaseComparer:
 
     def __init__(self, observation, modeldata=None):
 
+        self._metrics = DEFAULT_METRICS
         self.obs_name = "Observation"
         self._obs_names: List[str]
         self._mod_names: List[str]
@@ -333,7 +348,7 @@ class BaseComparer:
 
     def _parse_metric(self, metric, return_list=False):
         if metric is None:
-            return [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+            return self._metrics
 
         if isinstance(metric, str):
             valid_metrics = [
@@ -839,7 +854,7 @@ class BaseComparer:
         df: pd.DataFrame = None,
         binsize: float = None,
         nbins: int = None,
-        skill_table: bool = False,
+        skill_table: Union[str, List[str], bool] = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -902,9 +917,10 @@ class BaseComparer:
             by default None
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
-        skill_table : bool, optional
-            calculates the main skills (bias, rmse, si, r2, etc) and adds a box at
-            the right of the scatter plot, by default False
+        skill_table : str, List[str], bool, optional
+            list of fmskill.metrics or boolean, if True then by default [bias, rmse, urmse, mae, cc, si, r2].
+            This kword adds a box at the right of the scatter plot,
+            by default False
         kwargs
 
         Examples
@@ -953,6 +969,34 @@ class BaseComparer:
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
 
+        if skill_table != None:
+            # Calculate Skill if it was requested to add as table on the right of plot
+            if skill_table == True:
+                skill_df = self.skill(
+                    df=df, model=model, observation=observation, variable=variable
+                )
+            elif isinstance(skill_table, (list, tuple)):
+                skill_df = self.skill(
+                    df=df,
+                    metrics=skill_table,
+                    model=model,
+                    observation=observation,
+                    variable=variable,
+                )
+            # Check for units
+            try:
+                units = unit_text.split("[")[1].split("]")[0]
+            except:
+                #     Dimensionless
+                units = ""
+            if skill_table == False:
+                skill_df = None
+                units = None
+        else:
+            # skill_table is None
+            skill_df = None
+            units = None
+
         scatter(
             x=x,
             y=y,
@@ -969,41 +1013,12 @@ class BaseComparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
+            skill_df=skill_df,
+            units=units,
             binsize=binsize,
             nbins=nbins,
             **kwargs,
         )
-        if skill_table:
-            # Calculate Skill if it was requested to add as table on the right of plot
-            skill_df = self.skill(
-                metrics=["bias", "rmse", "urmse", "mae", "cc", "si", "r2"], df=df
-            )  # df is filtered to matching subset
-            lines = []
-
-            max_str_len = skill_df.df.columns.str.len().max()
-
-            for col in skill_df.df.columns:
-                if col == "model":
-                    continue
-                lines.append(
-                    f"{col.ljust(max_str_len)} {np.round(skill_df.df[col].values[0],3)}"
-                )
-
-            text_ = "\n".join(lines)
-
-            plt.gcf().text(
-                0.97,
-                0.6,
-                text_,
-                bbox={
-                    "facecolor": "blue",
-                    "edgecolor": "k",
-                    "boxstyle": "round",
-                    "alpha": 0.05,
-                },
-                fontsize=12,
-                family="monospace",
-            )
 
     def taylor(
         self,
@@ -1121,6 +1136,9 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
+    def __init__(self, observation, model):
+        super().__init__(observation, model)
+
     def __copy__(self):
         # cls = self.__class__
         # cp = cls.__new__(cls)
@@ -1154,6 +1172,8 @@ class SingleObsComparer(BaseComparer):
         by: Union[str, List[str]] = None,
         metrics: list = None,
         model: Union[str, int, List[str], List[int]] = None,
+        observation=None,  # Only used to have a compatible interface with other skill mehod TODO refactor to a new sel() method
+        variable=None,  # Only used to have a compatible interface with other skill mehod TODO refactor to a new sel() method
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
@@ -1475,7 +1495,9 @@ class SingleObsComparer(BaseComparer):
         plt.title(title)
         plt.xlabel(f"Residuals of {self._obs_unit_text}")
 
-    def hist(self, model=None, bins=100, title=None, alpha=0.5, **kwargs):
+    def hist(
+        self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
+    ):
         """Plot histogram of model data and observations.
 
         Wraps pandas.DataFrame hist() method.
@@ -1488,6 +1510,8 @@ class SingleObsComparer(BaseComparer):
             number of bins, by default 100
         title : str, optional
             plot title, default: [model name] vs [observation name]
+        density: bool, optional
+            If True, draw and return a probability density
         alpha : float, optional
             alpha transparency fraction, by default 0.5
         kwargs : other keyword arguments to df.hist()
@@ -1495,6 +1519,12 @@ class SingleObsComparer(BaseComparer):
         Returns
         -------
         matplotlib axes
+
+        See also
+        --------
+        pandas.Series.hist
+        matplotlib.axes.Axes.hist
+
         """
         mod_id = self._get_mod_id(model)
         mod_name = self.mod_names[mod_id]
@@ -1502,6 +1532,7 @@ class SingleObsComparer(BaseComparer):
         title = f"{mod_name} vs {self.name}" if title is None else title
 
         kwargs["alpha"] = alpha
+        kwargs["density"] = density
         ax = self.df[mod_name].hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
         self.df[self.obs_name].hist(
             bins=bins, color=self.observation.color, ax=ax, **kwargs
@@ -1509,6 +1540,11 @@ class SingleObsComparer(BaseComparer):
         ax.legend([mod_name, self.obs_name])
         plt.title(title)
         plt.xlabel(f"{self._obs_unit_text}")
+        if density:
+            plt.ylabel("density")
+        else:
+            plt.ylabel("count")
+
         return ax
 
 
@@ -1791,7 +1827,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._all_df.index.name = "datetime"
 
     def __init__(self, comparers=None):
-
+        # super().__init__(observation=None, modeldata=None)  # Not possible since init signature is different compared to BaseComparer
+        self._metrics = DEFAULT_METRICS
         self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
@@ -1894,6 +1931,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         area: List[float] = None,
         df: pd.DataFrame = None,
         title: str = None,
+        density=True,
         alpha: float = 0.5,
         **kwargs,
     ):
@@ -1923,6 +1961,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             user-provided data instead of the comparers own data, by default None
         title : str, optional
             plot title, default: observation name
+        density: bool, optional
+            If True, draw and return a probability density
         alpha : float, optional
             alpha transparency fraction, by default 0.5
         kwargs : other keyword arguments to df.hist()
@@ -1930,6 +1970,11 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         Returns
         -------
         matplotlib axes
+
+        See also
+        --------
+        pandas.Series.hist
+        matplotlib.axes.Axes.hist
         """
         mod_id = self._get_mod_id(model)
         mod_name = self.mod_names[mod_id]
@@ -1951,11 +1996,18 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         title = f"{mod_name} vs Observations" if title is None else title
 
         kwargs["alpha"] = alpha
+        kwargs["density"] = density
         ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
         df.obs_val.hist(bins=bins, color=self[0].observation.color, ax=ax, **kwargs)
         ax.legend([mod_name, "observations"])
         plt.title(title)
         plt.xlabel(f"{self._obs_unit_text}")
+
+        if density:
+            plt.ylabel("density")
+        else:
+            plt.ylabel("count")
+
         return ax
 
     def mean_skill(
