@@ -191,7 +191,7 @@ class AggregatedSkill(SkillDataFrame):
                 if i == 0:
                     dfout = dfi
                 else:
-                    dfout = dfout.append(dfi)
+                    dfout = pd.concat([dfout, dfi])
             return dfout
 
         if isinstance(value, int):
