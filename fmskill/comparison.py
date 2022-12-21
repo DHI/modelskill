@@ -19,7 +19,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
-
+import sys
 import mikeio
 import fmskill.metrics as mtr
 from .observation import PointObservation, TrackObservation
@@ -968,6 +968,9 @@ class BaseComparer:
 
         if title is None:
             title = f"{self.mod_names[mod_id]} vs {self.name}"
+        if sys.modules['fmskill'].plot_style=='MOOD' and skill_table==None:
+            #if MOOD and table ommited, then table
+            skill_table=True
 
         if skill_table != None:
             # Calculate Skill if it was requested to add as table on the right of plot
