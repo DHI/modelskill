@@ -424,11 +424,6 @@ class Connector(_BaseConnector, Mapping, Sequence):
         self.observations = {}
         self.modelresults = {}
 
-        model_names = [m.name for m in mod]
-        model_name_unique = len(set(model_names)) == len(mod)
-        if not model_name_unique:
-            raise KeyError(f"Model names {model_names} are not unique")
-
         if (obs is not None) and (mod is not None):
             if not is_iterable_not_str(obs):
                 obs = [obs]
@@ -437,6 +432,16 @@ class Connector(_BaseConnector, Mapping, Sequence):
                 self.add(o, mod, weight=weight[j], validate=validate)
         elif (mod is not None) or (obs is not None):
             raise ValueError("obs and mod must both be specified (or both None)")
+
+        self._validate_unique_model_names(mod)
+
+    def _validate_unique_model_names(self, mod) -> None:
+        if not is_iterable_not_str(mod):  # a single model is unique by default
+            return
+
+        model_name_unique = len(set(self.mod_names)) == len(mod)
+        if not model_name_unique:
+            raise KeyError(f"Model names {self.mod_names} are not unique")
 
     def add(self, obs, mod=None, weight=1.0, validate=True):
         """Add Observation-ModelResult-connections to Connector
