@@ -423,6 +423,12 @@ class Connector(_BaseConnector, Mapping, Sequence):
         self.connections = {}
         self.observations = {}
         self.modelresults = {}
+
+        model_names = [m.name for m in mod]
+        model_name_unique = len(set(model_names)) == len(mod)
+        if not model_name_unique:
+            raise KeyError(f"Model names {model_names} are not unique")
+
         if (obs is not None) and (mod is not None):
             if not is_iterable_not_str(obs):
                 obs = [obs]

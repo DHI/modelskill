@@ -65,7 +65,9 @@ def test_model_names_should_be_unique_connector():
         "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887
     )
 
-    with pytest.raises(Exception):  # TODO maybe KeyError
+    with pytest.raises(
+        Exception, match="swh"
+    ):  # TODO maybe KeyError or some custom exception
         Connector(obs=o1, mod=[mr1, mr2])
 
 
