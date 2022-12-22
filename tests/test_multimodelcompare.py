@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 import matplotlib.pyplot as plt
+import xarray as xr
 
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
@@ -47,6 +48,25 @@ def cc(mr1, mr2, o1, o2, o3):
 def test_connector(mr1, mr2, o1):
     con = Connector(o1, [mr1[0], mr2[0]])
     assert len(con.observations) == 1
+
+
+def test_model_names_should_be_unique_connector():
+    mr1 = ModelResult(
+        "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu",
+        item=0,
+        name="swh",  # explicitly name this modelresult
+    )
+    ds = xr.open_dataset("tests/testdata/SW/ERA5_DutchCoast.nc")
+    da = ds["swh"]
+    mr2 = ModelResult(
+        da
+    )  # No name, so uses default name, which is the same as the one used above, should cause trouble...
+    o1 = PointObservation(
+        "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887
+    )
+
+    with pytest.raises(Exception):  # TODO maybe KeyError
+        Connector(obs=o1, mod=[mr1, mr2])
 
 
 def test_extract(mr1, mr2, o1, o2, o3):
@@ -275,7 +295,7 @@ def test_mm_scatter(cc):
     cc.scatter(model="SW_2", show_points=0.75)
     cc.scatter(model="SW_2", show_density=True)
     cc.scatter(model="SW_2", show_points=0.75, show_density=True)
-    cc.scatter(model="SW_2", observation='HKNA',skill_table=True)
+    cc.scatter(model="SW_2", observation="HKNA", skill_table=True)
     # cc.scatter(model="SW_2", binsize=0.5, backend="plotly")
     assert True
     plt.close("all")
