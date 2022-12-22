@@ -51,7 +51,7 @@ def test_XArrayModelResult_from_nc(modelresult):
 
     assert isinstance(mr, XArrayModelResult)
     assert isinstance(mr.ds, xr.Dataset)
-    assert "ERA5_DutchCoast.nc" in mr.filename
+    # assert "ERA5_DutchCoast.nc" in mr.filename
     assert "- Item: 4: swh" in repr(mr)
     assert len(mr) == 5
     assert len(mr.ds) == 5
@@ -69,7 +69,7 @@ def test_XArrayModelResult_from_ds(ERA5_DutchCoast_nc):
     assert isinstance(mr, XArrayModelResult)
     assert isinstance(mr.ds, xr.Dataset)
     assert mr.item_names == ["mwd", "mwp", "mp2", "pp1d", "swh"]
-    assert not mr.filename
+    # assert not mr.filename
     assert mr[0].itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
@@ -79,7 +79,7 @@ def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
     mr = ModelResult(da)
 
     assert isinstance(mr, XArrayModelResultItem)
-    assert not mr.filename
+    # assert not mr.filename
 
 
 @python3_7_or_above
@@ -88,7 +88,7 @@ def test_XArrayModelResult_from_multifile(mf_modelresult):
 
     assert isinstance(mr, XArrayModelResult)
     assert isinstance(mr.ds, xr.Dataset)
-    assert "CMEMS_DutchCoast_*.nc" in mr.filename
+    # assert "CMEMS_DutchCoast_*.nc" in mr.filename
     assert mr.name == "CMEMS"
     assert mr.start_time == datetime(2017, 10, 28, 0, 0, 0)
     assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)

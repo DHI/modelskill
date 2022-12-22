@@ -53,11 +53,6 @@ class MultiItemModelResult(ABC, Mapping):  # pragma: no cover
     def item_names(self):
         pass
 
-    @property
-    @abstractmethod
-    def _get_item_name(self):
-        pass
-
     def __getitem__(self, x):
         if isinstance(x, (int, str)):
             x = self._get_item_name(x)

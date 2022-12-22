@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 import numpy as np
 import pandas as pd
 import warnings
@@ -9,6 +10,23 @@ from .abstract import ModelResultInterface, MultiItemModelResult, _parse_itemInf
 
 
 class _XarrayBase:
+
+    import xarray as xr
+
+    def __init__(self, ds, name=None, item=None, itemInfo=None, **kwargs):
+        self.name = name
+        self._selected_item = item
+        ds = self._rename_coords(ds)
+        self._validate_coord_names(ds.coords)
+        self._validate_time_axis(ds.coords)
+        self.ds = ds
+
+    def _rename_coords(self, ds):
+        new_names = self._get_new_coord_names(ds.coords)
+        if len(new_names) > 0:
+            ds = ds.rename(new_names)
+        return ds
+
     @property
     def start_time(self) -> pd.Timestamp:
         return pd.Timestamp(self.ds.time.values[0])
@@ -16,10 +34,6 @@ class _XarrayBase:
     @property
     def end_time(self) -> pd.Timestamp:
         return pd.Timestamp(self.ds.time.values[-1])
-
-    @property
-    def filename(self):
-        return self._filename
 
     @staticmethod
     def _get_new_coord_names(coords):
@@ -50,7 +64,7 @@ class _XarrayBase:
             raise ValueError(f"Time coordinate is not equivalent to DatetimeIndex")
         # return coords["time"].dtype.type == np.datetime64
 
-    def _get_item_name(self, item, item_names=None) -> str:
+    def _get_item_name(self, item, item_names=None) -> Optional[str]:
         if item_names is None:
             item_names = list(self.ds.data_vars)
         n_items = len(item_names)
@@ -132,8 +146,17 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
     def item_name(self):
         return self._selected_item
 
-    def __init__(self, ds, name: str = None, item=None, itemInfo=None, filename=None):
+    def __init__(
+        self,
+        ds,
+        name: Optional[str] = None,
+        item=None,
+        itemInfo=None,
+        **kwargs,
+    ):
         import xarray as xr
+
+        super().__init__(ds=ds, name=name, item=item, itemInfo=itemInfo, **kwargs)
 
         self.itemInfo = _parse_itemInfo(itemInfo)
 
@@ -150,11 +173,9 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
 
         item = self._get_item_name(item, list(ds.data_vars))
         self.ds = ds[[item]]
-        self._selected_item = item
+
         if name is None:
             name = self.item_name
-        self.name = name
-        self._filename = filename
 
     def extract_observation(self, observation: PointObservation) -> PointComparer:
         """Compare this ModelResult with an observation
@@ -195,7 +216,9 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         """List of item names (=data vars)"""
         return list(self.ds.data_vars)
 
-    def __init__(self, input, name: str = None, item=None, itemInfo=None, **kwargs):
+    def __init__(
+        self, input, name: str = None, item=None, itemInfo=None, filename=None, **kwargs
+    ):
         import xarray as xr
 
         self._filename = None
@@ -218,12 +241,9 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
             raise TypeError(
                 f"Unknown input type {type(input)}. Must be str or xarray.Dataset/DataArray."
             )
-
-        ds = self._rename_coords(ds)
-        self._validate_coord_names(ds.coords)
-        self._validate_time_axis(ds.coords)
-        self.ds = ds
-        self.name = name
+        super().__init__(
+            ds=ds, name=name, item=item, itemInfo=itemInfo, filename=filename, **kwargs
+        )
 
         if item is not None:
             self._selected_item = self._get_item_name(item)
@@ -240,9 +260,3 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
             self._mr_items[it] = XArrayModelResultItem(
                 self.ds, self.name, item=it, itemInfo=itemInfo, filename=self._filename
             )
-
-    def _rename_coords(self, ds):
-        new_names = self._get_new_coord_names(ds.coords)
-        if len(new_names) > 0:
-            ds = ds.rename(new_names)
-        return ds
