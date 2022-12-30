@@ -71,6 +71,89 @@ def test_model_names_should_be_unique_connector():
         Connector(obs=o1, mod=[mr1, mr2])
 
 
+def test_mm_df_named_columns(o1):
+
+    import mikeio
+
+    ds1 = mikeio.read("tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu").isel(
+        element=0
+    )
+    ds2 = mikeio.read("tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu").isel(
+        element=0
+    )
+    df1 = ds1.to_dataframe()[["Sign. Wave Height"]]
+    df1.columns = ["Model1"]
+
+    df2 = ds2.to_dataframe()[["Sign. Wave Height"]]
+    df2.columns = ["Model2"]
+
+    mmr1 = ModelResult(df1, name="Foo")  # explicit naming
+    assert mmr1.name == "Foo"
+
+    mmr2 = ModelResult(df2)  # implicit name
+    assert mmr2.name == "Model2"
+
+    scon = Connector(o1, mmr1)
+    assert scon.mod_names == ["Foo"]
+
+    con = Connector(o1, [mmr1, mmr2])
+    assert con.mod_names == ["Foo", "Model2"]
+
+    cc = con.extract()
+    assert cc.mod_names == ["Foo", "Model2"]
+
+
+def test_mm_df_nonamed_columns(o1):
+
+    import mikeio
+
+    ds1 = mikeio.read("tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu").isel(
+        element=0
+    )
+    ds2 = mikeio.read("tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu").isel(
+        element=0
+    )
+    df1 = ds1.to_dataframe()
+    df2 = ds2.to_dataframe()
+
+    mmr1 = ModelResult(df1, item="Sign. Wave Height")
+    assert mmr1.name == "Sign. Wave Height"
+    mmr2 = ModelResult(df2, item="Sign. Wave Height")
+    assert mmr2.name == "Sign. Wave Height"
+
+    with pytest.raises(Exception, match="unique"):
+        Connector(o1, [mmr1, mmr2])
+
+
+def test_mm_df_default_columns(o1):
+
+    import mikeio
+
+    ds1 = mikeio.read("tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu").isel(
+        element=0
+    )
+    ds2 = mikeio.read("tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu").isel(
+        element=0
+    )
+    df1 = ds1.to_dataframe()
+    df2 = ds2.to_dataframe()
+
+    mmr1 = ModelResult(df1, item="Sign. Wave Height", name="Foo")
+    assert mmr1.name == "Foo"
+
+    mmr2 = ModelResult(df2, item="Sign. Wave Height", name="Bar")
+    assert mmr2.name == "Bar"
+
+    scon = Connector(o1, mmr2)
+    assert scon.mod_names == ["Bar"]
+
+    con = Connector(o1, [mmr1, mmr2])
+    assert con.mod_names == ["Foo", "Bar"]
+
+    cc = con.extract()
+    assert cc.mod_names == ["Foo", "Bar"]
+
+
 def test_extract(mr1, mr2, o1, o2, o3):
     con = Connector([o1, o2, o3], [mr1[0], mr2[0]])
     cc = con.extract()
