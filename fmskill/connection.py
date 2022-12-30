@@ -80,11 +80,29 @@ def _parse_model(mod, item=None):
     return mod
 
 
-class _BaseConnector:
-    def __init__(self) -> None:
-        self.modelresults = {}
-        self.name = None
-        self.obs = None
+# class _BaseConnector:
+#    def __init__(self) -> None:
+#        self.modelresults = {}
+#        self.name = None
+#        self.obs = None
+
+#    @property
+#   def n_models(self):
+#        """Number of (unique) model results in Connector."""
+#        return len(self.modelresults)
+#
+#    @property
+#    def mod_names(self):
+#        """Names of (unique) model results in Connector."""
+#        return list(self.modelresults.keys())
+#
+#    @abstractmethod
+#    def extract(self):
+#        raise NotImplementedError()
+
+
+class _SingleObsConnector:
+    """A connection between a single observation and model(s)"""
 
     @property
     def n_models(self):
@@ -92,17 +110,8 @@ class _BaseConnector:
         return len(self.modelresults)
 
     @property
-    def mod_names(self):
-        """Names of (unique) model results in Connector."""
-        return list(self.modelresults.keys())
-
-    @abstractmethod
-    def extract(self):
-        raise NotImplementedError()
-
-
-class _SingleObsConnector(_BaseConnector):
-    """A connection between a single observation and model(s)"""
+    def mod_names(self) -> List[str]:
+        return [m.name for m in self.modelresults]
 
     def __repr__(self):
         if self.n_models > 0:
@@ -120,7 +129,9 @@ class _SingleObsConnector(_BaseConnector):
         return f"<{self.__class__.__name__}> {txt}"
 
     def __init__(self, obs, mod, weight=1.0, validate=True):
-        super().__init__()
+
+        self.modelresults = []
+
         obs = self._parse_observation(obs)
         self.name = obs.name
         modelresults = self._parse_model(mod)
@@ -136,7 +147,9 @@ class _SingleObsConnector(_BaseConnector):
                 f"Validation failed! Cannot connect observation '{obs.name}' and {mod_txt}."
             )
         if ok or (not validate):
+            # assert isinstance(self.modelresults, dict)
             self.modelresults = modelresults
+            assert isinstance(self.modelresults, list)  # TODO why list?
             self.obs = obs
             self.obs.weight = weight
 
@@ -373,7 +386,7 @@ class TrackConnector(_SingleObsConnector):
         return self._comparer_or_None(comparer)
 
 
-class Connector(_BaseConnector, Mapping, Sequence):
+class Connector(Mapping, Sequence):
     """The Connector is used for matching Observations and ModelResults
 
     It is one of the most important classes in fmskill. The connections are
@@ -403,6 +416,14 @@ class Connector(_BaseConnector, Mapping, Sequence):
     >>> conB.add(o2, mr)    # conA = conB
     >>> cc = conB.extract()
     """
+
+    @property
+    def mod_names(self) -> List[str]:
+        return list(self.modelresults.keys())
+
+    @property
+    def n_models(self) -> int:
+        return len(self.modelresults)
 
     @property
     def n_observations(self):
