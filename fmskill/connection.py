@@ -1,10 +1,9 @@
-from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 import os
 
 import yaml
 from fmskill.plot import plot_observation_positions
-from typing import List, Union
+from typing import Dict, List, Union
 import warnings
 import numpy as np
 import pandas as pd
@@ -147,9 +146,8 @@ class _SingleObsConnector:
                 f"Validation failed! Cannot connect observation '{obs.name}' and {mod_txt}."
             )
         if ok or (not validate):
-            # assert isinstance(self.modelresults, dict)
             self.modelresults = modelresults
-            assert isinstance(self.modelresults, list)  # TODO why list?
+            assert isinstance(self.modelresults, list)
             self.obs = obs
             self.obs.weight = weight
 
@@ -334,6 +332,10 @@ class PointConnector(_SingleObsConnector):
             )
             return None
 
+        # Rename dataframe columns to match model names
+        for i, name in enumerate(self.mod_names):
+            df_model[i].columns = [name]
+
         comparer = PointComparer(self.obs, df_model)
         return self._comparer_or_None(comparer)
 
@@ -441,7 +443,9 @@ class Connector(Mapping, Sequence):
 
     def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
         super().__init__()
-        self.connections = {}
+        self.connections: Dict[
+            str, Union[_SingleObsConnector, TrackConnector, PointConnector]
+        ] = {}
         self.observations = {}
         self.modelresults = {}
 
@@ -586,6 +590,7 @@ class Connector(Mapping, Sequence):
 
         for con in self.connections.values():
             comparer = con.extract()
+            # assert comparer.mod_names == self.mod_names # TODO consider this
             if comparer is not None:
                 cc.add_comparer(comparer)
         return cc
