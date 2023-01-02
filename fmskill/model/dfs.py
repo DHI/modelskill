@@ -176,19 +176,20 @@ class DataArrayModelResultItem(ModelResultInterface):
         return self._da.time[-1]
 
     @property
-    def name(self):
-        self._name
-
-    @property
     def item_name(self):
         self._da.name
 
     def __init__(self, da: mikeio.DataArray, name=None):
         self._da = da
         if name is None:
-            self._name = self._da.name
+            self.name = self._da.name
         else:
-            self._name = name
+            self.name = name
+
+    def __repr__(self):
+        txt = [f"<DataArrayModelResultItem> '{self.name}'"]
+        txt.append(f"- Item: {self.itemInfo}")
+        return "\n".join(txt)
 
     @property
     def itemInfo(self):
