@@ -3,6 +3,7 @@ import pytest
 
 import mikeio
 from fmskill import ModelResult
+from fmskill.comparison import PointComparer, TrackComparer
 from fmskill.model import DfsModelResultItem, DfsModelResult
 from fmskill.model import DataArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
@@ -184,7 +185,13 @@ def test_dataarray_extract_point(sw_dutch_coast, Hm0_EPL):
     df2 = mr2._extract_point(Hm0_EPL)
 
     assert df1.columns == df2.columns
-    assert np.all(df1.values == df2.values)
+    assert np.all(df1 == df2)
+
+    c1 = mr1.extract_observation(Hm0_EPL)
+    c2 = mr2.extract_observation(Hm0_EPL)
+    assert isinstance(c1, PointComparer)
+    assert isinstance(c2, PointComparer)
+    assert np.all(c1.df == c2.df)
 
 
 def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
@@ -198,7 +205,13 @@ def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
     df2 = mr2._extract_track(Hm0_C2)
 
     assert list(df1.columns) == list(df2.columns)
-    assert np.all(df1.values == df2.values)
+    assert np.all(df1 == df2)
+
+    c1 = mr1.extract_observation(Hm0_C2)
+    c2 = mr2.extract_observation(Hm0_C2)
+    assert isinstance(c1, TrackComparer)
+    assert isinstance(c2, TrackComparer)
+    assert np.all(c1.df == c2.df)
 
 
 def test_factory(hd_oresund_2d):
