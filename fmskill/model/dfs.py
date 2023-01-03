@@ -14,19 +14,19 @@ from .abstract import ModelResultInterface, MultiItemModelResult
 def _validate_item_eum(mod_item: mikeio.ItemInfo, obs: Observation) -> bool:
     """Check that observation and model item eum match"""
     ok = True
-    if obs.item.type == mikeio.EUMType.Undefined:
+    if obs.itemInfo.type == mikeio.EUMType.Undefined:
         warnings.warn(f"{obs.name}: Cannot validate as type is Undefined.")
         return ok
 
-    if mod_item.type != obs.item.type:
+    if mod_item.type != obs.itemInfo.type:
         ok = False
         warnings.warn(
-            f"{obs.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs.item.type.display_name}"
+            f"{obs.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs.itemInfo.type.display_name}"
         )
-    if mod_item.unit != obs.item.unit:
+    if mod_item.unit != obs.itemInfo.unit:
         ok = False
         warnings.warn(
-            f"{obs.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs.item.unit.display_name}"
+            f"{obs.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs.itemInfo.unit.display_name}"
         )
     return ok
 
