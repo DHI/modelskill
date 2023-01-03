@@ -182,16 +182,18 @@ def test_dataarray_extract_point(sw_dutch_coast, Hm0_EPL):
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ModelResult(da, name="SW1")
     assert mr2.itemInfo.type == mikeio.EUMType.Significant_wave_height
-    df2 = mr2._extract_point(Hm0_EPL)
+    df2 = mr2._extract_point(Hm0_EPL.copy())
 
     assert df1.columns == df2.columns
     assert np.all(df1 == df2)
 
-    c1 = mr1.extract_observation(Hm0_EPL)
-    c2 = mr2.extract_observation(Hm0_EPL)
+    c1 = mr1.extract_observation(Hm0_EPL.copy())
+    c2 = mr2.extract_observation(Hm0_EPL.copy())
     assert isinstance(c1, PointComparer)
     assert isinstance(c2, PointComparer)
     assert np.all(c1.df == c2.df)
+    c1.observation.itemInfo == Hm0_EPL.itemInfo
+    assert len(c1.observation.df.index.difference(Hm0_EPL.df.index)) == 0
 
 
 def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
@@ -202,16 +204,18 @@ def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ModelResult(da, name="SW1")
-    df2 = mr2._extract_track(Hm0_C2)
+    df2 = mr2._extract_track(Hm0_C2.copy())
 
     assert list(df1.columns) == list(df2.columns)
     assert np.all(df1 == df2)
 
-    c1 = mr1.extract_observation(Hm0_C2)
-    c2 = mr2.extract_observation(Hm0_C2)
+    c1 = mr1.extract_observation(Hm0_C2.copy())
+    c2 = mr2.extract_observation(Hm0_C2.copy())
     assert isinstance(c1, TrackComparer)
     assert isinstance(c2, TrackComparer)
     assert np.all(c1.df == c2.df)
+    c1.observation.itemInfo == Hm0_C2.itemInfo
+    assert len(c1.observation.df.index.difference(Hm0_C2.df.index)) == 0
 
 
 def test_factory(hd_oresund_2d):
