@@ -177,7 +177,7 @@ class DataArrayModelResultItem(ModelResultInterface):
 
     @property
     def item_name(self):
-        self._da.name
+        return self._da.name
 
     def __init__(self, da: mikeio.DataArray, name=None):
         self._da = da
@@ -198,20 +198,29 @@ class DataArrayModelResultItem(ModelResultInterface):
     def _extract_point(self, observation: PointObservation) -> pd.DataFrame:
 
         dap = self._da.sel(x=observation.x, y=observation.y)
+        dap.name = self.name
+        # ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
 
-        return (
-            mikeio.Dataset(dap).to_dataframe().dropna()
-        )  # Why is there no .to_dataframe() on DataArray?
+        # Why is there no .to_dataframe() on DataArray?
+        return mikeio.Dataset(dap).to_dataframe().dropna()
 
-    def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
-        return self._da.extract_track(observation.df).to_dataframe()
+    def _extract_track(self, observation: TrackObservation) -> pd.DataFrame:
+        ds = self._da.extract_track(observation.df)
+        ds.rename({ds.items[-1].name: self.name}, inplace=True)
+        return ds.to_dataframe().dropna()
 
     def extract_observation(self, observation: PointObservation) -> PointComparer:
 
+        # TODO: this should return a BaseComparer
+
         if isinstance(observation, PointObservation):
             return self._extract_point(observation)
+        elif isinstance(observation, TrackObservation):
+            return self._extract_track(observation)
         else:
-            raise NotImplementedError("Only PointObservations are supported")
+            raise NotImplementedError(
+                "Only PointObservation and TrackObservations are supported"
+            )
 
 
 class DfsModelResultItem(_DfsBase, ModelResultInterface):
