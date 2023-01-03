@@ -11,6 +11,26 @@ from ..utils import make_unique_index
 from .abstract import ModelResultInterface, MultiItemModelResult
 
 
+def _validate_item_eum(mod_item: mikeio.ItemInfo, obs: Observation) -> bool:
+    """Check that observation and model item eum match"""
+    ok = True
+    if obs.item.type == mikeio.EUMType.Undefined:
+        warnings.warn(f"{obs.name}: Cannot validate as type is Undefined.")
+        return ok
+
+    if mod_item.type != obs.item.type:
+        ok = False
+        warnings.warn(
+            f"{obs.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs.item.type.display_name}"
+        )
+    if mod_item.unit != obs.item.unit:
+        ok = False
+        warnings.warn(
+            f"{obs.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs.item.unit.display_name}"
+        )
+    return ok
+
+
 class _DfsBase:
     @property
     def start_time(self) -> pd.Timestamp:
@@ -209,18 +229,46 @@ class DataArrayModelResultItem(ModelResultInterface):
         ds.rename({ds.items[-1].name: self.name}, inplace=True)
         return ds.to_dataframe().dropna()
 
-    def extract_observation(self, observation: PointObservation) -> PointComparer:
+    def extract_observation(
+        self, observation: Union[PointObservation, TrackObservation], validate=True
+    ) -> BaseComparer:
+        """Extract ModelResult at observation for comparison
 
-        # TODO: this should return a BaseComparer
+        Parameters
+        ----------
+        observation : <PointObservation> or <TrackObservation>
+            points and times at which modelresult should be extracted
+        validate: bool, optional
+            Validate if observation is inside domain and that eum type
+            and units match; Default: True
+
+        Returns
+        -------
+        <fmskill.BaseComparer>
+            A comparer object for further analysis or plotting
+        """
+
+        if validate:
+            # ok = self._validate_observation(observation)
+            # if ok:
+            ok = _validate_item_eum(self.itemInfo, observation)
+            if not ok:
+                raise ValueError("Could not extract observation")
 
         if isinstance(observation, PointObservation):
-            return self._extract_point(observation)
+            df_model = self._extract_point(observation)
+            comparer = PointComparer(observation, df_model)
         elif isinstance(observation, TrackObservation):
-            return self._extract_track(observation)
+            df_model = self._extract_track(observation)
+            comparer = TrackComparer(observation, df_model)
         else:
-            raise NotImplementedError(
-                "Only PointObservation and TrackObservations are supported"
-            )
+            raise ValueError("Only point and track observation are supported!")
+
+        if len(comparer.df) == 0:
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+            comparer = None
+
+        return comparer
 
 
 class DfsModelResultItem(_DfsBase, ModelResultInterface):
@@ -268,7 +316,7 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         if validate:
             ok = self._validate_observation(observation)
             if ok:
-                ok = self._validate_item_eum(observation)
+                ok = _validate_item_eum(self.itemInfo, observation)
             if not ok:
                 raise ValueError("Could not extract observation")
 
@@ -286,27 +334,6 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
             comparer = None
 
         return comparer
-
-    def _validate_item_eum(self, observation: Observation) -> bool:
-        """Check that observation and model item eum match"""
-        ok = True
-        obs_item = observation.itemInfo
-        if obs_item.type == mikeio.EUMType.Undefined:
-            warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
-            return ok
-
-        item = self.itemInfo
-        if item.type != obs_item.type:
-            ok = False
-            warnings.warn(
-                f"{observation.name}: Item type should match. Model item: {item.type.display_name}, obs item: {obs_item.type.display_name}"
-            )
-        if item.unit != obs_item.unit:
-            ok = False
-            warnings.warn(
-                f"{observation.name}: Unit should match. Model unit: {item.unit.display_name}, obs unit: {obs_item.unit.display_name}"
-            )
-        return ok
 
 
 class DfsModelResult(_DfsBase, MultiItemModelResult):
