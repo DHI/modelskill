@@ -21,7 +21,7 @@ setuptools.setup(
     extras_require={
         "dev": [
             "pytest",
-            "sphinx",
+            "sphinx==4.5.0",  # pin version to work with sphinx-book-theme
             "sphinx-book-theme",
             "black==22.3.0",
             "plotly >= 4.5",
