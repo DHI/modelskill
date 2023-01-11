@@ -131,7 +131,7 @@ dmypy.json
 
 /data/
 tests/testdata/tmp
-
+/tmp/
 
 # ignore .bak files
 *.bak
