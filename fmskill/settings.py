@@ -30,7 +30,7 @@ Implementation
 
 """
 import re
-from typing import Any, Callable, Iterable, NamedTuple, Union
+from typing import Any, Callable, Iterable, NamedTuple, Optional
 import warnings
 import fmskill.metrics as mtr
 
@@ -39,8 +39,8 @@ class RegisteredOption(NamedTuple):
     key: str
     defval: object
     doc: str
-    validator: Union[Callable[[object], Any], None]
-    cb: Union[Callable[[str], Any], None]
+    validator: Optional[Callable[[object], Any]]
+    cb: Optional[Callable[[str], Any]]
 
 
 # holds registered option metadata
@@ -107,7 +107,7 @@ def _set_option(*args, **kwargs) -> None:
                 o.cb(key)
 
 
-def _describe_option_short(pat: str = "", _print_desc: bool = True) -> str | None:
+def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[str]:
 
     keys = _select_options(pat)
     if len(keys) == 0:
@@ -121,7 +121,7 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> str | Non
     return s
 
 
-def _describe_option(pat: str = "", _print_desc: bool = True) -> str | None:
+def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
 
     keys = _select_options(pat)
     if len(keys) == 0:
@@ -262,8 +262,8 @@ def register_option(
     key: str,
     defval: object,
     doc: str = "",
-    validator: Callable[[object], Any] | None = None,
-    cb: Callable[[str], Any] | None = None,
+    validator: Optional[Callable[[object], Any]] = None,
+    cb: Optional[Callable[[str], Any]] = None,
 ) -> None:
     """
     Register an option in the package-wide pandas config object
