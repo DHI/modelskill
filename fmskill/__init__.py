@@ -27,6 +27,14 @@ from .model.factory import ModelResult
 from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector
 
+from .settings import (
+    get_option,
+    set_option,
+    reset_option,
+    describe_option,
+    options,
+)
+
 
 def from_config(
     configuration: Union[dict, str], *, validate_eum=True, relative_path=True
