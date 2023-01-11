@@ -11,6 +11,26 @@ from ..utils import make_unique_index
 from .abstract import ModelResultInterface, MultiItemModelResult
 
 
+def _validate_item_eum(mod_item: mikeio.ItemInfo, obs: Observation) -> bool:
+    """Check that observation and model item eum match"""
+    ok = True
+    if obs.itemInfo.type == mikeio.EUMType.Undefined:
+        warnings.warn(f"{obs.name}: Cannot validate as type is Undefined.")
+        return ok
+
+    if mod_item.type != obs.itemInfo.type:
+        ok = False
+        warnings.warn(
+            f"{obs.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs.itemInfo.type.display_name}"
+        )
+    if mod_item.unit != obs.itemInfo.unit:
+        ok = False
+        warnings.warn(
+            f"{obs.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs.itemInfo.unit.display_name}"
+        )
+    return ok
+
+
 class _DfsBase:
     @property
     def start_time(self) -> pd.Timestamp:
@@ -166,6 +186,91 @@ class _DfsBase:
         raise NotImplementedError("Deprecated! Use Connector instead.")
 
 
+class DataArrayModelResultItem(ModelResultInterface):
+    @property
+    def start_time(self) -> pd.Timestamp:
+        return self._da.time[0]
+
+    @property
+    def end_time(self) -> pd.Timestamp:
+        return self._da.time[-1]
+
+    @property
+    def item_name(self):
+        return self._da.name
+
+    def __init__(self, da: mikeio.DataArray, name=None):
+        self._da = da
+        if name is None:
+            self.name = self._da.name
+        else:
+            self.name = name
+
+    def __repr__(self):
+        txt = [f"<DataArrayModelResultItem> '{self.name}'"]
+        txt.append(f"- Item: {self.itemInfo}")
+        return "\n".join(txt)
+
+    @property
+    def itemInfo(self):
+        return self._da.item
+
+    def _extract_point(self, observation: PointObservation) -> pd.DataFrame:
+
+        dap = self._da.sel(x=observation.x, y=observation.y)
+        dap.name = self.name
+        # ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
+
+        # Why is there no .to_dataframe() on DataArray?
+        return mikeio.Dataset(dap).to_dataframe().dropna()
+
+    def _extract_track(self, observation: TrackObservation) -> pd.DataFrame:
+        ds = self._da.extract_track(observation.df)
+        ds.rename({ds.items[-1].name: self.name}, inplace=True)
+        return ds.to_dataframe().dropna()
+
+    def extract_observation(
+        self, observation: Union[PointObservation, TrackObservation], validate=True
+    ) -> BaseComparer:
+        """Extract ModelResult at observation for comparison
+
+        Parameters
+        ----------
+        observation : <PointObservation> or <TrackObservation>
+            points and times at which modelresult should be extracted
+        validate: bool, optional
+            Validate if observation is inside domain and that eum type
+            and units match; Default: True
+
+        Returns
+        -------
+        <fmskill.BaseComparer>
+            A comparer object for further analysis or plotting
+        """
+
+        if validate:
+            # ok = self._validate_observation(observation)
+            # if ok:
+            ok = _validate_item_eum(self.itemInfo, observation)
+            if not ok:
+                raise ValueError("Could not extract observation")
+
+        if isinstance(observation, PointObservation):
+            df_model = self._extract_point(observation)
+            comparer = PointComparer(observation, df_model)
+        elif isinstance(observation, TrackObservation):
+            df_model = self._extract_track(observation)
+            comparer = TrackComparer(observation, df_model)
+        else:
+            raise ValueError("Only point and track observation are supported!")
+
+        if len(comparer.df) == 0:
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+            comparer = None
+
+        return comparer
+
+
 class DfsModelResultItem(_DfsBase, ModelResultInterface):
     @property
     def item_name(self):
@@ -211,7 +316,7 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         if validate:
             ok = self._validate_observation(observation)
             if ok:
-                ok = self._validate_item_eum(observation)
+                ok = _validate_item_eum(self.itemInfo, observation)
             if not ok:
                 raise ValueError("Could not extract observation")
 
@@ -229,27 +334,6 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
             comparer = None
 
         return comparer
-
-    def _validate_item_eum(self, observation: Observation) -> bool:
-        """Check that observation and model item eum match"""
-        ok = True
-        obs_item = observation.itemInfo
-        if obs_item.type == mikeio.EUMType.Undefined:
-            warnings.warn(f"{observation.name}: Cannot validate as type is Undefined.")
-            return ok
-
-        item = self.itemInfo
-        if item.type != obs_item.type:
-            ok = False
-            warnings.warn(
-                f"{observation.name}: Item type should match. Model item: {item.type.display_name}, obs item: {obs_item.type.display_name}"
-            )
-        if item.unit != obs_item.unit:
-            ok = False
-            warnings.warn(
-                f"{observation.name}: Unit should match. Model unit: {item.unit.display_name}, obs unit: {obs_item.unit.display_name}"
-            )
-        return ok
 
 
 class DfsModelResult(_DfsBase, MultiItemModelResult):

@@ -11,7 +11,7 @@ Examples
 >>> comparer = con.extract()
 """
 from collections.abc import Mapping, Iterable, Sequence
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 import warnings
 from inspect import getmembers, isfunction
 import numpy as np
@@ -972,17 +972,15 @@ class BaseComparer:
         if skill_table != None:
             # Calculate Skill if it was requested to add as table on the right of plot
             if skill_table == True:
-                skill_df = self.skill(
-                    df=df, model=model, observation=observation, variable=variable
-                )
-            elif isinstance(skill_table, (list, tuple)):
-                skill_df = self.skill(
-                    df=df,
-                    metrics=skill_table,
-                    model=model,
-                    observation=observation,
-                    variable=variable,
-                )
+                if isinstance(self,PointComparer) or (isinstance(self, ComparerCollection) and self.n_observations==1):
+                    skill_df = self.skill(
+                        df=df, model=model, observation=observation, variable=variable
+                    )
+                else: 
+                    skill_df = self.mean_skill(
+                        df=df, model=model, observation=observation, variable=variable
+                    )
+
             # Check for units
             try:
                 units = unit_text.split("[")[1].split("]")[0]
@@ -1826,17 +1824,23 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._all_df = res.sort_index()
         self._all_df.index.name = "datetime"
 
-    def __init__(self):
+    def __init__(self, comparers=None):
         # super().__init__(observation=None, modeldata=None)  # Not possible since init signature is different compared to BaseComparer
         self._metrics = options.metrics.default
         self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
-        self.comparers = {}
         self._mod_names = []
         self._obs_names = []
         self._var_names = []
         self._itemInfos = []
+
+        self.comparers = {}
+
+        if comparers is not None:
+            for c in comparers:
+                if c is not None:
+                    self._add_comparer(c)
 
     def __repr__(self):
         out = []
@@ -1847,9 +1851,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     def __getitem__(self, x):
         if isinstance(x, slice):
-            cc = ComparerCollection()
-            for xi in range(*x.indices(len(self))):
-                cc.add_comparer(self[xi])
+            cmps = [self[xi] for xi in range(*x.indices(len(self)))]
+            cc = ComparerCollection(cmps)
             return cc
 
         if isinstance(x, int):
