@@ -30,7 +30,7 @@ Implementation
 
 """
 import re
-from typing import Any, Callable, Iterable, NamedTuple
+from typing import Any, Callable, Iterable, NamedTuple, Union
 import warnings
 import fmskill.metrics as mtr
 
@@ -39,8 +39,8 @@ class RegisteredOption(NamedTuple):
     key: str
     defval: object
     doc: str
-    validator: Callable[[object], Any] | None
-    cb: Callable[[str], Any] | None
+    validator: Union[Callable[[object], Any], None]
+    cb: Union[Callable[[str], Any], None]
 
 
 # holds registered option metadata
