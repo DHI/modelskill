@@ -11,6 +11,7 @@ import mikeio
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
+from .settings import options
 
 
 def scatter(
@@ -90,10 +91,9 @@ def scatter(
         user default units to override default units, eg 'metre', by default None
     kwargs
     """
-    if show_hist==None and show_density==None:
-        #Default: points density
-        show_density=True
-
+    if show_hist == None and show_density == None:
+        # Default: points density
+        show_density = True
 
     if (binsize is not None) or (nbins is not None):
         warnings.warn(
@@ -184,14 +184,14 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-    
+
     if show_hist:
-        #if histogram is wanted (explicit non-default flag) then density is off
+        # if histogram is wanted (explicit non-default flag) then density is off
         if show_density == True:
             raise TypeError(
                 "if `show_hist=True` then `show_density` must be either `False` or `None`"
-            )        
-        
+            )
+
     if show_density:
         if not ((type(bins) == float) or (type(bins) == int)):
             raise TypeError(
@@ -201,7 +201,7 @@ def scatter(
         if show_hist == True:
             raise TypeError(
                 "if `show_density=True` then `show_hist` must be either `False` or `None`"
-            )    
+            )
         # calculate density data
         z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
@@ -238,7 +238,7 @@ def scatter(
                 x_sample,
                 y_sample,
                 c=c,
-                s=20,
+                s=options.plot.scatter.point_size,
                 alpha=0.5,
                 marker=".",
                 label=None,
@@ -274,18 +274,17 @@ def scatter(
         plt.grid(
             which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
         )
-        max_cbar=None
-        if (show_hist or (show_density and show_points)):
+        max_cbar = None
+        if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             ticks = cbar.ax.get_yticks()
-            max_cbar=ticks[-1]
-            cbar.set_label("# points")        
-            
+            max_cbar = ticks[-1]
+            cbar.set_label("# points")
+
         plt.title(title)
         # Add skill table
         if skill_df != None:
-            _plot_summary_table(skill_df,units,max_cbar=max_cbar)
-        
+            _plot_summary_table(skill_df, units, max_cbar=max_cbar)
 
     elif backend == "plotly":  # pragma: no cover
         import plotly.graph_objects as go
@@ -511,58 +510,61 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 
     return Z_grid
 
-def _plot_summary_table(skill_df,units,max_cbar):
-    stats_with_units=["bias", "rmse", "urmse", "mae"]
+
+def _plot_summary_table(skill_df, units, max_cbar):
+    stats_with_units = ["bias", "rmse", "urmse", "mae"]
     max_str_len = skill_df.columns.str.len().max()
     lines = []
-    if len(skill_df)>1:
-        raise Exception('''`skill_table` kword can only be used for comparisons between 1 model and 1 measurement. 
-        Please add `model`, `variable` and `observation` kwords where required''')
+    if len(skill_df) > 1:
+        raise Exception(
+            """`skill_table` kword can only be used for comparisons between 1 model and 1 measurement. 
+        Please add `model`, `variable` and `observation` kwords where required"""
+        )
 
     for col in skill_df.columns:
         if col == "model" or col == "variable":
             continue
         if col in stats_with_units:
-            #if statistic has dimensions, then add units
-            item_unit=units
+            # if statistic has dimensions, then add units
+            item_unit = units
         else:
-            #else, add empty space (for fomatting)
-            item_unit=' '
-        if col=="n":
+            # else, add empty space (for fomatting)
+            item_unit = " "
+        if col == "n":
             # Number of samples, integer, else, 2 decimals
-            decimals=f'.{0}f'
+            decimals = f".{0}f"
         else:
-            decimals=f'.{2}f'
+            decimals = f".{2}f"
         lines.append(
             f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df[col].values[0],2):{decimals}} {item_unit}"
-                )
+        )
 
     text_ = "\n".join(lines)
 
-    if max_cbar==None:
-        x=0.93
-    elif max_cbar<1e3:
-        x=0.99
-    elif max_cbar<1e4:
-        x=1.01
-    elif max_cbar<1e5:
-        x=1.03
-    elif max_cbar<1e6:
-        x=1.05
+    if max_cbar == None:
+        x = 0.93
+    elif max_cbar < 1e3:
+        x = 0.99
+    elif max_cbar < 1e4:
+        x = 1.01
+    elif max_cbar < 1e5:
+        x = 1.03
+    elif max_cbar < 1e6:
+        x = 1.05
     else:
-        #When more than 1e6 samples, matplotlib changes to scientific notation
-        x=0.97
+        # When more than 1e6 samples, matplotlib changes to scientific notation
+        x = 0.97
 
     plt.gcf().text(
-                x,
-                0.6,
-                text_,
-                bbox={
-                    "facecolor": "blue",
-                    "edgecolor": "k",
-                    "boxstyle": "round",
-                    "alpha": 0.05,
-                },
-                fontsize=12,
-                family="monospace",
-            )
+        x,
+        0.6,
+        text_,
+        bbox={
+            "facecolor": "blue",
+            "edgecolor": "k",
+            "boxstyle": "round",
+            "alpha": 0.05,
+        },
+        fontsize=12,
+        family="monospace",
+    )
