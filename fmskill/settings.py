@@ -30,7 +30,7 @@ Implementation
 
 """
 import re
-from typing import Any, Callable, Iterable, NamedTuple, Optional, Dict
+from typing import Any, Callable, Iterable, List, NamedTuple, Optional, Dict, Tuple
 import warnings
 import fmskill.metrics as mtr
 
@@ -199,7 +199,7 @@ class DictWrapper:
         return list(self.d.keys())
 
 
-def _select_options(pat: str) -> list[str]:
+def _select_options(pat: str) -> List[str]:
     """
     returns a list of keys matching `pat`
     if pat=="all", returns all registered options
@@ -216,7 +216,7 @@ def _select_options(pat: str) -> list[str]:
     return [k for k in keys if re.search(pat, k, re.I)]
 
 
-def _get_root(key: str) -> tuple[Dict[str, Any], str]:
+def _get_root(key: str) -> Tuple[Dict[str, Any], str]:
     path = key.split(".")
     cursor = _global_settings
     for p in path[:-1]:
