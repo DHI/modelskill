@@ -30,7 +30,7 @@ Implementation
 
 """
 import re
-from typing import Any, Callable, Iterable, NamedTuple, Optional
+from typing import Any, Callable, Iterable, NamedTuple, Optional, Dict
 import warnings
 import fmskill.metrics as mtr
 
@@ -44,10 +44,10 @@ class RegisteredOption(NamedTuple):
 
 
 # holds registered option metadata
-_registered_options: dict[str, RegisteredOption] = {}
+_registered_options: Dict[str, RegisteredOption] = {}
 
 # holds the current values for registered options
-_global_settings: dict[str, Any] = {}
+_global_settings: Dict[str, Any] = {}
 
 
 class OptionError(AttributeError, KeyError):
@@ -161,7 +161,7 @@ def get_default_val(pat: str):
 class DictWrapper:
     """provide attribute-style access to a nested dict"""
 
-    def __init__(self, d: dict[str, Any], prefix: str = "") -> None:
+    def __init__(self, d: Dict[str, Any], prefix: str = "") -> None:
         object.__setattr__(self, "d", d)
         object.__setattr__(self, "prefix", prefix)
 
@@ -216,7 +216,7 @@ def _select_options(pat: str) -> list[str]:
     return [k for k in keys if re.search(pat, k, re.I)]
 
 
-def _get_root(key: str) -> tuple[dict[str, Any], str]:
+def _get_root(key: str) -> tuple[Dict[str, Any], str]:
     path = key.split(".")
     cursor = _global_settings
     for p in path[:-1]:
