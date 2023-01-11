@@ -30,7 +30,17 @@ Implementation
 
 """
 import re
-from typing import Any, Callable, Iterable, List, NamedTuple, Optional, Dict, Tuple
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Dict,
+    Tuple,
+    Type,
+)
 import warnings
 import fmskill.metrics as mtr
 
@@ -330,7 +340,7 @@ def register_option(
     )
 
 
-def is_type_factory(_type: type[Any]) -> Callable[[Any], None]:
+def is_type_factory(_type: Type[Any]) -> Callable[[Any], None]:
     """
     Parameters
     ----------
