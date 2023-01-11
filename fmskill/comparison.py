@@ -26,9 +26,9 @@ from .observation import PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
 from .spatial import SpatialSkill
+from .settings import options
 
-
-DEFAULT_METRICS = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+# DEFAULT_METRICS = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
 
 
 class BaseComparer:
@@ -100,7 +100,7 @@ class BaseComparer:
     @metrics.setter
     def metrics(self, values) -> None:
         if values is None:
-            self._metrics = DEFAULT_METRICS
+            self._metrics = options.metrics.default
         else:
             self._metrics = self._parse_metric(values)
 
@@ -178,7 +178,7 @@ class BaseComparer:
 
     def __init__(self, observation, modeldata=None):
 
-        self._metrics = DEFAULT_METRICS
+        self._metrics = options.metrics.default
         self.obs_name = "Observation"
         self._obs_names: List[str]
         self._mod_names: List[str]
@@ -1828,7 +1828,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     def __init__(self):
         # super().__init__(observation=None, modeldata=None)  # Not possible since init signature is different compared to BaseComparer
-        self._metrics = DEFAULT_METRICS
+        self._metrics = options.metrics.default
         self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
