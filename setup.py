@@ -25,6 +25,9 @@ setuptools.setup(
             "sphinx-book-theme",
             "black==22.3.0",
             "plotly >= 4.5",
+            "click",
+            "fmskill[test]",
+            "fmskill[notebooks]",
         ],
         "test": [
             "pytest",

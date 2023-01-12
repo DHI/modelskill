@@ -1,7 +1,11 @@
-import os
-import pandas as pd
+from typing import Union
+from pathlib import Path
 
-from .dfs import DfsModelResult, DataArrayModelResultItem
+import mikeio
+import pandas as pd
+import xarray as xr
+
+from .dfs import DataArrayModelResultItem, DfsModelResult
 from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
 from .xarray import XArrayModelResult
 
@@ -42,38 +46,45 @@ class ModelResult:
     >>> mr_item = ModelResult("ThirdParty.nc", item="WL", itemInfo=mikeio.EUMType.Water_Level)
     """
 
-    def __new__(self, input, *args, **kwargs):
-        import xarray as xr
-        import mikeio
+    def __new__(
+        self,
+        data: Union[
+            str, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset, xr.DataArray
+        ],
+        *args,
+        **kwargs,
+    ):
 
-        if isinstance(input, str):
-            filename = input
-            ext = os.path.splitext(filename)[-1]
+        if isinstance(data, str):
+            filename = Path(data)
+            ext = filename.suffix
             if "dfs" in ext:
-                mr = DfsModelResult(filename, *args, **kwargs)
+                mr = DfsModelResult(str(filename), *args, **kwargs)
                 return self._mr_or_mr_item(mr)
             else:
-                mr = XArrayModelResult(filename, *args, **kwargs)
+                mr = XArrayModelResult(str(filename), *args, **kwargs)
                 return self._mr_or_mr_item(mr)
 
-        elif isinstance(input, mikeio.DataArray):
-            return DataArrayModelResultItem(input, *args, **kwargs)
-        elif isinstance(input, mikeio.Dataset):
+        elif isinstance(data, mikeio.DataArray):
+            return DataArrayModelResultItem(data, *args, **kwargs)
+        elif isinstance(data, mikeio.Dataset):
             raise ValueError("mikeio.Dataset not supported, but mikeio.DataArray is")
-        elif isinstance(input, (pd.DataFrame, pd.Series)):
+        elif isinstance(data, (pd.DataFrame, pd.Series)):
             type = kwargs.pop("type", "point")
             if type == "point":
-                mr = DataFramePointModelResult(input, *args, **kwargs)
+                mr = DataFramePointModelResult(data, *args, **kwargs)
             elif type == "track":
-                mr = DataFrameTrackModelResult(input, *args, **kwargs)
+                mr = DataFrameTrackModelResult(data, *args, **kwargs)
             else:
                 raise ValueError(f"type '{type}' unknown (point, track)")
             return self._mr_or_mr_item(mr)
-        elif isinstance(input, (xr.Dataset, xr.DataArray)):
-            mr = XArrayModelResult(input, *args, **kwargs)
+        elif isinstance(data, (xr.Dataset, xr.DataArray)):
+            mr = XArrayModelResult(data, *args, **kwargs)
             return self._mr_or_mr_item(mr)
         else:
-            raise ValueError("Input type not supported (filename, mikeio.DataArray, DataFrame, xr.DataArray)")
+            raise ValueError(
+                "Input type not supported (filename, mikeio.DataArray, DataFrame, xr.DataArray)"
+            )
 
     @staticmethod
     def _mr_or_mr_item(mr):

@@ -45,7 +45,12 @@ class Observation:
     # matplotlib: red=#d62728
 
     def __init__(
-        self, name: str = None, df=None, itemInfo=None, variable_name: str = None, override_units: str = None,
+        self,
+        name: str = None,
+        df=None,
+        itemInfo=None,
+        variable_name: str = None,
+        override_units: str = None,
     ):
         self.color = "#d62728"
 
@@ -67,7 +72,8 @@ class Observation:
         if variable_name is None:
             variable_name = self.itemInfo.type.name
         self.variable_name = variable_name
-        self.override_units= override_units
+        self.override_units = override_units
+
     @property
     def time(self) -> pd.DatetimeIndex:
         "Time index"
@@ -99,12 +105,12 @@ class Observation:
         return self._filename
 
     def _unit_text(self):
-        override_units=self.override_units
+        override_units = self.override_units
         if self.itemInfo is None:
             return ""
         txt = f"{self.itemInfo.type.display_name}"
         if self.itemInfo.type != mikeio.EUMType.Undefined:
-            if override_units==None:
+            if override_units == None:
                 unit = self.itemInfo.unit.display_name
                 txt = f"{txt} [{unit_display_name(unit)}]"
             else:
@@ -168,7 +174,7 @@ class PointObservation(Observation):
     variable_name : str, optional
         user-defined variable name in case of multiple variables, by default eumType name
     units : str, optional
-        user-defined units name in case user wants to override eumUnits 
+        user-defined units name in case user wants to override eumUnits
 
     Examples
     --------
@@ -262,7 +268,11 @@ class PointObservation(Observation):
             )
 
         super().__init__(
-            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name, override_units=units, 
+            name=name,
+            df=df,
+            itemInfo=itemInfo,
+            variable_name=variable_name,
+            override_units=units,
         )
 
     def __repr__(self):
@@ -342,7 +352,7 @@ class TrackObservation(Observation):
     offset_duplicates : float, optional
         in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001
     units : str, optional
-        user-defined units name in case user wants to override eumUnits 
+        user-defined units name in case user wants to override eumUnits
 
 
     Examples
@@ -410,7 +420,7 @@ class TrackObservation(Observation):
 
     def __init__(
         self,
-        input,
+        data,
         *,
         item: int = None,
         name: str = None,
@@ -424,21 +434,21 @@ class TrackObservation(Observation):
         self._filename = None
         self._item = None
 
-        if isinstance(input, pd.DataFrame):
-            df = input
+        if isinstance(data, pd.DataFrame):
+            df = data
             df_items = df.columns.to_list()
             items = self._parse_track_items(df_items, x_item, y_item, item)
             df = df.iloc[:, items].copy()
             itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
-        elif isinstance(input, str):
-            assert os.path.exists(input)
-            self._filename = input
+        elif isinstance(data, str):
+            assert os.path.exists(data)
+            self._filename = data
             if name is None:
-                name = os.path.basename(input).split(".")[0]
+                name = os.path.basename(data).split(".")[0]
 
-            ext = os.path.splitext(input)[-1]
+            ext = os.path.splitext(data)[-1]
             if ext == ".dfs0":
-                dfs = mikeio.open(input)
+                dfs = mikeio.open(data)
                 file_items = [i.name for i in dfs.items]
                 items = self._parse_track_items(file_items, x_item, y_item, item)
                 df, itemInfo = self._read_dfs0(dfs, items)
@@ -449,7 +459,7 @@ class TrackObservation(Observation):
                 )
         else:
             raise TypeError(
-                f"input must be str or pandas DataFrame! Given input has type {type(input)}"
+                f"input must be str or pandas DataFrame! Given input has type {type(data)}"
             )
 
         # A unique index makes lookup much faster O(1)
@@ -457,7 +467,11 @@ class TrackObservation(Observation):
             df.index = make_unique_index(df.index, offset_duplicates=offset_duplicates)
 
         super().__init__(
-            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name,override_units=units,
+            name=name,
+            df=df,
+            itemInfo=itemInfo,
+            variable_name=variable_name,
+            override_units=units,
         )
 
     @staticmethod
@@ -505,6 +519,12 @@ def unit_display_name(name: str) -> str:
     m
     """
 
-    res = name.replace("meter", "m").replace("_per_", "/").replace(" per ", "/").replace("second", "s").replace("sec", "s")
+    res = (
+        name.replace("meter", "m")
+        .replace("_per_", "/")
+        .replace(" per ", "/")
+        .replace("second", "s")
+        .replace("sec", "s")
+    )
 
     return res
