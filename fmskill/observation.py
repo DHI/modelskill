@@ -505,6 +505,6 @@ def unit_display_name(name: str) -> str:
     m
     """
 
-    res = name.replace("meter", "m").replace("_per_", "/").replace("second", "s").replace("sec", "s")
+    res = name.replace("meter", "m").replace("_per_", "/").replace(" per ", "/").replace("second", "s").replace("sec", "s")
 
     return res

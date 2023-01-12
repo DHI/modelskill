@@ -373,7 +373,7 @@ def scatter(
 
 
 def plot_observation_positions(
-    dfs: mikeio.dfsu._Dfsu,
+    geometry: mikeio.spatial.FM_geometry.GeometryFM,
     observations: List[Observation],
     figsize: Tuple = None,
     title=None,
@@ -382,8 +382,8 @@ def plot_observation_positions(
 
     Parameters
     ----------
-    dfs: Dfsu
-        model object
+    geometry: mikeio.GeometryFM
+        A MIKE IO geometry object
     observations: list
         Observation collection
     figsize : (float, float), optional
@@ -392,9 +392,9 @@ def plot_observation_positions(
         plot title, default empty
     """
 
-    xn = dfs.node_coordinates[:, 0]
+    xn = geometry.node_coordinates[:, 0]
     offset_x = 0.02 * (max(xn) - min(xn))
-    ax = dfs.geometry.plot(plot_type="outline_only", figsize=figsize)
+    ax = geometry.plot(plot_type="outline_only", figsize=figsize)
     for obs in observations:
         if isinstance(obs, PointObservation):
             ax.scatter(x=obs.x, y=obs.y, marker="x")
@@ -515,9 +515,6 @@ def _plot_summary_table(skill_df,units,max_cbar):
     stats_with_units=["bias", "rmse", "urmse", "mae"]
     max_str_len = skill_df.columns.str.len().max()
     lines = []
-    if len(skill_df)>1:
-        raise Exception('''`skill_table` kword can only be used for comparisons between 1 model and 1 measurement. 
-        Please add `model`, `variable` and `observation` kwords where required''')
 
     for col in skill_df.columns:
         if col == "model" or col == "variable":

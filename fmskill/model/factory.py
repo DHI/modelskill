@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from .dfs import DfsModelResult
+from .dfs import DfsModelResult, DataArrayModelResultItem
 from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
 from .xarray import XArrayModelResult
 
@@ -44,6 +44,7 @@ class ModelResult:
 
     def __new__(self, input, *args, **kwargs):
         import xarray as xr
+        import mikeio
 
         if isinstance(input, str):
             filename = input
@@ -55,6 +56,10 @@ class ModelResult:
                 mr = XArrayModelResult(filename, *args, **kwargs)
                 return self._mr_or_mr_item(mr)
 
+        elif isinstance(input, mikeio.DataArray):
+            return DataArrayModelResultItem(input, *args, **kwargs)
+        elif isinstance(input, mikeio.Dataset):
+            raise ValueError("mikeio.Dataset not supported, but mikeio.DataArray is")
         elif isinstance(input, (pd.DataFrame, pd.Series)):
             type = kwargs.pop("type", "point")
             if type == "point":
@@ -68,7 +73,7 @@ class ModelResult:
             mr = XArrayModelResult(input, *args, **kwargs)
             return self._mr_or_mr_item(mr)
         else:
-            raise ValueError("Input type not supported (filename or DataFrame)")
+            raise ValueError("Input type not supported (filename, mikeio.DataArray, DataFrame, xr.DataArray)")
 
     @staticmethod
     def _mr_or_mr_item(mr):

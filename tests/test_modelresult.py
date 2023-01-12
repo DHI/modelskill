@@ -6,6 +6,7 @@ from fmskill.model import DfsModelResultItem, DfsModelResult
 from fmskill.observation import PointObservation
 
 
+
 @pytest.fixture
 def klagshamn():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
@@ -45,6 +46,12 @@ def wind_HKNA():
 def Hm0_EPL():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
     return PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
+
+
+@pytest.fixture
+def Hm0_C2():
+    fn = "tests/testdata/SW/Alti_c2_Dutch.dfs0"
+    return TrackObservation(fn, item=3, name="C2")
 
 
 @pytest.fixture
@@ -151,6 +158,68 @@ def test_dfs_model_result(hd_oresund_2d):
     assert mr.item_names[0] == mr1.item_name
     assert mr.filename == mr1.filename
     assert mr.name == mr1.name
+
+
+def test_dataarray_model_result(hd_oresund_2d):
+    ds = mikeio.read(hd_oresund_2d)
+    assert ds.n_items == 7
+    da = ds[0]
+    assert isinstance(da, mikeio.DataArray)
+
+    mr = ModelResult(da, name="Oresund")
+    assert isinstance(mr, DataArrayModelResultItem)
+    assert mr.item_name == da.item.name
+    assert mr.name == "Oresund"
+    assert isinstance(mr._da, mikeio.DataArray)
+
+    mr.name = "Oresund2"
+    assert mr.name == "Oresund2"
+
+
+def test_dataarray_extract_point(sw_dutch_coast, Hm0_EPL):
+    mr1 = ModelResult(sw_dutch_coast, item=0, name="SW1")
+    assert mr1.itemInfo.type == mikeio.EUMType.Significant_wave_height
+    df1 = mr1._extract_point(Hm0_EPL)
+    assert df1.columns == ["SW1"]
+    assert len(df1) == 23
+
+    da = mikeio.read(sw_dutch_coast)[0]
+    mr2 = ModelResult(da, name="SW1")
+    assert mr2.itemInfo.type == mikeio.EUMType.Significant_wave_height
+    df2 = mr2._extract_point(Hm0_EPL.copy())
+
+    assert df1.columns == df2.columns
+    assert np.all(df1 == df2)
+
+    c1 = mr1.extract_observation(Hm0_EPL.copy())
+    c2 = mr2.extract_observation(Hm0_EPL.copy())
+    assert isinstance(c1, PointComparer)
+    assert isinstance(c2, PointComparer)
+    assert np.all(c1.df == c2.df)
+    c1.observation.itemInfo == Hm0_EPL.itemInfo
+    assert len(c1.observation.df.index.difference(Hm0_EPL.df.index)) == 0
+
+
+def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
+    mr1 = ModelResult(sw_dutch_coast, item=0, name="SW1")
+    df1 = mr1._extract_track(Hm0_C2)
+    assert list(df1.columns) == ["Longitude", "Latitude", "SW1"]
+    assert len(df1) == 113
+
+    da = mikeio.read(sw_dutch_coast)[0]
+    mr2 = ModelResult(da, name="SW1")
+    df2 = mr2._extract_track(Hm0_C2.copy())
+
+    assert list(df1.columns) == list(df2.columns)
+    assert np.all(df1 == df2)
+
+    c1 = mr1.extract_observation(Hm0_C2.copy())
+    c2 = mr2.extract_observation(Hm0_C2.copy())
+    assert isinstance(c1, TrackComparer)
+    assert isinstance(c2, TrackComparer)
+    assert np.all(c1.df == c2.df)
+    c1.observation.itemInfo == Hm0_C2.itemInfo
+    assert len(c1.observation.df.index.difference(Hm0_C2.df.index)) == 0
 
 
 def test_factory(hd_oresund_2d):

@@ -93,6 +93,29 @@ def test_connector_add(o1, mr1):
     assert len(con.observations) == 1
 
 
+def test_connector_dataarray(o1, o3):
+
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]  # Skip warm-up period
+
+    # Using a mikeio.DataArray instead of a Dfs file, makes it possible to select a subset of data
+
+    c = Connector([o1, o3], da)
+    assert c.n_models == 1
+
+    cc = c.extract()
+    assert cc.n_models == 1
+    assert cc["c2"].n_points == 41
+
+    da2 = mikeio.read(fn, area=[0, 2, 52, 54], time=slice("2017-10-28 00:00", None))[
+        0
+    ]  # Spatio/temporal subset
+
+    c2 = Connector([o1, o3], da2)
+    cc2 = c2.extract()
+    assert cc2["c2"].n_points == 19
+
+
 def test_connector_add_two_models(
     o1: PointObservation, mr1: ModelResult, mr2: ModelResult
 ):
