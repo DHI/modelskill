@@ -201,6 +201,6 @@ def test_plot_data_coverage(con31):
     con31.plot_temporal_coverage()
 
 
-# def test_extract_gaps(con33):
-#     collection = con33.extract()
-#     assert collection.n_points==28
+def test_extract_gaps(con33):
+    collection = con33.extract(max_gap=3600)
+    assert collection.n_points==28
