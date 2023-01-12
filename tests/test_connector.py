@@ -202,5 +202,5 @@ def test_plot_data_coverage(con31):
 
 
 def test_extract_gaps(con33):
-    collection = con33.extract(max_gap=3600)
+    collection = con33.extract(max_model_gap=3600)
     assert collection.n_points==28
