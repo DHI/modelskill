@@ -2,8 +2,11 @@ import pytest
 
 import mikeio
 from fmskill.model import ModelResult
-from fmskill.model import DfsModelResultItem, DfsModelResult
-from fmskill.observation import PointObservation
+from fmskill.model import DfsModelResultItem, DfsModelResult,DataArrayModelResultItem
+from fmskill.observation import PointObservation,TrackObservation
+from fmskill.comparison import PointComparer, TrackComparer
+
+import numpy as np
 
 
 
