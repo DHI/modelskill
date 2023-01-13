@@ -81,7 +81,7 @@ def _get_option(pat: str) -> Any:
     Parameters
     ----------
     pat : str
-        pattern of seeked option 
+        pattern of seeked option
 
     Returns
     -------
@@ -230,7 +230,7 @@ class OptionsContainer:
         try:
             v = object.__getattribute__(self, "d")[key]
         except KeyError as err:
-            raise OptionError("No such option") from err
+            raise OptionError(f"No such option: {key}") from err
         if isinstance(v, dict):
             return OptionsContainer(v, prefix)
         else:
