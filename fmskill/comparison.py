@@ -28,12 +28,15 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option
 
-# DEFAULT_METRICS = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
-
 register_option(
-    "metrics.default",
+    "metrics.primary",
+    mtr.rmse,
+    doc="Default metric in cases where a only a single metric can be reported.",
+)
+register_option(
+    "metrics.list",
     [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
-    doc="Default metrics to be used in skill tables if specific metrics are not described.",
+    doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
 )
 
 
@@ -106,7 +109,7 @@ class BaseComparer:
     @metrics.setter
     def metrics(self, values) -> None:
         if values is None:
-            self._metrics = options.metrics.default
+            self._metrics = options.metrics.list
         else:
             self._metrics = self._parse_metric(values)
 
@@ -184,7 +187,7 @@ class BaseComparer:
 
     def __init__(self, observation, modeldata=None):
 
-        self._metrics = options.metrics.default
+        self._metrics = options.metrics.list
         self.obs_name = "Observation"
         self._obs_names: List[str]
         self._mod_names: List[str]
@@ -401,7 +404,7 @@ class BaseComparer:
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model","observation"]
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
@@ -585,7 +588,7 @@ class BaseComparer:
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model","observation"]
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         n_min : int, optional
             minimum number of observations in a grid cell;
             cells with fewer observations get a score of `np.nan`
@@ -924,7 +927,7 @@ class BaseComparer:
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
         skill_table : str, List[str], bool, optional
-            list of fmskill.metrics or boolean, if True then by default [bias, rmse, urmse, mae, cc, si, r2].
+            list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
             by default False
         kwargs
@@ -1195,7 +1198,7 @@ class SingleObsComparer(BaseComparer):
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model"]
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         freq : string, optional
@@ -1834,7 +1837,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     def __init__(self, comparers=None):
         # super().__init__(observation=None, modeldata=None)  # Not possible since init signature is different compared to BaseComparer
-        self._metrics = options.metrics.default
+        self._metrics = options.metrics.list
         self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
@@ -2047,7 +2050,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             dictionary of observations with special weigths, others will be set to 1.0
             by default None (i.e. observations weight attribute if assigned else "equal")
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
@@ -2162,7 +2165,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         Parameters
         ----------
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
