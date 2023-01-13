@@ -15,8 +15,41 @@ import fmskill.settings as settings
 from .settings import options, register_option
 
 
-register_option("plot.font.color", "red", validator=settings.is_str)
-register_option("plot.scatter.point_size", 10, validator=settings.is_int)
+def is_positive(value: object) -> None:
+    if np.isreal(value) and value > 0:
+        return
+    raise ValueError("Value must be a number greater than 0")
+
+
+def is_nonnegative(value: object) -> None:
+    if np.isreal(value) and value >= 0:
+        return
+    raise ValueError("Value must be a non-negative number")
+
+
+def is_between_0_and_1(value: object) -> None:
+    if np.isreal(value) and value >= 0 and value <= 1:
+        return
+    raise ValueError("Value must be a number between 0 and 1")
+
+
+register_option("plot.scatter.points.size", 20, validator=is_positive)
+register_option("plot.scatter.points.alpha", 0.5, validator=is_between_0_and_1)
+register_option("plot.scatter.points.label", "", validator=settings.is_str)
+register_option("plot.scatter.points.plot_kwargs", {})
+register_option("plot.scatter.quantiles.size", 3.5, validator=is_positive)
+register_option("plot.scatter.quantiles.marker", "X", validator=settings.is_str)
+register_option("plot.scatter.quantiles.color", "darkturquoise")
+register_option("plot.scatter.quantiles.label", "Q-Q", validator=settings.is_str)
+register_option(
+    "plot.scatter.quantiles.plot_kwargs", {"markeredgecolor": (0, 0, 0, 0.4)}
+)
+register_option("plot.scatter.reg_line.label", "1:1", validator=settings.is_str)
+register_option("plot.scatter.reg_line.color", "r", validator=settings.is_str)
+register_option("plot.scatter.reg_line.plot_kwargs", {})
+register_option("plot.scatter.legend_kwargs", {})
+register_option("plot.scatter.table.show", False, validator=settings.is_bool)
+register_option("plot.scatter.table.bbox_kwargs", {})
 
 
 def scatter(
