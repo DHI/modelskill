@@ -259,6 +259,11 @@ def _build_option_description(k: str) -> str:
     return s
 
 
+# temporary disabled
+# get_option = _get_option
+# set_option = _set_option
+# reset_option = _reset_option
+# describe_option = _describe_option
 options = OptionsContainer(_global_settings)
 
 
