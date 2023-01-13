@@ -36,20 +36,17 @@ def is_between_0_and_1(value: object) -> None:
 register_option("plot.scatter.points.size", 20, validator=is_positive)
 register_option("plot.scatter.points.alpha", 0.5, validator=is_between_0_and_1)
 register_option("plot.scatter.points.label", "", validator=settings.is_str)
-register_option("plot.scatter.points.plot_kwargs", {})
 register_option("plot.scatter.quantiles.size", 3.5, validator=is_positive)
 register_option("plot.scatter.quantiles.marker", "X", validator=settings.is_str)
-register_option("plot.scatter.quantiles.color", "darkturquoise")
-register_option("plot.scatter.quantiles.label", "Q-Q", validator=settings.is_str)
 register_option(
-    "plot.scatter.quantiles.plot_kwargs", {"markeredgecolor": (0, 0, 0, 0.4)}
+    "plot.scatter.quantiles.color", "darkturquoise", validator=settings.is_str
 )
-register_option("plot.scatter.reg_line.label", "1:1", validator=settings.is_str)
+register_option("plot.scatter.quantiles.label", "Q-Q", validator=settings.is_str)
+register_option("plot.scatter.quantiles.markeredgecolor", (0, 0, 0, 0.4))
+register_option("plot.scatter.oneone_line.label", "1:1", validator=settings.is_str)
+register_option("plot.scatter.oneone_line.color", "blue", validator=settings.is_str)
 register_option("plot.scatter.reg_line.color", "r", validator=settings.is_str)
-register_option("plot.scatter.reg_line.plot_kwargs", {})
-register_option("plot.scatter.legend_kwargs", {})
-register_option("plot.scatter.table.show", False, validator=settings.is_bool)
-register_option("plot.scatter.table.bbox_kwargs", {})
+# register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 
 
 def scatter(
@@ -263,8 +260,8 @@ def scatter(
         plt.plot(
             [xlim[0], xlim[1]],
             [xlim[0], xlim[1]],
-            label="1:1",
-            c="blue",
+            label=options.plot.scatter.oneone_line.label,
+            c=options.plot.scatter.oneone_line.color,
             zorder=3,
         )
         if show_points:
@@ -276,26 +273,26 @@ def scatter(
                 x_sample,
                 y_sample,
                 c=c,
-                s=options.plot.scatter.point_size,
-                alpha=0.5,
+                s=options.plot.scatter.points.size,
+                alpha=options.plot.scatter.points.alpha,
                 marker=".",
-                label=None,
+                label=options.plot.scatter.points.label,
                 zorder=1,
                 **kwargs,
             )
         plt.plot(
             xq,
             yq,
-            "X",
-            label="Q-Q",
-            c="darkturquoise",
-            markeredgecolor=(0, 0, 0, 0.4),
+            options.plot.scatter.quantiles.marker,
+            label=options.plot.scatter.quantiles.label,
+            c=options.plot.scatter.quantiles.color,
             zorder=4,
+            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
         )
         plt.plot(
             x,
             intercept + slope * x,
-            "r",
+            options.plot.scatter.reg_line.color,
             label=reglabel,
             zorder=2,
         )
@@ -378,10 +375,10 @@ def scatter(
             go.Scatter(
                 x=xq,
                 y=yq,
-                name="Q-Q",
+                name=options.plot.scatter.quantiles.label,
                 mode="markers",
                 marker_symbol="x",
-                marker_color="darkturquoise",
+                marker_color=options.plot.scatter.quantiles.color,
                 marker_line_color="midnightblue",
                 marker_line_width=0.6,
             )
