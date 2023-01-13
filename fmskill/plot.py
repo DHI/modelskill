@@ -11,7 +11,12 @@ import mikeio
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
-from .settings import options
+import fmskill.settings as settings
+from .settings import options, register_option
+
+
+register_option("plot.font.color", "red", validator=settings.is_str)
+register_option("plot.scatter.point_size", 10, validator=settings.is_int)
 
 
 def scatter(

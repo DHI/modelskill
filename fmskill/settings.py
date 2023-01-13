@@ -50,7 +50,7 @@ class RegisteredOption(NamedTuple):
     defval: object
     doc: str
     validator: Optional[Callable[[object], Any]]
-    cb: Optional[Callable[[str], Any]]
+    # cb: Optional[Callable[[str], Any]]
 
 
 # holds registered option metadata
@@ -77,7 +77,7 @@ def _get_single_key(pat: str) -> str:
     return key
 
 
-def _get_option(pat: str) -> Any:
+def get_option(pat: str) -> Any:
     key = _get_single_key(pat)
 
     # walk the nested dict
@@ -85,7 +85,7 @@ def _get_option(pat: str) -> Any:
     return root[k]
 
 
-def _set_option(*args, **kwargs) -> None:
+def set_option(*args, **kwargs) -> None:
     # must at least 1 arg deal with constraints later
     nargs = len(args)
     if not nargs or nargs % 2 != 0:
@@ -109,12 +109,12 @@ def _set_option(*args, **kwargs) -> None:
         root, k = _get_root(key)
         root[k] = v
 
-        if o.cb:
-            if silent:
-                with warnings.catch_warnings(record=True):
-                    o.cb(key)
-            else:
-                o.cb(key)
+        # if o.cb:
+        #     if silent:
+        #         with warnings.catch_warnings(record=True):
+        #             o.cb(key)
+        #     else:
+        #         o.cb(key)
 
 
 def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[str]:
@@ -123,7 +123,7 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[
     if len(keys) == 0:
         raise OptionError("No such keys(s)")
 
-    s = "\n".join([f"{k} : {_get_option(k)}" for k in keys])
+    s = "\n".join([f"{k} : {get_option(k)}" for k in keys])
 
     if _print_desc:
         print(s)
@@ -131,7 +131,7 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[
     return s
 
 
-def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
+def describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
 
     keys = _select_options(pat)
     if len(keys) == 0:
@@ -145,7 +145,7 @@ def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
     return s
 
 
-def _reset_option(pat: str, silent: bool = False) -> None:
+def reset_option(pat: str, silent: bool = False) -> None:
 
     keys = _select_options(pat)
 
@@ -160,7 +160,7 @@ def _reset_option(pat: str, silent: bool = False) -> None:
         )
 
     for k in keys:
-        _set_option(k, _registered_options[k].defval, silent=silent)
+        set_option(k, _registered_options[k].defval, silent=silent)
 
 
 def get_default_val(pat: str):
@@ -168,7 +168,7 @@ def get_default_val(pat: str):
     return _get_registered_option(key).defval
 
 
-class DictWrapper:
+class OptionsContainer:
     """provide attribute-style access to a nested dict"""
 
     def __init__(self, d: Dict[str, Any], prefix: str = "") -> None:
@@ -183,7 +183,7 @@ class DictWrapper:
         # you can't set new keys
         # can you can't overwrite subtrees
         if key in self.d and not isinstance(self.d[key], dict):
-            _set_option(prefix, val)
+            set_option(prefix, val)
         else:
             raise OptionError("You can only set the value of existing options")
 
@@ -197,13 +197,12 @@ class DictWrapper:
         except KeyError as err:
             raise OptionError("No such option") from err
         if isinstance(v, dict):
-            return DictWrapper(v, prefix)
+            return OptionsContainer(v, prefix)
         else:
-            return _get_option(prefix)
+            return get_option(prefix)
 
     def __repr__(self) -> str:
         return _describe_option_short(self.prefix, False)
-        # return yaml.dump(self.d, sort_keys=False)
 
     def __dir__(self) -> Iterable[str]:
         return list(self.d.keys())
@@ -256,16 +255,12 @@ def _build_option_description(k: str) -> str:
         s += "No description available."
 
     if o:
-        s += f"\n    [default: {o.defval}] [currently: {_get_option(k)}]"
+        s += f"\n    [default: {o.defval}] [currently: {get_option(k)}]"
 
     return s
 
 
-get_option = _get_option
-set_option = _set_option
-reset_option = _reset_option
-describe_option = _describe_option
-options = DictWrapper(_global_settings)
+options = OptionsContainer(_global_settings)
 
 
 def register_option(
@@ -273,7 +268,7 @@ def register_option(
     defval: object,
     doc: str = "",
     validator: Optional[Callable[[object], Any]] = None,
-    cb: Optional[Callable[[str], Any]] = None,
+    # cb: Optional[Callable[[str], Any]] = None,
 ) -> None:
     """
     Register an option in the package-wide pandas config object
@@ -288,7 +283,7 @@ def register_option(
     validator : Callable, optional
         Function of a single argument, should raise `ValueError` if
         called with a value which is not a legal value for the option.
-    cb
+    disabled: cb
         a function of a single argument "key", which is called
         immediately after an option value is set/reset. key is
         the full name of the option.
@@ -336,7 +331,7 @@ def register_option(
 
     # save the option metadata
     _registered_options[key] = RegisteredOption(
-        key=key, defval=defval, doc=doc, validator=validator, cb=cb
+        key=key, defval=defval, doc=doc, validator=validator  # , cb=cb
     )
 
 
@@ -381,48 +376,6 @@ def is_instance_factory(_type) -> Callable[[Any], None]:
     return inner
 
 
-def is_one_of_factory(legal_values) -> Callable[[Any], None]:
-
-    callables = [c for c in legal_values if callable(c)]
-    legal_values = [c for c in legal_values if not callable(c)]
-
-    def inner(x) -> None:
-        if x not in legal_values:
-
-            if not any(c(x) for c in callables):
-                uvals = [str(lval) for lval in legal_values]
-                pp_values = "|".join(uvals)
-                msg = f"Value must be one of {pp_values}"
-                if len(callables):
-                    msg += " or a callable"
-                raise ValueError(msg)
-
-    return inner
-
-
-def is_nonnegative_int(value: object) -> None:
-    """
-    Verify that value is None or a positive int.
-    Parameters
-    ----------
-    value : None or int
-            The `value` to be checked.
-    Raises
-    ------
-    ValueError
-        When the value is not None or is a negative integer
-    """
-    if value is None:
-        return
-
-    elif isinstance(value, int):
-        if value >= 0:
-            return
-
-    msg = "Value must be a nonnegative integer or None"
-    raise ValueError(msg)
-
-
 # common type validators, for convenience
 # usage: register_option(... , validator = is_int)
 is_int = is_type_factory(int)
@@ -445,12 +398,3 @@ def is_callable(obj) -> bool:
     if not callable(obj):
         raise ValueError("Value must be a callable")
     return True
-
-
-register_option("plot.font.color", "red", validator=is_str)
-register_option("plot.scatter.point_size", 10, validator=is_int)
-register_option(
-    "metrics.default",
-    [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
-    doc="Default metrics to be used in skill tables if specific metrics are not described.",
-)

@@ -26,9 +26,15 @@ from .observation import PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
 from .spatial import SpatialSkill
-from .settings import options
+from .settings import options, register_option
 
 # DEFAULT_METRICS = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+
+register_option(
+    "metrics.default",
+    [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    doc="Default metrics to be used in skill tables if specific metrics are not described.",
+)
 
 
 class BaseComparer:
@@ -972,11 +978,13 @@ class BaseComparer:
         if skill_table != None:
             # Calculate Skill if it was requested to add as table on the right of plot
             if skill_table == True:
-                if isinstance(self,PointComparer) or (isinstance(self, ComparerCollection) and self.n_observations==1):
+                if isinstance(self, PointComparer) or (
+                    isinstance(self, ComparerCollection) and self.n_observations == 1
+                ):
                     skill_df = self.skill(
                         df=df, model=model, observation=observation, variable=variable
                     )
-                else: 
+                else:
                     skill_df = self.mean_skill(
                         df=df, model=model, observation=observation, variable=variable
                     )
