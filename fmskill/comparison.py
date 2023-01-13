@@ -26,13 +26,13 @@ from .observation import PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
 from .spatial import SpatialSkill
-from .settings import options, register_option
+from .settings import options, register_option, reset_option
 
-register_option(
-    "metrics.primary",
-    mtr.rmse,
-    doc="Default metric in cases where a only a single metric can be reported.",
-)
+# register_option(
+#     "metrics.primary",
+#     mtr.rmse,
+#     doc="Default metric in cases where a only a single metric can be reported.",
+# )
 register_option(
     "metrics.list",
     [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
@@ -104,14 +104,14 @@ class BaseComparer:
 
     @property
     def metrics(self):
-        return self._metrics
+        return options.metrics.list
 
     @metrics.setter
     def metrics(self, values) -> None:
         if values is None:
-            self._metrics = options.metrics.list
+            reset_option("metrics.list")
         else:
-            self._metrics = self._parse_metric(values)
+            options.metrics.list = self._parse_metric(values)
 
     def __add__(self, other: "BaseComparer") -> "ComparerCollection":
 
@@ -187,7 +187,7 @@ class BaseComparer:
 
     def __init__(self, observation, modeldata=None):
 
-        self._metrics = options.metrics.list
+        # self._metrics = options.metrics.list
         self.obs_name = "Observation"
         self._obs_names: List[str]
         self._mod_names: List[str]
@@ -357,7 +357,7 @@ class BaseComparer:
 
     def _parse_metric(self, metric, return_list=False):
         if metric is None:
-            return self._metrics
+            metric = self.metrics
 
         if isinstance(metric, str):
             valid_metrics = [
@@ -1837,7 +1837,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     def __init__(self, comparers=None):
         # super().__init__(observation=None, modeldata=None)  # Not possible since init signature is different compared to BaseComparer
-        self._metrics = options.metrics.list
+        # self._metrics = options.metrics.list
         self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
