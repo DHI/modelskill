@@ -76,6 +76,18 @@ def _get_single_key(pat: str) -> str:
 
 
 def _get_option(pat: str) -> Any:
+    """Get value of a single option matching a pattern
+
+    Parameters
+    ----------
+    pat : str
+        pattern of seeked option 
+
+    Returns
+    -------
+    Any
+        value of matched option
+    """
     key = _get_single_key(pat)
 
     # walk the nested dict
@@ -84,9 +96,25 @@ def _get_option(pat: str) -> Any:
 
 
 def _set_option(*args, **kwargs) -> None:
+    """Set the value of one or more options
+
+    Examples
+    --------
+    >>> fmskill.set_option("plot.scatter.point_size", 4)
+    >>> fmskill.set_option({"plot.scatter.point_size": 4})
+    """
     # must at least 1 arg deal with constraints later
+
+    if len(args) == 1 and isinstance(args[0], dict):
+        # accept a dictonary of options
+        d = args[0]
+        args = []
+        for k, v in d.items():
+            args = args + [k, v]
+
     nargs = len(args)
     if not nargs or nargs % 2 != 0:
+        print(f"Input was args={args}, kwargs={kwargs}")
         raise ValueError("Must provide an even number of non-keyword arguments")
 
     # default to false
@@ -113,6 +141,14 @@ def _set_option(*args, **kwargs) -> None:
         #             o.cb(key)
         #     else:
         #         o.cb(key)
+
+
+def _option_to_dict(pat: str = "") -> Dict:
+    keys = _select_options(pat)
+    d = dict()
+    for k in keys:
+        d[k] = _get_option(k)
+    return d
 
 
 def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[str]:
@@ -143,7 +179,8 @@ def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
     return s
 
 
-def _reset_option(pat: str, silent: bool = False) -> None:
+def _reset_option(pat: str = "", silent: bool = False) -> None:
+    """Reset one or more options (matching a pattern) to the default value"""
 
     keys = _select_options(pat)
 
@@ -198,6 +235,14 @@ class OptionsContainer:
             return OptionsContainer(v, prefix)
         else:
             return _get_option(prefix)
+
+    def to_dict(self) -> Dict:
+        """Return options as dictionary with full-name keys"""
+        return _option_to_dict(self.prefix)
+
+    # def search(self, pat: str = "") -> List[str]:
+    #     keys = _select_options(f"{self.prefix}*{pat}")
+    #     return list(keys)
 
     def __repr__(self) -> str:
         return _describe_option_short(self.prefix, False)
@@ -260,9 +305,9 @@ def _build_option_description(k: str) -> str:
 
 
 # temporary disabled
-# get_option = _get_option
-# set_option = _set_option
-# reset_option = _reset_option
+get_option = _get_option
+set_option = _set_option
+reset_option = _reset_option
 # describe_option = _describe_option
 options = OptionsContainer(_global_settings)
 
