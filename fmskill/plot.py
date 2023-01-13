@@ -36,8 +36,8 @@ def is_between_0_and_1(value: object) -> None:
 register_option("plot.scatter.points.size", 20, validator=is_positive)
 register_option("plot.scatter.points.alpha", 0.5, validator=is_between_0_and_1)
 register_option("plot.scatter.points.label", "", validator=settings.is_str)
-register_option("plot.scatter.quantiles.size", 3.5, validator=is_positive)
 register_option("plot.scatter.quantiles.marker", "X", validator=settings.is_str)
+register_option("plot.scatter.quantiles.markersize", 3.5, validator=is_positive)
 register_option(
     "plot.scatter.quantiles.color", "darkturquoise", validator=settings.is_str
 )
@@ -288,6 +288,7 @@ def scatter(
             c=options.plot.scatter.quantiles.color,
             zorder=4,
             markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+            markersize=options.plot.scatter.quantiles.markersize,
         )
         plt.plot(
             x,
