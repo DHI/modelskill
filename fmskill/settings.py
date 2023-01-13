@@ -41,8 +41,6 @@ from typing import (
     Tuple,
     Type,
 )
-import warnings
-import fmskill.metrics as mtr
 
 
 class RegisteredOption(NamedTuple):
@@ -77,7 +75,7 @@ def _get_single_key(pat: str) -> str:
     return key
 
 
-def get_option(pat: str) -> Any:
+def _get_option(pat: str) -> Any:
     key = _get_single_key(pat)
 
     # walk the nested dict
@@ -85,7 +83,7 @@ def get_option(pat: str) -> Any:
     return root[k]
 
 
-def set_option(*args, **kwargs) -> None:
+def _set_option(*args, **kwargs) -> None:
     # must at least 1 arg deal with constraints later
     nargs = len(args)
     if not nargs or nargs % 2 != 0:
@@ -123,7 +121,7 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[
     if len(keys) == 0:
         raise OptionError("No such keys(s)")
 
-    s = "\n".join([f"{k} : {get_option(k)}" for k in keys])
+    s = "\n".join([f"{k} : {_get_option(k)}" for k in keys])
 
     if _print_desc:
         print(s)
@@ -131,7 +129,7 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[
     return s
 
 
-def describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
+def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
 
     keys = _select_options(pat)
     if len(keys) == 0:
@@ -145,7 +143,7 @@ def describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
     return s
 
 
-def reset_option(pat: str, silent: bool = False) -> None:
+def _reset_option(pat: str, silent: bool = False) -> None:
 
     keys = _select_options(pat)
 
@@ -160,10 +158,10 @@ def reset_option(pat: str, silent: bool = False) -> None:
         )
 
     for k in keys:
-        set_option(k, _registered_options[k].defval, silent=silent)
+        _set_option(k, _registered_options[k].defval, silent=silent)
 
 
-def get_default_val(pat: str):
+def _get_default_val(pat: str):
     key = _get_single_key(pat, silent=True)
     return _get_registered_option(key).defval
 
@@ -183,7 +181,7 @@ class OptionsContainer:
         # you can't set new keys
         # can you can't overwrite subtrees
         if key in self.d and not isinstance(self.d[key], dict):
-            set_option(prefix, val)
+            _set_option(prefix, val)
         else:
             raise OptionError("You can only set the value of existing options")
 
@@ -199,7 +197,7 @@ class OptionsContainer:
         if isinstance(v, dict):
             return OptionsContainer(v, prefix)
         else:
-            return get_option(prefix)
+            return _get_option(prefix)
 
     def __repr__(self) -> str:
         return _describe_option_short(self.prefix, False)
@@ -236,6 +234,7 @@ def _get_root(key: str) -> Tuple[Dict[str, Any], str]:
 def _get_registered_option(key: str):
     """
     Retrieves the option metadata if `key` is a registered option.
+
     Returns
     -------
     RegisteredOption (namedtuple) if key is deprecated, None otherwise
@@ -255,7 +254,7 @@ def _build_option_description(k: str) -> str:
         s += "No description available."
 
     if o:
-        s += f"\n    [default: {o.defval}] [currently: {get_option(k)}]"
+        s += f"\n    [default: {o.defval}] [currently: {_get_option(k)}]"
 
     return s
 
@@ -271,7 +270,8 @@ def register_option(
     # cb: Optional[Callable[[str], Any]] = None,
 ) -> None:
     """
-    Register an option in the package-wide pandas config object
+    Register an option in the package-wide fmskill settingss object
+
     Parameters
     ----------
     key : str
@@ -287,6 +287,7 @@ def register_option(
         a function of a single argument "key", which is called
         immediately after an option value is set/reset. key is
         the full name of the option.
+
     Raises
     ------
     ValueError if `validator` is specified and `defval` is not a valid value.
@@ -340,6 +341,7 @@ def is_type_factory(_type: Type[Any]) -> Callable[[Any], None]:
     Parameters
     ----------
     `_type` - a type to be compared against (e.g. type(x) == `_type`)
+
     Returns
     -------
     validator - a function of a single argument x , which raises
@@ -358,6 +360,7 @@ def is_instance_factory(_type) -> Callable[[Any], None]:
     Parameters
     ----------
     `_type` - the type to be checked against
+
     Returns
     -------
     validator - a function of a single argument x , which raises
@@ -390,6 +393,7 @@ def is_callable(obj) -> bool:
     Parameters
     ----------
     `obj` - the object to be checked
+
     Returns
     -------
     validator - returns True if object is callable

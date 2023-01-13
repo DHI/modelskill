@@ -26,14 +26,7 @@ if "64" not in architecture()[0]:
 from .model.factory import ModelResult
 from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector
-
-from .settings import (
-    get_option,
-    set_option,
-    reset_option,
-    describe_option,
-    options,
-)
+from .settings import options
 
 
 def from_config(
