@@ -42,6 +42,8 @@ from typing import (
     Type,
 )
 
+import numpy as np
+
 
 class RegisteredOption(NamedTuple):
     key: str
@@ -452,3 +454,25 @@ def is_callable(obj) -> bool:
     if not callable(obj):
         raise ValueError("Value must be a callable")
     return True
+
+def is_positive(value: object) -> None:
+    if np.isreal(value) and value > 0:
+        return
+    raise ValueError("Value must be a number greater than 0")
+
+
+def is_nonnegative(value: object) -> None:
+    if np.isreal(value) and value >= 0:
+        return
+    raise ValueError("Value must be a non-negative number")
+
+
+def is_between_0_and_1(value: object) -> None:
+    if np.isreal(value) and value >= 0 and value <= 1:
+        return
+    raise ValueError("Value must be a number between 0 and 1")
+
+def is_dict(value: object) -> None:
+    if isinstance(value, dict):
+        return
+    raise ValueError("Value must be a dictionary")
