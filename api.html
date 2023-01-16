@@ -1115,7 +1115,7 @@ by default “ols”</p></li>
 or polygon coordinates[x0, y0, x1, y1, …, xn, yn],
 by default None</p></li>
 <li><p><strong>df</strong> (<em>pd.dataframe</em><em>, </em><em>optional</em>) – show user-provided data instead of the comparers own data, by default None</p></li>
-<li><p><strong>skill_table</strong> (<em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>bool</em><em>, </em><em>optional</em>) – list of fmskill.metrics or boolean, if True then by default [bias, rmse, urmse, mae, cc, si, r2].
+<li><p><strong>skill_table</strong> (<em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>bool</em><em>, </em><em>optional</em>) – list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
 This kword adds a box at the right of the scatter plot,
 by default False</p></li>
 <li><p><strong>kwargs</strong> – </p></li>
@@ -1230,7 +1230,7 @@ by default None</p></li>
 (using pandas pd.Grouper(freq)),
 e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
 by default [“model”]</p></li>
-<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default fmskill.options.metrics.list</p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
 <li><p><strong>freq</strong> (<em>string</em><em>, </em><em>optional</em>) – do temporal binning using pandas pd.Grouper(freq),
 typical examples: ‘M’ = monthly; ‘D’ daily
@@ -1299,7 +1299,7 @@ creates bins with reference to round(mean(x)), round(mean(y))</p></li>
 (using pandas pd.Grouper(freq)),
 e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
 by default [“model”,”observation”]</p></li>
-<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default fmskill.options.metrics.list</p></li>
 <li><p><strong>n_min</strong> (<em>int</em><em>, </em><em>optional</em>) – minimum number of observations in a grid cell;
 cells with fewer observations get a score of <cite>np.nan</cite></p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
@@ -1506,7 +1506,7 @@ by default “ols”</p></li>
 or polygon coordinates[x0, y0, x1, y1, …, xn, yn],
 by default None</p></li>
 <li><p><strong>df</strong> (<em>pd.dataframe</em><em>, </em><em>optional</em>) – show user-provided data instead of the comparers own data, by default None</p></li>
-<li><p><strong>skill_table</strong> (<em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>bool</em><em>, </em><em>optional</em>) – list of fmskill.metrics or boolean, if True then by default [bias, rmse, urmse, mae, cc, si, r2].
+<li><p><strong>skill_table</strong> (<em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>bool</em><em>, </em><em>optional</em>) – list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
 This kword adds a box at the right of the scatter plot,
 by default False</p></li>
 <li><p><strong>kwargs</strong> – </p></li>
@@ -1621,7 +1621,7 @@ by default None</p></li>
 (using pandas pd.Grouper(freq)),
 e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
 by default [“model”]</p></li>
-<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default fmskill.options.metrics.list</p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
 <li><p><strong>freq</strong> (<em>string</em><em>, </em><em>optional</em>) – do temporal binning using pandas pd.Grouper(freq),
 typical examples: ‘M’ = monthly; ‘D’ daily
@@ -1690,7 +1690,7 @@ creates bins with reference to round(mean(x)), round(mean(y))</p></li>
 (using pandas pd.Grouper(freq)),
 e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
 by default [“model”,”observation”]</p></li>
-<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default fmskill.options.metrics.list</p></li>
 <li><p><strong>n_min</strong> (<em>int</em><em>, </em><em>optional</em>) – minimum number of observations in a grid cell;
 cells with fewer observations get a score of <cite>np.nan</cite></p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
@@ -1866,7 +1866,7 @@ the weighted mean of the skills is then found.</p>
 list of weights e.g. [0.3, 0.3, 0.4] per observation,
 dictionary of observations with special weigths, others will be set to 1.0
 by default None (i.e. observations weight attribute if assigned else “equal”)</p></li>
-<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default fmskill.options.metrics.list</p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
 <li><p><strong>observation</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of observations to be compared, by default all</p></li>
 <li><p><strong>variable</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of variables to be compared, by default all</p></li>
@@ -1924,7 +1924,7 @@ use mean_skill() if you need to apply weighting</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default fmskill.options.metrics.list</p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
 <li><p><strong>observation</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of observations to be compared, by default all</p></li>
 <li><p><strong>variable</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of variables to be compared, by default all</p></li>
@@ -2032,7 +2032,7 @@ by default “ols”</p></li>
 or polygon coordinates[x0, y0, x1, y1, …, xn, yn],
 by default None</p></li>
 <li><p><strong>df</strong> (<em>pd.dataframe</em><em>, </em><em>optional</em>) – show user-provided data instead of the comparers own data, by default None</p></li>
-<li><p><strong>skill_table</strong> (<em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>bool</em><em>, </em><em>optional</em>) – list of fmskill.metrics or boolean, if True then by default [bias, rmse, urmse, mae, cc, si, r2].
+<li><p><strong>skill_table</strong> (<em>str</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>bool</em><em>, </em><em>optional</em>) – list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
 This kword adds a box at the right of the scatter plot,
 by default False</p></li>
 <li><p><strong>kwargs</strong> – </p></li>
@@ -2172,7 +2172,7 @@ by default None</p></li>
 (using pandas pd.Grouper(freq)),
 e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
 by default [“model”,”observation”]</p></li>
-<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default fmskill.options.metrics.list</p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
 <li><p><strong>observation</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of observations to be compared, by default all</p></li>
 <li><p><strong>variable</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>)</em><em>, </em><em>optional</em>) – name or ids of variables to be compared, by default all</p></li>
@@ -2250,7 +2250,7 @@ creates bins with reference to round(mean(x)), round(mean(y))</p></li>
 (using pandas pd.Grouper(freq)),
 e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily
 by default [“model”,”observation”]</p></li>
-<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]</p></li>
+<li><p><strong>metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – list of fmskill.metrics, by default fmskill.options.metrics.list</p></li>
 <li><p><strong>n_min</strong> (<em>int</em><em>, </em><em>optional</em>) – minimum number of observations in a grid cell;
 cells with fewer observations get a score of <cite>np.nan</cite></p></li>
 <li><p><strong>model</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>, </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>List</em><em>[</em><em>int</em><em>]</em><em>)</em><em>, </em><em>optional</em>) – name or ids of models to be compared, by default all</p></li>
