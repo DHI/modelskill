@@ -439,6 +439,7 @@ is_float = is_type_factory(float)
 is_str = is_type_factory(str)
 is_tuple = is_type_factory(tuple)
 is_text = is_instance_factory((str, bytes))
+is_tuple_or_str = is_instance_factory((str,tuple))
 
 
 def is_callable(obj) -> bool:

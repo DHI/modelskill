@@ -21,14 +21,14 @@ register_option("plot.scatter.points.label", "", validator=settings.is_str)
 register_option("plot.scatter.quantiles.marker", "X", validator=settings.is_str)
 register_option("plot.scatter.quantiles.markersize", 3.5, validator=settings.is_positive)
 register_option(
-    "plot.scatter.quantiles.color", "darkturquoise", 
+    "plot.scatter.quantiles.color", "darkturquoise", validator=settings.is_tuple_or_str
 )
 register_option("plot.scatter.quantiles.label", "Q-Q", validator=settings.is_str)
-register_option("plot.scatter.quantiles.markeredgecolor", (0, 0, 0, 0.4))
+register_option("plot.scatter.quantiles.markeredgecolor", (0, 0, 0, 0.4),validator=settings.is_tuple_or_str)
 register_option("plot.scatter.quantiles.markeredgewidth", 0.5,validator=settings.is_positive)
 register_option("plot.scatter.quantiles.kwargs", {}, settings.is_dict)
 register_option("plot.scatter.oneone_line.label", "1:1", validator=settings.is_str)
-register_option("plot.scatter.oneone_line.color", "blue", )
+register_option("plot.scatter.oneone_line.color", "blue",validator=settings.is_tuple_or_str )
 register_option("plot.scatter.legend.kwargs", {}, settings.is_dict)
 register_option("plot.scatter.reg_line.kwargs", {"color":"r"}, settings.is_dict)
 register_option("plot.scatter.legend.bbox", 
