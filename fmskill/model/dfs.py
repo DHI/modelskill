@@ -3,11 +3,12 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import warnings
+from pathlib import Path
 
 import mikeio
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
-from ..utils import make_unique_index
+from ..utils import make_unique_index, _as_path
 from .abstract import ModelResultInterface, MultiItemModelResult
 
 
@@ -41,8 +42,8 @@ class _DfsBase:
         return pd.Timestamp(self.dfs.end_time)
 
     @property
-    def filename(self):
-        return self._filename
+    def filename(self) -> str:
+        return str(self._filename)
 
     @property
     def is_dfsu(self):
@@ -276,12 +277,12 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
     def item_name(self):
         return self.itemInfo.name
 
-    def __init__(self, dfs, itemInfo, filename, name):
+    def __init__(self, dfs, itemInfo, filename, item_index):
         self.dfs = dfs
         self.itemInfo = itemInfo
-        self._selected_item = self._get_item_num(itemInfo)
+        self._selected_item = item_index
         self._filename = filename
-        self.name = name
+        self.name = self.itemInfo.name
 
     def __repr__(self):
         txt = [f"<DfsModelResultItem> '{self.name}'"]
@@ -345,22 +346,16 @@ class DfsModelResult(_DfsBase, MultiItemModelResult):
     def n_items(self):
         return len(self.dfs.items)
 
-    def __init__(self, filename: str, name: str = None, item=None):
+    def __init__(self, filename: Union[str, Path], name: str = None, item=None):
         # TODO: add "start" as user may wish to disregard start from comparison
-        self._filename = filename
-        ext = os.path.splitext(filename)[-1]
-        if ext == ".dfsu":
-            self.dfs = mikeio.open(filename)
-        # elif ext == '.dfs2':
-        #    self.dfs = mikeio.open(filename)
-        elif ext == ".dfs0":
+        self._filename = _as_path(filename)
+        ext = self._filename.suffix
+        if ext in (".dfsu", ".dfs0"):
             self.dfs = mikeio.open(filename)
         else:
             raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
 
-        if name is None:
-            name = os.path.basename(filename).split(".")[0]
-        self.name = name
+        self.name = name or self._filename.stem
 
         self._mr_items = {}
         for it in self.dfs.items:

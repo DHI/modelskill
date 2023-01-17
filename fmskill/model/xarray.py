@@ -195,28 +195,28 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         """List of item names (=data vars)"""
         return list(self.ds.data_vars)
 
-    def __init__(self, input, name: str = None, item=None, itemInfo=None, **kwargs):
+    def __init__(self, data, name: str = None, item=None, itemInfo=None, **kwargs):
         import xarray as xr
 
         self._filename = None
-        if isinstance(input, str) and ("*" not in input):
-            self._filename = input
-            ds = xr.open_dataset(input, **kwargs)
+        if isinstance(data, str) and ("*" not in data):
+            self._filename = data
+            ds = xr.open_dataset(data, **kwargs)
             if name is None:
-                name = os.path.basename(input).split(".")[0]
-        elif isinstance(input, str) or isinstance(input, list):
+                name = os.path.basename(data).split(".")[0]
+        elif isinstance(data, str) or isinstance(data, list):
             # multi-file dataset; input is list of filenames or str with wildcard
-            self._filename = input if isinstance(input, str) else ";".join(input)
-            ds = xr.open_mfdataset(input, **kwargs)
-        elif isinstance(input, xr.Dataset):
-            ds = input
+            self._filename = data if isinstance(data, str) else ";".join(data)
+            ds = xr.open_mfdataset(data, **kwargs)
+        elif isinstance(data, xr.Dataset):
+            ds = data
             # TODO: name
-        elif isinstance(input, xr.DataArray):
-            ds = input.to_dataset()
+        elif isinstance(data, xr.DataArray):
+            ds = data.to_dataset()
             # TODO: name
         else:
             raise TypeError(
-                f"Unknown input type {type(input)}. Must be str or xarray.Dataset/DataArray."
+                f"Unknown input type {type(data)}. Must be str or xarray.Dataset/DataArray."
             )
 
         ds = self._rename_coords(ds)

@@ -1,13 +1,27 @@
-from typing import Union
 from pathlib import Path
+from typing import Union, Optional
 
 import mikeio
 import pandas as pd
 import xarray as xr
 
-from .dfs import DataArrayModelResultItem, DfsModelResult
+from ..utils import _as_path
+from .dfs import DataArrayModelResultItem, DfsModelResult, DfsModelResultItem
 from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
 from .xarray import XArrayModelResult
+
+
+ModelResultDataInput = Union[
+    str,
+    Path,
+    mikeio.DataArray,
+    pd.DataFrame,
+    pd.Series,
+    xr.Dataset,
+    xr.DataArray,
+]
+
+ItemSpecifier = Optional[Union[int, str]]
 
 
 class ModelResult:
@@ -48,27 +62,31 @@ class ModelResult:
 
     def __new__(
         self,
-        data: Union[
-            str, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset, xr.DataArray
-        ],
+        data: ModelResultDataInput,
+        item: ItemSpecifier = None,
         *args,
         **kwargs,
     ):
+        self._validate_result(data, item)
 
-        if isinstance(data, str):
-            filename = Path(data)
+        if isinstance(data, (str, Path)):
+            filename = _as_path(data)
             ext = filename.suffix
             if "dfs" in ext:
-                mr = DfsModelResult(str(filename), *args, **kwargs)
-                return self._mr_or_mr_item(mr)
+                import mikeio
+
+                dfs = mikeio.open(filename)
+                info, item_index = self._validate_and_get_item_info(dfs, item)
+
+                return DfsModelResultItem(
+                    dfs=dfs, itemInfo=info, filename=filename, item_index=item_index
+                )
             else:
-                mr = XArrayModelResult(str(filename), *args, **kwargs)
+                mr = XArrayModelResult(filename, *args, **kwargs)
                 return self._mr_or_mr_item(mr)
 
         elif isinstance(data, mikeio.DataArray):
             return DataArrayModelResultItem(data, *args, **kwargs)
-        elif isinstance(data, mikeio.Dataset):
-            raise ValueError("mikeio.Dataset not supported, but mikeio.DataArray is")
         elif isinstance(data, (pd.DataFrame, pd.Series)):
             type = kwargs.pop("type", "point")
             if type == "point":
@@ -81,14 +99,43 @@ class ModelResult:
         elif isinstance(data, (xr.Dataset, xr.DataArray)):
             mr = XArrayModelResult(data, *args, **kwargs)
             return self._mr_or_mr_item(mr)
-        else:
-            raise ValueError(
-                "Input type not supported (filename, mikeio.DataArray, DataFrame, xr.DataArray)"
-            )
 
     @staticmethod
-    def _mr_or_mr_item(mr):
-        if mr._selected_item is not None:
-            return mr[mr._selected_item]
-        else:
-            return mr
+    def _validate_result(data, item) -> None:
+        if isinstance(data, mikeio.Dataset):
+            raise ValueError("mikeio.Dataset not supported, but mikeio.DataArray is")
+
+        if not isinstance(data, ModelResultDataInput):
+            raise ValueError(
+                "Input type not supported (str, Path, mikeio.DataArray, DataFrame, xr.DataArray)"
+            )
+        if not isinstance(item, ItemSpecifier):
+            raise ValueError("Invalid type for item argument (int, str, None)")
+
+    @staticmethod
+    def _validate_and_get_item_info(dfs, item):
+        available_names = [i.name for i in dfs.items]
+        lower_case_names = [i.lower() for i in available_names]
+        if item is None:
+            if len(dfs.items) > 1:
+                raise ValueError(
+                    f"Found more than one item in dfs. Please specify item. Available: {available_names}"
+                )
+            else:
+                idx = 0
+        elif isinstance(item, str):
+            if item.lower() not in lower_case_names:
+                raise ValueError(
+                    f"Requested item {item} not found in dfs file. Available: {available_names}"
+                )
+            idx = lower_case_names.index(item.lower())
+
+        elif isinstance(item, int):
+            idx = item
+            n_items = len(dfs.items)
+            if idx < 0:  # Handle negative indices
+                idx = n_items + idx
+            if (idx < 0) or (idx >= n_items):
+                raise IndexError(f"item {item} out of range (0, {n_items-1})")
+
+        return dfs.items[idx], idx

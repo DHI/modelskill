@@ -2,6 +2,8 @@ import warnings
 import numpy as np
 import pandas as pd
 from collections.abc import Iterable
+from typing import Union
+from pathlib import Path
 
 
 def is_iterable_not_str(obj):
@@ -51,3 +53,11 @@ def make_unique_index(df_index, offset_duplicates=0.001, warn=True):
     tmp = np.cumsum(values.astype(int)).astype("timedelta64[ns]")
     new_index = df_index + offset_in_ns * tmp
     return new_index
+
+
+def _as_path(input_obj: Union[str, Path]) -> Path:
+    if isinstance(input_obj, Path):
+        return input_obj
+    elif isinstance(input_obj, str):
+        return Path(input_obj)
+    raise NotImplementedError
