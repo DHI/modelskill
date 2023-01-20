@@ -5,21 +5,26 @@ import mikeio
 import pandas as pd
 import xarray as xr
 
+import builtins
 from ..utils import _as_path
-from .dfs import DataArrayModelResultItem, DfsModelResult, DfsModelResultItem
+from .dfs import DfsModelResultItem, dfs_get_item_index
 from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
-from .xarray import XArrayModelResult
+from .xarray import XArrayModelResultItem, validate_and_format_xarray
 
 
 ModelResultDataInput = Union[
     str,
     Path,
+    list[str],
+    list[Path],
     mikeio.DataArray,
     pd.DataFrame,
     pd.Series,
     xr.Dataset,
     xr.DataArray,
 ]
+
+DfsType = Union[mikeio.Dfs0, mikeio.Dfsu]
 
 ItemSpecifier = Optional[Union[int, str]]
 
@@ -67,39 +72,106 @@ class ModelResult:
         *args,
         **kwargs,
     ):
-        self._validate_result(data, item)
+        self._validate_input_data(data, item)
 
-        if isinstance(data, (str, Path)):
-            filename = _as_path(data)
-            ext = filename.suffix
-            if "dfs" in ext:
-                dfs = mikeio.open(filename)
-                info, item_index = self._validate_and_get_item_info(dfs, item)
+        # TODO: handle dataframe inputs, check if we could simply
+        # convert pandas stuff to xarray
+        input_data_handler_mapping = {
+            str: ModelResult.from_filepath,
+            Path: ModelResult.from_filepath,
+            list: ModelResult.from_filepath,
+            xr.Dataset: ModelResult.from_xarray_dataset,
+            xr.DataArray: ModelResult.from_xarray_array,
+            mikeio.DataArray: ModelResult.from_mikeio_array,
+            pd.Series: ModelResult.from_pd_series,
+        }
 
-                return DfsModelResultItem(
-                    dfs=dfs, itemInfo=info, filename=filename, item_index=item_index
-                )
-            else:
-                mr = XArrayModelResult(filename, *args, **kwargs)
-                return self._mr_or_mr_item(mr)
+        return input_data_handler_mapping[type(data)](
+            data,
+            item,
+            *args,
+            **kwargs,
+        )
 
-        elif isinstance(data, mikeio.DataArray):
-            return DataArrayModelResultItem(data, *args, **kwargs)
-        elif isinstance(data, (pd.DataFrame, pd.Series)):
-            type = kwargs.pop("type", "point")
-            if type == "point":
+        if isinstance(data, (pd.DataFrame, pd.Series)):
+            type_ = kwargs.pop("type", "point")
+            if type_ == "point":
                 mr = DataFramePointModelResult(data, *args, **kwargs)
-            elif type == "track":
+            elif type_ == "track":
                 mr = DataFrameTrackModelResult(data, *args, **kwargs)
             else:
-                raise ValueError(f"type '{type}' unknown (point, track)")
-            return self._mr_or_mr_item(mr)
-        elif isinstance(data, (xr.Dataset, xr.DataArray)):
-            mr = XArrayModelResult(data, *args, **kwargs)
+                raise ValueError(f"type '{type_}' unknown (point, track)")
             return self._mr_or_mr_item(mr)
 
+    @classmethod
+    def from_filepath(
+        cls,
+        filepath: Union[str, Path, list],
+        item: ItemSpecifier = None,
+        *args,
+        **kwargs,
+    ):
+        filename = _as_path(filepath)
+        ext = filename.suffix
+        if "dfs" in ext:
+            dfs: DfsType = mikeio.open(filename)
+            return ModelResult.from_dfs(dfs, item)
+        else:
+            if "*" not in str(filename):
+                return ModelResult.from_xarray_dataset(
+                    xr.open_dataset(filename), item, *args, **kwargs
+                )
+            elif isinstance(filepath, str) or isinstance(filepath, list):
+                return ModelResult.from_xarray_dataset(
+                    xr.open_mfdataset(filepath), item, *args, **kwargs
+                )
+
+    @classmethod
+    def from_dfs(cls, dfs: DfsType, item: ItemSpecifier = None):
+        """Create a ModelResult from a dfs instance"""
+        idx = dfs_get_item_index(dfs, item)
+        return DfsModelResultItem(
+            dfs=dfs, itemInfo=dfs.items[idx], filename=None, item_index=idx
+        )
+
+    @classmethod
+    def from_xarray_array(cls, da: xr.DataArray, *args, **kwargs):
+        """
+        Create a ModelResult from an xarray DataArray. This should be the interface
+        used for creating single item ModelResults from any xarray data structure.
+        """
+        new_da = validate_and_format_xarray(da)
+        return XArrayModelResultItem(new_da, *args, **kwargs)
+
+    @classmethod
+    def from_xarray_dataset(
+        cls, ds: xr.Dataset, item: ItemSpecifier = None, *args, **kwargs
+    ):
+        """Create a ModelResult from an xarray Dataset. An item needs to be passed if
+        the Dataset contains more than one item."""
+
+        item = cls._xarray_get_item_name(ds, item)
+        return cls.from_xarray_array(ds[item], *args, **kwargs)
+
+    @classmethod
+    def from_mikeio_array(cls, da: mikeio.DataArray, *args, **kwargs):
+        """Create a ModelResult from a mikeio DataArray."""
+        return cls.from_xarray_array(da.to_xarray(), *args, **kwargs)
+
+    @classmethod
+    def from_pd_series(cls, series: pd.Series, *args, **kwargs):
+        """Create a ModelResult from a pandas Series."""
+        return cls.from_xarray_array(series.to_xarray(), *args, **kwargs)
+
+    @classmethod
+    def from_pd_dataframe(
+        cls, df: pd.DataFrame, item: ItemSpecifier = None, *args, **kwargs
+    ):
+        """Create a ModelResult from a pandas DataFrame. An item needs to be passed if
+        the DataFrame contains more than one series."""
+
     @staticmethod
-    def _validate_result(data, item) -> None:
+    def _validate_input_data(data, item) -> None:
         if isinstance(data, mikeio.Dataset):
             raise ValueError("mikeio.Dataset not supported, but mikeio.DataArray is")
 
@@ -111,29 +183,26 @@ class ModelResult:
             raise ValueError("Invalid type for item argument (int, str, None)")
 
     @staticmethod
-    def _validate_and_get_item_info(dfs, item):
-        available_names = [i.name for i in dfs.items]
-        lower_case_names = [i.lower() for i in available_names]
+    def _xarray_get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
+        if item_names is None:
+            item_names = list(ds.data_vars)
+        n_items = len(item_names)
         if item is None:
-            if len(dfs.items) > 1:
-                raise ValueError(
-                    f"Found more than one item in dfs. Please specify item. Available: {available_names}"
-                )
+            if n_items == 1:
+                return item_names[0]
             else:
-                idx = 0
-        elif isinstance(item, str):
-            if item.lower() not in lower_case_names:
                 raise ValueError(
-                    f"Requested item {item} not found in dfs file. Available: {available_names}"
+                    f"item must be specified when more than one item available. Available items: {item_names}"
                 )
-            idx = lower_case_names.index(item.lower())
-
-        elif isinstance(item, int):
-            idx = item
-            n_items = len(dfs.items)
-            if idx < 0:  # Handle negative indices
-                idx = n_items + idx
-            if (idx < 0) or (idx >= n_items):
+        if isinstance(item, int):
+            if item < 0:  # Handle negative indices
+                item = n_items + item
+            if (item < 0) or (item >= n_items):
                 raise IndexError(f"item {item} out of range (0, {n_items-1})")
-
-        return dfs.items[idx], idx
+            item = item_names[item]
+        elif isinstance(item, str):
+            if item not in item_names:
+                raise KeyError(f"item must be one of {item_names}")
+        else:
+            raise TypeError("item must be int or string")
+        return item
