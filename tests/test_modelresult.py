@@ -67,25 +67,25 @@ def sw_total_windsea():
 
 
 def test_repr(hd_oresund_2d):
-    mr = ModelResult(hd_oresund_2d)
+    mr = ModelResult(hd_oresund_2d, item='Surface elevation')
     txt = repr(mr)
     assert "Oresund2D.dfsu" in txt
 
 
 def test_dfs_object(hd_oresund_2d):
-    mr = ModelResult(hd_oresund_2d)
+    mr = ModelResult(hd_oresund_2d, item='Surface elevation')
 
     assert mr.dfs.is_2d
 
 
 def test_ModelResultType(sw_dutch_coast):
-    mr = ModelResult(sw_dutch_coast)
+    mr = ModelResult(sw_dutch_coast, item=0)
 
     assert mr.is_dfsu
 
 
 def test_ModelResultType0():
-    mr = ModelResult("tests/testdata/TS.dfs0")
+    mr = ModelResult("tests/testdata/TS.dfs0", item=0)
 
     assert mr.is_dfs0
 
@@ -96,17 +96,17 @@ def test_ModelResultType0():
 #     assert c.n_points == 386
 
 
-def test_extract_observation_no_matching_item(sw_total_windsea, wind_HKNA):
-    mr = ModelResult(sw_total_windsea)  # No wind speed here !
+# def test_extract_observation_no_matching_item(sw_total_windsea, wind_HKNA):
+#     mr = ModelResult(sw_total_windsea)  # No wind speed here !
 
-    with pytest.raises(Exception):  # More specific error?
-        _ = mr.extract_observation(wind_HKNA)
+#     with pytest.raises(Exception):  # More specific error?
+#         _ = mr.extract_observation(wind_HKNA)
 
 
 def test_extract_observation_total_windsea_swell_not_possible(
     sw_total_windsea, Hm0_HKNA
 ):
-    mr = ModelResult(sw_total_windsea)
+    mr = ModelResult(sw_total_windsea, item="Sign. Wave Height, S")
     """
     Items:
         0:  Sign. Wave Height <Significant wave height> (meter)
@@ -118,42 +118,42 @@ def test_extract_observation_total_windsea_swell_not_possible(
     #     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
 
     # Specify Swell item explicitely
-    c = mr["Sign. Wave Height, S"].extract_observation(Hm0_HKNA)
+    c = mr.extract_observation(Hm0_HKNA)
     assert c.n_points > 0
 
 
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
-    mr = ModelResult(hd_oresund_2d)
+    mr = ModelResult(hd_oresund_2d, item=0)
     with pytest.raises(Exception):
         with pytest.warns(UserWarning, match="Item type should match"):
-            c = mr[0].extract_observation(klagshamn, validate=True)
+            c = mr.extract_observation(klagshamn, validate=True)
 
-    c = mr[0].extract_observation(klagshamn, validate=False)
+    c = mr.extract_observation(klagshamn, validate=False)
     assert c.n_points > 0
 
 
 def test_extract_observation_outside(hd_oresund_2d, klagshamn):
-    mr = ModelResult(hd_oresund_2d)
+    mr = ModelResult(hd_oresund_2d, item=0)
     # correct eum, but outside domain
     klagshamn.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
     klagshamn.y = -10
     with pytest.raises(ValueError):
-        _ = mr[0].extract_observation(klagshamn, validate=True)
+        _ = mr.extract_observation(klagshamn, validate=True)
 
 
-def test_dfs_model_result(hd_oresund_2d):
-    mr = DfsModelResult(hd_oresund_2d, "Oresund")
-    assert mr.n_items == 7
-    assert isinstance(mr, DfsModelResult)
+# def test_dfs_model_result(hd_oresund_2d):
+#     mr = DfsModelResult(hd_oresund_2d, "Oresund")
+#     assert mr.n_items == 7
+#     assert isinstance(mr, DfsModelResult)
 
-    mr0 = mr[0]
-    assert isinstance(mr0, DfsModelResultItem)
-    assert mr.item_names[0] == mr0.item_name
+#     mr0 = mr[0]
+#     assert isinstance(mr0, DfsModelResultItem)
+#     assert mr.item_names[0] == mr0.item_name
 
-    mr1 = mr["Surface elevation"]
-    assert mr.item_names[0] == mr1.item_name
-    assert mr.filename == mr1.filename
-    assert mr.name == mr1.name
+#     mr1 = mr["Surface elevation"]
+#     assert mr.item_names[0] == mr1.item_name
+#     assert mr.filename == mr1.filename
+#     assert mr.name == mr1.name
 
 
 def test_dataarray_model_result(hd_oresund_2d):
@@ -203,7 +203,7 @@ def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
     assert len(df1) == 113
 
     da = mikeio.read(sw_dutch_coast)[0]
-    mr2 = ModelResult(da, name="SW1")
+    mr2 = ModelResult(da, item=0, name="SW1")
     df2 = mr2._extract_track(Hm0_C2.copy())
 
     assert list(df1.columns) == list(df2.columns)
@@ -219,10 +219,10 @@ def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
 
 
 def test_factory(hd_oresund_2d):
-    mr = ModelResult(hd_oresund_2d, name="myname")
-    assert isinstance(mr, DfsModelResult)
-    assert mr.name == "myname"
-    assert mr.n_items == 7
+    # mr = ModelResult(hd_oresund_2d, name="myname")
+    # assert isinstance(mr, DfsModelResult)
+    # assert mr.name == "myname"
+    # assert mr.n_items == 7
 
     mri = ModelResult(hd_oresund_2d, item="Surface elevation")
     assert isinstance(mri, DfsModelResultItem)
