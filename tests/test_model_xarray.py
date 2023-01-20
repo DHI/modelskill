@@ -87,7 +87,7 @@ def test_XArrayModelResult_from_multifile(mf_modelresult):
     mr = mf_modelresult
 
     assert isinstance(mr, XArrayModelResult)
-    assert isinstance(mr.ds, xr.Dataset)
+    # assert isinstance(mr.data, xr.DataArray)   # maybe better to have an attribute data which could then be a DataArray or something else---
     assert "CMEMS_DutchCoast_*.nc" in mr.filename
     assert mr.name == "CMEMS"
     assert mr.start_time == datetime(2017, 10, 28, 0, 0, 0)
@@ -132,7 +132,7 @@ def test_XArrayModelResult_getitem(modelresult):
     
     assert "XArrayModelResultItem" in repr(mri)
     assert "- Item: pp1d" in repr(mri)
-    assert isinstance(mri.ds, xr.Dataset)
+    assert isinstance(mri.data, xr.DataArray)
     # assert len(mri) == 1   # has no length (it's an item)
     assert len(mri.ds) == 1    # Keep this?
     assert mri.name == "ERA5_DutchCoast"
@@ -150,9 +150,8 @@ def test_XArrayModelResult_extract_point(modelresult, pointobs_epl_hm0):
 
 @python3_7_or_above
 def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
-    mr = mf_modelresult
-    mri = mr["VHM0"]
-
+    mri = mf_modelresult
+    
     ok = mri._validate_start_end(pointobs_epl_hm0)
     assert ok
 
@@ -173,8 +172,7 @@ def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
 
 
 def test_XArrayModelResultItem_extract_point_xoutside(modelresult, pointobs_epl_hm0):
-    mr = modelresult
-    mri = mr["swh"]
+    mri = modelresult
     pointobs_epl_hm0.x = -50
     with pytest.warns(UserWarning, match="Cannot add zero-length modeldata"):
         pc = mri.extract_observation(pointobs_epl_hm0)
