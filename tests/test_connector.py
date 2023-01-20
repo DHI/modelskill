@@ -12,13 +12,13 @@ from fmskill.connection import PointConnector, TrackConnector
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, name="SW_1")
+    return ModelResult(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, name="SW_2")
+    return ModelResult(fn, item=0, name="SW_2")
 
 
 @pytest.fixture
@@ -41,28 +41,28 @@ def o3():
 
 @pytest.fixture
 def con11(o1, mr1):
-    return Connector(o1, mr1[0])
+    return Connector(o1, mr1)
 
 
 @pytest.fixture
 def con31(o1, o2, o3, mr1):
-    return Connector([o1, o2, o3], mr1[0])
+    return Connector([o1, o2, o3], mr1)
 
 
 @pytest.fixture
 def con32(o1, o2, o3, mr1, mr2):
-    return Connector([o1, o2, o3], [mr1[0], mr2[0]])
+    return Connector([o1, o2, o3], [mr1, mr2])
 
 
 def test_point_connector_repr(o1, mr1):
-    con = PointConnector(o1, mr1[0])
+    con = PointConnector(o1, mr1)
     txt = repr(con)
     assert "PointConnector" in txt
 
 
 def test_connector_add(o1, mr1):
     con = Connector()
-    con.add(o1, mr1[0], validate=False)
+    con.add(o1, mr1, validate=False)
     assert len(con.observations) == 1
 
 
@@ -93,7 +93,7 @@ def test_connector_add_two_models(
     o1: PointObservation, mr1: ModelResult, mr2: ModelResult
 ):
 
-    con = Connector(o1, [mr1[0], mr2[0]])
+    con = Connector(o1, [mr1, mr2])
 
     assert con.n_models == 2
     cc = con.extract()
@@ -101,8 +101,8 @@ def test_connector_add_two_models(
 
     # Alternative specification using .add() should be identical
     con2 = Connector()
-    con2.add(o1, mr1[0])
-    con2.add(o1, mr2[0])
+    con2.add(o1, mr1)
+    con2.add(o1, mr2)
 
     assert con2.n_models == 2
     cc2 = con2.extract()
@@ -113,8 +113,8 @@ def test_connector_add_two_model_dataframes(
     o1: PointObservation, mr1: ModelResult, mr2: ModelResult
 ):
 
-    mr1_df = mr1[0]._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
-    mr2_df = mr2[0]._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
+    mr1_df = mr1._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
+    mr2_df = mr2._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
 
     assert isinstance(mr1_df, pd.DataFrame)
     assert isinstance(mr2_df, pd.DataFrame)
@@ -175,13 +175,13 @@ def test_add_fail(o2, mr1):
     with pytest.raises(Exception):
         with pytest.warns(UserWarning):
             # EUM unit doesn't match
-            con.add(o2, mr1[0])
+            con.add(o2, mr1)
 
     o2.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Water_Level, unit=mikeio.EUMUnit.meter)
     with pytest.raises(Exception):
         with pytest.warns(UserWarning):
             # EUM type doesn't match
-            con.add(o2, mr1[0])
+            con.add(o2, mr1)
 
 
 def test_extract(con32):

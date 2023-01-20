@@ -7,16 +7,24 @@ from fmskill import Connector
 
 
 @pytest.fixture
-def mr1():
+def mr1Hm0():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, name="SW_1")
-
+    return ModelResult(fn, item="Sign. Wave Height", name="SW_1")
 
 @pytest.fixture
-def mr2():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, name="SW_2")
+def mr1WS():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    return ModelResult(fn, item="Wind speed", name="SW_1")
 
+@pytest.fixture
+def mr2Hm0():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    return ModelResult(fn, item="Sign. Wave Height", name="SW_2")
+
+pytest.fixture
+def mr2WS():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    return ModelResult(fn, item="Wind speed", name="SW_2")
 
 @pytest.fixture
 def o1():
@@ -55,18 +63,18 @@ def wind3():
 
 
 @pytest.fixture
-def cc_1model(mr1, o1, o2, o3, wind1, wind2, wind3):
+def cc_1model(mr1Hm0, mr1WS, o1, o2, o3, wind1, wind2, wind3):
     con = Connector()
-    con.add([o1, o2, o3], mr1["Sign. Wave Height"])
-    con.add([wind1, wind2, wind3], mr1["Wind speed"])
+    con.add([o1, o2, o3], mr1Hm0)
+    con.add([wind1, wind2, wind3], mr1WS)
     return con.extract()
 
 
 @pytest.fixture
-def cc(mr1, mr2, o1, o2, o3, wind1, wind2, wind3):
+def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):
     con = Connector()
-    con.add([o1, o2, o3], [mr1["Sign. Wave Height"], mr2["Sign. Wave Height"]])
-    con.add([wind1, wind2, wind3], [mr1["Wind speed"], mr2["Wind speed"]])
+    con.add([o1, o2, o3], [mr1Hm0, mr2Hm0])
+    con.add([wind1, wind2, wind3], [mr1WS, mr2WS])
     return con.extract()
 
 
