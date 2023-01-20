@@ -25,13 +25,14 @@ def ERA5_DutchCoast_nc():
 
 @pytest.fixture
 def modelresult(ERA5_DutchCoast_nc):
-    return ModelResult(ERA5_DutchCoast_nc)
+    return ModelResult(ERA5_DutchCoast_nc, item="pp1d")
 
 
 @pytest.fixture
 def mf_modelresult():
     fn = "tests/testdata/SW/CMEMS_DutchCoast_*.nc"
-    return ModelResult(fn, name="CMEMS")
+    ds = xr.open_mfdataset(fn)
+    return ModelResult(ds["VHM0"], name="CMEMS")
 
 
 @pytest.fixture
@@ -50,25 +51,25 @@ def test_XArrayModelResult_from_nc(modelresult):
     mr = modelresult
 
     assert isinstance(mr, XArrayModelResult)
-    assert isinstance(mr.ds, xr.Dataset)
+    # assert isinstance(mr.ds, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else--- 
     assert "ERA5_DutchCoast.nc" in mr.filename
-    assert "- Item: 4: swh" in repr(mr)
-    assert len(mr) == 5
-    assert len(mr.ds) == 5
+    # assert "- Item: 4: swh" in repr(mr)
+    # assert len(mr) == 5
+    # assert len(mr.ds) == 5
     assert mr.name == "ERA5_DutchCoast"
-    assert mr.item_names == ["mwd", "mwp", "mp2", "pp1d", "swh"]
+    assert mr.item_name == "pp1d"
     assert mr.start_time == datetime(2017, 10, 27, 0, 0, 0)
     assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
-    assert mr[0].itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
+    assert mr.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
-def test_XArrayModelResult_from_ds(ERA5_DutchCoast_nc):
+def test_XArrayModelResult_from_DataArray(ERA5_DutchCoast_nc):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
-    mr = ModelResult(ds)
+    mr = ModelResult(ds["swh"])
 
     assert isinstance(mr, XArrayModelResult)
-    assert isinstance(mr.ds, xr.Dataset)
-    assert mr.item_names == ["mwd", "mwp", "mp2", "pp1d", "swh"]
+    #assert isinstance(mr.data, xr.DataArray)  
+    assert mr.item_name == "swh"
     assert not mr.filename
     assert mr[0].itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
@@ -82,7 +83,6 @@ def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
     assert not mr.filename
 
 
-@python3_7_or_above
 def test_XArrayModelResult_from_multifile(mf_modelresult):
     mr = mf_modelresult
 
@@ -94,13 +94,15 @@ def test_XArrayModelResult_from_multifile(mf_modelresult):
     assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
 
 
-def test_XArrayModelResult_select_item(modelresult):
-    mr = modelresult
+# no longer supported
+# def test_XArrayModelResult_select_item(modelresult):
+#     mr = modelresult
 
-    assert isinstance(mr["mwd"], XArrayModelResultItem)
-    assert isinstance(mr[0], XArrayModelResultItem)
+#     assert isinstance(mr["mwd"], XArrayModelResultItem)
+#     assert isinstance(mr[0], XArrayModelResultItem)
 
 
+# should be supported
 def test_XArrayModelResultItem(ERA5_DutchCoast_nc):
     mri1 = ModelResult(ERA5_DutchCoast_nc, item="pp1d")
     assert isinstance(mri1, XArrayModelResultItem)
@@ -109,7 +111,7 @@ def test_XArrayModelResultItem(ERA5_DutchCoast_nc):
     assert isinstance(mri2, XArrayModelResultItem)
 
     assert mri1.name == mri2.name
-    assert mri1._selected_item == mri2._selected_item
+    assert mri1._selected_item == mri2._selected_item  # do we still need this?
 
 
 def test_XArrayModelResultItem_itemInfo(ERA5_DutchCoast_nc):
@@ -126,21 +128,21 @@ def test_XArrayModelResultItem_itemInfo(ERA5_DutchCoast_nc):
 
 
 def test_XArrayModelResult_getitem(modelresult):
-    mr = modelresult
-    mri = mr[0]
-
+    mri = modelresult
+    
     assert "XArrayModelResultItem" in repr(mri)
-    assert "- Item: mwd" in repr(mri)
+    assert "- Item: pp1d" in repr(mri)
     assert isinstance(mri.ds, xr.Dataset)
     # assert len(mri) == 1   # has no length (it's an item)
-    assert len(mri.ds) == 1
+    assert len(mri.ds) == 1    # Keep this?
     assert mri.name == "ERA5_DutchCoast"
-    assert mri.item_name == "mwd"
+    assert mri.item_name == "pp1d"
 
 
+# should we test "private" methods?
 def test_XArrayModelResult_extract_point(modelresult, pointobs_epl_hm0):
     mr = modelresult
-    df = mr._extract_point(pointobs_epl_hm0, item="swh")
+    df = mr._extract_point(pointobs_epl_hm0)
     assert isinstance(df, pd.DataFrame)
     assert len(df.columns) == 1
     assert pytest.approx(df.iloc[0, 0]) == 0.875528
@@ -156,9 +158,8 @@ def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
 
 
 def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
-    mr = modelresult
-    mri = mr["swh"]
-
+    mri = modelresult
+    
     pc = mri.extract_observation(pointobs_epl_hm0)
     df = pc.df
 
@@ -198,15 +199,13 @@ def test_XArrayModelResultItem_extract_point_toutside(
     reason="validation not possible at the moment, allow item mapping for ModelResult and Observation and match on item name?"
 )
 def test_XArrayModelResultItem_extract_point_wrongitem(modelresult, pointobs_epl_hm0):
-    mr = modelresult
-    mri = mr["mwd"]
+    mri = modelresult
     pc = mri.extract_observation(pointobs_epl_hm0)
     assert pc == None
 
 
 def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
-    mr = modelresult
-    mri = mr["swh"]
+    mri = modelresult
     tc = mri.extract_observation(trackobs_c2_hm0)
     df = tc.df
 
