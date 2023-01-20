@@ -51,7 +51,7 @@ def test_XArrayModelResult_from_nc(modelresult):
     mr = modelresult
 
     assert isinstance(mr, XArrayModelResultItem)
-    # assert isinstance(mr.ds, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else--- 
+    # assert isinstance(mr.ds, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else---
     assert "ERA5_DutchCoast.nc" in mr.filename
     # assert "- Item: 4: swh" in repr(mr)
     # assert len(mr) == 5
@@ -68,7 +68,7 @@ def test_XArrayModelResult_from_DataArray(ERA5_DutchCoast_nc):
     mr = ModelResult(ds["swh"])
 
     assert isinstance(mr, XArrayModelResultItem)
-    #assert isinstance(mr.data, xr.DataArray)  
+    # assert isinstance(mr.data, xr.DataArray)
     assert mr.item_name == "swh"
     assert not mr.filename
     assert mr[0].itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
@@ -129,12 +129,12 @@ def test_XArrayModelResultItem_itemInfo(ERA5_DutchCoast_nc):
 
 def test_XArrayModelResult_getitem(modelresult):
     mri = modelresult
-    
+
     assert "XArrayModelResultItem" in repr(mri)
     assert "- Item: pp1d" in repr(mri)
     assert isinstance(mri.data, xr.DataArray)
     # assert len(mri) == 1   # has no length (it's an item)
-    assert len(mri.ds) == 1    # Keep this?
+    assert len(mri.ds) == 1  # Keep this?
     assert mri.name == "ERA5_DutchCoast"
     assert mri.item_name == "pp1d"
 
@@ -151,14 +151,14 @@ def test_XArrayModelResult_extract_point(modelresult, pointobs_epl_hm0):
 @python3_7_or_above
 def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
     mri = mf_modelresult
-    
+
     ok = mri._validate_start_end(pointobs_epl_hm0)
     assert ok
 
 
 def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
     mri = modelresult
-    
+
     pc = mri.extract_observation(pointobs_epl_hm0)
     df = pc.df
 
