@@ -9,7 +9,7 @@ import mikeio
 import fmskill
 from fmskill.model import ModelResult
 
-from fmskill.model import XArrayModelResult, XArrayModelResultItem
+from fmskill.model import XArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
 
@@ -50,7 +50,7 @@ def trackobs_c2_hm0():
 def test_XArrayModelResult_from_nc(modelresult):
     mr = modelresult
 
-    assert isinstance(mr, XArrayModelResult)
+    assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.ds, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else--- 
     assert "ERA5_DutchCoast.nc" in mr.filename
     # assert "- Item: 4: swh" in repr(mr)
@@ -67,7 +67,7 @@ def test_XArrayModelResult_from_DataArray(ERA5_DutchCoast_nc):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     mr = ModelResult(ds["swh"])
 
-    assert isinstance(mr, XArrayModelResult)
+    assert isinstance(mr, XArrayModelResultItem)
     #assert isinstance(mr.data, xr.DataArray)  
     assert mr.item_name == "swh"
     assert not mr.filename
@@ -86,7 +86,7 @@ def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
 def test_XArrayModelResult_from_multifile(mf_modelresult):
     mr = mf_modelresult
 
-    assert isinstance(mr, XArrayModelResult)
+    assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.data, xr.DataArray)   # maybe better to have an attribute data which could then be a DataArray or something else---
     assert "CMEMS_DutchCoast_*.nc" in mr.filename
     assert mr.name == "CMEMS"
