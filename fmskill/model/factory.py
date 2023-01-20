@@ -73,8 +73,6 @@ class ModelResult:
             filename = _as_path(data)
             ext = filename.suffix
             if "dfs" in ext:
-                import mikeio
-
                 dfs = mikeio.open(filename)
                 info, item_index = self._validate_and_get_item_info(dfs, item)
 
