@@ -5,11 +5,10 @@ import mikeio
 import pandas as pd
 import xarray as xr
 
-import builtins
 from ..utils import _as_path
 from .dfs import DfsModelResultItem, dfs_get_item_index
 from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
-from .xarray import XArrayModelResultItem, validate_and_format_xarray
+from .xarray import XArrayModelResultItem
 
 
 ModelResultDataInput = Union[
@@ -93,15 +92,15 @@ class ModelResult:
             **kwargs,
         )
 
-        if isinstance(data, (pd.DataFrame, pd.Series)):
-            type_ = kwargs.pop("type", "point")
-            if type_ == "point":
-                mr = DataFramePointModelResult(data, *args, **kwargs)
-            elif type_ == "track":
-                mr = DataFrameTrackModelResult(data, *args, **kwargs)
-            else:
-                raise ValueError(f"type '{type_}' unknown (point, track)")
-            return self._mr_or_mr_item(mr)
+        # if isinstance(data, (pd.DataFrame, pd.Series)):
+        #     type_ = kwargs.pop("type", "point")
+        #     if type_ == "point":
+        #         mr = DataFramePointModelResult(data, *args, **kwargs)
+        #     elif type_ == "track":
+        #         mr = DataFrameTrackModelResult(data, *args, **kwargs)
+        #     else:
+        #         raise ValueError(f"type '{type_}' unknown (point, track)")
+        #     return self._mr_or_mr_item(mr)
 
     @classmethod
     def from_filepath(
@@ -169,40 +168,3 @@ class ModelResult:
     ):
         """Create a ModelResult from a pandas DataFrame. An item needs to be passed if
         the DataFrame contains more than one series."""
-
-    @staticmethod
-    def _validate_input_data(data, item) -> None:
-        if isinstance(data, mikeio.Dataset):
-            raise ValueError("mikeio.Dataset not supported, but mikeio.DataArray is")
-
-        if not isinstance(data, ModelResultDataInput):
-            raise ValueError(
-                "Input type not supported (str, Path, mikeio.DataArray, DataFrame, xr.DataArray)"
-            )
-        if not isinstance(item, ItemSpecifier):
-            raise ValueError("Invalid type for item argument (int, str, None)")
-
-    @staticmethod
-    def _xarray_get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
-        if item_names is None:
-            item_names = list(ds.data_vars)
-        n_items = len(item_names)
-        if item is None:
-            if n_items == 1:
-                return item_names[0]
-            else:
-                raise ValueError(
-                    f"item must be specified when more than one item available. Available items: {item_names}"
-                )
-        if isinstance(item, int):
-            if item < 0:  # Handle negative indices
-                item = n_items + item
-            if (item < 0) or (item >= n_items):
-                raise IndexError(f"item {item} out of range (0, {n_items-1})")
-            item = item_names[item]
-        elif isinstance(item, str):
-            if item not in item_names:
-                raise KeyError(f"item must be one of {item_names}")
-        else:
-            raise TypeError("item must be int or string")
-        return item

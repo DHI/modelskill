@@ -139,29 +139,3 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
             comparer = None
 
         return comparer
-
-
-def validate_and_format_xarray(da: xr.DataArray):
-    new_names = {}
-    coords = da.coords
-    for coord in coords:
-        c = coord.lower()
-        if ("x" not in new_names) and (("lon" in c) or ("east" in c)):
-            new_names[coord] = "x"
-        elif ("y" not in new_names) and (("lat" in c) or ("north" in c)):
-            new_names[coord] = "y"
-        elif ("time" not in new_names) and (("time" in c) or ("date" in c)):
-            new_names[coord] = "time"
-
-    if len(new_names) > 0:
-        da = da.rename(new_names)
-
-    cnames = da.coords
-    for c in ["x", "y", "time"]:
-        if c not in cnames:
-            raise ValueError(f"{c} not found in coords {cnames}")
-
-    if not isinstance(coords["time"].to_index(), pd.DatetimeIndex):
-        raise ValueError(f"Time coordinate is not equivalent to DatetimeIndex")
-
-    return da
