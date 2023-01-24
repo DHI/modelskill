@@ -6,7 +6,7 @@ import pandas as pd
 import xarray as xr
 
 from ..utils import _as_path
-from .dfs import DfsModelResultItem, dfs_get_item_index
+from .dfs import DfsModelResultItem
 from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
 from .xarray import XArrayModelResultItem
 

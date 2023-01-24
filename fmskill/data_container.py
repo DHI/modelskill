@@ -1,3 +1,4 @@
+from textwrap import dedent
 import xarray as xr
 
 from fmskill import parsing, types
@@ -36,9 +37,25 @@ class DataContainer:
         self.is_result: bool = is_result or not is_observation
         self.is_observation: bool = is_observation or not is_result
 
-        parsing._validate_input_data(data, item)
+        parsing.validate_input_data(data, item)
+
+        # store item for later use in case of lazy loading
+        self.item = item
+
         self._load_data(data, item)
         self._check_point_or_track()
+
+    def __repr__(self) -> str:
+        _res = "result" if self.is_result else "observation"
+        _lazy = "lazy" if self.is_lazy else "eager"
+        if self.is_track:
+            _type = "track data"
+        elif self.is_point:
+            _type = "point data"
+        else:
+            _type = "unknown data type"
+
+        return f"DataContainer({_res}, {_lazy} loading, {_type})"
 
     def _load_data(self, data, item):
         """
@@ -73,7 +90,12 @@ class DataContainer:
 
 
 if __name__ == "__main__":
-    # fn = "tests/testdata/SW/ERA5_DutchCoast.nc"
-    fn = "tests/testdata/Oresund2D.dfsu"
+    fn_1 = "tests/testdata/SW/ERA5_DutchCoast.nc"
+    fn_2 = "tests/testdata/Oresund2D.dfsu"
+    fn_3 = "tests/testdata/SW/Alti_c2_Dutch.dfs0"
 
-    dc = DataContainer(fn, item=0, is_result=True)
+    dc_1 = DataContainer(fn_1, item=0, is_result=True)
+    dc_2 = DataContainer(fn_2, item=0, is_result=True)
+    dc_3 = DataContainer(fn_3, item="swh", is_observation=True)
+
+    print(dc_1.data)

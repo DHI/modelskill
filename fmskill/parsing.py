@@ -47,7 +47,9 @@ def lazy_array_from_filepath(
     filename = _as_path(filepath)
     ext = filename.suffix
     if "dfs" in ext:
-        return mikeio.open(filename)
+        dfs = mikeio.open(filename)
+        _dfs_get_item_index(dfs, item)
+        return dfs
 
 
 def array_from_pd_series(series: pd.Series, *args, **kwargs) -> xr.DataArray:
@@ -147,6 +149,34 @@ def _xarray_get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
     return item
 
 
+def _dfs_get_item_index(dfs, item):
+    available_names = [i.name for i in dfs.items]
+    lower_case_names = [i.lower() for i in available_names]
+    if item is None:
+        if len(dfs.items) > 1:
+            raise ValueError(
+                f"Found more than one item in dfs. Please specify item. Available: {available_names}"
+            )
+        else:
+            return 0
+    elif isinstance(item, str):
+        if item.lower() not in lower_case_names:
+            raise ValueError(
+                f"Requested item {item} not found in dfs file. Available: {available_names}"
+            )
+        return lower_case_names.index(item.lower())
+
+    elif isinstance(item, int):
+        idx = item
+        n_items = len(dfs.items)
+        if idx < 0:  # Handle negative indices
+            idx = n_items + idx
+        if (idx < 0) or (idx >= n_items):
+            raise IndexError(f"item {item} out of range (0, {n_items-1})")
+
+        return idx
+
+
 def validate_and_format_xarray(da: xr.DataArray):
     new_names = {}
     coords = da.coords
@@ -173,7 +203,7 @@ def validate_and_format_xarray(da: xr.DataArray):
     return da
 
 
-def _validate_input_data(data, item) -> None:
+def validate_input_data(data, item) -> None:
     """Validates the input data to ensure that a loader will available for the provided data."""
 
     if isinstance(data, mikeio.Dataset):

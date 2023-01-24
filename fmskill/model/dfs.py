@@ -272,34 +272,6 @@ class DataArrayModelResultItem(ModelResultInterface):
         return comparer
 
 
-def dfs_get_item_index(dfs, item):
-    available_names = [i.name for i in dfs.items]
-    lower_case_names = [i.lower() for i in available_names]
-    if item is None:
-        if len(dfs.items) > 1:
-            raise ValueError(
-                f"Found more than one item in dfs. Please specify item. Available: {available_names}"
-            )
-        else:
-            return 0
-    elif isinstance(item, str):
-        if item.lower() not in lower_case_names:
-            raise ValueError(
-                f"Requested item {item} not found in dfs file. Available: {available_names}"
-            )
-        return lower_case_names.index(item.lower())
-
-    elif isinstance(item, int):
-        idx = item
-        n_items = len(dfs.items)
-        if idx < 0:  # Handle negative indices
-            idx = n_items + idx
-        if (idx < 0) or (idx >= n_items):
-            raise IndexError(f"item {item} out of range (0, {n_items-1})")
-
-        return idx
-
-
 class DfsModelResultItem(_DfsBase, ModelResultInterface):
     @property
     def item_name(self):
