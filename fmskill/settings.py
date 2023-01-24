@@ -499,6 +499,11 @@ def load_style(name: str) -> None:
     ------
     KeyError
         If a named style is not found.
+
+    Examples
+    --------
+    >>> import fmskill
+    >>> fmskill.load_style('MOOD')
     """
 
     lname = name.lower()
