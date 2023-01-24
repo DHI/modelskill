@@ -39,9 +39,11 @@ def eager_array_from_filepath(
 
 def lazy_array_from_filepath(
     filepath: Union[str, Path, list], item: types.ItemSpecifier = None
-):
-    """Return a lazy loading object for a filepath.
-    Currently supported formats: .dfs0, .dfsu"""
+) -> types.DfsType:
+    """
+    Return a lazy loading object for a filepath.
+    Currently supported formats: .dfs0, .dfsu
+    """
     filename = _as_path(filepath)
     ext = filename.suffix
     if "dfs" in ext:
@@ -82,7 +84,7 @@ def get_eager_loader(
 
 def get_lazy_loader(
     data: types.DataInputType,
-) -> Callable[[types.DataInputType, types.ItemSpecifier], xr.DataArray]:
+) -> types.DfsType:
     return lazy_loading_types_mapping.get(type(data))
 
 

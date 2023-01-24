@@ -41,7 +41,12 @@ class DataContainer:
         self._check_point_or_track()
 
     def _load_data(self, data, item):
-        """Checks if provided input data should be loaded eagerly or lazily."""
+        """
+        Checks if provided input data should be loaded eagerly or lazily.
+        In case of eager loading, the data is loaded into an xr.DataArray and stored in self.data.
+        In case of lazy loading, the data is stored in self.data as a dfsu or dfs0 object,
+        to be loaded later, once obersevation points are known.
+        """
 
         _eager_loader = parsing.get_eager_loader(data)
         if _eager_loader is not None:
