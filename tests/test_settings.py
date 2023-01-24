@@ -92,11 +92,11 @@ def test_options_register_option():
 
 def test_named_style():
 
-    fmskill.settings.load_style("MOOD")
+    fmskill.load_style("MOOD")
     assert fmskill.get_option("plot.scatter.points.label") == "Data"
 
 
 def test_missing_named_style():
 
     with pytest.raises(KeyError, match="not found"):
-        fmskill.settings.load_style("food")
+        fmskill.load_style("food")
