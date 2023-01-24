@@ -487,13 +487,22 @@ def is_dict(value: object) -> None:
 
 
 def set_plot_style(name: str) -> None:
-    if name == "MOOD":
-        path = (
-            Path(__file__).parent / "styles" / f"{name.lower()}.yml"
-        )  # TODO create name from style
-        with open(path) as f:
-            contents = f.read()
+
+    lname = name.lower()
+
+    # The number of folders to search can be expanded in the future
+    path = Path(__file__).parent / "styles"
+    NAMED_STYLES = {x.stem: x for x in path.glob("*.yml")}
+
+    if lname not in NAMED_STYLES:
+        raise KeyError(
+            f"Plot style '{name}' not found. Choose from {list(NAMED_STYLES.keys())}"
+        )
+
+    style_path = NAMED_STYLES[lname]
+
+    with open(style_path, encoding="utf-8") as f:
+        contents = f.read()
         d = yaml.load(contents, Loader=yaml.FullLoader)
-    else:
-        raise ValueError(f"Plot style '{name}' not found (MOOD)")
+
     set_option(d)
