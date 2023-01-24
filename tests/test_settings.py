@@ -93,7 +93,7 @@ def test_options_register_option():
 def test_named_style():
 
     # TODO rename .set_plot_style to .set_style
-    fmskill.settings.set_plot_style("MOOD")
+    fmskill.settings.load_style("MOOD")
     assert fmskill.get_option("plot.scatter.points.label") == "Data"
 
 
@@ -101,4 +101,4 @@ def test_missing_named_style():
 
     # TODO rename .set_plot_style to .set_style
     with pytest.raises(KeyError, match="style"):
-        fmskill.settings.set_plot_style("food")
+        fmskill.settings.load_style("food")

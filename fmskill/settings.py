@@ -441,7 +441,7 @@ is_float = is_type_factory(float)
 is_str = is_type_factory(str)
 is_tuple = is_type_factory(tuple)
 is_text = is_instance_factory((str, bytes))
-is_tuple_or_str = is_instance_factory(
+is_tuple_list_or_str = is_instance_factory(
     (str, tuple, list)
 )  # a list can be used as a tuple
 
@@ -486,7 +486,20 @@ def is_dict(value: object) -> None:
     raise ValueError("Value must be a dictionary")
 
 
-def set_plot_style(name: str) -> None:
+def load_style(name: str) -> None:
+    """Load a number of options from a named style.
+
+    Parameters
+    ----------
+    name : str
+        Name of the predefined style to load. Available styles are:
+        'MOOD': Resembling the plots of the www.metocean-on-demand.com data portal.
+
+    Raises
+    ------
+    KeyError
+        If a named style is not found.
+    """
 
     lname = name.lower()
 
@@ -496,7 +509,7 @@ def set_plot_style(name: str) -> None:
 
     if lname not in NAMED_STYLES:
         raise KeyError(
-            f"Plot style '{name}' not found. Choose from {list(NAMED_STYLES.keys())}"
+            f"Style '{name}' not found. Choose from {list(NAMED_STYLES.keys())}"
         )
 
     style_path = NAMED_STYLES[lname]
