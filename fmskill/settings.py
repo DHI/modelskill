@@ -29,6 +29,8 @@ Implementation
   fully-qualified key, e.g. "x.y.z.option".
 
 """
+import yaml
+from pathlib import Path
 import re
 from typing import (
     Any,
@@ -439,7 +441,9 @@ is_float = is_type_factory(float)
 is_str = is_type_factory(str)
 is_tuple = is_type_factory(tuple)
 is_text = is_instance_factory((str, bytes))
-is_tuple_or_str = is_instance_factory((str,tuple))
+is_tuple_or_str = is_instance_factory(
+    (str, tuple, list)
+)  # a list can be used as a tuple
 
 
 def is_callable(obj) -> bool:
@@ -456,6 +460,7 @@ def is_callable(obj) -> bool:
     if not callable(obj):
         raise ValueError("Value must be a callable")
     return True
+
 
 def is_positive(value: object) -> None:
     if np.isreal(value) and value > 0:
@@ -474,32 +479,21 @@ def is_between_0_and_1(value: object) -> None:
         return
     raise ValueError("Value must be a number between 0 and 1")
 
+
 def is_dict(value: object) -> None:
     if isinstance(value, dict):
         return
     raise ValueError("Value must be a dictionary")
 
-def set_plot_style(name:str) -> None:
-    d = {}
+
+def set_plot_style(name: str) -> None:
     if name == "MOOD":
-        d["plot.scatter.points.size"] = 10.0        
-        d["plot.scatter.points.alpha"] = 0.9
-        d["plot.scatter.points.label"] = "Data" 
-
-        d["plot.scatter.quantiles.markersize"] = 3.5
-        d["plot.scatter.quantiles.marker"] = "o"
-        d["plot.scatter.quantiles.color"] = (0,0,0,0)
-        d["plot.scatter.quantiles.markeredgecolor"] = (0,152/255,219/255)
-        d["plot.scatter.quantiles.markeredgewidth"] = 1.2
-        d["plot.scatter.quantiles.label"] = "Quantiles (0.0 - 100.0%)"
-
-        d["plot.scatter.reg_line.kwargs"] = {'dashes':(2, 5), 'color':(0,152/255,219/255)}
-
-        d["plot.scatter.oneone_line.color"] = "darkorange"
-        d["plot.scatter.oneone_line.label"] = "1:1 (45degrees)"        
-
-        d["plot.scatter.legend.kwargs"] = {'loc':'center left','bbox_to_anchor':(1.2, 0.1),'edgecolor':'k'}
-        d["plot.scatter.legend.bbox"] = {"facecolor": "w","alpha": 0.99,}
-    else: 
+        path = (
+            Path(__file__).parent / "styles" / f"{name.lower()}.yml"
+        )  # TODO create name from style
+        with open(path) as f:
+            contents = f.read()
+        d = yaml.load(contents, Loader=yaml.FullLoader)
+    else:
         raise ValueError(f"Plot style '{name}' not found (MOOD)")
     set_option(d)
