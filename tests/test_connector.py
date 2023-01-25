@@ -51,19 +51,19 @@ def o3():
     return TrackObservation(fn, item=3, name="c2")
 
 
-@pytest.fixture
-def con11(o1, mr1):
-    return Connector(o1, mr1[0])
+# @pytest.fixture
+# def con11(o1, mr1):
+#     return Connector(o1, mr1[0])
 
 
 @pytest.fixture
-def con11_b(o1, mr3):
+def con11(o1, mr3):
     return Connector([o1], mr3[0])
 
 
-@pytest.fixture
-def con11_c(o1, mr4):
-    return Connector([o1], mr4)
+# @pytest.fixture
+# def con11_c(o1, mr4):
+#     return Connector([o1], mr4)
 
 
 @pytest.fixture
@@ -74,11 +74,6 @@ def con31(o1, o2, o3, mr1):
 @pytest.fixture
 def con32(o1, o2, o3, mr1, mr2):
     return Connector([o1, o2, o3], [mr1[0], mr2[0]])
-
-
-@pytest.fixture
-def con33(o1, mr3):
-    return Connector([o1], mr3[0])
 
 
 def test_point_connector_repr(o1, mr1):
@@ -224,6 +219,6 @@ def test_plot_data_coverage(con31):
     con31.plot_temporal_coverage()
 
 
-def test_extract_gaps(con33):
-    collection = con33.extract(max_model_gap=3600)
-    assert collection.n_points==28
+def test_extract_gaps(con11):
+    collection = con11.extract(max_model_gap=3600)
+    assert collection.n_points == 28
