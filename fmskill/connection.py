@@ -549,7 +549,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
     def __iter__(self):
         return iter(self.connections.values())
 
-    def extract(self) -> ComparerCollection:
+    def extract(self, *args, **kwargs) -> ComparerCollection:
         """Extract model results at times and positions of all observations.
 
         Returns
@@ -558,7 +558,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             A comparer object for further analysis and plotting.
         """
 
-        cmps = [con.extract() for con in self.connections.values()]
+        cmps = [con.extract(*args, **kwargs) for con in self.connections.values()]
         cc = ComparerCollection(cmps)
         return cc
 
