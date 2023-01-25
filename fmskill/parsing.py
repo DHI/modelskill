@@ -1,5 +1,26 @@
+"""
+Problem example:
+When loading a dfs0 file, this can happen either eagerly or lazily,
+depending on whether the file is a result (lazy) or an observation (eager).
+Furthermore, we want to determine if the data is point or track data.
+If the data contains multiple unique coordinates (e.g. latitude/longitude, x/y),
+it is track data. However, the coordinates may also be stored as data variables of
+the DataSet. Therefore, we can't simply convert to a DataArray based only on the
+provided item. 
+
+Strategy:
+1. Parse all eagerly loadable formats to a xarray.DataSet.
+2. Check coords and data variables for coordinates to determine if point or track data.
+   If track data is present, make sure it is part of the coords.
+3. Using the specified item, reduce to a xarray.DataArray.
+
+The end result should be a DataArray having either only a time coordinate (point data)
+or time and geographical coordinates (track data).
+The logic for creating the dataset should be separated from the logic for creating the DataArray.
+"""
+
 from pathlib import Path
-from typing import Optional, Union, Callable
+from typing import Optional, Union, Callable, Tuple
 
 import mikeio
 import xarray as xr
@@ -8,38 +29,43 @@ import pandas as pd
 from .utils import _as_path
 from fmskill import types
 
+POS_COORDINATE_NAME_MAPPING = {
+    "x": "x",
+    "y": "y",
+    "lon": "x",
+    "longitude": "x",
+    "lat": "y",
+    "latitude": "y",
+    "east": "x",
+    "north": "y",
+}
+TIME_COORDINATE_NAME_MAPPING = {"time": "time", "t": "time", "date": "time"}
+
 
 # functions for converting various input formats to xarray.DataArray
 
 
-def array_from_dataset(
-    ds: xr.Dataset, item: types.ItemSpecifier = None, *args, **kwargs
-) -> xr.DataArray:
-    """Get a DataArray from a Dataset"""
-    item = _xarray_get_item_name(ds, item)
-    da = ds[item]
-    return da
+# def array_from_dataset(
+#     ds: xr.Dataset, item: types.ItemSpecifier = None, *args, **kwargs
+# ) -> Tuple[xr.DataArray, str]:
+#     """Get a DataArray from a Dataset"""
+#     item = _xarray_get_item_name(ds, item)
+#     da = ds[item]
+#     return da, item
 
 
-def eager_array_from_filepath(
-    filepath: Union[str, Path, list], item: types.ItemSpecifier = None
-):
-    """Get a DataArray from a filepath. Does not support dfs files."""
+def eager_ds_from_filepath(filepath: Union[str, Path, list]):
+    """Get a DataSet from a filepath. Does not support dfs files."""
     filename = _as_path(filepath)
     ext = filename.suffix
-    # if "dfs" in ext:
-    # dfs: DfsType = mikeio.open(filename)
-    # return array_from_dfs(dfs, item)
     if "dfs" not in ext:
         if "*" not in str(filename):
-            return array_from_dataset(xr.open_dataset(filename), item)
+            return xr.open_dataset(filename)
         elif isinstance(filepath, str) or isinstance(filepath, list):
-            return array_from_dataset(xr.open_mfdataset(filepath), item)
+            return xr.open_mfdataset(filepath)
 
 
-def lazy_array_from_filepath(
-    filepath: Union[str, Path, list], item: types.ItemSpecifier = None
-) -> types.DfsType:
+def lazy_ds_from_filepath(filepath: Union[str, Path, list]) -> types.DfsType:
     """
     Return a lazy loading object for a filepath.
     Currently supported formats: .dfs0, .dfsu
@@ -48,30 +74,25 @@ def lazy_array_from_filepath(
     ext = filename.suffix
     if "dfs" in ext:
         dfs = mikeio.open(filename)
-        _dfs_get_item_index(dfs, item)
+        # item = _dfs_get_item_index(dfs, item)
         return dfs
 
 
-def array_from_pd_series(series: pd.Series, *args, **kwargs) -> xr.DataArray:
-    """Get a DataArray from a pandas Series."""
-    return series.to_xarray()
+# def array_from_pd_series(
+#     series: pd.Series, *args, **kwargs
+# ) -> Tuple[xr.DataArray, str]:
+#     """Get a DataArray from a pandas Series."""
+#     return series.to_xarray(), series.name
 
 
-def array_from_pd_dataframe(
-    df: pd.DataFrame, item: types.ItemSpecifier = None, *args, **kwargs
-) -> xr.DataArray:
-    """Get a DataArray from a pandas DataFrame."""
-    if item is None:
-        if len(df.columns) == 1:
-            item = df.columns[0]
-        else:
-            item = _pd_get_column_name(df, item)
-    return df[item].to_xarray()
+def array_from_pd_dataframe(df: pd.DataFrame, *args, **kwargs) -> xr.Dataset:
+    """Get a DataSet from a pandas DataFrame."""
+    return df.to_xarray()
 
 
 def get_eager_loader(
     data: types.DataInputType,
-) -> Callable[[types.DataInputType, types.ItemSpecifier], xr.DataArray]:
+) -> Callable[[types.DataInputType], xr.Dataset]:
     """Check if the provided data can be loaded eagerly. If so, return the loader function,
     otherwise return None."""
 
@@ -91,19 +112,84 @@ def get_lazy_loader(
 
 
 eager_loading_types_mapping = {
-    xr.DataArray: lambda x: x,
-    xr.Dataset: array_from_dataset,
-    str: eager_array_from_filepath,
-    Path: eager_array_from_filepath,
-    list: eager_array_from_filepath,
-    pd.Series: array_from_pd_series,
+    xr.DataArray: lambda x: x.to_dataset(),
+    xr.Dataset: lambda x: x,
+    str: eager_ds_from_filepath,
+    Path: eager_ds_from_filepath,
+    list: eager_ds_from_filepath,
+    # pd.Series: array_from_pd_series,
     pd.DataFrame: array_from_pd_dataframe,
 }
 
 lazy_loading_types_mapping = {
-    str: lazy_array_from_filepath,
-    Path: lazy_array_from_filepath,
+    str: lazy_ds_from_filepath,
+    Path: lazy_ds_from_filepath,
 }
+
+
+def parse_ds_coords(ds: xr.Dataset) -> xr.Dataset:
+    """Parse the coordinates of a dataset. If track data is present, make sure it is part of the coords."""
+
+    ds = _ensure_dims(ds)
+    ds = _rename_coords(ds)
+
+    if "time" not in ds.coords:
+        raise ValueError("time coordinate not found")
+
+    if not isinstance(ds.coords["time"].to_index(), pd.DatetimeIndex):
+        raise ValueError(f"Time coordinate is not equivalent to DatetimeIndex")
+
+    # check if track data is already part of the coords
+    if all(d in ds.coords for d in ("x", "y", "time")):
+        return ds
+
+    # check if track data is stored as data variables
+    data_vars = [c.lower() for c in ds.data_vars]
+    if any(c in data_vars for c in POS_COORDINATE_NAME_MAPPING.keys()):
+        ds = ds.set_coords(
+            [c for c in ds.data_vars if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()]
+        )
+        return _rename_coords(ds)
+
+    # if no track data is present, we are dealing with point data
+    # just rename the time coordinate and return
+    return ds
+
+
+def _ensure_dims(ds: xr.Dataset) -> xr.Dataset:
+    def _already_correct(name: str):
+        return name.lower() in ("time", "x", "y")
+
+    for d in ds.dims:
+        if d.lower() in POS_COORDINATE_NAME_MAPPING.keys() and not _already_correct(d):
+            ds = ds.rename_dims({d: POS_COORDINATE_NAME_MAPPING[d.lower()]})
+        if d.lower() in TIME_COORDINATE_NAME_MAPPING.keys() and not _already_correct(d):
+            ds = ds.rename_dims({d: TIME_COORDINATE_NAME_MAPPING[d.lower()]})
+
+    for d in ["time", "x", "y"]:
+        if d not in ds.dims:
+            ds = ds.expand_dims(d)
+
+    return ds
+
+
+def _rename_coords(ds: xr.Dataset) -> xr.Dataset:
+    """Rename coordinates to standard names"""
+    ds = ds.rename(
+        {
+            c: TIME_COORDINATE_NAME_MAPPING[c.lower()]
+            for c in ds.coords
+            if c.lower() in TIME_COORDINATE_NAME_MAPPING.keys()
+        }
+    )
+    ds = ds.rename(
+        {
+            c: POS_COORDINATE_NAME_MAPPING[c.lower()]
+            for c in ds.coords
+            if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
+        }
+    )
+    return ds
 
 
 def _pd_get_column_name(df: pd.DataFrame, item: types.ItemSpecifier = None) -> str:
@@ -124,7 +210,8 @@ def _pd_get_column_name(df: pd.DataFrame, item: types.ItemSpecifier = None) -> s
         raise TypeError("column must be given as int or str")
 
 
-def _xarray_get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
+def xarray_get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
+    """Returns the name of the requested data variable, provided either as either a str or int."""
     if item_names is None:
         item_names = list(ds.data_vars)
     n_items = len(item_names)
@@ -192,7 +279,7 @@ def validate_and_format_xarray(da: xr.DataArray):
     if len(new_names) > 0:
         da = da.rename(new_names)
 
-    cnames = da.coords
+    cnames = list(da.coords)
     for c in ["x", "y", "time"]:
         if c not in cnames:
             raise ValueError(f"{c} not found in coords {cnames}")
