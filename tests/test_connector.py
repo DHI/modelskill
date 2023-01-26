@@ -66,7 +66,7 @@ def o2():
 def o2_gaps():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
     obs = mikeio.read(fn, items=0).to_dataframe().rename(columns=dict(Hm0="obs")) + 1
-    rnd = np.random.random(len(obs.index))
+    rnd = np.random.random(len(obs.index)) - 1
     dt = pd.Timedelta(180, unit="s")
     obs.index = obs.index + rnd * dt
     obs.index = obs.index.round("S")
@@ -248,8 +248,31 @@ def test_plot_data_coverage(con31):
 
 
 def test_extract_gaps1(con11):
-    collection = con11.extract(max_model_gap=3600)
-    assert collection.n_points == 28
+    # obs has 278 steps (2017-10-27 18:00 to 2017-10-29 18:00) (10min data with gaps)
+    # model SW_3 has 5 timesteps:
+    # 2017-10-27 18:00:00  1.880594
+    # 2017-10-27 21:00:00  1.781904
+    # 2017-10-28 00:00:00  1.819505   (not in obs)
+    # 2017-10-28 03:00:00  2.119306
+    # 2017-10-29 18:00:00  3.249600
+
+    cc = con11.extract()
+    assert cc.n_points == 278
+
+    # accept only 1 hour gaps (even though the model has 3 hour timesteps)
+    # expect only exact matches (4 of 5 model timesteps are in obs)
+    cc = con11.extract(max_model_gap=3600)
+    assert cc.n_points == 4
+
+    # accept only 3 hour gaps
+    # should disregard everything after 2017-10-28 03:00
+    # except a single point 2017-10-29 18:00 (which is hit spot on)
+    cc = con11.extract(max_model_gap=10800)
+    assert cc.n_points == 48 + 1
+
+    # accept gaps up to 2 days (all points should be included)
+    cc = con11.extract(max_model_gap=2 * 24 * 60 * 60)
+    assert cc.n_points == 278
 
 
 def test_extract_gaps2(o2_gaps, mr12_gaps):
