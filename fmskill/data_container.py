@@ -36,7 +36,7 @@ class DataContainer:
         self.item = None
         self.is_track: bool = None
         self.is_point: bool = None
-        self.is_lazy: bool = None
+        self.is_dfs: bool = None
 
         self.is_result: bool = is_result or not is_observation
         self.is_observation: bool = is_observation or not is_result
@@ -44,11 +44,9 @@ class DataContainer:
         parsing.validate_input_data(data, item)
 
         self._load_data(data, item)
-        # self._check_point_or_track()
 
     def __repr__(self) -> str:
         _res = "result" if self.is_result else "observation"
-        _lazy = "lazy" if self.is_lazy else "eager"
         if self.is_track:
             _type = "track data"
         elif self.is_point:
@@ -56,7 +54,7 @@ class DataContainer:
         else:
             _type = "unknown data type"
 
-        return f"DataContainer({_res}, item: '{self.item}', {_lazy} loading, {_type})"
+        return f"DataContainer({_res}, item: '{self.item}' {_type})"
 
     def _load_data(self, data, item):
         """
@@ -68,29 +66,31 @@ class DataContainer:
         The assumption is made that observations can always be loaded eagerly.
         """
 
-        # eager loading
-        _eager_loader = parsing.get_eager_loader(data)
+        # try loading straight into a dataset
+        _eager_loader = parsing.get_dataset_loader(data)
         if _eager_loader is not None:
-            self.is_lazy = False
+            self.is_dfs = False
             ds = _eager_loader(data)
-        # lazy loading
+        # lazily load dfs files
         else:
-            self.is_lazy = True
-            _lazy_loader = parsing.get_lazy_loader(data)
+            self.is_dfs = True
+            _lazy_loader = parsing.get_dfs_loader(data)
             self.data = _lazy_loader(data)
 
-        # special case of eager loading for observations
-        if self.is_observation and self.is_lazy:
+        # special case of observations stored in dfs files
+        if self.is_observation and self.is_dfs:
             if isinstance(self.data, types.DfsType):
                 ds = self.data.read().to_xarray()
-                _loader = parsing.get_eager_loader(ds)
+                _loader = parsing.get_dataset_loader(ds)
                 ds = _loader(ds)
-                self.is_lazy = False
+                self.is_dfs = False
 
-        if not self.is_lazy:
+        if not self.is_dfs:
             # put all positional & temporal data into standard coordinate names
+            # ds = parsing.ensure_dims(ds)
             ds = parsing.parse_ds_coords(ds)
-            self._check_point_or_track(ds)
+            if self.is_observation:
+                self._check_point_or_track(ds)
 
             # parse into DataArray, based on item
             self.item = parsing.xarray_get_item_name(ds, item)
@@ -99,7 +99,7 @@ class DataContainer:
         print("hold")
 
     def _check_point_or_track(self, ds: xr.Dataset) -> None:
-        if self.is_lazy:
+        if self.is_dfs:
             return
 
         # if only one coordinate is present, we have point data
@@ -157,7 +157,8 @@ class DataContainer:
                 )
 
     def compare(self, other: "DataContainer"):
-        self._check_compatibility([self, other])
+        # self._check_compatibility([self, other])
+        pass
 
 
 if __name__ == "__main__":

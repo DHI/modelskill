@@ -65,7 +65,7 @@ def eager_ds_from_filepath(filepath: Union[str, Path, list]):
             return xr.open_mfdataset(filepath)
 
 
-def lazy_ds_from_filepath(filepath: Union[str, Path, list]) -> types.DfsType:
+def ds_from_dfs_filepath(filepath: Union[str, Path, list]) -> types.DfsType:
     """
     Return a lazy loading object for a filepath.
     Currently supported formats: .dfs0, .dfsu
@@ -90,7 +90,7 @@ def array_from_pd_dataframe(df: pd.DataFrame, *args, **kwargs) -> xr.Dataset:
     return df.to_xarray()
 
 
-def get_eager_loader(
+def get_dataset_loader(
     data: types.DataInputType,
 ) -> Callable[[types.DataInputType], xr.Dataset]:
     """Check if the provided data can be loaded eagerly. If so, return the loader function,
@@ -105,7 +105,7 @@ def get_eager_loader(
     return eager_loading_types_mapping.get(type(data))
 
 
-def get_lazy_loader(
+def get_dfs_loader(
     data: types.DataInputType,
 ) -> types.DfsType:
     return lazy_loading_types_mapping.get(type(data))
@@ -122,15 +122,13 @@ eager_loading_types_mapping = {
 }
 
 lazy_loading_types_mapping = {
-    str: lazy_ds_from_filepath,
-    Path: lazy_ds_from_filepath,
+    str: ds_from_dfs_filepath,
+    Path: ds_from_dfs_filepath,
 }
 
 
 def parse_ds_coords(ds: xr.Dataset) -> xr.Dataset:
     """Parse the coordinates of a dataset. If track data is present, make sure it is part of the coords."""
-
-    ds = _ensure_dims(ds)
     ds = _rename_coords(ds)
 
     if "time" not in ds.coords:
@@ -146,9 +144,16 @@ def parse_ds_coords(ds: xr.Dataset) -> xr.Dataset:
     # check if track data is stored as data variables
     data_vars = [c.lower() for c in ds.data_vars]
     if any(c in data_vars for c in POS_COORDINATE_NAME_MAPPING.keys()):
-        ds = ds.set_coords(
-            [c for c in ds.data_vars if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()]
+        ds = ds.assign_coords(
+            {
+                c: (POS_COORDINATE_NAME_MAPPING[c.lower()], ds[c].values.squeeze())
+                for c in ds.data_vars
+                if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
+            }
         )
+        # ds = ds.set_coords(
+        #     [c for c in ds.data_vars if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()]
+        # )
         return _rename_coords(ds)
 
     # if no track data is present, we are dealing with point data
@@ -156,16 +161,18 @@ def parse_ds_coords(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def _ensure_dims(ds: xr.Dataset) -> xr.Dataset:
+def ensure_dims(ds: xr.Dataset) -> xr.Dataset:
     def _already_correct(name: str):
         return name.lower() in ("time", "x", "y")
 
+    # rename dimensions to standard names if they already exist under a different name
     for d in ds.dims:
         if d.lower() in POS_COORDINATE_NAME_MAPPING.keys() and not _already_correct(d):
             ds = ds.rename_dims({d: POS_COORDINATE_NAME_MAPPING[d.lower()]})
         if d.lower() in TIME_COORDINATE_NAME_MAPPING.keys() and not _already_correct(d):
             ds = ds.rename_dims({d: TIME_COORDINATE_NAME_MAPPING[d.lower()]})
 
+    # otherwise, expand the dataset with the missing dimensions
     for d in ["time", "x", "y"]:
         if d not in ds.dims:
             ds = ds.expand_dims(d)
