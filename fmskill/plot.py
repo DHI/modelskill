@@ -600,4 +600,6 @@ def _plot_summary_table(skill_df, units, max_cbar):
         0.6,
         text_,
         bbox=settings.get_option("plot.scatter.legend.bbox"),
+        fontsize=12,
+        family="monospace",
     )
