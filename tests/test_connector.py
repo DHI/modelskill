@@ -67,9 +67,8 @@ def o2():
 def o2_gaps():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
     obs = mikeio.read(fn, items=0).to_dataframe().rename(columns=dict(Hm0="obs")) + 1
-    rnd = np.random.random(len(obs.index)) - 1
     dt = pd.Timedelta(180, unit="s")
-    obs.index = obs.index + rnd * dt
+    obs.index = obs.index - dt
     obs.index = obs.index.round("S")
     return PointObservation(obs, item=0, x=3.2760, y=51.9990, name="EPL")
 
