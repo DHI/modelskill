@@ -28,16 +28,66 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option, reset_option
 
-# register_option(
-#     "metrics.primary",
-#     mtr.rmse,
-#     doc="Default metric in cases where a only a single metric can be reported.",
-# )
 register_option(
     "metrics.list",
     [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
     doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
 )
+
+
+def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
+    """Interpolate time series to new time index"""
+    new_df = (
+        df.reindex(df.index.union(new_time))
+        .interpolate(method="time", limit_area="inside")
+        .reindex(new_time)
+    )
+    return new_df
+
+
+TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
+
+
+def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
+    if isinstance(time_delta, (timedelta, np.timedelta64)):
+        time_delta = pd.Timedelta(time_delta)
+    elif np.isscalar(time_delta):
+        # assume seconds
+        time_delta = pd.Timedelta(time_delta, "s")
+    return time_delta
+
+
+def _remove_model_gaps(
+    df: pd.DataFrame,
+    mod_index: pd.DatetimeIndex,
+    max_gap: TimeDeltaTypes,
+) -> pd.DataFrame:
+    """Remove model gaps longer than max_gap from dataframe"""
+    max_gap = _time_delta_to_pd_timedelta(max_gap)
+    valid_time = _get_valid_query_time(mod_index, df.index, max_gap)
+    return df.loc[valid_time]
+
+
+def _get_valid_query_time(
+    mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
+):
+    # init dataframe of available timesteps and their index
+    df = pd.DataFrame(index=mod_index)
+    df["idx"] = range(len(df))
+
+    # for query times get available left and right index of source times
+    df = _interp_time(df, obs_index).dropna()
+    df["idxa"] = np.floor(df.idx).astype(int)
+    df["idxb"] = np.ceil(df.idx).astype(int)
+
+    # time of left and right source times and time delta
+    df["ta"] = mod_index[df.idxa]
+    df["tb"] = mod_index[df.idxb]
+    df["dt"] = df.tb - df.ta
+
+    # valid query times where time delta is less than max_gap
+    valid_idx = df.dt <= max_gap
+    return valid_idx
 
 
 class BaseComparer:
@@ -1150,32 +1200,20 @@ class SingleObsComparer(BaseComparer):
         super().__init__(observation, model)
 
     def __copy__(self):
-        # cls = self.__class__
-        # cp = cls.__new__(cls)
-        # cp.__init__(self.observation, self.mod_df)
-        # return cp
         return deepcopy(self)
 
     def copy(self):
         return self.__copy__()
 
-    def _model2obs_interp(self, obs, mod_df):
+    def _model2obs_interp(self, obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]):
         """interpolate model to measurement time"""
-        df = self._interp_df(mod_df, obs.time)
-        # mod_ds.interp_time(obs.time).to_dataframe()
+        df = _interp_time(mod_df.dropna(), obs.time)
         df[self.obs_name] = obs.values
-        return df
 
-    @staticmethod
-    def _interp_df(df, new_time):
-        assert df.index.is_unique
-        assert new_time.is_unique
-        new_df = (
-            df.reindex(df.index.union(new_time))
-            .interpolate(method="time", limit_area="inside")
-            .reindex(new_time)
-        )
-        return new_df
+        if max_model_gap is not None:
+            df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
+
+        return df
 
     def skill(
         self,
@@ -1571,7 +1609,9 @@ class PointComparer(SingleObsComparer):
     >>> comparer['Klagshamn']
     """
 
-    def __init__(self, observation, modeldata):
+    def __init__(
+        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
+    ):
         super().__init__(observation, modeldata)
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
@@ -1580,8 +1620,12 @@ class PointComparer(SingleObsComparer):
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
+        # max_model_gap = self._parse_max_gap(modeldata, max_model_gap)
+
         for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data).iloc[:, ::-1]
+            df = self._model2obs_interp(self.observation, data, max_model_gap).iloc[
+                :, ::-1
+            ]
             if j == 0:
                 self.df = df
             else:
@@ -1694,15 +1738,17 @@ class TrackComparer(SingleObsComparer):
     def y(self):
         return self.df.iloc[:, 1]
 
-    def __init__(self, observation, modeldata):
+    def __init__(self, observation, modeldata, max_model_gap: float = None):
         super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
         self.observation.df = self.observation.df[self._mod_start : self._mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
+        # max_model_gap = self._parse_max_gap(modeldata, max_model_gap)
+
         for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data)
+            df = self._model2obs_interp(self.observation, data, max_model_gap)
             # rename first columns to x, y
             df.columns = ["x", "y", *list(df.columns)[2:]]
             if (len(df) > 0) and (len(df) == len(self.observation.df)):

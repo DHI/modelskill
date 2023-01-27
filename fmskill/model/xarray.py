@@ -156,7 +156,7 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
         self.name = name
         self._filename = filename
 
-    def extract_observation(self, observation: PointObservation) -> PointComparer:
+    def extract_observation(self, observation: PointObservation, **kwargs) -> PointComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -175,10 +175,10 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
 
         if isinstance(observation, PointObservation):
             df_model = self._extract_point(observation, item)
-            comparer = PointComparer(observation, df_model)
+            comparer = PointComparer(observation, df_model, **kwargs)
         elif isinstance(observation, TrackObservation):
             df_model = self._extract_track(observation, item)
-            comparer = TrackComparer(observation, df_model)
+            comparer = TrackComparer(observation, df_model, **kwargs)
         else:
             raise ValueError("Only point and track observation are supported!")
 
@@ -238,7 +238,7 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.item_names:
             self._mr_items[it] = XArrayModelResultItem(
-                self.ds, self.name, item=it, itemInfo=itemInfo, filename=self._filename
+                self.ds, self.name, item=it, itemInfo=itemInfo, filename=self._filename,
             )
 
     def _rename_coords(self, ds):

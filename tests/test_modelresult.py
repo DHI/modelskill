@@ -1,12 +1,13 @@
-import numpy as np
 import pytest
 
 import mikeio
-from fmskill import ModelResult
+from fmskill.model import ModelResult
+from fmskill.model import DfsModelResultItem, DfsModelResult,DataArrayModelResultItem
+from fmskill.observation import PointObservation,TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
-from fmskill.model import DfsModelResultItem, DfsModelResult
-from fmskill.model import DataArrayModelResultItem
-from fmskill.observation import PointObservation, TrackObservation
+
+import numpy as np
+
 
 
 @pytest.fixture
@@ -64,6 +65,12 @@ def sw_dutch_coast():
 @pytest.fixture
 def sw_total_windsea():
     return "tests/testdata/SW/SW_Tot_Wind_Swell.dfsu"
+
+
+@pytest.fixture
+def sw_Hm0_df():
+    fn = "tests/testdata/SW/ts_storm_4.dfs0"
+    return mikeio.read(fn, items=0).to_dataframe()
 
 
 def test_repr(hd_oresund_2d):

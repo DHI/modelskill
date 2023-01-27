@@ -291,7 +291,7 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         return "\n".join(txt)
 
     def extract_observation(
-        self, observation: Union[PointObservation, TrackObservation], validate=True
+        self, observation: Union[PointObservation, TrackObservation], validate=True, **kwargs
     ) -> BaseComparer:
         """Extract ModelResult at observation for comparison
 
@@ -322,10 +322,10 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
 
         if isinstance(observation, PointObservation):
             df_model = self._extract_point(observation, item)
-            comparer = PointComparer(observation, df_model)
+            comparer = PointComparer(observation, df_model, **kwargs)
         elif isinstance(observation, TrackObservation):
             df_model = self._extract_track(observation, item)
-            comparer = TrackComparer(observation, df_model)
+            comparer = TrackComparer(observation, df_model, **kwargs)
         else:
             raise ValueError("Only point and track observation are supported!")
 
@@ -365,7 +365,7 @@ class DfsModelResult(_DfsBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.dfs.items:
             self._mr_items[it.name] = DfsModelResultItem(
-                self.dfs, it, self._filename, self.name
+                self.dfs, it, self._filename, self.name,
             )
 
         if item is not None:

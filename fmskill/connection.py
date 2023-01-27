@@ -20,7 +20,7 @@ from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 
 
-def compare(obs, mod, *, obs_item=None, mod_item=None):
+def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
     """Quick-and-dirty compare of observation and model
 
     Parameters
@@ -49,7 +49,8 @@ def compare(obs, mod, *, obs_item=None, mod_item=None):
         obs = PointObservation(obs, item=obs_item)
 
     mod = _parse_model(mod, mod_item)
-    return PointComparer(obs, mod)
+    
+    return PointComparer(obs, mod, max_model_gap=max_model_gap)
 
 
 def _parse_model(mod, item=None):
@@ -301,7 +302,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self) -> PointComparer:
+    def extract(self, max_model_gap: float=None) -> PointComparer:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -327,7 +328,7 @@ class PointConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = PointComparer(self.obs, df_model)
+        comparer = PointComparer(self.obs, df_model, max_model_gap=max_model_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -350,7 +351,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self) -> TrackComparer:
+    def extract(self, max_model_gap: float=None) -> TrackComparer:
         """Extract model results at times and positions of track observation.
 
         Returns
@@ -375,7 +376,7 @@ class TrackConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = TrackComparer(self.obs, df_model)
+        comparer = TrackComparer(self.obs, df_model, max_model_gap=max_model_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -548,7 +549,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
     def __iter__(self):
         return iter(self.connections.values())
 
-    def extract(self) -> ComparerCollection:
+    def extract(self, *args, **kwargs) -> ComparerCollection:
         """Extract model results at times and positions of all observations.
 
         Returns
@@ -557,7 +558,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             A comparer object for further analysis and plotting.
         """
 
-        cmps = [con.extract() for con in self.connections.values()]
+        cmps = [con.extract(*args, **kwargs) for con in self.connections.values()]
         cc = ComparerCollection(cmps)
         return cc
 
