@@ -28,11 +28,6 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option, reset_option
 
-# register_option(
-#     "metrics.primary",
-#     mtr.rmse,
-#     doc="Default metric in cases where a only a single metric can be reported.",
-# )
 register_option(
     "metrics.list",
     [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
@@ -50,31 +45,24 @@ def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex):
     return new_df
 
 
-def _remove_model_gaps(df, mod_index, max_gap):
-    """Remove model gaps longer than max_gap_seconds from dataframe"""
+def _remove_model_gaps(
+    df: pd.DataFrame,
+    mod_index: pd.DatetimeIndex,
+    max_gap: Union[float, int, np.timedelta64, pd.Timedelta],
+):
+    """Remove model gaps longer than max_gap from dataframe"""
     if isinstance(max_gap, np.timedelta64):
         max_gap = pd.Timedelta(max_gap)
     if np.isscalar(max_gap):
         # assume seconds
-        max_gap = pd.Timedelta(max_gap, "s")    
+        max_gap = pd.Timedelta(max_gap, "s")
     valid_time = _get_valid_query_time(mod_index, df.index, max_gap)
     return df.loc[valid_time]
 
 
-# def _model_dt_at_obs_index(mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex):
-#     """Return (model) timesteps in seconds interpolated to observation time index"""
-#     first = mod_index[0]
-#     dt = mod_index.to_series().diff().dt.total_seconds()
-#     dt = dt.reindex(mod_index.union(obs_index))
-#     dt = dt.fillna(method="bfill")
-#     dt = dt.reindex(obs_index)
-#     dt.loc[dt.index < first] = np.nan
-#     return dt
-
-
 def _get_valid_query_time(
     mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
-):    
+):
     # init dataframe of available timesteps and their index
     df = pd.DataFrame(index=mod_index)
     df["idx"] = range(len(df))
@@ -92,8 +80,6 @@ def _get_valid_query_time(
     # valid query times where time delta is less than max_gap
     valid_idx = df.dt <= max_gap
     return valid_idx
-    # valid_time = df.index[df.dt <= max_gap]
-    # return valid_time
 
 
 class BaseComparer:
@@ -1205,67 +1191,20 @@ class SingleObsComparer(BaseComparer):
         super().__init__(observation, model)
 
     def __copy__(self):
-        # cls = self.__class__
-        # cp = cls.__new__(cls)
-        # cp.__init__(self.observation, self.mod_df)
-        # return cp
         return deepcopy(self)
 
     def copy(self):
         return self.__copy__()
 
-    def _model2obs_interp(self, obs, mod_df, max_gap):
+    def _model2obs_interp(self, obs, mod_df, max_model_gap):
         """interpolate model to measurement time"""
         df = _interp_time(mod_df.dropna(), obs.time)
         df[self.obs_name] = obs.values
 
-        if max_gap is not None:
-            df = _remove_model_gaps(df, mod_df.dropna().index, max_gap)
+        if max_model_gap is not None:
+            df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
 
         return df
-
-    # @staticmethod
-    # def _parse_max_gap(modeldatalist, max_model_gap):
-    #     if not isinstance(max_model_gap, list):
-    #         max_model_gap = [max_model_gap]
-    #     if len(max_model_gap) != len(modeldatalist):
-    #         if len(max_model_gap) == 1:
-    #             max_model_gap *= len(modeldatalist)
-    #         else:
-    #             raise ValueError("Length of max_model_gap must match length of modeldata.")
-    #     return max_model_gap
-
-    @staticmethod
-    def _interp_df(df, new_time, max_gap):
-        assert df.index.is_unique
-        assert new_time.is_unique
-        limit = None
-        interpolation = True
-        # Long list of checks for the minimum value that can be interpolated if different values are given, since,
-        # for a fair model comparison, all model results must share same index
-
-        # Calculate the `mode` of dt
-        if (len(new_time) > 0) and (max_gap is not None):
-            ix = new_time[1:] - new_time[0:-1]
-            vals, counts = np.unique(ix, return_counts=True)
-            mode_value_ix = np.argwhere(counts == np.max(counts))
-            dt_meas = vals[mode_value_ix][0][0] / np.timedelta64(1, "s")
-            limit = int(max_gap / dt_meas)
-            if limit == 0:
-                interpolation = False
-
-        if interpolation is False:
-            new_df = df.reindex(df.index.union(new_time)).reindex(new_time)
-            warnings.warn(
-                f"max gap = {max_gap}s < Measurement dt (mode) = {dt_meas}s; No model interpolation was performed. Increase or remove `max_gap` if model interpolation is wanted"
-            )
-        else:
-            new_df = (
-                df.reindex(df.index.union(new_time))
-                .interpolate(method="time", limit_area="inside", limit=limit)
-                .reindex(new_time)
-            )
-        return new_df
 
     def skill(
         self,
