@@ -40,6 +40,62 @@ register_option(
 )
 
 
+def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex):
+    """Interpolate time series to new time index"""
+    new_df = (
+        df.reindex(df.index.union(new_time))
+        .interpolate(method="time", limit_area="inside")
+        .reindex(new_time)
+    )
+    return new_df
+
+
+def _remove_model_gaps(df, mod_index, max_gap):
+    """Remove model gaps longer than max_gap_seconds from dataframe"""
+    if isinstance(max_gap, np.timedelta64):
+        max_gap = pd.Timedelta(max_gap)
+    if np.isscalar(max_gap):
+        # assume seconds
+        max_gap = pd.Timedelta(max_gap, "s")    
+    valid_time = _get_valid_query_time(mod_index, df.index, max_gap)
+    return df.loc[valid_time]
+
+
+# def _model_dt_at_obs_index(mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex):
+#     """Return (model) timesteps in seconds interpolated to observation time index"""
+#     first = mod_index[0]
+#     dt = mod_index.to_series().diff().dt.total_seconds()
+#     dt = dt.reindex(mod_index.union(obs_index))
+#     dt = dt.fillna(method="bfill")
+#     dt = dt.reindex(obs_index)
+#     dt.loc[dt.index < first] = np.nan
+#     return dt
+
+
+def _get_valid_query_time(
+    mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
+):    
+    # init dataframe of available timesteps and their index
+    df = pd.DataFrame(index=mod_index)
+    df["idx"] = range(len(df))
+
+    # for query times get available left and right index of source times
+    df = _interp_time(df, obs_index).dropna()
+    df["idxa"] = np.floor(df.idx).astype(int)
+    df["idxb"] = np.ceil(df.idx).astype(int)
+
+    # time of left and right source times and time delta
+    df["ta"] = mod_index[df.idxa]
+    df["tb"] = mod_index[df.idxb]
+    df["dt"] = df.tb - df.ta
+
+    # valid query times where time delta is less than max_gap
+    valid_idx = df.dt <= max_gap
+    return valid_idx
+    # valid_time = df.index[df.dt <= max_gap]
+    # return valid_time
+
+
 class BaseComparer:
     """Abstract base class for all comparers, only used to inherit from, not to be used directly"""
 
@@ -1160,9 +1216,12 @@ class SingleObsComparer(BaseComparer):
 
     def _model2obs_interp(self, obs, mod_df, max_gap):
         """interpolate model to measurement time"""
-        df = self._interp_df(mod_df, obs.time, max_gap)
-        # mod_ds.interp_time(obs.time).to_dataframe()
+        df = _interp_time(mod_df.dropna(), obs.time)
         df[self.obs_name] = obs.values
+
+        if max_gap is not None:
+            df = _remove_model_gaps(df, mod_df.dropna().index, max_gap)
+
         return df
 
     # @staticmethod
