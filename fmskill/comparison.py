@@ -35,7 +35,7 @@ register_option(
 )
 
 
-def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex):
+def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
     """Interpolate time series to new time index"""
     new_df = (
         df.reindex(df.index.union(new_time))
@@ -45,17 +45,25 @@ def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex):
     return new_df
 
 
+TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
+
+
+def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
+    if isinstance(time_delta, (timedelta, np.timedelta64)):
+        time_delta = pd.Timedelta(time_delta)
+    elif np.isscalar(time_delta):
+        # assume seconds
+        time_delta = pd.Timedelta(time_delta, "s")
+    return time_delta
+
+
 def _remove_model_gaps(
     df: pd.DataFrame,
     mod_index: pd.DatetimeIndex,
-    max_gap: Union[float, int, np.timedelta64, pd.Timedelta],
-):
+    max_gap: TimeDeltaTypes,
+) -> pd.DataFrame:
     """Remove model gaps longer than max_gap from dataframe"""
-    if isinstance(max_gap, np.timedelta64):
-        max_gap = pd.Timedelta(max_gap)
-    if np.isscalar(max_gap):
-        # assume seconds
-        max_gap = pd.Timedelta(max_gap, "s")
+    max_gap = _time_delta_to_pd_timedelta(max_gap)
     valid_time = _get_valid_query_time(mod_index, df.index, max_gap)
     return df.loc[valid_time]
 
@@ -1196,7 +1204,7 @@ class SingleObsComparer(BaseComparer):
     def copy(self):
         return self.__copy__()
 
-    def _model2obs_interp(self, obs, mod_df, max_model_gap):
+    def _model2obs_interp(self, obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]):
         """interpolate model to measurement time"""
         df = _interp_time(mod_df.dropna(), obs.time)
         df[self.obs_name] = obs.values
@@ -1600,7 +1608,9 @@ class PointComparer(SingleObsComparer):
     >>> comparer['Klagshamn']
     """
 
-    def __init__(self, observation, modeldata, max_model_gap: float = None):
+    def __init__(
+        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
+    ):
         super().__init__(observation, modeldata)
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
