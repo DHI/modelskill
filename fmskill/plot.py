@@ -238,8 +238,8 @@ def scatter(
     reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
 
     if backend == "matplotlib":
-
-        plt.figure(figsize=figsize)
+        _,ax=plt.subplots(figsize=figsize)
+        #plt.figure(figsize=figsize)
         plt.plot(
             [xlim[0], xlim[1]],
             [xlim[0], xlim[1]],
@@ -305,6 +305,7 @@ def scatter(
         # Add skill table
         if skill_df != None:
             _plot_summary_table(skill_df, units, max_cbar=max_cbar)
+        return ax
 
     elif backend == "plotly":  # pragma: no cover
         import plotly.graph_objects as go

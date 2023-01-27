@@ -1006,7 +1006,7 @@ class BaseComparer:
             skill_df = None
             units = None
 
-        scatter(
+        ax=scatter(
             x=x,
             y=y,
             bins=bins,
@@ -1028,6 +1028,7 @@ class BaseComparer:
             nbins=nbins,
             **kwargs,
         )
+        return ax
 
     def taylor(
         self,
