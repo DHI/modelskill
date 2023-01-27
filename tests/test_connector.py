@@ -1,3 +1,4 @@
+from datetime import timedelta
 import numpy as np
 import pytest
 import pandas as pd
@@ -79,19 +80,9 @@ def o3():
     return TrackObservation(fn, item=3, name="c2")
 
 
-# @pytest.fixture
-# def con11(o1, mr1):
-#     return Connector(o1, mr1[0])
-
-
 @pytest.fixture
 def con11(o1, mr3):
     return Connector([o1], mr3[0])
-
-
-# @pytest.fixture
-# def con11_c(o1, mr4):
-#     return Connector([o1], mr4)
 
 
 @pytest.fixture
@@ -322,3 +313,20 @@ def test_extract_gaps_small(o2_gaps, mr12_gaps):
     con2 = Connector(o2_gaps, mr2)
     cc = con2.extract(max_model_gap=10)  # no data with that small gap
     assert cc.n_comparers == 0
+
+
+def test_extract_gaps_negative(o2_gaps, mr12_gaps):
+    _, mr2 = mr12_gaps
+    con2 = Connector(o2_gaps, mr2)
+    cc = con2.extract(max_model_gap=-10)
+    assert cc.n_comparers == 0
+
+def test_extract_gaps_types(o2_gaps, mr12_gaps):
+    mr1, mr2 = mr12_gaps
+    con2 = Connector(o2_gaps, [mr1, mr2])
+
+    gap_seconds = 7200
+    gaps = [pd.Timedelta(gap_seconds, unit="s"), np.timedelta64(gap_seconds, "s"), timedelta(seconds=gap_seconds)]
+    for gap in gaps:
+        cc = con2.extract(max_model_gap=gap)
+        assert cc[0].df["mr1"].count() == 42
