@@ -29,6 +29,8 @@ Implementation
   fully-qualified key, e.g. "x.y.z.option".
 
 """
+import yaml
+from pathlib import Path
 import re
 from typing import (
     Any,
@@ -437,7 +439,11 @@ is_int = is_type_factory(int)
 is_bool = is_type_factory(bool)
 is_float = is_type_factory(float)
 is_str = is_type_factory(str)
+is_tuple = is_type_factory(tuple)
 is_text = is_instance_factory((str, bytes))
+is_tuple_list_or_str = is_instance_factory(
+    (str, tuple, list)
+)  # a list can be used as a tuple
 
 
 def is_callable(obj) -> bool:
@@ -454,6 +460,7 @@ def is_callable(obj) -> bool:
     if not callable(obj):
         raise ValueError("Value must be a callable")
     return True
+
 
 def is_positive(value: object) -> None:
     if np.isreal(value) and value > 0:
@@ -472,7 +479,48 @@ def is_between_0_and_1(value: object) -> None:
         return
     raise ValueError("Value must be a number between 0 and 1")
 
+
 def is_dict(value: object) -> None:
     if isinstance(value, dict):
         return
     raise ValueError("Value must be a dictionary")
+
+
+def load_style(name: str) -> None:
+    """Load a number of options from a named style.
+
+    Parameters
+    ----------
+    name : str
+        Name of the predefined style to load. Available styles are:
+        'MOOD': Resembling the plots of the www.metocean-on-demand.com data portal.
+
+    Raises
+    ------
+    KeyError
+        If a named style is not found.
+
+    Examples
+    --------
+    >>> import fmskill
+    >>> fmskill.load_style('MOOD')
+    """
+
+    lname = name.lower()
+
+    # The number of folders to search can be expanded in the future
+    path = Path(__file__).parent / "styles"
+    NAMED_STYLES = {x.stem: x for x in path.glob("*.yml")}
+
+    if lname not in NAMED_STYLES:
+        raise KeyError(
+            f"Style '{name}' not found. Choose from {list(NAMED_STYLES.keys())}"
+        )
+
+    style_path = NAMED_STYLES[lname]
+
+    with open(style_path, encoding="utf-8") as f:
+        contents = f.read()
+        d = yaml.load(contents, Loader=yaml.FullLoader)
+
+    set_option(d)

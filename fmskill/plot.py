@@ -19,16 +19,40 @@ register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
 register_option("plot.scatter.points.alpha", 0.5, validator=settings.is_between_0_and_1)
 register_option("plot.scatter.points.label", "", validator=settings.is_str)
 register_option("plot.scatter.quantiles.marker", "X", validator=settings.is_str)
-register_option("plot.scatter.quantiles.markersize", 3.5, validator=settings.is_positive)
 register_option(
-    "plot.scatter.quantiles.color", "darkturquoise", validator=settings.is_str
+    "plot.scatter.quantiles.markersize", 3.5, validator=settings.is_positive
+)
+register_option(
+    "plot.scatter.quantiles.color",
+    "darkturquoise",
+    validator=settings.is_tuple_list_or_str,
 )
 register_option("plot.scatter.quantiles.label", "Q-Q", validator=settings.is_str)
-register_option("plot.scatter.quantiles.markeredgecolor", (0, 0, 0, 0.4))
+register_option(
+    "plot.scatter.quantiles.markeredgecolor",
+    (0, 0, 0, 0.4),
+    validator=settings.is_tuple_list_or_str,
+)
+register_option(
+    "plot.scatter.quantiles.markeredgewidth", 0.5, validator=settings.is_positive
+)
 register_option("plot.scatter.quantiles.kwargs", {}, settings.is_dict)
 register_option("plot.scatter.oneone_line.label", "1:1", validator=settings.is_str)
-register_option("plot.scatter.oneone_line.color", "blue", validator=settings.is_str)
-register_option("plot.scatter.reg_line.color", "r", validator=settings.is_str)
+register_option(
+    "plot.scatter.oneone_line.color", "blue", validator=settings.is_tuple_list_or_str
+)
+register_option("plot.scatter.legend.kwargs", {}, settings.is_dict)
+register_option("plot.scatter.reg_line.kwargs", {"color": "r"}, settings.is_dict)
+register_option(
+    "plot.scatter.legend.bbox",
+    {
+        "facecolor": "blue",
+        "edgecolor": "k",
+        "boxstyle": "round",
+        "alpha": 0.05,
+    },
+    settings.is_dict,
+)
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 
 
@@ -271,20 +295,21 @@ def scatter(
             c=options.plot.scatter.quantiles.color,
             zorder=4,
             markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
             markersize=options.plot.scatter.quantiles.markersize,
-            **settings.get_option("plot.scatter.quantiles.kwargs")
+            **settings.get_option("plot.scatter.quantiles.kwargs"),
         )
         plt.plot(
             x,
             intercept + slope * x,
-            options.plot.scatter.reg_line.color,
+            **settings.get_option("plot.scatter.reg_line.kwargs"),
             label=reglabel,
             zorder=2,
         )
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
 
-        plt.legend()
+        plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
@@ -552,7 +577,7 @@ def _plot_summary_table(skill_df, units, max_cbar):
         else:
             decimals = f".{2}f"
         lines.append(
-            f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df[col].values[0],2):{decimals}} {item_unit}"
+            f"{(col.ljust(max_str_len)).upper()} = {np.round(skill_df[col].values[0],2): {decimals}} {item_unit}"
         )
 
     text_ = "\n".join(lines)
@@ -575,12 +600,7 @@ def _plot_summary_table(skill_df, units, max_cbar):
         x,
         0.6,
         text_,
-        bbox={
-            "facecolor": "blue",
-            "edgecolor": "k",
-            "boxstyle": "round",
-            "alpha": 0.05,
-        },
+        bbox=settings.get_option("plot.scatter.legend.bbox"),
         fontsize=12,
         family="monospace",
     )
