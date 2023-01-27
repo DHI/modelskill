@@ -576,7 +576,7 @@ def _plot_summary_table(skill_df, units, max_cbar):
         else:
             decimals = f".{2}f"
         lines.append(
-            f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df[col].values[0],2):{decimals}} {item_unit}"
+            f"{(col.ljust(max_str_len)).upper()} = {np.round(skill_df[col].values[0],2): {decimals}} {item_unit}"
         )
 
     text_ = "\n".join(lines)
