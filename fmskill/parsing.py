@@ -127,9 +127,15 @@ lazy_loading_types_mapping = {
 }
 
 
+def is_grid_data(ds: xr.Dataset) -> bool:
+    """
+    Check if the dataset contains densly filled grid data.
+    """
+
+
 def parse_ds_coords(ds: xr.Dataset) -> xr.Dataset:
     """Parse the coordinates of a dataset. If track data is present, make sure it is part of the coords."""
-    ds = _rename_coords(ds)
+    ds = rename_coords(ds)
 
     if "time" not in ds.coords:
         raise ValueError("time coordinate not found")
@@ -154,7 +160,7 @@ def parse_ds_coords(ds: xr.Dataset) -> xr.Dataset:
         # ds = ds.set_coords(
         #     [c for c in ds.data_vars if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()]
         # )
-        return _rename_coords(ds)
+        return rename_coords(ds)
 
     # if no track data is present, we are dealing with point data
     # just rename the time coordinate and return
@@ -180,45 +186,36 @@ def ensure_dims(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def _rename_coords(ds: xr.Dataset) -> xr.Dataset:
+def rename_coords(ds: xr.Dataset) -> xr.Dataset:
     """Rename coordinates to standard names"""
     ds = ds.rename(
         {
             c: TIME_COORDINATE_NAME_MAPPING[c.lower()]
-            for c in ds.coords
+            for c in list(ds.coords) + list(ds.data_vars)
             if c.lower() in TIME_COORDINATE_NAME_MAPPING.keys()
         }
     )
     ds = ds.rename(
         {
             c: POS_COORDINATE_NAME_MAPPING[c.lower()]
-            for c in ds.coords
+            for c in list(ds.coords) + list(ds.data_vars)
             if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
         }
     )
     return ds
 
 
-def _pd_get_column_name(df: pd.DataFrame, item: types.ItemSpecifier = None) -> str:
-    columns = list(df.columns)
-    if isinstance(item, str):
-        if item not in columns:
-            raise KeyError(f"item must be one of {columns}.")
-        return item
-    elif isinstance(item, int):
-        if item < 0:
-            item = len(columns) + item
-        if (item < 0) or (item >= len(columns)):
-            raise ValueError(
-                f"item must be between 0 and {len(columns)-1} (or {-len(columns)} and -1)"
-            )
-        return columns[item]
-    else:
-        raise TypeError("column must be given as int or str")
+def _get_expected_size_if_grid(da: xr.DataArray) -> int:
+    """Returns the expected size of a grid data array"""
+    _size = 1
+    for c in [d for d in da.coords if d in ("time", "x", "y")]:
+        _size *= da.coords[c].size
+    return _size
 
 
-def xarray_get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
-    """Returns the name of the requested data variable, provided either as either a str or int."""
+def get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
+    """Returns the name of the requested data variable, provided
+    either as either a str or int."""
     if item_names is None:
         item_names = list(ds.data_vars)
     n_items = len(item_names)
@@ -241,6 +238,11 @@ def xarray_get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
     else:
         raise TypeError("item must be int or string")
     return item
+
+
+def get_coords_in_data_vars(ds: xr.Dataset) -> list[str]:
+    """Returns a list of coordinate names that are also data variables"""
+    return [c for c in ds.data_vars if c in ("x", "y", "time")]
 
 
 def _dfs_get_item_index(dfs, item):

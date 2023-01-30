@@ -12,12 +12,7 @@ class DataContainer:
     """
     Class to hold data from either a model result or an observation.
     This is not a user facing class, but is used internally by fmskill.
-    If the data is provided as either a .dfs or netcdf file, then the data-field of the class
-    remains None.
-    Any other input format will be parsed into an xr.DataArray and stored in the data-field.
 
-    Multiple DataContainers (either containing multiple model results or a mix of model results and observations)
-    can be used for comparison.
     """
 
     def __init__(
@@ -32,8 +27,8 @@ class DataContainer:
             raise ValueError("One of is_result or is_observation must be set to True.")
 
         # Attribute declarations for overview, these will be filled during initialization
-        self.data: Union[xr.DataArray, types.LazyLoadingType] = None
-        self.item = None
+        self.data: Union[xr.Dataset, types.LazyLoadingType] = None
+        self.is_field: bool = None
         self.is_track: bool = None
         self.is_point: bool = None
         self.is_dfs: bool = None
@@ -44,6 +39,21 @@ class DataContainer:
         parsing.validate_input_data(data, item)
 
         self._load_data(data, item)
+        if not self.is_dfs:
+            self._check_field()
+            self._check_point_or_track()
+
+    @property
+    def values(self):
+        return self.data[self.requested_key].data
+
+    @property
+    def is_point_observation(self):
+        return self.is_observation and self.is_point
+
+    @property
+    def is_track_observation(self):
+        return self.is_observation and self.is_track
 
     def __repr__(self) -> str:
         _res = "result" if self.is_result else "observation"
@@ -86,29 +96,40 @@ class DataContainer:
                 self.is_dfs = False
 
         if not self.is_dfs:
-            # put all positional & temporal data into standard coordinate names
-            # ds = parsing.ensure_dims(ds)
-            ds = parsing.parse_ds_coords(ds)
-            if self.is_observation:
-                self._check_point_or_track(ds)
+            ds = parsing.rename_coords(ds)
+            # if self.is_observation:
+            # self._check_point_or_track(ds)
 
-            # parse into DataArray, based on item
-            self.item = parsing.xarray_get_item_name(ds, item)
-            self.data = ds[self.item]
+            self.requested_key = parsing.get_item_name(ds, item)
+            self.additional_keys = parsing.get_coords_in_data_vars(ds)
+            self.data = ds[self.additional_keys + [self.requested_key]]
 
-        print("hold")
+    def _check_field(self):
+        """Maybe come up with somthing better here."""
+        target_coords = ("time", "x", "y")
+        present_coords = [c for c in self.data.coords if c in target_coords]
+        if len(present_coords) > 1 and self.data[
+            self.requested_key
+        ].size == parsing._get_expected_size_if_grid(self.data[self.requested_key]):
+            self.is_field = True
+        else:
+            self.is_field = False
 
-    def _check_point_or_track(self, ds: xr.Dataset) -> None:
-        if self.is_dfs:
+    def _check_point_or_track(self) -> None:
+        if self.is_dfs or self.is_field:
             return
 
-        # if only one coordinate is present, we have point data
-        if len(ds.coords) == 1:
+        # combine spatial variables present in data variables and coordinates
+        spatial_variables = [
+            self.data.coords[c] for c in self.data.coords if c in ("x", "y")
+        ] + [self.data[c] for c in self.additional_keys if c in ("x", "y")]
+
+        if not spatial_variables:
             self.is_point, self.is_track = True, False
             return
 
         # The coordinates might be present, but only have one value combination, point data
-        if ds.x.size == 1 and ds.y.size == 1:
+        if all(d.size == 1 for d in spatial_variables):
             self.is_point, self.is_track = True, False
         else:
             self.is_point, self.is_track = False, True
