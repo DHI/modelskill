@@ -1,9 +1,9 @@
 import logging
+from typing import Optional, Union
 
 import xarray as xr
 
 from fmskill import parsing, types
-from typing import Union, Optional
 
 logging.basicConfig(level=logging.INFO)
 
@@ -97,15 +97,13 @@ class DataContainer:
 
         if not self.is_dfs:
             ds = parsing.rename_coords(ds)
-            # if self.is_observation:
-            # self._check_point_or_track(ds)
 
             self.requested_key = parsing.get_item_name(ds, item)
             self.additional_keys = parsing.get_coords_in_data_vars(ds)
             self.data = ds[self.additional_keys + [self.requested_key]]
 
     def _check_field(self):
-        """Maybe come up with somthing better here."""
+        """Maybe come up with somthing better here?"""
         target_coords = ("time", "x", "y")
         present_coords = [c for c in self.data.coords if c in target_coords]
         if len(present_coords) > 1 and self.data[

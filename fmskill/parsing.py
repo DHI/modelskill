@@ -1,33 +1,13 @@
-"""
-Problem example:
-When loading a dfs0 file, this can happen either eagerly or lazily,
-depending on whether the file is a result (lazy) or an observation (eager).
-Furthermore, we want to determine if the data is point or track data.
-If the data contains multiple unique coordinates (e.g. latitude/longitude, x/y),
-it is track data. However, the coordinates may also be stored as data variables of
-the DataSet. Therefore, we can't simply convert to a DataArray based only on the
-provided item. 
-
-Strategy:
-1. Parse all eagerly loadable formats to a xarray.DataSet.
-2. Check coords and data variables for coordinates to determine if point or track data.
-   If track data is present, make sure it is part of the coords.
-3. Using the specified item, reduce to a xarray.DataArray.
-
-The end result should be a DataArray having either only a time coordinate (point data)
-or time and geographical coordinates (track data).
-The logic for creating the dataset should be separated from the logic for creating the DataArray.
-"""
-
 from pathlib import Path
-from typing import Optional, Union, Callable, Tuple
+from typing import Callable, Union
 
 import mikeio
-import xarray as xr
 import pandas as pd
+import xarray as xr
+
+from fmskill import types
 
 from .utils import _as_path
-from fmskill import types
 
 POS_COORDINATE_NAME_MAPPING = {
     "x": "x",
