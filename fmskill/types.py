@@ -20,6 +20,3 @@ DataInputType = Union[
     xr.Dataset,
     xr.DataArray,
 ]
-
-
-LazyLoadingType = Union[mikeio.Dfs0, mikeio.Dfsu]

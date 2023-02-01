@@ -4,10 +4,11 @@ from typing import Callable, Union
 import mikeio
 import pandas as pd
 import xarray as xr
+import numpy as np
 
 from fmskill import types
 
-from .utils import _as_path
+from .utils import _as_path, make_unique_index
 
 POS_COORDINATE_NAME_MAPPING = {
     "x": "x",
@@ -22,19 +23,89 @@ POS_COORDINATE_NAME_MAPPING = {
 TIME_COORDINATE_NAME_MAPPING = {"time": "time", "t": "time", "date": "time"}
 
 
-# functions for converting various input formats to xarray.DataArray
+def dfs_extract_point(result, observation, file_extension, item=None) -> xr.Dataset:
+    ds_model = None
+    if "dfsu" in file_extension:
+        if (observation.x is None) or (observation.y is None):
+            raise ValueError(
+                f"PointObservation '{observation.name}' cannot be used for extraction "
+                + f"because it has None position x={observation.x}, y={observation.y}. "
+                + "Please provide position when creating PointObservation."
+            )
+        ds_model = _extract_point_dfsu(
+            dfsu=result.data, x=observation.x, y=observation.y, item=item
+        )
+    elif "dfs0" in file_extension:
+        ds_model = _extract_point_dfs0(dfs0=result.data, item=item)
+
+    return rename_coords(ds_model)
 
 
-# def array_from_dataset(
-#     ds: xr.Dataset, item: types.ItemSpecifier = None, *args, **kwargs
-# ) -> Tuple[xr.DataArray, str]:
-#     """Get a DataArray from a Dataset"""
-#     item = _xarray_get_item_name(ds, item)
-#     da = ds[item]
-#     return da, item
+def _extract_point_dfsu(dfsu: mikeio.dfsu._Dfsu, x, y, item) -> xr.Dataset:
+    xy = np.atleast_2d([x, y])
+    elemids = dfsu.geometry.find_index(coords=xy)
+    ds_model = dfsu.read(elements=elemids, items=[item])
+    # ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
+    return ds_model.to_xarray()
 
 
-def eager_ds_from_filepath(filepath: Union[str, Path, list]):
+def _extract_point_dfs0(dfs0: mikeio.Dfs0, item) -> xr.Dataset:
+    ds_model = dfs0.read(items=[item])
+    # ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
+    return ds_model.to_xarray()
+
+
+def dfs_extract_track(result, observation, file_extension, item=None) -> xr.Dataset:
+    ds_model = None
+    if "dfsu" in file_extension:
+        ds_model = _extract_track_dfsu(
+            dfsu=result.data, observation=observation, item=item
+        )
+    elif "dfs0" in file_extension:
+        ds_model = _extract_track_dfs0(dfs0=result.data, item=item)
+
+    return rename_coords(ds_model)
+
+
+def _extract_track_dfsu(dfsu: mikeio.dfsu._Dfsu, observation, item: int) -> xr.Dataset:
+    ds_model = dfsu.extract_track(track=observation.df, items=[item])
+    # ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
+    return ds_model.to_xarray()
+
+
+def _extract_track_dfs0(dfs0: mikeio.Dfs0, item: int) -> xr.Dataset:
+    ds_model = dfs0.read(items=[0, 1, item])
+    # ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
+    df = ds_model.to_dataframe().dropna()
+    df.index = make_unique_index(df.index, offset_duplicates=0.001)
+    if isinstance(df.index, pd.DatetimeIndex):
+        df.index.name = "time"
+    return df.to_xarray()
+
+
+# def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
+#     if item is None:
+#         item = self._selected_item
+#     df = None
+#     if self.is_dfsu:
+#         ds_model = self._extract_track_dfsu(observation, item)
+#         df = ds_model.to_dataframe().dropna()
+#     elif self.is_dfs0:
+#         ds_model = self.dfs.read(items=[0, 1, item])
+#         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
+#         df = ds_model.to_dataframe().dropna()
+#         df.index = make_unique_index(df.index, offset_duplicates=0.001)
+#     return df
+
+# def _extract_track_dfsu(
+#     self, observation: TrackObservation, item
+# ) -> mikeio.Dataset:
+#     ds_model = self.dfs.extract_track(track=observation.df, items=[item])
+#     ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
+#     return ds_model
+
+
+def ds_from_filepath(filepath: Union[str, Path, list]):
     """Get a DataSet from a filepath. Does not support dfs files."""
     filename = _as_path(filepath)
     ext = filename.suffix
@@ -45,7 +116,7 @@ def eager_ds_from_filepath(filepath: Union[str, Path, list]):
             return xr.open_mfdataset(filepath)
 
 
-def ds_from_dfs_filepath(filepath: Union[str, Path, list]) -> types.DfsType:
+def dfs_from_filepath(filepath: Union[str, Path, list]) -> types.DfsType:
     """
     Return a lazy loading object for a filepath.
     Currently supported formats: .dfs0, .dfsu
@@ -94,76 +165,17 @@ def get_dfs_loader(
 eager_loading_types_mapping = {
     xr.DataArray: lambda x: x.to_dataset(),
     xr.Dataset: lambda x: x,
-    str: eager_ds_from_filepath,
-    Path: eager_ds_from_filepath,
-    list: eager_ds_from_filepath,
+    str: ds_from_filepath,
+    Path: ds_from_filepath,
+    list: ds_from_filepath,
     # pd.Series: array_from_pd_series,
     pd.DataFrame: array_from_pd_dataframe,
 }
 
 lazy_loading_types_mapping = {
-    str: ds_from_dfs_filepath,
-    Path: ds_from_dfs_filepath,
+    str: dfs_from_filepath,
+    Path: dfs_from_filepath,
 }
-
-
-def is_grid_data(ds: xr.Dataset) -> bool:
-    """
-    Check if the dataset contains densly filled grid data.
-    """
-
-
-def parse_ds_coords(ds: xr.Dataset) -> xr.Dataset:
-    """Parse the coordinates of a dataset. If track data is present, make sure it is part of the coords."""
-    ds = rename_coords(ds)
-
-    if "time" not in ds.coords:
-        raise ValueError("time coordinate not found")
-
-    if not isinstance(ds.coords["time"].to_index(), pd.DatetimeIndex):
-        raise ValueError(f"Time coordinate is not equivalent to DatetimeIndex")
-
-    # check if track data is already part of the coords
-    if all(d in ds.coords for d in ("x", "y", "time")):
-        return ds
-
-    # check if track data is stored as data variables
-    data_vars = [c.lower() for c in ds.data_vars]
-    if any(c in data_vars for c in POS_COORDINATE_NAME_MAPPING.keys()):
-        ds = ds.assign_coords(
-            {
-                c: (POS_COORDINATE_NAME_MAPPING[c.lower()], ds[c].values.squeeze())
-                for c in ds.data_vars
-                if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
-            }
-        )
-        # ds = ds.set_coords(
-        #     [c for c in ds.data_vars if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()]
-        # )
-        return rename_coords(ds)
-
-    # if no track data is present, we are dealing with point data
-    # just rename the time coordinate and return
-    return ds
-
-
-def ensure_dims(ds: xr.Dataset) -> xr.Dataset:
-    def _already_correct(name: str):
-        return name.lower() in ("time", "x", "y")
-
-    # rename dimensions to standard names if they already exist under a different name
-    for d in ds.dims:
-        if d.lower() in POS_COORDINATE_NAME_MAPPING.keys() and not _already_correct(d):
-            ds = ds.rename_dims({d: POS_COORDINATE_NAME_MAPPING[d.lower()]})
-        if d.lower() in TIME_COORDINATE_NAME_MAPPING.keys() and not _already_correct(d):
-            ds = ds.rename_dims({d: TIME_COORDINATE_NAME_MAPPING[d.lower()]})
-
-    # otherwise, expand the dataset with the missing dimensions
-    for d in ["time", "x", "y"]:
-        if d not in ds.dims:
-            ds = ds.expand_dims(d)
-
-    return ds
 
 
 def rename_coords(ds: xr.Dataset) -> xr.Dataset:
@@ -193,15 +205,15 @@ def _get_expected_size_if_grid(da: xr.DataArray) -> int:
     return _size
 
 
-def get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
-    """Returns the name of the requested data variable, provided
+def get_item_name_xr_ds(ds: xr.Dataset, item, item_names=None) -> tuple[str, int]:
+    """Returns the name and index of the requested data variable, provided
     either as either a str or int."""
     if item_names is None:
         item_names = list(ds.data_vars)
     n_items = len(item_names)
     if item is None:
         if n_items == 1:
-            return item_names[0]
+            return item_names[0], 0
         else:
             raise ValueError(
                 f"item must be specified when more than one item available. Available items: {item_names}"
@@ -211,18 +223,47 @@ def get_item_name(ds: xr.Dataset, item, item_names=None) -> str:
             item = n_items + item
         if (item < 0) or (item >= n_items):
             raise IndexError(f"item {item} out of range (0, {n_items-1})")
-        item = item_names[item]
+        return item_names[item], item
     elif isinstance(item, str):
         if item not in item_names:
             raise KeyError(f"item must be one of {item_names}")
+        return item, item_names.index(item)
     else:
         raise TypeError("item must be int or string")
-    return item
 
 
-def get_coords_in_data_vars(ds: xr.Dataset) -> list[str]:
+def get_item_name_dfs(dfs: types.DfsType, item) -> tuple[str, int]:
+    """Returns the name and index of the requested variable, provided
+    either as either a str or int."""
+    item_names = [i.name for i in dfs.items]
+    n_items = len(item_names)
+    if item is None:
+        if n_items == 1:
+            return item_names[0], 0
+        else:
+            raise ValueError(
+                f"item must be specified when more than one item available. Available items: {item_names}"
+            )
+    if isinstance(item, int):
+        if item < 0:  # Handle negative indices
+            item = n_items + item
+        if (item < 0) or (item >= n_items):
+            raise IndexError(f"item {item} out of range (0, {n_items-1})")
+        return item_names[item], item
+    elif isinstance(item, str):
+        if item not in item_names:
+            raise KeyError(f"item must be one of {item_names}")
+        return item, item_names.index(item)
+    else:
+        raise TypeError("item must be int or string")
+
+
+def get_coords_in_data_vars(ds: Union[xr.Dataset, types.DfsType]) -> list[str]:
     """Returns a list of coordinate names that are also data variables"""
-    return [c for c in ds.data_vars if c in ("x", "y", "time")]
+    if isinstance(ds, xr.Dataset):
+        return [c for c in ds.data_vars if c in ("x", "y", "time")]
+    elif isinstance(ds, (mikeio.Dfs0, mikeio.Dfsu)):
+        return [c for c in ds.items if c in ("x", "y", "time")]
 
 
 def _dfs_get_item_index(dfs, item):
@@ -285,7 +326,20 @@ def validate_input_data(data, item) -> None:
     if isinstance(data, mikeio.Dataset):
         raise ValueError("mikeio.Dataset not supported, but mikeio.DataArray is")
 
-    if not isinstance(data, types.DataInputType):
+    if not isinstance(
+        data,
+        (
+            str,
+            Path,
+            list,
+            mikeio.DataArray,
+            pd.DataFrame,
+            pd.Series,
+            xr.Dataset,
+            xr.DataArray,
+        ),
+    ):
+        # if not isinstance(data, types.DataInputType):
         raise ValueError(
             "Input type not supported (str, Path, mikeio.DataArray, DataFrame, xr.DataArray)"
         )

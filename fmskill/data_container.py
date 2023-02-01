@@ -1,7 +1,8 @@
 import logging
 from typing import Optional, Union
-
+from pathlib import Path
 import xarray as xr
+import numpy as np
 
 from fmskill import parsing, types
 
@@ -13,6 +14,30 @@ class DataContainer:
     Class to hold data from either a model result or an observation.
     This is not a user facing class, but is used internally by fmskill.
 
+    Parameters
+    ----------
+    data : DataInputType
+        Data to be stored in the DataContainer. Can be a file path, a pandas DataFrame,
+        a xarray Dataset, a xarray DataArray, a mikeio DataArray or a list of file paths.
+    item : ItemSpecifier, optional
+        Name or index of the item to be stored in the DataContainer. Can only be None for single
+        variable data
+    is_result : bool, optional
+        Set to True if the DataContainer is a model result, either this or is_observation must be set to True
+    is_observation : bool, optional
+        Set to True if the DataContainer is an observation, either this or is_result must be set to True
+    x : float, optional
+        x-coordinate of the observation point, should be used for point observations that do not include
+        the coordinates in the data
+    y : float, optional
+        y-coordinate of the observation point, should be used for point observations that do not include
+        the coordinates in the data
+
+    Raises
+    ------
+    ValueError
+        If neither is_result or is_observation is set to True.
+
     """
 
     def __init__(
@@ -21,17 +46,24 @@ class DataContainer:
         item: types.ItemSpecifier = None,
         is_result: Optional[bool] = None,
         is_observation: Optional[bool] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
     ) -> None:
 
         if [is_result, is_observation].count(True) != 1:
             raise ValueError("One of is_result or is_observation must be set to True.")
 
+        self.x_point = x
+        self.y_point = y
+
         # Attribute declarations for overview, these will be filled during initialization
-        self.data: Union[xr.Dataset, types.LazyLoadingType] = None
+        self.data: Union[xr.Dataset, types.DfsType] = None
         self.is_field: bool = None
         self.is_track: bool = None
         self.is_point: bool = None
         self.is_dfs: bool = None
+        self.item_key = None
+        self.additional_keys = None
 
         self.is_result: bool = is_result or not is_observation
         self.is_observation: bool = is_observation or not is_result
@@ -45,7 +77,7 @@ class DataContainer:
 
     @property
     def values(self):
-        return self.data[self.requested_key].data
+        return self.data[self.item_key].values
 
     @property
     def is_point_observation(self):
@@ -55,16 +87,40 @@ class DataContainer:
     def is_track_observation(self):
         return self.is_observation and self.is_track
 
-    def __repr__(self) -> str:
-        _res = "result" if self.is_result else "observation"
-        if self.is_track:
-            _type = "track data"
-        elif self.is_point:
-            _type = "point data"
-        else:
-            _type = "unknown data type"
+    @property
+    def x(self):
+        if self.x_point is not None:
+            return self.x_point
+        elif not self.is_dfs:
+            return self.data.x
 
-        return f"DataContainer({_res}, item: '{self.item}' {_type})"
+    @property
+    def y(self):
+        if self.y_point is not None:
+            return self.y_point
+        elif not self.is_dfs:
+            return self.data.y
+
+    def __repr__(self) -> str:
+        def _f(_inp: str):
+            return f"|{_inp.center(12)}|"
+
+        _type = "Result" if self.is_result else "Observation"
+        if not self.is_dfs:
+            _unit = self.data[self.item_key].attrs.get("unit")
+        else:
+            _unit = None
+        _unit = f" [{_unit}]" if _unit else "Unit unknown"
+        if self.is_point_observation:
+            _geo_type = "Point Data"
+        elif self.is_track_observation:
+            _geo_type = "Track Data"
+        elif self.is_field:
+            _geo_type = "Grid Data"
+        else:
+            _geo_type = ""
+
+        return f"({_f(_type)}{_f(self.item_key)}{_f(_unit)}{_f(_geo_type)}"
 
     def _load_data(self, data, item):
         """
@@ -75,6 +131,11 @@ class DataContainer:
         (as the dataset may contain data variables to be used as coordinates).
         The assumption is made that observations can always be loaded eagerly.
         """
+
+        if isinstance(data, (str, Path)):
+            self.file_extension = Path(data).suffix
+        else:
+            self.file_extension = None
 
         # try loading straight into a dataset
         _eager_loader = parsing.get_dataset_loader(data)
@@ -97,18 +158,21 @@ class DataContainer:
 
         if not self.is_dfs:
             ds = parsing.rename_coords(ds)
-
-            self.requested_key = parsing.get_item_name(ds, item)
+            self.item_key, self.item_idx = parsing.get_item_name_xr_ds(ds, item)
             self.additional_keys = parsing.get_coords_in_data_vars(ds)
-            self.data = ds[self.additional_keys + [self.requested_key]]
+            self.data = ds[self.additional_keys + [self.item_key]]
+
+        else:
+            self.item_key, self.item_idx = parsing.get_item_name_dfs(self.data, item)
+            self.additional_keys = parsing.get_coords_in_data_vars(self.data)
 
     def _check_field(self):
         """Maybe come up with somthing better here?"""
         target_coords = ("time", "x", "y")
         present_coords = [c for c in self.data.coords if c in target_coords]
         if len(present_coords) > 1 and self.data[
-            self.requested_key
-        ].size == parsing._get_expected_size_if_grid(self.data[self.requested_key]):
+            self.item_key
+        ].size == parsing._get_expected_size_if_grid(self.data[self.item_key]):
             self.is_field = True
         else:
             self.is_field = False
@@ -118,32 +182,50 @@ class DataContainer:
             return
 
         # combine spatial variables present in data variables and coordinates
-        spatial_variables = [
-            self.data.coords[c] for c in self.data.coords if c in ("x", "y")
-        ] + [self.data[c] for c in self.additional_keys if c in ("x", "y")]
+        spatial_variables = {}
+        for c in ("x", "y"):
+            if c in self.data.coords:
+                spatial_variables[c] = self.data.coords[c]
+            elif c in self.data.data_vars:
+                spatial_variables[c] = self.data[c]
 
         if not spatial_variables:
             self.is_point, self.is_track = True, False
             return
 
         # The coordinates might be present, but only have one value combination, point data
-        if all(d.size == 1 for d in spatial_variables):
+        # If this is the case, we can extract the point coordinates from the data
+        # and the user does not need to provide them.
+        if all(np.unique(d.values).shape == (1,) for d in spatial_variables.values()):
             self.is_point, self.is_track = True, False
+            self.x_point, self.y_point = (
+                spatial_variables["x"].values[0],
+                spatial_variables["y"].values[0],
+            )
+
         else:
             self.is_point, self.is_track = False, True
 
     @staticmethod
-    def _check_compatibility(containers: list["DataContainer"]) -> None:
+    def _check_compatibility(
+        containers: list["DataContainer"],
+    ) -> list[tuple[int, int]]:
         """
         Checks if the provided DataContainers are compatible for comparison.
         Implemented as a static method, so it may also be used for more complex validation
         of multiple DataContainers in any higher level collection of models and observations.
+        Returns a list of tuples of the indices of compatible DataContainers.
         """
         if len(containers) < 2:
             return
 
-        model_results = [c for c in containers if c.is_result]
-        observations = [c for c in containers if c.is_observation]
+        if not all(isinstance(c, DataContainer) for c in containers):
+            raise TypeError(
+                "All provided DataContainers must be of type DataContainer."
+            )
+
+        model_results = [(i, c) for i, c in enumerate(containers) if c.is_result]
+        observations = [(i, c) for i, c in enumerate(containers) if c.is_observation]
 
         if not model_results:
             raise ValueError(
@@ -157,12 +239,12 @@ class DataContainer:
             )
 
         ok, not_ok = [], []
-        for m in model_results:
-            for o in observations:
-                if o.is_track and not m.is_track:
-                    not_ok.append((str(m), str(o)))
+        for i_m, m in model_results:
+            for i_o, o in observations:
+                if o.is_track and m.is_point:
+                    not_ok.append((i_m, i_o))
                 else:
-                    ok.append((str(m), str(o)))
+                    ok.append((i_m, i_o))
 
         if not ok:
             raise ValueError(
@@ -172,25 +254,57 @@ class DataContainer:
         if not_ok:
             for m, o in not_ok:
                 logging.warning(
-                    f"Can't compare track observation to point model results: {m} and {o}"
+                    f"Can't compare track observation to point model results: {containers[m]} and {containers[o]}"
                 )
 
+        return ok
+
     def compare(self, other: "DataContainer"):
-        # self._check_compatibility([self, other])
-        pass
+        _objs = [self, other]
+        result_idx, obs_idx = self._check_compatibility(_objs)[0]
+        result: DataContainer = _objs[result_idx]
+        obs: DataContainer = _objs[obs_idx]
+
+        payload = {
+            "result": result,
+            "observation": obs,
+            "file_extension": result.file_extension,
+            "item": result.item_idx,
+        }
+
+        if result.is_dfs and obs.is_point_observation:
+            test = parsing.dfs_extract_point(**payload)
+
+        elif result.is_dfs and obs.is_track_observation:
+            test = parsing.dfs_extract_track(**payload)
 
 
 if __name__ == "__main__":
-    fn_1 = "tests/testdata/SW/ERA5_DutchCoast.nc"
-    fn_2 = "tests/testdata/Oresund2D.dfsu"
-    fn_3 = "tests/testdata/SW/Alti_c2_Dutch.dfs0"  # track observation
-    fn_4 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
+    # fn_1 = "tests/testdata/SW/ERA5_DutchCoast.nc"
+    # fn_2 = "tests/testdata/Oresund2D.dfsu"
+    # fn_3 = "tests/testdata/SW/Alti_c2_Dutch.dfs0"  # track observation
+    # fn_4 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
 
-    dc_1 = DataContainer(fn_1, item=0, is_result=True)
-    dc_2 = DataContainer(fn_2, item=0, is_result=True)
-    dc_3 = DataContainer(fn_3, item="swh", is_observation=True)
-    dc_4 = DataContainer(fn_4, is_observation=True)
+    # dc_1 = DataContainer(fn_1, item=0, is_result=True)
+    # dc_2 = DataContainer(fn_2, item=2, is_result=True)
+    # dc_3 = DataContainer(fn_3, item="swh", is_observation=True)
+    # dc_4 = DataContainer(fn_4, is_observation=True, x=366844, y=6154291)
 
-    dc_1.compare(dc_3)
+    import pandas as pd
+
+    fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"  # MR
+    fn_2 = pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index(
+        "date"
+    )  # track observation
+    fn_3 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
+    fn_4 = "tests/testdata/Oresund2D.dfsu"  # MR
+
+    dc_1 = DataContainer(fn, item=2, is_result=True)
+    dc_2 = DataContainer(fn_2, item=2, is_observation=True)
+    dc_3 = DataContainer(fn_3, is_observation=True, x=366844, y=6154291, item=0)
+    dc_4 = DataContainer(fn_4, item=0, is_result=True)
+    dc_4.compare(dc_3)
+
+    # test = DataContainer._check_compatibility([dc_1, dc_2, dc_3, dc_4])
 
     print(dc_1.data)
