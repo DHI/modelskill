@@ -38,20 +38,20 @@ def dfs_extract_point(result, observation, file_extension, item=None) -> xr.Data
     elif "dfs0" in file_extension:
         ds_model = _extract_point_dfs0(dfs0=result.data, item=item)
 
-    return rename_coords(ds_model)
+    ds_model = ds_model.rename({list(ds_model.data_vars)[-1]: result.name})
+
+    return ds_model
 
 
 def _extract_point_dfsu(dfsu: mikeio.dfsu._Dfsu, x, y, item) -> xr.Dataset:
     xy = np.atleast_2d([x, y])
     elemids = dfsu.geometry.find_index(coords=xy)
     ds_model = dfsu.read(elements=elemids, items=[item])
-    # ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
     return ds_model.to_xarray()
 
 
 def _extract_point_dfs0(dfs0: mikeio.Dfs0, item) -> xr.Dataset:
     ds_model = dfs0.read(items=[item])
-    # ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
     return ds_model.to_xarray()
 
 
@@ -64,18 +64,16 @@ def dfs_extract_track(result, observation, file_extension, item=None) -> xr.Data
     elif "dfs0" in file_extension:
         ds_model = _extract_track_dfs0(dfs0=result.data, item=item)
 
-    return rename_coords(ds_model)
+    return ds_model
 
 
 def _extract_track_dfsu(dfsu: mikeio.dfsu._Dfsu, observation, item: int) -> xr.Dataset:
     ds_model = dfsu.extract_track(track=observation.df, items=[item])
-    # ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
     return ds_model.to_xarray()
 
 
 def _extract_track_dfs0(dfs0: mikeio.Dfs0, item: int) -> xr.Dataset:
     ds_model = dfs0.read(items=[0, 1, item])
-    # ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
     df = ds_model.to_dataframe().dropna()
     df.index = make_unique_index(df.index, offset_duplicates=0.001)
     if isinstance(df.index, pd.DatetimeIndex):
@@ -83,26 +81,16 @@ def _extract_track_dfs0(dfs0: mikeio.Dfs0, item: int) -> xr.Dataset:
     return df.to_xarray()
 
 
-# def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:
-#     if item is None:
-#         item = self._selected_item
-#     df = None
-#     if self.is_dfsu:
-#         ds_model = self._extract_track_dfsu(observation, item)
-#         df = ds_model.to_dataframe().dropna()
-#     elif self.is_dfs0:
-#         ds_model = self.dfs.read(items=[0, 1, item])
-#         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
-#         df = ds_model.to_dataframe().dropna()
-#         df.index = make_unique_index(df.index, offset_duplicates=0.001)
-#     return df
+def xarray_extract_point(result, observation, **kwargs) -> xr.Dataset:
+    return result.data.interp(
+        coords=dict(x=observation.x, y=observation.y), method="nearest"
+    )
 
-# def _extract_track_dfsu(
-#     self, observation: TrackObservation, item
-# ) -> mikeio.Dataset:
-#     ds_model = self.dfs.extract_track(track=observation.df, items=[item])
-#     ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
-#     return ds_model
+
+def xarray_extract_track(result, observation, **kwargs) -> xr.Dataset:
+    return result.data.interp(
+        x=observation.x, y=observation.y, time=observation.data.time, method="linear"
+    ).reset_coords(["x", "y"])
 
 
 def ds_from_filepath(filepath: Union[str, Path, list]):

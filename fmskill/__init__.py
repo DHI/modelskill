@@ -27,6 +27,7 @@ from .model.factory import ModelResult
 from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector
 from .settings import options, get_option, set_option, reset_option
+from .user_structures import Comparer, Observation, ModelResult
 
 
 def from_config(

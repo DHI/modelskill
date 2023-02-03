@@ -32,6 +32,8 @@ class DataContainer:
     y : float, optional
         y-coordinate of the observation point, should be used for point observations that do not include
         the coordinates in the data
+    name : str, optional
+        Name of the DataContainer, will be used for plotting and logging
 
     Raises
     ------
@@ -48,6 +50,7 @@ class DataContainer:
         is_observation: Optional[bool] = None,
         x: Optional[float] = None,
         y: Optional[float] = None,
+        name: Optional[str] = None,
     ) -> None:
 
         if [is_result, is_observation].count(True) != 1:
@@ -55,6 +58,7 @@ class DataContainer:
 
         self.x_point = x
         self.y_point = y
+        self.name = name
 
         # Attribute declarations for overview, these will be filled during initialization
         self.data: Union[xr.Dataset, types.DfsType] = None
@@ -88,14 +92,14 @@ class DataContainer:
         return self.is_observation and self.is_track
 
     @property
-    def x(self):
+    def x(self) -> Union[int, float, xr.DataArray, None]:
         if self.x_point is not None:
             return self.x_point
         elif not self.is_dfs:
             return self.data.x
 
     @property
-    def y(self):
+    def y(self) -> Union[int, float, xr.DataArray, None]:
         if self.y_point is not None:
             return self.y_point
         elif not self.is_dfs:
@@ -123,30 +127,24 @@ class DataContainer:
         return f"({_f(_type)}{_f(self.item_key)}{_f(_unit)}{_f(_geo_type)}"
 
     def _load_data(self, data, item):
-        """
-        Load data and store in self.data as a standardized xr.DataArray in case
-        of eager loading (all observations & eager file formats),
-        or as a lazy loading object in case of lazy loading (model results stored e.g. in dfs files).
-        To do so, the data is first loaded as a xr.Dataset, and then parsed into a xr.DataArray
-        (as the dataset may contain data variables to be used as coordinates).
-        The assumption is made that observations can always be loaded eagerly.
-        """
-
         if isinstance(data, (str, Path)):
             self.file_extension = Path(data).suffix
+            if self.name is None:
+                self.name = Path(data).stem
         else:
             self.file_extension = None
 
         # try loading straight into a dataset
-        _eager_loader = parsing.get_dataset_loader(data)
-        if _eager_loader is not None:
+        _ds_loader = parsing.get_dataset_loader(data)
+        if _ds_loader is not None:
             self.is_dfs = False
-            ds = _eager_loader(data)
+            ds = _ds_loader(data)
+
         # lazily load dfs files
         else:
             self.is_dfs = True
-            _lazy_loader = parsing.get_dfs_loader(data)
-            self.data = _lazy_loader(data)
+            _dfs_loader = parsing.get_dfs_loader(data)
+            self.data = _dfs_loader(data)
 
         # special case of observations stored in dfs files
         if self.is_observation and self.is_dfs:
@@ -161,10 +159,15 @@ class DataContainer:
             self.item_key, self.item_idx = parsing.get_item_name_xr_ds(ds, item)
             self.additional_keys = parsing.get_coords_in_data_vars(ds)
             self.data = ds[self.additional_keys + [self.item_key]]
+            if self.is_observation:
+                self.data = self.data.dropna("time", how="any")
 
         else:
             self.item_key, self.item_idx = parsing.get_item_name_dfs(self.data, item)
             self.additional_keys = parsing.get_coords_in_data_vars(self.data)
+
+            if self.name is None:
+                self.name = self.item_key
 
     def _check_field(self):
         """Maybe come up with somthing better here?"""
@@ -259,7 +262,7 @@ class DataContainer:
 
         return ok
 
-    def compare(self, other: "DataContainer"):
+    def compare(self, other: "DataContainer") -> xr.Dataset:
         _objs = [self, other]
         result_idx, obs_idx = self._check_compatibility(_objs)[0]
         result: DataContainer = _objs[result_idx]
@@ -273,37 +276,57 @@ class DataContainer:
         }
 
         if result.is_dfs and obs.is_point_observation:
-            test = parsing.dfs_extract_point(**payload)
+            ds = parsing.dfs_extract_point(**payload)
 
         elif result.is_dfs and obs.is_track_observation:
-            test = parsing.dfs_extract_track(**payload)
+            ds = parsing.dfs_extract_track(**payload)
+
+        elif not result.is_dfs and obs.is_point_observation:
+            ds = parsing.xarray_extract_point(**payload)
+
+        elif not result.is_dfs and obs.is_track_observation:
+            ds = parsing.xarray_extract_track(**payload)
+
+        # ds = ds.rename({result.item_key: result.name})
+        ds = parsing.rename_coords(ds)
+        ds = ds.dropna(dim="time", how="any")
+
+        ds_new = xr.merge([ds, obs.data]).rename(
+            {obs.item_key: obs.name, result.item_key: result.name}
+        )
+
+        return ds_new
 
 
 if __name__ == "__main__":
-    # fn_1 = "tests/testdata/SW/ERA5_DutchCoast.nc"
-    # fn_2 = "tests/testdata/Oresund2D.dfsu"
-    # fn_3 = "tests/testdata/SW/Alti_c2_Dutch.dfs0"  # track observation
-    # fn_4 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
-
-    # dc_1 = DataContainer(fn_1, item=0, is_result=True)
-    # dc_2 = DataContainer(fn_2, item=2, is_result=True)
-    # dc_3 = DataContainer(fn_3, item="swh", is_observation=True)
-    # dc_4 = DataContainer(fn_4, is_observation=True, x=366844, y=6154291)
-
     import pandas as pd
 
-    fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"  # MR
-    fn_2 = pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index(
-        "date"
-    )  # track observation
-    fn_3 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
-    fn_4 = "tests/testdata/Oresund2D.dfsu"  # MR
+    ##### dfs data #####
+    # fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"  # MR
+    # fn_2 = pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index(
+    #     "date"
+    # )  # track observation
+    # fn_3 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
+    # fn_4 = "tests/testdata/Oresund2D.dfsu"  # MR
 
-    dc_1 = DataContainer(fn, item=2, is_result=True)
-    dc_2 = DataContainer(fn_2, item=2, is_observation=True)
-    dc_3 = DataContainer(fn_3, is_observation=True, x=366844, y=6154291, item=0)
-    dc_4 = DataContainer(fn_4, item=0, is_result=True)
-    dc_4.compare(dc_3)
+    # dc_1 = DataContainer(fn, item=2, is_result=True)
+    # dc_2 = DataContainer(fn_2, item=2, is_observation=True)
+    # dc_3 = DataContainer(fn_3, is_observation=True, x=366844, y=6154291, item=0)
+    # dc_4 = DataContainer(fn_4, item=0, is_result=True, name="Oresund Model")
+    # dc_4.compare(dc_3)
+
+    ##### xarray data #####
+    fn_1 = "tests/testdata/SW/ERA5_DutchCoast.nc"  # MR
+    fn_2 = "tests/testdata/SW/eur_Hm0.dfs0"  # Point observation
+
+    dc_1 = DataContainer(fn_1, is_result=True, item="pp1d")
+    dc_2 = DataContainer(
+        fn_2, is_observation=True, item=0, x=3.2760, y=51.9990, name="EPL"
+    )
+    dc_3 = DataContainer(
+        "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="c2", is_observation=True
+    )  # track observation
+    dc_3.compare(dc_1)
 
     # test = DataContainer._check_compatibility([dc_1, dc_2, dc_3, dc_4])
 
