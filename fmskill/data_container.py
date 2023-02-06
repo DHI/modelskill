@@ -81,7 +81,8 @@ class DataContainer:
 
     @property
     def values(self):
-        return self.data[self.item_key].values
+        if not self.is_dfs:
+            return self.data[self.item_key].values
 
     @property
     def is_point_observation(self):
@@ -104,6 +105,36 @@ class DataContainer:
             return self.y_point
         elif not self.is_dfs:
             return self.data.y
+
+    @property
+    def time(self):
+        return self.data.time
+
+    @property
+    def geometry(self):
+        if self.file_extension == ".dfsu":
+            return self.data.geometry
+
+    @property
+    def n_points(self):
+        if self.is_point_observation:
+            return 1
+        elif self.is_track_observation:
+            return self.values.shape[0]
+
+    @property
+    def start_time(self):
+        if not self.is_dfs:
+            return min(self.data.time)
+        else:
+            return self.data.start_time
+
+    @property
+    def end_time(self):
+        if not self.is_dfs:
+            return max(self.data.time)
+        else:
+            return self.data.end_time
 
     def __repr__(self) -> str:
         def _f(_inp: str):
@@ -210,7 +241,7 @@ class DataContainer:
             self.is_point, self.is_track = False, True
 
     @staticmethod
-    def _check_compatibility(
+    def check_compatibility(
         containers: list["DataContainer"],
     ) -> list[tuple[int, int]]:
         """
@@ -264,7 +295,7 @@ class DataContainer:
 
     def compare(self, other: "DataContainer") -> xr.Dataset:
         _objs = [self, other]
-        result_idx, obs_idx = self._check_compatibility(_objs)[0]
+        result_idx, obs_idx = self.check_compatibility(_objs)[0]
         result: DataContainer = _objs[result_idx]
         obs: DataContainer = _objs[obs_idx]
 
@@ -302,18 +333,18 @@ if __name__ == "__main__":
     import pandas as pd
 
     ##### dfs data #####
-    # fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"  # MR
-    # fn_2 = pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index(
-    #     "date"
-    # )  # track observation
-    # fn_3 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
-    # fn_4 = "tests/testdata/Oresund2D.dfsu"  # MR
+    fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"  # MR
+    fn_2 = pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index(
+        "date"
+    )  # track observation
+    fn_3 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
+    fn_4 = "tests/testdata/Oresund2D.dfsu"  # MR
 
-    # dc_1 = DataContainer(fn, item=2, is_result=True)
-    # dc_2 = DataContainer(fn_2, item=2, is_observation=True)
-    # dc_3 = DataContainer(fn_3, is_observation=True, x=366844, y=6154291, item=0)
-    # dc_4 = DataContainer(fn_4, item=0, is_result=True, name="Oresund Model")
-    # dc_4.compare(dc_3)
+    dc_1 = DataContainer(fn, item=2, is_result=True)
+    dc_2 = DataContainer(fn_2, item=2, is_observation=True)
+    dc_3 = DataContainer(fn_3, is_observation=True, x=366844, y=6154291, item=0)
+    dc_4 = DataContainer(fn_4, item=0, is_result=True, name="Oresund Model")
+    dc_4.compare(dc_3)
 
     ##### xarray data #####
     fn_1 = "tests/testdata/SW/ERA5_DutchCoast.nc"  # MR

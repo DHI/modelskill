@@ -13,13 +13,16 @@ from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
 import fmskill.settings as settings
 from .settings import options, register_option
+from fmskill.data_container import DataContainer
 
 
 register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
 register_option("plot.scatter.points.alpha", 0.5, validator=settings.is_between_0_and_1)
 register_option("plot.scatter.points.label", "", validator=settings.is_str)
 register_option("plot.scatter.quantiles.marker", "X", validator=settings.is_str)
-register_option("plot.scatter.quantiles.markersize", 3.5, validator=settings.is_positive)
+register_option(
+    "plot.scatter.quantiles.markersize", 3.5, validator=settings.is_positive
+)
 register_option(
     "plot.scatter.quantiles.color", "darkturquoise", validator=settings.is_str
 )
@@ -272,7 +275,7 @@ def scatter(
             zorder=4,
             markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
             markersize=options.plot.scatter.quantiles.markersize,
-            **settings.get_option("plot.scatter.quantiles.kwargs")
+            **settings.get_option("plot.scatter.quantiles.kwargs"),
         )
         plt.plot(
             x,
@@ -393,7 +396,8 @@ def scatter(
 
 def plot_observation_positions(
     geometry: mikeio.spatial.FM_geometry.GeometryFM,
-    observations: List[Observation],
+    observations: List[DataContainer],
+    # observations: List[Observation],
     figsize: Tuple = None,
     title=None,
 ):
@@ -415,15 +419,92 @@ def plot_observation_positions(
     offset_x = 0.02 * (max(xn) - min(xn))
     ax = geometry.plot(plot_type="outline_only", figsize=figsize)
     for obs in observations:
-        if isinstance(obs, PointObservation):
+        # if isinstance(obs, PointObservation):
+        if obs.is_point:
             ax.scatter(x=obs.x, y=obs.y, marker="x")
             ax.annotate(obs.name, (obs.x + offset_x, obs.y))
-        elif isinstance(obs, TrackObservation):
+        # elif isinstance(obs, TrackObservation):
+        elif obs.is_track:
             if obs.n_points < 10000:
                 ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
             else:
                 print("Too many points to plot")
                 # TODO: group by lonlat bin
+    if title:
+        ax.set_title(title)
+    return ax
+
+
+def plot_temporal_coverage(
+    *,
+    modelresults: List[DataContainer] = None,
+    observations: List[DataContainer] = None,
+    # show_model=True,
+    limit_to_model_period=True,
+    marker="_",
+    title=None,
+    figsize=None,
+):
+    """Plot graph showing temporal coverage for all observations
+
+    Parameters
+    ----------
+    show_model : bool, optional
+        Show model(s) as separate lines on plot, by default True
+    limit_to_model_period : bool, optional
+        Show temporal coverage only for period covered
+        by the model, by default True
+    marker : str, optional
+        plot marker for observations, by default "_"
+    title: str, optional
+        plot title, default empty
+    figsize : Tuple(float, float), optional
+        size of figure, by default (7, 0.45*n_lines)
+
+    Examples
+    --------
+    >>> con.plot_temporal_coverage()
+    >>> con.plot_temporal_coverage(show_model=False)
+    >>> con.plot_temporal_coverage(limit_to_model_period=False)
+    >>> con.plot_temporal_coverage(marker=".")
+    >>> con.plot_temporal_coverage(figsize=(5,3))
+    """
+    n_models = len(modelresults) if modelresults else 0
+    # n_models = self.n_models if show_model else 0
+    n_lines = n_models + len(observations)
+    # n_lines = n_models + self.n_observations
+    if figsize is None:
+        ysize = max(2.0, 0.45 * n_lines)
+        figsize = (7, ysize)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    y = np.repeat(0.0, 2)
+    labels = []
+
+    # if show_model:
+    if n_models > 0:
+        for mr in modelresults:
+            y += 1.0
+            plt.plot([mr.start_time, mr.end_time], y)
+            labels.append(mr.name)
+
+    for obs in observations:
+        y += 1.0
+        plt.plot(obs.time, y[0] * np.ones_like(obs.values), marker, markersize=5)
+        labels.append(obs.name)
+
+    if limit_to_model_period:
+        mr = modelresults[0]  # take first
+        plt.xlim([mr.start_time, mr.end_time])
+
+    plt.yticks(np.arange(n_lines) + 1, labels)
+    if n_models > 0:
+        for j in range(n_models):
+            ax.get_yticklabels()[j].set_fontstyle("italic")
+            ax.get_yticklabels()[j].set_weight("bold")
+            # set_color("#004165")
+    fig.autofmt_xdate()
+
     if title:
         ax.set_title(title)
     return ax
