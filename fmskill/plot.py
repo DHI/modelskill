@@ -490,7 +490,7 @@ def plot_temporal_coverage(
 
     for obs in observations:
         y += 1.0
-        plt.plot(obs.time, y[0] * np.ones_like(obs.values), marker, markersize=5)
+        plt.plot(obs.time.values, y[0] * np.ones_like(obs.values), marker, markersize=5)
         labels.append(obs.name)
 
     if limit_to_model_period:

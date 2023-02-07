@@ -2,7 +2,7 @@ from typing import Optional, Union
 import warnings
 
 from fmskill import types
-from fmskill.data_container import DataContainer
+from fmskill.data_container import DataContainer, compare
 
 
 class Observation:
@@ -58,6 +58,10 @@ class Comparer:
 
         self.observations = []
         self.results = []
+        self.extracted = {}
+
+        self.observation_names = set()
+        self.result_names = set()
 
         if not isinstance(observations, list):
             observations = [observations]
@@ -66,26 +70,77 @@ class Comparer:
 
         self._add_data(observations + results)
 
-        print("hold")
+    def __getitem__(self, key):
+        if not self.extracted:
+            warnings.warn("No data extracted. Use Comparer.extract() first.")
+            return
+
+        if isinstance(key, str):
+            if key in self.extracted:
+                return self.extracted[key]
+
+            else:
+                partial_matches = [
+                    k for k in self.extracted.keys() if key.lower() in k.lower()
+                ]
+                if len(partial_matches) > 1:
+                    return {k: self.extracted[k] for k in partial_matches}
+                elif len(partial_matches) == 1:
+                    return self.extracted[partial_matches[0]]
+
+        elif isinstance(key, int):
+            if key < len(self.extracted):
+                return list(self.extracted.values())[key]
+            elif -len(self.extracted) < key < 0:
+                return list(self.extracted.values())[key + len(self.extracted)]
+            else:
+                raise IndexError(f"Index out of range: {key}")
 
     def _add_data(self, data: list[Union[ModelResult, Observation, "Comparer"]]):
         for d in data:
             if isinstance(d, DataContainer):
                 if d.is_observation:
-                    self.observations.append(d)
+                    if d.name in self.observation_names:
+                        warnings.warn(
+                            f"Duplicate observation name: {d.name}. Please choose unique names."
+                        )
+                    else:
+                        self.observations.append(d)
                 elif d.is_result:
-                    self.results.append(d)
+                    if d.name in self.result_names:
+                        warnings.warn(
+                            f"Duplicate result name: {d.name}. Please choose unique names."
+                        )
+                    else:
+                        self.results.append(d)
             elif isinstance(d, Comparer):
                 self._add_data(d.observations + d.results)
             else:
                 raise ValueError(f"Unknown data type: {type(d)}")
 
-        _comparison_idc: list[
-            tuple[ModelResultIndex, ObservationIndex]
-        ] = DataContainer.check_compatibility(self.results + self.observations)
+        # _comparison_idc: list[
+        #     tuple[ModelResultIndex, ObservationIndex]
+        # ] = DataContainer.check_compatibility(self.results + self.observations)
 
         # Tuples of valid comparisons, format: (result_index, observation_index)
-        self._pair_idc = [(m, o - len(self.results)) for m, o in _comparison_idc]
+        # self._pair_idc = [(m, o - len(self.results)) for m, o in _comparison_idc]
+
+    def extract(self):
+        """
+        Build a dictionary of extracted data, using the names of the
+        observations and results as keys.
+        """
+
+        compare(self.results + self.observations)
+
+        for i_m, i_o in self._pair_idc:
+            identifier = f"{self.results[i_m].name} - {self.observations[i_o].name}"
+            if identifier not in self.extracted:
+                self.extracted[identifier] = self.results[i_m].compare(
+                    self.observations[i_o]
+                )
+
+        print("hold")
 
     def plot_observation_positions(self, title=None, figsize=None):
         from fmskill.plot import plot_observation_positions
@@ -127,24 +182,16 @@ class Comparer:
 
 
 if __name__ == "__main__":
-    import pandas as pd
+    fldr = "tests/testdata/SW/"
+    o1 = Observation(fldr + "HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
+    o2 = Observation(fldr + "eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
+    o3 = Observation(fldr + "Alti_c2_Dutch.dfs0", item=3, name="c2")
 
-    res_1 = ModelResult(
-        "tests/testdata/NorthSeaHD_extracted_track.dfs0", item=2, name="North Sea Model"
-    )
-    res_2 = ModelResult("tests/testdata/Oresund2D.dfsu", item=0, name="Oresund Model")
+    mr1 = ModelResult(fldr + "HKZN_local_2017_DutchCoast.dfsu", name="SW_1", item=0)
+    mr2 = ModelResult(fldr + "HKZN_local_2017_DutchCoast_v2.dfsu", name="SW_2", item=0)
 
-    obs_1 = Observation(
-        pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index("date"),
-        item=2,
-        name="North Sea Altimetry",
-    )
-    obs_2 = Observation(
-        "tests/testdata/smhi_2095_klagshamn.dfs0",
-        x=366844,
-        y=6154291,
-        item=0,
-        name="Klagshamn SMHI",
-    )
+    c = Comparer([o1, o2, o3], [mr1, mr2])
 
-    c = Comparer([obs_1, obs_2], [res_1, res_2])
+    c.extract()
+
+    print("hold")

@@ -3,6 +3,7 @@ from typing import Optional, Union
 from pathlib import Path
 import xarray as xr
 import numpy as np
+import pandas as pd
 
 from fmskill import parsing, types
 
@@ -118,21 +119,21 @@ class DataContainer:
     @property
     def n_points(self):
         if self.is_point_observation:
-            return 1
+            return len(self.time)
         elif self.is_track_observation:
             return self.values.shape[0]
 
     @property
-    def start_time(self):
+    def start_time(self) -> pd.Timestamp:
         if not self.is_dfs:
-            return min(self.data.time)
+            return pd.Timestamp(self.data.time[0].values)
         else:
             return self.data.start_time
 
     @property
-    def end_time(self):
+    def end_time(self) -> pd.Timestamp:
         if not self.is_dfs:
-            return max(self.data.time)
+            return pd.Timestamp(self.data.time[-1].values)
         else:
             return self.data.end_time
 
@@ -155,7 +156,9 @@ class DataContainer:
         else:
             _geo_type = ""
 
-        return f"({_f(_type)}{_f(self.item_key)}{_f(_unit)}{_f(_geo_type)}"
+        return (
+            f"({_f(_type)}{_f(self.name)}{_f(self.item_key)}{_f(_unit)}{_f(_geo_type)}"
+        )
 
     def _load_data(self, data, item):
         if isinstance(data, (str, Path)):
@@ -293,58 +296,74 @@ class DataContainer:
 
         return ok
 
-    def compare(self, other: "DataContainer") -> xr.Dataset:
-        _objs = [self, other]
-        result_idx, obs_idx = self.check_compatibility(_objs)[0]
-        result: DataContainer = _objs[result_idx]
-        obs: DataContainer = _objs[obs_idx]
+    def compare(self, other: Union["DataContainer", list["DataContainer"]]):
+        if isinstance(other, list):
+            return compare(other + [self])
+        else:
+            return compare([self, other])
 
-        payload = {
-            "result": result,
-            "observation": obs,
-            "file_extension": result.file_extension,
-            "item": result.item_idx,
-        }
 
-        if result.is_dfs and obs.is_point_observation:
-            ds = parsing.dfs_extract_point(**payload)
+def compare(
+    data_containers: Union["DataContainer", list["DataContainer"]]
+) -> xr.Dataset:
+    if not isinstance(data_containers, list):
+        data_containers = [data_containers]
 
-        elif result.is_dfs and obs.is_track_observation:
-            ds = parsing.dfs_extract_track(**payload)
+    observations = [c for c in data_containers if c.is_observation]
+    results = [c for c in data_containers if c.is_result]
 
-        elif not result.is_dfs and obs.is_point_observation:
-            ds = parsing.xarray_extract_point(**payload)
+    extractions = {}
+    if not observations:
+        return
+    for o in observations:
+        _obs_extractions = []
+        for r in results:
 
-        elif not result.is_dfs and obs.is_track_observation:
-            ds = parsing.xarray_extract_track(**payload)
+            if r.is_dfs and o.is_point_observation:
+                ds = parsing.dfs_extract_point(r, o)
 
-        # ds = ds.rename({result.item_key: result.name})
-        ds = parsing.rename_coords(ds)
-        ds = ds.dropna(dim="time", how="any")
+            elif r.is_dfs and o.is_track_observation:
+                ds = parsing.dfs_extract_track(r, o)
 
-        ds_new = xr.merge([ds, obs.data]).rename(
-            {obs.item_key: obs.name, result.item_key: result.name}
+            elif not r.is_dfs and o.is_point_observation:
+                ds = parsing.xarray_extract_point(r, o)
+
+            elif not r.is_dfs and o.is_track_observation:
+                ds = parsing.xarray_extract_track(r, o)
+
+            # ds = ds.rename({result.item_key: result.name})
+            ds = parsing.rename_coords(ds).rename({r.item_key: r.name})
+            _obs_extractions.append(ds)
+
+        extractions[o.name] = xr.merge([o.data, *_obs_extractions]).rename(
+            {o.item_key: o.name}
         )
+    # ds = ds.dropna(dim="time", how="any")
 
-        return ds_new
+    # ds_new = xr.merge([ds, obs.data]).rename(
+    #     {obs.item_key: obs.name, result.item_key: result.name}
+    # )
+    # ds_new = ds_new.dropna(dim="time", how="any")
+
+    return
 
 
 if __name__ == "__main__":
     import pandas as pd
 
     ##### dfs data #####
-    fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"  # MR
-    fn_2 = pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index(
-        "date"
-    )  # track observation
-    fn_3 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
-    fn_4 = "tests/testdata/Oresund2D.dfsu"  # MR
+    # fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"  # MR
+    # fn_2 = pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index(
+    #     "date"
+    # )  # track observation
+    # fn_3 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
+    # fn_4 = "tests/testdata/Oresund2D.dfsu"  # MR
 
-    dc_1 = DataContainer(fn, item=2, is_result=True)
-    dc_2 = DataContainer(fn_2, item=2, is_observation=True)
-    dc_3 = DataContainer(fn_3, is_observation=True, x=366844, y=6154291, item=0)
-    dc_4 = DataContainer(fn_4, item=0, is_result=True, name="Oresund Model")
-    dc_4.compare(dc_3)
+    # dc_1 = DataContainer(fn, item=2, is_result=True)
+    # dc_2 = DataContainer(fn_2, item=2, is_observation=True)
+    # dc_3 = DataContainer(fn_3, is_observation=True, x=366844, y=6154291, item=0)
+    # dc_4 = DataContainer(fn_4, item=0, is_result=True, name="Oresund Model")
+    # dc_4.compare(dc_3)
 
     ##### xarray data #####
     fn_1 = "tests/testdata/SW/ERA5_DutchCoast.nc"  # MR

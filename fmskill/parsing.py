@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import Callable, Union
 
 import mikeio
@@ -23,9 +23,9 @@ POS_COORDINATE_NAME_MAPPING = {
 TIME_COORDINATE_NAME_MAPPING = {"time": "time", "t": "time", "date": "time"}
 
 
-def dfs_extract_point(result, observation, file_extension, item=None) -> xr.Dataset:
+def dfs_extract_point(result, observation) -> xr.Dataset:
     ds_model = None
-    if "dfsu" in file_extension:
+    if "dfsu" in result.file_extension:
         if (observation.x is None) or (observation.y is None):
             raise ValueError(
                 f"PointObservation '{observation.name}' cannot be used for extraction "
@@ -33,12 +33,12 @@ def dfs_extract_point(result, observation, file_extension, item=None) -> xr.Data
                 + "Please provide position when creating PointObservation."
             )
         ds_model = _extract_point_dfsu(
-            dfsu=result.data, x=observation.x, y=observation.y, item=item
+            dfsu=result.data, x=observation.x, y=observation.y, item=result.item_idx
         )
-    elif "dfs0" in file_extension:
-        ds_model = _extract_point_dfs0(dfs0=result.data, item=item)
+    elif "dfs0" in result.file_extension:
+        ds_model = _extract_point_dfs0(dfs0=result.data, item=result.item_idx)
 
-    ds_model = ds_model.rename({list(ds_model.data_vars)[-1]: result.name})
+    # ds_model = ds_model.rename({list(ds_model.data_vars)[-1]: result.name})
 
     return ds_model
 
@@ -55,20 +55,20 @@ def _extract_point_dfs0(dfs0: mikeio.Dfs0, item) -> xr.Dataset:
     return ds_model.to_xarray()
 
 
-def dfs_extract_track(result, observation, file_extension, item=None) -> xr.Dataset:
+def dfs_extract_track(result, observation) -> xr.Dataset:
     ds_model = None
-    if "dfsu" in file_extension:
+    if "dfsu" in result.file_extension:
         ds_model = _extract_track_dfsu(
-            dfsu=result.data, observation=observation, item=item
+            dfsu=result.data, observation=observation, item=result.item_idx
         )
-    elif "dfs0" in file_extension:
-        ds_model = _extract_track_dfs0(dfs0=result.data, item=item)
+    elif "dfs0" in result.file_extension:
+        ds_model = _extract_track_dfs0(dfs0=result.data, item=result.item_idx)
 
     return ds_model
 
 
 def _extract_track_dfsu(dfsu: mikeio.dfsu._Dfsu, observation, item: int) -> xr.Dataset:
-    ds_model = dfsu.extract_track(track=observation.df, items=[item])
+    ds_model = dfsu.extract_track(track=observation.data.to_dataframe(), items=[item])
     return ds_model.to_xarray()
 
 
@@ -81,13 +81,13 @@ def _extract_track_dfs0(dfs0: mikeio.Dfs0, item: int) -> xr.Dataset:
     return df.to_xarray()
 
 
-def xarray_extract_point(result, observation, **kwargs) -> xr.Dataset:
+def xarray_extract_point(result, observation) -> xr.Dataset:
     return result.data.interp(
         coords=dict(x=observation.x, y=observation.y), method="nearest"
     )
 
 
-def xarray_extract_track(result, observation, **kwargs) -> xr.Dataset:
+def xarray_extract_track(result, observation) -> xr.Dataset:
     return result.data.interp(
         x=observation.x, y=observation.y, time=observation.data.time, method="linear"
     ).reset_coords(["x", "y"])
@@ -126,6 +126,8 @@ def dfs_from_filepath(filepath: Union[str, Path, list]) -> types.DfsType:
 
 def array_from_pd_dataframe(df: pd.DataFrame, *args, **kwargs) -> xr.Dataset:
     """Get a DataSet from a pandas DataFrame."""
+
+    df.index = make_unique_index(pd.to_datetime(df.index), offset_duplicates=0.001)
     return df.to_xarray()
 
 
@@ -155,6 +157,7 @@ eager_loading_types_mapping = {
     xr.Dataset: lambda x: x,
     str: ds_from_filepath,
     Path: ds_from_filepath,
+    PosixPath: ds_from_filepath,
     list: ds_from_filepath,
     # pd.Series: array_from_pd_series,
     pd.DataFrame: array_from_pd_dataframe,
@@ -163,6 +166,7 @@ eager_loading_types_mapping = {
 lazy_loading_types_mapping = {
     str: dfs_from_filepath,
     Path: dfs_from_filepath,
+    PosixPath: dfs_from_filepath,
 }
 
 
