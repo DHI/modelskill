@@ -11,8 +11,8 @@ from fmskill import types
 from .utils import _as_path, make_unique_index
 
 POS_COORDINATE_NAME_MAPPING = {
-    "x": "x",
-    "y": "y",
+    # "x": "x",
+    # "y": "y",
     "lon": "x",
     "longitude": "x",
     "lat": "y",
@@ -20,51 +20,126 @@ POS_COORDINATE_NAME_MAPPING = {
     "east": "x",
     "north": "y",
 }
-TIME_COORDINATE_NAME_MAPPING = {"time": "time", "t": "time", "date": "time"}
+TIME_COORDINATE_NAME_MAPPING = {
+    # "time": "time",
+    "t": "time",
+    "date": "time",
+}
 
 
-def dfs_extract_point(result, observation) -> xr.Dataset:
-    ds_model = None
-    if "dfsu" in result.file_extension:
-        if (observation.x is None) or (observation.y is None):
-            raise ValueError(
-                f"PointObservation '{observation.name}' cannot be used for extraction "
-                + f"because it has None position x={observation.x}, y={observation.y}. "
-                + "Please provide position when creating PointObservation."
+def dfs_extract_point(observation, model_results) -> xr.Dataset:
+    _extracted_mrs = []
+    attrs = {"x": {}, "y": {}}
+    for mr in model_results:
+        if "dfsu" in mr.file_extension:
+            if (observation.x is None) or (observation.y is None):
+                raise ValueError(
+                    f"PointObservation '{observation.name}' cannot be used for extraction "
+                    + f"because it has None position x={observation.x}, y={observation.y}. "
+                    + "Please provide position when creating PointObservation."
+                )
+            _extr = _extract_point_dfsu(
+                dfsu=mr.data, x=observation.x, y=observation.y, item=mr.item_idx
             )
-        ds_model = _extract_point_dfsu(
-            dfsu=result.data, x=observation.x, y=observation.y, item=result.item_idx
-        )
-    elif "dfs0" in result.file_extension:
-        ds_model = _extract_point_dfs0(dfs0=result.data, item=result.item_idx)
+        elif "dfs0" in mr.file_extension:
+            _extr = _extract_point_dfs0(dfs0=mr.data, item=mr.item_idx)
 
-    # ds_model = ds_model.rename({list(ds_model.data_vars)[-1]: result.name})
+        _extr = rename_coords(_extr).rename({mr.item_key: mr.name})
+        if "x" in _extr.attrs:
+            attrs["x"][mr.name] = _extr.attrs.pop("x")
+            attrs["y"][mr.name] = _extr.attrs.pop("y")
+        _extracted_mrs.append(_extr)
 
-    return ds_model
+    attrs["x"][observation.name] = observation.x
+    attrs["y"][observation.name] = observation.y
+
+    _extracted_mrs = xr.merge(_extracted_mrs, combine_attrs="no_conflicts")
+    temporally_cut_obs = observation.data.sel(
+        time=slice(_extracted_mrs.time.min(), _extracted_mrs.time.max())
+    )
+    temporally_cut_obs.attrs.update(attrs)
+    ds = xr.merge([temporally_cut_obs, _extracted_mrs], join="left")
+
+    ds = ds.interpolate_na(dim="time")
+
+    return ds
+
+
+def _point_coords_to_attr(ds: xr.Dataset):
+    # for point observations, we don't need to store the coordinates
+    # as coordinates or data variables, we just put the extracted position
+    # in the metadata
+    for c in ("x", "y"):
+        if c in ds.coords:
+            ds.attrs[c] = ds[c].item()
+            ds = ds.reset_coords(c, drop=True)
+    return ds
 
 
 def _extract_point_dfsu(dfsu: mikeio.dfsu._Dfsu, x, y, item) -> xr.Dataset:
     xy = np.atleast_2d([x, y])
     elemids = dfsu.geometry.find_index(coords=xy)
-    ds_model = dfsu.read(elements=elemids, items=[item])
-    return ds_model.to_xarray()
+    ds_model: mikeio.Dataset = dfsu.read(elements=elemids, items=[item])
+    ds: xr.Dataset = ds_model.to_xarray()
+
+    ds = _point_coords_to_attr(ds)
+    return ds
 
 
 def _extract_point_dfs0(dfs0: mikeio.Dfs0, item) -> xr.Dataset:
     ds_model = dfs0.read(items=[item])
-    return ds_model.to_xarray()
+    ds = ds_model.to_xarray()
+    return _point_coords_to_attr(ds)
 
 
-def dfs_extract_track(result, observation) -> xr.Dataset:
-    ds_model = None
-    if "dfsu" in result.file_extension:
-        ds_model = _extract_track_dfsu(
-            dfsu=result.data, observation=observation, item=result.item_idx
-        )
-    elif "dfs0" in result.file_extension:
-        ds_model = _extract_track_dfs0(dfs0=result.data, item=result.item_idx)
+def dfs_extract_track(observation, model_results):
+    from fmskill.data_container import DataContainer
 
-    return ds_model
+    if not isinstance(model_results, list):
+        assert isinstance(model_results, DataContainer)
+        model_results = [model_results]
+
+    _extracted_mrs = []
+    for mr in model_results:
+        # Dfs extraction returns spatial and temporal intersection of MR and observation,
+        # but still containing the original coordinates of the observation. Variables that
+        # are outside the MR domain are filled with NaNs.
+        if "dfsu" in mr.file_extension:
+            _extr = _extract_track_dfsu(
+                dfsu=mr.data, observation=observation, item=mr.item_idx
+            )
+        elif "dfs0" in mr.file_extension:
+            _extr = _extract_track_dfs0(dfs0=mr.data, item=mr.item_idx)
+
+        # Drop the NaNs, as we do not want to extrapolate
+        _extr = _extr.dropna(dim="time")
+        _extr = rename_coords(_extr).rename({mr.item_key: mr.name})
+
+        _extracted_mrs.append(_extr)
+
+    # Merge the individually extracted MRs into one dataset
+    _extracted_mrs = xr.merge(_extracted_mrs)
+
+    # Cut the observation to the same time period as the MR
+    temporally_cut_obs = observation.data.sel(
+        time=slice(_extracted_mrs.time.min(), _extracted_mrs.time.max())
+    )
+    # Also need to filter the observation to the same spatial extent as the MR
+    spatially_cut_obs = temporally_cut_obs.where(
+        (temporally_cut_obs.x >= _extracted_mrs.x.min())
+        & (temporally_cut_obs.x <= _extracted_mrs.x.max())
+        & (temporally_cut_obs.y >= _extracted_mrs.y.min())
+        & (temporally_cut_obs.y <= _extracted_mrs.y.max()),
+        drop=True,
+    )
+
+    # Left join the observation and the MRs
+    ds = xr.merge([spatially_cut_obs, _extracted_mrs], join="left")
+
+    # Interpolate the NaNs in the MRs
+    ds = ds.interpolate_na(dim="time")
+
+    return ds
 
 
 def _extract_track_dfsu(dfsu: mikeio.dfsu._Dfsu, observation, item: int) -> xr.Dataset:

@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 from pathlib import Path
 import xarray as xr
 import numpy as np
@@ -303,49 +303,35 @@ class DataContainer:
             return compare([self, other])
 
 
-def compare(
-    data_containers: Union["DataContainer", list["DataContainer"]]
-) -> xr.Dataset:
-    if not isinstance(data_containers, list):
-        data_containers = [data_containers]
-
+def compare(data_containers: list["DataContainer"]) -> Dict[str, xr.Dataset]:
+    """
+    Returns a dictionary of xarray datasets with one entry for each observation.
+    Each dataset contains the observation (limited to the model domains), as well as
+    the model results interpolated to match the observation (in time and space).
+    """
     observations = [c for c in data_containers if c.is_observation]
-    results = [c for c in data_containers if c.is_result]
+    dfs_results = [c for c in data_containers if c.is_result and c.is_dfs]
+    xarray_results = [c for c in data_containers if c.is_result and not c.is_dfs]
 
-    extractions = {}
-    if not observations:
+    observation_extractions = {}
+    if not observations or not (dfs_results or xarray_results):
         return
     for o in observations:
-        _obs_extractions = []
-        for r in results:
+        if dfs_results and o.is_point_observation:
+            ds = parsing.dfs_extract_point(o, dfs_results)
 
-            if r.is_dfs and o.is_point_observation:
-                ds = parsing.dfs_extract_point(r, o)
+        elif dfs_results and o.is_track_observation:
+            ds = parsing.dfs_extract_track(o, dfs_results)
 
-            elif r.is_dfs and o.is_track_observation:
-                ds = parsing.dfs_extract_track(r, o)
+        elif xarray_results and o.is_point_observation:
+            ds = parsing.xarray_extract_point(o, xarray_results)
 
-            elif not r.is_dfs and o.is_point_observation:
-                ds = parsing.xarray_extract_point(r, o)
+        elif xarray_results and o.is_track_observation:
+            ds = parsing.xarray_extract_track(o, xarray_results)
 
-            elif not r.is_dfs and o.is_track_observation:
-                ds = parsing.xarray_extract_track(r, o)
+        observation_extractions[o.name] = ds
 
-            # ds = ds.rename({result.item_key: result.name})
-            ds = parsing.rename_coords(ds).rename({r.item_key: r.name})
-            _obs_extractions.append(ds)
-
-        extractions[o.name] = xr.merge([o.data, *_obs_extractions]).rename(
-            {o.item_key: o.name}
-        )
-    # ds = ds.dropna(dim="time", how="any")
-
-    # ds_new = xr.merge([ds, obs.data]).rename(
-    #     {obs.item_key: obs.name, result.item_key: result.name}
-    # )
-    # ds_new = ds_new.dropna(dim="time", how="any")
-
-    return
+    return observation_extractions
 
 
 if __name__ == "__main__":

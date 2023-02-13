@@ -106,6 +106,7 @@ class Comparer:
                         )
                     else:
                         self.observations.append(d)
+                        self.observation_names.add(d.name)
                 elif d.is_result:
                     if d.name in self.result_names:
                         warnings.warn(
@@ -113,32 +114,19 @@ class Comparer:
                         )
                     else:
                         self.results.append(d)
+                        self.result_names.add(d.name)
             elif isinstance(d, Comparer):
                 self._add_data(d.observations + d.results)
             else:
                 raise ValueError(f"Unknown data type: {type(d)}")
 
-        # _comparison_idc: list[
-        #     tuple[ModelResultIndex, ObservationIndex]
-        # ] = DataContainer.check_compatibility(self.results + self.observations)
-
-        # Tuples of valid comparisons, format: (result_index, observation_index)
-        # self._pair_idc = [(m, o - len(self.results)) for m, o in _comparison_idc]
-
     def extract(self):
         """
         Build a dictionary of extracted data, using the names of the
-        observations and results as keys.
+        observations as keys.
         """
 
-        compare(self.results + self.observations)
-
-        for i_m, i_o in self._pair_idc:
-            identifier = f"{self.results[i_m].name} - {self.observations[i_o].name}"
-            if identifier not in self.extracted:
-                self.extracted[identifier] = self.results[i_m].compare(
-                    self.observations[i_o]
-                )
+        self.extracted = compare(self.results + self.observations)
 
         print("hold")
 

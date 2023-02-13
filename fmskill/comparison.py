@@ -503,7 +503,8 @@ class BaseComparer:
                     skilldf.insert(loc=0, column=field, value=unames[0])
         return skilldf
 
-    def _groupby_df(self, df, by, metrics, n_min: int = None):
+    @staticmethod
+    def _groupby_df(df, by, metrics, n_min: int = None):
         def calc_metrics(x):
             row = {}
             row["n"] = len(x)
