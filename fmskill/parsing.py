@@ -28,6 +28,14 @@ TIME_COORDINATE_NAME_MAPPING = {
 
 
 def dfs_extract_point(observation, model_results) -> xr.Dataset:
+    from fmskill.data_container import DataContainer
+
+    if not isinstance(model_results, list):
+        assert isinstance(model_results, DataContainer)
+        model_results = [model_results]
+
+    model_names = [mr.name for mr in model_results]
+
     _extracted_mrs = []
     attrs = {"x": {}, "y": {}}
     for mr in model_results:
@@ -54,14 +62,16 @@ def dfs_extract_point(observation, model_results) -> xr.Dataset:
     attrs["y"][observation.name] = observation.y
 
     _extracted_mrs = xr.merge(_extracted_mrs, combine_attrs="no_conflicts")
-    temporally_cut_obs = observation.data.sel(
-        time=slice(_extracted_mrs.time.min(), _extracted_mrs.time.max())
-    )
-    temporally_cut_obs.attrs.update(attrs)
+    temporally_cut_obs = observation.data.rename(
+        {observation.item_key: "Observation"}
+    ).sel(time=slice(_extracted_mrs.time.min(), _extracted_mrs.time.max()))
     ds = xr.merge([temporally_cut_obs, _extracted_mrs], join="left")
 
     ds = ds.interpolate_na(dim="time")
-
+    ds = (
+        ds[model_names + ["Observation"]].to_array(dim="source").to_dataset(name="data")
+    )
+    ds.attrs.update(attrs)
     return ds
 
 
@@ -99,6 +109,8 @@ def dfs_extract_track(observation, model_results):
         assert isinstance(model_results, DataContainer)
         model_results = [model_results]
 
+    model_names = [mr.name for mr in model_results]
+
     _extracted_mrs = []
     for mr in model_results:
         # Dfs extraction returns spatial and temporal intersection of MR and observation,
@@ -121,9 +133,9 @@ def dfs_extract_track(observation, model_results):
     _extracted_mrs = xr.merge(_extracted_mrs)
 
     # Cut the observation to the same time period as the MR
-    temporally_cut_obs = observation.data.sel(
-        time=slice(_extracted_mrs.time.min(), _extracted_mrs.time.max())
-    )
+    temporally_cut_obs = observation.data.rename(
+        {observation.item_key: "Observation"}
+    ).sel(time=slice(_extracted_mrs.time.min(), _extracted_mrs.time.max()))
     # Also need to filter the observation to the same spatial extent as the MR
     spatially_cut_obs = temporally_cut_obs.where(
         (temporally_cut_obs.x >= _extracted_mrs.x.min())
@@ -138,6 +150,10 @@ def dfs_extract_track(observation, model_results):
 
     # Interpolate the NaNs in the MRs
     ds = ds.interpolate_na(dim="time")
+    _multi_dim = ds[model_names + ["Observation"]].to_array(dim="source")
+
+    ds = ds[["x", "y"]]
+    ds["data"] = _multi_dim
 
     return ds
 
