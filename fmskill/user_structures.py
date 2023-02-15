@@ -1,8 +1,11 @@
-from typing import Optional, Union
 import warnings
+from typing import Optional, Union
 
-from fmskill import types
+import xarray as xr
+
+from fmskill import types, parsing
 from fmskill.data_container import DataContainer, compare
+from fmskill.settings import options, reset_option
 
 
 class Observation:
@@ -70,6 +73,17 @@ class Comparer:
 
         self._add_data(observations + results)
 
+    @property
+    def metrics(self):
+        return options.metrics.list
+
+    @metrics.setter
+    def metrics(self, values) -> None:
+        if values is None:
+            reset_option("metrics.list")
+        else:
+            options.metrics.list = parsing.parse_metric(values)
+
     def __getitem__(self, key):
         if not self.extracted:
             warnings.warn("No data extracted. Use Comparer.extract() first.")
@@ -120,6 +134,19 @@ class Comparer:
             else:
                 raise ValueError(f"Unknown data type: {type(d)}")
 
+    def _add_skill_metrics(self):
+
+        for ds in self.extracted.values():
+
+            obs_values = ds.variable.sel(source="Observation").values
+
+            def _get_obs_metric(x, metric):
+                np_metric = metric(obs_values, x.variable.values)
+                return xr.DataArray(np_metric)
+
+            for m in self.metrics:
+                ds[m.__name__] = ds.groupby("source").map(_get_obs_metric, metric=m)
+
     def extract(self):
         """
         Build a dictionary of extracted data, using the names of the
@@ -127,6 +154,7 @@ class Comparer:
         """
 
         self.extracted = compare(self.results + self.observations)
+        self._add_skill_metrics()
 
         print("hold")
 
@@ -167,6 +195,9 @@ class Comparer:
             title=title,
             figsize=figsize,
         )
+
+    def skill(self):
+        pass
 
 
 if __name__ == "__main__":

@@ -1,12 +1,13 @@
+from inspect import getmembers, isfunction
 from pathlib import Path, PosixPath
-from typing import Callable, Union
+from typing import Callable, Iterable, Union
 
 import mikeio
+import numpy as np
 import pandas as pd
 import xarray as xr
-import numpy as np
 
-from fmskill import types
+from fmskill import metrics as mtr, types
 
 from .utils import _as_path, make_unique_index
 
@@ -69,7 +70,9 @@ def dfs_extract_point(observation, model_results) -> xr.Dataset:
 
     ds = ds.interpolate_na(dim="time")
     ds = (
-        ds[model_names + ["Observation"]].to_array(dim="source").to_dataset(name="data")
+        ds[model_names + ["Observation"]]
+        .to_array(dim="source")
+        .to_dataset(name="variable")
     )
     ds.attrs.update(attrs)
     return ds
@@ -153,7 +156,7 @@ def dfs_extract_track(observation, model_results):
     _multi_dim = ds[model_names + ["Observation"]].to_array(dim="source")
 
     ds = ds[["x", "y"]]
-    ds["data"] = _multi_dim
+    ds["variable"] = _multi_dim
 
     return ds
 
@@ -208,11 +211,25 @@ def dfs_from_filepath(filepath: Union[str, Path, list]) -> types.DfsType:
         return dfs
 
 
-# def array_from_pd_series(
-#     series: pd.Series, *args, **kwargs
-# ) -> Tuple[xr.DataArray, str]:
-#     """Get a DataArray from a pandas Series."""
-#     return series.to_xarray(), series.name
+def parse_metric(metric, return_list=False):
+    if isinstance(metric, str):
+        valid_metrics = [x[0] for x in getmembers(mtr, isfunction) if x[0][0] != "_"]
+
+        if metric.lower() in valid_metrics:
+            metric = getattr(mtr, metric.lower())
+        else:
+            raise ValueError(
+                f"Invalid metric: {metric}. Valid metrics are {valid_metrics}."
+            )
+    elif isinstance(metric, Iterable):
+        metrics = [parse_metric(m) for m in metric]
+        return metrics
+    elif not callable(metric):
+        raise TypeError(f"Invalid metric: {metric}. Must be either string or callable.")
+    if return_list:
+        if callable(metric) or isinstance(metric, str):
+            metric = [metric]
+    return metric
 
 
 def array_from_pd_dataframe(df: pd.DataFrame, *args, **kwargs) -> xr.Dataset:
