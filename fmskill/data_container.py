@@ -332,38 +332,3 @@ def compare(data_containers: list["DataContainer"]) -> Dict[str, xr.Dataset]:
         observation_extractions[o.name] = ds
 
     return observation_extractions
-
-
-if __name__ == "__main__":
-    import pandas as pd
-
-    ##### dfs data #####
-    # fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"  # MR
-    # fn_2 = pd.read_csv("tests/testdata/altimetry_NorthSea_20171027.csv").set_index(
-    #     "date"
-    # )  # track observation
-    # fn_3 = "tests/testdata/smhi_2095_klagshamn.dfs0"  # point observation
-    # fn_4 = "tests/testdata/Oresund2D.dfsu"  # MR
-
-    # dc_1 = DataContainer(fn, item=2, is_result=True)
-    # dc_2 = DataContainer(fn_2, item=2, is_observation=True)
-    # dc_3 = DataContainer(fn_3, is_observation=True, x=366844, y=6154291, item=0)
-    # dc_4 = DataContainer(fn_4, item=0, is_result=True, name="Oresund Model")
-    # dc_4.compare(dc_3)
-
-    ##### xarray data #####
-    fn_1 = "tests/testdata/SW/ERA5_DutchCoast.nc"  # MR
-    fn_2 = "tests/testdata/SW/eur_Hm0.dfs0"  # Point observation
-
-    dc_1 = DataContainer(fn_1, is_result=True, item="pp1d")
-    dc_2 = DataContainer(
-        fn_2, is_observation=True, item=0, x=3.2760, y=51.9990, name="EPL"
-    )
-    dc_3 = DataContainer(
-        "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="c2", is_observation=True
-    )  # track observation
-    dc_3.compare(dc_1)
-
-    # test = DataContainer._check_compatibility([dc_1, dc_2, dc_3, dc_4])
-
-    print(dc_1.data)

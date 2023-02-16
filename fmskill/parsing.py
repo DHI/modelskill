@@ -12,8 +12,6 @@ from fmskill import metrics as mtr, types
 from .utils import _as_path, make_unique_index
 
 POS_COORDINATE_NAME_MAPPING = {
-    # "x": "x",
-    # "y": "y",
     "lon": "x",
     "longitude": "x",
     "lat": "y",
@@ -22,7 +20,6 @@ POS_COORDINATE_NAME_MAPPING = {
     "north": "y",
 }
 TIME_COORDINATE_NAME_MAPPING = {
-    # "time": "time",
     "t": "time",
     "date": "time",
 }
@@ -251,7 +248,7 @@ def get_dataset_loader(
             # dfs are loaded lazily, so return None here
             return None
 
-    return eager_loading_types_mapping.get(type(data))
+    return non_dfs_loading_types_mapping.get(type(data))
 
 
 def get_dfs_loader(
@@ -260,7 +257,7 @@ def get_dfs_loader(
     return lazy_loading_types_mapping.get(type(data))
 
 
-eager_loading_types_mapping = {
+non_dfs_loading_types_mapping = {
     xr.DataArray: lambda x: x.to_dataset(),
     xr.Dataset: lambda x: x,
     str: ds_from_filepath,
@@ -364,60 +361,6 @@ def get_coords_in_data_vars(ds: Union[xr.Dataset, types.DfsType]) -> list[str]:
         return [c for c in ds.data_vars if c in ("x", "y", "time")]
     elif isinstance(ds, (mikeio.Dfs0, mikeio.Dfsu)):
         return [c for c in ds.items if c in ("x", "y", "time")]
-
-
-def _dfs_get_item_index(dfs, item):
-    available_names = [i.name for i in dfs.items]
-    lower_case_names = [i.lower() for i in available_names]
-    if item is None:
-        if len(dfs.items) > 1:
-            raise ValueError(
-                f"Found more than one item in dfs. Please specify item. Available: {available_names}"
-            )
-        else:
-            return 0
-    elif isinstance(item, str):
-        if item.lower() not in lower_case_names:
-            raise ValueError(
-                f"Requested item {item} not found in dfs file. Available: {available_names}"
-            )
-        return lower_case_names.index(item.lower())
-
-    elif isinstance(item, int):
-        idx = item
-        n_items = len(dfs.items)
-        if idx < 0:  # Handle negative indices
-            idx = n_items + idx
-        if (idx < 0) or (idx >= n_items):
-            raise IndexError(f"item {item} out of range (0, {n_items-1})")
-
-        return idx
-
-
-def validate_and_format_xarray(da: xr.DataArray):
-    new_names = {}
-    coords = da.coords
-    for coord in coords:
-        c = coord.lower()
-        if ("x" not in new_names) and (("lon" in c) or ("east" in c)):
-            new_names[coord] = "x"
-        elif ("y" not in new_names) and (("lat" in c) or ("north" in c)):
-            new_names[coord] = "y"
-        elif ("time" not in new_names) and (("time" in c) or ("date" in c)):
-            new_names[coord] = "time"
-
-    if len(new_names) > 0:
-        da = da.rename(new_names)
-
-    cnames = list(da.coords)
-    for c in ["x", "y", "time"]:
-        if c not in cnames:
-            raise ValueError(f"{c} not found in coords {cnames}")
-
-    if not isinstance(coords["time"].to_index(), pd.DatetimeIndex):
-        raise ValueError(f"Time coordinate is not equivalent to DatetimeIndex")
-
-    return da
 
 
 def validate_input_data(data, item) -> None:

@@ -195,8 +195,6 @@ class Comparer:
         self.unextracted_result_names.clear()
         self.unextracted_observation_names.clear()
 
-        print("hold")
-
     def plot_observation_positions(self, title=None, figsize=None):
         from fmskill.plot import plot_observation_positions
 
@@ -245,7 +243,7 @@ class Comparer:
         ds = ds.rename({"source": "model"})
         self._skill = ds
 
-    def skill(self, observation=None, **kwargs):
+    def skill(self, observation=None, **kwargs) -> xr.Dataset:
         obs = self._get_obs(observation)
         return self._skill.sel(observation=obs, **kwargs)
 
