@@ -204,7 +204,6 @@ def dfs_from_filepath(filepath: Union[str, Path, list]) -> types.DfsType:
     ext = filename.suffix
     if "dfs" in ext:
         dfs = mikeio.open(filename)
-        # item = _dfs_get_item_index(dfs, item)
         return dfs
 
 

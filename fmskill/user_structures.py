@@ -3,9 +3,16 @@ from typing import Optional, Union, Iterable
 
 import xarray as xr
 
-from fmskill import types, parsing
+from fmskill import types, parsing, metrics as mtr
 from fmskill.data_container import DataContainer, compare
-from fmskill.settings import options, reset_option
+from fmskill.settings import options, reset_option, register_option
+
+
+register_option(
+    "metrics.list",
+    [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
+)
 
 
 class Observation:
@@ -21,7 +28,7 @@ class Observation:
         return DataContainer(
             data=data,
             item=item,
-            is_observation=True,
+            is_result=False,
             x=x,
             y=y,
             name=name,

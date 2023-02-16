@@ -1,9 +1,10 @@
 import logging
-from typing import Optional, Union, Dict
 from pathlib import Path
-import xarray as xr
+from typing import Dict, Optional, Union
+
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from fmskill import parsing, types
 
@@ -46,19 +47,17 @@ class DataContainer:
     def __init__(
         self,
         data: types.DataInputType,
+        is_result: Optional[bool],
         item: types.ItemSpecifier = None,
-        is_result: Optional[bool] = None,
-        is_observation: Optional[bool] = None,
         x: Optional[float] = None,
         y: Optional[float] = None,
+        quantity: Optional[str] = None,
         name: Optional[str] = None,
     ) -> None:
 
-        if [is_result, is_observation].count(True) != 1:
-            raise ValueError("One of is_result or is_observation must be set to True.")
-
         self.x_point = x
         self.y_point = y
+        self.quantity = quantity
         self.name = name
 
         # Attribute declarations for overview, these will be filled during initialization
@@ -70,8 +69,7 @@ class DataContainer:
         self.item_key = None
         self.additional_keys = None
 
-        self.is_result: bool = is_result or not is_observation
-        self.is_observation: bool = is_observation or not is_result
+        self.is_result: bool = is_result
 
         parsing.validate_input_data(data, item)
 
@@ -79,6 +77,10 @@ class DataContainer:
         if not self.is_dfs:
             self._check_field()
             self._check_point_or_track()
+
+    @property
+    def is_observation(self):
+        return not self.is_result
 
     @property
     def values(self):
@@ -173,16 +175,21 @@ class DataContainer:
         if _ds_loader is not None:
             self.is_dfs = False
             ds = _ds_loader(data)
+            self.item_key, self.item_idx = parsing.get_item_name_xr_ds(ds, item)
 
-        # lazily load dfs files
+        # load as dfs object
         else:
             self.is_dfs = True
             _dfs_loader = parsing.get_dfs_loader(data)
             self.data = _dfs_loader(data)
+            self.item_key, self.item_idx = parsing.get_item_name_dfs(self.data, item)
+
+        self.additional_keys = parsing.get_coords_in_data_vars(self.data)
 
         # special case of observations stored in dfs files
         if self.is_observation and self.is_dfs:
             if isinstance(self.data, types.DfsType):
+                self.quantity = self.data.items[self.item_idx].type
                 ds = self.data.read().to_xarray()
                 _loader = parsing.get_dataset_loader(ds)
                 ds = _loader(ds)
@@ -190,16 +197,12 @@ class DataContainer:
 
         if not self.is_dfs:
             ds = parsing.rename_coords(ds)
-            self.item_key, self.item_idx = parsing.get_item_name_xr_ds(ds, item)
-            self.additional_keys = parsing.get_coords_in_data_vars(ds)
             self.data = ds[self.additional_keys + [self.item_key]]
             if self.is_observation:
                 self.data = self.data.dropna("time", how="any")
 
         else:
-            self.item_key, self.item_idx = parsing.get_item_name_dfs(self.data, item)
-            self.additional_keys = parsing.get_coords_in_data_vars(self.data)
-
+            self.quantity = self.data.items[self.item_idx].type
             if self.name is None:
                 self.name = self.item_key
 
