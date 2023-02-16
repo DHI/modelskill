@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Union
+from typing import Optional, Union, Iterable
 
 import xarray as xr
 
@@ -84,6 +84,10 @@ class Comparer:
         else:
             options.metrics.list = parsing.parse_metric(values)
 
+    @property
+    def metric_names(self):
+        return [m.__name__ for m in self.metrics]
+
     def __getitem__(self, key):
         if not self.extracted:
             warnings.warn("No data extracted. Use Comparer.extract() first.")
@@ -155,6 +159,7 @@ class Comparer:
 
         self.extracted = compare(self.results + self.observations)
         self._add_skill_metrics()
+        self._set_skill()
 
         print("hold")
 
@@ -196,8 +201,42 @@ class Comparer:
             figsize=figsize,
         )
 
-    def skill(self):
-        pass
+    def _set_skill(self):
+        ds = xr.concat(list(self.extracted.values()), dim="observation").sel(
+            source=list(self.result_names)
+        )
+        ds = ds.assign_coords(observation=list(self.extracted.keys()))
+        ds["observation"] = ds.observation.astype("object")
+        ds = ds.rename({"source": "model"})
+        self._skill = ds
+
+    # def skill(self, observation=None):
+    #     obs = self._get_obs(observation)
+
+    #     _extractions = {
+    #         k: v[self.metric_names] for k, v in self.extracted.items() if k in obs
+    #     }
+    #     ds = xr.concat(list(_extractions.values()), dim="observation").sel(
+    #         source=list(self.result_names)
+    #     )
+    #     ds = ds.assign_coords(observation=list(_extractions.keys()))
+    #     ds["observation"] = ds.observation.astype("object")
+    #     ds = ds.rename({"source": "model"})
+    #     return ds
+
+    def _get_obs(self, obs):
+        if obs is None:
+            return list(self.observation_names)
+        if isinstance(obs, str):
+            if obs not in self.observation_names:
+                raise ValueError(f"Observation not found: {obs}")
+            return [obs]
+        if isinstance(obs, Iterable):
+            if not set(obs).issubset(self.observation_names):
+                warnings.warn(
+                    f"Observations not found: {set(obs).difference(self.observation_names)}"
+                )
+            return list(set(obs).intersection(self.observation_names))
 
 
 if __name__ == "__main__":
