@@ -65,6 +65,8 @@ class Comparer:
 
         self.observation_names = set()
         self.result_names = set()
+        self.unextracted_observation_names = set()
+        self.unextracted_result_names = set()
 
         if not isinstance(observations, list):
             observations = [observations]
@@ -87,6 +89,24 @@ class Comparer:
     @property
     def metric_names(self):
         return [m.__name__ for m in self.metrics]
+
+    @property
+    def extracted_result_names(self):
+        return self.result_names - self.unextracted_result_names
+
+    @property
+    def extracted_observation_names(self):
+        return self.observation_names - self.unextracted_observation_names
+
+    def __add__(self, other: Union[ModelResult, Observation, "Comparer"]):
+        if not isinstance(other, list):
+            other = [other]
+        assert all(
+            isinstance(i, (Comparer, DataContainer)) for i in other
+        ), "Can only add Comparer, ModelResult or Observation"
+
+        self._add_data(other)
+        return self
 
     def __getitem__(self, key):
         if not self.extracted:
@@ -114,7 +134,7 @@ class Comparer:
             else:
                 raise IndexError(f"Index out of range: {key}")
 
-    def _add_data(self, data: list[Union[ModelResult, Observation, "Comparer"]]):
+    def _add_data(self, data: list[Union[DataContainer, "Comparer"]]):
         for d in data:
             if isinstance(d, DataContainer):
                 if d.is_observation:
@@ -125,6 +145,8 @@ class Comparer:
                     else:
                         self.observations.append(d)
                         self.observation_names.add(d.name)
+                        self.unextracted_observation_names.add(d.name)
+
                 elif d.is_result:
                     if d.name in self.result_names:
                         warnings.warn(
@@ -133,6 +155,7 @@ class Comparer:
                     else:
                         self.results.append(d)
                         self.result_names.add(d.name)
+                        self.unextracted_result_names.add(d.name)
             elif isinstance(d, Comparer):
                 self._add_data(d.observations + d.results)
             else:
@@ -152,14 +175,25 @@ class Comparer:
                 ds[m.__name__] = ds.groupby("source").map(_get_obs_metric, metric=m)
 
     def extract(self):
-        """
-        Build a dictionary of extracted data, using the names of the
-        observations as keys.
-        """
+        _results_to_add = [
+            r for r in self.results if r.name in self.unextracted_result_names
+        ]
+        _observations_to_add = [
+            o for o in self.observations if o.name in self.unextracted_observation_names
+        ]
+        if _observations_to_add and not _results_to_add:
+            _results_to_add = self.results
+        else:
+            _observations_to_add = self.observations
+            _results_to_add = self.results
+        new_data = compare(_results_to_add + _observations_to_add)
+        self.extracted.update(new_data)
 
-        self.extracted = compare(self.results + self.observations)
         self._add_skill_metrics()
         self._set_skill()
+
+        self.unextracted_result_names.clear()
+        self.unextracted_observation_names.clear()
 
         print("hold")
 
@@ -202,7 +236,8 @@ class Comparer:
         )
 
     def _set_skill(self):
-        ds = xr.concat(list(self.extracted.values()), dim="observation").sel(
+        _relevant_arrays = [v[self.metric_names] for v in self.extracted.values()]
+        ds = xr.concat(_relevant_arrays, dim="observation").sel(
             source=list(self.result_names)
         )
         ds = ds.assign_coords(observation=list(self.extracted.keys()))
@@ -210,23 +245,13 @@ class Comparer:
         ds = ds.rename({"source": "model"})
         self._skill = ds
 
-    # def skill(self, observation=None):
-    #     obs = self._get_obs(observation)
-
-    #     _extractions = {
-    #         k: v[self.metric_names] for k, v in self.extracted.items() if k in obs
-    #     }
-    #     ds = xr.concat(list(_extractions.values()), dim="observation").sel(
-    #         source=list(self.result_names)
-    #     )
-    #     ds = ds.assign_coords(observation=list(_extractions.keys()))
-    #     ds["observation"] = ds.observation.astype("object")
-    #     ds = ds.rename({"source": "model"})
-    #     return ds
+    def skill(self, observation=None, **kwargs):
+        obs = self._get_obs(observation)
+        return self._skill.sel(observation=obs, **kwargs)
 
     def _get_obs(self, obs):
         if obs is None:
-            return list(self.observation_names)
+            return list(self.extracted_observation_names)
         if isinstance(obs, str):
             if obs not in self.observation_names:
                 raise ValueError(f"Observation not found: {obs}")
