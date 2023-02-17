@@ -184,8 +184,6 @@ class DataContainer:
             self.data = _dfs_loader(data)
             self.item_key, self.item_idx = parsing.get_item_name_dfs(self.data, item)
 
-        self.additional_keys = parsing.get_coords_in_data_vars(self.data)
-
         # special case of observations stored in dfs files
         if self.is_observation and self.is_dfs:
             if isinstance(self.data, types.DfsType):
@@ -197,6 +195,7 @@ class DataContainer:
 
         if not self.is_dfs:
             ds = parsing.rename_coords(ds)
+            self.additional_keys = parsing.get_coords_in_data_vars(ds)
             self.data = ds[self.additional_keys + [self.item_key]]
             if self.is_observation:
                 self.data = self.data.dropna("time", how="any")

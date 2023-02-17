@@ -38,12 +38,7 @@ def dfs_extract_point(observation, model_results) -> xr.Dataset:
     attrs = {"x": {}, "y": {}}
     for mr in model_results:
         if "dfsu" in mr.file_extension:
-            if (observation.x is None) or (observation.y is None):
-                raise ValueError(
-                    f"PointObservation '{observation.name}' cannot be used for extraction "
-                    + f"because it has None position x={observation.x}, y={observation.y}. "
-                    + "Please provide position when creating PointObservation."
-                )
+            _assert_valid_point_obs(observation)
             _extr = _extract_point_dfsu(
                 dfsu=mr.data, x=observation.x, y=observation.y, item=mr.item_idx
             )
@@ -60,29 +55,14 @@ def dfs_extract_point(observation, model_results) -> xr.Dataset:
     attrs["y"][observation.name] = observation.y
 
     _extracted_mrs = xr.merge(_extracted_mrs, combine_attrs="no_conflicts")
-    temporally_cut_obs = observation.data.rename(
-        {observation.item_key: "Observation"}
-    ).sel(time=slice(_extracted_mrs.time.min(), _extracted_mrs.time.max()))
+    temporally_cut_obs = fit_to_time(
+        observation.data.rename({observation.item_key: "Observation"}), _extracted_mrs
+    )
     ds = xr.merge([temporally_cut_obs, _extracted_mrs], join="left")
 
     ds = ds.interpolate_na(dim="time")
-    ds = (
-        ds[model_names + ["Observation"]]
-        .to_array(dim="source")
-        .to_dataset(name="variable")
-    )
+    ds = _add_source_dim(ds[model_names + ["Observation"]], retun_as_dataset=True)
     ds.attrs.update(attrs)
-    return ds
-
-
-def _point_coords_to_attr(ds: xr.Dataset):
-    # for point observations, we don't need to store the coordinates
-    # as coordinates or data variables, we just put the extracted position
-    # in the metadata
-    for c in ("x", "y"):
-        if c in ds.coords:
-            ds.attrs[c] = ds[c].item()
-            ds = ds.reset_coords(c, drop=True)
     return ds
 
 
@@ -133,24 +113,20 @@ def dfs_extract_track(observation, model_results):
     _extracted_mrs = xr.merge(_extracted_mrs)
 
     # Cut the observation to the same time period as the MR
-    temporally_cut_obs = observation.data.rename(
-        {observation.item_key: "Observation"}
-    ).sel(time=slice(_extracted_mrs.time.min(), _extracted_mrs.time.max()))
-    # Also need to filter the observation to the same spatial extent as the MR
-    spatially_cut_obs = temporally_cut_obs.where(
-        (temporally_cut_obs.x >= _extracted_mrs.x.min())
-        & (temporally_cut_obs.x <= _extracted_mrs.x.max())
-        & (temporally_cut_obs.y >= _extracted_mrs.y.min())
-        & (temporally_cut_obs.y <= _extracted_mrs.y.max()),
-        drop=True,
+    temporally_cut_obs = fit_to_time(
+        observation.data.rename({observation.item_key: "Observation"}), _extracted_mrs
     )
+    # Also need to filter the observation to the same spatial extent as the MR
+    spatially_cut_obs = fit_to_spatial_extend(temporally_cut_obs, _extracted_mrs)
 
     # Left join the observation and the MRs
     ds = xr.merge([spatially_cut_obs, _extracted_mrs], join="left")
 
     # Interpolate the NaNs in the MRs
     ds = ds.interpolate_na(dim="time")
-    _multi_dim = ds[model_names + ["Observation"]].to_array(dim="source")
+    _multi_dim = _add_source_dim(
+        ds[model_names + ["Observation"]], retun_as_dataset=False
+    )
 
     ds = ds[["x", "y"]]
     ds["variable"] = _multi_dim
@@ -182,6 +158,52 @@ def xarray_extract_track(result, observation) -> xr.Dataset:
     return result.data.interp(
         x=observation.x, y=observation.y, time=observation.data.time, method="linear"
     ).reset_coords(["x", "y"])
+
+
+def _assert_valid_point_obs(observation):
+    if (observation.x is None) or (observation.y is None):
+        raise ValueError("Missing x and/or y coordinates for point observation")
+
+
+def _add_source_dim(ds: xr.Dataset, retun_as_dataset: bool) -> xr.Dataset:
+    da = ds.to_array(dim="source")
+    if not retun_as_dataset:
+        return da
+    else:
+        return da.to_dataset(name="variable")
+
+
+def fit_to_time(to_fit, target, time_name="time"):
+    if isinstance(to_fit, xr.Dataset):
+        return to_fit.sel(
+            **{time_name: slice(target[time_name].min(), target[time_name].max())}
+        )
+    raise NotImplementedError(f"fit_to_time not implemented for type {type(to_fit)}")
+
+
+def fit_to_spatial_extend(to_fit, target, x_name="x", y_name="y"):
+    if isinstance(to_fit, xr.Dataset):
+        return to_fit.where(
+            (to_fit[x_name] >= target[x_name].min())
+            & (to_fit[x_name] <= target[x_name].max())
+            & (to_fit[y_name] >= target[y_name].min())
+            & (to_fit[y_name] <= target[y_name].max()),
+            drop=True,
+        )
+    raise NotImplementedError(
+        f"fit_to_spatial_extend not implemented for type {type(to_fit)}"
+    )
+
+
+def _point_coords_to_attr(ds: xr.Dataset):
+    # for point observations, we don't need to store the coordinates
+    # as coordinates or data variables, we just put the extracted position
+    # in the metadata
+    for c in ("x", "y"):
+        if c in ds.coords:
+            ds.attrs[c] = ds[c].item()
+            ds = ds.reset_coords(c, drop=True)
+    return ds
 
 
 def ds_from_filepath(filepath: Union[str, Path, list]):
