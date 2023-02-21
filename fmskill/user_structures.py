@@ -1,5 +1,6 @@
 import warnings
 from typing import Optional, Union, Iterable
+from collections import defaultdict
 
 import xarray as xr
 
@@ -69,6 +70,7 @@ class Comparer:
         self.observations = []
         self.results = []
         self.extracted = {}
+        self.quantity_source_mapping = defaultdict(set)
 
         self.observation_names = set()
         self.result_names = set()
@@ -168,18 +170,8 @@ class Comparer:
             else:
                 raise ValueError(f"Unknown data type: {type(d)}")
 
-    def _add_skill_metrics(self):
-
-        for ds in self.extracted.values():
-
-            obs_values = ds.variable.sel(source="Observation").values
-
-            def _get_obs_metric(x, metric):
-                np_metric = metric(obs_values, x.variable.values)
-                return xr.DataArray(np_metric)
-
-            for m in self.metrics:
-                ds[m.__name__] = ds.groupby("source").map(_get_obs_metric, metric=m)
+        for d in self.observations + self.results:
+            self.quantity_source_mapping[d.quantity].update([d.name])
 
     def extract(self):
         _results_to_add = [
@@ -195,9 +187,6 @@ class Comparer:
             _results_to_add = self.results
         new_data = compare(_results_to_add + _observations_to_add)
         self.extracted.update(new_data)
-
-        self._add_skill_metrics()
-        self._set_skill()
 
         self.unextracted_result_names.clear()
         self.unextracted_observation_names.clear()
@@ -240,19 +229,58 @@ class Comparer:
             figsize=figsize,
         )
 
-    def _set_skill(self):
-        _relevant_arrays = [v[self.metric_names] for v in self.extracted.values()]
-        ds = xr.concat(_relevant_arrays, dim="observation").sel(
-            source=list(self.result_names)
+    def skill(
+        self,
+        observation=None,
+        model_result=None,
+        quantity=None,
+        start_time=None,
+        end_time=None,
+        metrics=None,
+    ) -> xr.Dataset:
+
+        subset = self._select_subset(
+            observation=observation,
+            model_result=model_result,
+            quantity=quantity,
+            start_time=start_time,
+            end_time=end_time,
         )
-        ds = ds.assign_coords(observation=list(self.extracted.keys()))
+        if not subset:
+            warnings.warn("No matching data found. Cannot calculate skill.")
+            return
+
+        if metrics is not None:
+            if isinstance(metrics, str):
+                metrics = [metrics]
+            metrics = parsing.parse_metric(metrics, return_list=True)
+            metric_names = [m.__name__ for m in metrics]
+        else:
+            metrics, metric_names = self.metrics, self.metric_names
+
+        for ds in subset:
+            obs_values = ds.variable.sel(source="Observation").values
+
+            def _get_obs_metric(x, metric):
+                np_metric = metric(obs_values, x.variable.values)
+                return xr.DataArray(np_metric)
+
+            for m in self.metrics:
+                ds[m.__name__] = ds.groupby("source").map(_get_obs_metric, metric=m)
+
+        _relevant_arrays = [v[metric_names] for v in subset]
+        ds = xr.concat(_relevant_arrays, dim="observation")
+
+        remaining_model_names = [
+            m for m in ds.coords["source"].values.tolist() if m != "Observation"
+        ]
+        remaining_observation_names = [s.attrs["observation_name"] for s in subset]
+        ds = ds.sel(source=remaining_model_names)
+        ds = ds.assign_coords(observation=remaining_observation_names)
         ds["observation"] = ds.observation.astype("object")
         ds = ds.rename({"source": "model"})
-        self._skill = ds
 
-    def skill(self, observation=None, **kwargs) -> xr.Dataset:
-        obs = self._get_obs(observation)
-        return self._skill.sel(observation=obs, **kwargs)
+        return ds
 
     def _get_obs(self, obs):
         if obs is None:
@@ -268,6 +296,52 @@ class Comparer:
                 )
             return list(set(obs).intersection(self.observation_names))
 
+    def _select_subset(
+        self,
+        observation=None,
+        model_result=None,
+        quantity=None,
+        start_time=None,
+        end_time=None,
+    ):
+        obs = self._get_obs(observation)
+
+        subset = [
+            ds for ds in self.extracted.values() if ds.attrs["observation_name"] in obs
+        ]
+
+        if quantity is not None:
+            if isinstance(quantity, str):
+                quantity = [quantity]
+
+            valid_quantity_sources = set()
+            for q in quantity:
+                valid_quantity_sources.update(self.quantity_source_mapping[q])
+            subset = map(
+                lambda x: x.where(
+                    x.source.isin(list(valid_quantity_sources)), drop=True
+                ),
+                subset,
+            )
+
+        if model_result is not None:
+            if isinstance(model_result, str):
+                model_result = [model_result]
+            subset = map(
+                lambda x: x.where(x.source.isin(model_result), drop=True), subset
+            )
+
+        if start_time is not None:
+            subset = map(lambda x: x.sel(time=slice(start_time, None)), subset)
+
+        if end_time is not None:
+            subset = map(lambda x: x.sel(time=slice(None, end_time)), subset)
+
+        # filter out empty datasets
+        subset = filter(lambda x: (x.source.size > 0) and (x.time.size > 0), subset)
+
+        return list(subset)
+
 
 if __name__ == "__main__":
     fldr = "tests/testdata/SW/"
@@ -281,5 +355,7 @@ if __name__ == "__main__":
     c = Comparer([o1, o2, o3], [mr1, mr2])
 
     c.extract()
+
+    c.skill(observation=["HKNA", "EPL"])
 
     print("hold")

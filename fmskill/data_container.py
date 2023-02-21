@@ -187,7 +187,7 @@ class DataContainer:
         # special case of observations stored in dfs files
         if self.is_observation and self.is_dfs:
             if isinstance(self.data, types.DfsType):
-                self.quantity = self.data.items[self.item_idx].type
+                self.quantity = self.data.items[self.item_idx].type.display_name
                 ds = self.data.read().to_xarray()
                 _loader = parsing.get_dataset_loader(ds)
                 ds = _loader(ds)
@@ -201,7 +201,7 @@ class DataContainer:
                 self.data = self.data.dropna("time", how="any")
 
         else:
-            self.quantity = self.data.items[self.item_idx].type
+            self.quantity = self.data.items[self.item_idx].type.display_name
             if self.name is None:
                 self.name = self.item_key
 
@@ -331,6 +331,7 @@ def compare(data_containers: list["DataContainer"]) -> Dict[str, xr.Dataset]:
         elif xarray_results and o.is_track_observation:
             ds = parsing.xarray_extract_track(o, xarray_results)
 
+        ds.attrs.update({"observation_name": o.name})
         observation_extractions[o.name] = ds
 
     return observation_extractions
