@@ -10,13 +10,13 @@ from fmskill import Connector
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, name="SW_1")
+    return ModelResult(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, name="SW_2")
+    return ModelResult(fn, item=0, name="SW_2")
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def o3():
 
 @pytest.fixture
 def con32(o1, o2, o3, mr1, mr2):
-    return Connector([o1, o2, o3], [mr1[0], mr2[0]])
+    return Connector([o1, o2, o3], [mr1, mr2])
 
 
 @pytest.fixture
