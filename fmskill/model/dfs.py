@@ -276,12 +276,33 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
     def item_name(self):
         return self.itemInfo.name
 
-    def __init__(self, dfs, itemInfo, filename, name):
-        self.dfs = dfs
-        self.itemInfo = itemInfo
-        self._selected_item = self._get_item_num(itemInfo)
+    def __init__(self, filename: str, name: str = None, item=None, itemInfo=None):
+        # TODO: add "start" as user may wish to disregard start from comparison
         self._filename = filename
+        ext = os.path.splitext(filename)[-1]
+        if ext == ".dfsu":
+            self.dfs = mikeio.open(filename)
+        # elif ext == '.dfs2':
+        #    self.dfs = mikeio.open(filename)
+        elif ext == ".dfs0":
+            self.dfs = mikeio.open(filename)
+        else:
+            raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
+
+        if name is None:
+            name = os.path.basename(filename).split(".")[0]
         self.name = name
+
+        if item is not None:
+            self._selected_item = self._get_item_num(item)
+        elif len(self.dfs.items) == 1:
+            self._selected_item = 0
+        else:
+            raise ValueError("Dfs file has multiple items: item must be specified!")
+
+        self.itemInfo = (
+            self.dfs.items[self._selected_item] if itemInfo is None else itemInfo
+        )
 
     def __repr__(self):
         txt = [f"<DfsModelResultItem> '{self.name}'"]
@@ -291,7 +312,10 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         return "\n".join(txt)
 
     def extract_observation(
-        self, observation: Union[PointObservation, TrackObservation], validate=True, **kwargs
+        self,
+        observation: Union[PointObservation, TrackObservation],
+        validate=True,
+        **kwargs,
     ) -> BaseComparer:
         """Extract ModelResult at observation for comparison
 
@@ -365,7 +389,10 @@ class DfsModelResult(_DfsBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.dfs.items:
             self._mr_items[it.name] = DfsModelResultItem(
-                self.dfs, it, self._filename, self.name,
+                self.dfs,
+                it,
+                self._filename,
+                self.name,
             )
 
         if item is not None:
