@@ -11,20 +11,24 @@ def mr1Hm0():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     return ModelResult(fn, item="Sign. Wave Height", name="SW_1")
 
+
 @pytest.fixture
 def mr1WS():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     return ModelResult(fn, item="Wind speed", name="SW_1")
+
 
 @pytest.fixture
 def mr2Hm0():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     return ModelResult(fn, item="Sign. Wave Height", name="SW_2")
 
-pytest.fixture
+
+@pytest.fixture
 def mr2WS():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     return ModelResult(fn, item="Wind speed", name="SW_2")
+
 
 @pytest.fixture
 def o1():
@@ -127,7 +131,9 @@ def test_mv_mm_mean_skill(cc):
 def test_mv_mm_scatter(cc):
     cc.scatter(model="SW_1", variable="Wind_speed")
     cc.scatter(model="SW_1", variable="Wind_speed", show_density=True)
-    cc.scatter(model="SW_1", variable="Wind_speed", observation = 'F16_wind', skill_table=True)
+    cc.scatter(
+        model="SW_1", variable="Wind_speed", observation="F16_wind", skill_table=True
+    )
     assert True
     plt.close("all")
 
