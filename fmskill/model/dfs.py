@@ -8,7 +8,7 @@ import mikeio
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from ..utils import make_unique_index
-from .abstract import ModelResultInterface, MultiItemModelResult
+from .abstract import ModelResultInterface
 
 
 def _validate_item_eum(mod_item: mikeio.ItemInfo, obs: Observation) -> bool:
@@ -358,81 +358,3 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
             comparer = None
 
         return comparer
-
-
-class DfsModelResult(_DfsBase, MultiItemModelResult):
-    @property
-    def item_names(self):
-        return [item.name for item in self.dfs.items]
-
-    @property
-    def n_items(self):
-        return len(self.dfs.items)
-
-    def __init__(self, filename: str, name: str = None, item=None):
-        # TODO: add "start" as user may wish to disregard start from comparison
-        self._filename = filename
-        ext = os.path.splitext(filename)[-1]
-        if ext == ".dfsu":
-            self.dfs = mikeio.open(filename)
-        # elif ext == '.dfs2':
-        #    self.dfs = mikeio.open(filename)
-        elif ext == ".dfs0":
-            self.dfs = mikeio.open(filename)
-        else:
-            raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
-
-        if name is None:
-            name = os.path.basename(filename).split(".")[0]
-        self.name = name
-
-        self._mr_items = {}
-        for it in self.dfs.items:
-            self._mr_items[it.name] = DfsModelResultItem(
-                self.dfs,
-                it,
-                self._filename,
-                self.name,
-            )
-
-        if item is not None:
-            self._selected_item = self._get_item_num(item)
-        elif len(self._mr_items) == 1:
-            self._selected_item = 0
-        else:
-            self._selected_item = None
-
-    def __repr__(self):
-        txt = [f"<DfsModelResult> '{self.name}'"]
-        txt.append(f"File: {self.filename}")
-        for j, item in enumerate(self.dfs.items):
-            txt.append(f"- Item: {j}: {item}")
-        return "\n".join(txt)
-
-
-#     def _infer_model_item(
-#         self,
-#         observation: Observation,
-#         mod_items: List[mikeio.ItemInfo] = None,
-#     ) -> int:
-#         """Attempt to infer model item by matching observation eum with model eum"""
-#         if mod_items is None:
-#             mod_items = self.dfs.items
-
-#         if len(mod_items) == 1:
-#             # accept even if eum does not match
-#             return 0
-
-#         mod_items = [(x.type, x.unit) for x in mod_items]
-#         obs_item = (observation.itemInfo.type, observation.itemInfo.unit)
-
-#         pot_items = [j for j, mod_item in enumerate(mod_items) if mod_item == obs_item]
-
-#         if len(pot_items) == 0:
-#             raise Exception("Could not infer")
-#         if len(pot_items) > 1:
-#             raise ValueError(
-#                 f"Multiple matching model items found! (Matches {pot_items})."
-#             )
-
-#         return pot_items[0]
