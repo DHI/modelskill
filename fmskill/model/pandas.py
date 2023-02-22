@@ -39,7 +39,9 @@ class _DataFrameBase:
         if len(cols) == 1:
             return cols[0]
         else:
-            raise ValueError("Model ambiguous - please provide item")
+            raise ValueError(
+                f"Model ambiguous - please provide item (=column name). Available columns: {list(cols)}"
+            )
 
     def _get_item_name(self, item, item_names=None) -> str:
         if item_names is None:
@@ -181,7 +183,7 @@ class _DataFrameTrackBase(_DataFrameBase):
             return 0
         else:
             raise ValueError(
-                f"First column '{n}' does not seem like a plausible x-coordinate column name. Please provide explicitly using the 'x' keyword."
+                f"First column '{n}' does not seem like a plausible x-coordinate column name. Please provide explicitly using the 'x_item' keyword."
             )
 
     @staticmethod
@@ -191,7 +193,7 @@ class _DataFrameTrackBase(_DataFrameBase):
             return 1
         else:
             raise ValueError(
-                f"Second column '{n}' does not seem like a plausible y-coordinate column name. Please provide explicitly using the 'y' keyword."
+                f"Second column '{n}' does not seem like a plausible y-coordinate column name. Please provide explicitly using the 'y_item' keyword."
             )
 
     @staticmethod
@@ -216,7 +218,9 @@ class _DataFrameTrackBase(_DataFrameBase):
 
     def _get_val_cols(self, cols):
         """All columns except x- and y- column"""
-        col_ids = [j for j in range(len(cols)) if (j != self._x_item and j != self._y_item)]
+        col_ids = [
+            j for j in range(len(cols)) if (j != self._x_item and j != self._y_item)
+        ]
         return cols[col_ids]
 
     def _extract_track(self, observation: TrackObservation, item=None) -> pd.DataFrame:

@@ -298,7 +298,10 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         elif len(self.dfs.items) == 1:
             self._selected_item = 0
         else:
-            raise ValueError("Dfs file has multiple items: item must be specified!")
+            item_names = [i.name for i in self.dfs.items]
+            raise ValueError(
+                f"Dfs file has multiple items: item must be specified! Available items: {item_names}"
+            )
 
         self.itemInfo = (
             self.dfs.items[self._selected_item] if itemInfo is None else itemInfo

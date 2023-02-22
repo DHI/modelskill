@@ -161,7 +161,7 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
             if len(ds.data_vars) == 1:
                 item = list(ds.data_vars)[0]
             else:
-                raise ValueError("Model ambiguous - please provide item")
+                raise ValueError(f"Model ambiguous - please provide item! Available items: {list(ds.data_vars)}")
 
         ds = self._rename_coords(ds)
         self._validate_coord_names(ds.coords)
