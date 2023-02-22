@@ -225,7 +225,7 @@ class DataArrayModelResultItem(ModelResultInterface):
         return mikeio.Dataset(dap).to_dataframe().dropna()
 
     def _extract_track(self, observation: TrackObservation) -> pd.DataFrame:
-        ds = self._da.extract_track(observation.data)
+        ds = self.data.extract_track(observation.data)
         ds.rename({ds.items[-1].name: self.name}, inplace=True)
         return ds.to_dataframe().dropna()
 
