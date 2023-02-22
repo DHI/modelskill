@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 import pandas as pd
 import warnings
 
@@ -61,7 +62,7 @@ class XArrayModelResultItem(ModelResultInterface):
         return ds
 
     @staticmethod
-    def _get_new_coord_names(coords):
+    def _get_new_coord_names(coords) -> Dict[str, str]:
         new_names = {}
         for coord in coords:
             c = coord.lower()
@@ -69,7 +70,7 @@ class XArrayModelResultItem(ModelResultInterface):
                 new_names[coord] = "x"
             elif ("y" not in new_names) and (("lat" in c) or ("north" in c)):
                 new_names[coord] = "y"
-            elif ("time" not in new_names) and (("time" in c) or ("date" in c)):
+            elif ("time" not in new_names) and "date" in c:
                 new_names[coord] = "time"
         return new_names
 
