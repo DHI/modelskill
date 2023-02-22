@@ -161,7 +161,7 @@ class _DfsBase:
     def _extract_track_dfsu(
         self, observation: TrackObservation, item
     ) -> mikeio.Dataset:
-        ds_model = self.dfs.extract_track(track=observation.data, items=[item])
+        ds_model = self.data.extract_track(track=observation.data, items=[item])
         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
         return ds_model
 
