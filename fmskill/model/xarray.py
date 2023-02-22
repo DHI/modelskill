@@ -1,11 +1,10 @@
 import os
-import numpy as np
 import pandas as pd
 import warnings
 
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer
-from .abstract import ModelResultInterface, MultiItemModelResult, _parse_itemInfo
+from .abstract import ModelResultInterface, _parse_itemInfo
 
 
 class _XarrayBase:
@@ -132,15 +131,31 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
     def item_name(self):
         return self._selected_item
 
-    def __init__(self, ds, name: str = None, item=None, itemInfo=None, filename=None):
+    def __init__(self, data, name: str = None, item=None, itemInfo=None, **kwargs):
         import xarray as xr
 
         self.itemInfo = _parse_itemInfo(itemInfo)
 
-        if isinstance(ds, (xr.DataArray, xr.Dataset)):
-            self._validate_time_axis(ds)
+        self._filename = None
+        if isinstance(data, str) and ("*" not in data):
+            self._filename = data
+            ds = xr.open_dataset(data, **kwargs)
+            if name is None:
+                name = os.path.basename(data).split(".")[0]
+        elif isinstance(data, str) or isinstance(data, list):
+            # multi-file dataset; input is list of filenames or str with wildcard
+            self._filename = data if isinstance(data, str) else ";".join(data)
+            ds = xr.open_mfdataset(data, **kwargs)
+        elif isinstance(data, xr.Dataset):
+            ds = data
+            # TODO: name
+        elif isinstance(data, xr.DataArray):
+            ds = data.to_dataset()
+            # TODO: name
         else:
-            raise TypeError("Input must be xarray Dataset or DataArray!")
+            raise TypeError(
+                f"Unknown input type {type(data)}. Must be str or xarray.Dataset/DataArray."
+            )
 
         if item is None:
             if len(ds.data_vars) == 1:
@@ -148,15 +163,27 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
             else:
                 raise ValueError("Model ambiguous - please provide item")
 
+        ds = self._rename_coords(ds)
+        self._validate_coord_names(ds.coords)
+        self._validate_time_axis(ds.coords)
+
         item = self._get_item_name(item, list(ds.data_vars))
         self.ds = ds[[item]]
         self._selected_item = item
         if name is None:
             name = self.item_name
-        self.name = name
-        self._filename = filename
 
-    def extract_observation(self, observation: PointObservation, **kwargs) -> PointComparer:
+        self.name = name
+
+    def _rename_coords(self, ds):
+        new_names = self._get_new_coord_names(ds.coords)
+        if len(new_names) > 0:
+            ds = ds.rename(new_names)
+        return ds
+
+    def extract_observation(
+        self, observation: PointObservation, **kwargs
+    ) -> PointComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -187,62 +214,3 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
             comparer = None
 
         return comparer
-
-
-class XArrayModelResult(_XarrayBase, MultiItemModelResult):
-    @property
-    def item_names(self):
-        """List of item names (=data vars)"""
-        return list(self.ds.data_vars)
-
-    def __init__(self, input, name: str = None, item=None, itemInfo=None, **kwargs):
-        import xarray as xr
-
-        self._filename = None
-        if isinstance(input, str) and ("*" not in input):
-            self._filename = input
-            ds = xr.open_dataset(input, **kwargs)
-            if name is None:
-                name = os.path.basename(input).split(".")[0]
-        elif isinstance(input, str) or isinstance(input, list):
-            # multi-file dataset; input is list of filenames or str with wildcard
-            self._filename = input if isinstance(input, str) else ";".join(input)
-            ds = xr.open_mfdataset(input, **kwargs)
-        elif isinstance(input, xr.Dataset):
-            ds = input
-            # TODO: name
-        elif isinstance(input, xr.DataArray):
-            ds = input.to_dataset()
-            # TODO: name
-        else:
-            raise TypeError(
-                f"Unknown input type {type(input)}. Must be str or xarray.Dataset/DataArray."
-            )
-
-        ds = self._rename_coords(ds)
-        self._validate_coord_names(ds.coords)
-        self._validate_time_axis(ds.coords)
-        self.ds = ds
-        self.name = name
-
-        if item is not None:
-            self._selected_item = self._get_item_name(item)
-        elif len(self.item_names) == 1:
-            self._selected_item = 0
-        else:
-            self._selected_item = None
-
-        if (itemInfo is not None) and (self._selected_item is None):
-            raise ValueError("itemInfo can only be supplied if item is non-ambigious")
-
-        self._mr_items = {}
-        for it in self.item_names:
-            self._mr_items[it] = XArrayModelResultItem(
-                self.ds, self.name, item=it, itemInfo=itemInfo, filename=self._filename,
-            )
-
-    def _rename_coords(self, ds):
-        new_names = self._get_new_coord_names(ds.coords)
-        if len(new_names) > 0:
-            ds = ds.rename(new_names)
-        return ds
