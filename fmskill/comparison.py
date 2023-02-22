@@ -1080,120 +1080,6 @@ class BaseComparer:
         )
         return ax
 
-    def taylor(
-        self,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
-        area: List[float] = None,
-        df: pd.DataFrame = None,
-        normalize_std: bool = False,
-        aggregate_observations: bool = True,
-        figsize: List[float] = (7, 7),
-        marker: str = "o",
-        marker_size: float = 6.0,
-        title: str = "Taylor diagram",
-    ):
-        """Taylor diagram showing model std and correlation to observation
-        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
-
-        Parameters
-        ----------
-        model : (int, str), optional
-            name or id of model to be compared, by default all
-        observation : (int, str, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int), optional
-            name or id of variable to be compared, by default first
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
-        normalize_std : bool, optional
-            plot model std normalized with observation std, default False
-        aggregate_observations : bool, optional
-            should multiple observations be aggregated before plotting
-            (or shown individually), default True
-        figsize : tuple, optional
-            width and height of the figure (should be square), by default (7, 7)
-        marker : str, optional
-            marker type e.g. "x", "*", by default "o"
-        marker_size : float, optional
-            size of the marker, by default 6
-        title : str, optional
-            title of the plot, by default "Taylor diagram"
-
-        Examples
-        ------
-        >>> comparer.taylor()
-        >>> comparer.taylor(observation="c2")
-        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
-
-        References
-        ----------
-        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
-        """
-
-        if (not aggregate_observations) and (not normalize_std):
-            raise ValueError(
-                "aggregate_observations=False is only possible if normalize_std=True!"
-            )
-
-        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        if aggregate_observations:
-            s = self.mean_skill(
-                model=model,
-                observation=observation,
-                variable=variable,
-                start=start,
-                end=end,
-                area=area,
-                metrics=metrics,
-            )
-        else:
-            s = self.skill(
-                model=model,
-                observation=observation,
-                variable=variable,
-                start=start,
-                end=end,
-                area=area,
-                metrics=metrics,
-            )
-        if s is None:
-            return
-
-        df = s.df
-        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
-
-        if isinstance(df.index, pd.MultiIndex):
-            df.index = df.index.map("_".join)
-
-        df = df[["_std_obs", "_std_mod", "cc"]].copy()
-        df.columns = ["obs_std", "std", "cc"]
-        pts = [
-            TaylorPoint(
-                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
-            )
-            for r in df.itertuples()
-        ]
-
-        taylor_diagram(
-            obs_std=ref_std,
-            points=pts,
-            figsize=figsize,
-            normalize_std=normalize_std,
-            title=title,
-        )
-
 
 class SingleObsComparer(BaseComparer):
     def __init__(self, observation, model):
@@ -2440,3 +2326,107 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
                 score[model] = mtr_val
 
         return score
+
+    def taylor(
+        self,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        area: List[float] = None,
+        df: pd.DataFrame = None,
+        normalize_std: bool = False,
+        aggregate_observations: bool = True,
+        figsize: List[float] = (7, 7),
+        marker: str = "o",
+        marker_size: float = 6.0,
+        title: str = "Taylor diagram",
+    ):
+        """Taylor diagram showing model std and correlation to observation
+        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
+
+        Parameters
+        ----------
+        model : (int, str), optional
+            name or id of model to be compared, by default all
+        observation : (int, str, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        variable : (str, int), optional
+            name or id of variable to be compared, by default first
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        df : pd.dataframe, optional
+            show user-provided data instead of the comparers own data, by default None
+        normalize_std : bool, optional
+            plot model std normalized with observation std, default False
+        aggregate_observations : bool, optional
+            should multiple observations be aggregated before plotting
+            (or shown individually), default True
+        figsize : tuple, optional
+            width and height of the figure (should be square), by default (7, 7)
+        marker : str, optional
+            marker type e.g. "x", "*", by default "o"
+        marker_size : float, optional
+            size of the marker, by default 6
+        title : str, optional
+            title of the plot, by default "Taylor diagram"
+
+        Examples
+        ------
+        >>> comparer.taylor()
+        >>> comparer.taylor(observation="c2")
+        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+
+        References
+        ----------
+        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
+        """
+
+        if (not aggregate_observations) and (not normalize_std):
+            raise ValueError(
+                "aggregate_observations=False is only possible if normalize_std=True!"
+            )
+
+        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        skill_func = self.mean_skill if aggregate_observations else self.skill
+        s = skill_func(
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+            metrics=metrics,
+        )
+        if s is None:
+            return
+
+        df = s.df
+        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
+
+        if isinstance(df.index, pd.MultiIndex):
+            df.index = df.index.map("_".join)
+
+        df = df[["_std_obs", "_std_mod", "cc"]].copy()
+        df.columns = ["obs_std", "std", "cc"]
+        pts = [
+            TaylorPoint(
+                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+            )
+            for r in df.itertuples()
+        ]
+
+        taylor_diagram(
+            obs_std=ref_std,
+            points=pts,
+            figsize=figsize,
+            normalize_std=normalize_std,
+            title=title,
+        )
