@@ -20,7 +20,7 @@ And it should be
 
 * Difficult to make mistakes by verifying input 
 * Trustworthy by having >95% test coverage 
-* Easy to install (from pypi and conda)
+* Easy to install (`pip install fmskill`)
 * Easy to get started by providing many notebook examples and documentation
 
 
@@ -42,28 +42,17 @@ And it should be
 [FMskill](https://github.com/DHI/fmskill) does **not** wish to cover 
 
 * Extreme value analysis
-* Forecast skill assessments
 * Deterministic wave analysis such as crossing analysis
-* Alternative file types 
+* Rare alternative file formats
 * Rarely used model result types 
 * Rare observation types
 * Anything project specific
-
-
 
 ## Future
 
 ### Automatic reports
 Both static as markdown, docx, pptx and interactive as html
 
-
 ### Web app
 Create a web app that wraps this library 
 
-
-### Interface to observation APIs
-Easy to get observation data from [DHI's altimetry portal](https://altimetry.dhigroup.com/), CMEMS, etc. 
-
-
-### Interface to alternative models
-Should be easy to compare your model to publically available alternative e.g. from CMEMS or NOAA. Or from DHI's DataLink. 

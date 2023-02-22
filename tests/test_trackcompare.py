@@ -100,6 +100,23 @@ def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
     assert len(cc.all_df) == 0
 
 
+# def test_extract_from_model_result_with_nan(sw_Hm0_df, Hm0_EPL):
+#     df_mod_nan = sw_Hm0_df.copy()
+#     df_mod_nan.loc["2017-10-28"] = np.nan
+#     c = compare(Hm0_EPL, df_mod_nan)
+#     assert not any(c.df["Model"]["2017-10-28"].isna())
+
+#     # # ModelResult allows you to specify max_gap
+#     # mr_nan = ModelResult(df_mod_nan, max_gap=360)
+#     # c2 = compare(Hm0_EPL, mr_nan)
+#     # assert all(c2.df["Model"]["2017-10-28"].isna())
+
+
+# def test_extract_from_model_result_with_gap(sw_Hm0_df, Hm0_EPL):
+#     df_mod_gap = pd.concat([sw_Hm0_df.loc["2017-10-27"], sw_Hm0_df.loc["2017-10-29"]])
+#     c = compare(Hm0_EPL, df_mod_gap)
+#     assert all(c.df["Model"]["2017-10-28"].isna())
+
 # def test_extract_no_spatial_overlap_dfsu(observation_df):
 
 

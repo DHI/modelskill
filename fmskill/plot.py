@@ -11,6 +11,49 @@ import mikeio
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
+import fmskill.settings as settings
+from .settings import options, register_option
+
+
+register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
+register_option("plot.scatter.points.alpha", 0.5, validator=settings.is_between_0_and_1)
+register_option("plot.scatter.points.label", "", validator=settings.is_str)
+register_option("plot.scatter.quantiles.marker", "X", validator=settings.is_str)
+register_option(
+    "plot.scatter.quantiles.markersize", 3.5, validator=settings.is_positive
+)
+register_option(
+    "plot.scatter.quantiles.color",
+    "darkturquoise",
+    validator=settings.is_tuple_list_or_str,
+)
+register_option("plot.scatter.quantiles.label", "Q-Q", validator=settings.is_str)
+register_option(
+    "plot.scatter.quantiles.markeredgecolor",
+    (0, 0, 0, 0.4),
+    validator=settings.is_tuple_list_or_str,
+)
+register_option(
+    "plot.scatter.quantiles.markeredgewidth", 0.5, validator=settings.is_positive
+)
+register_option("plot.scatter.quantiles.kwargs", {}, settings.is_dict)
+register_option("plot.scatter.oneone_line.label", "1:1", validator=settings.is_str)
+register_option(
+    "plot.scatter.oneone_line.color", "blue", validator=settings.is_tuple_list_or_str
+)
+register_option("plot.scatter.legend.kwargs", {}, settings.is_dict)
+register_option("plot.scatter.reg_line.kwargs", {"color": "r"}, settings.is_dict)
+register_option(
+    "plot.scatter.legend.bbox",
+    {
+        "facecolor": "blue",
+        "edgecolor": "k",
+        "boxstyle": "round",
+        "alpha": 0.05,
+    },
+    settings.is_dict,
+)
+# register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 
 
 def scatter(
@@ -90,10 +133,9 @@ def scatter(
         user default units to override default units, eg 'metre', by default None
     kwargs
     """
-    if show_hist==None and show_density==None:
-        #Default: points density
-        show_density=True
-
+    if show_hist == None and show_density == None:
+        # Default: points density
+        show_density = True
 
     if (binsize is not None) or (nbins is not None):
         warnings.warn(
@@ -184,14 +226,14 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-    
+
     if show_hist:
-        #if histogram is wanted (explicit non-default flag) then density is off
+        # if histogram is wanted (explicit non-default flag) then density is off
         if show_density == True:
             raise TypeError(
                 "if `show_hist=True` then `show_density` must be either `False` or `None`"
-            )        
-        
+            )
+
     if show_density:
         if not ((type(bins) == float) or (type(bins) == int)):
             raise TypeError(
@@ -201,7 +243,7 @@ def scatter(
         if show_hist == True:
             raise TypeError(
                 "if `show_density=True` then `show_hist` must be either `False` or `None`"
-            )    
+            )
         # calculate density data
         z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
@@ -220,13 +262,13 @@ def scatter(
     reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
 
     if backend == "matplotlib":
-
-        plt.figure(figsize=figsize)
+        _,ax=plt.subplots(figsize=figsize)
+        #plt.figure(figsize=figsize)
         plt.plot(
             [xlim[0], xlim[1]],
             [xlim[0], xlim[1]],
-            label="1:1",
-            c="blue",
+            label=options.plot.scatter.oneone_line.label,
+            c=options.plot.scatter.oneone_line.color,
             zorder=3,
         )
         if show_points:
@@ -238,33 +280,36 @@ def scatter(
                 x_sample,
                 y_sample,
                 c=c,
-                s=20,
-                alpha=0.5,
+                s=options.plot.scatter.points.size,
+                alpha=options.plot.scatter.points.alpha,
                 marker=".",
-                label=None,
+                label=options.plot.scatter.points.label,
                 zorder=1,
                 **kwargs,
             )
         plt.plot(
             xq,
             yq,
-            "X",
-            label="Q-Q",
-            c="darkturquoise",
-            markeredgecolor=(0, 0, 0, 0.4),
+            options.plot.scatter.quantiles.marker,
+            label=options.plot.scatter.quantiles.label,
+            c=options.plot.scatter.quantiles.color,
             zorder=4,
+            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
+            markersize=options.plot.scatter.quantiles.markersize,
+            **settings.get_option("plot.scatter.quantiles.kwargs"),
         )
         plt.plot(
             x,
             intercept + slope * x,
-            "r",
+            **settings.get_option("plot.scatter.reg_line.kwargs"),
             label=reglabel,
             zorder=2,
         )
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
 
-        plt.legend()
+        plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
@@ -274,18 +319,18 @@ def scatter(
         plt.grid(
             which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
         )
-        max_cbar=None
-        if (show_hist or (show_density and show_points)):
+        max_cbar = None
+        if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             ticks = cbar.ax.get_yticks()
-            max_cbar=ticks[-1]
-            cbar.set_label("# points")        
-            
+            max_cbar = ticks[-1]
+            cbar.set_label("# points")
+
         plt.title(title)
         # Add skill table
         if skill_df != None:
-            _plot_summary_table(skill_df,units,max_cbar=max_cbar)
-        
+            _plot_summary_table(skill_df, units, max_cbar=max_cbar)
+        return ax
 
     elif backend == "plotly":  # pragma: no cover
         import plotly.graph_objects as go
@@ -341,10 +386,10 @@ def scatter(
             go.Scatter(
                 x=xq,
                 y=yq,
-                name="Q-Q",
+                name=options.plot.scatter.quantiles.label,
                 mode="markers",
                 marker_symbol="x",
-                marker_color="darkturquoise",
+                marker_color=options.plot.scatter.quantiles.color,
                 marker_line_color="midnightblue",
                 marker_line_width=0.6,
             )
@@ -373,7 +418,7 @@ def scatter(
 
 
 def plot_observation_positions(
-    dfs: mikeio.dfsu._Dfsu,
+    geometry: mikeio.spatial.FM_geometry.GeometryFM,
     observations: List[Observation],
     figsize: Tuple = None,
     title=None,
@@ -382,8 +427,8 @@ def plot_observation_positions(
 
     Parameters
     ----------
-    dfs: Dfsu
-        model object
+    geometry: mikeio.GeometryFM
+        A MIKE IO geometry object
     observations: list
         Observation collection
     figsize : (float, float), optional
@@ -392,9 +437,9 @@ def plot_observation_positions(
         plot title, default empty
     """
 
-    xn = dfs.node_coordinates[:, 0]
+    xn = geometry.node_coordinates[:, 0]
     offset_x = 0.02 * (max(xn) - min(xn))
-    ax = dfs.geometry.plot(plot_type="outline_only", figsize=figsize)
+    ax = geometry.plot(plot_type="outline_only", figsize=figsize)
     for obs in observations:
         if isinstance(obs, PointObservation):
             ax.scatter(x=obs.x, y=obs.y, marker="x")
@@ -511,58 +556,51 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 
     return Z_grid
 
-def _plot_summary_table(skill_df,units,max_cbar):
-    stats_with_units=["bias", "rmse", "urmse", "mae"]
+
+def _plot_summary_table(skill_df, units, max_cbar):
+    stats_with_units = ["bias", "rmse", "urmse", "mae"]
     max_str_len = skill_df.columns.str.len().max()
     lines = []
-    if len(skill_df)>1:
-        raise Exception('''`skill_table` kword can only be used for comparisons between 1 model and 1 measurement. 
-        Please add `model`, `variable` and `observation` kwords where required''')
 
     for col in skill_df.columns:
         if col == "model" or col == "variable":
             continue
         if col in stats_with_units:
-            #if statistic has dimensions, then add units
-            item_unit=units
+            # if statistic has dimensions, then add units
+            item_unit = units
         else:
-            #else, add empty space (for fomatting)
-            item_unit=' '
-        if col=="n":
+            # else, add empty space (for fomatting)
+            item_unit = " "
+        if col == "n":
             # Number of samples, integer, else, 2 decimals
-            decimals=f'.{0}f'
+            decimals = f".{0}f"
         else:
-            decimals=f'.{2}f'
+            decimals = f".{2}f"
         lines.append(
-            f"{(col.ljust(max_str_len)).upper()} {np.round(skill_df[col].values[0],2):{decimals}} {item_unit}"
-                )
+            f"{(col.ljust(max_str_len)).upper()} = {np.round(skill_df[col].values[0],2): {decimals}} {item_unit}"
+        )
 
     text_ = "\n".join(lines)
 
-    if max_cbar==None:
-        x=0.93
-    elif max_cbar<1e3:
-        x=0.99
-    elif max_cbar<1e4:
-        x=1.01
-    elif max_cbar<1e5:
-        x=1.03
-    elif max_cbar<1e6:
-        x=1.05
+    if max_cbar == None:
+        x = 0.93
+    elif max_cbar < 1e3:
+        x = 0.99
+    elif max_cbar < 1e4:
+        x = 1.01
+    elif max_cbar < 1e5:
+        x = 1.03
+    elif max_cbar < 1e6:
+        x = 1.05
     else:
-        #When more than 1e6 samples, matplotlib changes to scientific notation
-        x=0.97
+        # When more than 1e6 samples, matplotlib changes to scientific notation
+        x = 0.97
 
     plt.gcf().text(
-                x,
-                0.6,
-                text_,
-                bbox={
-                    "facecolor": "blue",
-                    "edgecolor": "k",
-                    "boxstyle": "round",
-                    "alpha": 0.05,
-                },
-                fontsize=12,
-                family="monospace",
-            )
+        x,
+        0.6,
+        text_,
+        bbox=settings.get_option("plot.scatter.legend.bbox"),
+        fontsize=12,
+        family="monospace",
+    )

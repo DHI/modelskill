@@ -104,7 +104,7 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
             name = self.item_name
         self.name = name
 
-    def extract_observation(self, observation: PointObservation) -> PointComparer:
+    def extract_observation(self, observation: PointObservation, **kwargs) -> PointComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -119,7 +119,7 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
         """
         if isinstance(observation, PointObservation):
             df_model = self._extract_point(observation)
-            comparer = PointComparer(observation, df_model)
+            comparer = PointComparer(observation, df_model, **kwargs)
         else:
             raise ValueError("Only point observation are supported!")
 
@@ -155,7 +155,7 @@ class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.item_names:
             self._mr_items[it] = DataFramePointModelResultItem(
-                self.df, self.name, item=it, itemInfo=itemInfo
+                self.df, self.name, item=it, itemInfo=itemInfo, 
             )
 
 
@@ -231,7 +231,7 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
         return self._selected_item
 
     def __init__(
-        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None
+        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None,
     ):
         self.itemInfo = _parse_itemInfo(itemInfo)
         self.is_point = False
@@ -254,7 +254,7 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
             name = self.item_name
         self.name = name
 
-    def extract_observation(self, observation: TrackObservation) -> TrackComparer:
+    def extract_observation(self, observation: TrackObservation, **kwargs) -> TrackComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -269,7 +269,7 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
         """
         if isinstance(observation, TrackObservation):
             df_model = self._extract_track(observation)
-            comparer = TrackComparer(observation, df_model)
+            comparer = TrackComparer(observation, df_model, **kwargs)
         else:
             raise ValueError("Only track observation are supported!")
 
@@ -286,7 +286,7 @@ class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
         return list(self._val_cols)
 
     def __init__(
-        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None
+        self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None,
     ):
         self.is_point = False
         self._x, self._y = self._parse_x_y_columns(df, x_item, y_item)

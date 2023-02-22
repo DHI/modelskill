@@ -11,7 +11,7 @@ Examples
 >>> comparer = con.extract()
 """
 from collections.abc import Mapping, Iterable, Sequence
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 import warnings
 from inspect import getmembers, isfunction
 import numpy as np
@@ -26,9 +26,68 @@ from .observation import PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
 from .spatial import SpatialSkill
+from .settings import options, register_option, reset_option
+
+register_option(
+    "metrics.list",
+    [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
+)
 
 
-DEFAULT_METRICS = [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2]
+def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
+    """Interpolate time series to new time index"""
+    new_df = (
+        df.reindex(df.index.union(new_time))
+        .interpolate(method="time", limit_area="inside")
+        .reindex(new_time)
+    )
+    return new_df
+
+
+TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
+
+
+def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
+    if isinstance(time_delta, (timedelta, np.timedelta64)):
+        time_delta = pd.Timedelta(time_delta)
+    elif np.isscalar(time_delta):
+        # assume seconds
+        time_delta = pd.Timedelta(time_delta, "s")
+    return time_delta
+
+
+def _remove_model_gaps(
+    df: pd.DataFrame,
+    mod_index: pd.DatetimeIndex,
+    max_gap: TimeDeltaTypes,
+) -> pd.DataFrame:
+    """Remove model gaps longer than max_gap from dataframe"""
+    max_gap = _time_delta_to_pd_timedelta(max_gap)
+    valid_time = _get_valid_query_time(mod_index, df.index, max_gap)
+    return df.loc[valid_time]
+
+
+def _get_valid_query_time(
+    mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
+):
+    # init dataframe of available timesteps and their index
+    df = pd.DataFrame(index=mod_index)
+    df["idx"] = range(len(df))
+
+    # for query times get available left and right index of source times
+    df = _interp_time(df, obs_index).dropna()
+    df["idxa"] = np.floor(df.idx).astype(int)
+    df["idxb"] = np.ceil(df.idx).astype(int)
+
+    # time of left and right source times and time delta
+    df["ta"] = mod_index[df.idxa]
+    df["tb"] = mod_index[df.idxb]
+    df["dt"] = df.tb - df.ta
+
+    # valid query times where time delta is less than max_gap
+    valid_idx = df.dt <= max_gap
+    return valid_idx
 
 
 class BaseComparer:
@@ -95,14 +154,14 @@ class BaseComparer:
 
     @property
     def metrics(self):
-        return self._metrics
+        return options.metrics.list
 
     @metrics.setter
     def metrics(self, values) -> None:
         if values is None:
-            self._metrics = DEFAULT_METRICS
+            reset_option("metrics.list")
         else:
-            self._metrics = self._parse_metric(values)
+            options.metrics.list = self._parse_metric(values)
 
     def __add__(self, other: "BaseComparer") -> "ComparerCollection":
 
@@ -178,7 +237,7 @@ class BaseComparer:
 
     def __init__(self, observation, modeldata=None):
 
-        self._metrics = DEFAULT_METRICS
+        # self._metrics = options.metrics.list
         self.obs_name = "Observation"
         self._obs_names: List[str]
         self._mod_names: List[str]
@@ -348,7 +407,7 @@ class BaseComparer:
 
     def _parse_metric(self, metric, return_list=False):
         if metric is None:
-            return self._metrics
+            metric = self.metrics
 
         if isinstance(metric, str):
             valid_metrics = [
@@ -395,7 +454,7 @@ class BaseComparer:
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model","observation"]
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
@@ -579,7 +638,7 @@ class BaseComparer:
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model","observation"]
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         n_min : int, optional
             minimum number of observations in a grid cell;
             cells with fewer observations get a score of `np.nan`
@@ -918,7 +977,7 @@ class BaseComparer:
         df : pd.dataframe, optional
             show user-provided data instead of the comparers own data, by default None
         skill_table : str, List[str], bool, optional
-            list of fmskill.metrics or boolean, if True then by default [bias, rmse, urmse, mae, cc, si, r2].
+            list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
             by default False
         kwargs
@@ -972,17 +1031,17 @@ class BaseComparer:
         if skill_table != None:
             # Calculate Skill if it was requested to add as table on the right of plot
             if skill_table == True:
-                skill_df = self.skill(
-                    df=df, model=model, observation=observation, variable=variable
-                )
-            elif isinstance(skill_table, (list, tuple)):
-                skill_df = self.skill(
-                    df=df,
-                    metrics=skill_table,
-                    model=model,
-                    observation=observation,
-                    variable=variable,
-                )
+                if isinstance(self, PointComparer) or (
+                    isinstance(self, ComparerCollection) and self.n_observations == 1
+                ):
+                    skill_df = self.skill(
+                        df=df, model=model, observation=observation, variable=variable
+                    )
+                else:
+                    skill_df = self.mean_skill(
+                        df=df, model=model, observation=observation, variable=variable
+                    )
+
             # Check for units
             try:
                 units = unit_text.split("[")[1].split("]")[0]
@@ -997,7 +1056,7 @@ class BaseComparer:
             skill_df = None
             units = None
 
-        scatter(
+        ax=scatter(
             x=x,
             y=y,
             bins=bins,
@@ -1019,6 +1078,7 @@ class BaseComparer:
             nbins=nbins,
             **kwargs,
         )
+        return ax
 
     def taylor(
         self,
@@ -1140,32 +1200,20 @@ class SingleObsComparer(BaseComparer):
         super().__init__(observation, model)
 
     def __copy__(self):
-        # cls = self.__class__
-        # cp = cls.__new__(cls)
-        # cp.__init__(self.observation, self.mod_df)
-        # return cp
         return deepcopy(self)
 
     def copy(self):
         return self.__copy__()
 
-    def _model2obs_interp(self, obs, mod_df):
+    def _model2obs_interp(self, obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]):
         """interpolate model to measurement time"""
-        df = self._interp_df(mod_df, obs.time)
-        # mod_ds.interp_time(obs.time).to_dataframe()
+        df = _interp_time(mod_df.dropna(), obs.time)
         df[self.obs_name] = obs.values
-        return df
 
-    @staticmethod
-    def _interp_df(df, new_time):
-        assert df.index.is_unique
-        assert new_time.is_unique
-        new_df = (
-            df.reindex(df.index.union(new_time))
-            .interpolate(method="time", limit_area="inside")
-            .reindex(new_time)
-        )
-        return new_df
+        if max_model_gap is not None:
+            df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
+
+        return df
 
     def skill(
         self,
@@ -1189,7 +1237,7 @@ class SingleObsComparer(BaseComparer):
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model"]
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         freq : string, optional
@@ -1561,7 +1609,9 @@ class PointComparer(SingleObsComparer):
     >>> comparer['Klagshamn']
     """
 
-    def __init__(self, observation, modeldata):
+    def __init__(
+        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
+    ):
         super().__init__(observation, modeldata)
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
@@ -1570,8 +1620,12 @@ class PointComparer(SingleObsComparer):
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
+        # max_model_gap = self._parse_max_gap(modeldata, max_model_gap)
+
         for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data).iloc[:, ::-1]
+            df = self._model2obs_interp(self.observation, data, max_model_gap).iloc[
+                :, ::-1
+            ]
             if j == 0:
                 self.df = df
             else:
@@ -1684,15 +1738,17 @@ class TrackComparer(SingleObsComparer):
     def y(self):
         return self.df.iloc[:, 1]
 
-    def __init__(self, observation, modeldata):
+    def __init__(self, observation, modeldata, max_model_gap: float = None):
         super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
         self.observation.df = self.observation.df[self._mod_start : self._mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
+        # max_model_gap = self._parse_max_gap(modeldata, max_model_gap)
+
         for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data)
+            df = self._model2obs_interp(self.observation, data, max_model_gap)
             # rename first columns to x, y
             df.columns = ["x", "y", *list(df.columns)[2:]]
             if (len(df) > 0) and (len(df) == len(self.observation.df)):
@@ -1826,17 +1882,23 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._all_df = res.sort_index()
         self._all_df.index.name = "datetime"
 
-    def __init__(self):
+    def __init__(self, comparers=None):
         # super().__init__(observation=None, modeldata=None)  # Not possible since init signature is different compared to BaseComparer
-        self._metrics = DEFAULT_METRICS
+        # self._metrics = options.metrics.list
         self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
-        self.comparers = {}
         self._mod_names = []
         self._obs_names = []
         self._var_names = []
         self._itemInfos = []
+
+        self.comparers = {}
+
+        if comparers is not None:
+            for c in comparers:
+                if c is not None:
+                    self._add_comparer(c)
 
     def __repr__(self):
         out = []
@@ -1847,9 +1909,8 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
 
     def __getitem__(self, x):
         if isinstance(x, slice):
-            cc = ComparerCollection()
-            for xi in range(*x.indices(len(self))):
-                cc.add_comparer(self[xi])
+            cmps = [self[xi] for xi in range(*x.indices(len(self)))]
+            cc = ComparerCollection(cmps)
             return cc
 
         if isinstance(x, int):
@@ -2036,7 +2097,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
             dictionary of observations with special weigths, others will be set to 1.0
             by default None (i.e. observations weight attribute if assigned else "equal")
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
@@ -2151,7 +2212,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         Parameters
         ----------
         metrics : list, optional
-            list of fmskill.metrics, by default [bias, rmse, urmse, mae, cc, si, r2]
+            list of fmskill.metrics, by default fmskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional

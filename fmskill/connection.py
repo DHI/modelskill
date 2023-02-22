@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 import mikeio
 from .model import ModelResult
-from .model.dfs import DfsModelResult, DfsModelResultItem
+from .model.dfs import DfsModelResult, DfsModelResultItem, DataArrayModelResultItem
 from .model.pandas import DataFramePointModelResultItem
 from .model.abstract import ModelResultInterface, MultiItemModelResult
 from .observation import Observation, PointObservation, TrackObservation
@@ -20,7 +20,7 @@ from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 
 
-def compare(obs, mod, *, obs_item=None, mod_item=None):
+def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
     """Quick-and-dirty compare of observation and model
 
     Parameters
@@ -49,7 +49,8 @@ def compare(obs, mod, *, obs_item=None, mod_item=None):
         obs = PointObservation(obs, item=obs_item)
 
     mod = _parse_model(mod, mod_item)
-    return PointComparer(obs, mod)
+    
+    return PointComparer(obs, mod, max_model_gap=max_model_gap)
 
 
 def _parse_model(mod, item=None):
@@ -166,6 +167,8 @@ class _SingleObsConnector(_BaseConnector):
             return mod
         elif isinstance(mod, MultiItemModelResult):
             raise ValueError("Please select model item! e.g. mr[0]")
+        elif isinstance(mod, mikeio.DataArray):
+            return DataArrayModelResultItem(mod)
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
 
@@ -249,14 +252,18 @@ class _SingleObsConnector(_BaseConnector):
         """
         mr = self.modelresults[0]
 
-        if (not isinstance(mr, DfsModelResultItem)) or mr.is_dfs0:
-            warnings.warn(
-                "Plotting observations is only supported for dfsu ModelResults"
-            )
+        if isinstance(mr, DfsModelResultItem) and not mr.is_dfs0:
+            geometry = mr.dfs.geometry
+        elif isinstance(mr, DataArrayModelResultItem) and isinstance(
+            mr._da.geometry, mikeio.spatial.FM_geometry.GeometryFM
+        ):
+            geometry = mr._da.geometry
+        else:
+            warnings.warn("Only supported for dfsu ModelResults")
             return
 
         ax = plot_observation_positions(
-            dfs=mr.dfs, observations=[self.obs], figsize=figsize
+            geometry=geometry, observations=[self.obs], figsize=figsize
         )
 
         return ax
@@ -295,7 +302,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self) -> PointComparer:
+    def extract(self, max_model_gap: float=None) -> PointComparer:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -321,7 +328,7 @@ class PointConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = PointComparer(self.obs, df_model)
+        comparer = PointComparer(self.obs, df_model, max_model_gap=max_model_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -344,7 +351,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self) -> TrackComparer:
+    def extract(self, max_model_gap: float=None) -> TrackComparer:
         """Extract model results at times and positions of track observation.
 
         Returns
@@ -369,7 +376,7 @@ class TrackConnector(_SingleObsConnector):
             )
             return None
 
-        comparer = TrackComparer(self.obs, df_model)
+        comparer = TrackComparer(self.obs, df_model, max_model_gap=max_model_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -542,7 +549,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
     def __iter__(self):
         return iter(self.connections.values())
 
-    def extract(self) -> ComparerCollection:
+    def extract(self, *args, **kwargs) -> ComparerCollection:
         """Extract model results at times and positions of all observations.
 
         Returns
@@ -550,12 +557,9 @@ class Connector(_BaseConnector, Mapping, Sequence):
         ComparerCollection
             A comparer object for further analysis and plotting.
         """
-        cc = ComparerCollection()
 
-        for con in self.connections.values():
-            comparer = con.extract()
-            if comparer is not None:
-                cc.add_comparer(comparer)
+        cmps = [con.extract(*args, **kwargs) for con in self.connections.values()]
+        cc = ComparerCollection(cmps)
         return cc
 
     def plot_observation_positions(self, title=None, figsize=None):
@@ -576,13 +580,19 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         mod = list(self.modelresults.values())[0]
 
-        if (not isinstance(mod, DfsModelResultItem)) or mod.is_dfs0:
+        if isinstance(mod, DfsModelResultItem) and not mod.is_dfs0:
+            geometry = mod.dfs.geometry
+        elif isinstance(mod, DataArrayModelResultItem) and isinstance(
+            mod._da.geometry, mikeio.spatial.FM_geometry.GeometryFM
+        ):
+            geometry = mod._da.geometry
+        else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
 
         observations = list(self.observations.values())
         ax = plot_observation_positions(
-            dfs=mod.dfs, observations=observations, title=title, figsize=figsize
+            geometry=geometry, observations=observations, title=title, figsize=figsize
         )
         return ax
 
