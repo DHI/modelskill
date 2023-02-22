@@ -245,11 +245,11 @@ class _SingleObsConnector(_BaseConnector):
         mr = self.modelresults[0]
 
         if isinstance(mr, DfsModelResultItem) and not mr.is_dfs0:
-            geometry = mr.dfs.geometry
+            geometry = mr.data.geometry
         elif isinstance(mr, DataArrayModelResultItem) and isinstance(
-            mr._da.geometry, mikeio.spatial.FM_geometry.GeometryFM
+            mr.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
         ):
-            geometry = mr._da.geometry
+            geometry = mr.data.geometry
         else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
@@ -573,11 +573,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
         mod = list(self.modelresults.values())[0]
 
         if isinstance(mod, DfsModelResultItem) and not mod.is_dfs0:
-            geometry = mod.dfs.geometry
+            geometry = mod.data.geometry
         elif isinstance(mod, DataArrayModelResultItem) and isinstance(
-            mod._da.geometry, mikeio.spatial.FM_geometry.GeometryFM
+            mod.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
         ):
-            geometry = mod._da.geometry
+            geometry = mod.data.geometry
         else:
             warnings.warn("Only supported for dfsu ModelResults")
             return

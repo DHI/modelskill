@@ -67,15 +67,15 @@ def sw_total_windsea():
 
 
 def test_repr(hd_oresund_2d):
-    mr = ModelResult(hd_oresund_2d, item='Surface elevation')
+    mr = ModelResult(hd_oresund_2d, item="Surface elevation")
     txt = repr(mr)
     assert "Oresund2D.dfsu" in txt
 
 
 def test_dfs_object(hd_oresund_2d):
-    mr = ModelResult(hd_oresund_2d, item='Surface elevation')
+    mr = ModelResult(hd_oresund_2d, item="Surface elevation")
 
-    assert mr.dfs.is_2d
+    assert mr.data.is_2d
 
 
 def test_ModelResultType(sw_dutch_coast):
@@ -166,7 +166,7 @@ def test_dataarray_model_result(hd_oresund_2d):
     assert isinstance(mr, DataArrayModelResultItem)
     assert mr.item_name == da.item.name
     assert mr.name == "Oresund"
-    assert isinstance(mr._da, mikeio.DataArray)
+    assert isinstance(mr.data, mikeio.DataArray)
 
     mr.name = "Oresund2"
     assert mr.name == "Oresund2"
