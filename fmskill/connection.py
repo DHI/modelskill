@@ -14,7 +14,7 @@ import mikeio
 from .model import ModelResult
 from .model.dfs import DfsModelResultItem, DataArrayModelResultItem
 from .model.pandas import DataFramePointModelResultItem
-from .model.abstract import ModelResultInterface, MultiItemModelResult
+from .model.abstract import ModelResultInterface
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -67,12 +67,6 @@ def _parse_model(mod, item=None):
         if not mod.is_dfs0:
             raise ValueError("Only dfs0 ModelResults are supported")
         mod = mod._extract_point_dfs0(mod.item).to_dataframe()
-    # elif isinstance(mod, DfsModelResult):
-    #     if not mod.is_dfs0:
-    #         raise ValueError("Only dfs0 ModelResults are supported")
-    #     if mod.item is None:
-    #         raise ValueError("Model ambiguous - please provide item")
-    #     mod = mod._extract_point_dfs0(mod.item).to_dataframe()
 
     assert mod.shape[1] == 1  # A single item
 
@@ -165,8 +159,6 @@ class _SingleObsConnector(_BaseConnector):
 
         if isinstance(mod, ModelResultInterface):
             return mod
-        elif isinstance(mod, MultiItemModelResult):
-            raise ValueError("Please select model item! e.g. mr[0]")
         elif isinstance(mod, mikeio.DataArray):
             return DataArrayModelResultItem(mod)
         else:
