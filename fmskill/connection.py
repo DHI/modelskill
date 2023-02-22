@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 import mikeio
 from .model import ModelResult
-from .model.dfs import DfsModelResult, DfsModelResultItem, DataArrayModelResultItem
+from .model.dfs import DfsModelResultItem, DataArrayModelResultItem
 from .model.pandas import DataFramePointModelResultItem
 from .model.abstract import ModelResultInterface, MultiItemModelResult
 from .observation import Observation, PointObservation, TrackObservation
@@ -49,7 +49,7 @@ def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
         obs = PointObservation(obs, item=obs_item)
 
     mod = _parse_model(mod, mod_item)
-    
+
     return PointComparer(obs, mod, max_model_gap=max_model_gap)
 
 
@@ -67,12 +67,12 @@ def _parse_model(mod, item=None):
         if not mod.is_dfs0:
             raise ValueError("Only dfs0 ModelResults are supported")
         mod = mod._extract_point_dfs0(mod.item).to_dataframe()
-    elif isinstance(mod, DfsModelResult):
-        if not mod.is_dfs0:
-            raise ValueError("Only dfs0 ModelResults are supported")
-        if mod.item is None:
-            raise ValueError("Model ambiguous - please provide item")
-        mod = mod._extract_point_dfs0(mod.item).to_dataframe()
+    # elif isinstance(mod, DfsModelResult):
+    #     if not mod.is_dfs0:
+    #         raise ValueError("Only dfs0 ModelResults are supported")
+    #     if mod.item is None:
+    #         raise ValueError("Model ambiguous - please provide item")
+    #     mod = mod._extract_point_dfs0(mod.item).to_dataframe()
 
     assert mod.shape[1] == 1  # A single item
 
@@ -302,7 +302,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float=None) -> PointComparer:
+    def extract(self, max_model_gap: float = None) -> PointComparer:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -351,7 +351,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float=None) -> TrackComparer:
+    def extract(self, max_model_gap: float = None) -> TrackComparer:
         """Extract model results at times and positions of track observation.
 
         Returns
