@@ -4,7 +4,7 @@ import pytest
 import mikeio
 from fmskill import ModelResult
 from fmskill.comparison import PointComparer, TrackComparer
-from fmskill.model import DfsModelResultItem, DfsModelResult
+from fmskill.model import DfsModelResultItem
 from fmskill.model import DataArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 
@@ -203,7 +203,7 @@ def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
     assert len(df1) == 113
 
     da = mikeio.read(sw_dutch_coast)[0]
-    mr2 = ModelResult(da, item=0, name="SW1")
+    mr2 = ModelResult(da, name="SW1")
     df2 = mr2._extract_track(Hm0_C2.copy())
 
     assert list(df1.columns) == list(df2.columns)
