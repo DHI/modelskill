@@ -196,9 +196,9 @@ class XArrayModelResultItem(ModelResultInterface):
 
         if item is None:
             item = self._selected_item
-        t = xr.DataArray(observation.df.index, dims="track")
-        x = xr.DataArray(observation.df.Longitude, dims="track")
-        y = xr.DataArray(observation.df.Latitude, dims="track")
+        t = xr.DataArray(observation.data.index, dims="track")
+        x = xr.DataArray(observation.data.Longitude, dims="track")
+        y = xr.DataArray(observation.data.Latitude, dims="track")
         da = self.data[item].interp(coords=dict(time=t, x=x, y=y), method="linear")
         df = da.to_dataframe().drop(columns=["time"])
         df.index.name = "time"
