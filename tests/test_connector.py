@@ -310,14 +310,16 @@ def test_extract_gaps_big(o2_gaps, mr12_gaps):
 def test_extract_gaps_small(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
     con2 = Connector(o2_gaps, mr2)
-    cc = con2.extract(max_model_gap=10)  # no data with that small gap
+    with pytest.warns(UserWarning, match="No overlapping data"): 
+        cc = con2.extract(max_model_gap=10)  # no data with that small gap
     assert cc.n_comparers == 0
 
 
 def test_extract_gaps_negative(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
     con2 = Connector(o2_gaps, mr2)
-    cc = con2.extract(max_model_gap=-10)
+    with pytest.warns(UserWarning, match="No overlapping data"): 
+        cc = con2.extract(max_model_gap=-10)
     assert cc.n_comparers == 0
 
 
