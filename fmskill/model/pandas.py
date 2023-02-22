@@ -134,46 +134,51 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
         return comparer
 
 
-# class DataFramePointModelResult(_DataFrameBase, MultiItemModelResult):
-#     @property
-#     def item_names(self):
-#         return list(self.df.columns)
+class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
+    @property
+    def item_name(self):
+        return self._selected_item
 
-#     def __init__(self, df, name: str = None, item=None, itemInfo=None):
-#         self.is_point = True
-#         if isinstance(df, pd.Series):
-#             df = df.to_frame()
-#             df.columns = ["model"] if name is None else name
-#         self._check_dataframe(df)
-#         self.df = df
+    def __init__(
+        self,
+        df,
+        name: str = None,
+        item=None,
+        itemInfo=None,
+        x_item=None,
+        y_item=None,
+    ):
+        self.itemInfo = _parse_itemInfo(itemInfo)
+        self.is_point = False
+        self._x_item, self._y_item = self._parse_x_y_columns(df, x_item, y_item)
+        self._check_dataframe(df)
+        if item is None:
+            val_cols = self._get_val_cols(df.columns)
+            item = self._get_default_item(val_cols)
 
-#         self._selected_item = self._get_selected_item(df.columns, item)
+        if not df.index.is_unique:
+            df = df.copy()
+            df.index = make_unique_index(df.index)
 
-#         if (itemInfo is not None) and (self._selected_item is None):
-#             raise ValueError("itemInfo can only be supplied if item is non-ambigious")
+        item_num = self._get_item_num(item, list(df.columns))
+        self.df = df.iloc[:, [self._x_item, self._y_item, item_num]]
+        item = self._get_item_name(item, self.df.columns)
+        self._selected_item = item
 
-#         if name is None:
-#             name = self._selected_item if self._selected_item else "model"
-#         self.name = name
+        if name is None:
+            name = self.item_name
+        self.name = name
 
-#         self._mr_items = {}
-#         for it in self.item_names:
-#             self._mr_items[it] = DataFramePointModelResultItem(
-#                 self.df, self.name, item=it, itemInfo=itemInfo,
-#             )
-
-
-class _DataFrameTrackBase(_DataFrameBase):
     def _parse_x_y_columns(self, df, x, y):
         if x is None:
-            x = _DataFrameTrackBase._get_default_x_idx(df.columns[0])
+            x = self._get_default_x_idx(df.columns[0])
         else:
-            x = _DataFrameTrackBase._get_col_idx(df.columns, x)
+            x = self._get_col_idx(df.columns, x)
 
         if y is None:
-            y = _DataFrameTrackBase._get_default_y_idx(df.columns[1])
+            y = self._get_default_y_idx(df.columns[1])
         else:
-            y = _DataFrameTrackBase._get_col_idx(df.columns, y)
+            y = self._get_col_idx(df.columns, y)
         return x, y
 
     @staticmethod
@@ -230,42 +235,6 @@ class _DataFrameTrackBase(_DataFrameBase):
         item_num = self._get_item_num(item)
         return self.df.iloc[:, [self._x_item, self._y_item, item_num]].dropna()
 
-
-class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
-    @property
-    def item_name(self):
-        return self._selected_item
-
-    def __init__(
-        self,
-        df,
-        name: str = None,
-        item=None,
-        itemInfo=None,
-        x_item=None,
-        y_item=None,
-    ):
-        self.itemInfo = _parse_itemInfo(itemInfo)
-        self.is_point = False
-        self._x_item, self._y_item = self._parse_x_y_columns(df, x_item, y_item)
-        self._check_dataframe(df)
-        if item is None:
-            val_cols = self._get_val_cols(df.columns)
-            item = self._get_default_item(val_cols)
-
-        if not df.index.is_unique:
-            df = df.copy()
-            df.index = make_unique_index(df.index)
-
-        item_num = self._get_item_num(item, list(df.columns))
-        self.df = df.iloc[:, [self._x_item, self._y_item, item_num]]
-        item = self._get_item_name(item, self.df.columns)
-        self._selected_item = item
-
-        if name is None:
-            name = self.item_name
-        self.name = name
-
     def extract_observation(
         self, observation: TrackObservation, **kwargs
     ) -> TrackComparer:
@@ -292,40 +261,3 @@ class DataFrameTrackModelResultItem(_DataFrameTrackBase, ModelResultInterface):
             comparer = None
 
         return comparer
-
-
-# class DataFrameTrackModelResult(_DataFrameTrackBase, MultiItemModelResult):
-#     @property
-#     def item_names(self):
-#         return list(self._val_cols)
-
-#     def __init__(
-#         self, df, name: str = None, item=None, itemInfo=None, x_item=None, y_item=None,
-#     ):
-#         self.is_point = False
-#         self._x, self._y = self._parse_x_y_columns(df, x_item, y_item)
-#         self._check_dataframe(df)
-#         if not df.index.is_unique:
-#             df = df.copy()
-#             df.index = make_unique_index(df.index)
-
-#         self.df = df
-#         self._selected_item = self._get_selected_item(self._val_cols, item)
-
-#         if (itemInfo is not None) and (self._selected_item is None):
-#             raise ValueError("itemInfo can only be supplied if item is non-ambigious")
-
-#         if name is None:
-#             name = self._selected_item if self._selected_item else "model"
-#         self.name = name
-
-#         self._mr_items = {}
-#         for it in self.item_names:
-#             self._mr_items[it] = DataFrameTrackModelResultItem(
-#                 self.df,
-#                 name=self.name,
-#                 item=it,
-#                 itemInfo=itemInfo,
-#                 x_item=x_item,
-#                 y_item=y_item,
-#             )
