@@ -5,12 +5,9 @@ import pytest
 
 import mikeio
 from fmskill import ModelResult, PointObservation, TrackObservation
-from fmskill.model.abstract import ModelResultInterface, MultiItemModelResult
-from fmskill.model import DataFramePointModelResult, DataFramePointModelResultItem
-from fmskill.model.pandas import (
-    DataFrameTrackModelResult,
-    DataFrameTrackModelResultItem,
-)
+from fmskill.model.abstract import ModelResultInterface
+from fmskill.model import DataFramePointModelResultItem
+from fmskill.model.pandas import DataFrameTrackModelResultItem
 
 
 @pytest.fixture
@@ -45,15 +42,15 @@ def test_df_modelresultitem(point_df):
 
     # item as string
     mr2 = DataFramePointModelResultItem(df, item="Water Level")
-    assert len(mr2.df) == len(mr1.df)
+    assert len(mr2.data) == len(mr1.data)
     assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     mr3 = DataFramePointModelResultItem(df[["Water Level"]])
-    assert len(mr3.df) == len(mr1.df)
+    assert len(mr3.data) == len(mr1.data)
 
     # Series
     mr4 = ModelResult(df["Water Level"])
-    assert len(mr4.df) == len(mr1.df)
+    assert len(mr4.data) == len(mr1.data)
 
 
 def test_df_modelresultitem_itemInfo(point_df):
@@ -72,14 +69,11 @@ def test_df_modelresult(point_df):
     df = point_df
     df["ones"] = 1.0
 
-    mr1 = DataFramePointModelResult(df)
-    assert not isinstance(mr1, ModelResultInterface)
+    mr1 = DataFramePointModelResultItem(df, item=0)
+    assert isinstance(mr1, ModelResultInterface)
     assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
     assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
-    assert mr1.name == "model"
-
-    mr2 = mr1["Water Level"]
-    assert len(mr2.df) == len(mr1.df)
+    assert mr1.name == "Water Level"
 
 
 def test_point_df_model_extract(point_df):
@@ -100,11 +94,11 @@ def test_track_df_modelresultitem(track_df):
 
     # item as string
     mr2 = ModelResult(df, item="surface_elevation")
-    assert len(mr2.df) == len(mr1.df)
+    assert len(mr2.data) == len(mr1.data)
     assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     mr3 = DataFramePointModelResultItem(df[["surface_elevation"]])
-    assert len(mr3.df) == len(mr1.df)
+    assert len(mr3.data) == len(mr1.data)
     assert mr3.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
@@ -122,39 +116,24 @@ def test_track_df_modelresultitem_iteminfo(track_df):
 def test_track_df_modelresult(track_df):
     df = track_df
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = DataFrameTrackModelResult(df)
-    assert not isinstance(mr1, ModelResultInterface)
-    assert len(df.columns) == 5
-    assert len(mr1.item_names) == 3
-
-    mr2 = mr1["surface_elevation"]
-    assert len(mr2.df) == len(mr1.df)
-    assert isinstance(mr2, ModelResultInterface)
+        mr1 = DataFrameTrackModelResultItem(df, item=2)
+    assert isinstance(mr1, ModelResultInterface)
+    assert len(mr1.data.columns) == 3
+    assert mr1.item_name == "surface_elevation"
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr3 = ModelResult(df, type="track")
-    mr4 = mr3["surface_elevation"]
-    assert len(mr4.df) == len(mr1.df)
-    assert isinstance(mr4, ModelResultInterface)
+        mr3 = ModelResult(df, item=2, type="track")
+    assert len(mr3.data) == len(mr1.data)
+    assert isinstance(mr3, ModelResultInterface)
 
 
 def test_track_from_dfs0_df_modelresult(track_from_dfs0):
     df = track_from_dfs0
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = ModelResult(df, type="track")
-    assert isinstance(mr1, MultiItemModelResult)
-    assert isinstance(mr1, DataFrameTrackModelResult)
-    assert len(df.columns) == 4
-    assert len(mr1.item_names) == 2
-
-    mr2 = mr1[-1]
-    assert len(mr2.df) == len(mr1.df)
-    assert isinstance(mr2, ModelResultInterface)
-    assert mr2.item_name == "Model_wind_speed"
-
-    mr3 = mr1["Model_wind_speed"]
-    assert np.nansum(mr3.df.to_numpy()) == np.nansum(mr2.df.to_numpy())
-    assert mr3.item_name == "Model_wind_speed"
+        mr1 = ModelResult(df, item=-1, type="track")
+    assert isinstance(mr1, ModelResultInterface)
+    assert isinstance(mr1, DataFrameTrackModelResultItem)
+    assert len(mr1.data.columns) == 3
 
 
 def test_track_df_tweak_modelresult(track_df):
@@ -186,9 +165,10 @@ def test_track_df_tweak_modelresult(track_df):
         ModelResult(df, type="track")
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr3 = ModelResult(df, type="track", x_item="longitude", y_item="latitude")
-    mr4 = mr3["wl"]
-    assert isinstance(mr4, ModelResultInterface)
+        mr3 = ModelResult(
+            df, item="wl", type="track", x_item="longitude", y_item="latitude"
+        )
+    assert isinstance(mr3, ModelResultInterface)
 
 
 def test_track_df_model_extract(track_df):

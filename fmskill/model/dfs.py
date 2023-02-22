@@ -8,7 +8,7 @@ import mikeio
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
 from ..utils import make_unique_index
-from .abstract import ModelResultInterface, MultiItemModelResult
+from .abstract import ModelResultInterface
 
 
 def _validate_item_eum(mod_item: mikeio.ItemInfo, obs: Observation) -> bool:
@@ -34,11 +34,11 @@ def _validate_item_eum(mod_item: mikeio.ItemInfo, obs: Observation) -> bool:
 class _DfsBase:
     @property
     def start_time(self) -> pd.Timestamp:
-        return pd.Timestamp(self.dfs.start_time)
+        return pd.Timestamp(self.data.start_time)
 
     @property
     def end_time(self) -> pd.Timestamp:
-        return pd.Timestamp(self.dfs.end_time)
+        return pd.Timestamp(self.data.end_time)
 
     @property
     def filename(self):
@@ -46,20 +46,20 @@ class _DfsBase:
 
     @property
     def is_dfsu(self):
-        return isinstance(self.dfs, mikeio.dfsu._Dfsu)
+        return isinstance(self.data, mikeio.dfsu._Dfsu)
 
     @property
     def is_dfs0(self):
-        return isinstance(self.dfs, mikeio.Dfs0)
+        return isinstance(self.data, mikeio.Dfs0)
 
     def _in_domain(self, x, y) -> bool:
         ok = True
         if self.is_dfsu:
-            ok = self.dfs.contains([x, y])
+            ok = self.data.contains([x, y])
         return ok
 
     def _get_item_num(self, item) -> int:
-        items = self.dfs.items
+        items = self.data.items
         n_items = len(items)
         if item is None:
             if n_items == 1:
@@ -84,13 +84,13 @@ class _DfsBase:
 
     def _get_item_name(self, item) -> str:
         item_num = self._get_item_num(item)
-        return self.dfs.items[item_num].name
+        return self.data.items[item_num].name
 
     def _validate_observation(self, observation) -> bool:
         ok = False
         if self.is_dfsu:
             if isinstance(observation, PointObservation):
-                ok = self.dfs.contains([observation.x, observation.y])
+                ok = self.data.contains([observation.x, observation.y])
                 if not ok:
                     raise ValueError("Observation outside domain")
             elif isinstance(observation, TrackObservation):
@@ -107,9 +107,9 @@ class _DfsBase:
     def _validate_start_end(self, observation: Observation) -> bool:
         try:
             # need to put this in try-catch due to error in dfs0 in mikeio
-            if observation.end_time < self.dfs.start_time:
+            if observation.end_time < self.data.start_time:
                 return False
-            if observation.start_time > self.dfs.end_time:
+            if observation.start_time > self.data.end_time:
                 return False
         except:
             pass
@@ -134,13 +134,13 @@ class _DfsBase:
 
     def _extract_point_dfsu(self, x, y, item) -> mikeio.Dataset:
         xy = np.atleast_2d([x, y])
-        elemids = self.dfs.geometry.find_index(coords=xy)
-        ds_model = self.dfs.read(elements=elemids, items=[item])
+        elemids = self.data.geometry.find_index(coords=xy)
+        ds_model = self.data.read(elements=elemids, items=[item])
         ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
         return ds_model
 
     def _extract_point_dfs0(self, item) -> mikeio.Dataset:
-        ds_model = self.dfs.read(items=[item])
+        ds_model = self.data.read(items=[item])
         ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
         return ds_model
 
@@ -152,7 +152,7 @@ class _DfsBase:
             ds_model = self._extract_track_dfsu(observation, item)
             df = ds_model.to_dataframe().dropna()
         elif self.is_dfs0:
-            ds_model = self.dfs.read(items=[0, 1, item])
+            ds_model = self.data.read(items=[0, 1, item])
             ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
             df = ds_model.to_dataframe().dropna()
             df.index = make_unique_index(df.index, offset_duplicates=0.001)
@@ -161,7 +161,7 @@ class _DfsBase:
     def _extract_track_dfsu(
         self, observation: TrackObservation, item
     ) -> mikeio.Dataset:
-        ds_model = self.dfs.extract_track(track=observation.data, items=[item])
+        ds_model = self.data.extract_track(track=observation.data, items=[item])
         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
         return ds_model
 
@@ -189,20 +189,20 @@ class _DfsBase:
 class DataArrayModelResultItem(ModelResultInterface):
     @property
     def start_time(self) -> pd.Timestamp:
-        return self._da.time[0]
+        return self.data.time[0]
 
     @property
     def end_time(self) -> pd.Timestamp:
-        return self._da.time[-1]
+        return self.data.time[-1]
 
     @property
     def item_name(self):
-        return self._da.name
+        return self.data.name
 
     def __init__(self, da: mikeio.DataArray, name=None):
-        self._da = da
+        self.data = da
         if name is None:
-            self.name = self._da.name
+            self.name = self.data.name
         else:
             self.name = name
 
@@ -213,11 +213,11 @@ class DataArrayModelResultItem(ModelResultInterface):
 
     @property
     def itemInfo(self):
-        return self._da.item
+        return self.data.item
 
     def _extract_point(self, observation: PointObservation) -> pd.DataFrame:
 
-        dap = self._da.sel(x=observation.x, y=observation.y)
+        dap = self.data.sel(x=observation.x, y=observation.y)
         dap.name = self.name
         # ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
 
@@ -225,7 +225,7 @@ class DataArrayModelResultItem(ModelResultInterface):
         return mikeio.Dataset(dap).to_dataframe().dropna()
 
     def _extract_track(self, observation: TrackObservation) -> pd.DataFrame:
-        ds = self._da.extract_track(observation.data)
+        ds = self.data.extract_track(observation.data)
         ds.rename({ds.items[-1].name: self.name}, inplace=True)
         return ds.to_dataframe().dropna()
 
@@ -276,12 +276,36 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
     def item_name(self):
         return self.itemInfo.name
 
-    def __init__(self, dfs, itemInfo, filename, name):
-        self.dfs = dfs
-        self.itemInfo = itemInfo
-        self._selected_item = self._get_item_num(itemInfo)
+    def __init__(self, filename: str, name: str = None, item=None, itemInfo=None):
+        # TODO: add "start" as user may wish to disregard start from comparison
         self._filename = filename
+        ext = os.path.splitext(filename)[-1]
+        if ext == ".dfsu":
+            self.data = mikeio.open(filename)
+        # elif ext == '.dfs2':
+        #    self.data = mikeio.open(filename)
+        elif ext == ".dfs0":
+            self.data = mikeio.open(filename)
+        else:
+            raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
+
+        if name is None:
+            name = os.path.basename(filename).split(".")[0]
         self.name = name
+
+        if item is not None:
+            self._selected_item = self._get_item_num(item)
+        elif len(self.data.items) == 1:
+            self._selected_item = 0
+        else:
+            item_names = [i.name for i in self.data.items]
+            raise ValueError(
+                f"Dfs file has multiple items: item must be specified! Available items: {item_names}"
+            )
+
+        self.itemInfo = (
+            self.data.items[self._selected_item] if itemInfo is None else itemInfo
+        )
 
     def __repr__(self):
         txt = [f"<DfsModelResultItem> '{self.name}'"]
@@ -337,81 +361,3 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
             comparer = None
 
         return comparer
-
-
-class DfsModelResult(_DfsBase, MultiItemModelResult):
-    @property
-    def item_names(self):
-        return [item.name for item in self.dfs.items]
-
-    @property
-    def n_items(self):
-        return len(self.dfs.items)
-
-    def __init__(self, filename: str, name: str = None, item=None):
-        # TODO: add "start" as user may wish to disregard start from comparison
-        self._filename = filename
-        ext = os.path.splitext(filename)[-1]
-        if ext == ".dfsu":
-            self.dfs = mikeio.open(filename)
-        # elif ext == '.dfs2':
-        #    self.dfs = mikeio.open(filename)
-        elif ext == ".dfs0":
-            self.dfs = mikeio.open(filename)
-        else:
-            raise ValueError(f"Filename extension {ext} not supported (dfsu, dfs0)")
-
-        if name is None:
-            name = os.path.basename(filename).split(".")[0]
-        self.name = name
-
-        self._mr_items = {}
-        for it in self.dfs.items:
-            self._mr_items[it.name] = DfsModelResultItem(
-                self.dfs,
-                it,
-                self._filename,
-                self.name,
-            )
-
-        if item is not None:
-            self._selected_item = self._get_item_num(item)
-        elif len(self._mr_items) == 1:
-            self._selected_item = 0
-        else:
-            self._selected_item = None
-
-    def __repr__(self):
-        txt = [f"<DfsModelResult> '{self.name}'"]
-        txt.append(f"File: {self.filename}")
-        for j, item in enumerate(self.dfs.items):
-            txt.append(f"- Item: {j}: {item}")
-        return "\n".join(txt)
-
-
-#     def _infer_model_item(
-#         self,
-#         observation: Observation,
-#         mod_items: List[mikeio.ItemInfo] = None,
-#     ) -> int:
-#         """Attempt to infer model item by matching observation eum with model eum"""
-#         if mod_items is None:
-#             mod_items = self.dfs.items
-
-#         if len(mod_items) == 1:
-#             # accept even if eum does not match
-#             return 0
-
-#         mod_items = [(x.type, x.unit) for x in mod_items]
-#         obs_item = (observation.itemInfo.type, observation.itemInfo.unit)
-
-#         pot_items = [j for j, mod_item in enumerate(mod_items) if mod_item == obs_item]
-
-#         if len(pot_items) == 0:
-#             raise Exception("Could not infer")
-#         if len(pot_items) > 1:
-#             raise ValueError(
-#                 f"Multiple matching model items found! (Matches {pot_items})."
-#             )
-
-#         return pot_items[0]

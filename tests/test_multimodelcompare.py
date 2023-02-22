@@ -13,13 +13,13 @@ plt.rcParams.update({"figure.max_open_warning": 0})
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, name="SW_1")
+    return ModelResult(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, name="SW_2")
+    return ModelResult(fn, item=0, name="SW_2")
 
 
 @pytest.fixture
@@ -42,17 +42,17 @@ def o3():
 
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3):
-    con = Connector([o1, o2, o3], [mr1[0], mr2[0]])
+    con = Connector([o1, o2, o3], [mr1, mr2])
     return con.extract()
 
 
 def test_connector(mr1, mr2, o1):
-    con = Connector(o1, [mr1[0], mr2[0]])
+    con = Connector(o1, [mr1, mr2])
     assert len(con.observations) == 1
 
 
 def test_extract(mr1, mr2, o1, o2, o3):
-    con = Connector([o1, o2, o3], [mr1[0], mr2[0]])
+    con = Connector([o1, o2, o3], [mr1, mr2])
     cc = con.extract()
 
     assert cc.n_points > 0
@@ -62,8 +62,8 @@ def test_extract(mr1, mr2, o1, o2, o3):
 
 
 def test_add_comparer(mr1, mr2, o1, o2):
-    cc1 = Connector(o1, mr1[0]).extract()
-    cc2 = Connector(o2, mr2[0]).extract()
+    cc1 = Connector(o1, mr1).extract()
+    cc2 = Connector(o2, mr2).extract()
     cc = cc1 + cc2
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
@@ -72,8 +72,8 @@ def test_add_comparer(mr1, mr2, o1, o2):
 
 
 def test_add_same_comparer_twice(mr1, mr2, o1, o2):
-    cc1 = Connector(o1, mr1[0]).extract()
-    cc2 = Connector(o2, mr2[0]).extract()
+    cc1 = Connector(o1, mr1).extract()
+    cc2 = Connector(o2, mr2).extract()
     cc = cc1 + cc2
     assert len(cc) == 2
     cc = cc + cc2

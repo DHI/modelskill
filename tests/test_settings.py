@@ -40,7 +40,7 @@ def test_options_get_options_dict():
     assert isinstance(d0, settings.OptionsContainer)
     d1 = list(d0.to_dict().values())[0]
     assert isinstance(d1, dict)
-
+    
     # this is the way to get the dict
     d = settings.get_option("plot.scatter.quantiles.kwargs")
     assert isinstance(d, dict)
@@ -69,6 +69,7 @@ def test_options_set_options():
         fmskill.set_option("plot.scatter.points.size", -1)
 
 
+
 def test_options_reset_options():
     o = fmskill.options
     o.plot.scatter.points.size = 300
@@ -81,22 +82,10 @@ def test_options_register_option():
     with pytest.raises(settings.OptionError):
         # non-existing option
         assert fmskill.get_option("plot.scatter.points.size2")
-
+    
     settings.register_option("plot.scatter.points.size2", 200, "test")
     assert fmskill.get_option("plot.scatter.points.size2") == 200
     fmskill.set_option("plot.scatter.points.size2", 300)
     assert fmskill.get_option("plot.scatter.points.size2") == 300
     fmskill.reset_option("plot.scatter.points.size2")
     assert fmskill.get_option("plot.scatter.points.size2") == 200
-
-
-def test_named_style():
-
-    fmskill.load_style("MOOD")
-    assert fmskill.get_option("plot.scatter.points.label") == "Data"
-
-
-def test_missing_named_style():
-
-    with pytest.raises(KeyError, match="not found"):
-        fmskill.load_style("food")

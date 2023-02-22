@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 
 import mikeio
 from .model import ModelResult
-from .model.dfs import DfsModelResult, DfsModelResultItem, DataArrayModelResultItem
+from .model.dfs import DfsModelResultItem, DataArrayModelResultItem
 from .model.pandas import DataFramePointModelResultItem
-from .model.abstract import ModelResultInterface, MultiItemModelResult
+from .model.abstract import ModelResultInterface
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -49,7 +49,7 @@ def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
         obs = PointObservation(obs, item=obs_item)
 
     mod = _parse_model(mod, mod_item)
-    
+
     return PointComparer(obs, mod, max_model_gap=max_model_gap)
 
 
@@ -60,18 +60,12 @@ def _parse_model(mod, item=None):
             raise ValueError("Model ambiguous - please provide item")
         mod = dfs.read(items=item).to_dataframe()
     elif isinstance(mod, pd.DataFrame):
-        mod = DataFramePointModelResultItem(mod, item=item).df
+        mod = DataFramePointModelResultItem(mod, item=item).data
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
     elif isinstance(mod, DfsModelResultItem):
         if not mod.is_dfs0:
             raise ValueError("Only dfs0 ModelResults are supported")
-        mod = mod._extract_point_dfs0(mod.item).to_dataframe()
-    elif isinstance(mod, DfsModelResult):
-        if not mod.is_dfs0:
-            raise ValueError("Only dfs0 ModelResults are supported")
-        if mod.item is None:
-            raise ValueError("Model ambiguous - please provide item")
         mod = mod._extract_point_dfs0(mod.item).to_dataframe()
 
     assert mod.shape[1] == 1  # A single item
@@ -165,8 +159,6 @@ class _SingleObsConnector(_BaseConnector):
 
         if isinstance(mod, ModelResultInterface):
             return mod
-        elif isinstance(mod, MultiItemModelResult):
-            raise ValueError("Please select model item! e.g. mr[0]")
         elif isinstance(mod, mikeio.DataArray):
             return DataArrayModelResultItem(mod)
         else:
@@ -253,11 +245,11 @@ class _SingleObsConnector(_BaseConnector):
         mr = self.modelresults[0]
 
         if isinstance(mr, DfsModelResultItem) and not mr.is_dfs0:
-            geometry = mr.dfs.geometry
+            geometry = mr.data.geometry
         elif isinstance(mr, DataArrayModelResultItem) and isinstance(
-            mr._da.geometry, mikeio.spatial.FM_geometry.GeometryFM
+            mr.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
         ):
-            geometry = mr._da.geometry
+            geometry = mr.data.geometry
         else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
@@ -302,7 +294,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float=None) -> PointComparer:
+    def extract(self, max_model_gap: float = None) -> PointComparer:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -351,7 +343,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float=None) -> TrackComparer:
+    def extract(self, max_model_gap: float = None) -> TrackComparer:
         """Extract model results at times and positions of track observation.
 
         Returns
@@ -581,11 +573,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
         mod = list(self.modelresults.values())[0]
 
         if isinstance(mod, DfsModelResultItem) and not mod.is_dfs0:
-            geometry = mod.dfs.geometry
+            geometry = mod.data.geometry
         elif isinstance(mod, DataArrayModelResultItem) and isinstance(
-            mod._da.geometry, mikeio.spatial.FM_geometry.GeometryFM
+            mod.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
         ):
-            geometry = mod._da.geometry
+            geometry = mod.data.geometry
         else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
