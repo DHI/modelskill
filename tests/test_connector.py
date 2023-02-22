@@ -24,6 +24,12 @@ def mr2():
 
 
 @pytest.fixture
+def mr3():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
+    return ModelResult(fn, item=0, name="SW_3")
+
+
+@pytest.fixture
 def mr12_gaps():
     fn = "tests/testdata/SW/ts_storm_4.dfs0"
     df1 = mikeio.read(fn, items=0).to_dataframe()
@@ -68,8 +74,8 @@ def o3():
 
 
 @pytest.fixture
-def con11(o1, mr1):
-    return Connector(o1, mr1)
+def con13(o1, mr3):
+    return Connector(o1, mr3)
 
 
 @pytest.fixture
@@ -225,7 +231,7 @@ def test_plot_data_coverage(con31):
     con31.plot_temporal_coverage()
 
 
-def test_extract_gaps1(con11):
+def test_extract_gaps1(con13):
     # obs has 278 steps (2017-10-27 18:00 to 2017-10-29 18:00) (10min data with gaps)
     # model SW_3 has 5 timesteps:
     # 2017-10-27 18:00:00  1.880594
@@ -234,22 +240,22 @@ def test_extract_gaps1(con11):
     # 2017-10-28 03:00:00  2.119306
     # 2017-10-29 18:00:00  3.249600
 
-    cc = con11.extract()
+    cc = con13.extract()
     assert cc.n_points == 278
 
     # accept only 1 hour gaps (even though the model has 3 hour timesteps)
     # expect only exact matches (4 of 5 model timesteps are in obs)
-    cc = con11.extract(max_model_gap=3600)
+    cc = con13.extract(max_model_gap=3600)
     assert cc.n_points == 4
 
     # accept only 3 hour gaps
     # should disregard everything after 2017-10-28 03:00
     # except a single point 2017-10-29 18:00 (which is hit spot on)
-    cc = con11.extract(max_model_gap=10800)
+    cc = con13.extract(max_model_gap=10800)
     assert cc.n_points == 48 + 1
 
     # accept gaps up to 2 days (all points should be included)
-    cc = con11.extract(max_model_gap=2 * 24 * 60 * 60)
+    cc = con13.extract(max_model_gap=2 * 24 * 60 * 60)
     assert cc.n_points == 278
 
 
