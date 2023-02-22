@@ -31,8 +31,8 @@ def modelresult(ERA5_DutchCoast_nc):
 @pytest.fixture
 def mf_modelresult():
     fn = "tests/testdata/SW/CMEMS_DutchCoast_*.nc"
-    ds = xr.open_mfdataset(fn)
-    return ModelResult(ds["VHM0"], name="CMEMS")
+    # ds = xr.open_mfdataset(fn)
+    return ModelResult(fn, item="VHM0", name="CMEMS")
 
 
 @pytest.fixture
@@ -71,7 +71,7 @@ def test_XArrayModelResult_from_DataArray(ERA5_DutchCoast_nc):
     # assert isinstance(mr.data, xr.DataArray)
     assert mr.item_name == "swh"
     assert not mr.filename
-    assert mr[0].itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
+    assert mr.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
 def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
@@ -132,7 +132,7 @@ def test_XArrayModelResult_getitem(modelresult):
 
     assert "XArrayModelResultItem" in repr(mri)
     assert "- Item: pp1d" in repr(mri)
-    assert isinstance(mri.data, xr.DataArray)
+    assert isinstance(mri.ds, xr.Dataset)
     # assert len(mri) == 1   # has no length (it's an item)
     assert len(mri.ds) == 1  # Keep this?
     assert mri.name == "ERA5_DutchCoast"
@@ -217,7 +217,7 @@ def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
 
 
 def test_xarray_connector(modelresult, pointobs_epl_hm0, trackobs_c2_hm0):
-    con = fmskill.Connector([pointobs_epl_hm0, trackobs_c2_hm0], modelresult["swh"])
+    con = fmskill.Connector([pointobs_epl_hm0, trackobs_c2_hm0], modelresult)
     assert len(con) == 2
     assert con.n_models == 1
 
