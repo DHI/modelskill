@@ -90,49 +90,92 @@ def _get_valid_query_time(
     return valid_idx
 
 
+def _area_is_bbox(area) -> bool:
+    is_bbox = False
+    if area is not None:
+        if not np.isscalar(area):
+            area = np.array(area)
+            if (area.ndim == 1) & (len(area) == 4):
+                if np.all(np.isreal(area)):
+                    is_bbox = True
+    return is_bbox
+
+
+def _area_is_polygon(area) -> bool:
+    if area is None:
+        return False
+    if np.isscalar(area):
+        return False
+    if not np.all(np.isreal(area)):
+        return False
+    polygon = np.array(area)
+    if polygon.ndim > 2:
+        return False
+
+    if polygon.ndim == 1:
+        if len(polygon) <= 5:
+            return False
+        if len(polygon) % 2 != 0:
+            return False
+
+    if polygon.ndim == 2:
+        if polygon.shape[0] < 3:
+            return False
+        if polygon.shape[1] != 2:
+            return False
+
+    return True
+
+
+def _inside_polygon(polygon, xy) -> bool:
+    import matplotlib.path as mp
+
+    if polygon.ndim == 1:
+        polygon = np.column_stack((polygon[0::2], polygon[1::2]))
+    return mp.Path(polygon).contains_points(xy)
+
+
+def _add_spatial_grid_to_df(
+    df: pd.DataFrame, bins, binsize: Optional[float]
+) -> pd.DataFrame:
+    if binsize is None:
+        # bins from bins
+        if isinstance(bins, tuple):
+            bins_x = bins[0]
+            bins_y = bins[1]
+        else:
+            bins_x = bins
+            bins_y = bins
+    else:
+        # bins from binsize
+        x_ptp = df.x.values.ptp()
+        y_ptp = df.y.values.ptp()
+        nx = int(np.ceil(x_ptp / binsize))
+        ny = int(np.ceil(y_ptp / binsize))
+        x_mean = np.round(df.x.mean())
+        y_mean = np.round(df.y.mean())
+        bins_x = np.arange(
+            x_mean - nx / 2 * binsize, x_mean + (nx / 2 + 1) * binsize, binsize
+        )
+        bins_y = np.arange(
+            y_mean - ny / 2 * binsize, y_mean + (ny / 2 + 1) * binsize, binsize
+        )
+    # cut and get bin centre
+    df["xBin"] = pd.cut(df.x, bins=bins_x)
+    df["xBin"] = df["xBin"].apply(lambda x: x.mid)
+    df["yBin"] = pd.cut(df.y, bins=bins_y)
+    df["yBin"] = df["yBin"].apply(lambda x: x.mid)
+
+    return df
+
+
 class BaseComparer:
     """Abstract base class for all comparers, only used to inherit from, not to be used directly"""
-
-    @property
-    def n_points(self) -> int:
-        """number of compared points"""
-        return len(self.data)
-
-    @property
-    def start(self) -> datetime:
-        """start datetime of compared data"""
-        return self.data.index[0].to_pydatetime()
-
-    @property
-    def end(self) -> datetime:
-        """end datetime of compared data"""
-        return self.data.index[-1].to_pydatetime()
-
-    @property
-    def x(self) -> float:
-        return self.observation.x
-
-    @property
-    def y(self) -> float:
-        return self.observation.y
-
-    @property
-    def name(self) -> str:
-        """name of comparer (=observation)"""
-        return self.observation.name
 
     @property
     def residual(self):
         # TODO
         return self.mod - np.vstack(self.obs)
-
-    @property
-    def obs(self) -> np.ndarray:
-        return self.data[self.obs_name].values
-
-    @property
-    def mod(self) -> np.ndarray:
-        return self.data[self.mod_names].values
 
     @property
     def n_models(self) -> int:
@@ -211,124 +254,6 @@ class BaseComparer:
         template["obs_val"] = pd.Series([], dtype="float")
         res = pd.DataFrame(template)
         return res
-
-    def _construct_all_df(self):
-        # TODO: var_name
-        res = self._all_df_template()
-        frames = []
-        cols = res.keys()
-        for j in range(self.n_models):
-            mod_name = self.mod_names[j]
-            df = self.data[[mod_name]].copy()
-            df.columns = ["mod_val"]
-            df["model"] = mod_name
-            df["observation"] = self.observation.name
-            if self.n_variables > 1:
-                df["variable"] = self.observation.variable_name
-            df["x"] = self.x
-            df["y"] = self.y
-            df["obs_val"] = self.obs
-            frames.append(df[cols])
-
-        if len(frames) > 0:
-            res = pd.concat(frames)
-
-        self._all_df = res.sort_index()
-
-    def __init__(self, observation, modeldata=None):
-
-        # self._metrics = options.metrics.list
-        self.obs_name = "Observation"
-        self._obs_names: List[str]
-        self._mod_names: List[str]
-        self._mod_colors = [
-            "#1f78b4",
-            "#33a02c",
-            "#ff7f00",
-            "#93509E",
-            "#63CEFF",
-            "#fdbf6f",
-            "#004165",
-            "#8B8D8E",
-            "#0098DB",
-            "#61C250",
-            "#a6cee3",
-            "#b2df8a",
-            "#fb9a99",
-            "#cab2d6",
-            "#003f5c",
-            "#2f4b7c",
-            "#665191",
-            "#e31a1c",
-        ]
-
-        self._resi_color = "#8B8D8E"
-        self._obs_unit_text = ""
-        #      darkblue: #004165
-        #      midblue:  #0098DB,
-        #      gray:     #8B8D8E,
-        #      lightblue:#63CEFF,
-        #      green:    #61C250
-        #      purple:   #93509E
-        self.mod_data = None
-        self.data = None
-        self._all_df = None
-
-        self._mod_start = pd.Timestamp.max
-        self._mod_end = pd.Timestamp.min
-
-        self.observation = deepcopy(observation)
-        self._obs_unit_text = self.observation._unit_text()
-        self.mod_data = {}
-        self._obs_names = [observation.name]
-        self._var_names = [observation.variable_name]
-        self._itemInfos = [observation.itemInfo]
-
-        if modeldata is not None:
-            self.add_modeldata(modeldata)
-
-    def add_modeldata(self, modeldata):
-        if modeldata is None:
-            warnings.warn("Cannot add 'None' modeldata")
-            return
-
-        if isinstance(modeldata, list):
-            for data in modeldata:
-                self.add_modeldata(data)
-            return
-
-        if isinstance(modeldata, mikeio.Dataset):
-            mod_df = modeldata.to_dataframe()
-        elif isinstance(modeldata, pd.DataFrame):
-            # TODO: add validation
-            mod_df = modeldata
-        else:
-            raise ValueError(
-                f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset or pd.DataFrame)"
-            )
-        if len(mod_df) == 0:
-            warnings.warn("Cannot add zero-length modeldata")
-            return
-
-        mod_name = mod_df.columns[-1]
-        self.mod_data[mod_name] = mod_df
-        self._mod_names = list(self.mod_data.keys())
-
-        time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
-        mod_df.index = pd.DatetimeIndex(time, freq="infer")
-
-        if mod_df.index[0] < self._mod_start:
-            self._mod_start = mod_df.index[0].to_pydatetime()
-        if mod_df.index[-1] > self._mod_end:
-            self._mod_end = mod_df.index[-1].to_pydatetime()
-
-    def __repr__(self):
-        out = []
-        out.append(f"<{type(self).__name__}>")
-        out.append(f"Observation: {self.observation.name}, n_points={self.n_points}")
-        for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
-        return str.join("\n", out)
 
     def _get_obs_name(self, obs):
         return self._obs_names[self._get_obs_id(obs)]
@@ -553,7 +478,8 @@ class BaseComparer:
                     skilldf.insert(loc=0, column=field, value=unames[0])
         return skilldf
 
-    def _groupby_df(self, df, by, metrics, n_min: int = None):
+    @staticmethod
+    def _groupby_df(df, by, metrics, n_min: int = None):
         def calc_metrics(x):
             row = {}
             row["n"] = len(x)
@@ -706,7 +632,7 @@ class BaseComparer:
             warnings.warn("No data!")
             return
 
-        df = self._add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
+        df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
         n_models = len(df.model.unique())
         n_obs = len(df.observation.unique())
@@ -727,37 +653,6 @@ class BaseComparer:
 
         ss = SpatialSkill(res.to_xarray().squeeze())
         return ss
-
-    def _add_spatial_grid_to_df(self, df, bins, binsize):
-        if binsize is None:
-            # bins from bins
-            if isinstance(bins, tuple):
-                bins_x = bins[0]
-                bins_y = bins[1]
-            else:
-                bins_x = bins
-                bins_y = bins
-        else:
-            # bins from binsize
-            x_ptp = df.x.values.ptp()
-            y_ptp = df.y.values.ptp()
-            nx = int(np.ceil(x_ptp / binsize))
-            ny = int(np.ceil(y_ptp / binsize))
-            x_mean = np.round(df.x.mean())
-            y_mean = np.round(df.y.mean())
-            bins_x = np.arange(
-                x_mean - nx / 2 * binsize, x_mean + (nx / 2 + 1) * binsize, binsize
-            )
-            bins_y = np.arange(
-                y_mean - ny / 2 * binsize, y_mean + (ny / 2 + 1) * binsize, binsize
-            )
-        # cut and get bin centre
-        df["xBin"] = pd.cut(df.x, bins=bins_x)
-        df["xBin"] = df["xBin"].apply(lambda x: x.mid)
-        df["yBin"] = pd.cut(df.y, bins=bins_y)
-        df["yBin"] = df["yBin"].apply(lambda x: x.mid)
-
-        return df
 
     def sel_df(
         self,
@@ -834,59 +729,17 @@ class BaseComparer:
         if (start is not None) or (end is not None):
             df = df.loc[start:end]
         if area is not None:
-            if self._area_is_bbox(area):
+            if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
                 df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
-            elif self._area_is_polygon(area):
+            elif _area_is_polygon(area):
                 polygon = np.array(area)
                 xy = np.column_stack((df.x.values, df.y.values))
-                mask = self._inside_polygon(polygon, xy)
+                mask = _inside_polygon(polygon, xy)
                 df = df[mask]
             else:
                 raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
         return df
-
-    def _area_is_bbox(self, area):
-        is_bbox = False
-        if area is not None:
-            if not np.isscalar(area):
-                area = np.array(area)
-                if (area.ndim == 1) & (len(area) == 4):
-                    if np.all(np.isreal(area)):
-                        is_bbox = True
-        return is_bbox
-
-    def _area_is_polygon(self, area) -> bool:
-        if area is None:
-            return False
-        if np.isscalar(area):
-            return False
-        if not np.all(np.isreal(area)):
-            return False
-        polygon = np.array(area)
-        if polygon.ndim > 2:
-            return False
-
-        if polygon.ndim == 1:
-            if len(polygon) <= 5:
-                return False
-            if len(polygon) % 2 != 0:
-                return False
-
-        if polygon.ndim == 2:
-            if polygon.shape[0] < 3:
-                return False
-            if polygon.shape[1] != 2:
-                return False
-
-        return True
-
-    def _inside_polygon(self, polygon, xy):
-        import matplotlib.path as mp
-
-        if polygon.ndim == 1:
-            polygon = np.column_stack((polygon[0::2], polygon[1::2]))
-        return mp.Path(polygon).contains_points(xy)
 
     def scatter(
         self,
@@ -1082,8 +935,163 @@ class BaseComparer:
 
 
 class SingleObsComparer(BaseComparer):
-    def __init__(self, observation, model):
-        super().__init__(observation, model)
+    def __init__(self, observation, modeldata=None):
+
+        # self._metrics = options.metrics.list
+        self.obs_name = "Observation"
+        # self._obs_names: List[str]
+        self._mod_names: List[str]
+        self._mod_colors = [
+            "#1f78b4",
+            "#33a02c",
+            "#ff7f00",
+            "#93509E",
+            "#63CEFF",
+            "#fdbf6f",
+            "#004165",
+            "#8B8D8E",
+            "#0098DB",
+            "#61C250",
+            "#a6cee3",
+            "#b2df8a",
+            "#fb9a99",
+            "#cab2d6",
+            "#003f5c",
+            "#2f4b7c",
+            "#665191",
+            "#e31a1c",
+        ]
+
+        self._resi_color = "#8B8D8E"
+        self._obs_unit_text = ""
+        #      darkblue: #004165
+        #      midblue:  #0098DB,
+        #      gray:     #8B8D8E,
+        #      lightblue:#63CEFF,
+        #      green:    #61C250
+        #      purple:   #93509E
+        self.mod_data = None
+        self.data = None
+        self._all_df = None
+
+        self._mod_start = pd.Timestamp.max
+        self._mod_end = pd.Timestamp.min
+
+        self.observation = deepcopy(observation)
+        self._obs_unit_text = self.observation._unit_text()
+        self.mod_data = {}
+        # self._obs_names = [observation.name]
+        self._var_names = [observation.variable_name]
+        self._itemInfos = [observation.itemInfo]
+
+        if modeldata is not None:
+            self.add_modeldata(modeldata)
+
+    def add_modeldata(self, modeldata):
+        if modeldata is None:
+            warnings.warn("Cannot add 'None' modeldata")
+            return
+
+        if isinstance(modeldata, list):
+            for data in modeldata:
+                self.add_modeldata(data)
+            return
+
+        if isinstance(modeldata, mikeio.Dataset):
+            mod_df = modeldata.to_dataframe()
+        elif isinstance(modeldata, pd.DataFrame):
+            # TODO: add validation
+            mod_df = modeldata
+        else:
+            raise ValueError(
+                f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset or pd.DataFrame)"
+            )
+        if len(mod_df) == 0:
+            warnings.warn("Cannot add zero-length modeldata")
+            return
+
+        mod_name = mod_df.columns[-1]
+        self.mod_data[mod_name] = mod_df
+        self._mod_names = list(self.mod_data.keys())
+
+        time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
+        mod_df.index = pd.DatetimeIndex(time, freq="infer")
+
+        if mod_df.index[0] < self._mod_start:
+            self._mod_start = mod_df.index[0].to_pydatetime()
+        if mod_df.index[-1] > self._mod_end:
+            self._mod_end = mod_df.index[-1].to_pydatetime()
+
+    def __repr__(self):
+        out = []
+        out.append(f"<{type(self).__name__}>")
+        out.append(f"Observation: {self.observation.name}, n_points={self.n_points}")
+        for model in self.mod_names:
+            out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
+        return str.join("\n", out)
+
+    @property
+    def x(self) -> float:
+        return self.observation.x
+
+    @property
+    def y(self) -> float:
+        return self.observation.y
+
+    @property
+    def name(self) -> str:
+        """name of comparer (=observation)"""
+        return self.observation.name
+
+    @property
+    def _obs_names(self):
+        return [self.observation.name]
+
+    @property
+    def n_points(self) -> int:
+        """number of compared points"""
+        return len(self.data)
+
+    @property
+    def start(self) -> datetime:
+        """start datetime of compared data"""
+        return self.data.index[0].to_pydatetime()
+
+    @property
+    def end(self) -> datetime:
+        """end datetime of compared data"""
+        return self.data.index[-1].to_pydatetime()
+
+    @property
+    def obs(self) -> np.ndarray:
+        return self.data[self.obs_name].values
+
+    @property
+    def mod(self) -> np.ndarray:
+        return self.data[self.mod_names].values
+
+    def _construct_all_df(self):
+        # TODO: var_name
+        res = self._all_df_template()
+        frames = []
+        cols = res.keys()
+        for j in range(self.n_models):
+            mod_name = self.mod_names[j]
+            df = self.data[[mod_name]].copy()
+            df.columns = ["mod_val"]
+            df["model"] = mod_name
+            df["observation"] = self.observation.name
+            if self.n_variables > 1:
+                df["variable"] = self.observation.variable_name
+            df["x"] = self.x
+            df["y"] = self.y
+            df["obs_val"] = self.obs
+            frames.append(df[cols])
+
+        if len(frames) > 0:
+            res = pd.concat(frames)
+
+        self._all_df = res.sort_index()
 
     def __copy__(self):
         return deepcopy(self)
@@ -1740,6 +1748,10 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         return self._obs_names
 
     @property
+    def _obs_names(self):
+        return [c.observation.name for c in self.comparers.values()]
+
+    @property
     def n_observations(self) -> int:
         """Number of observations"""
         return self.n_comparers
@@ -1779,7 +1791,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
         self._mod_names = []
-        self._obs_names = []
+        # self._obs_names = []
         self._var_names = []
         self._itemInfos = []
 
@@ -1851,7 +1863,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         for mod_name in comparer.mod_names:
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
-        self._obs_names.append(comparer.observation.name)
+        # self._obs_names.append(comparer.observation.name)
         if comparer.observation.variable_name not in self._var_names:
             self._var_names.append(comparer.observation.variable_name)
 
@@ -2174,7 +2186,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
     def _parse_weights(self, weights, observations):
 
         if observations is None:
-            observations = self._obs_names
+            observations = self.obs_names
         else:
             observations = [observations] if np.isscalar(observations) else observations
             observations = [self._get_obs_name(o) for o in observations]
