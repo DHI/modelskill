@@ -1056,7 +1056,7 @@ class BaseComparer:
             skill_df = None
             units = None
 
-        ax=scatter(
+        ax = scatter(
             x=x,
             y=y,
             bins=bins,
@@ -1205,7 +1205,9 @@ class SingleObsComparer(BaseComparer):
     def copy(self):
         return self.__copy__()
 
-    def _model2obs_interp(self, obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]):
+    def _model2obs_interp(
+        self, obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]
+    ):
         """interpolate model to measurement time"""
         df = _interp_time(mod_df.dropna(), obs.time)
         df[self.obs_name] = obs.values
@@ -1616,7 +1618,7 @@ class PointComparer(SingleObsComparer):
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
         mod_end = self._mod_end + timedelta(seconds=1)
-        self.observation.df = self.observation.df[mod_start:mod_end]
+        self.observation.data = self.observation.data[mod_start:mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
@@ -1741,7 +1743,7 @@ class TrackComparer(SingleObsComparer):
     def __init__(self, observation, modeldata, max_model_gap: float = None):
         super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
-        self.observation.df = self.observation.df[self._mod_start : self._mod_end]
+        self.observation.data = self.observation.data[self._mod_start : self._mod_end]
 
         if not isinstance(modeldata, list):
             modeldata = [modeldata]
@@ -1751,8 +1753,8 @@ class TrackComparer(SingleObsComparer):
             df = self._model2obs_interp(self.observation, data, max_model_gap)
             # rename first columns to x, y
             df.columns = ["x", "y", *list(df.columns)[2:]]
-            if (len(df) > 0) and (len(df) == len(self.observation.df)):
-                ok = self._obs_mod_xy_distance_acceptable(df, self.observation.df)
+            if (len(df) > 0) and (len(df) == len(self.observation.data)):
+                ok = self._obs_mod_xy_distance_acceptable(df, self.observation.data)
                 # set model to NaN if too far away from obs location
                 df.loc[~ok, self.mod_names[j]] = np.nan
                 if sum(ok) == 0:

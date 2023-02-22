@@ -88,7 +88,7 @@ def test_point_df_model_extract(point_df):
     o1 = PointObservation(df, item=0)
     c = mr1.extract_observation(o1)
     assert c.score() == 0.0  # o1=mr1
-    assert c.n_points == len(o1.df.dropna())
+    assert c.n_points == len(o1.data.dropna())
 
 
 def test_track_df_modelresultitem(track_df):
@@ -199,5 +199,5 @@ def test_track_df_model_extract(track_df):
         o1 = TrackObservation(df, item=2)
     c = mr1.extract_observation(o1)
     assert c.score() == 0.0  # o1=mr1
-    assert len(o1.df.dropna()) == 1110
+    assert len(o1.data.dropna()) == 1110
     assert c.n_points == 1110
