@@ -24,8 +24,13 @@ def ERA5_DutchCoast_nc():
 
 
 @pytest.fixture
-def modelresult(ERA5_DutchCoast_nc):
+def mr_ERA5_pp1d(ERA5_DutchCoast_nc):
     return ModelResult(ERA5_DutchCoast_nc, item="pp1d")
+
+
+@pytest.fixture
+def mr_ERA5_swh(ERA5_DutchCoast_nc):
+    return ModelResult(ERA5_DutchCoast_nc, item="swh")
 
 
 @pytest.fixture
@@ -47,8 +52,8 @@ def trackobs_c2_hm0():
     return TrackObservation("tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="c2")
 
 
-def test_XArrayModelResult_from_nc(modelresult):
-    mr = modelresult
+def test_XArrayModelResult_from_nc(mr_ERA5_pp1d):
+    mr = mr_ERA5_pp1d
 
     assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.ds, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else---
@@ -127,8 +132,8 @@ def test_XArrayModelResultItem_itemInfo(ERA5_DutchCoast_nc):
     mri3.itemInfo == mikeio.ItemInfo("Peak period", mikeio.EUMType.Wave_period)
 
 
-def test_XArrayModelResult_getitem(modelresult):
-    mri = modelresult
+def test_XArrayModelResult_getitem(mr_ERA5_pp1d):
+    mri = mr_ERA5_pp1d
 
     assert "XArrayModelResultItem" in repr(mri)
     assert "- Item: pp1d" in repr(mri)
@@ -140,9 +145,8 @@ def test_XArrayModelResult_getitem(modelresult):
 
 
 # should we test "private" methods?
-def test_XArrayModelResult_extract_point(modelresult, pointobs_epl_hm0):
-    mr = modelresult
-    df = mr._extract_point(pointobs_epl_hm0)
+def test_XArrayModelResult_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
+    df = mr_ERA5_swh._extract_point(pointobs_epl_hm0)
     assert isinstance(df, pd.DataFrame)
     assert len(df.columns) == 1
     assert pytest.approx(df.iloc[0, 0]) == 0.875528
@@ -156,10 +160,8 @@ def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
     assert ok
 
 
-def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
-    mri = modelresult
-
-    pc = mri.extract_observation(pointobs_epl_hm0)
+def test_XArrayModelResultItem_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
+    pc = mr_ERA5_swh.extract_observation(pointobs_epl_hm0)
     df = pc.df
 
     assert isinstance(pc, PointComparer)
@@ -171,8 +173,8 @@ def test_XArrayModelResultItem_extract_point(modelresult, pointobs_epl_hm0):
     assert len(df.dropna()) == 67
 
 
-def test_XArrayModelResultItem_extract_point_xoutside(modelresult, pointobs_epl_hm0):
-    mri = modelresult
+def test_XArrayModelResultItem_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
+    mri = mr_ERA5_pp1d
     pointobs_epl_hm0.x = -50
     with pytest.warns(UserWarning, match="Cannot add zero-length modeldata"):
         pc = mri.extract_observation(pointobs_epl_hm0)
@@ -196,14 +198,14 @@ def test_XArrayModelResultItem_extract_point_toutside(
 @pytest.mark.skip(
     reason="validation not possible at the moment, allow item mapping for ModelResult and Observation and match on item name?"
 )
-def test_XArrayModelResultItem_extract_point_wrongitem(modelresult, pointobs_epl_hm0):
-    mri = modelresult
+def test_XArrayModelResultItem_extract_point_wrongitem(mr_ERA5_pp1d, pointobs_epl_hm0):
+    mri = mr_ERA5_pp1d
     pc = mri.extract_observation(pointobs_epl_hm0)
     assert pc == None
 
 
-def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
-    mri = modelresult
+def test_XArrayModelResultItem_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
+    mri = mr_ERA5_pp1d
     tc = mri.extract_observation(trackobs_c2_hm0)
     df = tc.df
 
@@ -216,8 +218,8 @@ def test_XArrayModelResultItem_extract_track(modelresult, trackobs_c2_hm0):
     assert len(df.dropna()) == 99
 
 
-def test_xarray_connector(modelresult, pointobs_epl_hm0, trackobs_c2_hm0):
-    con = fmskill.Connector([pointobs_epl_hm0, trackobs_c2_hm0], modelresult)
+def test_xarray_connector(mr_ERA5_pp1d, pointobs_epl_hm0, trackobs_c2_hm0):
+    con = fmskill.Connector([pointobs_epl_hm0, trackobs_c2_hm0], mr_ERA5_pp1d)
     assert len(con) == 2
     assert con.n_models == 1
 
