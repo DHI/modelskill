@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 
-from .dfs import DfsModelResult, DataArrayModelResultItem, DfsModelResultItem
-from .pandas import DataFramePointModelResult, DataFrameTrackModelResult
-from .xarray import XArrayModelResult
+from .dfs import DataArrayModelResultItem, DfsModelResultItem
+from .pandas import DataFramePointModelResultItem, DataFrameTrackModelResultItem
+from .xarray import XArrayModelResultItem
 
 
 class ModelResult:
@@ -42,9 +42,8 @@ class ModelResult:
             if "dfs" in ext:
                 return DfsModelResultItem(filename, *args, **kwargs)
             else:
-                mr = XArrayModelResult(filename, *args, **kwargs)
-                return self._mr_or_mr_item(mr)
-
+                return XArrayModelResultItem(filename, *args, **kwargs)
+            
         elif isinstance(data, mikeio.DataArray):
             return DataArrayModelResultItem(data, *args, **kwargs)
         elif isinstance(data, mikeio.Dataset):
@@ -52,23 +51,15 @@ class ModelResult:
         elif isinstance(data, (pd.DataFrame, pd.Series)):
             type = kwargs.pop("type", "point")
             if type == "point":
-                mr = DataFramePointModelResult(data, *args, **kwargs)
+                return DataFramePointModelResultItem(data, *args, **kwargs)
             elif type == "track":
-                mr = DataFrameTrackModelResult(data, *args, **kwargs)
+                return DataFrameTrackModelResultItem(data, *args, **kwargs)
             else:
                 raise ValueError(f"type '{type}' unknown (point, track)")
-            return self._mr_or_mr_item(mr)
+            
         elif isinstance(data, (xr.Dataset, xr.DataArray)):
-            mr = XArrayModelResult(data, *args, **kwargs)
-            return self._mr_or_mr_item(mr)
+            return XArrayModelResultItem(data, *args, **kwargs)
         else:
             raise ValueError(
                 "Input type not supported (filename, mikeio.DataArray, DataFrame, xr.DataArray)"
             )
-
-    @staticmethod
-    def _mr_or_mr_item(mr):
-        if mr._selected_item is not None:
-            return mr[mr._selected_item]
-        else:
-            return mr
