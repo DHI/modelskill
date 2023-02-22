@@ -161,7 +161,7 @@ class _DfsBase:
     def _extract_track_dfsu(
         self, observation: TrackObservation, item
     ) -> mikeio.Dataset:
-        ds_model = self.dfs.extract_track(track=observation.df, items=[item])
+        ds_model = self.dfs.extract_track(track=observation.data, items=[item])
         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
         return ds_model
 
@@ -225,7 +225,7 @@ class DataArrayModelResultItem(ModelResultInterface):
         return mikeio.Dataset(dap).to_dataframe().dropna()
 
     def _extract_track(self, observation: TrackObservation) -> pd.DataFrame:
-        ds = self._da.extract_track(observation.df)
+        ds = self._da.extract_track(observation.data)
         ds.rename({ds.items[-1].name: self.name}, inplace=True)
         return ds.to_dataframe().dropna()
 
@@ -291,7 +291,10 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         return "\n".join(txt)
 
     def extract_observation(
-        self, observation: Union[PointObservation, TrackObservation], validate=True, **kwargs
+        self,
+        observation: Union[PointObservation, TrackObservation],
+        validate=True,
+        **kwargs,
     ) -> BaseComparer:
         """Extract ModelResult at observation for comparison
 
@@ -365,7 +368,10 @@ class DfsModelResult(_DfsBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.dfs.items:
             self._mr_items[it.name] = DfsModelResultItem(
-                self.dfs, it, self._filename, self.name,
+                self.dfs,
+                it,
+                self._filename,
+                self.name,
             )
 
         if item is not None:

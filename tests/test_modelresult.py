@@ -2,12 +2,11 @@ import pytest
 
 import mikeio
 from fmskill.model import ModelResult
-from fmskill.model import DfsModelResultItem, DfsModelResult,DataArrayModelResultItem
-from fmskill.observation import PointObservation,TrackObservation
+from fmskill.model import DfsModelResultItem, DfsModelResult, DataArrayModelResultItem
+from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
 
 import numpy as np
-
 
 
 @pytest.fixture
@@ -200,7 +199,7 @@ def test_dataarray_extract_point(sw_dutch_coast, Hm0_EPL):
     assert isinstance(c2, PointComparer)
     assert np.all(c1.df == c2.df)
     c1.observation.itemInfo == Hm0_EPL.itemInfo
-    assert len(c1.observation.df.index.difference(Hm0_EPL.df.index)) == 0
+    assert len(c1.observation.data.index.difference(Hm0_EPL.data.index)) == 0
 
 
 def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
@@ -222,7 +221,7 @@ def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
     assert isinstance(c2, TrackComparer)
     assert np.all(c1.df == c2.df)
     c1.observation.itemInfo == Hm0_C2.itemInfo
-    assert len(c1.observation.df.index.difference(Hm0_C2.df.index)) == 0
+    assert len(c1.observation.data.index.difference(Hm0_C2.data.index)) == 0
 
 
 def test_factory(hd_oresund_2d):

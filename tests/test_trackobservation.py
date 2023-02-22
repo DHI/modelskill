@@ -17,10 +17,9 @@ def test_read(c2):
     assert o1.name == "c2"
     assert pytest.approx(o1.values.max()) == 17.67
     assert o1.override_units == None
-    o2 = TrackObservation(c2, item=2, name="c2",units='inches/hour')
-    assert o2.override_units == 'inches/hour'
+    o2 = TrackObservation(c2, item=2, name="c2", units="inches/hour")
+    assert o2.override_units == "inches/hour"
     assert o2._unit_text() == "Wind speed [inches/hour]"
-    
 
 
 def test_from_df():
@@ -50,16 +49,16 @@ def test_non_unique_index():
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o = TrackObservation(df, item=2)
-    assert o.df.index.is_unique
+    assert o.data.index.is_unique
     assert not df.index.is_unique  # did not change input data
-    assert o.df.index[160].to_pydatetime().microsecond == 1000
-    assert o.df.index[161].to_pydatetime().microsecond == 2000
+    assert o.data.index[160].to_pydatetime().microsecond == 1000
+    assert o.data.index[161].to_pydatetime().microsecond == 2000
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o = TrackObservation(df, item=2, offset_duplicates=0.0001)
-    assert o.df.index.is_unique
-    assert o.df.index[160].to_pydatetime().microsecond == 100
-    assert o.df.index[161].to_pydatetime().microsecond == 200
+    assert o.data.index.is_unique
+    assert o.data.index[160].to_pydatetime().microsecond == 100
+    assert o.data.index[161].to_pydatetime().microsecond == 200
 
 
 def test_trackobservation_item_dfs0(c2):
@@ -86,7 +85,7 @@ def test_trackobservation_item_csv():
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o1 = TrackObservation(df, item=-1)
     assert o1.n_points == 1115
-    assert o1.df.columns[-1] == "wind_speed"
+    assert o1.data.columns[-1] == "wind_speed"
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o2 = TrackObservation(df, item="significant_wave_height")
@@ -112,7 +111,7 @@ def test_trackobservation_x_y_item(c2):
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o1 = TrackObservation(df, item=-1, x_item="lon", y_item="lat")
     assert o1.n_points == 1115
-    assert o1.df.columns[-1] == "wind_speed"
+    assert o1.data.columns[-1] == "wind_speed"
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o2 = TrackObservation(df, item="surface_elevation", x_item=2, y_item=0)

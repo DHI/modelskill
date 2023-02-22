@@ -99,9 +99,9 @@ class _XarrayBase:
 
         if item is None:
             item = self._selected_item
-        t = xr.DataArray(observation.df.index, dims="track")
-        x = xr.DataArray(observation.df.Longitude, dims="track")
-        y = xr.DataArray(observation.df.Latitude, dims="track")
+        t = xr.DataArray(observation.data.index, dims="track")
+        x = xr.DataArray(observation.data.Longitude, dims="track")
+        y = xr.DataArray(observation.data.Latitude, dims="track")
         da = self.ds[item].interp(coords=dict(time=t, x=x, y=y), method="linear")
         df = da.to_dataframe().drop(columns=["time"])
         df.index.name = "time"
@@ -156,7 +156,9 @@ class XArrayModelResultItem(_XarrayBase, ModelResultInterface):
         self.name = name
         self._filename = filename
 
-    def extract_observation(self, observation: PointObservation, **kwargs) -> PointComparer:
+    def extract_observation(
+        self, observation: PointObservation, **kwargs
+    ) -> PointComparer:
         """Compare this ModelResult with an observation
 
         Parameters
@@ -238,7 +240,11 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
         self._mr_items = {}
         for it in self.item_names:
             self._mr_items[it] = XArrayModelResultItem(
-                self.ds, self.name, item=it, itemInfo=itemInfo, filename=self._filename,
+                self.ds,
+                self.name,
+                item=it,
+                itemInfo=itemInfo,
+                filename=self._filename,
             )
 
     def _rename_coords(self, ds):
