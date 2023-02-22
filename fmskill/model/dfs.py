@@ -264,7 +264,7 @@ class DataArrayModelResultItem(ModelResultInterface):
         else:
             raise ValueError("Only point and track observation are supported!")
 
-        if len(comparer.df) == 0:
+        if len(comparer.data) == 0:
             warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
             comparer = None
 
@@ -356,7 +356,7 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         else:
             raise ValueError("Only point and track observation are supported!")
 
-        if len(comparer.df) == 0:
+        if len(comparer.data) == 0:
             warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
             comparer = None
 

@@ -7,6 +7,7 @@ from fmskill.comparison import PointComparer, TrackComparer
 from fmskill.model import DfsModelResultItem, DataArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 
+
 @pytest.fixture
 def klagshamn():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
@@ -189,7 +190,7 @@ def test_dataarray_extract_point(sw_dutch_coast, Hm0_EPL):
     c2 = mr2.extract_observation(Hm0_EPL.copy())
     assert isinstance(c1, PointComparer)
     assert isinstance(c2, PointComparer)
-    assert np.all(c1.df == c2.df)
+    assert np.all(c1.data == c2.data)
     c1.observation.itemInfo == Hm0_EPL.itemInfo
     assert len(c1.observation.data.index.difference(Hm0_EPL.data.index)) == 0
 
@@ -211,7 +212,7 @@ def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
     c2 = mr2.extract_observation(Hm0_C2.copy())
     assert isinstance(c1, TrackComparer)
     assert isinstance(c2, TrackComparer)
-    assert np.all(c1.df == c2.df)
+    assert np.all(c1.data == c2.data)
     c1.observation.itemInfo == Hm0_C2.itemInfo
     assert len(c1.observation.data.index.difference(Hm0_C2.data.index)) == 0
 

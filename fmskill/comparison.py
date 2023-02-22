@@ -96,17 +96,17 @@ class BaseComparer:
     @property
     def n_points(self) -> int:
         """number of compared points"""
-        return len(self.df)
+        return len(self.data)
 
     @property
     def start(self) -> datetime:
         """start datetime of compared data"""
-        return self.df.index[0].to_pydatetime()
+        return self.data.index[0].to_pydatetime()
 
     @property
     def end(self) -> datetime:
         """end datetime of compared data"""
-        return self.df.index[-1].to_pydatetime()
+        return self.data.index[-1].to_pydatetime()
 
     @property
     def x(self) -> float:
@@ -128,11 +128,11 @@ class BaseComparer:
 
     @property
     def obs(self) -> np.ndarray:
-        return self.df[self.obs_name].values
+        return self.data[self.obs_name].values
 
     @property
     def mod(self) -> np.ndarray:
-        return self.df[self.mod_names].values
+        return self.data[self.mod_names].values
 
     @property
     def n_models(self) -> int:
@@ -178,14 +178,14 @@ class BaseComparer:
             if len(missing_models) == 0:
                 # same obs name and same model names
                 cc = self.copy()
-                cc.df = pd.concat([cc.df, other.df])
-                cc.df = cc.df[~cc.df.index.duplicated(keep="last")]  # 'first'
+                cc.data = pd.concat([cc.data, other.data])
+                cc.data = cc.data[~cc.data.index.duplicated(keep="last")]  # 'first'
 
             else:
                 cols = ["x", "y"] if isinstance(self, TrackComparer) else []
-                mod_data = [self.df[cols + [m]] for m in self.mod_names]
+                mod_data = [self.data[cols + [m]] for m in self.mod_names]
                 for m in other.mod_names:
-                    mod_data.append(other.df[cols + [m]])
+                    mod_data.append(other.data[cols + [m]])
 
                 cls = self.__class__
                 cc = cls.__new__(cls)
@@ -219,7 +219,7 @@ class BaseComparer:
         cols = res.keys()
         for j in range(self.n_models):
             mod_name = self.mod_names[j]
-            df = self.df[[mod_name]].copy()
+            df = self.data[[mod_name]].copy()
             df.columns = ["mod_val"]
             df["model"] = mod_name
             df["observation"] = self.observation.name
@@ -271,7 +271,7 @@ class BaseComparer:
         #      green:    #61C250
         #      purple:   #93509E
         self.mod_data = None
-        self.df = None
+        self.data = None
         self._all_df = None
 
         self._mod_start = pd.Timestamp.max
@@ -1516,10 +1516,10 @@ class SingleObsComparer(BaseComparer):
                 mod_name = self.mod_names[j]
                 mod_df = self.mod_data[mod_name]
                 mod_df[mod_name] = mod_df.values - bias[j]
-            self.df[self.mod_names] = self.mod - bias
+            self.data[self.mod_names] = self.mod - bias
         elif correct == "Observation":
             # what if multiple models?
-            self.df[self.obs_name] = self.obs + bias
+            self.data[self.obs_name] = self.obs + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
@@ -1583,8 +1583,10 @@ class SingleObsComparer(BaseComparer):
 
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        ax = self.df[mod_name].hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
-        self.df[self.obs_name].hist(
+        ax = self.data[mod_name].hist(
+            bins=bins, color=self._mod_colors[mod_id], **kwargs
+        )
+        self.data[self.obs_name].hist(
             bins=bins, color=self.observation.color, ax=ax, **kwargs
         )
         ax.legend([mod_name, self.obs_name])
@@ -1629,12 +1631,12 @@ class PointComparer(SingleObsComparer):
                 :, ::-1
             ]
             if j == 0:
-                self.df = df
+                self.data = df
             else:
-                self.df[self.mod_names[j]] = df[self.mod_names[j]]
+                self.data[self.mod_names[j]] = df[self.mod_names[j]]
 
-        self.df.index.name = "datetime"
-        self.df.dropna(inplace=True)
+        self.data.index.name = "datetime"
+        self.data.dropna(inplace=True)
 
     def plot_timeseries(
         self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
@@ -1671,8 +1673,8 @@ class PointComparer(SingleObsComparer):
                 self.mod_data[key].plot(ax=ax, color=self._mod_colors[j])
 
             ax.scatter(
-                self.df.index,
-                self.df[[self.obs_name]],
+                self.data.index,
+                self.data[[self.obs_name]],
                 marker=".",
                 color=self.observation.color,
             )
@@ -1702,8 +1704,8 @@ class PointComparer(SingleObsComparer):
                 [
                     *mod_scatter_list,
                     go.Scatter(
-                        x=self.df.index,
-                        y=self.df[self.obs_name],
+                        x=self.data.index,
+                        y=self.data[self.obs_name],
                         name=self.obs_name,
                         mode="markers",
                         marker=dict(color=self.observation.color),
@@ -1734,11 +1736,11 @@ class TrackComparer(SingleObsComparer):
 
     @property
     def x(self):
-        return self.df.iloc[:, 0]
+        return self.data.iloc[:, 0]
 
     @property
     def y(self):
-        return self.df.iloc[:, 1]
+        return self.data.iloc[:, 1]
 
     def __init__(self, observation, modeldata, max_model_gap: float = None):
         super().__init__(observation, modeldata)
@@ -1764,12 +1766,12 @@ class TrackComparer(SingleObsComparer):
             if j == 0:
                 # change order of obs and model
                 cols = ["x", "y", self.obs_name, self.mod_names[j]]
-                self.df = df[cols]
+                self.data = df[cols]
             else:
-                self.df[self.mod_names[j]] = df[self.mod_names[j]]
+                self.data[self.mod_names[j]] = df[self.mod_names[j]]
 
-        self.df.index.name = "datetime"
-        self.df = self.df.dropna()
+        self.data.index.name = "datetime"
+        self.data = self.data.dropna()
 
     def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
         mod_xy = df_mod.loc[:, ["x", "y"]].values
@@ -1869,7 +1871,7 @@ class ComparerCollection(Mapping, Sequence, BaseComparer):
         for cmp in self.comparers.values():
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
-                df = cmp.df[[mod_name]].copy()
+                df = cmp.data[[mod_name]].copy()
                 df.columns = ["mod_val"]
                 df["model"] = mod_name
                 df["observation"] = cmp.observation.name
