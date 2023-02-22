@@ -42,15 +42,15 @@ def test_df_modelresultitem(point_df):
 
     # item as string
     mr2 = DataFramePointModelResultItem(df, item="Water Level")
-    assert len(mr2.df) == len(mr1.df)
+    assert len(mr2.data) == len(mr1.data)
     assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     mr3 = DataFramePointModelResultItem(df[["Water Level"]])
-    assert len(mr3.df) == len(mr1.df)
+    assert len(mr3.data) == len(mr1.data)
 
     # Series
     mr4 = ModelResult(df["Water Level"])
-    assert len(mr4.df) == len(mr1.df)
+    assert len(mr4.data) == len(mr1.data)
 
 
 def test_df_modelresultitem_itemInfo(point_df):
@@ -94,11 +94,11 @@ def test_track_df_modelresultitem(track_df):
 
     # item as string
     mr2 = ModelResult(df, item="surface_elevation")
-    assert len(mr2.df) == len(mr1.df)
+    assert len(mr2.data) == len(mr1.data)
     assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     mr3 = DataFramePointModelResultItem(df[["surface_elevation"]])
-    assert len(mr3.df) == len(mr1.df)
+    assert len(mr3.data) == len(mr1.data)
     assert mr3.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
@@ -118,12 +118,12 @@ def test_track_df_modelresult(track_df):
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         mr1 = DataFrameTrackModelResultItem(df, item=2)
     assert isinstance(mr1, ModelResultInterface)
-    assert len(mr1.df.columns) == 3
+    assert len(mr1.data.columns) == 3
     assert mr1.item_name == "surface_elevation"
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         mr3 = ModelResult(df, item=2, type="track")
-    assert len(mr3.df) == len(mr1.df)
+    assert len(mr3.data) == len(mr1.data)
     assert isinstance(mr3, ModelResultInterface)
 
 
@@ -133,7 +133,7 @@ def test_track_from_dfs0_df_modelresult(track_from_dfs0):
         mr1 = ModelResult(df, item=-1, type="track")
     assert isinstance(mr1, ModelResultInterface)
     assert isinstance(mr1, DataFrameTrackModelResultItem)
-    assert len(mr1.df.columns) == 3
+    assert len(mr1.data.columns) == 3
 
 
 def test_track_df_tweak_modelresult(track_df):

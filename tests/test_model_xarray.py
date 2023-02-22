@@ -56,11 +56,11 @@ def test_XArrayModelResult_from_nc(mr_ERA5_pp1d):
     mr = mr_ERA5_pp1d
 
     assert isinstance(mr, XArrayModelResultItem)
-    # assert isinstance(mr.ds, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else---
+    # assert isinstance(mr.data, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else---
     assert "ERA5_DutchCoast.nc" in mr.filename
     # assert "- Item: 4: swh" in repr(mr)
     # assert len(mr) == 5
-    # assert len(mr.ds) == 5
+    # assert len(mr.data) == 5
     assert mr.name == "ERA5_DutchCoast"
     assert mr.item_name == "pp1d"
     assert mr.start_time == datetime(2017, 10, 27, 0, 0, 0)
@@ -137,9 +137,9 @@ def test_XArrayModelResult_getitem(mr_ERA5_pp1d):
 
     assert "XArrayModelResultItem" in repr(mri)
     assert "- Item: pp1d" in repr(mri)
-    assert isinstance(mri.ds, xr.Dataset)
+    assert isinstance(mri.data, xr.Dataset)
     # assert len(mri) == 1   # has no length (it's an item)
-    assert len(mri.ds) == 1  # Keep this?
+    assert len(mri.data) == 1  # Keep this?
     assert mri.name == "ERA5_DutchCoast"
     assert mri.item_name == "pp1d"
 

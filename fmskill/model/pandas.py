@@ -11,11 +11,11 @@ from .abstract import ModelResultInterface, _parse_itemInfo
 class _DataFrameBase:
     @property
     def start_time(self) -> pd.Timestamp:
-        return self.df.index[0]
+        return self.data.index[0]
 
     @property
     def end_time(self) -> pd.Timestamp:
-        return self.df.index[-1]
+        return self.data.index[-1]
 
     @staticmethod
     def _check_dataframe(df):
@@ -45,7 +45,7 @@ class _DataFrameBase:
 
     def _get_item_name(self, item, item_names=None) -> str:
         if item_names is None:
-            item_names = list(self.df.columns)
+            item_names = list(self.data.columns)
         n_items = len(item_names)
         if item is None:
             if n_items == 1:
@@ -70,7 +70,7 @@ class _DataFrameBase:
     def _get_item_num(self, item, item_names=None) -> int:
         item_name = self._get_item_name(item, item_names)
         if item_names is None:
-            item_names = list(self.df.columns)
+            item_names = list(self.data.columns)
         return item_names.index(item_name)
 
     def _extract_point(self, observation: PointObservation, item=None) -> pd.DataFrame:
@@ -79,13 +79,13 @@ class _DataFrameBase:
             item = self._selected_item
         else:
             item = self._get_item_name(item)
-        return self.df[[item]].dropna()
+        return self.data[[item]].dropna()
 
 
 class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
     @property
     def item_name(self):
-        return self.df.columns[0]
+        return self.data.columns[0]
 
     def __init__(self, df, name: str = None, item=None, itemInfo=None):
         self.itemInfo = _parse_itemInfo(itemInfo)
@@ -99,7 +99,7 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
             item = self._get_default_item(df.columns)
 
         item = self._get_item_name(item, df.columns)
-        self.df = df[[item]]
+        self.data = df[[item]]
         self._selected_item = item
 
         if name is None:
@@ -161,8 +161,8 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
             df.index = make_unique_index(df.index)
 
         item_num = self._get_item_num(item, list(df.columns))
-        self.df = df.iloc[:, [self._x_item, self._y_item, item_num]]
-        item = self._get_item_name(item, self.df.columns)
+        self.data = df.iloc[:, [self._x_item, self._y_item, item_num]]
+        item = self._get_item_name(item, self.data.columns)
         self._selected_item = item
 
         if name is None:
@@ -219,7 +219,7 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
     @property
     def _val_cols(self):
         """All columns except x- and y- column"""
-        return self._get_val_cols(self.df.columns)
+        return self._get_val_cols(self.data.columns)
 
     def _get_val_cols(self, cols):
         """All columns except x- and y- column"""
@@ -233,7 +233,7 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
         if item is None:
             item = self._selected_item
         item_num = self._get_item_num(item)
-        return self.df.iloc[:, [self._x_item, self._y_item, item_num]].dropna()
+        return self.data.iloc[:, [self._x_item, self._y_item, item_num]].dropna()
 
     def extract_observation(
         self, observation: TrackObservation, **kwargs

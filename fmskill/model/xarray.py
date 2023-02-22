@@ -47,7 +47,7 @@ class XArrayModelResultItem(ModelResultInterface):
         self._validate_time_axis(ds.coords)
 
         item = self._get_item_name(item, list(ds.data_vars))
-        self.ds = ds[[item]]
+        self.data = ds[[item]]
         self._selected_item = item
         if name is None:
             name = self.item_name
@@ -91,7 +91,7 @@ class XArrayModelResultItem(ModelResultInterface):
 
     def _get_item_name(self, item, item_names=None) -> str:
         if item_names is None:
-            item_names = list(self.ds.data_vars)
+            item_names = list(self.data.data_vars)
         n_items = len(item_names)
         if item is None:
             if n_items == 1:
@@ -115,7 +115,7 @@ class XArrayModelResultItem(ModelResultInterface):
 
     def _get_item_num(self, item) -> int:
         item_name = self._get_item_name(item)
-        item_names = list(self.ds.data_vars)
+        item_names = list(self.data.data_vars)
         return item_names.index(item_name)
 
     def _validate_start_end(self, observation: Observation) -> bool:
@@ -131,11 +131,11 @@ class XArrayModelResultItem(ModelResultInterface):
 
     @property
     def start_time(self) -> pd.Timestamp:
-        return pd.Timestamp(self.ds.time.values[0])
+        return pd.Timestamp(self.data.time.values[0])
 
     @property
     def end_time(self) -> pd.Timestamp:
-        return pd.Timestamp(self.ds.time.values[-1])
+        return pd.Timestamp(self.data.time.values[-1])
 
     @property
     def filename(self):
@@ -185,7 +185,7 @@ class XArrayModelResultItem(ModelResultInterface):
                 + f"because it has None position x={x}, y={y}. Please provide position "
                 + "when creating PointObservation."
             )
-        da = self.ds[item].interp(coords=dict(x=x, y=y), method="nearest")
+        da = self.data[item].interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
         return df.dropna()
@@ -198,7 +198,7 @@ class XArrayModelResultItem(ModelResultInterface):
         t = xr.DataArray(observation.df.index, dims="track")
         x = xr.DataArray(observation.df.Longitude, dims="track")
         y = xr.DataArray(observation.df.Latitude, dims="track")
-        da = self.ds[item].interp(coords=dict(time=t, x=x, y=y), method="linear")
+        da = self.data[item].interp(coords=dict(time=t, x=x, y=y), method="linear")
         df = da.to_dataframe().drop(columns=["time"])
         df.index.name = "time"
         df = df.rename(columns={df.columns[-1]: self.name})
@@ -209,8 +209,8 @@ class XArrayModelResultItem(ModelResultInterface):
             raise ValueError(
                 "PointObservation has None position - cannot determine if inside xarray domain!"
             )
-        xmin = self.ds.x.values.min()
-        xmax = self.ds.x.values.max()
-        ymin = self.ds.y.values.min()
-        ymax = self.ds.y.values.max()
+        xmin = self.data.x.values.min()
+        xmax = self.data.x.values.max()
+        ymin = self.data.y.values.min()
+        ymax = self.data.y.values.max()
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)

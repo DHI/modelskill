@@ -60,7 +60,7 @@ def _parse_model(mod, item=None):
             raise ValueError("Model ambiguous - please provide item")
         mod = dfs.read(items=item).to_dataframe()
     elif isinstance(mod, pd.DataFrame):
-        mod = DataFramePointModelResultItem(mod, item=item).df
+        mod = DataFramePointModelResultItem(mod, item=item).data
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
     elif isinstance(mod, DfsModelResultItem):
