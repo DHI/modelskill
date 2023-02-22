@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 import numpy as np
 import pandas as pd
 import warnings
@@ -22,7 +23,7 @@ class _XarrayBase:
         return self._filename
 
     @staticmethod
-    def _get_new_coord_names(coords):
+    def _get_new_coord_names(coords) -> Dict[str, str]:
         new_names = {}
         for coord in coords:
             c = coord.lower()
@@ -30,7 +31,7 @@ class _XarrayBase:
                 new_names[coord] = "x"
             elif ("y" not in new_names) and (("lat" in c) or ("north" in c)):
                 new_names[coord] = "y"
-            elif ("time" not in new_names) and (("time" in c) or ("date" in c)):
+            elif ("time" not in new_names) and "date" in c:
                 new_names[coord] = "time"
         return new_names
 
@@ -249,6 +250,4 @@ class XArrayModelResult(_XarrayBase, MultiItemModelResult):
 
     def _rename_coords(self, ds):
         new_names = self._get_new_coord_names(ds.coords)
-        if len(new_names) > 0:
-            ds = ds.rename(new_names)
-        return ds
+        return ds.rename(new_names)
