@@ -132,7 +132,7 @@ def test_concat_same_model(o123, mrmike):
     # if we add the same model multiple times it has no effect
     cc12 = cc1 + cc2
     assert cc12.n_points == cc1.n_points
-    assert cc12[0].df.index.is_unique
+    assert cc12[0].data.index.is_unique
     assert cc1.score() == cc12.score()
 
 

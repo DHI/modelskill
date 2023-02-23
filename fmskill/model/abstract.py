@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import pandas as pd
 import mikeio
 
-from ..comparison import BaseComparer
+from ..comparison import SingleObsComparer
 
 
 def _parse_itemInfo(itemInfo):
@@ -30,7 +30,7 @@ class ModelResultInterface(ABC):  # pragma: no cover
         pass
 
     @abstractmethod
-    def extract_observation(self, observation) -> BaseComparer:
+    def extract_observation(self, observation) -> SingleObsComparer:
         pass
 
     def __repr__(self):

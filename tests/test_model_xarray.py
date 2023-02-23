@@ -162,7 +162,7 @@ def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
 
 def test_XArrayModelResultItem_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     pc = mr_ERA5_swh.extract_observation(pointobs_epl_hm0)
-    df = pc.df
+    df = pc.data
 
     assert isinstance(pc, PointComparer)
     assert pc.start == datetime(2017, 10, 27, 0, 0, 0)
@@ -207,7 +207,7 @@ def test_XArrayModelResultItem_extract_point_wrongitem(mr_ERA5_pp1d, pointobs_ep
 def test_XArrayModelResultItem_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     mri = mr_ERA5_pp1d
     tc = mri.extract_observation(trackobs_c2_hm0)
-    df = tc.df
+    df = tc.data
 
     assert isinstance(tc, TrackComparer)
     assert tc.start.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)

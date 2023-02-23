@@ -127,7 +127,7 @@ class DataFramePointModelResultItem(_DataFrameBase, ModelResultInterface):
         else:
             raise ValueError("Only point observation are supported!")
 
-        if len(comparer.df) == 0:
+        if len(comparer.data) == 0:
             warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
             comparer = None
 
@@ -256,7 +256,7 @@ class DataFrameTrackModelResultItem(_DataFrameBase, ModelResultInterface):
         else:
             raise ValueError("Only track observation are supported!")
 
-        if len(comparer.df) == 0:
+        if len(comparer.data) == 0:
             warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
             comparer = None
 
