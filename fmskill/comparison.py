@@ -293,7 +293,7 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
     return by
 
 
-class SingleObsComparer():
+class SingleObsComparer:
     def __init__(self, observation, modeldata=None):
 
         # self._metrics = options.metrics.list
@@ -996,24 +996,14 @@ class SingleObsComparer():
         ylabel = ylabel or f"Model, {unit_text}"
         title = title or f"{self.mod_names[mod_id]} vs {self.name}"
 
-        if skill_table != None:
-            # Calculate Skill if it was requested to add as table on the right of plot
-            if skill_table == True:
-                skill_df = self.skill(df=df, model=model)
-
-            # Check for units
+        skill_df = None
+        units = None
+        if skill_table:
+            skill_df = self.skill(df=df, model=model)
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except:
-                #     Dimensionless
-                units = ""
-            if skill_table == False:
-                skill_df = None
-                units = None
-        else:
-            # skill_table is None
-            skill_df = None
-            units = None
+                units = ""  # Dimensionless
 
         ax = scatter(
             x=x,
@@ -1418,7 +1408,6 @@ class ComparerCollection(Mapping, Sequence):
     >>> con.add(o1, mr)
     >>> con.add(o2, mr)
     >>> comparer = con.extract()
-
     """
 
     @property
@@ -1506,6 +1495,11 @@ class ComparerCollection(Mapping, Sequence):
     def n_comparers(self) -> int:
         """Number of comparers"""
         return len(self.comparers)
+
+    @property
+    def data(self) -> pd.DataFrame:
+        """Return a copy of the data"""
+        return self._construct_all_df()
 
     def _construct_all_df(self) -> pd.DataFrame:
         # TODO: var_name
@@ -2095,31 +2089,21 @@ class ComparerCollection(Mapping, Sequence):
         ylabel = ylabel or f"Model, {unit_text}"
         title = title or f"{self.mod_names[mod_id]} vs {self.name}"
 
-        if skill_table != None:
-            # Calculate Skill if it was requested to add as table on the right of plot
-            if skill_table == True:
-                if isinstance(self, ComparerCollection) and self.n_observations == 1:
-                    skill_df = self.skill(
-                        df=df, model=model, observation=observation, variable=variable
-                    )
-                else:
-                    skill_df = self.mean_skill(
-                        df=df, model=model, observation=observation, variable=variable
-                    )
-
-            # Check for units
+        skill_df = None
+        units = None
+        if skill_table:
+            if isinstance(self, ComparerCollection) and self.n_observations == 1:
+                skill_df = self.skill(
+                    df=df, model=model, observation=observation, variable=variable
+                )
+            else:
+                skill_df = self.mean_skill(
+                    df=df, model=model, observation=observation, variable=variable
+                )
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except:
-                #     Dimensionless
-                units = ""
-            if skill_table == False:
-                skill_df = None
-                units = None
-        else:
-            # skill_table is None
-            skill_df = None
-            units = None
+                units = ""  # Dimensionless
 
         ax = scatter(
             x=x,
