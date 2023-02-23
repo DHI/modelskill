@@ -1,4 +1,6 @@
 from .factory import ModelResult
-from .dfs import DfsModelResultItem, DataArrayModelResultItem
-from .pandas import DataFramePointModelResultItem
-from .xarray import XArrayModelResultItem
+
+from .comparable.point import PointModelResult
+from .comparable.track import TrackModelResult
+from .extractable.dfsu import DfsuModelResult
+from .extractable.grid import GridModelResult

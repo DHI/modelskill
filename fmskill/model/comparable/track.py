@@ -1,0 +1,2 @@
+class TrackModelResult:
+    pass

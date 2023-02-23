@@ -1,0 +1,2 @@
+class PointModelResult:
+    pass
