@@ -71,6 +71,7 @@ def _remove_model_gaps(
 def _get_valid_query_time(
     mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
 ):
+    """Used only by _remove_model_gaps"""
     # init dataframe of available timesteps and their index
     df = pd.DataFrame(index=mod_index)
     df["idx"] = range(len(df))
@@ -294,7 +295,7 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 class SingleObsComparer:
-    def __init__(self, observation, modeldata=None):
+    def __init__(self, observation, modeldata):
 
         # self._metrics = options.metrics.list
         self.obs_name = "Observation"
@@ -343,8 +344,7 @@ class SingleObsComparer:
         self._var_names = [observation.variable_name]
         self._itemInfos = [observation.itemInfo]
 
-        if modeldata is not None:
-            self.add_modeldata(modeldata)
+        self.add_modeldata(modeldata)
 
     def add_modeldata(self, modeldata):
         if modeldata is None:
