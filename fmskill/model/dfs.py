@@ -6,7 +6,12 @@ import warnings
 
 import mikeio
 from ..observation import Observation, PointObservation, TrackObservation
-from ..comparison import PointComparer, TrackComparer, ComparerCollection, BaseComparer
+from ..comparison import (
+    PointComparer,
+    TrackComparer,
+    ComparerCollection,
+    SingleObsComparer,
+)
 from ..utils import make_unique_index
 from .abstract import ModelResultInterface
 
@@ -231,7 +236,7 @@ class DataArrayModelResultItem(ModelResultInterface):
 
     def extract_observation(
         self, observation: Union[PointObservation, TrackObservation], validate=True
-    ) -> BaseComparer:
+    ) -> SingleObsComparer:
         """Extract ModelResult at observation for comparison
 
         Parameters
@@ -244,7 +249,7 @@ class DataArrayModelResultItem(ModelResultInterface):
 
         Returns
         -------
-        <fmskill.BaseComparer>
+        <fmskill.SingleObsComparer>
             A comparer object for further analysis or plotting
         """
 
@@ -264,7 +269,7 @@ class DataArrayModelResultItem(ModelResultInterface):
         else:
             raise ValueError("Only point and track observation are supported!")
 
-        if len(comparer.df) == 0:
+        if len(comparer.data) == 0:
             warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
             comparer = None
 
@@ -319,7 +324,7 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         observation: Union[PointObservation, TrackObservation],
         validate=True,
         **kwargs,
-    ) -> BaseComparer:
+    ) -> SingleObsComparer:
         """Extract ModelResult at observation for comparison
 
         Parameters
@@ -332,7 +337,7 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
 
         Returns
         -------
-        <fmskill.BaseComparer>
+        <fmskill.SingleObsComparer>
             A comparer object for further analysis or plotting
         """
         # if item is None:
@@ -356,7 +361,7 @@ class DfsModelResultItem(_DfsBase, ModelResultInterface):
         else:
             raise ValueError("Only point and track observation are supported!")
 
-        if len(comparer.df) == 0:
+        if len(comparer.data) == 0:
             warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
             comparer = None
 

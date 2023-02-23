@@ -97,7 +97,7 @@ def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
         cc = con.extract()
 
     assert cc.n_comparers == 0
-    assert len(cc.all_df) == 0
+    assert cc.n_points == 0
 
 
 # def test_extract_no_spatial_overlap_dfsu(observation_df):
