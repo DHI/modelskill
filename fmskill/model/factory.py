@@ -1,9 +1,58 @@
 import os
+from pathlib import Path
+from typing import Literal, Optional
 import pandas as pd
+import xarray as xr
+
+from fmskill import model, types, utils
+import mikeio
 
 from .dfs import DataArrayModelResultItem, DfsModelResultItem
 from ._pandas import DataFramePointModelResultItem, DataFrameTrackModelResultItem
 from ._xarray import XArrayModelResultItem
+
+
+type_lookup = {
+    "point": model.PointModelResult,
+    "track": model.TrackModelResult,
+    "unstructured": model.DfsuModelResult,
+    "grid": model.GridModelResult,
+}
+
+
+class ModelResult_new:
+    def __new__(
+        cls,
+        data: types.DataInputType,
+        model_type: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
+        item: Optional[str] = None,
+        name: Optional[str] = None,
+        quantity: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ):
+        # WIP!
+
+        if isinstance(data, (str, Path)):
+            data = Path(data)
+            file_ext = data.suffix.lower()
+        else:
+            file_ext = None
+
+        if file_ext in [".dfs2", ".dfsu"]:
+            data = mikeio.open(data)
+            item = utils.get_item_name_dfs(data, item)
+
+        elif file_ext == ".nc":
+            data = xr.open_dataset(data)
+
+        if model_type is not None:
+            return type_lookup[model_type](data, item, name, quantity)
+
+        if file_ext == ".dfs2":
+            return model.GridModelResult(data, item, name, quantity)
+        else:
+            return model.DfsuModelResult(data, item, name, quantity)
 
 
 class ModelResult:

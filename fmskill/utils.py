@@ -3,6 +3,26 @@ import numpy as np
 import pandas as pd
 from collections.abc import Iterable
 
+from fmskill import types
+
+
+def get_item_name_dfs(dfs: types.DfsType, item: str) -> str:
+    item_names = [i.name for i in dfs.items]
+    n_items = len(item_names)
+    if item is None:
+        if n_items == 1:
+            return item_names[0]
+        else:
+            raise ValueError(
+                f"item must be specified when more than one item available. Available items: {item_names}"
+            )
+    elif isinstance(item, str):
+        if item not in item_names:
+            raise KeyError(f"item must be one of {item_names}")
+        return item
+    else:
+        raise TypeError("item must be int or string")
+
 
 def is_iterable_not_str(obj):
     """Check if an object is an iterable but not a string."""
