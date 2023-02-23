@@ -297,10 +297,7 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 class SingleObsComparer:
     def __init__(self, observation, modeldata):
 
-        # self._metrics = options.metrics.list
         self.obs_name = "Observation"
-        # self._obs_names: List[str]
-        self._mod_names: List[str]
         self._mod_colors = [
             "#1f78b4",
             "#33a02c",
@@ -322,26 +319,19 @@ class SingleObsComparer:
             "#e31a1c",
         ]
 
-        self._resi_color = "#8B8D8E"
-        self._obs_unit_text = ""
         #      darkblue: #004165
         #      midblue:  #0098DB,
         #      gray:     #8B8D8E,
         #      lightblue:#63CEFF,
         #      green:    #61C250
         #      purple:   #93509E
-        self.mod_data = None
         self.data = None
-        # self._all_df = None
 
         self._mod_start = pd.Timestamp.max
         self._mod_end = pd.Timestamp.min
 
         self.observation = deepcopy(observation)
-        self._obs_unit_text = self.observation._unit_text()
         self.mod_data = {}
-        # self._obs_names = [observation.name]
-        self._var_names = [observation.variable_name]
         self._itemInfos = [observation.itemInfo]
 
         self.add_modeldata(modeldata)
@@ -371,7 +361,6 @@ class SingleObsComparer:
 
         mod_name = mod_df.columns[-1]
         self.mod_data[mod_name] = mod_df
-        self._mod_names = list(self.mod_data.keys())
 
         time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
@@ -403,10 +392,6 @@ class SingleObsComparer:
         return self.observation.name
 
     @property
-    def _obs_names(self):
-        return [self.observation.name]
-
-    @property
     def n_points(self) -> int:
         """number of compared points"""
         return len(self.data)
@@ -435,11 +420,11 @@ class SingleObsComparer:
 
     @property
     def mod_names(self) -> List[str]:
-        return self._mod_names  # list(self.mod_data.keys())
+        return list(self.mod_data.keys())
 
-    @property
-    def n_variables(self) -> int:
-        return len(self._var_names)
+    # @property
+    # def n_variables(self) -> int:
+    #     return 1
 
     @property
     def metrics(self):
@@ -988,10 +973,7 @@ class SingleObsComparer:
         x = df.obs_val
         y = df.mod_val
 
-        unit_text = self._obs_unit_text
-        if isinstance(self, ComparerCollection):
-            unit_text = self[df.observation[0]]._obs_unit_text
-
+        unit_text = self.observation._unit_text()
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
         title = title or f"{self.mod_names[mod_id]} vs {self.name}"
@@ -1146,11 +1128,13 @@ class SingleObsComparer:
             residual color, by default "#8B8D8E"
         kwargs : other keyword arguments to plt.hist()
         """
-        color = self._resi_color if color is None else color
+
+        default_color = "#8B8D8E"
+        color = default_color if color is None else color
         title = f"Residuals, {self.name}" if title is None else title
         plt.hist(self.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
-        plt.xlabel(f"Residuals of {self._obs_unit_text}")
+        plt.xlabel(f"Residuals of {self.observation._unit_text()}")
 
     def hist(
         self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
@@ -1198,7 +1182,7 @@ class SingleObsComparer:
         )
         ax.legend([mod_name, self.obs_name])
         plt.title(title)
-        plt.xlabel(f"{self._obs_unit_text}")
+        plt.xlabel(f"{self.observation._unit_text()}")
         if density:
             plt.ylabel("density")
         else:
@@ -1285,7 +1269,7 @@ class PointComparer(SingleObsComparer):
                 marker=".",
                 color=self.observation.color,
             )
-            ax.set_ylabel(self._obs_unit_text)
+            ax.set_ylabel(self.observation._unit_text())
             ax.legend([*self.mod_names, self.obs_name])
             ax.set_ylim(ylim)
             plt.title(title)
@@ -1320,7 +1304,9 @@ class PointComparer(SingleObsComparer):
                 ]
             )
 
-            fig.update_layout(title=title, yaxis_title=self._obs_unit_text, **kwargs)
+            fig.update_layout(
+                title=title, yaxis_title=self.observation._unit_text(), **kwargs
+            )
             fig.update_yaxes(range=ylim)
 
             fig.show()
@@ -1457,10 +1443,6 @@ class ComparerCollection(Mapping, Sequence):
     @property
     def obs_names(self):
         """List of observation names"""
-        return self._obs_names
-
-    @property
-    def _obs_names(self):
         return [c.observation.name for c in self.comparers.values()]
 
     @property
@@ -1474,7 +1456,7 @@ class ComparerCollection(Mapping, Sequence):
 
     @property
     def mod_names(self) -> List[str]:
-        return self._mod_names  # list(self.mod_data.keys())
+        return self._mod_names
 
     @property
     def n_variables(self) -> int:
@@ -1526,12 +1508,9 @@ class ComparerCollection(Mapping, Sequence):
         return _all_df
 
     def __init__(self, comparers=None):
-        # self._metrics = options.metrics.list
-        # self._all_df = None
         self._start = datetime(2900, 1, 1)
         self._end = datetime(1, 1, 1)
         self._mod_names = []
-        # self._obs_names = []
         self._var_names = []
         self._itemInfos = []
 
@@ -1615,7 +1594,7 @@ class ComparerCollection(Mapping, Sequence):
         for mod_name in comparer.mod_names:
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
-        # self._obs_names.append(comparer.observation.name)
+        
         if comparer.observation.variable_name not in self._var_names:
             self._var_names.append(comparer.observation.variable_name)
 
@@ -1626,9 +1605,6 @@ class ComparerCollection(Mapping, Sequence):
             self._start = comparer.start
         if comparer.end > self.end:
             self._end = comparer.end
-        self._obs_unit_text = comparer.observation._unit_text()
-
-        # self._all_df = None
 
     def sel_df(
         self,
@@ -2081,9 +2057,7 @@ class ComparerCollection(Mapping, Sequence):
         x = df.obs_val
         y = df.mod_val
 
-        unit_text = self._obs_unit_text
-        if isinstance(self, ComparerCollection):
-            unit_text = self[df.observation[0]]._obs_unit_text
+        unit_text = self[df.observation[0]].observation._unit_text()
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
@@ -2210,7 +2184,7 @@ class ComparerCollection(Mapping, Sequence):
         df.obs_val.hist(bins=bins, color=self[0].observation.color, ax=ax, **kwargs)
         ax.legend([mod_name, "observations"])
         plt.title(title)
-        plt.xlabel(f"{self._obs_unit_text}")
+        plt.xlabel(f"{self[df.observation[0]].observation._unit_text()}")
 
         if density:
             plt.ylabel("density")
@@ -2555,7 +2529,7 @@ class ComparerCollection(Mapping, Sequence):
             raise ValueError("metric must be a string or a function")
 
         if model is None:
-            models = self._mod_names
+            models = self.mod_names
         else:
             models = [model] if np.isscalar(model) else model
             models = [_get_name(m, self.mod_names) for m in models]
