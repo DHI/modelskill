@@ -9,7 +9,7 @@ import mikeio
 import fmskill
 from fmskill.model import ModelResult
 
-from fmskill.model import XArrayModelResultItem
+# from fmskill.model import XArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
 

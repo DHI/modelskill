@@ -4,8 +4,10 @@ import pytest
 import mikeio
 from fmskill import ModelResult
 from fmskill.comparison import PointComparer, TrackComparer
-from fmskill.model import DfsModelResultItem, DataArrayModelResultItem
+
+# from fmskill.model import DfsModelResultItem, DataArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
+
 
 @pytest.fixture
 def klagshamn():

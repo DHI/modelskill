@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import mikeio
 from .model import ModelResult
 from .model.dfs import DfsModelResultItem, DataArrayModelResultItem
-from .model.pandas import DataFramePointModelResultItem
+from .model._pandas import DataFramePointModelResultItem
 from .model.abstract import ModelResultInterface
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer

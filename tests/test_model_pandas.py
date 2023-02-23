@@ -6,8 +6,9 @@ import pytest
 import mikeio
 from fmskill import ModelResult, PointObservation, TrackObservation
 from fmskill.model.abstract import ModelResultInterface
-from fmskill.model import DataFramePointModelResultItem
-from fmskill.model.pandas import DataFrameTrackModelResultItem
+
+# from fmskill.model import DataFramePointModelResultItem
+from fmskill.model._pandas import DataFrameTrackModelResultItem
 
 
 @pytest.fixture

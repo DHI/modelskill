@@ -2,8 +2,8 @@ import os
 import pandas as pd
 
 from .dfs import DataArrayModelResultItem, DfsModelResultItem
-from .pandas import DataFramePointModelResultItem, DataFrameTrackModelResultItem
-from .xarray import XArrayModelResultItem
+from ._pandas import DataFramePointModelResultItem, DataFrameTrackModelResultItem
+from ._xarray import XArrayModelResultItem
 
 
 class ModelResult:
@@ -43,7 +43,7 @@ class ModelResult:
                 return DfsModelResultItem(filename, *args, **kwargs)
             else:
                 return XArrayModelResultItem(filename, *args, **kwargs)
-            
+
         elif isinstance(data, mikeio.DataArray):
             return DataArrayModelResultItem(data, *args, **kwargs)
         elif isinstance(data, mikeio.Dataset):
@@ -56,7 +56,7 @@ class ModelResult:
                 return DataFrameTrackModelResultItem(data, *args, **kwargs)
             else:
                 raise ValueError(f"type '{type}' unknown (point, track)")
-            
+
         elif isinstance(data, (xr.Dataset, xr.DataArray)):
             return XArrayModelResultItem(data, *args, **kwargs)
         else:
