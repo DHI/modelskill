@@ -134,4 +134,12 @@ def track_obs_from_dfsu_mr(
     """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
     given a TrackObservation."""
 
-    pass
+    ds_model = mr.data.extract_track(track=observation.data, items=[mr.item])
+    ds_model.rename({ds_model.items[-1].name: mr.name}, inplace=True)
+
+    return TrackModelResult(
+        data=ds_model.to_dataframe().dropna(),
+        item=mr.item,
+        name=mr.name,
+        quantity=mr.quantity,
+    )
