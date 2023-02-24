@@ -9,8 +9,9 @@ from fmskill.observation import PointObservation, TrackObservation
 
 
 class GridModelResult(ModelResultBase):
-    def extract(self, observation: Union[PointObservation, TrackObservation]):
-
+    def extract(
+        self, observation: Union[PointObservation, TrackObservation]
+    ) -> protocols.Comparable:
         type_extraction_mapping = {
             (xr.Dataset, PointObservation): extraction.point_obs_from_xr_mr,
             (xr.Dataset, TrackObservation): extraction.track_obs_from_xr_mr,

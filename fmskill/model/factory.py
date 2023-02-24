@@ -26,9 +26,6 @@ class ModelType(Enum):
     def __str__(self) -> str:
         return self.name.lower()
 
-    def __eq__(self, __o: object) -> bool:
-        return str(self) == str(__o)
-
     def from_string(s: str) -> "ModelType":
         try:
             return ModelType[s.capitalize()]
@@ -81,7 +78,7 @@ class ModelResult_new:
         elif file_ext == ".dfsu":
             return model.DfsuModelResult(data, item, name, quantity)
         elif file_ext == ".dfs0":
-
+            pass
 
 
 class ModelResult:

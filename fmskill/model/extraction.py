@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -105,4 +106,32 @@ def track_obs_from_xr_mr(
         quantity=mr.quantity,
     )
 
-    return df.dropna()
+
+def point_obs_from_dfsu_mr(
+    mr: protocols.Extractable, observation: PointObservation
+) -> PointModelResult:
+    """Extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
+    given a PointObservation."""
+
+    xy = np.atleast_2d([observation.x, observation.y])
+    elemids = mr.data.geometry.find_index(coords=xy)
+    ds_model = mr.data.read(elements=elemids, items=[mr.item])
+    ds_model.rename({ds_model.items[0].name: mr.name}, inplace=True)
+
+    return PointModelResult(
+        data=ds_model.to_dataframe().dropna(),
+        x=ds_model.geometry.x,
+        y=ds_model.geometry.y,
+        item=mr.item,
+        name=mr.name,
+        quantity=mr.quantity,
+    )
+
+
+def track_obs_from_dfsu_mr(
+    mr: protocols.Extractable, observation: TrackObservation
+) -> TrackModelResult:
+    """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
+    given a TrackObservation."""
+
+    pass

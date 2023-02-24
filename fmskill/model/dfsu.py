@@ -2,7 +2,7 @@ from typing import Union
 
 import mikeio
 
-from fmskill.model import protocols
+from fmskill.model import protocols, extraction
 from fmskill.model._base import ModelResultBase
 from fmskill.observation import PointObservation, TrackObservation
 
@@ -11,12 +11,38 @@ class DfsuModelResult(ModelResultBase):
     def extract(
         self, observation: Union[PointObservation, TrackObservation]
     ) -> protocols.Comparable:
-        pass
+
+        type_extraction_mapping = {
+            (mikeio.dfsu.Dfsu2DH, PointObservation): extraction.point_obs_from_dfsu_mr,
+            (mikeio.dfsu.Dfsu2DH, TrackObservation): extraction.track_obs_from_dfsu_mr,
+        }
+
+        extraction_func = type_extraction_mapping.get(
+            (type(self.data), type(observation))
+        )
+        if extraction_func is None:
+            raise NotImplementedError(
+                f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
+            )
+        extraction_result = extraction_func(self, observation)
+
+        return extraction_result
 
 
 if __name__ == "__main__":
     dfsu = mikeio.open("tests/testdata/Oresund2D.dfsu")
-    test = DfsuModelResult(dfsu, "test", "test", "test")
+    test = DfsuModelResult(dfsu, item="Surface elevation", name="test")
 
     assert isinstance(test, protocols.ModelResult)
     assert isinstance(test, protocols.Extractable)
+
+    dfsu_data = mikeio.open("tests/testdata/Oresund2D.dfsu")
+    point_obs = PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.dfs0",
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn",
+    )
+
+    test.extract(point_obs)
