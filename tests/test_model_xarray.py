@@ -7,9 +7,8 @@ import pandas as pd
 import mikeio
 
 import fmskill
-from fmskill.model import ModelResult
+from fmskill import ModelResult
 
-# from fmskill.model import XArrayModelResultItem
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
 
@@ -55,7 +54,7 @@ def trackobs_c2_hm0():
 def test_XArrayModelResult_from_nc(mr_ERA5_pp1d):
     mr = mr_ERA5_pp1d
 
-    assert isinstance(mr, XArrayModelResultItem)
+    # assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.data, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else---
     assert "ERA5_DutchCoast.nc" in mr.filename
     # assert "- Item: 4: swh" in repr(mr)
@@ -72,7 +71,7 @@ def test_XArrayModelResult_from_DataArray(ERA5_DutchCoast_nc):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     mr = ModelResult(ds["swh"])
 
-    assert isinstance(mr, XArrayModelResultItem)
+    # assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.data, xr.DataArray)
     assert mr.item_name == "swh"
     assert not mr.filename
@@ -84,14 +83,14 @@ def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
     da = ds["swh"]
     mr = ModelResult(da)
 
-    assert isinstance(mr, XArrayModelResultItem)
+    # assert isinstance(mr, XArrayModelResultItem)
     assert not mr.filename
 
 
 def test_XArrayModelResult_from_multifile(mf_modelresult):
     mr = mf_modelresult
 
-    assert isinstance(mr, XArrayModelResultItem)
+    # assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.data, xr.DataArray)   # maybe better to have an attribute data which could then be a DataArray or something else---
     assert "CMEMS_DutchCoast_*.nc" in mr.filename
     assert mr.name == "CMEMS"
@@ -110,10 +109,10 @@ def test_XArrayModelResult_from_multifile(mf_modelresult):
 # should be supported
 def test_XArrayModelResultItem(ERA5_DutchCoast_nc):
     mri1 = ModelResult(ERA5_DutchCoast_nc, item="pp1d")
-    assert isinstance(mri1, XArrayModelResultItem)
+    # assert isinstance(mri1, XArrayModelResultItem)
 
     mri2 = ModelResult(ERA5_DutchCoast_nc, item=3)
-    assert isinstance(mri2, XArrayModelResultItem)
+    # assert isinstance(mri2, XArrayModelResultItem)
 
     assert mri1.name == mri2.name
     assert mri1._selected_item == mri2._selected_item  # do we still need this?

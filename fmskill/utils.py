@@ -13,6 +13,8 @@ POS_COORDINATE_NAME_MAPPING = {
     "latitude": "y",
     "east": "x",
     "north": "y",
+    "x": "x",
+    "y": "y",
 }
 TIME_COORDINATE_NAME_MAPPING = {
     "t": "time",

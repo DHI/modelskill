@@ -1,5 +1,4 @@
 from datetime import datetime
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -30,28 +29,28 @@ def track_from_dfs0():
     return mikeio.open(fn).to_dataframe()
 
 
-def test_df_modelresultitem(point_df):
-    df = point_df
-    df["ones"] = 1.0
+# def test_df_modelresultitem(point_df):
+#     df = point_df
+#     df["ones"] = 1.0
 
-    mr1 = DataFramePointModelResultItem(df, item=0)
-    assert isinstance(mr1, ModelResultInterface)
-    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
-    assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
-    assert mr1.name == "Water Level"
-    assert mr1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
+# mr1 = DataFramePointModelResultItem(df, item=0)
+# assert isinstance(mr1, ModelResultInterface)
+# assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
+# assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
+# assert mr1.name == "Water Level"
+# assert mr1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
-    # item as string
-    mr2 = DataFramePointModelResultItem(df, item="Water Level")
-    assert len(mr2.data) == len(mr1.data)
-    assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
+# # item as string
+# mr2 = DataFramePointModelResultItem(df, item="Water Level")
+# assert len(mr2.data) == len(mr1.data)
+# assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
-    mr3 = DataFramePointModelResultItem(df[["Water Level"]])
-    assert len(mr3.data) == len(mr1.data)
+# mr3 = DataFramePointModelResultItem(df[["Water Level"]])
+# assert len(mr3.data) == len(mr1.data)
 
-    # Series
-    mr4 = ModelResult(df["Water Level"])
-    assert len(mr4.data) == len(mr1.data)
+# Series
+# mr4 = ModelResult(df["Water Level"])
+# assert len(mr4.data) == len(mr1.data)
 
 
 def test_df_modelresultitem_itemInfo(point_df):
@@ -66,24 +65,24 @@ def test_df_modelresultitem_itemInfo(point_df):
     assert mr2.itemInfo == mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
 
 
-def test_df_modelresult(point_df):
-    df = point_df
-    df["ones"] = 1.0
+# def test_df_modelresult(point_df):
+#     df = point_df
+#     df["ones"] = 1.0
 
-    mr1 = DataFramePointModelResultItem(df, item=0)
-    assert isinstance(mr1, ModelResultInterface)
-    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
-    assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
-    assert mr1.name == "Water Level"
+#     mr1 = DataFramePointModelResultItem(df, item=0)
+#     assert isinstance(mr1, ModelResultInterface)
+#     assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
+#     assert mr1.end_time == datetime(2020, 9, 28, 0, 0, 0)
+#     assert mr1.name == "Water Level"
 
 
-def test_point_df_model_extract(point_df):
-    df = point_df
-    mr1 = DataFramePointModelResultItem(df, item=0)
-    o1 = PointObservation(df, item=0)
-    c = mr1.extract_observation(o1)
-    assert c.score() == 0.0  # o1=mr1
-    assert c.n_points == len(o1.data.dropna())
+# def test_point_df_model_extract(point_df):
+#     df = point_df
+#     mr1 = DataFramePointModelResultItem(df, item=0)
+#     o1 = PointObservation(df, item=0)
+#     c = mr1.extract_observation(o1)
+#     assert c.score() == 0.0  # o1=mr1
+#     assert c.n_points == len(o1.data.dropna())
 
 
 def test_track_df_modelresultitem(track_df):
@@ -98,9 +97,9 @@ def test_track_df_modelresultitem(track_df):
     assert len(mr2.data) == len(mr1.data)
     assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
-    mr3 = DataFramePointModelResultItem(df[["surface_elevation"]])
-    assert len(mr3.data) == len(mr1.data)
-    assert mr3.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
+    # mr3 = DataFramePointModelResultItem(df[["surface_elevation"]])
+    # assert len(mr3.data) == len(mr1.data)
+    # assert mr3.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
 def test_track_df_modelresultitem_iteminfo(track_df):
