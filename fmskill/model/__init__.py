@@ -1,6 +1,6 @@
-from .factory import ModelResult
+# from .factory import ModelResult
 
-from .comparable.point import PointModelResult
-from .comparable.track import TrackModelResult
-from .extractable.dfsu import DfsuModelResult
-from .extractable.grid import GridModelResult
+from .point import PointModelResult
+from .track import TrackModelResult
+from .dfsu import DfsuModelResult
+from .grid import GridModelResult

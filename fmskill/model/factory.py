@@ -4,7 +4,9 @@ from typing import Literal, Optional
 import pandas as pd
 import xarray as xr
 
-from fmskill import model, types, utils
+from fmskill import types, utils, model
+
+
 import mikeio
 
 from .dfs import DataArrayModelResultItem, DfsModelResultItem

@@ -11,7 +11,7 @@ DataInputType = Union[
     list[str],
     list[Path],
     mikeio.DataArray,
-    mikeio.Dataset
+    mikeio.Dataset,
     pd.DataFrame,
     pd.Series,
     xr.Dataset,

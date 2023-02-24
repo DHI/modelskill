@@ -11,7 +11,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import mikeio
-from .model import ModelResult
+from fmskill import ModelResult
+
+# from .model import ModelResult
 from .model.dfs import DfsModelResultItem, DataArrayModelResultItem
 from .model._pandas import DataFramePointModelResultItem
 from .model.abstract import ModelResultInterface

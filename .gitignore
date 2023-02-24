@@ -139,3 +139,5 @@ fmskill/*.bak
 
 # .ini 
 *.ini
+
+notebooks/sandbox.ipynb

@@ -2,6 +2,8 @@ from typing import Any, Optional, Protocol, Union, runtime_checkable
 
 import pandas as pd
 
+from fmskill import types
+
 
 @runtime_checkable
 class ModelResult(Protocol):
@@ -44,7 +46,7 @@ class Extractable(ModelResult, Protocol):
 
     # Declaring data as Any, because mikeio.open() returns some possible types
     # that we currently don't handle. Instead checking for proper type in extract()
-    data: Any
+    data: types.ExtractableType
 
     def extract(
         self, observation: Union[PointObservation, Observation]
