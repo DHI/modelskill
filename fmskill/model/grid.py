@@ -15,14 +15,6 @@ class GridModelResult(ModelResultBase):
         type_extraction_mapping = {
             (xr.Dataset, PointObservation): extraction.point_obs_from_xr_mr,
             (xr.Dataset, TrackObservation): extraction.track_obs_from_xr_mr,
-            (
-                mikeio.Dataset,
-                PointObservation,
-            ): lambda mr, o: extraction.point_obs_from_xr_mr(mr.to_xarray(), o),
-            (
-                mikeio.Dataset,
-                TrackObservation,
-            ): lambda mr, o: extraction.track_obs_from_xr_mr(mr.to_xarray(), o),
             (mikeio.Dfs2, PointObservation): None,  # Possible future work
             (mikeio.Dfs2, TrackObservation): None,  # Possible future work
         }
