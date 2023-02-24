@@ -16,6 +16,7 @@ import warnings
 from inspect import getmembers, isfunction
 import numpy as np
 import pandas as pd
+import xarray as xr
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
@@ -331,9 +332,9 @@ class SingleObsComparer:
         self._mod_end = pd.Timestamp.min
 
         self.observation = deepcopy(observation)
-        self.mod_data = {}
         self._itemInfos = [observation.itemInfo]
 
+        self.raw_mod_data = {}
         self.add_modeldata(modeldata)
 
     def add_modeldata(self, modeldata):
@@ -360,10 +361,10 @@ class SingleObsComparer:
             return
 
         mod_name = mod_df.columns[-1]
-        self.mod_data[mod_name] = mod_df
 
         time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
+        self.raw_mod_data[mod_name] = mod_df
 
         if mod_df.index[0] < self._mod_start:
             self._mod_start = mod_df.index[0].to_pydatetime()
@@ -420,7 +421,7 @@ class SingleObsComparer:
 
     @property
     def mod_names(self) -> List[str]:
-        return list(self.mod_data.keys())
+        return list(self.raw_mod_data.keys())
 
     # @property
     # def n_variables(self) -> int:
@@ -439,7 +440,7 @@ class SingleObsComparer:
 
     def _construct_all_df(self) -> pd.DataFrame:
         # TODO: var_name
-        res = _all_df_template(self.n_variables)
+        res = _all_df_template(n_variables=1)
         frames = []
         cols = res.keys()
         for j in range(self.n_models):
@@ -448,8 +449,6 @@ class SingleObsComparer:
             df.columns = ["mod_val"]
             df["model"] = mod_name
             df["observation"] = self.observation.name
-            if self.n_variables > 1:
-                df["variable"] = self.observation.variable_name
             df["x"] = self.x
             df["y"] = self.y
             df["obs_val"] = self.obs
@@ -661,21 +660,17 @@ class SingleObsComparer:
 
         n_models = len(df.model.unique())
         n_obs = 1
-        n_var = len(df.variable.unique()) if (self.n_variables > 1) else 1
+        n_var = 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
 
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
 
-    def _add_as_col_if_not_in_index(
-        self, df, skilldf, fields=["model", "observation", "variable"]
-    ):
+    def _add_as_col_if_not_in_index(self, df, skilldf, fields=["model", "observation"]):
         """Add a field to skilldf if unique in df"""
         for field in reversed(fields):
             if (field == "model") and (self.n_models <= 1):
-                continue
-            if (field == "variable") and (self.n_variables <= 1):
                 continue
             if field not in skilldf.index.names:
                 unames = df[field].unique()
@@ -1103,7 +1098,7 @@ class SingleObsComparer:
         if correct == "Model":
             for j in range(self.n_models):
                 mod_name = self.mod_names[j]
-                mod_df = self.mod_data[mod_name]
+                mod_df = self.raw_mod_data[mod_name]
                 mod_df[mod_name] = mod_df.values - bias[j]
             self.data[self.mod_names] = self.mod - bias
         elif correct == "Observation":
@@ -1217,8 +1212,8 @@ class PointComparer(SingleObsComparer):
             modeldata = [modeldata]
         # max_model_gap = self._parse_max_gap(modeldata, max_model_gap)
 
-        for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data, max_model_gap).iloc[
+        for j, mdata in enumerate(modeldata):
+            df = self._model2obs_interp(self.observation, mdata, max_model_gap).iloc[
                 :, ::-1
             ]
             if j == 0:
@@ -1226,7 +1221,7 @@ class PointComparer(SingleObsComparer):
             else:
                 self.data[self.mod_names[j]] = df[self.mod_names[j]]
 
-        self.data.index.name = "datetime"
+        self.data.index.name = "time"
         self.data.dropna(inplace=True)
 
     def plot_timeseries(
@@ -1261,7 +1256,7 @@ class PointComparer(SingleObsComparer):
             _, ax = plt.subplots(figsize=figsize)
             for j in range(self.n_models):
                 key = self.mod_names[j]
-                self.mod_data[key].plot(ax=ax, color=self._mod_colors[j])
+                self.raw_mod_data[key].plot(ax=ax, color=self._mod_colors[j])
 
             ax.scatter(
                 self.data.index,
@@ -1281,7 +1276,7 @@ class PointComparer(SingleObsComparer):
             mod_scatter_list = []
             for j in range(self.n_models):
                 key = self.mod_names[j]
-                mod_df = self.mod_data[key]
+                mod_df = self.raw_mod_data[key]
                 mod_scatter_list.append(
                     go.Scatter(
                         x=mod_df.index,
@@ -1363,7 +1358,7 @@ class TrackComparer(SingleObsComparer):
             else:
                 self.data[self.mod_names[j]] = df[self.mod_names[j]]
 
-        self.data.index.name = "datetime"
+        self.data.index.name = "time"
         self.data = self.data.dropna()
 
     def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
@@ -1504,7 +1499,7 @@ class ComparerCollection(Mapping, Sequence):
         if len(frames) > 0:
             res = pd.concat(frames)
         _all_df = res.sort_index()
-        _all_df.index.name = "datetime"
+        _all_df.index.name = "time"
         return _all_df
 
     def __init__(self, comparers=None):
@@ -1594,7 +1589,7 @@ class ComparerCollection(Mapping, Sequence):
         for mod_name in comparer.mod_names:
             if mod_name not in self._mod_names:
                 self._mod_names.append(mod_name)
-        
+
         if comparer.observation.variable_name not in self._var_names:
             self._var_names.append(comparer.observation.variable_name)
 
