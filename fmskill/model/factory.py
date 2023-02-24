@@ -78,7 +78,29 @@ class ModelResult_new:
         elif file_ext == ".dfsu":
             return model.DfsuModelResult(data, item, name, quantity)
         elif file_ext == ".dfs0":
-            pass
+            data = data.read()
+            present_variables = [c.name for c in data.items]
+            coord_matches = [
+                c
+                for c in present_variables
+                if c.lower() in utils.POS_COORDINATE_NAME_MAPPING.keys()
+            ]
+            if coord_matches:
+                return model.TrackModelResult(
+                    data=data[coord_matches + [item]].to_dataframe(),
+                    item=item,
+                    name=name,
+                    quantity=quantity,
+                )
+            else:
+                return model.PointModelResult(
+                    data=data[item].to_dataframe(),
+                    item=item,
+                    name=name,
+                    quantity=quantity,
+                    x=x,
+                    y=y,
+                )
 
 
 class ModelResult:

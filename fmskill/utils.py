@@ -1,9 +1,59 @@
 import warnings
 import numpy as np
 import pandas as pd
+import xarray as xr
 from collections.abc import Iterable
 
 from fmskill import types
+
+POS_COORDINATE_NAME_MAPPING = {
+    "lon": "x",
+    "longitude": "x",
+    "lat": "y",
+    "latitude": "y",
+    "east": "x",
+    "north": "y",
+}
+TIME_COORDINATE_NAME_MAPPING = {
+    "t": "time",
+    "date": "time",
+}
+
+
+def rename_coords_xr(ds: xr.Dataset) -> xr.Dataset:
+    """Rename coordinates to standard names"""
+    ds = ds.rename(
+        {
+            c: TIME_COORDINATE_NAME_MAPPING[c.lower()]
+            for c in list(ds.coords) + list(ds.data_vars)
+            if c.lower() in TIME_COORDINATE_NAME_MAPPING.keys()
+        }
+    )
+    ds = ds.rename(
+        {
+            c: POS_COORDINATE_NAME_MAPPING[c.lower()]
+            for c in list(ds.coords) + list(ds.data_vars)
+            if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
+        }
+    )
+    return ds
+
+
+def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename coordinates to standard names"""
+    _mapping = {
+        c: TIME_COORDINATE_NAME_MAPPING[c.lower()]
+        for c in df.columns
+        if c.lower() in TIME_COORDINATE_NAME_MAPPING.keys()
+    }
+    _mapping.update(
+        {
+            c: POS_COORDINATE_NAME_MAPPING[c.lower()]
+            for c in df.columns
+            if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
+        }
+    )
+    return df.rename(columns=_mapping)
 
 
 def get_item_name_dfs(dfs: types.DfsType, item: str) -> str:
