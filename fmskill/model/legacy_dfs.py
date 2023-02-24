@@ -13,7 +13,7 @@ from ..comparison import (
     SingleObsComparer,
 )
 from ..utils import make_unique_index
-from .abstract import ModelResultInterface
+from .legacy_abstract import ModelResultInterface
 
 
 def _validate_item_eum(mod_item: mikeio.ItemInfo, obs: Observation) -> bool:

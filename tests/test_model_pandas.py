@@ -5,10 +5,10 @@ import pytest
 
 import mikeio
 from fmskill import ModelResult, PointObservation, TrackObservation
-from fmskill.model.abstract import ModelResultInterface
+from fmskill.model.legacy_abstract import ModelResultInterface
 
 # from fmskill.model import DataFramePointModelResultItem
-from fmskill.model._pandas import DataFrameTrackModelResultItem
+from fmskill.model.legacy_pandas import DataFrameTrackModelResultItem
 
 
 @pytest.fixture

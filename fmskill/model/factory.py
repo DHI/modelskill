@@ -9,16 +9,40 @@ from fmskill import types, utils, model
 
 import mikeio
 
-from .dfs import DataArrayModelResultItem, DfsModelResultItem
-from ._pandas import DataFramePointModelResultItem, DataFrameTrackModelResultItem
-from ._xarray import XArrayModelResultItem
+from .legacy_dfs import DataArrayModelResultItem, DfsModelResultItem
+from .legacy_pandas import DataFramePointModelResultItem, DataFrameTrackModelResultItem
+from .legacy_xarray import XArrayModelResultItem
+
+
+from enum import Enum, auto
+
+
+class ModelType(Enum):
+    Point = (auto(),)
+    Track = (auto(),)
+    Unstructured = (auto(),)
+    Grid = auto()
+
+    def __str__(self) -> str:
+        return self.name.lower()
+
+    def __eq__(self, __o: object) -> bool:
+        return str(self) == str(__o)
+
+    def from_string(s: str) -> "ModelType":
+        try:
+            return ModelType[s.capitalize()]
+        except KeyError as e:
+            raise KeyError(
+                f"ModelType {s} not recognized. Available options: {[m.name for m in ModelType]}"
+            ) from e
 
 
 type_lookup = {
-    "point": model.PointModelResult,
-    "track": model.TrackModelResult,
-    "unstructured": model.DfsuModelResult,
-    "grid": model.GridModelResult,
+    ModelType.Point: model.PointModelResult,
+    ModelType.Track: model.TrackModelResult,
+    ModelType.Unstructured: model.DfsuModelResult,
+    ModelType.Grid: model.GridModelResult,
 }
 
 
@@ -41,7 +65,7 @@ class ModelResult_new:
         else:
             file_ext = None
 
-        if file_ext in [".dfs2", ".dfsu"]:
+        if file_ext in [".dfs2", ".dfsu", ".dfs0"]:
             data = mikeio.open(data)
             item = utils.get_item_name_dfs(data, item)
 
@@ -49,12 +73,15 @@ class ModelResult_new:
             data = xr.open_dataset(data)
 
         if model_type is not None:
+            model_type = ModelType.from_string(model_type)
             return type_lookup[model_type](data, item, name, quantity)
 
         if file_ext == ".dfs2":
             return model.GridModelResult(data, item, name, quantity)
-        else:
+        elif file_ext == ".dfsu":
             return model.DfsuModelResult(data, item, name, quantity)
+        elif file_ext == ".dfs0":
+
 
 
 class ModelResult:

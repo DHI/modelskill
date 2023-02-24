@@ -5,7 +5,7 @@ import warnings
 
 from ..observation import Observation, PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer
-from .abstract import ModelResultInterface, _parse_itemInfo
+from .legacy_abstract import ModelResultInterface, _parse_itemInfo
 
 
 class XArrayModelResultItem(ModelResultInterface):

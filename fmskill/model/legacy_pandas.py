@@ -5,7 +5,7 @@ import warnings
 import mikeio
 from ..observation import PointObservation, TrackObservation
 from ..comparison import PointComparer, TrackComparer
-from .abstract import ModelResultInterface, _parse_itemInfo
+from .legacy_abstract import ModelResultInterface, _parse_itemInfo
 
 
 class _DataFrameBase:

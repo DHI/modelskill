@@ -14,9 +14,9 @@ import mikeio
 from fmskill import ModelResult
 
 # from .model import ModelResult
-from .model.dfs import DfsModelResultItem, DataArrayModelResultItem
-from .model._pandas import DataFramePointModelResultItem
-from .model.abstract import ModelResultInterface
+from .model.legacy_dfs import DfsModelResultItem, DataArrayModelResultItem
+from .model.legacy_pandas import DataFramePointModelResultItem
+from .model.legacy_abstract import ModelResultInterface
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str

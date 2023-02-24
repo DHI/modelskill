@@ -141,3 +141,5 @@ fmskill/*.bak
 *.ini
 
 notebooks/sandbox.ipynb
+streamlit_app.py
+notes.md
