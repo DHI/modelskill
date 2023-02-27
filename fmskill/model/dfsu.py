@@ -31,7 +31,12 @@ class DfsuModelResult(ModelResultBase):
 
 if __name__ == "__main__":
     dfsu = mikeio.open("tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu")
-    test = DfsuModelResult(dfsu, item="Surface elevation", name="test")
+    test = DfsuModelResult(
+        dfsu,
+        item="Surface elevation",
+        name="test",
+        itemInfo=mikeio.EUMType.Significant_wave_height,
+    )
 
     assert isinstance(test, protocols.ModelResult)
     assert isinstance(test, protocols.Extractable)
@@ -46,3 +51,8 @@ if __name__ == "__main__":
 
     test.extract(point_obs)
     test.extract(track_obs)
+
+    c1 = test.extract_observation(point_obs)
+    c2 = test.extract_observation(track_obs)
+
+    print("hold")

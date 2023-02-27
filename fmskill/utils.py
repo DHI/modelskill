@@ -166,3 +166,23 @@ def parse_itemInfo(itemInfo):
     if isinstance(itemInfo, mikeio.ItemInfo):
         return itemInfo
     return mikeio.ItemInfo(itemInfo)
+
+
+def _validate_item_eum(mod_item: mikeio.ItemInfo, obs) -> bool:
+    """Check that observation and model item eum match"""
+    ok = True
+    if obs.itemInfo.type == mikeio.EUMType.Undefined:
+        warnings.warn(f"{obs.name}: Cannot validate as type is Undefined.")
+        return ok
+
+    if mod_item.type != obs.itemInfo.type:
+        ok = False
+        warnings.warn(
+            f"{obs.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs.itemInfo.type.display_name}"
+        )
+    if mod_item.unit != obs.itemInfo.unit:
+        ok = False
+        warnings.warn(
+            f"{obs.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs.itemInfo.unit.display_name}"
+        )
+    return ok

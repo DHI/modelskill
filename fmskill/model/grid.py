@@ -46,3 +46,8 @@ if __name__ == "__main__":
 
     test.extract(point_obs)
     test.extract(track_obs)
+
+    c1 = test.extract_observation(point_obs)
+    c2 = test.extract_observation(track_obs)
+
+    print("hold")
