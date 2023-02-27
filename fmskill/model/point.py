@@ -12,10 +12,11 @@ class PointModelResult(ModelResultBase):
         x: float,
         y: float,
         item: str = None,
+        itemInfo=None,
         name: str = None,
         quantity: str = None,
     ) -> None:
-        super().__init__(data, item, name, quantity)
+        super().__init__(data, item, itemInfo, name, quantity)
         self.x = x
         self.y = y
 

@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from collections.abc import Iterable
-
+import mikeio
 from fmskill import types
 
 POS_COORDINATE_NAME_MAPPING = {
@@ -58,20 +58,55 @@ def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
     return df.rename(columns=_mapping)
 
 
-def get_item_name_dfs(dfs: types.DfsType, item: str) -> str:
+def get_item_name_and_idx_dfs(dfs: types.DfsType, item) -> tuple[str, int]:
+    """Returns the name and index of the requested variable, provided
+    either as either a str or int."""
     item_names = [i.name for i in dfs.items]
     n_items = len(item_names)
     if item is None:
         if n_items == 1:
-            return item_names[0]
+            return item_names[0], 0
         else:
             raise ValueError(
                 f"item must be specified when more than one item available. Available items: {item_names}"
             )
+    if isinstance(item, int):
+        if item < 0:  # Handle negative indices
+            item = n_items + item
+        if (item < 0) or (item >= n_items):
+            raise IndexError(f"item {item} out of range (0, {n_items-1})")
+        return item_names[item], item
     elif isinstance(item, str):
         if item not in item_names:
             raise KeyError(f"item must be one of {item_names}")
-        return item
+        return item, item_names.index(item)
+    else:
+        raise TypeError("item must be int or string")
+
+
+def get_item_name_and_idx_xr(ds: xr.Dataset, item, item_names=None) -> tuple[str, int]:
+    """Returns the name and index of the requested data variable, provided
+    either as either a str or int."""
+    if item_names is None:
+        item_names = list(ds.data_vars)
+    n_items = len(item_names)
+    if item is None:
+        if n_items == 1:
+            return item_names[0], 0
+        else:
+            raise ValueError(
+                f"item must be specified when more than one item available. Available items: {item_names}"
+            )
+    if isinstance(item, int):
+        if item < 0:  # Handle negative indices
+            item = n_items + item
+        if (item < 0) or (item >= n_items):
+            raise IndexError(f"item {item} out of range (0, {n_items-1})")
+        return item_names[item], item
+    elif isinstance(item, str):
+        if item not in item_names:
+            raise KeyError(f"item must be one of {item_names}")
+        return item, item_names.index(item)
     else:
         raise TypeError("item must be int or string")
 
@@ -123,3 +158,11 @@ def make_unique_index(df_index, offset_duplicates=0.001, warn=True):
     tmp = np.cumsum(values.astype(int)).astype("timedelta64[ns]")
     new_index = df_index + offset_in_ns * tmp
     return new_index
+
+
+def parse_itemInfo(itemInfo):
+    if itemInfo is None:
+        return mikeio.ItemInfo(mikeio.EUMType.Undefined)
+    if isinstance(itemInfo, mikeio.ItemInfo):
+        return itemInfo
+    return mikeio.ItemInfo(itemInfo)

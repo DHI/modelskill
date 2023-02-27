@@ -42,6 +42,7 @@ class ModelResult:
         data: types.DataInputType,
         model_type: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
         item: Optional[str] = None,
+        itemInfo=None,
         name: Optional[str] = None,
         quantity: Optional[str] = None,
         x: Optional[float] = None,
@@ -55,16 +56,23 @@ class ModelResult:
 
         if file_ext in [".dfsu", ".dfs0"]:
             data = mikeio.open(data)
-            item = utils.get_item_name_dfs(data, item)
+            item, idx = utils.get_item_name_and_idx_dfs(data, item)
+            itemInfo = data.items[idx].type
 
         elif file_ext == ".nc":
             data = xr.open_dataset(data)
+            item, idx = utils.get_item_name_and_idx_xr(data, item)
+            iteminfo = mikeio.EUMType.Undefined
 
         if isinstance(data, xr.Dataset) and (model_type is None):
-            return model.GridModelResult(data, item, name, quantity)
+            return model.GridModelResult(
+                data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity
+            )
 
         elif file_ext == ".dfsu" and (model_type is None):
-            return model.DfsuModelResult(data, item, name, quantity)
+            return model.DfsuModelResult(
+                data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity
+            )
 
         elif file_ext == ".dfs0":
             data = data.read()
@@ -80,16 +88,17 @@ class ModelResult:
                     return model.TrackModelResult(
                         data=data,
                         item=item,
+                        itemInfo=itemInfo,
                         name=name,
                         quantity=quantity,
                     )
             else:
-                mikeio.DataArray
                 data = data[item]._to_dataset().to_dataframe().dropna()
                 if model_type is None:
                     return model.PointModelResult(
                         data=data,
                         item=item,
+                        itemInfo=itemInfo,
                         name=name,
                         quantity=quantity,
                         x=x,
