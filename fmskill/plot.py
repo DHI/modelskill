@@ -54,7 +54,7 @@ register_option(
     settings.is_dict,
 )
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
-
+register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
 
 def scatter(
     x,
@@ -316,9 +316,7 @@ def scatter(
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.minorticks_on()
-        plt.grid(
-            which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
-        )
+        plt.grid(which="both", axis="both", linewidth="0.2", color="k",alpha=0.6)
         max_cbar = None
         if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
@@ -601,6 +599,6 @@ def _plot_summary_table(skill_df, units, max_cbar):
         0.6,
         text_,
         bbox=settings.get_option("plot.scatter.legend.bbox"),
-        fontsize=12,
+        fontsize=options.plot.scatter.legend.fontsize,
         family="monospace",
     )
