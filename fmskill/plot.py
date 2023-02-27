@@ -316,7 +316,7 @@ def scatter(
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.minorticks_on()
-        plt.grid(which="both", axis="both", linewidth="0.2", color="k")
+        plt.grid(which="both", axis="both", linewidth="0.2", color="k",alpha=0.6)
         max_cbar = None
         if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
