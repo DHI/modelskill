@@ -47,7 +47,7 @@ def track_obs_from_xr_mr(
     y = xr.DataArray(renamed_obs_data.y, dims="track")
     da = renamed_mr_data[mr.item].interp(coords=dict(time=t, x=x, y=y), method="linear")
     df = da.to_dataframe().drop(columns=["time"])
-    df.index.name = "time"
+    # df.index.name = "time"
     df = df.rename(columns={df.columns[-1]: mr.name})
 
     return TrackModelResult(
@@ -69,8 +69,11 @@ def point_obs_from_dfsu_mr(
     ds_model = mr.data.read(elements=elemids, items=[mr.item])
     ds_model.rename({ds_model.items[0].name: mr.name}, inplace=True)
 
+    df = ds_model.to_dataframe().dropna()
+    df.index = utils.make_unique_index(df.index, offset_duplicates=0.001)
+
     return PointModelResult(
-        data=ds_model.to_dataframe().dropna(),
+        data=df,
         x=ds_model.geometry.x,
         y=ds_model.geometry.y,
         item=mr.item,

@@ -51,7 +51,7 @@ class ModelResultBase:
         if validate:
             # ok = self._validate_observation(observation)
             # if ok:
-            ok = utils._validate_item_eum(self.itemInfo, observation)
+            ok = utils.validate_item_eum(self.itemInfo, observation)
             if not ok:
                 raise ValueError("Could not extract observation")
 

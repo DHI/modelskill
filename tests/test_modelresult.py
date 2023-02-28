@@ -4,8 +4,7 @@ import pytest
 import mikeio
 from fmskill import ModelResult
 from fmskill.comparison import PointComparer, TrackComparer
-
-# from fmskill.model import DfsModelResultItem, DataArrayModelResultItem
+from fmskill.model import DfsuModelResult, PointModelResult
 from fmskill.observation import PointObservation, TrackObservation
 
 
@@ -69,7 +68,7 @@ def sw_total_windsea():
 def test_repr(hd_oresund_2d):
     mr = ModelResult(hd_oresund_2d, item="Surface elevation")
     txt = repr(mr)
-    assert "Oresund2D.dfsu" in txt
+    assert "Oresund2D" in txt
 
 
 def test_dfs_object(hd_oresund_2d):
@@ -81,13 +80,13 @@ def test_dfs_object(hd_oresund_2d):
 def test_ModelResultType(sw_dutch_coast):
     mr = ModelResult(sw_dutch_coast, item=0)
 
-    assert mr.is_dfsu
+    assert isinstance(mr, DfsuModelResult)
 
 
 def test_ModelResultType0():
-    mr = ModelResult("tests/testdata/TS.dfs0", item=0)
+    mr = ModelResult("tests/testdata/TS.dfs0", item=0, x=1.23, y=4.56)
 
-    assert mr.is_dfs0
+    assert isinstance(mr, PointModelResult)
 
 
 # def test_extract_observation(sw_dutch_coast, Hm0_HKNA):

@@ -17,6 +17,9 @@ class PointModelResult(ModelResultBase):
         quantity: str = None,
     ) -> None:
         super().__init__(data, item, itemInfo, name, quantity)
+        assert (x is not None) and (
+            y is not None
+        ), "x and y must be specified when creating a PointModelResult."
         self.x = x
         self.y = y
 

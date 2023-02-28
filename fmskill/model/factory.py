@@ -51,6 +51,8 @@ class ModelResult:
         if isinstance(data, (str, Path)):
             data = Path(data)
             file_ext = data.suffix.lower()
+            if name is None:
+                name = data.stem
         else:
             file_ext = None
 

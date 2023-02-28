@@ -168,7 +168,7 @@ def parse_itemInfo(itemInfo):
     return mikeio.ItemInfo(itemInfo)
 
 
-def _validate_item_eum(mod_item: mikeio.ItemInfo, obs) -> bool:
+def validate_item_eum(mod_item: mikeio.ItemInfo, obs) -> bool:
     """Check that observation and model item eum match"""
     ok = True
     if obs.itemInfo.type == mikeio.EUMType.Undefined:
