@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import mikeio
 import pandas as pd
@@ -26,4 +26,6 @@ ExtractableType = Union[
     xr.Dataset,
 ]
 
-DfsType = Union[mikeio.Dfs0, mikeio.Dfsu, mikeio.Dfs2]
+DfsType = Union[mikeio.Dfs0, mikeio.Dfsu]
+
+ItemType = Optional[Union[str, int]]
