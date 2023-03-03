@@ -1,3 +1,4 @@
+from typing import Tuple
 import warnings
 import numpy as np
 import pandas as pd
@@ -58,7 +59,7 @@ def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
     return df.rename(columns=_mapping)
 
 
-def get_item_name_and_idx_dfs(dfs: types.DfsType, item) -> tuple[str, int]:
+def get_item_name_and_idx_dfs(dfs: types.DfsType, item) -> Tuple[str, int]:
     """Returns the name and index of the requested variable, provided
     either as either a str or int."""
     item_names = [i.name for i in dfs.items]
@@ -84,7 +85,7 @@ def get_item_name_and_idx_dfs(dfs: types.DfsType, item) -> tuple[str, int]:
         raise TypeError("item must be int or string")
 
 
-def get_item_name_and_idx_xr(ds: xr.Dataset, item, item_names=None) -> tuple[str, int]:
+def get_item_name_and_idx_xr(ds: xr.Dataset, item, item_names=None) -> Tuple[str, int]:
     """Returns the name and index of the requested data variable, provided
     either as either a str or int."""
     if item_names is None:
