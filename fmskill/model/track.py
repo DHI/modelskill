@@ -1,4 +1,5 @@
 from typing import Union
+import warnings
 import pandas as pd
 from fmskill.comparison import SingleObsComparer, TrackComparer
 
@@ -17,7 +18,12 @@ class TrackModelResult(ModelResultBase):
             raise ValueError(
                 "Can only extract TrackObservation from a TrackModelResult."
             )
-        return TrackComparer(observation, self.data)
+        comparer = TrackComparer(observation, self.data)
+        if len(comparer.data) == 0:
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+            comparer = None
+
+        return comparer
 
 
 if __name__ == "__main__":

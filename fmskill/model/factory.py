@@ -81,6 +81,8 @@ class ModelResult:
 
         elif isinstance(data, pd.DataFrame):
             data, mr_type = cls._pandas_handler(data, item)
+        else:
+            mr_type = None
 
         if (mr_type == ResultGeomType.Track) and (model_type is None):
             return model.TrackModelResult(

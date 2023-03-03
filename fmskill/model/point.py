@@ -1,4 +1,5 @@
 from typing import Union
+import warnings
 import pandas as pd
 from fmskill.comparison import PointComparer, SingleObsComparer
 
@@ -34,7 +35,12 @@ class PointModelResult(ModelResultBase):
             raise ValueError(
                 "Can only extract PointObservation from a PointModelResult."
             )
-        return PointComparer(observation, self.data)
+        comparer = PointComparer(observation, self.data)
+        if len(comparer.data) == 0:
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+            comparer = None
+
+        return comparer
 
 
 if __name__ == "__main__":
