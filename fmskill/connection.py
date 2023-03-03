@@ -156,21 +156,14 @@ class _SingleObsConnector(_BaseConnector):
         return mr
 
     def _parse_single_model(self, mod) -> ModelResultInterface:
-        if isinstance(mod, (pd.Series, pd.DataFrame)):
-            mod = self._parse_pandas_model(mod)
-
         if isinstance(mod, ModelResultInterface):
             return mod
+        elif isinstance(mod, (pd.Series, pd.DataFrame)):
+            return DataFramePointModelResultItem(mod)
         elif isinstance(mod, mikeio.DataArray):
             return DataArrayModelResultItem(mod)
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
-
-    def _parse_pandas_model(self, df, item=None) -> ModelResultInterface:
-        return DataFramePointModelResultItem(df, item=item)
-
-    def _parse_filename_model(self, filename, item=None) -> ModelResultInterface:
-        return ModelResult(filename, item=item)
 
     def _validate(self, obs, modelresults):
         # TODO: add validation errors to list
