@@ -77,25 +77,29 @@ class ModelResult:
             )
 
         elif file_ext == ".dfs0":
-            data, dfs0_type = cls._dfs0_handler(data, item)
-            if (dfs0_type == ResultGeomType.Track) and (model_type is None):
-                return model.TrackModelResult(
-                    data=data,
-                    item=item,
-                    itemInfo=itemInfo,
-                    name=name,
-                    quantity=quantity,
-                )
-            elif (dfs0_type == ResultGeomType.Point) and (model_type is None):
-                return model.PointModelResult(
-                    data=data,
-                    item=item,
-                    itemInfo=itemInfo,
-                    name=name,
-                    quantity=quantity,
-                    x=x,
-                    y=y,
-                )
+            data, mr_type = cls._dfs0_handler(data, item)
+
+        elif isinstance(data, pd.DataFrame):
+            data, mr_type = cls._pandas_handler(data, item)
+
+        if (mr_type == ResultGeomType.Track) and (model_type is None):
+            return model.TrackModelResult(
+                data=data,
+                item=item,
+                itemInfo=itemInfo,
+                name=name,
+                quantity=quantity,
+            )
+        elif (mr_type == ResultGeomType.Point) and (model_type is None):
+            return model.PointModelResult(
+                data=data,
+                item=item,
+                itemInfo=itemInfo,
+                name=name,
+                quantity=quantity,
+                x=x,
+                y=y,
+            )
 
         if model_type is not None:
             model_type = ResultGeomType.from_string(model_type)
@@ -140,6 +144,27 @@ class ModelResult:
             data = data[item]._to_dataset().to_dataframe().dropna()
             return data, ResultGeomType.Point
 
+    @staticmethod
+    def _pandas_handler(
+        data: pd.DataFrame, item: types.ItemType
+    ) -> Tuple[pd.DataFrame, ResultGeomType]:
+        """
+        Checks if the DataFrame object contains a track or point result, selects the relevant
+        items and returns a pandas DataFrame.
+        """
+        present_variables = list(data.columns)
+        coord_matches = [
+            c
+            for c in present_variables
+            if c.lower() in utils.POS_COORDINATE_NAME_MAPPING.keys()
+        ]
+        if coord_matches:
+            data = data[coord_matches + [item]].dropna()
+            return data, ResultGeomType.Track
+        else:
+            data = data[[item]].dropna()
+            return data, ResultGeomType.Point
+
 
 if __name__ == "__main__":
     mr1 = ModelResult("tests/testdata/Oresund2D.dfsu", item="Surface elevation")
@@ -148,5 +173,5 @@ if __name__ == "__main__":
     assert isinstance(mr2, model.TrackModelResult)
     mr3 = ModelResult("tests/testdata/SW/ERA5_DutchCoast.nc", item="swh")
     assert isinstance(mr3, model.GridModelResult)
-    mr4 = ModelResult("tests/testdata/SW/eur_Hm0.dfs0", item="Hm0")
+    mr4 = ModelResult("tests/testdata/SW/eur_Hm0.dfs0", item="Hm0", x=12.5, y=55.5)
     assert isinstance(mr4, model.PointModelResult)
