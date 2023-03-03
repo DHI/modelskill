@@ -1,8 +1,10 @@
+from typing import Union
 import pandas as pd
+from fmskill.comparison import PointComparer, SingleObsComparer
 
 from fmskill.model import protocols
 from fmskill.model._base import ModelResultBase
-from fmskill.observation import PointObservation
+from fmskill.observation import PointObservation, TrackObservation
 
 
 class PointModelResult(ModelResultBase):
@@ -23,8 +25,16 @@ class PointModelResult(ModelResultBase):
         self.x = x
         self.y = y
 
-    def compare(self, observation: PointObservation):
-        pass
+    def extract_observation(
+        self, observation: Union[PointObservation, TrackObservation], validate=True
+    ) -> SingleObsComparer:
+        super().extract_observation(observation, validate)
+
+        if not isinstance(observation, PointObservation):
+            raise ValueError(
+                "Can only extract PointObservation from a PointModelResult."
+            )
+        return PointComparer(observation, self.data)
 
 
 if __name__ == "__main__":

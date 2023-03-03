@@ -1,6 +1,8 @@
 from typing import Union
+import warnings
 
 import mikeio
+from fmskill.comparison import PointComparer, SingleObsComparer, TrackComparer
 
 from fmskill.model import protocols, extraction
 from fmskill.model._base import ModelResultBase
@@ -28,6 +30,25 @@ class DfsuModelResult(ModelResultBase):
 
         return extraction_result
 
+    def extract_observation(
+        self, observation: Union[PointObservation, TrackObservation], validate=True
+    ) -> SingleObsComparer:
+        super().extract_observation(observation, validate)
+
+        point_or_track_mr = self.extract(observation)
+        if isinstance(observation, PointObservation):
+            comparer = PointComparer(observation, point_or_track_mr.data)
+        elif isinstance(observation, TrackObservation):
+            comparer = TrackComparer(observation, point_or_track_mr.data)
+        else:
+            raise ValueError("Only point and track observation are supported!")
+
+        if len(comparer.data) == 0:
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+            comparer = None
+
+        return comparer
+
 
 if __name__ == "__main__":
     dfsu = mikeio.open("tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu")
@@ -54,5 +75,3 @@ if __name__ == "__main__":
 
     c1 = test.extract_observation(point_obs)
     c2 = test.extract_observation(track_obs)
-
-    print("hold")

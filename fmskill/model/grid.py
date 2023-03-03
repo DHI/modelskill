@@ -1,7 +1,9 @@
 from typing import Union
+import warnings
 
 import xarray as xr
 import mikeio
+from fmskill.comparison import PointComparer, SingleObsComparer, TrackComparer
 
 from fmskill.model import protocols, extraction
 from fmskill.model._base import ModelResultBase
@@ -30,6 +32,25 @@ class GridModelResult(ModelResultBase):
 
         return extraction_result
 
+    def extract_observation(
+        self, observation: Union[PointObservation, TrackObservation], validate=True
+    ) -> SingleObsComparer:
+        super().extract_observation(observation, validate)
+
+        point_or_track_mr = self.extract(observation)
+        if isinstance(observation, PointObservation):
+            comparer = PointComparer(observation, point_or_track_mr.data)
+        elif isinstance(observation, TrackObservation):
+            comparer = TrackComparer(observation, point_or_track_mr.data)
+        else:
+            raise ValueError("Only point and track observation are supported!")
+
+        if len(comparer.data) == 0:
+            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+            comparer = None
+
+        return comparer
+
 
 if __name__ == "__main__":
     grid_data = xr.open_dataset("tests/testdata/SW/ERA5_DutchCoast.nc")
@@ -47,7 +68,5 @@ if __name__ == "__main__":
     test.extract(point_obs)
     test.extract(track_obs)
 
-    c1 = test.extract_observation(point_obs)
-    c2 = test.extract_observation(track_obs)
-
-    print("hold")
+    c1 = test.extract_observation(point_obs, validate=False)
+    c2 = test.extract_observation(track_obs, validate=False)

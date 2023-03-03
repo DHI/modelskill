@@ -29,6 +29,13 @@ class ModelResultBase:
         txt.append(f"- Item: {self.item}")
         return "\n".join(txt)
 
+    def _validate_observation(
+        self, observation: Union[PointObservation, TrackObservation]
+    ):
+        ok = utils.validate_item_eum(self.itemInfo, observation)
+        if not ok:
+            raise ValueError("Could not extract observation")
+
     def extract_observation(
         self, observation: Union[PointObservation, TrackObservation], validate=True
     ) -> SingleObsComparer:
@@ -49,23 +56,4 @@ class ModelResultBase:
         """
 
         if validate:
-            # ok = self._validate_observation(observation)
-            # if ok:
-            ok = utils.validate_item_eum(self.itemInfo, observation)
-            if not ok:
-                raise ValueError("Could not extract observation")
-
-        if isinstance(observation, PointObservation):
-            point_mr = self.extract(observation)
-            comparer = PointComparer(observation, point_mr.data)
-        elif isinstance(observation, TrackObservation):
-            track_mr = self.extract(observation)
-            comparer = TrackComparer(observation, track_mr.data)
-        else:
-            raise ValueError("Only point and track observation are supported!")
-
-        if len(comparer.data) == 0:
-            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
-            comparer = None
-
-        return comparer
+            self._validate_observation(observation)
