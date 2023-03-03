@@ -1,7 +1,7 @@
 import os
 from enum import Enum, auto
 from pathlib import Path
-from typing import Literal, Optional, Tuple, Union
+from typing import List, Literal, Optional, Tuple, Union
 
 import mikeio
 import pandas as pd
@@ -109,7 +109,7 @@ class ModelResult:
 
     @staticmethod
     def _xarray_handler(
-        data: Union[str, Path, xr.Dataset, list[str], list[Path]], item: types.ItemType
+        data: Union[str, Path, xr.Dataset, List[str], List[Path]], item: types.ItemType
     ) -> Tuple[xr.Dataset, str, mikeio.EUMType]:
         if isinstance(data, (str, Path)):
             data = xr.open_dataset(data)

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 import mikeio
 import pandas as pd
@@ -8,8 +8,8 @@ import xarray as xr
 DataInputType = Union[
     str,
     Path,
-    list[str],
-    list[Path],
+    List[str],
+    List[Path],
     mikeio.DataArray,
     mikeio.Dataset,
     pd.DataFrame,
