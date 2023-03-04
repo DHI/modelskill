@@ -141,6 +141,7 @@ class ModelResult:
         ]
         if coord_matches:
             data = data[coord_matches + [item]].to_dataframe().dropna()
+            data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
             return data, ResultGeomType.Track
         else:
             data = data[item]._to_dataset().to_dataframe().dropna()
