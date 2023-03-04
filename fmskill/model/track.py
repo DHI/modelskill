@@ -9,21 +9,25 @@ from fmskill.observation import PointObservation, TrackObservation
 
 
 class TrackModelResult(ModelResultBase):
-    def extract_observation(
-        self, observation: Union[PointObservation, TrackObservation], validate=True
-    ) -> SingleObsComparer:
-        super().extract_observation(observation, validate)
+    pass
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
 
-        if not isinstance(observation, TrackObservation):
-            raise ValueError(
-                "Can only extract TrackObservation from a TrackModelResult."
-            )
-        comparer = TrackComparer(observation, self.data)
-        if len(comparer.data) == 0:
-            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
-            comparer = None
+    # def extract_observation(
+    #     self, observation: Union[PointObservation, TrackObservation], validate=True
+    # ) -> SingleObsComparer:
+    #     super().extract_observation(observation, validate)
 
-        return comparer
+    #     if not isinstance(observation, TrackObservation):
+    #         raise ValueError(
+    #             "Can only extract TrackObservation from a TrackModelResult."
+    #         )
+    #     comparer = TrackComparer(observation, self.data)
+    #     if len(comparer.data) == 0:
+    #         warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
+    #         comparer = None
+
+    #     return comparer
 
 
 if __name__ == "__main__":
