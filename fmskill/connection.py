@@ -124,20 +124,20 @@ class _SingleObsConnector(_BaseConnector):
         self.name = obs.name
         modelresults = self._parse_model(mod)
 
-        # ok = self._validate(obs, modelresults)
-        # if validate and (not ok):
-        #     mod_txt = (
-        #         f"model '{modelresults[0].name}'"
-        #         if len(modelresults) == 1
-        #         else f"models {[m.name for m in modelresults]}"
-        #     )
-        #     raise ValueError(
-        #         f"Validation failed! Cannot connect observation '{obs.name}' and {mod_txt}."
-        #     )
-        # if ok or (not validate):
-        self.modelresults = modelresults
-        self.obs = obs
-        self.obs.weight = weight
+        ok = self._validate(obs, modelresults)
+        if validate and (not ok):
+            mod_txt = (
+                f"model '{modelresults[0].name}'"
+                if len(modelresults) == 1
+                else f"models {[m.name for m in modelresults]}"
+            )
+            raise ValueError(
+                f"Validation failed! Cannot connect observation '{obs.name}' and {mod_txt}."
+            )
+        if ok or (not validate):
+            self.modelresults = modelresults
+            self.obs = obs
+            self.obs.weight = weight
 
     def _parse_model(self, mod) -> List[protocols.ModelResult]:
 
@@ -157,69 +157,69 @@ class _SingleObsConnector(_BaseConnector):
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
 
-    # def _validate(self, obs, modelresults):
-    #     # TODO: add validation errors to list
-    #     ok = True
-    #     for mod in modelresults:
-    #         # has_mod_item = self._has_mod_item(mod)
-    #         eum_match = self._validate_eum(obs, mod)
-    #         in_domain = self._validate_in_domain(obs, mod)
-    #         time_overlaps = self._validate_start_end(obs, mod)
-    #         ok = ok and eum_match and in_domain and time_overlaps
-    #     return ok
+    def _validate(self, obs, modelresults):
+        # TODO: add validation errors to list
+        ok = True
+        for mod in modelresults:
+            # has_mod_item = self._has_mod_item(mod)
+            eum_match = self._validate_eum(obs, mod)
+            in_domain = self._validate_in_domain(obs, mod)
+            time_overlaps = self._validate_start_end(obs, mod)
+            ok = ok and eum_match and in_domain and time_overlaps
+        return ok
 
-    # @staticmethod
-    # def _validate_eum(obs, mod):
-    #     """Check that observation and model item eum match"""
-    #     assert isinstance(obs, Observation)
-    #     assert isinstance(mod, protocols.ModelResult)
-    #     ok = True
-    #     _has_eum = lambda x: (x.itemInfo is not None) and (
-    #         x.itemInfo.type != mikeio.EUMType.Undefined
-    #     )
+    @staticmethod
+    def _validate_eum(obs, mod):
+        """Check that observation and model item eum match"""
+        assert isinstance(obs, Observation)
+        assert isinstance(mod, protocols.ModelResult)
+        ok = True
+        _has_eum = lambda x: (x.itemInfo is not None) and (
+            x.itemInfo.type != mikeio.EUMType.Undefined
+        )
 
-    #     # we can only check if both have eum itemInfo
-    #     if _has_eum(obs) and _has_eum(mod):
-    #         if obs.itemInfo.type != mod.itemInfo.type:
-    #             ok = False
-    #             warnings.warn(
-    #                 f"Item type mismatch! Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
-    #             )
-    #         if obs.itemInfo.unit != mod.itemInfo.unit:
-    #             ok = False
-    #             warnings.warn(
-    #                 f"Item unit mismatch! Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
-    #             )
-    #     return ok
+        # we can only check if both have eum itemInfo
+        if _has_eum(obs) and _has_eum(mod):
+            if obs.itemInfo.type != mod.itemInfo.type:
+                ok = False
+                warnings.warn(
+                    f"Item type mismatch! Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
+                )
+            if obs.itemInfo.unit != mod.itemInfo.unit:
+                ok = False
+                warnings.warn(
+                    f"Item unit mismatch! Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
+                )
+        return ok
 
-    # @staticmethod
-    # def _validate_in_domain(obs, mod):
-    #     in_domain = True
-    #     if isinstance(mod, protocols.ModelResult) and isinstance(obs, PointObservation):
-    #         in_domain = mod._in_domain(obs.x, obs.y)
-    #         if not in_domain:
-    #             warnings.warn(
-    #                 f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
-    #             )
-    #     return in_domain
+    @staticmethod
+    def _validate_in_domain(obs, mod):
+        in_domain = True
+        # if isinstance(mod, protocols.ModelResult) and isinstance(obs, PointObservation):
+        #     in_domain = mod._in_domain(obs.x, obs.y)
+        #     if not in_domain:
+        #         warnings.warn(
+        #             f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
+        #         )
+        return in_domain
 
-    # @staticmethod
-    # def _validate_start_end(obs, mod):
-    #     try:
-    #         # need to put this in try-catch due to error in dfs0 in mikeio
-    #         if obs.end_time < mod.start_time:
-    #             warnings.warn(
-    #                 f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
-    #             )
-    #             return False
-    #         if obs.start_time > mod.end_time:
-    #             warnings.warn(
-    #                 f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
-    #             )
-    #             return False
-    #     except:
-    #         pass
-    #     return True
+    @staticmethod
+    def _validate_start_end(obs, mod):
+        try:
+            # need to put this in try-catch due to error in dfs0 in mikeio
+            if obs.end_time < mod.start_time:
+                warnings.warn(
+                    f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
+                )
+                return False
+            if obs.start_time > mod.end_time:
+                warnings.warn(
+                    f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
+                )
+                return False
+        except:
+            pass
+        return True
 
     def plot_observation_positions(self, figsize=None):
         """Plot observation points on a map showing the model domain
@@ -294,10 +294,9 @@ class PointConnector(_SingleObsConnector):
         df_model = []
         for mr in self.modelresults:
             if isinstance(mr, protocols.Extractable):
-                df = mr.extract(self.obs).data
-            else:
-                df = mr.data
-            # df = mr._extract_point(self.obs)
+                mr = mr.extract(self.obs)
+
+            df = mr.data
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -346,10 +345,9 @@ class TrackConnector(_SingleObsConnector):
         df_model = []
         for mr in self.modelresults:
             if isinstance(mr, protocols.Extractable):
-                df = mr.extract(self.obs).data
-            else:
-                df = mr.data
-            # df = mr._extract_track(self.obs)
+                mr = mr.extract(self.obs)
+
+            df = mr.data
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
