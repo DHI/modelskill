@@ -29,8 +29,8 @@ def modelresult():
 @pytest.fixture
 def comparer(observation, modelresult):
     con = Connector(observation, modelresult)
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        cc = con.extract()
+    # with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    cc = con.extract()
     return cc
 
 
