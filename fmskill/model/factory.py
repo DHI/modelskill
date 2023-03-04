@@ -42,7 +42,9 @@ class ModelResult:
     def __new__(
         cls,
         data: types.DataInputType,
-        model_type: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
+        geometry_type: Optional[
+            Literal["point", "track", "unstructured", "grid"]
+        ] = None,
         item: types.ItemType = None,
         itemInfo=None,
         name: Optional[str] = None,
@@ -66,12 +68,12 @@ class ModelResult:
         elif (file_ext == ".nc") or isinstance(data, (list, xr.Dataset)):
             data, item, itemInfo = cls._xarray_handler(data, item)
 
-        if isinstance(data, xr.Dataset) and (model_type is None):
+        if isinstance(data, xr.Dataset) and (geometry_type is None):
             return model.GridModelResult(
                 data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity
             )
 
-        elif file_ext == ".dfsu" and (model_type is None):
+        elif file_ext == ".dfsu" and (geometry_type is None):
             return model.DfsuModelResult(
                 data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity
             )
@@ -84,7 +86,7 @@ class ModelResult:
         else:
             mr_type = None
 
-        if (mr_type == ResultGeomType.Track) and (model_type is None):
+        if (mr_type == ResultGeomType.Track) and (geometry_type is None):
             return model.TrackModelResult(
                 data=data,
                 item=item,
@@ -92,7 +94,7 @@ class ModelResult:
                 name=name,
                 quantity=quantity,
             )
-        elif (mr_type == ResultGeomType.Point) and (model_type is None):
+        elif (mr_type == ResultGeomType.Point) and (geometry_type is None):
             return model.PointModelResult(
                 data=data,
                 item=item,
@@ -103,9 +105,9 @@ class ModelResult:
                 y=y,
             )
 
-        if model_type is not None:
-            model_type = ResultGeomType.from_string(model_type)
-            return type_lookup[model_type](data, item, name, quantity)
+        if geometry_type is not None:
+            geometry_type = ResultGeomType.from_string(geometry_type)
+            return type_lookup[geometry_type](data, item, name, quantity)
 
     @staticmethod
     def _xarray_handler(
