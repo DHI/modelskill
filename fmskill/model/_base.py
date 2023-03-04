@@ -29,6 +29,20 @@ class ModelResultBase:
         txt.append(f"- Item: {self.item}")
         return "\n".join(txt)
 
+    @property
+    def start_time(self) -> pd.Timestamp:
+        if hasattr(self.data, "start_time"):
+            return pd.Timestamp(self.data.start_time)
+        else:
+            return pd.Timestamp(self.data.index[0])
+
+    @property
+    def end_time(self) -> pd.Timestamp:
+        if hasattr(self.data, "end_time"):
+            return pd.Timestamp(self.data.end_time)
+        else:
+            return pd.Timestamp(self.data.index[-1])
+
     def _validate_observation(
         self, observation: Union[PointObservation, TrackObservation]
     ):
