@@ -1,13 +1,9 @@
-from datetime import datetime
 import pandas as pd
 import pytest
 
 import mikeio
-from fmskill import ModelResult, PointObservation, TrackObservation
-from fmskill.model.legacy_abstract import ModelResultInterface
-
-# from fmskill.model import DataFramePointModelResultItem
-from fmskill.model.legacy_pandas import DataFrameTrackModelResultItem
+from fmskill import ModelResult, TrackObservation
+from fmskill.model import protocols
 
 
 @pytest.fixture
@@ -88,8 +84,8 @@ def test_df_modelresultitem_itemInfo(point_df):
 def test_track_df_modelresultitem(track_df):
     df = track_df
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = DataFrameTrackModelResultItem(df, item=2)
-    assert isinstance(mr1, ModelResultInterface)
+        mr1 = ModelResult(df, item=2)
+    assert isinstance(mr1, protocols.ModelResult)
     assert "Item: surface_elevation" in repr(mr1)
 
     # item as string
@@ -116,23 +112,22 @@ def test_track_df_modelresultitem_iteminfo(track_df):
 def test_track_df_modelresult(track_df):
     df = track_df
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = DataFrameTrackModelResultItem(df, item=2)
-    assert isinstance(mr1, ModelResultInterface)
+        mr1 = ModelResult(df, item=2)
+    assert isinstance(mr1, protocols.ModelResult)
     assert len(mr1.data.columns) == 3
     assert mr1.item_name == "surface_elevation"
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr3 = ModelResult(df, item=2, type="track")
+        mr3 = ModelResult(df, item=2, geometry_type="track")
     assert len(mr3.data) == len(mr1.data)
-    assert isinstance(mr3, ModelResultInterface)
+    assert isinstance(mr3, protocols.ModelResult)
 
 
 def test_track_from_dfs0_df_modelresult(track_from_dfs0):
     df = track_from_dfs0
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = ModelResult(df, item=-1, type="track")
-    assert isinstance(mr1, ModelResultInterface)
-    assert isinstance(mr1, DataFrameTrackModelResultItem)
+        mr1 = ModelResult(df, item=-1, geometry_type="track")
+    assert isinstance(mr1, protocols.ModelResult)
     assert len(mr1.data.columns) == 3
 
 
@@ -149,11 +144,11 @@ def test_track_df_tweak_modelresult(track_df):
 
     # Which columns are used for position, lon and lat?
     with pytest.raises(ValueError):
-        ModelResult(df, type="track")
+        ModelResult(df, geometry_type="track")
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = ModelResult(df, type="track", x_item=1, y_item="lat")
-    assert isinstance(mr1, ModelResultInterface)
+        mr1 = ModelResult(df, geometry_type="track", x_item=1, y_item="lat")
+    assert isinstance(mr1, protocols.ModelResult)
     assert mr1.item_name == "surface_elevation"
 
     # Rename
@@ -162,19 +157,19 @@ def test_track_df_tweak_modelresult(track_df):
     df["ones"] = 1.0  # add extra column
 
     with pytest.raises(ValueError):
-        ModelResult(df, type="track")
+        ModelResult(df, geometry_type="track")
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         mr3 = ModelResult(
-            df, item="wl", type="track", x_item="longitude", y_item="latitude"
+            df, item="wl", geometry_type="track", x_item="longitude", y_item="latitude"
         )
-    assert isinstance(mr3, ModelResultInterface)
+    assert isinstance(mr3, protocols.ModelResult)
 
 
 def test_track_df_model_extract(track_df):
     df = track_df
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = DataFrameTrackModelResultItem(df, item=2)
+        mr1 = ModelResult(df, item=2)
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o1 = TrackObservation(df, item=2)
     c = mr1.extract_observation(o1)
