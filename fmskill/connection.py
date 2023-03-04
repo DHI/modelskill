@@ -14,9 +14,11 @@ import mikeio
 from fmskill import ModelResult
 
 # from .model import ModelResult
-from .model.legacy_dfs import DfsModelResultItem, DataArrayModelResultItem
-from .model.legacy_pandas import DataFramePointModelResultItem
-from .model.legacy_abstract import ModelResultInterface
+from .model import protocols
+
+# from .model.legacy_dfs import DfsModelResultItem, DataArrayModelResultItem
+# from .model.legacy_pandas import DataFramePointModelResultItem
+# from .model.legacy_abstract import ModelResultInterface
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -62,13 +64,13 @@ def _parse_model(mod, item=None):
             raise ValueError("Model ambiguous - please provide item")
         mod = dfs.read(items=item).to_dataframe()
     elif isinstance(mod, pd.DataFrame):
-        mod = DataFramePointModelResultItem(mod, item=item).data
+        mod = ModelResult(mod, item=item).data
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
-    elif isinstance(mod, DfsModelResultItem):
-        if not mod.is_dfs0:
-            raise ValueError("Only dfs0 ModelResults are supported")
-        mod = mod._extract_point_dfs0(mod.item).to_dataframe()
+    # elif isinstance(mod, DfsModelResultItem):
+    #     if not mod.is_dfs0:
+    #         raise ValueError("Only dfs0 ModelResults are supported")
+    #     mod = mod._extract_point_dfs0(mod.item).to_dataframe()
 
     assert mod.shape[1] == 1  # A single item
 
@@ -122,30 +124,22 @@ class _SingleObsConnector(_BaseConnector):
         self.name = obs.name
         modelresults = self._parse_model(mod)
 
-        ok = self._validate(obs, modelresults)
-        if validate and (not ok):
-            mod_txt = (
-                f"model '{modelresults[0].name}'"
-                if len(modelresults) == 1
-                else f"models {[m.name for m in modelresults]}"
-            )
-            raise ValueError(
-                f"Validation failed! Cannot connect observation '{obs.name}' and {mod_txt}."
-            )
-        if ok or (not validate):
-            self.modelresults = modelresults
-            self.obs = obs
-            self.obs.weight = weight
+        # ok = self._validate(obs, modelresults)
+        # if validate and (not ok):
+        #     mod_txt = (
+        #         f"model '{modelresults[0].name}'"
+        #         if len(modelresults) == 1
+        #         else f"models {[m.name for m in modelresults]}"
+        #     )
+        #     raise ValueError(
+        #         f"Validation failed! Cannot connect observation '{obs.name}' and {mod_txt}."
+        #     )
+        # if ok or (not validate):
+        self.modelresults = modelresults
+        self.obs = obs
+        self.obs.weight = weight
 
-    def _parse_model(self, mod) -> List[ModelResultInterface]:
-
-        if isinstance(mod, pd.DataFrame):
-            if len(mod.columns) == 1:
-                return [self._parse_single_model(mod)]
-            else:
-                raise NotImplementedError(
-                    "Only data frames with a single column are allowed"
-                )
+    def _parse_model(self, mod) -> List[protocols.ModelResult]:
 
         if is_iterable_not_str(mod):
             mr = []
@@ -155,79 +149,77 @@ class _SingleObsConnector(_BaseConnector):
             mr = [self._parse_single_model(mod)]
         return mr
 
-    def _parse_single_model(self, mod) -> ModelResultInterface:
-        if isinstance(mod, ModelResultInterface):
+    def _parse_single_model(self, mod) -> protocols.ModelResult:
+        if isinstance(mod, protocols.ModelResult):
             return mod
-        elif isinstance(mod, (pd.Series, pd.DataFrame)):
-            return DataFramePointModelResultItem(mod)
-        elif isinstance(mod, mikeio.DataArray):
-            return DataArrayModelResultItem(mod)
+        elif isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
+            return ModelResult(mod)
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
 
-    def _validate(self, obs, modelresults):
-        # TODO: add validation errors to list
-        ok = True
-        for mod in modelresults:
-            # has_mod_item = self._has_mod_item(mod)
-            eum_match = self._validate_eum(obs, mod)
-            in_domain = self._validate_in_domain(obs, mod)
-            time_overlaps = self._validate_start_end(obs, mod)
-            ok = ok and eum_match and in_domain and time_overlaps
-        return ok
+    # def _validate(self, obs, modelresults):
+    #     # TODO: add validation errors to list
+    #     ok = True
+    #     for mod in modelresults:
+    #         # has_mod_item = self._has_mod_item(mod)
+    #         eum_match = self._validate_eum(obs, mod)
+    #         in_domain = self._validate_in_domain(obs, mod)
+    #         time_overlaps = self._validate_start_end(obs, mod)
+    #         ok = ok and eum_match and in_domain and time_overlaps
+    #     return ok
 
-    @staticmethod
-    def _validate_eum(obs, mod):
-        """Check that observation and model item eum match"""
-        assert isinstance(obs, Observation)
-        assert isinstance(mod, ModelResultInterface)
-        ok = True
-        _has_eum = lambda x: (x.itemInfo is not None) and (
-            x.itemInfo.type != mikeio.EUMType.Undefined
-        )
+    # @staticmethod
+    # def _validate_eum(obs, mod):
+    #     """Check that observation and model item eum match"""
+    #     assert isinstance(obs, Observation)
+    #     assert isinstance(mod, protocols.ModelResult)
+    #     ok = True
+    #     _has_eum = lambda x: (x.itemInfo is not None) and (
+    #         x.itemInfo.type != mikeio.EUMType.Undefined
+    #     )
 
-        # we can only check if both have eum itemInfo
-        if _has_eum(obs) and _has_eum(mod):
-            if obs.itemInfo.type != mod.itemInfo.type:
-                ok = False
-                warnings.warn(
-                    f"Item type mismatch! Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
-                )
-            if obs.itemInfo.unit != mod.itemInfo.unit:
-                ok = False
-                warnings.warn(
-                    f"Item unit mismatch! Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
-                )
-        return ok
+    #     # we can only check if both have eum itemInfo
+    #     if _has_eum(obs) and _has_eum(mod):
+    #         if obs.itemInfo.type != mod.itemInfo.type:
+    #             ok = False
+    #             warnings.warn(
+    #                 f"Item type mismatch! Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
+    #             )
+    #         if obs.itemInfo.unit != mod.itemInfo.unit:
+    #             ok = False
+    #             warnings.warn(
+    #                 f"Item unit mismatch! Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
+    #             )
+    #     return ok
 
-    @staticmethod
-    def _validate_in_domain(obs, mod):
-        in_domain = True
-        if isinstance(mod, ModelResultInterface) and isinstance(obs, PointObservation):
-            in_domain = mod._in_domain(obs.x, obs.y)
-            if not in_domain:
-                warnings.warn(
-                    f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
-                )
-        return in_domain
+    # @staticmethod
+    # def _validate_in_domain(obs, mod):
+    #     in_domain = True
+    #     if isinstance(mod, protocols.ModelResult) and isinstance(obs, PointObservation):
+    #         in_domain = mod._in_domain(obs.x, obs.y)
+    #         if not in_domain:
+    #             warnings.warn(
+    #                 f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
+    #             )
+    #     return in_domain
 
-    @staticmethod
-    def _validate_start_end(obs, mod):
-        try:
-            # need to put this in try-catch due to error in dfs0 in mikeio
-            if obs.end_time < mod.start_time:
-                warnings.warn(
-                    f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
-                )
-                return False
-            if obs.start_time > mod.end_time:
-                warnings.warn(
-                    f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
-                )
-                return False
-        except:
-            pass
-        return True
+    # @staticmethod
+    # def _validate_start_end(obs, mod):
+    #     try:
+    #         # need to put this in try-catch due to error in dfs0 in mikeio
+    #         if obs.end_time < mod.start_time:
+    #             warnings.warn(
+    #                 f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
+    #             )
+    #             return False
+    #         if obs.start_time > mod.end_time:
+    #             warnings.warn(
+    #                 f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
+    #             )
+    #             return False
+    #     except:
+    #         pass
+    #     return True
 
     def plot_observation_positions(self, figsize=None):
         """Plot observation points on a map showing the model domain
@@ -239,12 +231,12 @@ class _SingleObsConnector(_BaseConnector):
         """
         mr = self.modelresults[0]
 
-        if isinstance(mr, DfsModelResultItem) and not mr.is_dfs0:
+        if isinstance(mr.data, mikeio.dfsu.Dfsu2DH):
             geometry = mr.data.geometry
-        elif isinstance(mr, DataArrayModelResultItem) and isinstance(
-            mr.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
-        ):
-            geometry = mr.data.geometry
+        # elif isinstance(mr, DataArrayModelResultItem) and isinstance(
+        #     mr.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
+        # ):
+        #     geometry = mr.data.geometry
         else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
@@ -301,7 +293,11 @@ class PointConnector(_SingleObsConnector):
         assert isinstance(self.obs, PointObservation)
         df_model = []
         for mr in self.modelresults:
-            df = mr._extract_point(self.obs)
+            if isinstance(mr, protocols.Extractable):
+                df = mr.extract(self.obs).data
+            else:
+                df = mr.data
+            # df = mr._extract_point(self.obs)
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -349,7 +345,11 @@ class TrackConnector(_SingleObsConnector):
         assert isinstance(self.obs, TrackObservation)
         df_model = []
         for mr in self.modelresults:
-            df = mr._extract_track(self.obs)
+            if isinstance(mr, protocols.Extractable):
+                df = mr.extract(self.obs).data
+            else:
+                df = mr.data
+            # df = mr._extract_track(self.obs)
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -567,12 +567,12 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         mod = list(self.modelresults.values())[0]
 
-        if isinstance(mod, DfsModelResultItem) and not mod.is_dfs0:
+        if isinstance(mod.data, mikeio.dfsu.Dfsu2DH):
             geometry = mod.data.geometry
-        elif isinstance(mod, DataArrayModelResultItem) and isinstance(
-            mod.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
-        ):
-            geometry = mod.data.geometry
+        # elif isinstance(mod, DataArrayModelResultItem) and isinstance(
+        #     mod.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
+        # ):
+        #     geometry = mod.data.geometry
         else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
