@@ -1144,7 +1144,7 @@ class SingleObsComparer:
                 mod_name = self.mod_names[j]
                 mod_df = self.raw_mod_data[mod_name]
                 mod_df[mod_name] = mod_df.values - bias[j]
-            self.data[self.mod_names] = self.mod - bias
+                self.data[mod_name] = self.data[mod_name] - bias[j]
         elif correct == "Observation":
             # what if multiple models?
             self.data[self._obs_name] = self.obs + bias
