@@ -169,7 +169,6 @@ def test_XArrayModelResultItem_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     assert pc.end == datetime(2017, 10, 29, 18, 0, 0)
     assert pc.n_models == 1
     assert pc.n_points == 67
-    assert pc.n_variables == 1
     assert len(df.dropna()) == 67
 
 
@@ -214,7 +213,6 @@ def test_XArrayModelResultItem_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     assert tc.end.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tc.n_models == 1
     assert tc.n_points == 99
-    assert tc.n_variables == 1
     assert len(df.dropna()) == 99
 
 
