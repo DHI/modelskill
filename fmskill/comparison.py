@@ -322,21 +322,20 @@ class SingleObsComparer:
     #      lightblue:#63CEFF,
     #      green:    #61C250
     #      purple:   #93509E
+    _obs_name = "Observation"
 
     def __init__(self, observation, modeldata):
-        self._obs_name = "Observation"
         self.data = None
         self.observation = deepcopy(observation) if observation else None
-        # self.raw_mod_data = (
-        #     self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-        # )
-        self.raw_mod_data = self._parse_modeldata_list(modeldata)
-
+        self.raw_mod_data = (
+            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        )
+        
     def _parse_modeldata_list(self, modeldata):
         """Convert to dict of dataframes"""
-        if modeldata is None:
-            warnings.warn("Cannot add 'None' modeldata")
-            return {}
+        # if modeldata is None:
+        #     warnings.warn("Cannot add 'None' modeldata")
+        #     return {}
 
         if not isinstance(modeldata, Sequence):
             modeldata = [modeldata]
@@ -377,14 +376,6 @@ class SingleObsComparer:
         for model in self.mod_names:
             out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
         return str.join("\n", out)
-
-    # @property
-    # def x(self) -> float:
-    #     return self.observation.x
-
-    # @property
-    # def y(self) -> float:
-    #     return self.observation.y
 
     @property
     def name(self) -> str:
@@ -544,6 +535,43 @@ class SingleObsComparer:
             df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
 
         return df
+
+    def sel(
+        self,
+        model: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        time: Union[str, datetime] = None,
+        area: List[float] = None,
+    ) -> "SingleObsComparer":
+        d = self.data
+        raw_mod_data = self.raw_mod_data
+        if model is not None:
+            models = [model] if np.isscalar(model) else model
+            models = [_get_name(m, self.mod_names) for m in models]
+            dropped_models = [m for m in self.mod_names if m not in models]
+            d = d.drop(dropped_models)
+            raw_mod_data = {m: raw_mod_data[m] for m in models}
+        if (start is not None) or (end is not None):
+            if time is not None:
+                raise ValueError("Cannot use both time and start/end")
+            d = d.sel(time=d.time.to_index()[start:end])
+        if time is not None:
+            if (start is not None) or (end is not None):
+                raise ValueError("Cannot use both time and start/end")
+            d = d.sel(time=time)
+        if area is not None:
+            if _area_is_bbox(area):
+                x0, y0, x1, y1 = area
+                d = d[(self.x > x0) & (self.x < x1) & (self.y > y0) & (self.y < y1)]
+            elif _area_is_polygon(area):
+                polygon = np.array(area)
+                xy = np.column_stack((self.x, self.y))
+                mask = _inside_polygon(polygon, xy)
+                d = d[mask]
+            else:
+                raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
+        return self.__class__.from_compared_data(d, raw_mod_data)
 
     def sel_df(
         self,
