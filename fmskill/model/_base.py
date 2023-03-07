@@ -11,11 +11,12 @@ from fmskill.observation import PointObservation, TrackObservation
 class ModelResultBase:
     def __init__(
         self,
-        data: Union[types.ExtractableType, pd.DataFrame],
+        data: types.DataInputType,
         item: str = None,
         itemInfo=None,
         name: str = None,
         quantity: str = None,
+        **kwargs,
     ) -> None:
 
         self.data = data

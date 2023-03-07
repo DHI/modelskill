@@ -112,6 +112,35 @@ def get_item_name_and_idx_xr(ds: xr.Dataset, item, item_names=None) -> Tuple[str
         raise TypeError("item must be int or string")
 
 
+def get_item_name_and_idx_pd(
+    df: pd.DataFrame, item, item_names=None
+) -> Tuple[str, int]:
+    """Returns the name and index of the requested data variable, provided
+    either as either a str or int."""
+    if item_names is None:
+        item_names = list(df.columns)
+    n_items = len(item_names)
+    if item is None:
+        if n_items == 1:
+            return item_names[0], 0
+        else:
+            raise ValueError(
+                f"item must be specified when more than one item available. Available items: {item_names}"
+            )
+    if isinstance(item, int):
+        if item < 0:  # Handle negative indices
+            item = n_items + item
+        if (item < 0) or (item >= n_items):
+            raise IndexError(f"item {item} out of range (0, {n_items-1})")
+        return item_names[item], item
+    elif isinstance(item, str):
+        if item not in item_names:
+            raise KeyError(f"item must be one of {item_names}, got {item}.")
+        return item, item_names.index(item)
+    else:
+        raise TypeError("item must be int or string")
+
+
 def is_iterable_not_str(obj):
     """Check if an object is an iterable but not a string."""
     if isinstance(obj, str):

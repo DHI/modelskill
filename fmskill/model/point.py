@@ -1,8 +1,10 @@
-from typing import Union
-import warnings
-import pandas as pd
-from fmskill.comparison import PointComparer, SingleObsComparer
+from pathlib import Path
 
+import mikeio
+import pandas as pd
+
+from fmskill import types, utils
+from fmskill.comparison import PointComparer, SingleObsComparer
 from fmskill.model import protocols
 from fmskill.model._base import ModelResultBase
 from fmskill.observation import PointObservation, TrackObservation
@@ -11,36 +13,40 @@ from fmskill.observation import PointObservation, TrackObservation
 class PointModelResult(ModelResultBase):
     def __init__(
         self,
-        data: pd.DataFrame,
-        x: float,
-        y: float,
+        data: types.PointType,
+        x: float = None,
+        y: float = None,
         item: str = None,
         itemInfo=None,
         name: str = None,
         quantity: str = None,
     ) -> None:
+
+        assert isinstance(
+            data, types.PointType
+        ), "Could not construct PointModelResult from provided data"
+        if isinstance(data, (str, Path)):
+            assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
+            data = mikeio.open(data)
+
+        if isinstance(data, mikeio.Dfs0):
+            item, idx = utils.get_item_name_and_idx_dfs(data, item)
+            itemInfo = data.items[idx].type
+            data = data.read()
+            data = mikeio.Dataset(data[item]).to_dataframe().dropna()
+
+        if isinstance(data, pd.DataFrame):
+            if data.empty or len(data.columns) == 0:
+                raise ValueError("No data.")
+
+            item, idx = utils.get_item_name_and_idx_pd(data, item)
+            data = data[[item]]
+            if itemInfo is None:
+                itemInfo = mikeio.EUMType.Undefined
+
         super().__init__(data, item, itemInfo, name, quantity)
-        # assert (x is not None) and (
-        #     y is not None
-        # ), "x and y must be specified when creating a PointModelResult."
         self.x = x
         self.y = y
-
-    def extract_observation(
-        self, observation: Union[PointObservation, TrackObservation], validate=True
-    ) -> SingleObsComparer:
-        super().extract_observation(observation, validate)
-
-        if not isinstance(observation, PointObservation):
-            raise ValueError(
-                "Can only extract PointObservation from a PointModelResult."
-            )
-        comparer = PointComparer(observation, self.data)
-        if len(comparer.data) == 0:
-            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
-            comparer = None
-
-        return comparer
 
 
 if __name__ == "__main__":

@@ -26,6 +26,17 @@ ExtractableType = Union[
     xr.Dataset,
 ]
 
+UnstructuredType = Union[
+    str,
+    Path,
+    mikeio.dfsu.Dfsu2DH,
+    mikeio.Dataset,
+    mikeio.spatial.FM_geometry.GeometryFM,
+]
+GridType = Union[str, Path, List, xr.Dataset, xr.DataArray]
+
+PointType = Union[str, Path, pd.DataFrame, mikeio.Dfs0]
+
 DfsType = Union[mikeio.Dfs0, mikeio.Dfsu]
 
 ItemType = Optional[Union[str, int]]

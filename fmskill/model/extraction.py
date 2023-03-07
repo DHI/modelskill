@@ -1,8 +1,9 @@
+import mikeio
 import numpy as np
 import xarray as xr
 
 from fmskill import utils
-from fmskill.model import protocols, PointModelResult, TrackModelResult
+from fmskill.model import PointModelResult, TrackModelResult, protocols
 from fmskill.observation import PointObservation, TrackObservation
 
 
@@ -19,8 +20,7 @@ def point_obs_from_xr_mr(
             + f"because it has None position x={x}, y={y}. Please provide position "
             + "when creating PointObservation."
         )
-    renamed_mr_data = utils.rename_coords_xr(mr.data)
-    da = renamed_mr_data[mr.item].interp(coords=dict(x=x, y=y), method="nearest")
+    da = mr.data[mr.item].interp(coords=dict(x=x, y=y), method="nearest")
     df = da.to_dataframe().drop(columns=["x", "y"])
     df = df.rename(columns={df.columns[-1]: mr.name})
 
@@ -28,7 +28,8 @@ def point_obs_from_xr_mr(
         data=df.dropna(),
         x=da.x.item(),
         y=da.y.item(),
-        item=mr.item,
+        item=mr.name,
+        itemInfo=mr.itemInfo,
         name=mr.name,
         quantity=mr.quantity,
     )
@@ -41,11 +42,10 @@ def track_obs_from_xr_mr(
     given a TrackObservation."""
 
     renamed_obs_data = utils.rename_coords_pd(observation.data)
-    renamed_mr_data = utils.rename_coords_xr(mr.data)
     t = xr.DataArray(renamed_obs_data.index, dims="track")
     x = xr.DataArray(renamed_obs_data.x, dims="track")
     y = xr.DataArray(renamed_obs_data.y, dims="track")
-    da = renamed_mr_data[mr.item].interp(coords=dict(time=t, x=x, y=y), method="linear")
+    da = mr.data[mr.item].interp(coords=dict(time=t, x=x, y=y), method="linear")
     df = da.to_dataframe().drop(columns=["time"])
     # df.index.name = "time"
     df = df.rename(columns={df.columns[-1]: mr.name})
@@ -53,6 +53,7 @@ def track_obs_from_xr_mr(
     return TrackModelResult(
         data=df.dropna(),
         item=mr.item,
+        itemInfo=mr.itemInfo,
         name=mr.name,
         quantity=mr.quantity,
     )
@@ -76,7 +77,8 @@ def point_obs_from_dfsu_mr(
         data=df,
         x=ds_model.geometry.x,
         y=ds_model.geometry.y,
-        item=mr.item,
+        item=mr.name,
+        itemInfo=mr.itemInfo,
         name=mr.name,
         quantity=mr.quantity,
     )
@@ -93,6 +95,25 @@ def track_obs_from_dfsu_mr(
 
     return TrackModelResult(
         data=ds_model.to_dataframe().dropna(),
+        item=mr.item,
+        itemInfo=mr.itemInfo,
+        name=mr.name,
+        quantity=mr.quantity,
+    )
+
+
+def point_obs_from_mike_ds_mr(
+    mr: protocols.Extractable, observation: PointObservation
+) -> PointModelResult:
+
+    dap = mr.data.sel(x=observation.x, y=observation.y)
+    dap.name = mr.name
+    # ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
+
+    return PointModelResult(
+        data=mikeio.Dataset(dap).to_dataframe().dropna(),
+        x=dap.x.item(),
+        y=dap.y.item(),
         item=mr.item,
         name=mr.name,
         quantity=mr.quantity,

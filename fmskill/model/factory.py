@@ -60,41 +60,32 @@ class ModelResult:
         else:
             file_ext = None
 
-        if file_ext in [".dfsu", ".dfs0"]:
-            data = mikeio.open(data)
-            item, idx = utils.get_item_name_and_idx_dfs(data, item)
-            itemInfo = data.items[idx].type
-
-        elif (file_ext == ".nc") or isinstance(data, (list, xr.Dataset)):
-            data, item, itemInfo = cls._xarray_handler(data, item)
-
-        if isinstance(data, xr.Dataset) and (geometry_type is None):
-            return model.GridModelResult(
-                data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity
-            )
-
-        elif file_ext == ".dfsu" and (geometry_type is None):
-            return model.DfsuModelResult(
-                data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity
-            )
-
-        elif file_ext == ".dfs0":
-            data, mr_type = cls._dfs0_handler(data, item)
-
-        elif isinstance(data, pd.DataFrame):
-            data, mr_type = cls._pandas_handler(data, item)
-        else:
-            mr_type = None
-
-        if (mr_type == ResultGeomType.Track) and (geometry_type is None):
-            return model.TrackModelResult(
+        if geometry_type is not None:
+            geometry_type = ResultGeomType.from_string(geometry_type)
+            return type_lookup[geometry_type](
                 data=data,
                 item=item,
                 itemInfo=itemInfo,
                 name=name,
                 quantity=quantity,
+                x=x,
+                y=y,
             )
-        elif (mr_type == ResultGeomType.Point) and (geometry_type is None):
+
+        if (file_ext == ".dfsu") or isinstance(
+            data,
+            (mikeio.Dataset, mikeio.dfsu._Dfsu, mikeio.spatial.FM_geometry.GeometryFM),
+        ):
+            return model.DfsuModelResult(
+                data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity
+            )
+
+        if (file_ext == ".nc") or isinstance(data, (list, xr.Dataset, xr.DataArray)):
+            return model.GridModelResult(
+                data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity
+            )
+
+        if (file_ext == ".dfs0") or isinstance(data, (pd.DataFrame, mikeio.Dfs0)):
             return model.PointModelResult(
                 data=data,
                 item=item,
@@ -105,78 +96,14 @@ class ModelResult:
                 y=y,
             )
 
-        if geometry_type is not None:
-            geometry_type = ResultGeomType.from_string(geometry_type)
-            return type_lookup[geometry_type](data, item, name, quantity)
-
-    @staticmethod
-    def _xarray_handler(
-        data: Union[str, Path, xr.Dataset, List[str], List[Path]], item: types.ItemType
-    ) -> Tuple[xr.Dataset, str, mikeio.EUMType]:
-        if isinstance(data, (str, Path)):
-            data = xr.open_dataset(data)
-        elif isinstance(data, list):
-            if all(Path(f).suffix == ".nc" for f in data if isinstance(f, (str, Path))):
-                data = xr.open_mfdataset(data)
-            else:
-                raise ValueError("List of files must be netCDF files")
-
-        item, idx = utils.get_item_name_and_idx_xr(data, item)
-        itemInfo = mikeio.EUMType.Undefined
-
-        return data, item, itemInfo
-
-    @staticmethod
-    def _dfs0_handler(
-        data: mikeio.Dfs0, item: types.ItemType
-    ) -> Tuple[pd.DataFrame, ResultGeomType]:
-        """
-        Checks if the Dfs0 object contains a track or point result, selects the relevant
-        items and returns a pandas DataFrame.
-        """
-        data = data.read()
-        present_variables = [c.name for c in data.items]
-        coord_matches = [
-            c
-            for c in present_variables
-            if c.lower() in utils.POS_COORDINATE_NAME_MAPPING.keys()
-        ]
-        if coord_matches:
-            data = data[coord_matches + [item]].to_dataframe().dropna()
-            data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
-            return data, ResultGeomType.Track
-        else:
-            data = data[item]._to_dataset().to_dataframe().dropna()
-            return data, ResultGeomType.Point
-
-    @staticmethod
-    def _pandas_handler(
-        data: pd.DataFrame, item: types.ItemType
-    ) -> Tuple[pd.DataFrame, ResultGeomType]:
-        """
-        Checks if the DataFrame object contains a track or point result, selects the relevant
-        items and returns a pandas DataFrame.
-        """
-        present_variables = list(data.columns)
-        coord_matches = [
-            c
-            for c in present_variables
-            if c.lower() in utils.POS_COORDINATE_NAME_MAPPING.keys()
-        ]
-        if coord_matches:
-            data = data[coord_matches + [item]].dropna()
-            return data, ResultGeomType.Track
-        else:
-            data = data[[item]].dropna()
-            return data, ResultGeomType.Point
-
 
 if __name__ == "__main__":
     mr1 = ModelResult("tests/testdata/Oresund2D.dfsu", item="Surface elevation")
     assert isinstance(mr1, model.DfsuModelResult)
-    mr2 = ModelResult("tests/testdata/SW/Alti_c2_Dutch.dfs0", item="swh")
-    assert isinstance(mr2, model.TrackModelResult)
+    # mr2 = ModelResult("tests/testdata/SW/Alti_c2_Dutch.dfs0", item="swh")
+    # assert isinstance(mr2, model.TrackModelResult)
     mr3 = ModelResult("tests/testdata/SW/ERA5_DutchCoast.nc", item="swh")
     assert isinstance(mr3, model.GridModelResult)
     mr4 = ModelResult("tests/testdata/SW/eur_Hm0.dfs0", item="Hm0", x=12.5, y=55.5)
     assert isinstance(mr4, model.PointModelResult)
+    print("hold")

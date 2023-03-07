@@ -1,15 +1,45 @@
+from pathlib import Path
 from typing import Union
-import warnings
 
 import mikeio
-from fmskill.comparison import PointComparer, SingleObsComparer, TrackComparer
 
-from fmskill.model import protocols, extraction
+from fmskill import types, utils
+from fmskill.model import extraction, protocols
 from fmskill.model._base import ModelResultBase
 from fmskill.observation import PointObservation, TrackObservation
 
 
 class DfsuModelResult(ModelResultBase):
+    def __init__(
+        self,
+        data: types.UnstructuredType,
+        item: str = None,
+        itemInfo=None,
+        name: str = None,
+        quantity: str = None,
+        **kwargs,
+    ) -> None:
+        assert isinstance(
+            data, types.UnstructuredType
+        ), "Could not construct DfsuModelResult from provided data"
+        if isinstance(data, (str, Path)):
+            assert Path(data).suffix == ".dfsu", "File must be a dfsu file"
+            data = mikeio.open(data)
+            if itemInfo is None:
+                item, idx = utils.get_item_name_and_idx_dfs(data, item)
+                itemInfo = data.items[idx].type
+
+        elif isinstance(data, mikeio.DataArray):
+            raise NotImplementedError  # TODO: implement this, need example
+
+        elif isinstance(data, mikeio.spatial.FM_geometry.GeometryFM):
+            raise NotImplementedError  # What to do here?
+
+        if itemInfo is None:
+            itemInfo = mikeio.EUMType.Undefined
+
+        super().__init__(data, item, itemInfo, name, quantity)
+
     def extract(
         self, observation: Union[PointObservation, TrackObservation]
     ) -> protocols.Comparable:
@@ -30,28 +60,9 @@ class DfsuModelResult(ModelResultBase):
 
         return extraction_result
 
-    def extract_observation(
-        self, observation: Union[PointObservation, TrackObservation], validate=True
-    ) -> SingleObsComparer:
-        super().extract_observation(observation, validate)
-
-        point_or_track_mr = self.extract(observation)
-        if isinstance(observation, PointObservation):
-            comparer = PointComparer(observation, point_or_track_mr.data)
-        elif isinstance(observation, TrackObservation):
-            comparer = TrackComparer(observation, point_or_track_mr.data)
-        else:
-            raise ValueError("Only point and track observation are supported!")
-
-        if len(comparer.data) == 0:
-            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
-            comparer = None
-
-        return comparer
-
 
 if __name__ == "__main__":
-    dfsu = mikeio.open("tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu")
+    dfsu = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     test = DfsuModelResult(
         dfsu,
         item="Surface elevation",
@@ -72,6 +83,3 @@ if __name__ == "__main__":
 
     test.extract(point_obs)
     test.extract(track_obs)
-
-    c1 = test.extract_observation(point_obs)
-    c2 = test.extract_observation(track_obs)

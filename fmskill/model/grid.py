@@ -1,16 +1,55 @@
+from pathlib import Path
 from typing import Union
-import warnings
 
-import xarray as xr
 import mikeio
-from fmskill.comparison import PointComparer, SingleObsComparer, TrackComparer
+import xarray as xr
 
-from fmskill.model import protocols, extraction
+from fmskill import types, utils
+from fmskill.model import extraction, protocols
 from fmskill.model._base import ModelResultBase
 from fmskill.observation import PointObservation, TrackObservation
 
 
 class GridModelResult(ModelResultBase):
+    def __init__(
+        self,
+        data: types.GridType,
+        item: str = None,
+        itemInfo=None,
+        name: str = None,
+        quantity: str = None,
+        **kwargs,
+    ) -> None:
+        assert isinstance(
+            data, types.GridType
+        ), "Could not construct GridModelResult from provided data."
+
+        def _validate_file(file):
+            assert isinstance(
+                file, (str, Path)
+            ), f"Files need to be specified as str or Path objects."
+            assert Path(file).suffix == ".nc", f"{file}: Not a netcdf file."
+            assert Path(file).exists(), f"{file}: File does not exist."
+
+        if isinstance(data, (str, Path)):
+            _validate_file(data)
+            data = xr.open_dataset(data)
+
+        elif isinstance(data, list):
+            _ = [_validate_file(file) for file in data]
+            data = xr.open_mfdataset(data)
+
+        elif isinstance(data, xr.DataArray):
+            data = data.to_dataset(name=name, promote_attrs=True)
+
+        item, _ = utils.get_item_name_and_idx_xr(data, item)
+        data = utils.rename_coords_xr(data)
+
+        if itemInfo is None:
+            itemInfo = mikeio.EUMType.Undefined
+
+        super().__init__(data, item, itemInfo, name, quantity)
+
     def extract(
         self, observation: Union[PointObservation, TrackObservation]
     ) -> protocols.Comparable:
@@ -32,28 +71,9 @@ class GridModelResult(ModelResultBase):
 
         return extraction_result
 
-    def extract_observation(
-        self, observation: Union[PointObservation, TrackObservation], validate=True
-    ) -> SingleObsComparer:
-        super().extract_observation(observation, validate)
-
-        point_or_track_mr = self.extract(observation)
-        if isinstance(observation, PointObservation):
-            comparer = PointComparer(observation, point_or_track_mr.data)
-        elif isinstance(observation, TrackObservation):
-            comparer = TrackComparer(observation, point_or_track_mr.data)
-        else:
-            raise ValueError("Only point and track observation are supported!")
-
-        if len(comparer.data) == 0:
-            warnings.warn(f"No overlapping data in found for obs '{observation.name}'!")
-            comparer = None
-
-        return comparer
-
 
 if __name__ == "__main__":
-    grid_data = xr.open_dataset("tests/testdata/SW/ERA5_DutchCoast.nc")
+    grid_data = "tests/testdata/SW/ERA5_DutchCoast.nc"
     point_obs = PointObservation(
         "tests/testdata/SW/eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL"
     )
