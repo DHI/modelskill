@@ -330,7 +330,7 @@ class SingleObsComparer:
         self.raw_mod_data = (
             self._parse_modeldata_list(modeldata) if modeldata is not None else {}
         )
-        
+
     def _parse_modeldata_list(self, modeldata):
         """Convert to dict of dataframes"""
         # if modeldata is None:
@@ -361,13 +361,14 @@ class SingleObsComparer:
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
         return mod_df
 
-    @staticmethod
-    def from_compared_data(data, raw_mod_data=None):
+    @classmethod
+    def from_compared_data(cls, data, raw_mod_data=None):
         """Initialize from compared data"""
-        cmp = SingleObsComparer(observation=None, modeldata=None)
+        cmp = cls(observation=None, modeldata=None)
         cmp.data = data
         if raw_mod_data is not None:
             cmp.raw_mod_data = raw_mod_data
+        return cmp
 
     def __repr__(self):
         out = []
@@ -1354,6 +1355,8 @@ class PointComparer(SingleObsComparer):
     def __init__(
         self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
     ):
+        if observation is None and modeldata is None:
+            return
         super().__init__(observation, modeldata)
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
@@ -1401,6 +1404,8 @@ class TrackComparer(SingleObsComparer):
     """
 
     def __init__(self, observation, modeldata, max_model_gap: float = None):
+        if observation is None and modeldata is None:
+            return
         super().__init__(observation, modeldata)
         assert isinstance(observation, TrackObservation)
         self.observation.data = self.observation.data[self._mod_start : self._mod_end]
