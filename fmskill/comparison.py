@@ -326,26 +326,11 @@ class SingleObsComparer:
     def __init__(self, observation, modeldata):
         self._obs_name = "Observation"
         self.data = None
-        self.observation = deepcopy(observation)
-        # self.raw_mod_data = {}
+        self.observation = deepcopy(observation) if observation else None
+        # self.raw_mod_data = (
+        #     self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        # )
         self.raw_mod_data = self._parse_modeldata_list(modeldata)
-        # for mod_df in modeldata:
-        #     n = mod_df.columns[-1]
-        #     self.raw_mod_data[n] = mod_df
-
-    @property
-    def _mod_start(self) -> pd.Timestamp:
-        mod_starts = [pd.Timestamp.max]
-        for m in self.raw_mod_data.values():
-            mod_starts.append(m.index[0])
-        return min(mod_starts)
-
-    @property
-    def _mod_end(self) -> pd.Timestamp:
-        mod_ends = [pd.Timestamp.min]
-        for m in self.raw_mod_data.values():
-            mod_ends.append(m.index[-1])
-        return max(mod_ends)
 
     def _parse_modeldata_list(self, modeldata):
         """Convert to dict of dataframes"""
@@ -377,34 +362,13 @@ class SingleObsComparer:
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
         return mod_df
 
-    # def _add_modeldata(self, modeldata):
-    #     if modeldata is None:
-    #         warnings.warn("Cannot add 'None' modeldata")
-    #         return
-
-    #     if isinstance(modeldata, list):
-    #         for data in modeldata:
-    #             self._add_modeldata(data)
-    #         return
-
-    #     if isinstance(modeldata, (mikeio.Dataset, xr.DataArray, xr.Dataset)):
-    #         mod_df = modeldata.to_dataframe()
-    #     elif isinstance(modeldata, pd.DataFrame):
-    #         # TODO: add validation
-    #         mod_df = modeldata
-    #     else:
-    #         raise ValueError(
-    #             f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset or pd.DataFrame)"
-    #         )
-    #     if len(mod_df) == 0:
-    #         warnings.warn("Cannot add zero-length modeldata")
-    #         return
-
-    #     mod_name = mod_df.columns[-1]
-
-    #     time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
-    #     mod_df.index = pd.DatetimeIndex(time, freq="infer")
-    #     self.raw_mod_data[mod_name] = mod_df
+    @staticmethod
+    def from_compared_data(data, raw_mod_data=None):
+        """Initialize from compared data"""
+        cmp = SingleObsComparer(observation=None, modeldata=None)
+        cmp.data = data
+        if raw_mod_data is not None:
+            cmp.raw_mod_data = raw_mod_data
 
     def __repr__(self):
         out = []
@@ -414,13 +378,13 @@ class SingleObsComparer:
             out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
         return str.join("\n", out)
 
-    @property
-    def x(self) -> float:
-        return self.observation.x
+    # @property
+    # def x(self) -> float:
+    #     return self.observation.x
 
-    @property
-    def y(self) -> float:
-        return self.observation.y
+    # @property
+    # def y(self) -> float:
+    #     return self.observation.y
 
     @property
     def name(self) -> str:
@@ -441,6 +405,20 @@ class SingleObsComparer:
             return self.data.index
 
     @property
+    def _mod_start(self) -> pd.Timestamp:
+        mod_starts = [pd.Timestamp.max]
+        for m in self.raw_mod_data.values():
+            mod_starts.append(m.index[0])
+        return min(mod_starts)
+
+    @property
+    def _mod_end(self) -> pd.Timestamp:
+        mod_ends = [pd.Timestamp.min]
+        for m in self.raw_mod_data.values():
+            mod_ends.append(m.index[-1])
+        return max(mod_ends)
+
+    @property
     def start(self) -> pd.Timestamp:
         """start pd.Timestamp of compared data"""
         return self.time[0]
@@ -449,6 +427,20 @@ class SingleObsComparer:
     def end(self) -> pd.Timestamp:
         """end pd.Timestamp of compared data"""
         return self.time[-1]
+
+    @property
+    def x(self):
+        if "x" in self.data[self._obs_name].attrs.keys():
+            return self.data[self._obs_name].attrs["x"]
+        else:
+            return self.data["x"].values
+
+    @property
+    def y(self):
+        if "y" in self.data[self._obs_name].attrs.keys():
+            return self.data[self._obs_name].attrs["y"]
+        else:
+            return self.data["y"].values
 
     @property
     def obs(self) -> np.ndarray:
@@ -1232,6 +1224,91 @@ class SingleObsComparer:
 
         return ax
 
+    def plot_timeseries(
+        self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
+    ):
+        """Timeseries plot showing compared data: observation vs modelled
+
+        Parameters
+        ----------
+        title : str, optional
+            plot title, by default None
+        ylim : tuple, optional
+            plot range for the model (ymin, ymax), by default None
+        figsize : (float, float), optional
+            figure size, by default None
+        backend : str, optional
+            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"backend:
+
+        Examples
+        ------
+        >>> comparer.plot_timeseries()
+        >>> comparer.plot_timeseries(title="")
+        >>> comparer.plot_timeseries(ylim=[0,6])
+        >>> comparer.plot_timeseries(backend="plotly")
+        >>> comparer.plot_timeseries(backend="plotly", showlegend=False)
+        """
+
+        if title is None:
+            title = self.name
+
+        if backend == "matplotlib":
+            _, ax = plt.subplots(figsize=figsize)
+            for j in range(self.n_models):
+                key = self.mod_names[j]
+                mod_df = self.raw_mod_data[key]
+                mod_df[key].plot(ax=ax, color=self._mod_colors[j])
+
+            ax.scatter(
+                self.time,
+                self.data[self._obs_name].values,
+                marker=".",
+                color=self.observation.color,
+            )
+            ax.set_ylabel(self.observation._unit_text())
+            ax.legend([*self.mod_names, self._obs_name])
+            ax.set_ylim(ylim)
+            plt.title(title)
+            return ax
+
+        elif backend == "plotly":  # pragma: no cover
+            import plotly.graph_objects as go
+
+            mod_scatter_list = []
+            for j in range(self.n_models):
+                key = self.mod_names[j]
+                mod_df = self.raw_mod_data[key]
+                mod_scatter_list.append(
+                    go.Scatter(
+                        x=mod_df.index,
+                        y=mod_df[key],
+                        name=key,
+                        line=dict(color=self._mod_colors[j]),
+                    )
+                )
+
+            fig = go.Figure(
+                [
+                    *mod_scatter_list,
+                    go.Scatter(
+                        x=self.time,
+                        y=self.data[self._obs_name].values,
+                        name=self._obs_name,
+                        mode="markers",
+                        marker=dict(color=self.observation.color),
+                    ),
+                ]
+            )
+
+            fig.update_layout(
+                title=title, yaxis_title=self.observation._unit_text(), **kwargs
+            )
+            fig.update_yaxes(range=ylim)
+
+            fig.show()
+        else:
+            raise ValueError(f"Plotting backend: {backend} not supported")
+
 
 class PointComparer(SingleObsComparer):
     """
@@ -1274,93 +1351,12 @@ class PointComparer(SingleObsComparer):
         data.attrs["gtype"] = "point"
         data.attrs["name"] = self.observation.name
         data[self._obs_name].attrs["kind"] = "observation"
+        data[self._obs_name].attrs["x"] = self.observation.x
+        data[self._obs_name].attrs["y"] = self.observation.y
         for n in self.mod_names:
             data[n].attrs["kind"] = "model"
+            data.attrs["gtype"] = "point"
         self.data = data
-
-    def plot_timeseries(
-        self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
-    ):
-        """Timeseries plot showing compared data: observation vs modelled
-
-        Parameters
-        ----------
-        title : str, optional
-            plot title, by default None
-        ylim : tuple, optional
-            plot range for the model (ymin, ymax), by default None
-        figsize : (float, float), optional
-            figure size, by default None
-        backend : str, optional
-            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"backend:
-
-        Examples
-        ------
-        >>> comparer.plot_timeseries()
-        >>> comparer.plot_timeseries(title="")
-        >>> comparer.plot_timeseries(ylim=[0,6])
-        >>> comparer.plot_timeseries(backend="plotly")
-        >>> comparer.plot_timeseries(backend="plotly", showlegend=False)
-        """
-
-        if title is None:
-            title = self.name
-
-        if backend == "matplotlib":
-            _, ax = plt.subplots(figsize=figsize)
-            for j in range(self.n_models):
-                key = self.mod_names[j]
-                self.raw_mod_data[key].plot(ax=ax, color=self._mod_colors[j])
-
-            ax.scatter(
-                self.time,
-                self.data[self._obs_name].values,
-                marker=".",
-                color=self.observation.color,
-            )
-            ax.set_ylabel(self.observation._unit_text())
-            ax.legend([*self.mod_names, self._obs_name])
-            ax.set_ylim(ylim)
-            plt.title(title)
-            return ax
-
-        elif backend == "plotly":  # pragma: no cover
-            import plotly.graph_objects as go
-
-            mod_scatter_list = []
-            for j in range(self.n_models):
-                key = self.mod_names[j]
-                mod_df = self.raw_mod_data[key]
-                mod_scatter_list.append(
-                    go.Scatter(
-                        x=mod_df.index,
-                        y=mod_df.iloc[:, 0],
-                        name=key,
-                        line=dict(color=self._mod_colors[j]),
-                    )
-                )
-
-            fig = go.Figure(
-                [
-                    *mod_scatter_list,
-                    go.Scatter(
-                        x=self.time,
-                        y=self.data[self._obs_name].values,
-                        name=self._obs_name,
-                        mode="markers",
-                        marker=dict(color=self.observation.color),
-                    ),
-                ]
-            )
-
-            fig.update_layout(
-                title=title, yaxis_title=self.observation._unit_text(), **kwargs
-            )
-            fig.update_yaxes(range=ylim)
-
-            fig.show()
-        else:
-            raise ValueError(f"Plotting backend: {backend} not supported")
 
 
 class TrackComparer(SingleObsComparer):
@@ -1375,14 +1371,6 @@ class TrackComparer(SingleObsComparer):
     >>> comparer = con.extract()
     >>> comparer['c2']
     """
-
-    @property
-    def x(self):
-        return self.data["x"].values
-
-    @property
-    def y(self):
-        return self.data["y"].values
 
     def __init__(self, observation, modeldata, max_model_gap: float = None):
         super().__init__(observation, modeldata)
