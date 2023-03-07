@@ -296,46 +296,54 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 class SingleObsComparer:
+    _mod_colors = [
+        "#1f78b4",
+        "#33a02c",
+        "#ff7f00",
+        "#93509E",
+        "#63CEFF",
+        "#fdbf6f",
+        "#004165",
+        "#8B8D8E",
+        "#0098DB",
+        "#61C250",
+        "#a6cee3",
+        "#b2df8a",
+        "#fb9a99",
+        "#cab2d6",
+        "#003f5c",
+        "#2f4b7c",
+        "#665191",
+        "#e31a1c",
+    ]
+    #      darkblue: #004165
+    #      midblue:  #0098DB,
+    #      gray:     #8B8D8E,
+    #      lightblue:#63CEFF,
+    #      green:    #61C250
+    #      purple:   #93509E
+
     def __init__(self, observation, modeldata):
-
-        self.obs_name = "Observation"
-        self._mod_colors = [
-            "#1f78b4",
-            "#33a02c",
-            "#ff7f00",
-            "#93509E",
-            "#63CEFF",
-            "#fdbf6f",
-            "#004165",
-            "#8B8D8E",
-            "#0098DB",
-            "#61C250",
-            "#a6cee3",
-            "#b2df8a",
-            "#fb9a99",
-            "#cab2d6",
-            "#003f5c",
-            "#2f4b7c",
-            "#665191",
-            "#e31a1c",
-        ]
-
-        #      darkblue: #004165
-        #      midblue:  #0098DB,
-        #      gray:     #8B8D8E,
-        #      lightblue:#63CEFF,
-        #      green:    #61C250
-        #      purple:   #93509E
+        self._obs_name = "Observation"
         self.data = None
-
-        self._mod_start = pd.Timestamp.max
-        self._mod_end = pd.Timestamp.min
-
         self.observation = deepcopy(observation)
-        self._itemInfos = [observation.itemInfo]
-
+        # self._itemInfos = [self.observation.itemInfo]
         self.raw_mod_data = {}
         self.add_modeldata(modeldata)
+
+    @property
+    def _mod_start(self) -> pd.Timestamp:
+        mod_starts = [pd.Timestamp.max]
+        for m in self.raw_mod_data.values():
+            mod_starts.append(m.index[0])
+        return min(mod_starts)
+
+    @property
+    def _mod_end(self) -> pd.Timestamp:
+        mod_ends = [pd.Timestamp.min]
+        for m in self.raw_mod_data.values():
+            mod_ends.append(m.index[-1])
+        return max(mod_ends)
 
     def add_modeldata(self, modeldata):
         if modeldata is None:
@@ -366,10 +374,10 @@ class SingleObsComparer:
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
         self.raw_mod_data[mod_name] = mod_df
 
-        if mod_df.index[0] < self._mod_start:
-            self._mod_start = mod_df.index[0].to_pydatetime()
-        if mod_df.index[-1] > self._mod_end:
-            self._mod_end = mod_df.index[-1].to_pydatetime()
+        # if mod_df.index[0] < self._mod_start:
+        #     self._mod_start = mod_df.index[0].to_pydatetime()
+        # if mod_df.index[-1] > self._mod_end:
+        #     self._mod_end = mod_df.index[-1].to_pydatetime()
 
     def __repr__(self):
         out = []
@@ -409,7 +417,7 @@ class SingleObsComparer:
 
     @property
     def obs(self) -> np.ndarray:
-        return self.data[self.obs_name].values
+        return self.data[self._obs_name].values
 
     @property
     def mod(self) -> np.ndarray:
@@ -422,10 +430,6 @@ class SingleObsComparer:
     @property
     def mod_names(self) -> List[str]:
         return list(self.raw_mod_data.keys())
-
-    # @property
-    # def n_variables(self) -> int:
-    #     return 1
 
     @property
     def metrics(self):
@@ -502,7 +506,7 @@ class SingleObsComparer:
     ):
         """interpolate model to measurement time"""
         df = _interp_time(mod_df.dropna(), obs.time)
-        df[self.obs_name] = obs.values
+        df[self._obs_name] = obs.values
 
         if max_model_gap is not None:
             df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
@@ -1103,7 +1107,7 @@ class SingleObsComparer:
             self.data[self.mod_names] = self.mod - bias
         elif correct == "Observation":
             # what if multiple models?
-            self.data[self.obs_name] = self.obs + bias
+            self.data[self._obs_name] = self.obs + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
@@ -1172,10 +1176,10 @@ class SingleObsComparer:
         ax = self.data[mod_name].hist(
             bins=bins, color=self._mod_colors[mod_id], **kwargs
         )
-        self.data[self.obs_name].hist(
+        self.data[self._obs_name].hist(
             bins=bins, color=self.observation.color, ax=ax, **kwargs
         )
-        ax.legend([mod_name, self.obs_name])
+        ax.legend([mod_name, self._obs_name])
         plt.title(title)
         plt.xlabel(f"{self.observation._unit_text()}")
         if density:
@@ -1260,12 +1264,12 @@ class PointComparer(SingleObsComparer):
 
             ax.scatter(
                 self.data.index,
-                self.data[[self.obs_name]],
+                self.data[[self._obs_name]],
                 marker=".",
                 color=self.observation.color,
             )
             ax.set_ylabel(self.observation._unit_text())
-            ax.legend([*self.mod_names, self.obs_name])
+            ax.legend([*self.mod_names, self._obs_name])
             ax.set_ylim(ylim)
             plt.title(title)
             return ax
@@ -1291,8 +1295,8 @@ class PointComparer(SingleObsComparer):
                     *mod_scatter_list,
                     go.Scatter(
                         x=self.data.index,
-                        y=self.data[self.obs_name],
-                        name=self.obs_name,
+                        y=self.data[self._obs_name],
+                        name=self._obs_name,
                         mode="markers",
                         marker=dict(color=self.observation.color),
                     ),
@@ -1353,7 +1357,7 @@ class TrackComparer(SingleObsComparer):
                     )
             if j == 0:
                 # change order of obs and model
-                cols = ["x", "y", self.obs_name, self.mod_names[j]]
+                cols = ["x", "y", self._obs_name, self.mod_names[j]]
                 self.data = df[cols]
             else:
                 self.data[self.mod_names[j]] = df[self.mod_names[j]]
