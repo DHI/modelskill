@@ -162,14 +162,12 @@ def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
 
 def test_XArrayModelResultItem_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     pc = mr_ERA5_swh.extract_observation(pointobs_epl_hm0)
-    df = pc.data
-
     assert isinstance(pc, PointComparer)
     assert pc.start == datetime(2017, 10, 27, 0, 0, 0)
     assert pc.end == datetime(2017, 10, 29, 18, 0, 0)
     assert pc.n_models == 1
     assert pc.n_points == 67
-    assert len(df.dropna()) == 67
+    assert len(pc.data.time) == 67
 
 
 def test_XArrayModelResultItem_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
@@ -206,14 +204,13 @@ def test_XArrayModelResultItem_extract_point_wrongitem(mr_ERA5_pp1d, pointobs_ep
 def test_XArrayModelResultItem_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     mri = mr_ERA5_pp1d
     tc = mri.extract_observation(trackobs_c2_hm0)
-    df = tc.data
 
     assert isinstance(tc, TrackComparer)
     assert tc.start.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
     assert tc.end.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tc.n_models == 1
     assert tc.n_points == 99
-    assert len(df.dropna()) == 99
+    assert len(tc.data.time) == 99
 
 
 def test_xarray_connector(mr_ERA5_pp1d, pointobs_epl_hm0, trackobs_c2_hm0):
