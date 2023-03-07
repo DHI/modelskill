@@ -159,5 +159,8 @@ def test_hist(comparer):
     cc[0].hist(bins=10)
     cc[0].hist(density=False)
     cc[0].hist(model=0, title="new_title", alpha=0.2)
+    
+def test_resicual_hist(comparer):
+    cc = comparer
     cc[0].residual_hist()
     cc[0].residual_hist(bins=10, title="new_title", color="blue")
