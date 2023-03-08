@@ -1545,9 +1545,13 @@ class ComparerCollection(Mapping, Sequence):
 
     @property
     def var_names(self) -> List[str]:
-        """List of variable names"""
-        names = [cmp.variable_name for cmp in self.comparers.values()]
-        return list(set(names))
+        """List of unique variable names"""
+        unique_names = []
+        for cmp in self.comparers.values():
+            n = cmp.variable_name
+            if n not in unique_names:
+                unique_names.append(n)
+        return unique_names
 
     # @var_names.setter
     # def var_names(self, value):
@@ -1585,11 +1589,13 @@ class ComparerCollection(Mapping, Sequence):
 
     @property
     def mod_names(self) -> List[str]:
-        # list comprehension to unpack list of lists (n in mod_names in self.comparers)
-        non_unique_names = [
-            n for comparer in self.comparers.values() for n in comparer.mod_names
-        ]
-        return list(set(non_unique_names))
+        """List of unique model names"""
+        unique_names = []
+        for cmp in self.comparers.values():
+            for n in cmp.mod_names:
+                if n not in unique_names:
+                    unique_names.append(n)
+        return unique_names
 
     @property
     def n_variables(self) -> int:
