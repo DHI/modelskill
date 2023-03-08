@@ -265,7 +265,7 @@ class _SingleObsConnector(_BaseConnector):
         """If comparer is empty issue warning and return None."""
         if comparer.n_points == 0:
             if warn:
-                name = comparer.observation.name
+                name = comparer.name
                 warnings.warn(f"No overlapping data was found for {name}!")
             return None
         return comparer
