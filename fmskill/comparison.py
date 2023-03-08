@@ -326,17 +326,12 @@ class SingleObsComparer:
 
     def __init__(self, observation, modeldata):
         self.data = None
-        # self.observation = deepcopy(observation) if observation else None
         self.raw_mod_data = (
             self._parse_modeldata_list(modeldata) if modeldata is not None else {}
         )
 
     def _parse_modeldata_list(self, modeldata):
         """Convert to dict of dataframes"""
-        # if modeldata is None:
-        #     warnings.warn("Cannot add 'None' modeldata")
-        #     return {}
-
         if not isinstance(modeldata, Sequence):
             modeldata = [modeldata]
 
@@ -382,6 +377,10 @@ class SingleObsComparer:
     def name(self) -> str:
         """name of comparer (=observation)"""
         return self.data.attrs["name"]
+
+    @property
+    def gtype(self):
+        return self.data.attrs["gtype"]
 
     @property
     def variable_name(self) -> str:
@@ -475,7 +474,6 @@ class SingleObsComparer:
             options.metrics.list = _parse_metric(values, self.metrics)
 
     def _construct_all_df(self) -> pd.DataFrame:
-        # TODO: var_name
         res = _all_df_template(n_variables=1)
         frames = []
         cols = res.keys()
@@ -500,10 +498,6 @@ class SingleObsComparer:
 
     def copy(self):
         return self.__copy__()
-
-    @property
-    def gtype(self):
-        return self.data.attrs["gtype"]
 
     def to_observation(self) -> Observation:
         """Convert to Observation"""
@@ -1524,9 +1518,48 @@ class ComparerCollection(Mapping, Sequence):
     >>> comparer = con.extract()
     """
 
+    def __init__(self, comparers=None):
+        self.comparers = {}
+        self.add_comparer(comparers)
+
+    def add_comparer(
+        self, comparer: Union["SingleObsComparer", "ComparerCollection"]
+    ) -> None:
+        """Add another Comparer to this collection.
+
+        Parameters
+        ----------
+        comparer : (PointComparer, TrackComparer, ComparerCollection)
+            Comparer to add to this collection
+        """
+        if isinstance(comparer, (ComparerCollection, Sequence)):
+            for c in comparer:
+                self._add_comparer(c)
+        else:
+            self._add_comparer(comparer)
+
+    def _add_comparer(self, comparer: SingleObsComparer) -> None:
+        if comparer is None:
+            return
+        assert isinstance(
+            comparer, SingleObsComparer
+        ), f"comparer must be a SingleObsComparer, not {type(comparer)}"
+        if comparer.name in self.comparers:
+            # comparer with this name already exists!
+            # maybe the user is trying to add a new model
+            # or a new time period
+            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer
+        else:
+            self.comparers[comparer.name] = comparer
+
     @property
     def name(self) -> str:
         return "Observations"
+
+    @property
+    def n_comparers(self) -> int:
+        """Number of comparers"""
+        return len(self.comparers)
 
     @property
     def n_points(self) -> int:
@@ -1599,11 +1632,6 @@ class ComparerCollection(Mapping, Sequence):
             options.metrics.list = _parse_metric(values, self.metrics)
 
     @property
-    def n_comparers(self) -> int:
-        """Number of comparers"""
-        return len(self.comparers)
-
-    @property
     def data(self) -> pd.DataFrame:
         """Return a copy of the data"""
         return self._construct_all_df()
@@ -1631,10 +1659,6 @@ class ComparerCollection(Mapping, Sequence):
         _all_df = res.sort_index()
         _all_df.index.name = "time"
         return _all_df
-
-    def __init__(self, comparers=None):
-        self.comparers = {}
-        self.add_comparer(comparers)
 
     def __repr__(self):
         out = []
@@ -1682,36 +1706,6 @@ class ComparerCollection(Mapping, Sequence):
         cc.add_comparer(self)
         cc.add_comparer(other)
         return cc
-
-    def add_comparer(
-        self, comparer: Union["SingleObsComparer", "ComparerCollection"]
-    ) -> None:
-        """Add another Comparer to this collection.
-
-        Parameters
-        ----------
-        comparer : (PointComparer, TrackComparer, ComparerCollection)
-            Comparer to add to this collection
-        """
-        if isinstance(comparer, (ComparerCollection, Sequence)):
-            for c in comparer:
-                self._add_comparer(c)
-        else:
-            self._add_comparer(comparer)
-
-    def _add_comparer(self, comparer: SingleObsComparer) -> None:
-        if comparer is None:
-            return
-        assert isinstance(
-            comparer, SingleObsComparer
-        ), f"comparer must be a SingleObsComparer, not {type(comparer)}"
-        if comparer.name in self.comparers:
-            # comparer with this name already exists!
-            # maybe the user is trying to add a new model
-            # or a new time period
-            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer
-        else:
-            self.comparers[comparer.name] = comparer
 
     def sel_df(
         self,
