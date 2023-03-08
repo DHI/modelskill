@@ -1534,44 +1534,20 @@ class ComparerCollection(Mapping, Sequence):
         return sum([c.n_points for c in self.comparers.values()])
 
     @property
-    def start(self) -> datetime:
-        """start datetime of compared data"""
-        return self._start
-
-    @property
-    def end(self) -> datetime:
-        """end datetime of compared data"""
-        return self._end
-
-    @property
-    def var_names(self) -> List[str]:
-        """List of unique variable names"""
-        unique_names = []
+    def start(self) -> pd.Timestamp:
+        """start timestamp of compared data"""
+        starts = [pd.Timestamp.max]
         for cmp in self.comparers.values():
-            n = cmp.variable_name
-            if n not in unique_names:
-                unique_names.append(n)
-        return unique_names
+            starts.append(cmp.time[0])
+        return min(starts)
 
-    # @var_names.setter
-    # def var_names(self, value):
-    #     if np.isscalar(value):
-    #         value = [value]
-    #     if len(value) != self.n_variables:
-    #         raise ValueError(f"Length of var_names must be {self.n_variables}")
-    #     for var_id, new_var in enumerate(value):
-    #         for c in self.comparers.values():
-    #             if c._var_names[0] == self.var_names[var_id]:
-    #                 c.variable_name = new_var
-    #                 c._var_names = [new_var]
-    #     # if self.n_variables > 1:
-    #     #     if self._all_df is not None:
-    #     #         self._all_df["variable"]
-    #     #         for old_var, new_var in zip(self.var_names, value):
-    #     #             self._all_df.loc[
-    #     #                 self._all_df.variable == old_var, "variable"
-    #     #             ] = new_var
-    #     self._var_names = value
+    @property
+    def end(self) -> pd.Timestamp:
+        """end timestamp of compared data"""
+        ends = [pd.Timestamp.min]
+        for cmp in self.comparers.values():
+            ends.append(cmp.time[-1])
+        return max(ends)
 
     @property
     def obs_names(self) -> List[str]:
@@ -1584,10 +1560,6 @@ class ComparerCollection(Mapping, Sequence):
         return self.n_comparers
 
     @property
-    def n_models(self) -> int:
-        return len(self.mod_names)
-
-    @property
     def mod_names(self) -> List[str]:
         """List of unique model names"""
         unique_names = []
@@ -1595,6 +1567,20 @@ class ComparerCollection(Mapping, Sequence):
             for n in cmp.mod_names:
                 if n not in unique_names:
                     unique_names.append(n)
+        return unique_names
+
+    @property
+    def n_models(self) -> int:
+        return len(self.mod_names)
+
+    @property
+    def var_names(self) -> List[str]:
+        """List of unique variable names"""
+        unique_names = []
+        for cmp in self.comparers.values():
+            n = cmp.variable_name
+            if n not in unique_names:
+                unique_names.append(n)
         return unique_names
 
     @property
@@ -1647,15 +1633,8 @@ class ComparerCollection(Mapping, Sequence):
         return _all_df
 
     def __init__(self, comparers=None):
-        self._start = datetime(2900, 1, 1)
-        self._end = datetime(1, 1, 1)
-
         self.comparers = {}
-
-        if comparers is not None:
-            for c in comparers:
-                if c is not None:
-                    self._add_comparer(c)
+        self.add_comparer(comparers)
 
     def __repr__(self):
         out = []
@@ -1704,7 +1683,9 @@ class ComparerCollection(Mapping, Sequence):
         cc.add_comparer(other)
         return cc
 
-    def add_comparer(self, comparer: Union["SingleObsComparer", "ComparerCollection"]):
+    def add_comparer(
+        self, comparer: Union["SingleObsComparer", "ComparerCollection"]
+    ) -> None:
         """Add another Comparer to this collection.
 
         Parameters
@@ -1712,13 +1693,18 @@ class ComparerCollection(Mapping, Sequence):
         comparer : (PointComparer, TrackComparer, ComparerCollection)
             Comparer to add to this collection
         """
-        if isinstance(comparer, ComparerCollection):
+        if isinstance(comparer, (ComparerCollection, Sequence)):
             for c in comparer:
                 self._add_comparer(c)
         else:
             self._add_comparer(comparer)
 
-    def _add_comparer(self, comparer: SingleObsComparer):
+    def _add_comparer(self, comparer: SingleObsComparer) -> None:
+        if comparer is None:
+            return
+        assert isinstance(
+            comparer, SingleObsComparer
+        ), f"comparer must be a SingleObsComparer, not {type(comparer)}"
         if comparer.name in self.comparers:
             # comparer with this name already exists!
             # maybe the user is trying to add a new model
@@ -1726,21 +1712,6 @@ class ComparerCollection(Mapping, Sequence):
             self.comparers[comparer.name] = self.comparers[comparer.name] + comparer
         else:
             self.comparers[comparer.name] = comparer
-
-        # for mod_name in comparer.mod_names:
-        #     if mod_name not in self._mod_names:
-        #         self._mod_names.append(mod_name)
-
-        # if comparer.variable_name not in self._var_names:
-        #    self._var_names.append(comparer.variable_name)
-
-        # check if already in...
-        # self._itemInfos.append(comparer.observation.itemInfo)
-
-        if comparer.start < self.start:
-            self._start = comparer.start
-        if comparer.end > self.end:
-            self._end = comparer.end
 
     def sel_df(
         self,
