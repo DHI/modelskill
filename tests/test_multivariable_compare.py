@@ -110,7 +110,7 @@ def test_mv_mm_skill(cc):
     idx = ("HKNA_wind", "Wind_speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.skill(variable=1).df
+    df = cc.skill(variable="Wind_speed").df
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     idx = ("SW_1", "HKNA_wind")
@@ -124,7 +124,7 @@ def test_mv_mm_mean_skill(cc):
     idx = ("SW_1", "Wind_speed")
     assert pytest.approx(df.loc[idx].r2) == 0.65238805170
 
-    df = cc.mean_skill(variable=0).df
+    df = cc.mean_skill(variable="Significant_wave_height").df
     assert pytest.approx(df.loc["SW_1"].cc) == 0.971791458
 
 
