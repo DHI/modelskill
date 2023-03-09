@@ -31,6 +31,7 @@ UnstructuredType = Union[
     Path,
     mikeio.dfsu.Dfsu2DH,
     mikeio.Dataset,
+    mikeio.DataArray,
     mikeio.spatial.FM_geometry.GeometryFM,
 ]
 GridType = Union[str, Path, List, xr.Dataset, xr.DataArray]

@@ -74,7 +74,12 @@ class ModelResult:
 
         if (file_ext == ".dfsu") or isinstance(
             data,
-            (mikeio.Dataset, mikeio.dfsu._Dfsu, mikeio.spatial.FM_geometry.GeometryFM),
+            (
+                mikeio.Dataset,
+                mikeio.DataArray,
+                mikeio.dfsu._Dfsu,
+                mikeio.spatial.FM_geometry.GeometryFM,
+            ),
         ):
             return model.DfsuModelResult(
                 data=data, item=item, itemInfo=itemInfo, name=name, quantity=quantity

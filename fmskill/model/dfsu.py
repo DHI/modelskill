@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, get_args
 
 import mikeio
 
@@ -20,7 +20,7 @@ class DfsuModelResult(ModelResultBase):
         **kwargs,
     ) -> None:
         assert isinstance(
-            data, types.UnstructuredType
+            data, get_args(types.UnstructuredType)
         ), "Could not construct DfsuModelResult from provided data"
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfsu", "File must be a dfsu file"
@@ -30,6 +30,8 @@ class DfsuModelResult(ModelResultBase):
                 itemInfo = data.items[idx].type
 
         elif isinstance(data, mikeio.DataArray):
+            raise NotImplementedError  # TODO: implement this, need example
+        elif isinstance(data, mikeio.Dataset):
             raise NotImplementedError  # TODO: implement this, need example
 
         elif isinstance(data, mikeio.spatial.FM_geometry.GeometryFM):
