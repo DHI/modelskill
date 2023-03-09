@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from typing import get_args
 import mikeio
 import pandas as pd
 
@@ -23,7 +23,7 @@ class PointModelResult(ModelResultBase):
     ) -> None:
 
         assert isinstance(
-            data, types.PointType
+            data, get_args(types.PointType)
         ), "Could not construct PointModelResult from provided data"
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
