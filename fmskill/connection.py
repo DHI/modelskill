@@ -244,15 +244,7 @@ class _SingleObsConnector(_BaseConnector):
         """
         mr = self.modelresults[0]
 
-        if isinstance(mr, DfsModelResultItem) and not mr.is_dfs0:
-            geometry = mr.data.geometry
-        elif isinstance(mr, DataArrayModelResultItem) and isinstance(
-            mr.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
-        ):
-            geometry = mr.data.geometry
-        else:
-            warnings.warn("Only supported for dfsu ModelResults")
-            return
+        geometry = mr.data.geometry
 
         ax = plot_observation_positions(
             geometry=geometry, observations=[self.obs], figsize=figsize
@@ -572,15 +564,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         mod = list(self.modelresults.values())[0]
 
-        if isinstance(mod, DfsModelResultItem) and not mod.is_dfs0:
-            geometry = mod.data.geometry
-        elif isinstance(mod, DataArrayModelResultItem) and isinstance(
-            mod.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
-        ):
-            geometry = mod.data.geometry
-        else:
-            warnings.warn("Only supported for dfsu ModelResults")
-            return
+        geometry = mod.data.geometry
 
         observations = list(self.observations.values())
         ax = plot_observation_positions(
