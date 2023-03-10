@@ -4,6 +4,7 @@ import pytest
 import mikeio
 from fmskill import ModelResult
 from fmskill.comparison import PointComparer, TrackComparer
+from fmskill.connection import Connector
 from fmskill.model import DfsuModelResult, PointModelResult
 from fmskill.observation import PointObservation, TrackObservation
 
@@ -117,7 +118,7 @@ def test_extract_observation_total_windsea_swell_not_possible(
     #     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
 
     # Specify Swell item explicitely
-    c = mr.extract_observation(Hm0_HKNA)
+    c = Connector(Hm0_HKNA, mr).extract()
     assert c.n_points > 0
 
 
@@ -125,9 +126,12 @@ def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d, item=0)
     with pytest.raises(Exception):
         with pytest.warns(UserWarning, match="Item type should match"):
-            c = mr.extract_observation(klagshamn, validate=True)
+            c = Connector(klagshamn, mr, validate=True).extract()
 
-    c = mr.extract_observation(klagshamn, validate=False)
+            # c = mr.extract_observation(klagshamn, validate=True)
+
+    c = Connector(klagshamn, mr, validate=False).extract()
+    # c = mr.extract_observation(klagshamn, validate=False)
     assert c.n_points > 0
 
 
@@ -137,7 +141,9 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     klagshamn.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
     klagshamn.y = -10
     with pytest.raises(ValueError):
-        _ = mr.extract_observation(klagshamn, validate=True)
+        _ = Connector(klagshamn, mr, validate=True).extract()
+
+        # _ = mr.extract_observation(klagshamn, validate=True)
 
 
 # def test_dfs_model_result(hd_oresund_2d):
@@ -226,4 +232,4 @@ def test_factory(hd_oresund_2d):
 
     mri = ModelResult(hd_oresund_2d, item="Surface elevation")
     # assert isinstance(mri, DfsModelResultItem)
-    assert mri.item_name == "Surface elevation"
+    assert mri.item == "Surface elevation"

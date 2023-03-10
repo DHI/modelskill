@@ -65,6 +65,9 @@ def point_obs_from_dfsu_mr(
     """Extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
     given a PointObservation."""
 
+    if not mr.data.contains([observation.x, observation.y]):
+        raise ValueError("Observation outside domain")
+
     xy = np.atleast_2d([observation.x, observation.y])
     elemids = mr.data.geometry.find_index(coords=xy)
     ds_model = mr.data.read(elements=elemids, items=[mr.item])
