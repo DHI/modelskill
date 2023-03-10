@@ -39,10 +39,12 @@ class PointModelResult(ModelResultBase):
             if data.empty or len(data.columns) == 0:
                 raise ValueError("No data.")
 
-            item, idx = utils.get_item_name_and_idx_pd(data, item)
+            item, _ = utils.get_item_name_and_idx_pd(data, item)
             data = data[[item]]
             if itemInfo is None:
                 itemInfo = mikeio.EUMType.Undefined
+
+            data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
 
         super().__init__(data, item, itemInfo, name, quantity)
         self.x = x

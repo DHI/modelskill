@@ -84,7 +84,7 @@ def test_df_modelresultitem_itemInfo(point_df):
 def test_track_df_modelresultitem(track_df):
     df = track_df
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = ModelResult(df, item=2)
+        mr1 = ModelResult(df, item=2, geometry_type="track")
     assert isinstance(mr1, protocols.ModelResult)
     assert "Item: surface_elevation" in repr(mr1)
 
@@ -112,10 +112,10 @@ def test_track_df_modelresultitem_iteminfo(track_df):
 def test_track_df_modelresult(track_df):
     df = track_df
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr1 = ModelResult(df, item=2)
+        mr1 = ModelResult(df, item=2, geometry_type="track")
     assert isinstance(mr1, protocols.ModelResult)
     assert len(mr1.data.columns) == 3
-    assert mr1.item_name == "surface_elevation"
+    assert mr1.item == "surface_elevation"
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         mr3 = ModelResult(df, item=2, geometry_type="track")

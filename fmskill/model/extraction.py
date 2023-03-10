@@ -52,7 +52,7 @@ def track_obs_from_xr_mr(
 
     return TrackModelResult(
         data=df.dropna(),
-        item=mr.item,
+        item=mr.name,
         itemInfo=mr.itemInfo,
         name=mr.name,
         quantity=mr.quantity,
@@ -71,7 +71,7 @@ def point_obs_from_dfsu_mr(
     ds_model.rename({ds_model.items[0].name: mr.name}, inplace=True)
 
     df = ds_model.to_dataframe().dropna()
-    df.index = utils.make_unique_index(df.index, offset_duplicates=0.001)
+    # df.index = utils.make_unique_index(df.index, offset_duplicates=0.001)
 
     return PointModelResult(
         data=df,
@@ -95,7 +95,7 @@ def track_obs_from_dfsu_mr(
 
     return TrackModelResult(
         data=ds_model.to_dataframe().dropna(),
-        item=mr.item,
+        item=mr.name,
         itemInfo=mr.itemInfo,
         name=mr.name,
         quantity=mr.quantity,

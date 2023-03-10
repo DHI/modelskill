@@ -32,10 +32,13 @@ class GridModelResult(ModelResultBase):
             assert Path(file).exists(), f"{file}: File does not exist."
 
         if isinstance(data, (str, Path)):
-            _validate_file(data)
-            data = xr.open_dataset(data)
+            if "*" in str(data):
+                data = list(Path(data).parent.glob(str(data.name)))
+            else:
+                _validate_file(data)
+                data = xr.open_dataset(data)
 
-        elif isinstance(data, list):
+        if isinstance(data, list):
             _ = [_validate_file(file) for file in data]
             data = xr.open_mfdataset(data)
 
