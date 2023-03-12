@@ -1,4 +1,3 @@
-import sys
 from datetime import datetime
 import pytest
 import xarray as xr
@@ -8,13 +7,11 @@ import mikeio
 
 import fmskill
 from fmskill import ModelResult
+from fmskill.model import protocols
+from fmskill.model.point import PointModelResult
 
 from fmskill.observation import PointObservation, TrackObservation
 from fmskill.comparison import PointComparer, TrackComparer
-
-python3_7_or_above = pytest.mark.skipif(
-    sys.version_info < (3, 7), reason="requires Python3.7+"
-)
 
 
 @pytest.fixture
@@ -56,7 +53,7 @@ def test_XArrayModelResult_from_nc(mr_ERA5_pp1d):
 
     # assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.data, xr.Dataset)     # maybe better to have an attribute data which could then be a DataArray or something else---
-    assert "ERA5_DutchCoast.nc" in mr.filename
+    # assert "ERA5_DutchCoast.nc" in mr.filename
     # assert "- Item: 4: swh" in repr(mr)
     # assert len(mr) == 5
     # assert len(mr.data) == 5
@@ -74,7 +71,7 @@ def test_XArrayModelResult_from_DataArray(ERA5_DutchCoast_nc):
     # assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.data, xr.DataArray)
     assert mr.item_name == "swh"
-    assert not mr.filename
+    # assert not mr.filename
     assert mr.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
@@ -84,7 +81,7 @@ def test_XArrayModelResult_from_da(ERA5_DutchCoast_nc):
     mr = ModelResult(da)
 
     # assert isinstance(mr, XArrayModelResultItem)
-    assert not mr.filename
+    # assert not mr.filename
 
 
 def test_XArrayModelResult_from_multifile(mf_modelresult):
@@ -92,7 +89,7 @@ def test_XArrayModelResult_from_multifile(mf_modelresult):
 
     # assert isinstance(mr, XArrayModelResultItem)
     # assert isinstance(mr.data, xr.DataArray)   # maybe better to have an attribute data which could then be a DataArray or something else---
-    assert "CMEMS_DutchCoast_*.nc" in mr.filename
+    # assert "CMEMS_DutchCoast_*.nc" in mr.filename
     assert mr.name == "CMEMS"
     assert mr.start_time == datetime(2017, 10, 28, 0, 0, 0)
     assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
@@ -115,7 +112,7 @@ def test_XArrayModelResultItem(ERA5_DutchCoast_nc):
     # assert isinstance(mri2, XArrayModelResultItem)
 
     assert mri1.name == mri2.name
-    assert mri1._selected_item == mri2._selected_item  # do we still need this?
+    # assert mri1._selected_item == mri2._selected_item  # do we still need this?
 
 
 def test_XArrayModelResultItem_itemInfo(ERA5_DutchCoast_nc):
@@ -134,24 +131,22 @@ def test_XArrayModelResultItem_itemInfo(ERA5_DutchCoast_nc):
 def test_XArrayModelResult_getitem(mr_ERA5_pp1d):
     mri = mr_ERA5_pp1d
 
-    assert "XArrayModelResultItem" in repr(mri)
     assert "- Item: pp1d" in repr(mri)
     assert isinstance(mri.data, xr.Dataset)
-    # assert len(mri) == 1   # has no length (it's an item)
-    assert len(mri.data) == 1  # Keep this?
     assert mri.name == "ERA5_DutchCoast"
     assert mri.item_name == "pp1d"
 
 
 # should we test "private" methods?
 def test_XArrayModelResult_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
-    df = mr_ERA5_swh._extract_point(pointobs_epl_hm0)
+    mrp = mr_ERA5_swh.extract(pointobs_epl_hm0)
+    assert isinstance(mrp, PointModelResult)
+    df = mrp.data
     assert isinstance(df, pd.DataFrame)
     assert len(df.columns) == 1
     assert pytest.approx(df.iloc[0, 0]) == 0.875528
 
 
-@python3_7_or_above
 def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
     mri = mf_modelresult
 
@@ -160,7 +155,7 @@ def test_XArrayModelResultItem_validate_point(mf_modelresult, pointobs_epl_hm0):
 
 
 def test_XArrayModelResultItem_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
-    pc = mr_ERA5_swh.extract_observation(pointobs_epl_hm0)
+    pc = mr_ERA5_swh.extract(pointobs_epl_hm0)
     df = pc.data
 
     assert isinstance(pc, PointComparer)
@@ -176,7 +171,7 @@ def test_XArrayModelResultItem_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl
     mri = mr_ERA5_pp1d
     pointobs_epl_hm0.x = -50
     with pytest.warns(UserWarning, match="Cannot add zero-length modeldata"):
-        pc = mri.extract_observation(pointobs_epl_hm0)
+        pc = mri.extract(pointobs_epl_hm0)
 
     assert pc == None
 
@@ -189,7 +184,7 @@ def test_XArrayModelResultItem_extract_point_toutside(
     da["time"] = pd.Timedelta("365D") + da.time
     mr = ModelResult(da)
     with pytest.warns(UserWarning, match="No overlapping data in found"):
-        pc = mr.extract_observation(pointobs_epl_hm0)
+        pc = mr.extract(pointobs_epl_hm0)
 
     assert pc == None
 
@@ -199,13 +194,13 @@ def test_XArrayModelResultItem_extract_point_toutside(
 )
 def test_XArrayModelResultItem_extract_point_wrongitem(mr_ERA5_pp1d, pointobs_epl_hm0):
     mri = mr_ERA5_pp1d
-    pc = mri.extract_observation(pointobs_epl_hm0)
+    pc = mri.extract(pointobs_epl_hm0)
     assert pc == None
 
 
 def test_XArrayModelResultItem_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     mri = mr_ERA5_pp1d
-    tc = mri.extract_observation(trackobs_c2_hm0)
+    tc = mri.extract(trackobs_c2_hm0)
     df = tc.data
 
     assert isinstance(tc, TrackComparer)
