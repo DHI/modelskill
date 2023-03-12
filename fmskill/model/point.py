@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import get_args
+from typing import Union, get_args
 import mikeio
 import pandas as pd
 
@@ -11,11 +11,11 @@ class PointModelResult(ModelResultBase):
     def __init__(
         self,
         data: types.PointType,
+        name: str = None,
         x: float = None,
         y: float = None,
-        item: str = None,
+        item: Union[str, int] = None,
         itemInfo=None,
-        name: str = None,
         quantity: str = None,
     ) -> None:
 
@@ -40,7 +40,7 @@ class PointModelResult(ModelResultBase):
 
         if isinstance(data, mikeio.Dfs0):
             item_names = [i.name for i in data.items]
-            item, idx = utils.get_item_name_and_idx_dfs(item_names, item)
+            item, idx = utils.get_item_name_and_idx(item_names, item)
             if itemInfo is None:
                 itemInfo = data.items[idx]
             data = data.read()
@@ -57,6 +57,8 @@ class PointModelResult(ModelResultBase):
 
             data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
 
-        super().__init__(data, item, itemInfo, name, quantity)
+        super().__init__(
+            data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
+        )
         self.x = x
         self.y = y
