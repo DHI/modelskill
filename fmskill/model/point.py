@@ -34,11 +34,11 @@ class PointModelResult(ModelResultBase):
             item_names = [i.name for i in data.items]
             item, idx = utils.get_item_name_and_idx(item_names, item)
             itemInfo = itemInfo or data.items[idx]
-            data = data[item].to_dataframe()
+            data = data[[item]].to_dataframe()
         elif isinstance(data, mikeio.DataArray):
-            item = item or data.item.name
+            item = item or data.name
             itemInfo = itemInfo or data.item
-            data = data.to_dataframe()
+            data = mikeio.Dataset({data.name: data}).to_dataframe()
         elif isinstance(data, pd.DataFrame):
             item_names = list(data.columns)
             item, idx = utils.get_item_name_and_idx(item_names, item)
