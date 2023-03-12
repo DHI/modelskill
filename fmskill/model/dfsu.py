@@ -36,10 +36,15 @@ class DfsuModelResult(ModelResultBase):
                 f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
             )
 
-        item_names = [i.name for i in data.items]
-        item, idx = utils.get_item_name_and_idx(item_names, item)
-        if itemInfo is None:
-            itemInfo = data.items[idx]
+        if isinstance(data, mikeio.DataArray):
+            item = item or data.name
+            itemInfo = itemInfo or data.item
+        else:
+            item_names = [i.name for i in data.items]
+            item, idx = utils.get_item_name_and_idx(item_names, item)
+            itemInfo = itemInfo or data.items[idx]
+
+        name = name or item
 
         super().__init__(
             data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
