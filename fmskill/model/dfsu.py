@@ -13,12 +13,14 @@ class DfsuModelResult(ModelResultBase):
     def __init__(
         self,
         data: types.UnstructuredType,
-        item: str = None,
-        itemInfo=None,
         name: str = None,
+        item: Union[str, int] = None,
+        itemInfo=None,
         quantity: str = None,
         **kwargs,
     ) -> None:
+        name = name or super()._default_name(data)
+
         assert isinstance(
             data, get_args(types.UnstructuredType)
         ), "Could not construct DfsuModelResult from provided data"
@@ -33,13 +35,15 @@ class DfsuModelResult(ModelResultBase):
             raise ValueError(
                 f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
             )
-        
+
         item_names = [i.name for i in data.items]
         item, idx = utils.get_item_name_and_idx(item_names, item)
         if itemInfo is None:
             itemInfo = data.items[idx]
 
-        super().__init__(data, item, itemInfo, name, quantity)
+        super().__init__(
+            data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
+        )
 
     def extract(
         self, observation: Union[PointObservation, TrackObservation]
