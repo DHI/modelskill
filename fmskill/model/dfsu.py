@@ -25,20 +25,18 @@ class DfsuModelResult(ModelResultBase):
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfsu", "File must be a dfsu file"
             data = mikeio.open(data)
-            if itemInfo is None:
-                item, idx = utils.get_item_name_and_idx_dfs(data, item)
-                itemInfo = data.items[idx].type
 
-        elif isinstance(data, mikeio.DataArray):
-            raise NotImplementedError  # TODO: implement this, need example
-        elif isinstance(data, mikeio.Dataset):
-            raise NotImplementedError  # TODO: implement this, need example
-
-        elif isinstance(data, mikeio.spatial.FM_geometry.GeometryFM):
-            raise NotImplementedError  # What to do here?
-
+        elif isinstance(data, (mikeio.DataArray, mikeio.Dataset)):
+            if not isinstance(data.geometry, mikeio.spatial.FM_geometry.GeometryFM):
+                raise ValueError(f"Geometry of {type(data)} is not supported.")
+        else:
+            raise ValueError(
+                f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
+            )
+        
+        item, idx = utils.get_item_name_and_idx_dfs(data.items, item)
         if itemInfo is None:
-            itemInfo = mikeio.EUMType.Undefined
+            itemInfo = data.items[idx]
 
         super().__init__(data, item, itemInfo, name, quantity)
 
