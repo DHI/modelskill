@@ -14,9 +14,9 @@ class GridModelResult(ModelResultBase):
     def __init__(
         self,
         data: types.GridType,
-        item: str = None,
-        itemInfo=None,
         name: str = None,
+        item: Union[str, int] = None,
+        itemInfo=None,
         quantity: str = None,
         **kwargs,
     ) -> None:
@@ -63,11 +63,13 @@ class GridModelResult(ModelResultBase):
             raise NotImplementedError(
                 f"Could not construct GridModelResult from {type(data)}"
             )
-        
+
         item, _ = utils.get_item_name_and_idx(list(data.data_vars), item)
         data = utils.rename_coords_xr(data)
 
-        super().__init__(data, item, itemInfo, name, quantity)
+        super().__init__(
+            data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
+        )
 
     def extract(
         self, observation: Union[PointObservation, TrackObservation]
