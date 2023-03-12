@@ -15,47 +15,46 @@ class PointModelResult(ModelResultBase):
         x: float = None,
         y: float = None,
         item: Union[str, int] = None,
-        itemInfo=None,
+        itemInfo: mikeio.ItemInfo = None,
         quantity: str = None,
     ) -> None:
+        # assert isinstance(
+        #     data, get_args(types.PointType)
+        # ), "Could not construct PointModelResult from provided data"
 
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
-            data = mikeio.read(data, items=item).to_dataframe()
+            name = name or Path(data).stem
+            data = mikeio.read(data)  # now mikeio.Dataset
         elif isinstance(data, mikeio.Dfs0):
-            data = data.read(items=item).to_dataframe()
-        elif isinstance(data, mikeio.Dataset):
-            data = data.to_dataframe() if item is None else data[item].to_dataframe()
-        elif isinstance(data, mikeio.DataArray):
-            data = data.to_dataframe()
-        elif isinstance(data, pd.Series):
-            data = pd.DataFrame(data)  # to_frame?
+            data = data.read()  # now mikeio.Dataset
 
-        assert isinstance(
-            data, get_args(types.PointType)
-        ), "Could not construct PointModelResult from provided data"
-        if isinstance(data, (str, Path)):
-            assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
-            data = mikeio.open(data)
-
-        if isinstance(data, mikeio.Dfs0):
+        # parse item and convert to dataframe
+        if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
             item, idx = utils.get_item_name_and_idx(item_names, item)
-            if itemInfo is None:
-                itemInfo = data.items[idx]
-            data = data.read()
-            data = mikeio.Dataset(data[item]).to_dataframe().dropna()
-
-        # TODO: series
-
-        if isinstance(data, pd.DataFrame):
-            if data.empty or len(data.columns) == 0:
-                raise ValueError("No data.")
-
-            item, _ = utils.get_item_name_and_idx(list(data.columns), item)
+            itemInfo = itemInfo or data.items[idx]
+            data = data[item].to_dataframe()
+        elif isinstance(data, mikeio.DataArray):
+            item = item or data.item.name
+            itemInfo = itemInfo or data.item
+            data = data.to_dataframe()
+        elif isinstance(data, pd.DataFrame):
+            item_names = list(data.columns)
+            item, idx = utils.get_item_name_and_idx(item_names, item)
             data = data[[item]]
+        elif isinstance(data, pd.Series):
+            data = pd.DataFrame(data)  # to_frame?
+            item = item or data.columns[0]
+        else:
+            raise ValueError("Could not construct PointModelResult from provided data")
 
-            data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
+        name = name or item
+
+        data = data.dropna()
+        if data.empty or len(data.columns) == 0:
+            raise ValueError("No data.")
+        data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
 
         super().__init__(
             data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
