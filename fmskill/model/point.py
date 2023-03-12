@@ -39,7 +39,8 @@ class PointModelResult(ModelResultBase):
             data = mikeio.open(data)
 
         if isinstance(data, mikeio.Dfs0):
-            item, idx = utils.get_item_name_and_idx_dfs(data.items, item)
+            item_names = [i.name for i in data.items]
+            item, idx = utils.get_item_name_and_idx_dfs(item_names, item)
             if itemInfo is None:
                 itemInfo = data.items[idx]
             data = data.read()

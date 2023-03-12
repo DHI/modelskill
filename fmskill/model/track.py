@@ -34,7 +34,7 @@ class TrackModelResult(ModelResultBase):
                 "x" in data.columns and "y" in data.columns
             ), "Data must have x and y columns to construct a TrackModelResult."
 
-            item, _ = utils.get_item_name_and_idx_pd(data, item)
+            item, _ = utils.get_item_name_and_idx(list(data.columns), item)
             data = data[["x", "y", item]]
             data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
 

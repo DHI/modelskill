@@ -34,7 +34,8 @@ class DfsuModelResult(ModelResultBase):
                 f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
             )
         
-        item, idx = utils.get_item_name_and_idx_dfs(data.items, item)
+        item_names = [i.name for i in data.items]
+        item, idx = utils.get_item_name_and_idx(item_names, item)
         if itemInfo is None:
             itemInfo = data.items[idx]
 

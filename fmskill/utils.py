@@ -58,27 +58,6 @@ def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
     return df.rename(columns=_mapping)
 
 
-def get_item_name_and_idx_dfs(items: List[mikeio.ItemInfo], item) -> Tuple[str, int]:
-    """Returns the name and index of the requested variable, provided
-    either as either a str or int."""
-    item_names = [i.name for i in items]
-    return get_item_name_and_idx(item_names, item)
-
-
-def get_item_name_and_idx_xr(ds: xr.Dataset, item) -> Tuple[str, int]:
-    """Returns the name and index of the requested data variable, provided
-    either as either a str or int."""
-    item_names = list(ds.data_vars)
-    return get_item_name_and_idx(item_names, item)
-
-
-def get_item_name_and_idx_pd(df: pd.DataFrame, item) -> Tuple[str, int]:
-    """Returns the name and index of the requested data variable, provided
-    either as either a str or int."""
-    item_names = list(df.columns)
-    return get_item_name_and_idx(item_names, item)
-
-
 def get_item_name_and_idx(item_names: List[str], item) -> Tuple[str, int]:
     """Returns the name and index of the requested variable, provided
     either as either a str or int."""
