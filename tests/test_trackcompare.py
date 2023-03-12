@@ -24,7 +24,7 @@ def observation(observation_df):
 def modelresult():
     fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr = ModelResult(fn, item=2, name="HD")
+        mr = ModelResult(fn, geometry_type="track", item=2, name="HD")
     return mr
 
 
