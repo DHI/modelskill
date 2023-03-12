@@ -1,11 +1,10 @@
-from typing import Tuple
+from typing import List, Tuple
 import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
 from collections.abc import Iterable
 import mikeio
-from fmskill import types
 
 POS_COORDINATE_NAME_MAPPING = {
     "lon": "x",
@@ -59,66 +58,30 @@ def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
     return df.rename(columns=_mapping)
 
 
-def get_item_name_and_idx_dfs(dfs: types.DfsType, item) -> Tuple[str, int]:
+def get_item_name_and_idx_dfs(items: List[mikeio.ItemInfo], item) -> Tuple[str, int]:
     """Returns the name and index of the requested variable, provided
     either as either a str or int."""
-    item_names = [i.name for i in dfs.items]
-    n_items = len(item_names)
-    if item is None:
-        if n_items == 1:
-            return item_names[0], 0
-        else:
-            raise ValueError(
-                f"item must be specified when more than one item available. Available items: {item_names}"
-            )
-    if isinstance(item, int):
-        if item < 0:  # Handle negative indices
-            item = n_items + item
-        if (item < 0) or (item >= n_items):
-            raise IndexError(f"item {item} out of range (0, {n_items-1})")
-        return item_names[item], item
-    elif isinstance(item, str):
-        if item not in item_names:
-            raise KeyError(f"item must be one of {item_names}")
-        return item, item_names.index(item)
-    else:
-        raise TypeError("item must be int or string")
+    item_names = [i.name for i in items]
+    return get_item_name_and_idx(item_names, item)
 
 
-def get_item_name_and_idx_xr(ds: xr.Dataset, item, item_names=None) -> Tuple[str, int]:
+def get_item_name_and_idx_xr(ds: xr.Dataset, item) -> Tuple[str, int]:
     """Returns the name and index of the requested data variable, provided
     either as either a str or int."""
-    if item_names is None:
-        item_names = list(ds.data_vars)
-    n_items = len(item_names)
-    if item is None:
-        if n_items == 1:
-            return item_names[0], 0
-        else:
-            raise ValueError(
-                f"item must be specified when more than one item available. Available items: {item_names}"
-            )
-    if isinstance(item, int):
-        if item < 0:  # Handle negative indices
-            item = n_items + item
-        if (item < 0) or (item >= n_items):
-            raise IndexError(f"item {item} out of range (0, {n_items-1})")
-        return item_names[item], item
-    elif isinstance(item, str):
-        if item not in item_names:
-            raise KeyError(f"item must be one of {item_names}")
-        return item, item_names.index(item)
-    else:
-        raise TypeError("item must be int or string")
+    item_names = list(ds.data_vars)
+    return get_item_name_and_idx(item_names, item)
 
 
-def get_item_name_and_idx_pd(
-    df: pd.DataFrame, item, item_names=None
-) -> Tuple[str, int]:
+def get_item_name_and_idx_pd(df: pd.DataFrame, item) -> Tuple[str, int]:
     """Returns the name and index of the requested data variable, provided
     either as either a str or int."""
-    if item_names is None:
-        item_names = list(df.columns)
+    item_names = list(df.columns)
+    return get_item_name_and_idx(item_names, item)
+
+
+def get_item_name_and_idx(item_names: List[str], item) -> Tuple[str, int]:
+    """Returns the name and index of the requested variable, provided
+    either as either a str or int."""
     n_items = len(item_names)
     if item is None:
         if n_items == 1:
