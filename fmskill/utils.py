@@ -83,6 +83,30 @@ def get_item_name_and_idx(item_names: List[str], item) -> Tuple[str, int]:
         raise TypeError("item must be int or string")
 
 
+def _parse_track_items(items, x_item, y_item, item):
+    """If input has exactly 3 items we accept item=None"""
+    if len(items) < 3:
+        raise ValueError(
+            f"Input has only {len(items)} items. It should have at least 3."
+        )
+    if item is None:
+        if len(items) == 3:
+            item = 2
+        elif len(items) > 3:
+            raise ValueError("Input has more than 3 items, but item was not given!")
+    else:
+        item, _ = get_item_name_and_idx(items, item)
+
+    x_item, _ = get_item_name_and_idx(items, x_item)
+    y_item, _ = get_item_name_and_idx(items, y_item)
+
+    if (item == x_item) or (item == y_item) or (x_item == y_item):
+        raise ValueError(
+            f"x-item ({x_item}), y-item ({y_item}) and value-item ({item}) must be different!"
+        )
+    return [x_item, y_item, item]
+
+
 def is_iterable_not_str(obj):
     """Check if an object is an iterable but not a string."""
     if isinstance(obj, str):
