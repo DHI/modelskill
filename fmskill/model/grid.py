@@ -65,6 +65,7 @@ class GridModelResult(ModelResultBase):
             )
 
         item, _ = utils.get_item_name_and_idx(list(data.data_vars), item)
+        name = name or item
         data = utils.rename_coords_xr(data)
 
         super().__init__(
@@ -93,21 +94,21 @@ class GridModelResult(ModelResultBase):
         return extraction_result
 
 
-if __name__ == "__main__":
-    grid_data = "tests/testdata/SW/ERA5_DutchCoast.nc"
-    point_obs = PointObservation(
-        "tests/testdata/SW/eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL"
-    )
-    track_obs = TrackObservation(
-        "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="c2"
-    )
-    test = GridModelResult(grid_data, item="swh", name="test")
+# if __name__ == "__main__":
+#     grid_data = "tests/testdata/SW/ERA5_DutchCoast.nc"
+#     point_obs = PointObservation(
+#         "tests/testdata/SW/eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL"
+#     )
+#     track_obs = TrackObservation(
+#         "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="c2"
+#     )
+#     test = GridModelResult(grid_data, item="swh", name="test")
 
-    assert isinstance(test, protocols.ModelResult)
-    assert isinstance(test, protocols.Extractable)
+#     assert isinstance(test, protocols.ModelResult)
+#     assert isinstance(test, protocols.Extractable)
 
-    test.extract(point_obs)
-    test.extract(track_obs)
+#     test.extract(point_obs)
+#     test.extract(track_obs)
 
-    c1 = test.extract_observation(point_obs, validate=False)
-    c2 = test.extract_observation(track_obs, validate=False)
+#     c1 = test.extract_observation(point_obs, validate=False)
+#     c2 = test.extract_observation(track_obs, validate=False)
