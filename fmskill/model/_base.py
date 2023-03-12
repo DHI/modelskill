@@ -1,3 +1,4 @@
+from pathlib import Path
 import warnings
 from typing import Union
 
@@ -31,18 +32,37 @@ class ModelResultBase:
         return "\n".join(txt)
 
     @property
+    def item_name(self):
+        # backwards compatibility, delete?
+        return self.item
+
+    @staticmethod
+    def _default_name(data) -> str:
+        if isinstance(data, (str, Path)):
+            return Path(data).stem
+        
+    @property
+    def time(self) -> pd.DatetimeIndex:
+        if hasattr(self.data, "time"):
+            return pd.DatetimeIndex(self.data.time)
+        elif hasattr(self.data, "index"):
+            return pd.DatetimeIndex(self.data.index)
+        else:
+            raise AttributeError("Could not extract time from data")
+
+    @property
     def start_time(self) -> pd.Timestamp:
         if hasattr(self.data, "start_time"):
             return pd.Timestamp(self.data.start_time)
         else:
-            return pd.Timestamp(self.data.index[0])
+            return self.time[0]
 
     @property
     def end_time(self) -> pd.Timestamp:
         if hasattr(self.data, "end_time"):
             return pd.Timestamp(self.data.end_time)
         else:
-            return pd.Timestamp(self.data.index[-1])
+            return self.time[-1]
 
     def _validate_observation(
         self, observation: Union[PointObservation, TrackObservation]
@@ -51,6 +71,7 @@ class ModelResultBase:
         if not ok:
             raise ValueError("Could not extract observation")
 
+    # TODO: does not do anything except validation???
     def extract_observation(
         self, observation: Union[PointObservation, TrackObservation], validate=True
     ) -> SingleObsComparer:
