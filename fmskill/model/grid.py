@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Sequence, Union
 
 import mikeio
 import xarray as xr
@@ -20,36 +20,52 @@ class GridModelResult(ModelResultBase):
         quantity: str = None,
         **kwargs,
     ) -> None:
-        assert isinstance(
-            data, types.GridType
-        ), "Could not construct GridModelResult from provided data."
+        # assert isinstance(
+        #     data, types.GridType
+        # ), "Could not construct GridModelResult from provided data."
 
-        def _validate_file(file):
-            assert isinstance(
-                file, (str, Path)
-            ), f"Files need to be specified as str or Path objects."
-            assert Path(file).suffix == ".nc", f"{file}: Not a netcdf file."
-            assert Path(file).exists(), f"{file}: File does not exist."
+        # def _validate_file(file):
+        #     # TODO: not needed...
+        #     assert isinstance(
+        #         file, (str, Path)
+        #     ), f"Files need to be specified as str or Path objects."
+        #     # assert Path(file).suffix == ".nc", f"{file}: Not a netcdf file."
+        #     assert Path(file).exists(), f"{file}: File does not exist."
+
+        # TODO: Dataset is missing
+
+        # TODO: if dataset -> do nothing
+        #       if dataarray -> convert to dataset
+        #       if file -> open dataset
+        #       if list/sequence or contains * -> open mfdataset
+
+        name = name or super()._default_name(data)
 
         if isinstance(data, (str, Path)):
             if "*" in str(data):
-                data = list(Path(data).parent.glob(str(data.name)))
+                data = xr.open_mfdataset(data)
             else:
-                _validate_file(data)
+                assert Path(data).exists(), f"{data}: File does not exist."
                 data = xr.open_dataset(data)
 
-        if isinstance(data, list):
-            _ = [_validate_file(file) for file in data]
+        elif isinstance(data, Sequence) and all(
+            isinstance(file, (str, Path)) for file in data
+        ):
             data = xr.open_mfdataset(data)
 
         elif isinstance(data, xr.DataArray):
+            assert data.ndim >= 2, "DataArray must at least 2D."
             data = data.to_dataset(name=name, promote_attrs=True)
+        elif isinstance(data, xr.Dataset):
+            assert len(data.coords) >= 2, "Dataset must have at least 2 dimensions."
 
-        item, _ = utils.get_item_name_and_idx_xr(data, item)
+        else:
+            raise NotImplementedError(
+                f"Could not construct GridModelResult from {type(data)}"
+            )
+        
+        item, _ = utils.get_item_name_and_idx(list(data.data_vars), item)
         data = utils.rename_coords_xr(data)
-
-        if itemInfo is None:
-            itemInfo = mikeio.EUMType.Undefined
 
         super().__init__(data, item, itemInfo, name, quantity)
 
