@@ -13,22 +13,24 @@ class ModelResultBase:
     def __init__(
         self,
         data: types.DataInputType,
+        name: str,
         item: str = None,
         itemInfo=None,
-        name: str = None,
         quantity: str = None,
         **kwargs,
     ) -> None:
 
         self.data = data
         self.item = item
+        if name is None:
+            raise ValueError("name must be specified!")
         self.name = name
         self.quantity = quantity
         self.itemInfo = utils.parse_itemInfo(itemInfo)
 
     def __repr__(self):
         txt = [f"<{self.__class__.__name__}> '{self.name}'"]
-        txt.append(f"- Item: {self.item}")
+        txt.append(f"- Item: {self.item}")  # TODO: only if item is not None?
         return "\n".join(txt)
 
     @property
@@ -40,7 +42,7 @@ class ModelResultBase:
     def _default_name(data) -> str:
         if isinstance(data, (str, Path)):
             return Path(data).stem
-        
+
     @property
     def time(self) -> pd.DatetimeIndex:
         if hasattr(self.data, "time"):
