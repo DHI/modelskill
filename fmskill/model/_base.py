@@ -6,7 +6,7 @@ import pandas as pd
 
 from fmskill import types, utils
 from fmskill.comparison import PointComparer, SingleObsComparer, TrackComparer
-from fmskill.observation import PointObservation, TrackObservation
+from fmskill.observation import Observation, PointObservation, TrackObservation
 
 
 class ModelResultBase:
@@ -66,9 +66,14 @@ class ModelResultBase:
         else:
             return self.time[-1]
 
-    def _validate_observation(
-        self, observation: Union[PointObservation, TrackObservation]
-    ):
+    def _validate_start_end(self, observation: Observation) -> bool:
+        if observation.end_time < self.start_time:
+            return False
+        if observation.start_time > self.end_time:
+            return False
+        return True
+
+    def _validate_observation(self, observation: Observation):
         ok = utils.validate_item_eum(self.itemInfo, observation)
         if not ok:
             raise ValueError("Could not extract observation")
