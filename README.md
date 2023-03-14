@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/DHI/fmskill/main/images/logo/mike-fm-skill-rgb.svg" width="300">
 
-# FMskill: Flexble Model skill evaluation.
+# FMskill: Flexible Model skill evaluation.
  ![Python version](https://img.shields.io/pypi/pyversions/fmskill.svg) 
 ![Python package](https://github.com/DHI/fmskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/fmskill.svg)](https://badge.fury.io/py/fmskill)
 
