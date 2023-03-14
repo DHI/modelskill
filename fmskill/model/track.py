@@ -31,13 +31,14 @@ class TrackModelResult(ModelResultBase):
             item_names = list(data.columns)
         else:
             raise ValueError("Could not construct TrackModelResult from provided data")
+        items = utils._parse_track_items(item_names, x_item, y_item, item)
+        item = items[-1]
         item, idx = utils.get_item_name_and_idx(item_names, item)
         name = name or item
         if itemInfo is None and isinstance(data, mikeio.Dataset):
             itemInfo = data.items[idx]
 
         # select relevant items and convert to dataframe
-        items = utils._parse_track_items(item_names, x_item, y_item, item)
         data = data[items]
         if isinstance(data, mikeio.Dataset):
             data = data.to_dataframe()
