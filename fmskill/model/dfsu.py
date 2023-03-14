@@ -17,7 +17,6 @@ class DfsuModelResult(ModelResultBase):
         item: Union[str, int] = None,
         itemInfo=None,
         quantity: str = None,
-        **kwargs,
     ) -> None:
         name = name or super()._default_name(data)
 
@@ -50,10 +49,12 @@ class DfsuModelResult(ModelResultBase):
             data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
         )
 
+    def _in_domain(self, x, y) -> bool:
+        return self.data.geometry.contains([x, y])
+
     def extract(
         self, observation: Union[PointObservation, TrackObservation]
     ) -> protocols.Comparable:
-
         type_extraction_mapping = {
             (mikeio.dfsu.Dfsu2DH, PointObservation): extraction.extract_point_from_dfsu,
             (mikeio.dfsu.Dfsu2DH, TrackObservation): extraction.extract_track_from_dfsu,
@@ -75,25 +76,25 @@ class DfsuModelResult(ModelResultBase):
         return extraction_result
 
 
-if __name__ == "__main__":
-    dfsu = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    test = DfsuModelResult(
-        dfsu,
-        item="Surface elevation",
-        name="test",
-        itemInfo=mikeio.EUMType.Significant_wave_height,
-    )
+# if __name__ == "__main__":
+#     dfsu = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+#     test = DfsuModelResult(
+#         dfsu,
+#         item="Surface elevation",
+#         name="test",
+#         itemInfo=mikeio.EUMType.Significant_wave_height,
+#     )
 
-    assert isinstance(test, protocols.ModelResult)
-    assert isinstance(test, protocols.Extractable)
+#     assert isinstance(test, protocols.ModelResult)
+#     assert isinstance(test, protocols.Extractable)
 
-    dfsu_data = mikeio.open("tests/testdata/Oresund2D.dfsu")
-    point_obs = PointObservation(
-        "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA"
-    )
-    track_obs = TrackObservation(
-        "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="C2"
-    )
+#     dfsu_data = mikeio.open("tests/testdata/Oresund2D.dfsu")
+#     point_obs = PointObservation(
+#         "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA"
+#     )
+#     track_obs = TrackObservation(
+#         "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="C2"
+#     )
 
-    test.extract(point_obs)
-    test.extract(track_obs)
+#     test.extract(point_obs)
+#     test.extract(track_obs)
