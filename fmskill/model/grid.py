@@ -18,7 +18,6 @@ class GridModelResult(ModelResultBase):
         item: Union[str, int] = None,
         itemInfo=None,
         quantity: str = None,
-        **kwargs,
     ) -> None:
         # assert isinstance(
         #     data, types.GridType
@@ -74,9 +73,7 @@ class GridModelResult(ModelResultBase):
 
     def _in_domain(self, x, y) -> bool:
         if (x is None) or (y is None):
-            raise ValueError(
-                f"Cannot determine if point ({x}, {y}) is inside domain!"
-            )
+            raise ValueError(f"Cannot determine if point ({x}, {y}) is inside domain!")
         xmin = self.data.x.values.min()
         xmax = self.data.x.values.max()
         ymin = self.data.y.values.min()
@@ -87,7 +84,7 @@ class GridModelResult(ModelResultBase):
         self, observation: Union[PointObservation, TrackObservation]
     ) -> protocols.Comparable:
         type_extraction_mapping = {
-            (xr.Dataset, PointObservation): extraction.point_obs_from_xr_mr,
+            (xr.Dataset, PointObservation): extraction.extract_point_from_xr,
             (xr.Dataset, TrackObservation): extraction.extract_track_from_xr,
             (mikeio.Dfs2, PointObservation): None,  # Possible future work
             (mikeio.Dfs2, TrackObservation): None,  # Possible future work

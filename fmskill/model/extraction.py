@@ -1,3 +1,4 @@
+import warnings
 import mikeio
 import numpy as np
 import pandas as pd
@@ -31,17 +32,18 @@ def _validate_any_obs_in_model_time(
     """Check if any observation times are in model time range"""
     ok = _any_obs_in_model_time(time_obs, time_model)
     if not ok:
-        raise ValueError(
-            f"Observation '{obs_name}' outside model time range! "
+        #raise ValueError(
+        warnings.warn(
+            f"No time overlap. Observation '{obs_name}' outside model time range! "
             + f"({time_obs[0]} - {time_obs[-1]}) not in ({time_model[0]} - {time_model[-1]})"
         )
 
 
-def point_obs_from_xr_mr(
+def extract_point_from_xr(
     mr: protocols.Extractable, observation: PointObservation
 ) -> PointModelResult:
-    """Extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
-    given a PointObservation."""
+    """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
+    given a PointObservation. No time interpolation is done!"""
 
     x, y = observation.x, observation.y
     if (x is None) or (y is None):
@@ -101,8 +103,8 @@ def extract_track_from_xr(
 def extract_point_from_dfsu(
     mr: protocols.Extractable, observation: PointObservation
 ) -> PointModelResult:
-    """Extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
-    given a PointObservation."""
+    """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
+    given a PointObservation. No time interpolation is done!"""
 
     assert isinstance(mr.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset))
 
