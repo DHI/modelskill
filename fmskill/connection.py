@@ -708,7 +708,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             d["filename"] = mr.filename
         else:
             d["filename"] = os.path.relpath(mr.filename, start=folder)
-        d["item"] = mr._selected_item
+        d["item"] = mr.item
         return d
 
     @staticmethod

@@ -23,8 +23,11 @@ class DfsuModelResult(ModelResultBase):
         assert isinstance(
             data, get_args(types.UnstructuredType)
         ), "Could not construct DfsuModelResult from provided data"
+
+        filename = None
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfsu", "File must be a dfsu file"
+            filename = str(data)
             data = mikeio.open(data)
 
         elif isinstance(data, (mikeio.DataArray, mikeio.Dataset)):
@@ -48,6 +51,8 @@ class DfsuModelResult(ModelResultBase):
         super().__init__(
             data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
         )
+
+        self.filename = filename  # TODO: remove? backward compatibility
 
     def _in_domain(self, x, y) -> bool:
         return self.data.geometry.contains([x, y])
