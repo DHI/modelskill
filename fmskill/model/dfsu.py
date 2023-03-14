@@ -55,8 +55,12 @@ class DfsuModelResult(ModelResultBase):
     ) -> protocols.Comparable:
 
         type_extraction_mapping = {
-            (mikeio.dfsu.Dfsu2DH, PointObservation): extraction.point_obs_from_dfsu_mr,
-            (mikeio.dfsu.Dfsu2DH, TrackObservation): extraction.track_obs_from_dfsu_mr,
+            (mikeio.dfsu.Dfsu2DH, PointObservation): extraction.extract_point_from_dfsu,
+            (mikeio.dfsu.Dfsu2DH, TrackObservation): extraction.extract_track_from_dfsu,
+            (mikeio.Dataset, PointObservation): extraction.extract_point_from_dfsu,
+            (mikeio.Dataset, TrackObservation): extraction.extract_track_from_dfsu,
+            (mikeio.DataArray, PointObservation): extraction.extract_point_from_dfsu,
+            (mikeio.DataArray, TrackObservation): extraction.extract_track_from_dfsu,
         }
 
         extraction_func = type_extraction_mapping.get(

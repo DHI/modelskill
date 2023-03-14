@@ -35,7 +35,7 @@ def point_obs_from_xr_mr(
     )
 
 
-def track_obs_from_xr_mr(
+def extract_track_from_xr(
     mr: protocols.Extractable, observation: TrackObservation
 ) -> TrackModelResult:
     """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
@@ -59,25 +59,34 @@ def track_obs_from_xr_mr(
     )
 
 
-def point_obs_from_dfsu_mr(
+def extract_point_from_dfsu(
     mr: protocols.Extractable, observation: PointObservation
 ) -> PointModelResult:
     """Extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
     given a PointObservation."""
 
-    if not mr.data.contains([observation.x, observation.y]):
+    assert isinstance(mr.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset))
+
+    if not mr.data.geometry.contains([observation.x, observation.y]):
         raise ValueError("Observation outside domain")
 
+    # TODO: interp2d
     xy = np.atleast_2d([observation.x, observation.y])
     elemids = mr.data.geometry.find_index(coords=xy)
-    ds_model = mr.data.read(elements=elemids, items=[mr.item])
+    if isinstance(mr.data, mikeio.dfsu.Dfsu2DH):
+        ds_model = mr.data.read(elements=elemids, items=[mr.item])
+    elif isinstance(mr.data, mikeio.Dataset):
+        ds_model = mr.data.isel(element=elemids)
+    elif isinstance(mr.data, mikeio.DataArray):
+        da = mr.data.isel(element=elemids)
+        ds_model = mikeio.Dataset({da.name: da})
     ds_model.rename({ds_model.items[0].name: mr.name}, inplace=True)
 
-    df = ds_model.to_dataframe().dropna()
+    # df = ds_model.to_dataframe().dropna()
     # df.index = utils.make_unique_index(df.index, offset_duplicates=0.001)
 
     return PointModelResult(
-        data=df,
+        data=ds_model,
         x=ds_model.geometry.x,
         y=ds_model.geometry.y,
         item=mr.name,
@@ -87,17 +96,22 @@ def point_obs_from_dfsu_mr(
     )
 
 
-def track_obs_from_dfsu_mr(
+def extract_track_from_dfsu(
     mr: protocols.Extractable, observation: TrackObservation
 ) -> TrackModelResult:
     """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
     given a TrackObservation."""
 
-    ds_model = mr.data.extract_track(track=observation.data, items=[mr.item])
+    assert isinstance(mr.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset))
+
+    if isinstance(mr.data, mikeio.dfsu.Dfsu2DH):
+        ds_model = mr.data.extract_track(track=observation.data, items=[mr.item])
+    elif isinstance(mr.data, (mikeio.Dataset, mikeio.DataArray)):
+        ds_model = mr.data.extract_track(track=observation.data)    
     ds_model.rename({ds_model.items[-1].name: mr.name}, inplace=True)
 
     return TrackModelResult(
-        data=ds_model.to_dataframe().dropna(),
+        data=ds_model.dropna(),  # .to_dataframe().dropna(),
         item=mr.name,
         itemInfo=mr.itemInfo,
         name=mr.name,
@@ -105,7 +119,7 @@ def track_obs_from_dfsu_mr(
     )
 
 
-def point_obs_from_mike_ds_mr(
+def extract_point_from_mike_ds(
     mr: protocols.Extractable, observation: PointObservation
 ) -> PointModelResult:
 
@@ -115,8 +129,8 @@ def point_obs_from_mike_ds_mr(
 
     return PointModelResult(
         data=mikeio.Dataset(dap).to_dataframe().dropna(),
-        x=dap.x.item(),
-        y=dap.y.item(),
+        x=dap.x,
+        y=dap.y,
         item=mr.item,
         name=mr.name,
         quantity=mr.quantity,
