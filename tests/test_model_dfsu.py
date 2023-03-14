@@ -3,12 +3,17 @@ import pytest
 
 import mikeio
 from fmskill import ModelResult
-from fmskill.comparison import PointComparer, TrackComparer
 from fmskill.connection import Connector
-from fmskill.model import DfsuModelResult, PointModelResult
+from fmskill.model import DfsuModelResult, PointModelResult, TrackModelResult
 from fmskill.observation import PointObservation, TrackObservation
 
 
+@pytest.fixture
+def hd_oresund_2d():
+    return "tests/testdata/Oresund2D.dfsu"
+
+
+# TODO: replace with shorter dfs0
 @pytest.fixture
 def klagshamn():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
@@ -28,8 +33,13 @@ def drogden():
 
 
 @pytest.fixture
-def hd_oresund_2d():
-    return "tests/testdata/Oresund2D.dfsu"
+def sw_dutch_coast():
+    return "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+
+
+@pytest.fixture
+def sw_total_windsea():
+    return "tests/testdata/SW/SW_Tot_Wind_Swell.dfsu"
 
 
 @pytest.fixture
@@ -56,38 +66,63 @@ def Hm0_C2():
     return TrackObservation(fn, item=3, name="C2")
 
 
-@pytest.fixture
-def sw_dutch_coast():
-    return "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-
-
-@pytest.fixture
-def sw_total_windsea():
-    return "tests/testdata/SW/SW_Tot_Wind_Swell.dfsu"
-
-
-def test_repr(hd_oresund_2d):
+def test_dfsu_repr(hd_oresund_2d):
     mr = ModelResult(hd_oresund_2d, item="Surface elevation")
     txt = repr(mr)
     assert "Oresund2D" in txt
 
 
-def test_dfs_object(hd_oresund_2d):
+def test_dfsu_properties(hd_oresund_2d):
     mr = ModelResult(hd_oresund_2d, item="Surface elevation")
 
     assert mr.data.is_2d
 
 
-def test_ModelResultType(sw_dutch_coast):
+def test_dfsu_sw(sw_dutch_coast):
     mr = ModelResult(sw_dutch_coast, item=0)
 
     assert isinstance(mr, DfsuModelResult)
 
 
-def test_ModelResultType0():
-    mr = ModelResult("tests/testdata/TS.dfs0", item=0, x=1.23, y=4.56)
+# def test_model_dfsu(hd_oresund_2d):
+#     mr = DfsuModelResult(hd_oresund_2d, item=0, "Oresund")
+#     assert mr.n_items == 7
+#     assert isinstance(mr, DfsModelResult)
 
-    assert isinstance(mr, PointModelResult)
+#     mr0 = mr[0]
+#     assert isinstance(mr0, DfsModelResultItem)
+#     assert mr.item_names[0] == mr0.item_name
+
+#     mr1 = mr["Surface elevation"]
+#     assert mr.item_names[0] == mr1.item_name
+#     assert mr.filename == mr1.filename
+#     assert mr.name == mr1.name
+
+
+def test_dfsu_dataarray(hd_oresund_2d):
+    ds = mikeio.read(hd_oresund_2d)
+    assert ds.n_items == 7
+    da = ds[0]
+    assert isinstance(da, mikeio.DataArray)
+
+    mr = ModelResult(da, name="Oresund")
+    # assert isinstance(mr, DataArrayModelResultItem)
+    assert mr.item_name == da.item.name
+    assert mr.name == "Oresund"
+    assert isinstance(mr.data, mikeio.DataArray)
+
+    mr.name = "Oresund2"
+    assert mr.name == "Oresund2"
+
+
+def test_dfsu_factory(hd_oresund_2d):
+    mr1 = ModelResult(hd_oresund_2d, name="myname", item=-1)
+    assert isinstance(mr1, DfsuModelResult)
+    assert mr1.name == "myname"
+
+    mr2 = ModelResult(hd_oresund_2d, item="Surface elevation")
+    assert isinstance(mr2, DfsuModelResult)
+    assert mr2.item == "Surface elevation"
 
 
 # def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
@@ -103,6 +138,7 @@ def test_ModelResultType0():
 #         _ = mr.extract_observation(wind_HKNA)
 
 
+# TODO: move this test to test_connector.py
 def test_extract_observation_total_windsea_swell_not_possible(
     sw_total_windsea, Hm0_HKNA
 ):
@@ -122,6 +158,7 @@ def test_extract_observation_total_windsea_swell_not_possible(
     assert c.n_points > 0
 
 
+# TODO: move this test to test_connector.py
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d, item=0)
     with pytest.raises(Exception):
@@ -135,6 +172,7 @@ def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     assert c.n_points > 0
 
 
+# TODO: move this test to test_connector.py
 def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d, item=0)
     # correct eum, but outside domain
@@ -146,38 +184,7 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
         # _ = mr.extract_observation(klagshamn, validate=True)
 
 
-# def test_dfs_model_result(hd_oresund_2d):
-#     mr = DfsModelResult(hd_oresund_2d, "Oresund")
-#     assert mr.n_items == 7
-#     assert isinstance(mr, DfsModelResult)
-
-#     mr0 = mr[0]
-#     assert isinstance(mr0, DfsModelResultItem)
-#     assert mr.item_names[0] == mr0.item_name
-
-#     mr1 = mr["Surface elevation"]
-#     assert mr.item_names[0] == mr1.item_name
-#     assert mr.filename == mr1.filename
-#     assert mr.name == mr1.name
-
-
-def test_dataarray_model_result(hd_oresund_2d):
-    ds = mikeio.read(hd_oresund_2d)
-    assert ds.n_items == 7
-    da = ds[0]
-    assert isinstance(da, mikeio.DataArray)
-
-    mr = ModelResult(da, name="Oresund")
-    # assert isinstance(mr, DataArrayModelResultItem)
-    assert mr.item_name == da.item.name
-    assert mr.name == "Oresund"
-    assert isinstance(mr.data, mikeio.DataArray)
-
-    mr.name = "Oresund2"
-    assert mr.name == "Oresund2"
-
-
-def test_dataarray_extract_point(sw_dutch_coast, Hm0_EPL):
+def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
     mr1 = ModelResult(sw_dutch_coast, item=0, name="SW1")
     assert mr1.itemInfo.type == mikeio.EUMType.Significant_wave_height
     mr_extr_1 = mr1.extract(Hm0_EPL.copy())
@@ -193,43 +200,34 @@ def test_dataarray_extract_point(sw_dutch_coast, Hm0_EPL):
     assert mr_extr_1.data.columns == mr_extr_2.data.columns
     assert np.all(mr_extr_1.data == mr_extr_2.data)
 
-    # c1 = mr1.extract_observation(Hm0_EPL.copy())
-    # c2 = mr2.extract_observation(Hm0_EPL.copy())
-    # assert isinstance(c1, PointComparer)
-    # assert isinstance(c2, PointComparer)
-    # assert np.all(c1.data == c2.data)
+    c1 = mr1.extract(Hm0_EPL.copy())
+    c2 = mr2.extract(Hm0_EPL.copy())
+    assert isinstance(c1, PointModelResult)
+    assert isinstance(c2, PointModelResult)
+    assert np.all(c1.data == c2.data)
     # c1.observation.itemInfo == Hm0_EPL.itemInfo
     # assert len(c1.observation.data.index.difference(Hm0_EPL.data.index)) == 0
 
 
-def test_dataarray_extract_track(sw_dutch_coast, Hm0_C2):
+def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     mr1 = ModelResult(sw_dutch_coast, item=0, name="SW1")
-    df1 = mr1._extract_track(Hm0_C2)
-    assert list(df1.columns) == ["Longitude", "Latitude", "SW1"]
+    mr_track1 = mr1.extract(Hm0_C2)
+    df1 = mr_track1.data
+    assert list(df1.columns) == ["x", "y", "SW1"]
     assert len(df1) == 113
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ModelResult(da, name="SW1")
-    df2 = mr2._extract_track(Hm0_C2.copy())
+    mr_track2 = mr2.extract(Hm0_C2.copy())
+    df2 = mr_track2.data
 
     assert list(df1.columns) == list(df2.columns)
     assert np.all(df1 == df2)
 
-    c1 = mr1.extract_observation(Hm0_C2.copy())
-    c2 = mr2.extract_observation(Hm0_C2.copy())
-    assert isinstance(c1, TrackComparer)
-    assert isinstance(c2, TrackComparer)
+    c1 = mr1.extract(Hm0_C2.copy())
+    c2 = mr2.extract(Hm0_C2.copy())
+    assert isinstance(c1, TrackModelResult)
+    assert isinstance(c2, TrackModelResult)
     assert np.all(c1.data == c2.data)
-    c1.observation.itemInfo == Hm0_C2.itemInfo
-    assert len(c1.observation.data.index.difference(Hm0_C2.data.index)) == 0
-
-
-def test_factory(hd_oresund_2d):
-    # mr = ModelResult(hd_oresund_2d, name="myname")
-    # assert isinstance(mr, DfsModelResult)
-    # assert mr.name == "myname"
-    # assert mr.n_items == 7
-
-    mri = ModelResult(hd_oresund_2d, item="Surface elevation")
-    # assert isinstance(mri, DfsModelResultItem)
-    assert mri.item == "Surface elevation"
+    # c1.observation.itemInfo == Hm0_C2.itemInfo
+    # assert len(c1.observation.data.index.difference(Hm0_C2.data.index)) == 0
