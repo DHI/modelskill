@@ -26,7 +26,8 @@ def test_track_df(track_df):
     assert "Item: surface_elevation" in repr(mr1)
 
     # item as string
-    mr2 = TrackModelResult(df, item="surface_elevation")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr2 = TrackModelResult(df, item="surface_elevation")
     assert len(mr2.data) == len(mr1.data)
     assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
@@ -38,11 +39,13 @@ def test_track_df(track_df):
 def test_track_df_iteminfo(track_df):
     df = track_df
     itemInfo = mikeio.EUMType.Surface_Elevation
-    mr1 = TrackModelResult(df, item="surface_elevation", itemInfo=itemInfo)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr1 = TrackModelResult(df, item=2, itemInfo=itemInfo)
     assert mr1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
 
     itemInfo = mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
-    mr2 = TrackModelResult(df, item="surface_elevation", itemInfo=itemInfo)
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr2 = TrackModelResult(df, item="surface_elevation", itemInfo=itemInfo)
     assert mr2.itemInfo == mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
 
 
