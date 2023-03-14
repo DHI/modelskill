@@ -77,7 +77,7 @@ class GridModelResult(ModelResultBase):
     ) -> protocols.Comparable:
         type_extraction_mapping = {
             (xr.Dataset, PointObservation): extraction.point_obs_from_xr_mr,
-            (xr.Dataset, TrackObservation): extraction.track_obs_from_xr_mr,
+            (xr.Dataset, TrackObservation): extraction.extract_track_from_xr,
             (mikeio.Dfs2, PointObservation): None,  # Possible future work
             (mikeio.Dfs2, TrackObservation): None,  # Possible future work
         }
