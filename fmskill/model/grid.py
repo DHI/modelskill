@@ -72,6 +72,17 @@ class GridModelResult(ModelResultBase):
             data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
         )
 
+    def _in_domain(self, x, y) -> bool:
+        if (x is None) or (y is None):
+            raise ValueError(
+                f"Cannot determine if point ({x}, {y}) is inside domain!"
+            )
+        xmin = self.data.x.values.min()
+        xmax = self.data.x.values.max()
+        ymin = self.data.y.values.min()
+        ymax = self.data.y.values.max()
+        return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
+
     def extract(
         self, observation: Union[PointObservation, TrackObservation]
     ) -> protocols.Comparable:
