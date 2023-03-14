@@ -94,9 +94,8 @@ def _parse_track_items(items, x_item, y_item, item):
             item = 2
         elif len(items) > 3:
             raise ValueError("Input has more than 3 items, but item was not given!")
-    else:
-        item, _ = get_item_name_and_idx(items, item)
-
+        
+    item, _ = get_item_name_and_idx(items, item)
     x_item, _ = get_item_name_and_idx(items, x_item)
     y_item, _ = get_item_name_and_idx(items, y_item)
 
