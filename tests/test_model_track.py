@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import pytest
 import mikeio
@@ -110,7 +109,6 @@ def test_track_df_default_items(track_df):
             df, item="wl", geometry_type="track", x_item="longitude", y_item="latitude"
         )
     assert isinstance(mr3, protocols.ModelResult)
-    # assert np.all(mr3.data.values == mr1.data.values)
 
 
 # TODO:
