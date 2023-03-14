@@ -51,6 +51,7 @@ class PointModelResult(ModelResultBase):
 
         name = name or item
 
+        # basic processing
         data = data.dropna()
         if data.empty or len(data.columns) == 0:
             raise ValueError("No data.")
