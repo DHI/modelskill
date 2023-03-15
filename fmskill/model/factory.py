@@ -50,17 +50,10 @@ class ModelResult:
         **kwargs,
     ):
         if geometry_type is None:
-            geometry_type = str(cls._guess_geometry_type(data))
+            geometry_type = cls._guess_geometry_type(data)
+        else:
+            geometry_type = GeomType.from_string(geometry_type)
 
-        # if isinstance(data, (str, Path)):
-        #     data = Path(data)
-        #     file_ext = data.suffix.lower()
-        #     if name is None:
-        #         name = data.stem
-        # else:
-        #     file_ext = None
-
-        geometry_type = GeomType.from_string(geometry_type)
         return type_lookup[geometry_type](
             data=data,
             **kwargs,
@@ -97,14 +90,17 @@ class ModelResult:
 
     @staticmethod
     def _guess_geometry_type(data) -> GeomType:
-        fail_txt = "Could not guess geometry_type. Please provide as argument."
-        if isinstance(data, (mikeio.DataArray, mikeio.Dataset, mikeio.dfsu._Dfsu)):
-            if isinstance(data.geometry, mikeio.spatial.FM_geometry.GeometryFM):
+
+        if hasattr(data, "geometry"):
+            geom_str = repr(data.geometry).lower()
+            if "flex" in geom_str:
                 return GeomType.Unstructured
-            elif isinstance(data.geometry, mikeio.spatial.Geometry.GeometryPoint2D):
+            elif "point" in geom_str:
                 return GeomType.Point
             else:
-                raise ValueError(fail_txt)
+                raise ValueError(
+                    "Could not guess geometry_type from geometry, please speficy geometry_type, e.g. geometry_type='track'"
+                )
 
         if isinstance(data, (str, Path)):
             data = Path(data)
@@ -118,7 +114,9 @@ class ModelResult:
                 # could also be point or track, but we don't know
                 return GeomType.Grid
             else:
-                raise ValueError(fail_txt)
+                raise ValueError(
+                    "Could not guess geometry_type from file extension, please speficy geometry_type, e.g. geometry_type='track'"
+                )
 
         if isinstance(data, (xr.Dataset, xr.DataArray)):
             if len(data.coords) >= 3:
