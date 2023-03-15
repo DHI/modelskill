@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, get_args
 import pandas as pd
 import mikeio
 from fmskill import types, utils
@@ -9,9 +9,32 @@ from fmskill.model._base import ModelResultBase
 
 
 class TrackModelResult(ModelResultBase):
+    """Construct a TrackModelResult from a dfs0 file,
+    mikeio.Dataset or pandas.DataFrame
+
+    Parameters
+    ----------
+    data : types.UnstructuredType
+        the input data or file path
+    name : Optional[str], optional
+        The name of the model result,
+        by default None (will be set to file name or item name)
+    item : Optional[Union[str, int]], optional
+        If multiple items/arrays are present in the input an item
+        must be given (as either an index or a string), by default None
+    x_item : Optional[Union[str, int]], optional
+        Item of the first coordinate of positions, by default None
+    y_item : Optional[Union[str, int]], optional
+        Item of the second coordinate of positions, by default None
+    itemInfo : Optional[mikeio.ItemInfo], optional
+        Optionally, a MIKE IO ItemInfo (MIKE EUM system) can be given
+        to set or override the type and unit of the quantity, by default None
+    quantity : Optional[str], optional
+        A string to identify the quantity, by default None
+    """    
     def __init__(
         self,
-        data: types.DataInputType,
+        data: types.TrackType,
         *,
         name: str = None,
         item: Union[str, int] = None,
@@ -20,6 +43,10 @@ class TrackModelResult(ModelResultBase):
         x_item: Union[str, int] = 0,
         y_item: Union[str, int] = 1,
     ) -> None:
+        assert isinstance(
+            data, get_args(types.TrackType)
+        ), "Could not construct TrackModelResult from provided data."
+
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
             name = name or Path(data).stem
@@ -43,11 +70,6 @@ class TrackModelResult(ModelResultBase):
         data = data[items]
         if isinstance(data, mikeio.Dataset):
             data = data.to_dataframe()
-
-        # data = utils.rename_coords_pd(data)
-        # assert (
-        #     "x" in data.columns and "y" in data.columns
-        # ), "Data must have x and y columns to construct a TrackModelResult."
 
         data = data.rename(columns={items[0]: "x", items[1]: "y"})
         data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
