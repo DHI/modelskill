@@ -1,30 +1,42 @@
-import os
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Literal, Optional, Tuple, Union
+from typing import Literal, Optional
 
-import mikeio
 import pandas as pd
 import xarray as xr
 
 from fmskill import model, types  # , utils
 
-# from fmskill.model.point import PointModelResult
-# from fmskill.model.track import TrackModelResult
-
 
 class GeomType(Enum):
-    Point = (auto(),)  # why not auto()
-    Track = (auto(),)
-    Unstructured = (auto(),)
-    Grid = auto()
+    """Geometry type of model result"""
+
+    POINT = auto()
+    TRACK = auto()
+    UNSTRUCTURED = auto()
+    GRID = auto()
 
     def __str__(self) -> str:
         return self.name.lower()
 
+    @staticmethod
     def from_string(s: str) -> "GeomType":
+        """Convert string to GeomType
+
+        Examples
+        --------
+        >>> GeomType.from_string("point")
+        <GeomType.POINT: 1>
+        >>> GeomType.from_string("track")
+        <GeomType.TRACK: 2>
+        >>> GeomType.from_string("unstructured")
+        <GeomType.UNSTRUCTURED: 3>
+        >>> GeomType.from_string("grid")
+        <GeomType.GRID: 4>
+        """
+
         try:
-            return GeomType[s.capitalize()]
+            return GeomType[s.upper()]
         except KeyError as e:
             raise KeyError(
                 f"GeomType {s} not recognized. Available options: {[m.name for m in GeomType]}"
@@ -32,10 +44,10 @@ class GeomType(Enum):
 
 
 type_lookup = {
-    GeomType.Point: model.PointModelResult,
-    GeomType.Track: model.TrackModelResult,
-    GeomType.Unstructured: model.DfsuModelResult,
-    GeomType.Grid: model.GridModelResult,
+    GeomType.POINT: model.PointModelResult,
+    GeomType.TRACK: model.TrackModelResult,
+    GeomType.UNSTRUCTURED: model.DfsuModelResult,
+    GeomType.GRID: model.GridModelResult,
 }
 
 
@@ -94,9 +106,9 @@ class ModelResult:
         if hasattr(data, "geometry"):
             geom_str = repr(data.geometry).lower()
             if "flex" in geom_str:
-                return GeomType.Unstructured
+                return GeomType.UNSTRUCTURED
             elif "point" in geom_str:
-                return GeomType.Point
+                return GeomType.POINT
             else:
                 raise ValueError(
                     "Could not guess geometry_type from geometry, please speficy geometry_type, e.g. geometry_type='track'"
@@ -106,13 +118,13 @@ class ModelResult:
             data = Path(data)
             file_ext = data.suffix.lower()
             if file_ext == ".dfsu":
-                return GeomType.Unstructured
+                return GeomType.UNSTRUCTURED
             elif file_ext == ".dfs0":
                 # could also be a track, but we don't know
-                return GeomType.Point
+                return GeomType.POINT
             elif file_ext == ".nc":
                 # could also be point or track, but we don't know
-                return GeomType.Grid
+                return GeomType.GRID
             else:
                 raise ValueError(
                     "Could not guess geometry_type from file extension, please speficy geometry_type, e.g. geometry_type='track'"
@@ -121,12 +133,12 @@ class ModelResult:
         if isinstance(data, (xr.Dataset, xr.DataArray)):
             if len(data.coords) >= 3:
                 # if DataArray use ndim instead
-                return GeomType.Grid
+                return GeomType.GRID
             else:
                 raise ValueError("Could not guess geometry_type from xarray object")
         if isinstance(data, (pd.DataFrame, pd.Series)):
             # could also be a track, but we don't know
-            return GeomType.Point
+            return GeomType.POINT
 
         raise ValueError("Geometry type could not be guessed from this type of data")
 
