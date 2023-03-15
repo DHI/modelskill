@@ -8,6 +8,30 @@ from fmskill.model._base import ModelResultBase
 
 
 class PointModelResult(ModelResultBase):
+    """Construct a PointModelResult from a dfs0 file,
+    mikeio.Dataset/DataArray or pandas.DataFrame/Series
+
+    Parameters
+    ----------
+    data : types.UnstructuredType
+        the input data or file path
+    name : Optional[str], optional
+        The name of the model result,
+        by default None (will be set to file name or item name)
+    x : float, optional
+        first coordinate of point position, by default None
+    y : float, optional
+        second coordinate of point position, by default None
+    item : Optional[Union[str, int]], optional
+        If multiple items/arrays are present in the input an item
+        must be given (as either an index or a string), by default None
+    itemInfo : Optional[mikeio.ItemInfo], optional
+        Optionally, a MIKE IO ItemInfo (MIKE EUM system) can be given
+        to set or override the type and unit of the quantity, by default None
+    quantity : Optional[str], optional
+        A string to identify the quantity, by default None
+    """
+
     def __init__(
         self,
         data: types.PointType,
@@ -19,9 +43,9 @@ class PointModelResult(ModelResultBase):
         itemInfo: mikeio.ItemInfo = None,
         quantity: str = None,
     ) -> None:
-        # assert isinstance(
-        #     data, get_args(types.PointType)
-        # ), "Could not construct PointModelResult from provided data"
+        assert isinstance(
+            data, get_args(types.PointType)
+        ), "Could not construct PointModelResult from provided data"
 
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"

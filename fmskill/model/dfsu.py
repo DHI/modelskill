@@ -15,6 +15,25 @@ from fmskill.observation import Observation, PointObservation, TrackObservation
 
 
 class DfsuModelResult(ModelResultBase):
+    """Construct a DfsuModelResult from a dfsu file or mikeio.Dataset/DataArray.
+
+    Parameters
+    ----------
+    data : types.UnstructuredType
+        the input data or file path
+    name : Optional[str], optional
+        The name of the model result,
+        by default None (will be set to file name or item name)
+    item : Optional[Union[str, int]], optional
+        If multiple items/arrays are present in the input an item
+        must be given (as either an index or a string), by default None
+    itemInfo : Optional[mikeio.ItemInfo], optional
+        Optionally, a MIKE IO ItemInfo (MIKE EUM system) can be given
+        to *override* the type and unit of the quantity, by default None
+    quantity : Optional[str], optional
+        A string to identify the quantity, by default None
+    """
+
     def __init__(
         self,
         data: types.UnstructuredType,

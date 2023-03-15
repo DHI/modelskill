@@ -5,22 +5,41 @@ import warnings
 import pandas as pd
 import xarray as xr
 
+import mikeio
+
 from fmskill import types, utils
-from fmskill.model import protocols
+from fmskill.model import protocols, PointModelResult, TrackModelResult
 from fmskill.model._base import ModelResultBase
-from fmskill.model.point import PointModelResult
-from fmskill.model.track import TrackModelResult
 from fmskill.observation import Observation, PointObservation, TrackObservation
 
 
 class GridModelResult(ModelResultBase):
+    """Construct a GridModelResult from a file or xarray.Dataset.
+
+    Parameters
+    ----------
+    data : types.GridType
+        the input data or file path
+    name : Optional[str], optional
+        The name of the model result,
+        by default None (will be set to file name or item name)
+    item : Optional[Union[str, int]], optional
+        If multiple items/arrays are present in the input an item
+        must be given (as either an index or a string), by default None
+    itemInfo : Optional[mikeio.ItemInfo], optional
+        Optionally, a MIKE IO ItemInfo (MIKE EUM system)
+        can be given to define the type and unit of the quantity, by default None
+    quantity : Optional[str], optional
+        A string to identify the quantity, by default None
+    """
+
     def __init__(
         self,
         data: types.GridType,
         *,
         name: Optional[str] = None,
         item: Optional[Union[str, int]] = None,
-        itemInfo=None,
+        itemInfo: Optional[mikeio.ItemInfo] = None,
         quantity: Optional[str] = None,
     ) -> None:
         assert isinstance(
@@ -73,6 +92,18 @@ class GridModelResult(ModelResultBase):
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def extract(self, observation: Observation) -> protocols.Comparable:
+        """Extract ModelResult at observation positions
+
+        Parameters
+        ----------
+        observation : <PointObservation> or <TrackObservation>
+            positions (and times) at which modelresult should be extracted
+
+        Returns
+        -------
+        <fmskill.protocols.Comparable>
+            A model result object with the same geometry as the observation
+        """
         extractor_lookup: Mapping[Observation, Callable] = {
             PointObservation: self._extract_point,
             TrackObservation: self._extract_track,
