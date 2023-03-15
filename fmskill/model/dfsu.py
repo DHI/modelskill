@@ -1,10 +1,8 @@
 from pathlib import Path
 from typing import Callable, Mapping, Optional, Union, get_args
-import warnings
 
 import mikeio
 import numpy as np
-import pandas as pd
 
 from fmskill import types, utils
 from fmskill.model import protocols
@@ -81,29 +79,22 @@ class DfsuModelResult(ModelResultBase):
 
         self.filename = filename  # TODO: remove? backward compatibility
 
-    # def _in_domain(self, x, y) -> bool:
-    #    return self.data.geometry.contains([x, y])
-
-    @staticmethod
-    def _any_obs_in_model_time(
-        time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
-    ) -> bool:
-        """Check if any observation times are in model time range"""
-        return (time_obs[-1] >= time_model[0]) & (time_obs[0] <= time_model[-1])
-
-    def _validate_any_obs_in_model_time(
-        self, obs_name: str, time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
-    ) -> None:
-        """Check if any observation times are in model time range"""
-        ok = self._any_obs_in_model_time(time_obs, time_model)
-        if not ok:
-            # raise ValueError(
-            warnings.warn(
-                f"No time overlap. Observation '{obs_name}' outside model time range! "
-                + f"({time_obs[0]} - {time_obs[-1]}) not in ({time_model[0]} - {time_model[-1]})"
-            )
+    def _in_domain(self, x, y) -> bool:
+        return self.data.geometry.contains([x, y])
 
     def extract(self, observation: Observation) -> protocols.Comparable:
+        """Extract ModelResult at observation positions
+
+        Parameters
+        ----------
+        observation : <PointObservation> or <TrackObservation>
+            positions (and times) at which modelresult should be extracted
+
+        Returns
+        -------
+        <fmskill.protocols.Comparable>
+            A model result object with the same geometry as the observation
+        """
         extractor_lookup: Mapping[Observation, Callable] = {
             PointObservation: self._extract_point,
             TrackObservation: self._extract_track,
@@ -124,7 +115,7 @@ class DfsuModelResult(ModelResultBase):
         )
 
         x, y = observation.x, observation.y
-        if not self.data.geometry.contains([x, y]):
+        if not self._in_domain(x, y):
             raise ValueError(
                 f"PointObservation '{observation.name}' ({x}, {y}) outside model domain!"
             )

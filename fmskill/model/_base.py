@@ -1,12 +1,11 @@
 from pathlib import Path
 import warnings
-from typing import Optional, Union
+from typing import Optional
 
 import pandas as pd
 
 from fmskill import types, utils
-from fmskill.comparison import PointComparer, SingleObsComparer, TrackComparer
-from fmskill.observation import Observation, PointObservation, TrackObservation
+from fmskill.observation import Observation
 
 
 class ModelResultBase:
@@ -42,6 +41,25 @@ class ModelResultBase:
     def _default_name(data) -> str:
         if isinstance(data, (str, Path)):
             return Path(data).stem
+
+    @staticmethod
+    def _any_obs_in_model_time(
+        time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
+    ) -> bool:
+        """Check if any observation times are in model time range"""
+        return (time_obs[-1] >= time_model[0]) & (time_obs[0] <= time_model[-1])
+
+    def _validate_any_obs_in_model_time(
+        self, obs_name: str, time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
+    ) -> None:
+        """Check if any observation times are in model time range"""
+        ok = self._any_obs_in_model_time(time_obs, time_model)
+        if not ok:
+            # raise ValueError(
+            warnings.warn(
+                f"No time overlap. Observation '{obs_name}' outside model time range! "
+                + f"({time_obs[0]} - {time_obs[-1]}) not in ({time_model[0]} - {time_model[-1]})"
+            )
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -79,24 +97,24 @@ class ModelResultBase:
             raise ValueError("Could not extract observation")
 
     # TODO: does not do anything except validation???
-    def extract_observation(
-        self, observation: Union[PointObservation, TrackObservation], validate=True
-    ) -> SingleObsComparer:
-        """Extract ModelResult at observation for comparison
+    # def extract_observation(
+    #     self, observation: Union[PointObservation, TrackObservation], validate=True
+    # ) -> SingleObsComparer:
+    #     """Extract ModelResult at observation for comparison
 
-        Parameters
-        ----------
-        observation : <PointObservation> or <TrackObservation>
-            points and times at which modelresult should be extracted
-        validate: bool, optional
-            Validate if observation is inside domain and that eum type
-            and units match; Default: True
+    #     Parameters
+    #     ----------
+    #     observation : <PointObservation> or <TrackObservation>
+    #         points and times at which modelresult should be extracted
+    #     validate: bool, optional
+    #         Validate if observation is inside domain and that eum type
+    #         and units match; Default: True
 
-        Returns
-        -------
-        <fmskill.SingleObsComparer>
-            A comparer object for further analysis or plotting
-        """
+    #     Returns
+    #     -------
+    #     <fmskill.SingleObsComparer>
+    #         A comparer object for further analysis or plotting
+    #     """
 
-        if validate:
-            self._validate_observation(observation)
+    #     if validate:
+    #         self._validate_observation(observation)

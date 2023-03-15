@@ -1,8 +1,5 @@
 from pathlib import Path
 from typing import Callable, Mapping, Optional, Sequence, Union, get_args
-import warnings
-
-import pandas as pd
 import xarray as xr
 
 import mikeio
@@ -114,25 +111,6 @@ class GridModelResult(ModelResultBase):
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
         return extraction_func(observation)
-
-    @staticmethod
-    def _any_obs_in_model_time(
-        time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
-    ) -> bool:
-        """Check if any observation times are in model time range"""
-        return (time_obs[-1] >= time_model[0]) & (time_obs[0] <= time_model[-1])
-
-    def _validate_any_obs_in_model_time(
-        self, obs_name: str, time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
-    ) -> None:
-        """Check if any observation times are in model time range"""
-        ok = self._any_obs_in_model_time(time_obs, time_model)
-        if not ok:
-            # raise ValueError(
-            warnings.warn(
-                f"No time overlap. Observation '{obs_name}' outside model time range! "
-                + f"({time_obs[0]} - {time_obs[-1]}) not in ({time_model[0]} - {time_model[-1]})"
-            )
 
     def _extract_point(self, observation: PointObservation) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
