@@ -53,21 +53,21 @@ class GridModelResult(ModelResultBase):
         name = name or item
         data = utils.rename_coords_xr(data)
 
+        assert isinstance(data, xr.Dataset)
+
         super().__init__(
             data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
         )
 
-    def _in_domain(self, x, y) -> bool:
-        if (x is None) or (y is None):
-            raise ValueError(f"Cannot determine if point ({x}, {y}) is inside domain!")
-        assert hasattr(self.data, "x") and hasattr(
-            self.data, "y"
-        ), "Data has no x and/or y coordinates."
-        xmin = self.data.x.values.min()
-        xmax = self.data.x.values.max()
-        ymin = self.data.y.values.min()
-        ymax = self.data.y.values.max()
-        return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
+    # def _in_domain(self, x: float, y: float) -> bool:
+    #    assert hasattr(self.data, "x") and hasattr(
+    #        self.data, "y"
+    #    ), "Data has no x and/or y coordinates."
+    #    xmin = self.data.x.values.min()
+    #    xmax = self.data.x.values.max()
+    #    ymin = self.data.y.values.min()
+    #    ymax = self.data.y.values.max()
+    #    return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def extract(
         self, observation: Union[PointObservation, TrackObservation]
@@ -75,8 +75,8 @@ class GridModelResult(ModelResultBase):
         type_extraction_mapping = {
             (xr.Dataset, PointObservation): extraction.extract_point_from_xr,
             (xr.Dataset, TrackObservation): extraction.extract_track_from_xr,
-            (mikeio.Dfs2, PointObservation): None,  # Possible future work
-            (mikeio.Dfs2, TrackObservation): None,  # Possible future work
+            # (mikeio.Dfs2, PointObservation): None,  # Possible future work
+            # (mikeio.Dfs2, TrackObservation): None,  # Possible future work
         }
 
         extraction_func = type_extraction_mapping.get(
