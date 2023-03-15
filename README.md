@@ -56,8 +56,8 @@ Read more about the workflow in the [getting started guide](https://dhi.github.i
 Start by defining model results and observations:
 
 ```python
->>> from fmskill.model import ModelResult
->>> from fmskill.observation import PointObservation, TrackObservation
+>>> from fmskill import ModelResult
+>>> from fmskill import PointObservation, TrackObservation
 >>> mr = ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
 >>> HKNA = PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 >>> EPL = PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
