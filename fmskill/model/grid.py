@@ -1,13 +1,16 @@
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Callable, Mapping, Optional, Sequence, Union, get_args
+import warnings
 
-import mikeio
+import pandas as pd
 import xarray as xr
 
 from fmskill import types, utils
-from fmskill.model import extraction, protocols
+from fmskill.model import protocols
 from fmskill.model._base import ModelResultBase
-from fmskill.observation import PointObservation, TrackObservation
+from fmskill.model.point import PointModelResult
+from fmskill.model.track import TrackModelResult
+from fmskill.observation import Observation, PointObservation, TrackObservation
 
 
 class GridModelResult(ModelResultBase):
@@ -20,9 +23,9 @@ class GridModelResult(ModelResultBase):
         itemInfo=None,
         quantity: Optional[str] = None,
     ) -> None:
-        # assert isinstance(
-        #     data, types.GridType
-        # ), "Could not construct GridModelResult from provided data."
+        assert isinstance(
+            data, get_args(types.GridType)
+        ), "Could not construct GridModelResult from provided data."
 
         name = name or super()._default_name(data)
 
@@ -69,23 +72,92 @@ class GridModelResult(ModelResultBase):
         ymax = self.data.y.values.max()
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
-    def extract(
-        self, observation: Union[PointObservation, TrackObservation]
-    ) -> protocols.Comparable:
-        type_extraction_mapping = {
-            (xr.Dataset, PointObservation): extraction.extract_point_from_xr,
-            (xr.Dataset, TrackObservation): extraction.extract_track_from_xr,
-            (mikeio.Dfs2, PointObservation): None,  # Possible future work
-            (mikeio.Dfs2, TrackObservation): None,  # Possible future work
+    def extract(self, observation: Observation) -> protocols.Comparable:
+        extractor_lookup: Mapping[Observation, Callable] = {
+            PointObservation: self._extract_point,
+            TrackObservation: self._extract_track,
         }
-
-        extraction_func = type_extraction_mapping.get(
-            (type(self.data), type(observation))
-        )
+        extraction_func = extractor_lookup.get(type(observation))
         if extraction_func is None:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
-        extraction_result = extraction_func(self, observation)
+        return extraction_func(observation)
 
-        return extraction_result
+    @staticmethod
+    def _any_obs_in_model_time(
+        time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
+    ) -> bool:
+        """Check if any observation times are in model time range"""
+        return (time_obs[-1] >= time_model[0]) & (time_obs[0] <= time_model[-1])
+
+    def _validate_any_obs_in_model_time(
+        self, obs_name: str, time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
+    ) -> None:
+        """Check if any observation times are in model time range"""
+        ok = self._any_obs_in_model_time(time_obs, time_model)
+        if not ok:
+            # raise ValueError(
+            warnings.warn(
+                f"No time overlap. Observation '{obs_name}' outside model time range! "
+                + f"({time_obs[0]} - {time_obs[-1]}) not in ({time_model[0]} - {time_model[-1]})"
+            )
+
+    def _extract_point(self, observation: PointObservation) -> PointModelResult:
+        """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
+        given a PointObservation. No time interpolation is done!"""
+
+        x, y = observation.x, observation.y
+        if (x is None) or (y is None):
+            raise ValueError(
+                f"PointObservation '{observation.name}' cannot be used for extraction "
+                + f"because it has None position x={x}, y={y}. Please provide position "
+                + "when creating PointObservation."
+            )
+        if not self._in_domain(x, y):
+            raise ValueError(
+                f"PointObservation '{observation.name}' ({x}, {y}) is outside model domain!"
+            )
+
+        self._validate_any_obs_in_model_time(
+            observation.name, observation.data.index, self.time
+        )
+
+        da = self.data[self.item].interp(coords=dict(x=x, y=y), method="nearest")
+        df = da.to_dataframe().drop(columns=["x", "y"])
+        df = df.rename(columns={df.columns[-1]: self.name})
+
+        return PointModelResult(
+            data=df.dropna(),
+            x=da.x.item(),
+            y=da.y.item(),
+            item=self.name,
+            itemInfo=self.itemInfo,
+            name=self.name,
+            quantity=self.quantity,
+        )
+
+    def _extract_track(self, observation: TrackObservation) -> TrackModelResult:
+        """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
+        given a TrackObservation."""
+
+        self._validate_any_obs_in_model_time(
+            observation.name, observation.data.index, self.time
+        )
+
+        renamed_obs_data = utils.rename_coords_pd(observation.data)
+        t = xr.DataArray(renamed_obs_data.index, dims="track")
+        x = xr.DataArray(renamed_obs_data.x, dims="track")
+        y = xr.DataArray(renamed_obs_data.y, dims="track")
+        da = self.data[self.item].interp(coords=dict(time=t, x=x, y=y), method="linear")
+        df = da.to_dataframe().drop(columns=["time"])
+        # df.index.name = "time"
+        df = df.rename(columns={df.columns[-1]: self.name})
+
+        return TrackModelResult(
+            data=df.dropna(),
+            item=self.name,
+            itemInfo=self.itemInfo,
+            name=self.name,
+            quantity=self.quantity,
+        )
