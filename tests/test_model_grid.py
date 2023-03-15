@@ -64,6 +64,14 @@ def test_grid_from_DataArray(ERA5_DutchCoast_nc):
     assert mr.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
+def test_dataset_with_missing_coordinates(ERA5_DutchCoast_nc):
+    ds = xr.open_dataset(ERA5_DutchCoast_nc)
+    ds = ds.drop_vars(["longitude"])  # remove one of the coordinates
+
+    with pytest.raises(ValueError, match="geometry"):
+        ModelResult(ds["swh"])
+
+
 def test_grid_from_da(ERA5_DutchCoast_nc):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     da = ds["swh"]

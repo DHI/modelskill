@@ -123,12 +123,12 @@ class ModelResult:
                 # if DataArray use ndim instead
                 return GeomType.Grid
             else:
-                raise ValueError(fail_txt)
+                raise ValueError("Could not guess geometry_type from xarray object")
         if isinstance(data, (pd.DataFrame, pd.Series)):
             # could also be a track, but we don't know
             return GeomType.Point
 
-        raise ValueError(fail_txt)
+        raise ValueError("Geometry type could not be guessed from this type of data")
 
 
 # if __name__ == "__main__":
