@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Optional, Sequence, Union
 
 import mikeio
 import xarray as xr
@@ -15,10 +15,10 @@ class GridModelResult(ModelResultBase):
         self,
         data: types.GridType,
         *,
-        name: str = None,
-        item: Union[str, int] = None,
+        name: Optional[str] = None,
+        item: Optional[Union[str, int]] = None,
         itemInfo=None,
-        quantity: str = None,
+        quantity: Optional[str] = None,
     ) -> None:
         # assert isinstance(
         #     data, types.GridType
@@ -60,6 +60,9 @@ class GridModelResult(ModelResultBase):
     def _in_domain(self, x, y) -> bool:
         if (x is None) or (y is None):
             raise ValueError(f"Cannot determine if point ({x}, {y}) is inside domain!")
+        assert hasattr(self.data, "x") and hasattr(
+            self.data, "y"
+        ), "Data has no x and/or y coordinates."
         xmin = self.data.x.values.min()
         xmax = self.data.x.values.max()
         ymin = self.data.y.values.min()
