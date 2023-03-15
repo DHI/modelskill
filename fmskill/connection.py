@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import mikeio
 
 from fmskill import ModelResult
-from .model import protocols
+from .model import protocols, DfsuModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -62,10 +62,6 @@ def _parse_model(mod, item=None):
         mod = ModelResult(mod, item=item).data
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
-    # elif isinstance(mod, DfsModelResultItem):
-    #     if not mod.is_dfs0:
-    #         raise ValueError("Only dfs0 ModelResults are supported")
-    #     mod = mod._extract_point_dfs0(mod.item).to_dataframe()
 
     assert mod.shape[1] == 1  # A single item
 
@@ -226,12 +222,8 @@ class _SingleObsConnector(_BaseConnector):
         """
         mr = self.modelresults[0]
 
-        if isinstance(mr.data, mikeio.dfsu.Dfsu2DH):
+        if isinstance(mr, DfsuModelResult):
             geometry = mr.data.geometry
-        # elif isinstance(mr, DataArrayModelResultItem) and isinstance(
-        #     mr.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
-        # ):
-        #     geometry = mr.data.geometry
         else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
@@ -560,12 +552,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         mod = list(self.modelresults.values())[0]
 
-        if isinstance(mod.data, mikeio.dfsu.Dfsu2DH):
+        if isinstance(mod, DfsuModelResult):
             geometry = mod.data.geometry
-        # elif isinstance(mod, DataArrayModelResultItem) and isinstance(
-        #     mod.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
-        # ):
-        #     geometry = mod.data.geometry
         else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
