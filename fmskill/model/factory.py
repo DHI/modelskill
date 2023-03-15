@@ -8,7 +8,7 @@ from fmskill import model
 from fmskill.model import protocols
 from fmskill.types import GeometryType, DataInputType
 
-modelresult_lookup = {
+_modelresult_lookup = {
     GeometryType.POINT: model.PointModelResult,
     GeometryType.TRACK: model.TrackModelResult,
     GeometryType.UNSTRUCTURED: model.DfsuModelResult,
@@ -17,6 +17,32 @@ modelresult_lookup = {
 
 
 class ModelResult:
+    """
+    ModelResult factory returning a specialized ModelResult object
+    depending on the data input.
+
+    * dfs0 or pandas.DataFrame/Series => PointModelResult
+    * dfsu file => DfsuModelResult
+    * NetCDF/Grib/xarray => GridModelResult
+
+    In some cases, the geometry type of the data can be guessed, but
+    in other cases it must be specified explicitly using the gtype argument.
+
+    Note
+    ----
+    If a data input has more than one item, the desired item **must** be
+    specified as argument on construction.
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+    >>> mr = ModelResult("Oresund2D.dfsu", item="Surface elevation")
+    >>> mr = ModelResult(df, item="Water Level")
+    >>> mr = ModelResult(df, item="Water Level", itemInfo=mikeio.EUMType.Water_Level)
+    >>> mr = ModelResult("ThirdParty.nc", item="WL")
+    >>> mr = ModelResult("ThirdParty.nc", item="WL", itemInfo=mikeio.EUMType.Water_Level)
+    """
+
     def __new__(
         cls,
         data: DataInputType,
@@ -29,7 +55,7 @@ class ModelResult:
         else:
             geometry = GeometryType.from_string(gtype)
 
-        return modelresult_lookup[geometry](
+        return _modelresult_lookup[geometry](
             data=data,
             **kwargs,
         )
