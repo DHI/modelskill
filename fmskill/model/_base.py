@@ -1,6 +1,6 @@
 from pathlib import Path
 import warnings
-from typing import Union
+from typing import Optional, Union
 
 import pandas as pd
 
@@ -14,9 +14,9 @@ class ModelResultBase:
         self,
         data: types.DataInputType,
         name: str,
-        item: str = None,
+        item: Optional[str] = None,
         itemInfo=None,
-        quantity: str = None,
+        quantity: Optional[str] = None,
         **kwargs,
     ) -> None:
 
