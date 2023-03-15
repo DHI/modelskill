@@ -3,7 +3,6 @@ from collections.abc import Mapping, Sequence
 import os
 
 import yaml
-from fmskill.plot import plot_observation_positions
 from typing import List, Union
 import warnings
 import numpy as np
@@ -11,17 +10,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import mikeio
+
 from fmskill import ModelResult
-
-# from .model import ModelResult
 from .model import protocols
-
-# from .model.legacy_dfs import DfsModelResultItem, DataArrayModelResultItem
-# from .model.legacy_pandas import DataFramePointModelResultItem
-# from .model.legacy_abstract import ModelResultInterface
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
+from .plot import plot_observation_positions
 
 
 def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
