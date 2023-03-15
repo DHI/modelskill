@@ -80,27 +80,3 @@ class DfsuModelResult(ModelResultBase):
         extraction_result = extraction_func(self, observation)
 
         return extraction_result
-
-
-# if __name__ == "__main__":
-#     dfsu = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-#     test = DfsuModelResult(
-#         dfsu,
-#         item="Surface elevation",
-#         name="test",
-#         itemInfo=mikeio.EUMType.Significant_wave_height,
-#     )
-
-#     assert isinstance(test, protocols.ModelResult)
-#     assert isinstance(test, protocols.Extractable)
-
-#     dfsu_data = mikeio.open("tests/testdata/Oresund2D.dfsu")
-#     point_obs = PointObservation(
-#         "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA"
-#     )
-#     track_obs = TrackObservation(
-#         "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="C2"
-#     )
-
-#     test.extract(point_obs)
-#     test.extract(track_obs)

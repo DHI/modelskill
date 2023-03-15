@@ -24,21 +24,6 @@ class GridModelResult(ModelResultBase):
         #     data, types.GridType
         # ), "Could not construct GridModelResult from provided data."
 
-        # def _validate_file(file):
-        #     # TODO: not needed...
-        #     assert isinstance(
-        #         file, (str, Path)
-        #     ), f"Files need to be specified as str or Path objects."
-        #     # assert Path(file).suffix == ".nc", f"{file}: Not a netcdf file."
-        #     assert Path(file).exists(), f"{file}: File does not exist."
-
-        # TODO: Dataset is missing
-
-        # TODO: if dataset -> do nothing
-        #       if dataarray -> convert to dataset
-        #       if file -> open dataset
-        #       if list/sequence or contains * -> open mfdataset
-
         name = name or super()._default_name(data)
 
         if isinstance(data, (str, Path)):
@@ -101,23 +86,3 @@ class GridModelResult(ModelResultBase):
         extraction_result = extraction_func(self, observation)
 
         return extraction_result
-
-
-# if __name__ == "__main__":
-#     grid_data = "tests/testdata/SW/ERA5_DutchCoast.nc"
-#     point_obs = PointObservation(
-#         "tests/testdata/SW/eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL"
-#     )
-#     track_obs = TrackObservation(
-#         "tests/testdata/SW/Alti_c2_Dutch.dfs0", item=3, name="c2"
-#     )
-#     test = GridModelResult(grid_data, item="swh", name="test")
-
-#     assert isinstance(test, protocols.ModelResult)
-#     assert isinstance(test, protocols.Extractable)
-
-#     test.extract(point_obs)
-#     test.extract(track_obs)
-
-#     c1 = test.extract_observation(point_obs, validate=False)
-#     c2 = test.extract_observation(track_obs, validate=False)
