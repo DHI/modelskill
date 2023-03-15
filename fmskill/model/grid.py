@@ -56,13 +56,13 @@ class GridModelResult(ModelResultBase):
         name = name or item
         data = utils.rename_coords_xr(data)
 
+        assert isinstance(data, xr.Dataset)
+
         super().__init__(
             data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
         )
 
-    def _in_domain(self, x, y) -> bool:
-        if (x is None) or (y is None):
-            raise ValueError(f"Cannot determine if point ({x}, {y}) is inside domain!")
+    def _in_domain(self, x: float, y: float) -> bool:
         assert hasattr(self.data, "x") and hasattr(
             self.data, "y"
         ), "Data has no x and/or y coordinates."
