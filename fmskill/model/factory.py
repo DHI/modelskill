@@ -62,11 +62,11 @@ class ModelResult:
         **kwargs,
     ):
         if geometry_type is None:
-            geometry_type = cls._guess_geometry_type(data)
+            geometry = cls._guess_geometry_type(data)
         else:
-            geometry_type = GeomType.from_string(geometry_type)
+            geometry = GeomType.from_string(geometry_type)
 
-        return type_lookup[geometry_type](
+        return type_lookup[geometry](
             data=data,
             **kwargs,
         )
