@@ -68,7 +68,7 @@ def test_dataset_with_missing_coordinates(ERA5_DutchCoast_nc):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     ds = ds.drop_vars(["longitude"])  # remove one of the coordinates
 
-    with pytest.raises(ValueError, match="geometry"):
+    with pytest.raises(ValueError, match="gtype"):
         ModelResult(ds["swh"])
 
 
