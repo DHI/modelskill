@@ -14,6 +14,7 @@ class GridModelResult(ModelResultBase):
     def __init__(
         self,
         data: types.GridType,
+        *,
         name: str = None,
         item: Union[str, int] = None,
         itemInfo=None,

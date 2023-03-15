@@ -11,6 +11,7 @@ class PointModelResult(ModelResultBase):
     def __init__(
         self,
         data: types.PointType,
+        *,
         name: str = None,
         x: float = None,
         y: float = None,

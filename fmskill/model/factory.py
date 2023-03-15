@@ -7,9 +7,10 @@ import mikeio
 import pandas as pd
 import xarray as xr
 
-from fmskill import model, types, utils
-from fmskill.model.point import PointModelResult
-from fmskill.model.track import TrackModelResult
+from fmskill import model, types  # , utils
+
+# from fmskill.model.point import PointModelResult
+# from fmskill.model.track import TrackModelResult
 
 
 class GeomType(Enum):
@@ -42,10 +43,10 @@ class ModelResult:
     def __new__(
         cls,
         data: types.DataInputType,
+        *,
         geometry_type: Optional[
             Literal["point", "track", "unstructured", "grid"]
         ] = None,
-        *args,
         **kwargs,
     ):
         if geometry_type is None:
@@ -62,7 +63,6 @@ class ModelResult:
         geometry_type = GeomType.from_string(geometry_type)
         return type_lookup[geometry_type](
             data=data,
-            *args,
             **kwargs,
         )
 
@@ -131,6 +131,7 @@ class ModelResult:
             return GeomType.Point
 
         raise ValueError(fail_txt)
+
 
 # if __name__ == "__main__":
 #     mr1 = ModelResult("tests/testdata/Oresund2D.dfsu", item="Surface elevation")

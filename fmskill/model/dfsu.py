@@ -13,6 +13,7 @@ class DfsuModelResult(ModelResultBase):
     def __init__(
         self,
         data: types.UnstructuredType,
+        *,
         name: str = None,
         item: Union[str, int] = None,
         itemInfo=None,

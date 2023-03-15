@@ -12,6 +12,7 @@ class TrackModelResult(ModelResultBase):
     def __init__(
         self,
         data: types.DataInputType,
+        *,
         name: str = None,
         item: Union[str, int] = None,
         itemInfo=None,
