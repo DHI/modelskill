@@ -722,7 +722,7 @@ class SingleObsComparer:
 
         See also
         --------
-        sel_df
+        sel
             a method for filtering/selecting data
 
         Examples
@@ -1705,6 +1705,45 @@ class ComparerCollection(Mapping, Sequence):
         cc = ComparerCollection()
         cc.add_comparer(self)
         cc.add_comparer(other)
+        return cc
+
+    def sel(
+        self,
+        model: Union[str, int, List[str], List[int]] = None,
+        observation: Union[str, int, List[str], List[int]] = None,
+        variable: Union[str, int, List[str], List[int]] = None,
+        start: Union[str, datetime] = None,
+        end: Union[str, datetime] = None,
+        time: Union[str, datetime] = None,
+        area: List[float] = None,
+    ) -> "ComparerCollection":
+
+        if observation is None:
+            observation = self.obs_names
+        else:
+            observation = [observation] if np.isscalar(observation) else observation
+            observation = [_get_name(o, self.obs_names) for o in observation]
+
+        if (variable is not None) and (self.n_variables > 1):
+            variable = [variable] if np.isscalar(variable) else variable
+            variable = [_get_name(v, self.var_names) for v in variable]
+        else:
+            variable = self.var_names
+
+        cc = ComparerCollection()
+        for cmp in self.comparers.values():
+            cmp: SingleObsComparer
+            if cmp.name in observation and cmp.variable_name in variable:
+                cmpsel = cmp.sel(
+                    model=model,
+                    start=start,
+                    end=end,
+                    time=time,
+                    area=area,
+                )
+                if cmpsel is not None:
+                    # TODO: check if cmpsel is empty
+                    cc.add_comparer(cmpsel)
         return cc
 
     def sel_df(
