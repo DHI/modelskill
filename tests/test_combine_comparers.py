@@ -3,6 +3,8 @@ import pytest
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
 from fmskill import Connector
+import fmskill.metrics as mtr
+
 
 @pytest.fixture
 def mrmike():

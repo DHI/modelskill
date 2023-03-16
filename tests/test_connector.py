@@ -146,20 +146,21 @@ def test_connector_add_two_models(
 def test_connector_add_two_model_dataframes(
     o1: PointObservation, mr1: ModelResult, mr2: ModelResult
 ):
+    mr1_extr = mr1.extract(o1)
+    # mr1_df = mr1._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
+    mr2_extr = mr2.extract(o1)
+    # mr2_df = mr2._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
 
-    mr1_df = mr1._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
-    mr2_df = mr2._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
+    assert isinstance(mr1_extr.data, pd.DataFrame)
+    assert isinstance(mr2_extr.data, pd.DataFrame)
 
-    assert isinstance(mr1_df, pd.DataFrame)
-    assert isinstance(mr2_df, pd.DataFrame)
+    assert len(mr1_extr.data.columns == 1)
+    assert len(mr2_extr.data.columns == 1)
 
-    assert len(mr1_df.columns == 1)
-    assert len(mr2_df.columns == 1)
+    assert len(mr1_extr.data) > 1  # Number of rows
+    assert len(mr2_extr.data) > 1  # Number of rows
 
-    assert len(mr1_df) > 1  # Number of rows
-    assert len(mr2_df) > 1  # Number of rows
-
-    con = Connector(o1, [mr1_df, mr2_df])
+    con = Connector(o1, [mr1_extr, mr2_extr])
 
     assert con.n_models == 2
     cc = con.extract()
@@ -167,8 +168,8 @@ def test_connector_add_two_model_dataframes(
 
     # Alternative specification using .add() should be identical
     con2 = Connector()
-    con2.add(o1, mr1_df)
-    con2.add(o1, mr2_df)
+    con2.add(o1, mr1_extr)
+    con2.add(o1, mr2_extr)
 
     assert con2.n_models == 2
     cc2 = con2.extract()

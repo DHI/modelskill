@@ -1,12 +1,13 @@
 plot.scatter.legend.bbox:
   alpha: 0.99
   facecolor: w
+plot.scatter.legend.fontsize: 14
 plot.scatter.legend.kwargs:
   bbox_to_anchor: [1.2,0.1]
   edgecolor: k
   loc: center left
 plot.scatter.oneone_line.color: darkorange
-plot.scatter.oneone_line.label: 1:1 (45degrees)
+plot.scatter.oneone_line.label: 1:1 (45°)
 plot.scatter.points.alpha: 0.9
 plot.scatter.points.label: Data
 plot.scatter.points.size: 10.0

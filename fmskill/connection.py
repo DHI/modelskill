@@ -3,7 +3,6 @@ from collections.abc import Mapping, Sequence
 import os
 
 import yaml
-from fmskill.plot import plot_observation_positions
 from typing import List, Union
 import warnings
 import numpy as np
@@ -11,13 +10,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import mikeio
-from .model import ModelResult
-from .model.dfs import DfsModelResultItem, DataArrayModelResultItem
-from .model.pandas import DataFramePointModelResultItem
-from .model.abstract import ModelResultInterface
+
+from fmskill import ModelResult
+from .model import protocols, DfsuModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
+from .plot import plot_observation_positions
 
 
 def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
@@ -60,13 +59,9 @@ def _parse_model(mod, item=None):
             raise ValueError("Model ambiguous - please provide item")
         mod = dfs.read(items=item).to_dataframe()
     elif isinstance(mod, pd.DataFrame):
-        mod = DataFramePointModelResultItem(mod, item=item).data
+        mod = ModelResult(mod, item=item).data
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
-    elif isinstance(mod, DfsModelResultItem):
-        if not mod.is_dfs0:
-            raise ValueError("Only dfs0 ModelResults are supported")
-        mod = mod._extract_point_dfs0(mod.item).to_dataframe()
 
     assert mod.shape[1] == 1  # A single item
 
@@ -135,15 +130,7 @@ class _SingleObsConnector(_BaseConnector):
             self.obs = obs
             self.obs.weight = weight
 
-    def _parse_model(self, mod) -> List[ModelResultInterface]:
-
-        if isinstance(mod, pd.DataFrame):
-            if len(mod.columns) == 1:
-                return [self._parse_single_model(mod)]
-            else:
-                raise NotImplementedError(
-                    "Only data frames with a single column are allowed"
-                )
+    def _parse_model(self, mod) -> List[protocols.ModelResult]:
 
         if is_iterable_not_str(mod):
             mr = []
@@ -153,22 +140,13 @@ class _SingleObsConnector(_BaseConnector):
             mr = [self._parse_single_model(mod)]
         return mr
 
-    def _parse_single_model(self, mod) -> ModelResultInterface:
-        if isinstance(mod, (pd.Series, pd.DataFrame)):
-            mod = self._parse_pandas_model(mod)
-
-        if isinstance(mod, ModelResultInterface):
+    def _parse_single_model(self, mod) -> protocols.ModelResult:
+        if isinstance(mod, protocols.ModelResult):
             return mod
-        elif isinstance(mod, mikeio.DataArray):
-            return DataArrayModelResultItem(mod)
+        elif isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
+            return ModelResult(mod)
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
-
-    def _parse_pandas_model(self, df, item=None) -> ModelResultInterface:
-        return DataFramePointModelResultItem(df, item=item)
-
-    def _parse_filename_model(self, filename, item=None) -> ModelResultInterface:
-        return ModelResult(filename, item=item)
 
     def _validate(self, obs, modelresults):
         # TODO: add validation errors to list
@@ -185,7 +163,7 @@ class _SingleObsConnector(_BaseConnector):
     def _validate_eum(obs, mod):
         """Check that observation and model item eum match"""
         assert isinstance(obs, Observation)
-        assert isinstance(mod, ModelResultInterface)
+        assert isinstance(mod, protocols.ModelResult)
         ok = True
         _has_eum = lambda x: (x.itemInfo is not None) and (
             x.itemInfo.type != mikeio.EUMType.Undefined
@@ -208,12 +186,12 @@ class _SingleObsConnector(_BaseConnector):
     @staticmethod
     def _validate_in_domain(obs, mod):
         in_domain = True
-        if isinstance(mod, ModelResultInterface) and isinstance(obs, PointObservation):
-            in_domain = mod._in_domain(obs.x, obs.y)
-            if not in_domain:
-                warnings.warn(
-                    f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
-                )
+        # if isinstance(mod, protocols.ModelResult) and isinstance(obs, PointObservation):
+        #     in_domain = mod._in_domain(obs.x, obs.y)
+        #     if not in_domain:
+        #         warnings.warn(
+        #             f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
+        #         )
         return in_domain
 
     @staticmethod
@@ -244,7 +222,11 @@ class _SingleObsConnector(_BaseConnector):
         """
         mr = self.modelresults[0]
 
-        geometry = mr.data.geometry
+        if isinstance(mr, DfsuModelResult):
+            geometry = mr.data.geometry
+        else:
+            warnings.warn("Only supported for dfsu ModelResults")
+            return
 
         ax = plot_observation_positions(
             geometry=geometry, observations=[self.obs], figsize=figsize
@@ -298,7 +280,10 @@ class PointConnector(_SingleObsConnector):
         assert isinstance(self.obs, PointObservation)
         df_model = []
         for mr in self.modelresults:
-            df = mr._extract_point(self.obs)
+            if isinstance(mr, protocols.Extractable):
+                mr = mr.extract(self.obs)
+
+            df = mr.data
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -346,7 +331,10 @@ class TrackConnector(_SingleObsConnector):
         assert isinstance(self.obs, TrackObservation)
         df_model = []
         for mr in self.modelresults:
-            df = mr._extract_track(self.obs)
+            if isinstance(mr, protocols.Extractable):
+                mr = mr.extract(self.obs)
+
+            df = mr.data
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -564,7 +552,15 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         mod = list(self.modelresults.values())[0]
 
-        geometry = mod.data.geometry
+        if isinstance(mod, DfsModelResultItem) and not mod.is_dfs0:
+            geometry = mod.data.geometry
+        elif isinstance(mod, DataArrayModelResultItem) and isinstance(
+            mod.data.geometry, mikeio.spatial.FM_geometry.GeometryFM
+        ):
+            geometry = mod.data.geometry
+        else:
+            warnings.warn("Only supported for dfsu ModelResults")
+            return
 
         observations = list(self.observations.values())
         ax = plot_observation_positions(
@@ -699,7 +695,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             d["filename"] = mr.filename
         else:
             d["filename"] = os.path.relpath(mr.filename, start=folder)
-        d["item"] = mr._selected_item
+        d["item"] = mr.item
         return d
 
     @staticmethod

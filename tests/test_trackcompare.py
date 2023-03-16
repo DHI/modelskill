@@ -23,14 +23,15 @@ def observation(observation_df):
 @pytest.fixture
 def modelresult():
     fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"
-    return ModelResult(fn, item=2, name="HD")
+    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+        mr = ModelResult(fn, gtype="track", item=2, name="HD")
+    return mr
 
 
 @pytest.fixture
 def comparer(observation, modelresult):
     con = Connector(observation, modelresult)
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        cc = con.extract()
+    cc = con.extract()
     return cc
 
 

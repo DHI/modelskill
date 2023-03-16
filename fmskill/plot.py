@@ -54,7 +54,7 @@ register_option(
     settings.is_dict,
 )
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
-
+register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
 
 def scatter(
     x,
@@ -152,13 +152,14 @@ def scatter(
 
     x_sample = x
     y_sample = y
-
+    sample_warning=False
     if show_points is None:
         # If nothing given, and more than 50k points, 50k sample will be shown
         if len(x) < 5e4:
             show_points = True
         else:
             show_points = 50000
+            sample_warning=True
     if type(show_points) == float:
         if show_points < 0 or show_points > 1:
             raise ValueError(" `show_points` fraction must be in [0,1]")
@@ -169,17 +170,24 @@ def scatter(
             )
             x_sample = x[ran_index]
             y_sample = y[ran_index]
+            if len(x_sample)<len(x):
+                sample_warning=True
     # if show_points is an int
     elif type(show_points) == int:
         np.random.seed(20)
         ran_index = np.random.choice(range(len(x)), show_points, replace=False)
         x_sample = x[ran_index]
         y_sample = y[ran_index]
+        if len(x_sample)<len(x):
+            sample_warning=True
     elif type(show_points) == bool:
         pass
     else:
         raise TypeError(" `show_points` must be either bool, int or float")
-
+    if sample_warning:
+        warnings.warn(
+            message=f'Showing only {len(x_sample)} points in plot. If all scatter points wanted in plot, use `show_points=True`',
+            stacklevel=2)
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
     xymin = min([xmin, ymin])
@@ -316,9 +324,7 @@ def scatter(
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.minorticks_on()
-        plt.grid(
-            which="both", axis="both", linestyle=":", linewidth="0.2", color="grey"
-        )
+        plt.grid(which="both", axis="both", linewidth="0.2", color="k",alpha=0.6)
         max_cbar = None
         if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
@@ -601,6 +607,6 @@ def _plot_summary_table(skill_df, units, max_cbar):
         0.6,
         text_,
         bbox=settings.get_option("plot.scatter.legend.bbox"),
-        fontsize=12,
+        fontsize=options.plot.scatter.legend.fontsize,
         family="monospace",
     )
