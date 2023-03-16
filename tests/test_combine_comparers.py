@@ -7,10 +7,6 @@ from fmskill import PointObservation, TrackObservation
 from fmskill import Connector
 import fmskill.metrics as mtr
 
-python3_7_or_above = pytest.mark.skipif(
-    sys.version_info < (3, 7), reason="requires Python3.7+"
-)
-
 
 @pytest.fixture
 def mrmike():
@@ -56,7 +52,6 @@ def o123():
     return o1, o2, o3
 
 
-@python3_7_or_above
 def test_concat_time(o123, mr28, mr29, mr2days):
     con1 = Connector(o123, mr28)
     with pytest.warns(UserWarning, match="No overlapping data"):
@@ -80,7 +75,6 @@ def test_concat_time(o123, mr28, mr29, mr2days):
     assert cc12b.n_points == cc1.n_points + cc2.n_points
 
 
-@python3_7_or_above
 def test_concat_model(o123, mrmike, mrmike2):
     con1 = Connector(o123, mrmike)
     cc1 = con1.extract()
@@ -101,7 +95,6 @@ def test_concat_model(o123, mrmike, mrmike2):
     assert cc12b.n_points == cc12.n_points
 
 
-@python3_7_or_above
 def test_concat_model_different_time(o123, mrmike, mr2days):
     con1 = Connector(o123, mrmike)
     cc1 = con1.extract()

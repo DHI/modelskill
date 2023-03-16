@@ -9,7 +9,16 @@ Model
 .. autoclass:: fmskill.model.ModelResult
 	:members:
 
-.. autoclass:: fmskill.model.dfs.DfsModelResultItem
+.. autoclass:: fmskill.model.PointModelResult
+	:members:
+
+.. autoclass:: fmskill.model.TrackModelResult
+	:members:
+
+.. autoclass:: fmskill.model.DfsuModelResult
+	:members:
+
+.. autoclass:: fmskill.model.GridModelResult
 	:members:
 
 Observation

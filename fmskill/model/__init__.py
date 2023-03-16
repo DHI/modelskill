@@ -1,4 +1,6 @@
-from .factory import ModelResult
-from .dfs import DfsModelResultItem, DataArrayModelResultItem
-from .pandas import DataFramePointModelResultItem
-from .xarray import XArrayModelResultItem
+# from .factory import ModelResult
+
+from .point import PointModelResult
+from .track import TrackModelResult
+from .dfsu import DfsuModelResult
+from .grid import GridModelResult
