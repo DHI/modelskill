@@ -588,12 +588,13 @@ class SingleObsComparer:
             models = [model] if np.isscalar(model) else model
             models = [_get_name(m, self.mod_names) for m in models]
             dropped_models = [m for m in self.mod_names if m not in models]
-            d = d.drop(dropped_models)
+            d = d.drop_vars(dropped_models)
             raw_mod_data = {m: raw_mod_data[m] for m in models}
         if (start is not None) or (end is not None):
             if time is not None:
                 raise ValueError("Cannot use both time and start/end")
-            d = d.sel(time=d.time.to_index()[start:end])
+            # TODO: can this be done without to_index? (simplify)
+            d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)
         if time is not None:
             if (start is not None) or (end is not None):
                 raise ValueError("Cannot use both time and start/end")
@@ -601,14 +602,18 @@ class SingleObsComparer:
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
-                d = d[(self.x > x0) & (self.x < x1) & (self.y > y0) & (self.y < y1)]
+                mask = (self.x > x0) & (self.x < x1) & (self.y > y0) & (self.y < y1)
             elif _area_is_polygon(area):
                 polygon = np.array(area)
                 xy = np.column_stack((self.x, self.y))
                 mask = _inside_polygon(polygon, xy)
-                d = d[mask]
             else:
                 raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
+            if self.gtype == "point":
+                # if False, return empty data
+                d = d if mask else d.isel(time=slice(None, 0))
+            else:
+                d = d.isel(time=mask)
         return self.__class__.from_compared_data(d, raw_mod_data)
 
     def sel_df(
@@ -685,7 +690,6 @@ class SingleObsComparer:
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> AggregatedSkill:
         """Skill assessment of model(s)
 
@@ -712,8 +716,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -749,22 +751,19 @@ class SingleObsComparer:
         """
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
-        df = self.sel_df(
+        cmp = self.sel(
             model=model,
             start=start,
             end=end,
             area=area,
-            df=df,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
-        n_models = len(df.model.unique())
-        n_obs = 1
-        n_var = 1
-        by = _parse_groupby(by, n_models, n_obs, n_var)
+        by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
 
+        df = cmp._construct_all_df()  # TODO: avoid df if possible?
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
@@ -787,7 +786,6 @@ class SingleObsComparer:
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> float:
         """Model skill score
 
@@ -805,8 +803,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -838,7 +834,6 @@ class SingleObsComparer:
             start=start,
             end=end,
             area=area,
-            df=df,
         )
         if s is None:
             return
@@ -859,7 +854,6 @@ class SingleObsComparer:
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
@@ -892,8 +886,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -929,22 +921,22 @@ class SingleObsComparer:
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
-        df = self.sel_df(
+        cmp = self.sel(
             model=model,
             start=start,
             end=end,
             area=area,
-            df=df,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
+        df = cmp._construct_all_df()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        n_models = len(df.model.unique())
-        n_obs = len(df.observation.unique())
-        by = _parse_groupby(by, n_models, n_obs)
+        # n_models = len(df.model.unique())
+        # n_obs = len(df.observation.unique())
+        by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]
         if not "x" in by:
@@ -976,7 +968,6 @@ class SingleObsComparer:
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
         binsize: float = None,
         nbins: int = None,
         skill_table: Union[str, List[str], bool] = None,
@@ -1036,8 +1027,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
         skill_table : str, List[str], bool, optional
             list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
@@ -1057,28 +1046,28 @@ class SingleObsComparer:
         mod_name = self.mod_names[mod_id]
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=mod_name,
             start=start,
             end=end,
             area=area,
         )
-        if len(df) == 0:
+
+        if cmp.n_points == 0:
             raise Exception("No data found in selection")
 
-        x = df.obs_val
-        y = df.mod_val
+        x = np.squeeze(cmp.obs)
+        y = np.squeeze(cmp.mod)
 
-        unit_text = self._unit_text
+        unit_text = cmp._unit_text
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{self.mod_names[mod_id]} vs {self.name}"
+        title = title or f"{cmp.mod_names[mod_id]} vs {cmp.name}"
 
         skill_df = None
         units = None
         if skill_table:
-            skill_df = self.skill(df=df, model=model)
+            skill_df = cmp.skill()
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except:
@@ -1136,8 +1125,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         figsize : tuple, optional
@@ -1843,7 +1830,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> AggregatedSkill:
         """Aggregated skill assessment of model(s)
 
@@ -1870,8 +1856,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -1917,26 +1901,30 @@ class ComparerCollection(Mapping, Sequence):
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
-        df = self.sel_df(
+        cmp = self.sel(
             model=model,
             observation=observation,
             variable=variable,
             start=start,
             end=end,
             area=area,
-            df=df,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
-        n_models = len(df.model.unique())
-        n_obs = len(df.observation.unique())
-        n_var = len(df.variable.unique()) if (self.n_variables > 1) else 1
+        df = cmp._construct_all_df()
+        n_models = cmp.n_models  # len(df.model.unique())
+        n_obs = cmp.n_observations  # len(df.observation.unique())
+
+        # TODO: FIX
+        n_var = (
+            cmp.n_variables
+        )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
 
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
-        res = self._add_as_col_if_not_in_index(df, skilldf=res)
+        res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
 
     def _add_as_col_if_not_in_index(
@@ -1967,7 +1955,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
@@ -2004,8 +1991,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -2041,24 +2026,24 @@ class ComparerCollection(Mapping, Sequence):
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
-        df = self.sel_df(
+        cmp = self.sel(
             model=model,
             observation=observation,
             variable=variable,
             start=start,
             end=end,
             area=area,
-            df=df,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
+        df = cmp._construct_all_df()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        n_models = len(df.model.unique())
-        n_obs = len(df.observation.unique())
-        by = _parse_groupby(by, n_models, n_obs)
+        # n_models = len(df.model.unique())
+        # n_obs = len(df.observation.unique())
+        by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]
         if not "x" in by:
@@ -2092,7 +2077,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
         binsize: float = None,
         nbins: int = None,
         skill_table: Union[str, List[str], bool] = None,
@@ -2156,8 +2140,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
         skill_table : str, List[str], bool, optional
             list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
@@ -2182,8 +2164,7 @@ class ComparerCollection(Mapping, Sequence):
         var_name = self.var_names[var_id]
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=mod_name,
             observation=observation,
             variable=var_name,
@@ -2191,9 +2172,10 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             raise Exception("No data found in selection")
 
+        df = cmp._construct_all_df()
         x = df.obs_val
         y = df.mod_val
 
@@ -2201,19 +2183,15 @@ class ComparerCollection(Mapping, Sequence):
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{self.mod_names[mod_id]} vs {self.name}"
+        title = title or f"{mod_name} vs {cmp.name}"
 
         skill_df = None
         units = None
         if skill_table:
-            if isinstance(self, ComparerCollection) and self.n_observations == 1:
-                skill_df = self.skill(
-                    df=df, model=model, observation=observation, variable=variable
-                )
+            if isinstance(self, ComparerCollection) and cmp.n_observations == 1:
+                skill_df = cmp.skill()
             else:
-                skill_df = self.mean_skill(
-                    df=df, model=model, observation=observation, variable=variable
-                )
+                skill_df = self.mean_skill()
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except:
@@ -2252,7 +2230,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
         title: str = None,
         density=True,
         alpha: float = 0.5,
@@ -2280,8 +2257,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
         title : str, optional
             plot title, default: observation name
         density: bool, optional
@@ -2303,8 +2278,7 @@ class ComparerCollection(Mapping, Sequence):
         mod_name = self.mod_names[mod_id]
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=mod_name,
             observation=observation,
             variable=variable,
@@ -2312,12 +2286,13 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
         title = f"{mod_name} vs Observations" if title is None else title
 
+        df = cmp._construct_all_df()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
         ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
@@ -2349,7 +2324,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> AggregatedSkill:
         """Weighted mean of skills
 
@@ -2384,8 +2358,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -2411,8 +2383,7 @@ class ComparerCollection(Mapping, Sequence):
         """
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=model,
             observation=observation,
             variable=variable,
@@ -2420,26 +2391,28 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
-        mod_names = df.model.unique()
-        obs_names = df.observation.unique()
-        var_names = self.var_names
-        if self.n_variables > 1:
-            var_names = df.variable.unique()
+        df = cmp._construct_all_df()
+        mod_names = cmp.mod_names  # df.model.unique()
+        obs_names = cmp.obs_names  # df.observation.unique()
+        var_names = cmp.var_names  # self.var_names
+        # if self.n_variables > 1:
+        #     var_names = df.variable.unique()
         n_models = len(mod_names)
 
         # skill assessment
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
-        s = self.skill(df=df, metrics=metrics)
+        # s = self.skill(df=df, metrics=metrics)
+        s = cmp.skill(metrics=metrics)
         if s is None:
             return
         skilldf = s.df
 
         # weights
-        weights = self._parse_weights(weights, obs_names)
+        weights = cmp._parse_weights(weights, obs_names)
         skilldf["weights"] = (
             skilldf.n if weights is None else np.tile(weights, n_models)
         )
@@ -2447,14 +2420,14 @@ class ComparerCollection(Mapping, Sequence):
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
-        by = self._mean_skill_by(skilldf, mod_names, var_names)
+        by = cmp._mean_skill_by(skilldf, mod_names, var_names)
         agg = {"n": np.sum}
         for metric in metrics:
             agg[metric.__name__] = weighted_mean
         res = skilldf.groupby(by).agg(agg)
 
         # output
-        res = self._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
+        res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
         return AggregatedSkill(res.astype({"n": int}))
 
     def mean_skill_points(
@@ -2467,7 +2440,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> AggregatedSkill:
         """Mean skill of all observational points
 
@@ -2499,8 +2471,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -2521,8 +2491,7 @@ class ComparerCollection(Mapping, Sequence):
         """
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=model,
             observation=observation,
             variable=variable,
@@ -2530,13 +2499,16 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
-        dfall = df.copy()
+        dfall = cmp._construct_all_df()
         dfall["observation"] = "all"
-        return self.skill(df=dfall, metrics=metrics)
+
+        # TODO: no longer possible to do this way
+        # return self.skill(df=dfall, metrics=metrics)
+        return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
     def _mean_skill_by(self, skilldf, mod_names, var_names):
         by = []
@@ -2608,7 +2580,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> float:
         """Weighted mean score of model(s) over all observations
 
@@ -2641,8 +2612,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -2689,7 +2658,6 @@ class ComparerCollection(Mapping, Sequence):
             start=start,
             end=end,
             area=area,
-            df=df,
         )
         if skill is None:
             return
@@ -2717,7 +2685,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
         normalize_std: bool = False,
         aggregate_observations: bool = True,
         figsize: List[float] = (7, 7),
@@ -2744,8 +2711,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         aggregate_observations : bool, optional
