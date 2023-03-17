@@ -1,9 +1,19 @@
-import os
-import pandas as pd
+from pathlib import Path
+from typing import Literal, Optional
 
-from .dfs import DataArrayModelResultItem, DfsModelResultItem
-from .pandas import DataFramePointModelResultItem, DataFrameTrackModelResultItem
-from .xarray import XArrayModelResultItem
+import pandas as pd
+import xarray as xr
+
+from fmskill import model
+from fmskill.model import protocols
+from fmskill.types import GeometryType, DataInputType
+
+_modelresult_lookup = {
+    GeometryType.POINT: model.PointModelResult,
+    GeometryType.TRACK: model.TrackModelResult,
+    GeometryType.UNSTRUCTURED: model.DfsuModelResult,
+    GeometryType.GRID: model.GridModelResult,
+}
 
 
 class ModelResult:
@@ -11,9 +21,12 @@ class ModelResult:
     ModelResult factory returning a specialized ModelResult object
     depending on the data input.
 
-    * dfs0 or dfsu file
-    * pandas.DataFrame/Series
-    * NetCDF/Grib
+    * dfs0 or pandas.DataFrame/Series => PointModelResult
+    * dfsu file => DfsuModelResult
+    * NetCDF/Grib/xarray => GridModelResult
+
+    In some cases, the geometry type of the data can be guessed, but
+    in other cases it must be specified explicitly using the gtype argument.
 
     Note
     ----
@@ -24,42 +37,69 @@ class ModelResult:
     --------
     >>> mr = ModelResult("Oresund2D.dfsu", item=0)
     >>> mr = ModelResult("Oresund2D.dfsu", item="Surface elevation")
-
     >>> mr = ModelResult(df, item="Water Level")
     >>> mr = ModelResult(df, item="Water Level", itemInfo=mikeio.EUMType.Water_Level)
-
     >>> mr = ModelResult("ThirdParty.nc", item="WL")
     >>> mr = ModelResult("ThirdParty.nc", item="WL", itemInfo=mikeio.EUMType.Water_Level)
     """
 
-    def __new__(self, data, *args, **kwargs):
-        import xarray as xr
-        import mikeio
-
-        if isinstance(data, str):
-            filename = data
-            ext = os.path.splitext(filename)[-1]
-            if "dfs" in ext:
-                return DfsModelResultItem(filename, *args, **kwargs)
-            else:
-                return XArrayModelResultItem(filename, *args, **kwargs)
-            
-        elif isinstance(data, mikeio.DataArray):
-            return DataArrayModelResultItem(data, *args, **kwargs)
-        elif isinstance(data, mikeio.Dataset):
-            raise ValueError("mikeio.Dataset not supported, but mikeio.DataArray is")
-        elif isinstance(data, (pd.DataFrame, pd.Series)):
-            type = kwargs.pop("type", "point")
-            if type == "point":
-                return DataFramePointModelResultItem(data, *args, **kwargs)
-            elif type == "track":
-                return DataFrameTrackModelResultItem(data, *args, **kwargs)
-            else:
-                raise ValueError(f"type '{type}' unknown (point, track)")
-            
-        elif isinstance(data, (xr.Dataset, xr.DataArray)):
-            return XArrayModelResultItem(data, *args, **kwargs)
+    def __new__(
+        cls,
+        data: DataInputType,
+        *,
+        gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
+        **kwargs,
+    ) -> protocols.ModelResult:
+        if gtype is None:
+            geometry = cls._guess_gtype(data)
         else:
-            raise ValueError(
-                "Input type not supported (filename, mikeio.DataArray, DataFrame, xr.DataArray)"
-            )
+            geometry = GeometryType.from_string(gtype)
+
+        return _modelresult_lookup[geometry](
+            data=data,
+            **kwargs,
+        )
+
+    @staticmethod
+    def _guess_gtype(data) -> GeometryType:
+
+        if hasattr(data, "geometry"):
+            geom_str = repr(data.geometry).lower()
+            if "flex" in geom_str:
+                return GeometryType.UNSTRUCTURED
+            elif "point" in geom_str:
+                return GeometryType.POINT
+            else:
+                raise ValueError(
+                    "Could not guess gtype from geometry, please specify gtype, e.g. gtype='track'"
+                )
+
+        if isinstance(data, (str, Path)):
+            data = Path(data)
+            file_ext = data.suffix.lower()
+            if file_ext == ".dfsu":
+                return GeometryType.UNSTRUCTURED
+            elif file_ext == ".dfs0":
+                # could also be a track, but we don't know
+                return GeometryType.POINT
+            elif file_ext == ".nc":
+                # could also be point or track, but we don't know
+                return GeometryType.GRID
+            else:
+                raise ValueError(
+                    "Could not guess gtype from file extension, please specify gtype, e.g. gtype='track'"
+                )
+
+        if isinstance(data, (xr.Dataset, xr.DataArray)):
+            if len(data.coords) >= 3:
+                # if DataArray use ndim instead
+                return GeometryType.GRID
+            else:
+                raise ValueError("Could not guess gtype from xarray object")
+        if isinstance(data, (pd.DataFrame, pd.Series)):
+            # could also be a track, but we don't know
+            return GeometryType.POINT
+
+        raise ValueError(
+            f"Geometry type (gtype) could not be guessed from this type of data: {type(data)}. Please specify gtype, e.g. gtype='track'"
+        )

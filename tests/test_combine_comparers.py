@@ -4,6 +4,7 @@ from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
 from fmskill import Connector
 
+
 @pytest.fixture
 def mrmike():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"

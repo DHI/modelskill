@@ -1,17 +1,17 @@
 <img src="https://raw.githubusercontent.com/DHI/fmskill/main/images/logo/mike-fm-skill-rgb.svg" width="300">
 
-# FMskill: Compare MIKE FM results with observations.
+# FMskill: Flexible Model skill evaluation.
  ![Python version](https://img.shields.io/pypi/pyversions/fmskill.svg) 
 ![Python package](https://github.com/DHI/fmskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/fmskill.svg)](https://badge.fury.io/py/fmskill)
 
-[FMskill](https://github.com/DHI/fmskill) is a python package for scoring [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) models. 
+[FMskill](https://github.com/DHI/fmskill) is a python package for scoring [MIKE](https://www.mikepoweredbydhi.com) models (other models can be evaluated as well). 
 
 Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/fmskill/discussions), report an [issue](https://github.com/DHI/fmskill/issues) or browse the [API documentation](https://dhi.github.io/fmskill/api.html). Access observational data (e.g. altimetry data) from the sister library [WatObs](https://github.com/DHI/watobs). 
 
 
 ## Use cases
 
-[FMskill](https://github.com/DHI/fmskill) would like to be your companion during the different phases of a MIKE FM modelling workflow.
+[FMskill](https://github.com/DHI/fmskill) would like to be your companion during the different phases of a MIKE modelling workflow.
 
 * Model setup - exploratory phase   
 * Model calibration
@@ -56,8 +56,8 @@ Read more about the workflow in the [getting started guide](https://dhi.github.i
 Start by defining model results and observations:
 
 ```python
->>> from fmskill.model import ModelResult
->>> from fmskill.observation import PointObservation, TrackObservation
+>>> from fmskill import ModelResult
+>>> from fmskill import PointObservation, TrackObservation
 >>> mr = ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
 >>> HKNA = PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 >>> EPL = PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
