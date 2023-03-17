@@ -616,71 +616,71 @@ class SingleObsComparer:
                 d = d.isel(time=mask)
         return self.__class__.from_compared_data(d, raw_mod_data)
 
-    def sel_df(
-        self,
-        model: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
-        area: List[float] = None,
-        df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
-        """Select/filter data from all the compared data.
-        Used by compare.scatter and compare.skill to select data.
+    # def sel_df(
+    #     self,
+    #     model: Union[str, int, List[str], List[int]] = None,
+    #     start: Union[str, datetime] = None,
+    #     end: Union[str, datetime] = None,
+    #     area: List[float] = None,
+    #     df: pd.DataFrame = None,
+    # ) -> pd.DataFrame:
+    #     """Select/filter data from all the compared data.
+    #     Used by compare.scatter and compare.skill to select data.
 
-        Parameters
-        ----------
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
+    #     Parameters
+    #     ----------
+    #     model : (str, int, List[str], List[int]), optional
+    #         name or ids of models to be compared, by default all
+    #     start : (str, datetime), optional
+    #         start time of comparison, by default None
+    #     end : (str, datetime), optional
+    #         end time of comparison, by default None
+    #     area : list(float), optional
+    #         bbox coordinates [x0, y0, x1, y1],
+    #         or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
+    #         by default None
+    #     df : pd.dataframe, optional
+    #         user-provided data instead of the comparers own data, by default None
 
-        Returns
-        -------
-        pd.DataFrame
-            selected data in a dataframe with columns (model,observation,x,y,mod_val,obs_val)
+    #     Returns
+    #     -------
+    #     pd.DataFrame
+    #         selected data in a dataframe with columns (model,observation,x,y,mod_val,obs_val)
 
-        See also
-        --------
-        skill
-            a method for aggregated skill assessment
-        scatter
-            a method for plotting compared data
+    #     See also
+    #     --------
+    #     skill
+    #         a method for aggregated skill assessment
+    #     scatter
+    #         a method for plotting compared data
 
-        Examples
-        --------
-        >>> cc = con.extract()
-        >>> dfsub = cc['c2'].sel_df(model=0)
-        >>> dfsub = cc['c2'].sel_df(start='2017-10-1', end='2017-11-1')
-        >>> dfsub = cc['c2'].sel_df(area=[0.5,52.5,5,54])
-        """
-        if df is None:
-            df = self._construct_all_df()
-        if model is not None:
-            models = [model] if np.isscalar(model) else model
-            models = [_get_name(m, self.mod_names) for m in models]
-            df = df[df.model.isin(models)]
-        if (start is not None) or (end is not None):
-            df = df.loc[start:end]
-        if area is not None:
-            if _area_is_bbox(area):
-                x0, y0, x1, y1 = area
-                df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
-            elif _area_is_polygon(area):
-                polygon = np.array(area)
-                xy = np.column_stack((df.x.values, df.y.values))
-                mask = _inside_polygon(polygon, xy)
-                df = df[mask]
-            else:
-                raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
-        return df
+    #     Examples
+    #     --------
+    #     >>> cc = con.extract()
+    #     >>> dfsub = cc['c2'].sel_df(model=0)
+    #     >>> dfsub = cc['c2'].sel_df(start='2017-10-1', end='2017-11-1')
+    #     >>> dfsub = cc['c2'].sel_df(area=[0.5,52.5,5,54])
+    #     """
+    #     if df is None:
+    #         df = self._construct_all_df()
+    #     if model is not None:
+    #         models = [model] if np.isscalar(model) else model
+    #         models = [_get_name(m, self.mod_names) for m in models]
+    #         df = df[df.model.isin(models)]
+    #     if (start is not None) or (end is not None):
+    #         df = df.loc[start:end]
+    #     if area is not None:
+    #         if _area_is_bbox(area):
+    #             x0, y0, x1, y1 = area
+    #             df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
+    #         elif _area_is_polygon(area):
+    #             polygon = np.array(area)
+    #             xy = np.column_stack((df.x.values, df.y.values))
+    #             mask = _inside_polygon(polygon, xy)
+    #             df = df[mask]
+    #         else:
+    #             raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
+    #     return df
 
     def skill(
         self,
@@ -740,14 +740,6 @@ class SingleObsComparer:
         2017-10-27  72 -0.19  0.31   0.25  0.26  0.48  0.12  0.98
         2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
-
-        >>> df = cc['c2'].sel_df().copy()
-        >>> df['Hm0 group'] = pd.cut(df.obs_val, bins=[0,2,6])
-        >>> cc['c2'].skill(by='Hm0 group', df=df).round(2)
-                    n  bias  rmse  urmse   mae    cc    si    r2
-        Hm0 group
-        (0, 2]     33 -0.09  0.23   0.22  0.21  0.46  0.12  0.98
-        (2, 6]     80  0.03  0.39   0.39  0.33  0.97  0.12  0.99
         """
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
@@ -1733,92 +1725,92 @@ class ComparerCollection(Mapping, Sequence):
                     cc.add_comparer(cmpsel)
         return cc
 
-    def sel_df(
-        self,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
-        area: List[float] = None,
-        df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
-        """Select/filter data from all the compared data.
-        Used by compare.scatter and compare.skill to select data.
+    # def sel_df(
+    #     self,
+    #     model: Union[str, int, List[str], List[int]] = None,
+    #     observation: Union[str, int, List[str], List[int]] = None,
+    #     variable: Union[str, int, List[str], List[int]] = None,
+    #     start: Union[str, datetime] = None,
+    #     end: Union[str, datetime] = None,
+    #     area: List[float] = None,
+    #     df: pd.DataFrame = None,
+    # ) -> pd.DataFrame:
+    #     """Select/filter data from all the compared data.
+    #     Used by compare.scatter and compare.skill to select data.
 
-        Parameters
-        ----------
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
+    #     Parameters
+    #     ----------
+    #     model : (str, int, List[str], List[int]), optional
+    #         name or ids of models to be compared, by default all
+    #     observation : (str, int, List[str], List[int])), optional
+    #         name or ids of observations to be compared, by default all
+    #     variable : (str, int, List[str], List[int])), optional
+    #         name or ids of variables to be compared, by default all
+    #     start : (str, datetime), optional
+    #         start time of comparison, by default None
+    #     end : (str, datetime), optional
+    #         end time of comparison, by default None
+    #     area : list(float), optional
+    #         bbox coordinates [x0, y0, x1, y1],
+    #         or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
+    #         by default None
+    #     df : pd.dataframe, optional
+    #         user-provided data instead of the comparers own data, by default None
 
-        Returns
-        -------
-        pd.DataFrame
-            selected data in a dataframe with columns (mod_name,obs_name,x,y,mod_val,obs_val)
+    #     Returns
+    #     -------
+    #     pd.DataFrame
+    #         selected data in a dataframe with columns (mod_name,obs_name,x,y,mod_val,obs_val)
 
-        See also
-        --------
-        skill
-            a method for aggregated skill assessment
-        scatter
-            a method for plotting compared data
+    #     See also
+    #     --------
+    #     skill
+    #         a method for aggregated skill assessment
+    #     scatter
+    #         a method for plotting compared data
 
-        Examples
-        --------
-        >>> cc = con.extract()
-        >>> dfsub = cc.sel_df(observation=['EPL','HKNA'])
-        >>> dfsub = cc.sel_df(model=0)
-        >>> dfsub = cc.sel_df(start='2017-10-1', end='2017-11-1')
-        >>> dfsub = cc.sel_df(area=[0.5,52.5,5,54])
+    #     Examples
+    #     --------
+    #     >>> cc = con.extract()
+    #     >>> dfsub = cc.sel_df(observation=['EPL','HKNA'])
+    #     >>> dfsub = cc.sel_df(model=0)
+    #     >>> dfsub = cc.sel_df(start='2017-10-1', end='2017-11-1')
+    #     >>> dfsub = cc.sel_df(area=[0.5,52.5,5,54])
 
-        >>> cc.sel_df(observation='c2', start='2017-10-28').head(3)
-                           model observation      x       y   mod_val  obs_val
-        2017-10-28 01:00:00 SW_1         EPL  3.276  51.999  1.644092     1.82
-        2017-10-28 02:00:00 SW_1         EPL  3.276  51.999  1.755809     1.86
-        2017-10-28 03:00:00 SW_1         EPL  3.276  51.999  1.867526     2.11
-        """
-        if df is None:
-            df = self._construct_all_df()
-        if model is not None:
-            models = [model] if np.isscalar(model) else model
-            models = [_get_name(m, self.mod_names) for m in models]
-            df = df[df.model.isin(models)]
-        if observation is not None:
-            observation = [observation] if np.isscalar(observation) else observation
-            observation = [_get_name(o, self.obs_names) for o in observation]
-            df = df[df.observation.isin(observation)]
-        if (variable is not None) and (self.n_variables > 1):
-            variable = [variable] if np.isscalar(variable) else variable
-            variable = [_get_name(v, self.var_names) for v in variable]
-            df = df[df.variable.isin(variable)]
-        if (start is not None) or (end is not None):
-            df = df.loc[start:end]
-        if area is not None:
-            if _area_is_bbox(area):
-                x0, y0, x1, y1 = area
-                df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
-            elif _area_is_polygon(area):
-                polygon = np.array(area)
-                xy = np.column_stack((df.x.values, df.y.values))
-                mask = _inside_polygon(polygon, xy)
-                df = df[mask]
-            else:
-                raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
-        return df
+    #     >>> cc.sel_df(observation='c2', start='2017-10-28').head(3)
+    #                        model observation      x       y   mod_val  obs_val
+    #     2017-10-28 01:00:00 SW_1         EPL  3.276  51.999  1.644092     1.82
+    #     2017-10-28 02:00:00 SW_1         EPL  3.276  51.999  1.755809     1.86
+    #     2017-10-28 03:00:00 SW_1         EPL  3.276  51.999  1.867526     2.11
+    #     """
+    #     if df is None:
+    #         df = self._construct_all_df()
+    #     if model is not None:
+    #         models = [model] if np.isscalar(model) else model
+    #         models = [_get_name(m, self.mod_names) for m in models]
+    #         df = df[df.model.isin(models)]
+    #     if observation is not None:
+    #         observation = [observation] if np.isscalar(observation) else observation
+    #         observation = [_get_name(o, self.obs_names) for o in observation]
+    #         df = df[df.observation.isin(observation)]
+    #     if (variable is not None) and (self.n_variables > 1):
+    #         variable = [variable] if np.isscalar(variable) else variable
+    #         variable = [_get_name(v, self.var_names) for v in variable]
+    #         df = df[df.variable.isin(variable)]
+    #     if (start is not None) or (end is not None):
+    #         df = df.loc[start:end]
+    #     if area is not None:
+    #         if _area_is_bbox(area):
+    #             x0, y0, x1, y1 = area
+    #             df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
+    #         elif _area_is_polygon(area):
+    #             polygon = np.array(area)
+    #             xy = np.column_stack((df.x.values, df.y.values))
+    #             mask = _inside_polygon(polygon, xy)
+    #             df = df[mask]
+    #         else:
+    #             raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
+    #     return df
 
     def skill(
         self,
@@ -1864,7 +1856,7 @@ class ComparerCollection(Mapping, Sequence):
 
         See also
         --------
-        sel_df
+        sel
             a method for filtering/selecting data
 
         Examples
@@ -1887,16 +1879,6 @@ class ComparerCollection(Mapping, Sequence):
         2017-10-27  239 -0.15  0.25   0.21  0.20  0.72  0.10  0.98
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
-
-        >>> df = cc.sel_df(observation=['HKNA','EPL']).copy()
-        >>> df['seastate'] = pd.cut(df.obs_val, bins=[0,2,6], labels=['small','large'])
-        >>> cc.skill(by=['observation','seastate'], df=df).round(2)
-                                n  bias  rmse  urmse   mae    cc    si    r2
-        observation seastate
-        EPL         small      16  0.02  0.22   0.22  0.17  0.38  0.13  0.98
-                    large      50 -0.11  0.22   0.19  0.19  0.98  0.06  0.99
-        HKNA        small      61  0.02  0.09   0.09  0.08  0.88  0.05  1.00
-                    large     324 -0.23  0.38   0.30  0.28  0.96  0.09  0.99
         """
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
