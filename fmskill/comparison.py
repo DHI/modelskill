@@ -2397,11 +2397,11 @@ class ComparerCollection(Mapping, Sequence):
 
         df = cmp._construct_all_df()
         mod_names = cmp.mod_names  # df.model.unique()
-        obs_names = cmp.obs_names  # df.observation.unique()
+        # obs_names = cmp.obs_names  # df.observation.unique()
         var_names = cmp.var_names  # self.var_names
         # if self.n_variables > 1:
         #     var_names = df.variable.unique()
-        n_models = len(mod_names)
+        # n_models = len(mod_names)
 
         # skill assessment
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
@@ -2412,9 +2412,9 @@ class ComparerCollection(Mapping, Sequence):
         skilldf = s.df
 
         # weights
-        weights = cmp._parse_weights(weights, obs_names)
+        weights = cmp._parse_weights(weights, s.obs_names)
         skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, n_models)
+            skilldf.n if weights is None else np.tile(weights, len(mod_names))
         )
 
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
