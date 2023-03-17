@@ -173,6 +173,9 @@ def test_mm_skill_area_polygon(cc):
     s = cc.skill(model="SW_2", area=polygon)
     assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
+
+def test_mm_mean_skill_area_polygon(cc):
+    polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
     s = cc.mean_skill(area=polygon)
     assert pytest.approx(s.loc["SW_2"].rmse) == 0.3349027897
 
