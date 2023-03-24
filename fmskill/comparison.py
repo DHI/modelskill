@@ -324,11 +324,11 @@ class SingleObsComparer:
     #      purple:   #93509E
     _obs_name = "Observation"
 
-    def __init__(self, observation, modeldata):
-        self.data = None
-        self.raw_mod_data = (
-            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-        )
+    # def __init__(self, observation, modeldata):
+    #    self.data = None
+    #    self.raw_mod_data = (
+    #        self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+    #    )
 
     def _parse_modeldata_list(self, modeldata):
         """Convert to dict of dataframes"""
@@ -395,10 +395,7 @@ class SingleObsComparer:
     @property
     def time(self) -> pd.DatetimeIndex:
         """time of compared data as pandas DatetimeIndex"""
-        if hasattr(self.data, "time"):
-            return self.data.time.to_index()
-        else:
-            return self.data.index
+        return self.data.time.to_index()
 
     @property
     def _mod_start(self) -> pd.Timestamp:
@@ -533,7 +530,9 @@ class SingleObsComparer:
         if not isinstance(other, (SingleObsComparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        if isinstance(other, SingleObsComparer) and (self.name == other.name):
+        if isinstance(other, (PointComparer, TrackComparer)) and (
+            self.name == other.name
+        ):
             assert type(self) == type(other), "Must be same type!"
             missing_models = set(self.mod_names) - set(other.mod_names)
             if len(missing_models) == 0:
@@ -1306,7 +1305,9 @@ class PointComparer(SingleObsComparer):
     ):
         if observation is None and modeldata is None:
             return
-        super().__init__(observation, modeldata)
+        self.raw_mod_data = (
+            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        )
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
         mod_end = self._mod_end + timedelta(seconds=1)
@@ -1358,7 +1359,9 @@ class TrackComparer(SingleObsComparer):
     def __init__(self, observation, modeldata, max_model_gap: float = None):
         if observation is None and modeldata is None:
             return
-        super().__init__(observation, modeldata)
+        self.raw_mod_data = (
+            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        )
         assert isinstance(observation, TrackObservation)
         observation = deepcopy(observation)
         observation.data = observation.data[self._mod_start : self._mod_end]
