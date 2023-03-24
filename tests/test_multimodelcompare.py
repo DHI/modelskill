@@ -177,9 +177,19 @@ def test_mm_skill_area_polygon(cc):
 
 
 def test_mm_mean_skill_area_polygon(cc):
+
+    # The OGC standard definition requires a polygon to be topologically closed.
+    # It also states that if the exterior linear ring of a polygon is defined in a counterclockwise direction, then it will be seen from the "top".
+    # Any interior linear rings should be defined in opposite fashion compared to the exterior ring, in this case, clockwise
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
     s = cc.mean_skill(area=polygon)
     assert pytest.approx(s.loc["SW_2"].rmse) == 0.3349027897
+
+    closed_polygon = ((6, 51), (0, 55), (0, 51), (6, 51))
+    s2 = cc.mean_skill(area=closed_polygon)
+    assert pytest.approx(s2.loc["SW_2"].rmse) == 0.3349027897
+
+    # TODO support for polygons with holes
 
 
 def test_mm_skill_area_error(cc):
