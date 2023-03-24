@@ -16,13 +16,14 @@ import warnings
 from inspect import getmembers, isfunction
 import numpy as np
 import pandas as pd
+import xarray as xr
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
 
 import mikeio
 import fmskill.metrics as mtr
-from .observation import PointObservation, TrackObservation
+from .observation import Observation, PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
 from .spatial import SpatialSkill
@@ -295,139 +296,152 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 class SingleObsComparer:
-    def __init__(self, observation, modeldata):
+    _mod_colors = [
+        "#1f78b4",
+        "#33a02c",
+        "#ff7f00",
+        "#93509E",
+        "#63CEFF",
+        "#fdbf6f",
+        "#004165",
+        "#8B8D8E",
+        "#0098DB",
+        "#61C250",
+        "#a6cee3",
+        "#b2df8a",
+        "#fb9a99",
+        "#cab2d6",
+        "#003f5c",
+        "#2f4b7c",
+        "#665191",
+        "#e31a1c",
+    ]
+    #      darkblue: #004165
+    #      midblue:  #0098DB,
+    #      gray:     #8B8D8E,
+    #      lightblue:#63CEFF,
+    #      green:    #61C250
+    #      purple:   #93509E
+    _obs_name = "Observation"
 
-        # self._metrics = options.metrics.list
-        self.obs_name = "Observation"
-        # self._obs_names: List[str]
-        self._mod_names: List[str]
-        self._mod_colors = [
-            "#1f78b4",
-            "#33a02c",
-            "#ff7f00",
-            "#93509E",
-            "#63CEFF",
-            "#fdbf6f",
-            "#004165",
-            "#8B8D8E",
-            "#0098DB",
-            "#61C250",
-            "#a6cee3",
-            "#b2df8a",
-            "#fb9a99",
-            "#cab2d6",
-            "#003f5c",
-            "#2f4b7c",
-            "#665191",
-            "#e31a1c",
-        ]
+    # def __init__(self, observation, modeldata):
+    #    self.data = None
+    #    self.raw_mod_data = (
+    #        self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+    #    )
 
-        self._resi_color = "#8B8D8E"
-        self._obs_unit_text = ""
-        #      darkblue: #004165
-        #      midblue:  #0098DB,
-        #      gray:     #8B8D8E,
-        #      lightblue:#63CEFF,
-        #      green:    #61C250
-        #      purple:   #93509E
-        self.mod_data = None
-        self.data = None
-        # self._all_df = None
+    def _parse_modeldata_list(self, modeldata):
+        """Convert to dict of dataframes"""
+        if not isinstance(modeldata, Sequence):
+            modeldata = [modeldata]
 
-        self._mod_start = pd.Timestamp.max
-        self._mod_end = pd.Timestamp.min
+        mod_dfs = [self._parse_single_modeldata(m) for m in modeldata]
+        return {m.columns[-1]: m for m in mod_dfs if m is not None}
 
-        self.observation = deepcopy(observation)
-        self._obs_unit_text = self.observation._unit_text()
-        self.mod_data = {}
-        # self._obs_names = [observation.name]
-        self._var_names = [observation.variable_name]
-        self._itemInfos = [observation.itemInfo]
-
-        self.add_modeldata(modeldata)
-
-    def add_modeldata(self, modeldata):
-        if modeldata is None:
-            warnings.warn("Cannot add 'None' modeldata")
-            return
-
-        if isinstance(modeldata, list):
-            for data in modeldata:
-                self.add_modeldata(data)
-            return
-
-        if isinstance(modeldata, mikeio.Dataset):
+    @staticmethod
+    def _parse_single_modeldata(modeldata):
+        """Convert to dataframe and set index to pd.DatetimeIndex"""
+        if isinstance(modeldata, (mikeio.Dataset, xr.DataArray, xr.Dataset)):
             mod_df = modeldata.to_dataframe()
         elif isinstance(modeldata, pd.DataFrame):
-            # TODO: add validation
             mod_df = modeldata
         else:
             raise ValueError(
-                f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset or pd.DataFrame)"
+                f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
             )
         if len(mod_df) == 0:
-            warnings.warn("Cannot add zero-length modeldata")
+            warnings.warn(f"Cannot add zero-length modeldata ({mod_df.columns[-1]})")
             return
-
-        mod_name = mod_df.columns[-1]
-        self.mod_data[mod_name] = mod_df
-        self._mod_names = list(self.mod_data.keys())
-
         time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
+        return mod_df
 
-        if mod_df.index[0] < self._mod_start:
-            self._mod_start = mod_df.index[0].to_pydatetime()
-        if mod_df.index[-1] > self._mod_end:
-            self._mod_end = mod_df.index[-1].to_pydatetime()
+    @classmethod
+    def from_compared_data(cls, data, raw_mod_data=None):
+        """Initialize from compared data"""
+        cmp = cls(observation=None, modeldata=None)
+        cmp.data = data
+        if raw_mod_data is not None:
+            cmp.raw_mod_data = raw_mod_data
+        return cmp
 
     def __repr__(self):
         out = []
         out.append(f"<{type(self).__name__}>")
-        out.append(f"Observation: {self.observation.name}, n_points={self.n_points}")
+        out.append(f"Observation: {self.name}, n_points={self.n_points}")
         for model in self.mod_names:
             out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
         return str.join("\n", out)
 
     @property
-    def x(self) -> float:
-        return self.observation.x
-
-    @property
-    def y(self) -> float:
-        return self.observation.y
-
-    @property
     def name(self) -> str:
         """name of comparer (=observation)"""
-        return self.observation.name
+        return self.data.attrs["name"]
 
     @property
-    def _obs_names(self):
-        return [self.observation.name]
+    def gtype(self):
+        return self.data.attrs["gtype"]
+
+    @property
+    def variable_name(self) -> str:
+        """name of variable"""
+        return self.data.attrs["variable_name"]
 
     @property
     def n_points(self) -> int:
         """number of compared points"""
-        return len(self.data)
+        return len(self.data[self._obs_name]) if self.data else 0
 
     @property
-    def start(self) -> datetime:
-        """start datetime of compared data"""
-        return self.data.index[0].to_pydatetime()
+    def time(self) -> pd.DatetimeIndex:
+        """time of compared data as pandas DatetimeIndex"""
+        return self.data.time.to_index()
 
     @property
-    def end(self) -> datetime:
-        """end datetime of compared data"""
-        return self.data.index[-1].to_pydatetime()
+    def _mod_start(self) -> pd.Timestamp:
+        mod_starts = [pd.Timestamp.max]
+        for m in self.raw_mod_data.values():
+            mod_starts.append(m.index[0])
+        return min(mod_starts)
+
+    @property
+    def _mod_end(self) -> pd.Timestamp:
+        mod_ends = [pd.Timestamp.min]
+        for m in self.raw_mod_data.values():
+            mod_ends.append(m.index[-1])
+        return max(mod_ends)
+
+    @property
+    def start(self) -> pd.Timestamp:
+        """start pd.Timestamp of compared data"""
+        return self.time[0]
+
+    @property
+    def end(self) -> pd.Timestamp:
+        """end pd.Timestamp of compared data"""
+        return self.time[-1]
+
+    @property
+    def x(self):
+        if "x" in self.data[self._obs_name].attrs.keys():
+            return self.data[self._obs_name].attrs["x"]
+        else:
+            return self.data["x"].values
+
+    @property
+    def y(self):
+        if "y" in self.data[self._obs_name].attrs.keys():
+            return self.data[self._obs_name].attrs["y"]
+        else:
+            return self.data["y"].values
 
     @property
     def obs(self) -> np.ndarray:
-        return self.data[self.obs_name].values
+        return self.data[self._obs_name].to_dataframe().values
 
     @property
     def mod(self) -> np.ndarray:
-        return self.data[self.mod_names].values
+        return self.data[self.mod_names].to_dataframe().values
 
     @property
     def n_models(self) -> int:
@@ -435,11 +449,15 @@ class SingleObsComparer:
 
     @property
     def mod_names(self) -> List[str]:
-        return self._mod_names  # list(self.mod_data.keys())
+        return list(self.raw_mod_data.keys())
 
     @property
-    def n_variables(self) -> int:
-        return len(self._var_names)
+    def weight(self) -> str:
+        return self.data[self._obs_name].attrs["weight"]
+
+    @property
+    def _unit_text(self) -> str:
+        return self.data[self._obs_name].attrs["unit"]
 
     @property
     def metrics(self):
@@ -452,19 +470,17 @@ class SingleObsComparer:
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
-    def _construct_all_df(self) -> pd.DataFrame:
-        # TODO: var_name
-        res = _all_df_template(self.n_variables)
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert to pandas DataFrame"""
+        res = _all_df_template(n_variables=1)
         frames = []
         cols = res.keys()
         for j in range(self.n_models):
             mod_name = self.mod_names[j]
-            df = self.data[[mod_name]].copy()
+            df = self.data[[mod_name]].to_dataframe().copy()
             df.columns = ["mod_val"]
             df["model"] = mod_name
-            df["observation"] = self.observation.name
-            if self.n_variables > 1:
-                df["variable"] = self.observation.variable_name
+            df["observation"] = self.name
             df["x"] = self.x
             df["y"] = self.y
             df["obs_val"] = self.obs
@@ -481,6 +497,32 @@ class SingleObsComparer:
     def copy(self):
         return self.__copy__()
 
+    def _to_observation(self) -> Observation:
+        """Convert to Observation"""
+        if self.gtype == "point":
+            df = self.data[self._obs_name].to_dataframe()
+            return PointObservation(
+                data=df,
+                name=self.name,
+                x=self.x,
+                y=self.y,
+                variable_name=self.variable_name,
+                # units=self._unit_text,
+            )
+        elif self.gtype == "track":
+            df = self.data[["x", "y", self._obs_name]].to_dataframe()
+            return TrackObservation(
+                data=df,
+                item=2,
+                x_item=0,
+                y_item=1,
+                name=self.name,
+                variable_name=self.variable_name,
+                # units=self._unit_text,
+            )
+        else:
+            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
     def __add__(
         self, other: Union["SingleObsComparer", "ComparerCollection"]
     ) -> "ComparerCollection":
@@ -488,14 +530,20 @@ class SingleObsComparer:
         if not isinstance(other, (SingleObsComparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        if isinstance(other, SingleObsComparer) and (self.name == other.name):
+        if isinstance(other, (PointComparer, TrackComparer)) and (
+            self.name == other.name
+        ):
             assert type(self) == type(other), "Must be same type!"
             missing_models = set(self.mod_names) - set(other.mod_names)
             if len(missing_models) == 0:
                 # same obs name and same model names
-                cc = self.copy()
-                cc.data = pd.concat([cc.data, other.data])
-                cc.data = cc.data[~cc.data.index.duplicated(keep="last")]  # 'first'
+                cmp = self.copy()
+                cmp.data = xr.concat([cmp.data, other.data], dim="time")
+                # cc.data = cc.data[
+                #    ~cc.data.time.to_index().duplicated(keep="last")
+                # ]  # 'first'
+                _, index = np.unique(cmp.data["time"], return_index=True)
+                cmp.data = cmp.data.isel(time=index)
 
             else:
                 cols = ["x", "y"] if isinstance(self, TrackComparer) else []
@@ -504,92 +552,70 @@ class SingleObsComparer:
                     mod_data.append(other.data[cols + [m]])
 
                 cls = self.__class__
-                cc = cls.__new__(cls)
-                cc.__init__(self.observation, mod_data)
+                cmp = cls.__new__(cls)
+                cmp.__init__(self._to_observation(), mod_data)
+                # TODO cmp = cls.clone()
+
+            return cmp
         else:
             cc = ComparerCollection()
             cc.add_comparer(self)
             cc.add_comparer(other)
-
-        return cc
+            return cc
 
     def _model2obs_interp(
         self, obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]
     ):
         """interpolate model to measurement time"""
         df = _interp_time(mod_df.dropna(), obs.time)
-        df[self.obs_name] = obs.values
+        df[self._obs_name] = obs.values
 
         if max_model_gap is not None:
             df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
 
         return df
 
-    def sel_df(
+    def sel(
         self,
         model: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
+        time: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
-        """Select/filter data from all the compared data.
-        Used by compare.scatter and compare.skill to select data.
-
-        Parameters
-        ----------
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
-
-        Returns
-        -------
-        pd.DataFrame
-            selected data in a dataframe with columns (model,observation,x,y,mod_val,obs_val)
-
-        See also
-        --------
-        skill
-            a method for aggregated skill assessment
-        scatter
-            a method for plotting compared data
-
-        Examples
-        --------
-        >>> cc = con.extract()
-        >>> dfsub = cc['c2'].sel_df(model=0)
-        >>> dfsub = cc['c2'].sel_df(start='2017-10-1', end='2017-11-1')
-        >>> dfsub = cc['c2'].sel_df(area=[0.5,52.5,5,54])
-        """
-        if df is None:
-            df = self._construct_all_df()
+    ) -> "SingleObsComparer":
+        d = self.data
+        raw_mod_data = self.raw_mod_data
         if model is not None:
             models = [model] if np.isscalar(model) else model
             models = [_get_name(m, self.mod_names) for m in models]
-            df = df[df.model.isin(models)]
+            dropped_models = [m for m in self.mod_names if m not in models]
+            d = d.drop_vars(dropped_models)
+            raw_mod_data = {m: raw_mod_data[m] for m in models}
         if (start is not None) or (end is not None):
-            df = df.loc[start:end]
+            if time is not None:
+                raise ValueError("Cannot use both time and start/end")
+            # TODO: can this be done without to_index? (simplify)
+            d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)
+        if time is not None:
+            if (start is not None) or (end is not None):
+                raise ValueError("Cannot use both time and start/end")
+            d = d.sel(time=time)
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
-                df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
+                mask = (self.x > x0) & (self.x < x1) & (self.y > y0) & (self.y < y1)
             elif _area_is_polygon(area):
                 polygon = np.array(area)
-                xy = np.column_stack((df.x.values, df.y.values))
+                xy = np.column_stack((self.x, self.y))
                 mask = _inside_polygon(polygon, xy)
-                df = df[mask]
             else:
                 raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
-        return df
+            if self.gtype == "point":
+                # if False, return empty data
+                d = d if mask else d.isel(time=slice(None, 0))
+            else:
+                d = d.isel(time=mask)
+        return self.__class__.from_compared_data(d, raw_mod_data)
 
     def skill(
         self,
@@ -599,7 +625,6 @@ class SingleObsComparer:
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> AggregatedSkill:
         """Skill assessment of model(s)
 
@@ -626,8 +651,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -636,7 +659,7 @@ class SingleObsComparer:
 
         See also
         --------
-        sel_df
+        sel
             a method for filtering/selecting data
 
         Examples
@@ -652,45 +675,30 @@ class SingleObsComparer:
         2017-10-27  72 -0.19  0.31   0.25  0.26  0.48  0.12  0.98
         2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
-
-        >>> df = cc['c2'].sel_df().copy()
-        >>> df['Hm0 group'] = pd.cut(df.obs_val, bins=[0,2,6])
-        >>> cc['c2'].skill(by='Hm0 group', df=df).round(2)
-                    n  bias  rmse  urmse   mae    cc    si    r2
-        Hm0 group
-        (0, 2]     33 -0.09  0.23   0.22  0.21  0.46  0.12  0.98
-        (2, 6]     80  0.03  0.39   0.39  0.33  0.97  0.12  0.99
         """
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
-        df = self.sel_df(
+        cmp = self.sel(
             model=model,
             start=start,
             end=end,
             area=area,
-            df=df,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
-        n_models = len(df.model.unique())
-        n_obs = 1
-        n_var = len(df.variable.unique()) if (self.n_variables > 1) else 1
-        by = _parse_groupby(by, n_models, n_obs, n_var)
+        by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
 
+        df = cmp.to_dataframe()  # TODO: avoid df if possible?
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
 
-    def _add_as_col_if_not_in_index(
-        self, df, skilldf, fields=["model", "observation", "variable"]
-    ):
+    def _add_as_col_if_not_in_index(self, df, skilldf, fields=["model", "observation"]):
         """Add a field to skilldf if unique in df"""
         for field in reversed(fields):
             if (field == "model") and (self.n_models <= 1):
-                continue
-            if (field == "variable") and (self.n_variables <= 1):
                 continue
             if field not in skilldf.index.names:
                 unames = df[field].unique()
@@ -705,7 +713,6 @@ class SingleObsComparer:
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> float:
         """Model skill score
 
@@ -723,8 +730,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -756,7 +761,6 @@ class SingleObsComparer:
             start=start,
             end=end,
             area=area,
-            df=df,
         )
         if s is None:
             return
@@ -777,7 +781,6 @@ class SingleObsComparer:
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
@@ -810,8 +813,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -847,22 +848,22 @@ class SingleObsComparer:
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
-        df = self.sel_df(
+        cmp = self.sel(
             model=model,
             start=start,
             end=end,
             area=area,
-            df=df,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
+        df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        n_models = len(df.model.unique())
-        n_obs = len(df.observation.unique())
-        by = _parse_groupby(by, n_models, n_obs)
+        # n_models = len(df.model.unique())
+        # n_obs = len(df.observation.unique())
+        by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]
         if not "x" in by:
@@ -894,7 +895,6 @@ class SingleObsComparer:
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
         binsize: float = None,
         nbins: int = None,
         skill_table: Union[str, List[str], bool] = None,
@@ -954,8 +954,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
         skill_table : str, List[str], bool, optional
             list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
@@ -975,31 +973,28 @@ class SingleObsComparer:
         mod_name = self.mod_names[mod_id]
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=mod_name,
             start=start,
             end=end,
             area=area,
         )
-        if len(df) == 0:
+
+        if cmp.n_points == 0:
             raise Exception("No data found in selection")
 
-        x = df.obs_val
-        y = df.mod_val
+        x = np.squeeze(cmp.obs)
+        y = np.squeeze(cmp.mod)
 
-        unit_text = self._obs_unit_text
-        if isinstance(self, ComparerCollection):
-            unit_text = self[df.observation[0]]._obs_unit_text
-
+        unit_text = cmp._unit_text
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{self.mod_names[mod_id]} vs {self.name}"
+        title = title or f"{cmp.mod_names[mod_id]} vs {cmp.name}"
 
         skill_df = None
         units = None
         if skill_table:
-            skill_df = self.skill(df=df, model=model)
+            skill_df = cmp.skill()
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except:
@@ -1057,8 +1052,6 @@ class SingleObsComparer:
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         figsize : tuple, optional
@@ -1121,12 +1114,12 @@ class SingleObsComparer:
         if correct == "Model":
             for j in range(self.n_models):
                 mod_name = self.mod_names[j]
-                mod_df = self.mod_data[mod_name]
+                mod_df = self.raw_mod_data[mod_name]
                 mod_df[mod_name] = mod_df.values - bias[j]
-            self.data[self.mod_names] = self.mod - bias
+                self.data[mod_name] = self.data[mod_name] - bias[j]
         elif correct == "Observation":
             # what if multiple models?
-            self.data[self.obs_name] = self.obs + bias
+            self.data[self._obs_name] = self.obs + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
@@ -1146,11 +1139,13 @@ class SingleObsComparer:
             residual color, by default "#8B8D8E"
         kwargs : other keyword arguments to plt.hist()
         """
-        color = self._resi_color if color is None else color
+
+        default_color = "#8B8D8E"
+        color = default_color if color is None else color
         title = f"Residuals, {self.name}" if title is None else title
         plt.hist(self.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
-        plt.xlabel(f"Residuals of {self._obs_unit_text}")
+        plt.xlabel(f"Residuals of {self._unit_text}")
 
     def hist(
         self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
@@ -1190,60 +1185,24 @@ class SingleObsComparer:
 
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        ax = self.data[mod_name].hist(
-            bins=bins, color=self._mod_colors[mod_id], **kwargs
+
+        ax = (
+            self.data[mod_name]
+            .to_series()
+            .hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
         )
-        self.data[self.obs_name].hist(
-            bins=bins, color=self.observation.color, ax=ax, **kwargs
+        self.data[self._obs_name].to_series().hist(
+            bins=bins, color=self.data[self._obs_name].attrs["color"], ax=ax, **kwargs
         )
-        ax.legend([mod_name, self.obs_name])
+        ax.legend([mod_name, self._obs_name])
         plt.title(title)
-        plt.xlabel(f"{self._obs_unit_text}")
+        plt.xlabel(f"{self._unit_text}")
         if density:
             plt.ylabel("density")
         else:
             plt.ylabel("count")
 
         return ax
-
-
-class PointComparer(SingleObsComparer):
-    """
-    Comparer for observations from fixed locations
-
-    Examples
-    --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
-    >>> con = Connector(o1, mr)
-    >>> comparer = con.extract()
-    >>> comparer['Klagshamn']
-    """
-
-    def __init__(
-        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
-    ):
-        super().__init__(observation, modeldata)
-        assert isinstance(observation, PointObservation)
-        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
-        mod_end = self._mod_end + timedelta(seconds=1)
-        self.observation.data = self.observation.data[mod_start:mod_end]
-
-        if not isinstance(modeldata, list):
-            modeldata = [modeldata]
-        # max_model_gap = self._parse_max_gap(modeldata, max_model_gap)
-
-        for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data, max_model_gap).iloc[
-                :, ::-1
-            ]
-            if j == 0:
-                self.data = df
-            else:
-                self.data[self.mod_names[j]] = df[self.mod_names[j]]
-
-        self.data.index.name = "datetime"
-        self.data.dropna(inplace=True)
 
     def plot_timeseries(
         self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
@@ -1277,16 +1236,17 @@ class PointComparer(SingleObsComparer):
             _, ax = plt.subplots(figsize=figsize)
             for j in range(self.n_models):
                 key = self.mod_names[j]
-                self.mod_data[key].plot(ax=ax, color=self._mod_colors[j])
+                mod_df = self.raw_mod_data[key]
+                mod_df[key].plot(ax=ax, color=self._mod_colors[j])
 
             ax.scatter(
-                self.data.index,
-                self.data[[self.obs_name]],
+                self.time,
+                self.data[self._obs_name].values,
                 marker=".",
-                color=self.observation.color,
+                color=self.data[self._obs_name].attrs["color"],
             )
-            ax.set_ylabel(self._obs_unit_text)
-            ax.legend([*self.mod_names, self.obs_name])
+            ax.set_ylabel(self._unit_text)
+            ax.legend([*self.mod_names, self._obs_name])
             ax.set_ylim(ylim)
             plt.title(title)
             return ax
@@ -1297,11 +1257,11 @@ class PointComparer(SingleObsComparer):
             mod_scatter_list = []
             for j in range(self.n_models):
                 key = self.mod_names[j]
-                mod_df = self.mod_data[key]
+                mod_df = self.raw_mod_data[key]
                 mod_scatter_list.append(
                     go.Scatter(
                         x=mod_df.index,
-                        y=mod_df.iloc[:, 0],
+                        y=mod_df[key],
                         name=key,
                         line=dict(color=self._mod_colors[j]),
                     )
@@ -1311,21 +1271,77 @@ class PointComparer(SingleObsComparer):
                 [
                     *mod_scatter_list,
                     go.Scatter(
-                        x=self.data.index,
-                        y=self.data[self.obs_name],
-                        name=self.obs_name,
+                        x=self.time,
+                        y=self.data[self._obs_name].values,
+                        name=self._obs_name,
                         mode="markers",
-                        marker=dict(color=self.observation.color),
+                        marker=dict(color=self.data[self._obs_name].attrs["color"]),
                     ),
                 ]
             )
 
-            fig.update_layout(title=title, yaxis_title=self._obs_unit_text, **kwargs)
+            fig.update_layout(title=title, yaxis_title=self._unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
 
             fig.show()
         else:
             raise ValueError(f"Plotting backend: {backend} not supported")
+
+
+class PointComparer(SingleObsComparer):
+    """
+    Comparer for observations from fixed locations
+
+    Examples
+    --------
+    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+    >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> con = Connector(o1, mr)
+    >>> comparer = con.extract()
+    >>> comparer['Klagshamn']
+    """
+
+    def __init__(
+        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
+    ):
+        if observation is None and modeldata is None:
+            return
+        self.raw_mod_data = (
+            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        )
+        assert isinstance(observation, PointObservation)
+        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
+        mod_end = self._mod_end + timedelta(seconds=1)
+        observation = deepcopy(observation)
+        observation.data = observation.data[mod_start:mod_end]
+
+        modeldata_list = list(self.raw_mod_data.values())
+        if len(modeldata_list) == 0:
+            return
+
+        for j, mdata in enumerate(modeldata_list):
+            df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[:, ::-1]
+            if j == 0:
+                data = df
+            else:
+                data[self.mod_names[j]] = df[self.mod_names[j]]
+
+        data.index.name = "time"
+        data.dropna(inplace=True)
+        data = data.to_xarray()
+        data.attrs["gtype"] = "point"
+        data.attrs["name"] = observation.name
+        data.attrs["variable_name"] = observation.variable_name
+        data[self._obs_name].attrs["kind"] = "observation"
+        data[self._obs_name].attrs["x"] = observation.x
+        data[self._obs_name].attrs["y"] = observation.y
+        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["color"] = observation.color
+        data[self._obs_name].attrs["weight"] = observation.weight
+        for n in self.mod_names:
+            data[n].attrs["kind"] = "model"
+            data.attrs["gtype"] = "point"
+        self.data = data
 
 
 class TrackComparer(SingleObsComparer):
@@ -1341,29 +1357,26 @@ class TrackComparer(SingleObsComparer):
     >>> comparer['c2']
     """
 
-    @property
-    def x(self):
-        return self.data.iloc[:, 0]
-
-    @property
-    def y(self):
-        return self.data.iloc[:, 1]
-
     def __init__(self, observation, modeldata, max_model_gap: float = None):
-        super().__init__(observation, modeldata)
+        if observation is None and modeldata is None:
+            return
+        self.raw_mod_data = (
+            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        )
         assert isinstance(observation, TrackObservation)
-        self.observation.data = self.observation.data[self._mod_start : self._mod_end]
+        observation = deepcopy(observation)
+        observation.data = observation.data[self._mod_start : self._mod_end]
 
-        if not isinstance(modeldata, list):
-            modeldata = [modeldata]
-        # max_model_gap = self._parse_max_gap(modeldata, max_model_gap)
+        modeldata_list = list(self.raw_mod_data.values())
+        if len(modeldata_list) == 0:
+            return
 
-        for j, data in enumerate(modeldata):
-            df = self._model2obs_interp(self.observation, data, max_model_gap)
+        for j, mdata in enumerate(modeldata_list):
+            df = self._model2obs_interp(observation, mdata, max_model_gap)
             # rename first columns to x, y
             df.columns = ["x", "y", *list(df.columns)[2:]]
-            if (len(df) > 0) and (len(df) == len(self.observation.data)):
-                ok = self._obs_mod_xy_distance_acceptable(df, self.observation.data)
+            if (len(df) > 0) and (len(df) == len(observation.data)):
+                ok = self._obs_mod_xy_distance_acceptable(df, observation.data)
                 # set model to NaN if too far away from obs location
                 df.loc[~ok, self.mod_names[j]] = np.nan
                 if sum(ok) == 0:
@@ -1372,13 +1385,26 @@ class TrackComparer(SingleObsComparer):
                     )
             if j == 0:
                 # change order of obs and model
-                cols = ["x", "y", self.obs_name, self.mod_names[j]]
-                self.data = df[cols]
+                cols = ["x", "y", self._obs_name, self.mod_names[j]]
+                data = df[cols]
             else:
-                self.data[self.mod_names[j]] = df[self.mod_names[j]]
+                data[self.mod_names[j]] = df[self.mod_names[j]]
 
-        self.data.index.name = "datetime"
-        self.data = self.data.dropna()
+        data.index.name = "time"
+        data = data.dropna()
+        data = data.to_xarray()
+        data.attrs["gtype"] = "track"
+        data.attrs["name"] = observation.name
+        data.attrs["variable_name"] = observation.variable_name
+        data["x"].attrs["kind"] = "position"
+        data["y"].attrs["kind"] = "position"
+        data[self._obs_name].attrs["kind"] = "observation"
+        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["color"] = observation.color
+        data[self._obs_name].attrs["weight"] = observation.weight
+        for n in self.mod_names:
+            data[n].attrs["kind"] = "model"
+        self.data = data
 
     def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
         mod_xy = df_mod.loc[:, ["x", "y"]].values
@@ -1410,9 +1436,48 @@ class ComparerCollection(Mapping, Sequence):
     >>> comparer = con.extract()
     """
 
+    def __init__(self, comparers=None):
+        self.comparers = {}
+        self.add_comparer(comparers)
+
+    def add_comparer(
+        self, comparer: Union["SingleObsComparer", "ComparerCollection"]
+    ) -> None:
+        """Add another Comparer to this collection.
+
+        Parameters
+        ----------
+        comparer : (PointComparer, TrackComparer, ComparerCollection)
+            Comparer to add to this collection
+        """
+        if isinstance(comparer, (ComparerCollection, Sequence)):
+            for c in comparer:
+                self._add_comparer(c)
+        else:
+            self._add_comparer(comparer)
+
+    def _add_comparer(self, comparer: SingleObsComparer) -> None:
+        if comparer is None:
+            return
+        assert isinstance(
+            comparer, SingleObsComparer
+        ), f"comparer must be a SingleObsComparer, not {type(comparer)}"
+        if comparer.name in self.comparers:
+            # comparer with this name already exists!
+            # maybe the user is trying to add a new model
+            # or a new time period
+            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer
+        else:
+            self.comparers[comparer.name] = comparer
+
     @property
     def name(self) -> str:
         return "Observations"
+
+    @property
+    def n_comparers(self) -> int:
+        """Number of comparers"""
+        return len(self.comparers)
 
     @property
     def n_points(self) -> int:
@@ -1420,48 +1485,25 @@ class ComparerCollection(Mapping, Sequence):
         return sum([c.n_points for c in self.comparers.values()])
 
     @property
-    def start(self) -> datetime:
-        """start datetime of compared data"""
-        return self._start
+    def start(self) -> pd.Timestamp:
+        """start timestamp of compared data"""
+        starts = [pd.Timestamp.max]
+        for cmp in self.comparers.values():
+            starts.append(cmp.time[0])
+        return min(starts)
 
     @property
-    def end(self) -> datetime:
-        """end datetime of compared data"""
-        return self._end
+    def end(self) -> pd.Timestamp:
+        """end timestamp of compared data"""
+        ends = [pd.Timestamp.min]
+        for cmp in self.comparers.values():
+            ends.append(cmp.time[-1])
+        return max(ends)
 
     @property
-    def var_names(self):
-        """List of variable names"""
-        return self._var_names
-
-    @var_names.setter
-    def var_names(self, value):
-        if np.isscalar(value):
-            value = [value]
-        if len(value) != self.n_variables:
-            raise ValueError(f"Length of var_names must be {self.n_variables}")
-        for var_id, new_var in enumerate(value):
-            for c in self.comparers.values():
-                if c._var_names[0] == self.var_names[var_id]:
-                    c.observation.variable_name = new_var
-                    c._var_names = [new_var]
-        # if self.n_variables > 1:
-        #     if self._all_df is not None:
-        #         self._all_df["variable"]
-        #         for old_var, new_var in zip(self.var_names, value):
-        #             self._all_df.loc[
-        #                 self._all_df.variable == old_var, "variable"
-        #             ] = new_var
-        self._var_names = value
-
-    @property
-    def obs_names(self):
+    def obs_names(self) -> List[str]:
         """List of observation names"""
-        return self._obs_names
-
-    @property
-    def _obs_names(self):
-        return [c.observation.name for c in self.comparers.values()]
+        return [c.name for c in self.comparers.values()]
 
     @property
     def n_observations(self) -> int:
@@ -1469,16 +1511,32 @@ class ComparerCollection(Mapping, Sequence):
         return self.n_comparers
 
     @property
+    def mod_names(self) -> List[str]:
+        """List of unique model names"""
+        unique_names = []
+        for cmp in self.comparers.values():
+            for n in cmp.mod_names:
+                if n not in unique_names:
+                    unique_names.append(n)
+        return unique_names
+
+    @property
     def n_models(self) -> int:
         return len(self.mod_names)
 
     @property
-    def mod_names(self) -> List[str]:
-        return self._mod_names  # list(self.mod_data.keys())
+    def var_names(self) -> List[str]:
+        """List of unique variable names"""
+        unique_names = []
+        for cmp in self.comparers.values():
+            n = cmp.variable_name
+            if n not in unique_names:
+                unique_names.append(n)
+        return unique_names
 
     @property
     def n_variables(self) -> int:
-        return len(self._var_names)
+        return len(self.var_names)
 
     @property
     def metrics(self):
@@ -1492,16 +1550,12 @@ class ComparerCollection(Mapping, Sequence):
             options.metrics.list = _parse_metric(values, self.metrics)
 
     @property
-    def n_comparers(self) -> int:
-        """Number of comparers"""
-        return len(self.comparers)
-
-    @property
     def data(self) -> pd.DataFrame:
-        """Return a copy of the data"""
-        return self._construct_all_df()
+        """Return a copy of the data as a pandas DataFrame"""
+        return self.to_dataframe()
 
-    def _construct_all_df(self) -> pd.DataFrame:
+    def to_dataframe(self) -> pd.DataFrame:
+        """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
         res = _all_df_template(self.n_variables)
         frames = []
@@ -1509,38 +1563,21 @@ class ComparerCollection(Mapping, Sequence):
         for cmp in self.comparers.values():
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
-                df = cmp.data[[mod_name]].copy()
+                df = cmp.data[[mod_name]].to_dataframe().copy()
                 df.columns = ["mod_val"]
                 df["model"] = mod_name
-                df["observation"] = cmp.observation.name
+                df["observation"] = cmp.name
                 if self.n_variables > 1:
-                    df["variable"] = cmp.observation.variable_name
+                    df["variable"] = cmp.variable_name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
                 frames.append(df[cols])
         if len(frames) > 0:
             res = pd.concat(frames)
-        _all_df = res.sort_index()
-        _all_df.index.name = "datetime"
-        return _all_df
-
-    def __init__(self, comparers=None):
-        # self._metrics = options.metrics.list
-        # self._all_df = None
-        self._start = datetime(2900, 1, 1)
-        self._end = datetime(1, 1, 1)
-        self._mod_names = []
-        # self._obs_names = []
-        self._var_names = []
-        self._itemInfos = []
-
-        self.comparers = {}
-
-        if comparers is not None:
-            for c in comparers:
-                if c is not None:
-                    self._add_comparer(c)
+        res = res.sort_index()
+        res.index.name = "time"
+        return res
 
     def __repr__(self):
         out = []
@@ -1589,133 +1626,44 @@ class ComparerCollection(Mapping, Sequence):
         cc.add_comparer(other)
         return cc
 
-    def add_comparer(self, comparer: Union["SingleObsComparer", "ComparerCollection"]):
-        """Add another Comparer to this collection.
-
-        Parameters
-        ----------
-        comparer : (PointComparer, TrackComparer, ComparerCollection)
-            Comparer to add to this collection
-        """
-        if isinstance(comparer, ComparerCollection):
-            for c in comparer:
-                self._add_comparer(c)
-        else:
-            self._add_comparer(comparer)
-
-    def _add_comparer(self, comparer: SingleObsComparer):
-        if comparer.name in self.comparers:
-            # comparer with this name already exists!
-            # maybe the user is trying to add a new model
-            # or a new time period
-            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer
-        else:
-            self.comparers[comparer.name] = comparer
-
-        for mod_name in comparer.mod_names:
-            if mod_name not in self._mod_names:
-                self._mod_names.append(mod_name)
-        # self._obs_names.append(comparer.observation.name)
-        if comparer.observation.variable_name not in self._var_names:
-            self._var_names.append(comparer.observation.variable_name)
-
-        # check if already in...
-        self._itemInfos.append(comparer.observation.itemInfo)
-
-        if comparer.start < self.start:
-            self._start = comparer.start
-        if comparer.end > self.end:
-            self._end = comparer.end
-        self._obs_unit_text = comparer.observation._unit_text()
-
-        # self._all_df = None
-
-    def sel_df(
+    def sel(
         self,
         model: Union[str, int, List[str], List[int]] = None,
         observation: Union[str, int, List[str], List[int]] = None,
         variable: Union[str, int, List[str], List[int]] = None,
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
+        time: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
-    ) -> pd.DataFrame:
-        """Select/filter data from all the compared data.
-        Used by compare.scatter and compare.skill to select data.
+    ) -> "ComparerCollection":
 
-        Parameters
-        ----------
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
-
-        Returns
-        -------
-        pd.DataFrame
-            selected data in a dataframe with columns (mod_name,obs_name,x,y,mod_val,obs_val)
-
-        See also
-        --------
-        skill
-            a method for aggregated skill assessment
-        scatter
-            a method for plotting compared data
-
-        Examples
-        --------
-        >>> cc = con.extract()
-        >>> dfsub = cc.sel_df(observation=['EPL','HKNA'])
-        >>> dfsub = cc.sel_df(model=0)
-        >>> dfsub = cc.sel_df(start='2017-10-1', end='2017-11-1')
-        >>> dfsub = cc.sel_df(area=[0.5,52.5,5,54])
-
-        >>> cc.sel_df(observation='c2', start='2017-10-28').head(3)
-                           model observation      x       y   mod_val  obs_val
-        2017-10-28 01:00:00 SW_1         EPL  3.276  51.999  1.644092     1.82
-        2017-10-28 02:00:00 SW_1         EPL  3.276  51.999  1.755809     1.86
-        2017-10-28 03:00:00 SW_1         EPL  3.276  51.999  1.867526     2.11
-        """
-        if df is None:
-            df = self._construct_all_df()
-        if model is not None:
-            models = [model] if np.isscalar(model) else model
-            models = [_get_name(m, self.mod_names) for m in models]
-            df = df[df.model.isin(models)]
-        if observation is not None:
+        if observation is None:
+            observation = self.obs_names
+        else:
             observation = [observation] if np.isscalar(observation) else observation
             observation = [_get_name(o, self.obs_names) for o in observation]
-            df = df[df.observation.isin(observation)]
+
         if (variable is not None) and (self.n_variables > 1):
             variable = [variable] if np.isscalar(variable) else variable
             variable = [_get_name(v, self.var_names) for v in variable]
-            df = df[df.variable.isin(variable)]
-        if (start is not None) or (end is not None):
-            df = df.loc[start:end]
-        if area is not None:
-            if _area_is_bbox(area):
-                x0, y0, x1, y1 = area
-                df = df[(df.x > x0) & (df.x < x1) & (df.y > y0) & (df.y < y1)]
-            elif _area_is_polygon(area):
-                polygon = np.array(area)
-                xy = np.column_stack((df.x.values, df.y.values))
-                mask = _inside_polygon(polygon, xy)
-                df = df[mask]
-            else:
-                raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
-        return df
+        else:
+            variable = self.var_names
+
+        cc = ComparerCollection()
+        for cmp in self.comparers.values():
+            cmp: SingleObsComparer
+            if cmp.name in observation and cmp.variable_name in variable:
+                cmpsel = cmp.sel(
+                    model=model,
+                    start=start,
+                    end=end,
+                    time=time,
+                    area=area,
+                )
+                if cmpsel is not None:
+                    # TODO: check if cmpsel is empty
+                    cc.add_comparer(cmpsel)
+        return cc
 
     def skill(
         self,
@@ -1727,7 +1675,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> AggregatedSkill:
         """Aggregated skill assessment of model(s)
 
@@ -1754,8 +1701,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -1764,7 +1709,7 @@ class ComparerCollection(Mapping, Sequence):
 
         See also
         --------
-        sel_df
+        sel
             a method for filtering/selecting data
 
         Examples
@@ -1787,40 +1732,34 @@ class ComparerCollection(Mapping, Sequence):
         2017-10-27  239 -0.15  0.25   0.21  0.20  0.72  0.10  0.98
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
-
-        >>> df = cc.sel_df(observation=['HKNA','EPL']).copy()
-        >>> df['seastate'] = pd.cut(df.obs_val, bins=[0,2,6], labels=['small','large'])
-        >>> cc.skill(by=['observation','seastate'], df=df).round(2)
-                                n  bias  rmse  urmse   mae    cc    si    r2
-        observation seastate
-        EPL         small      16  0.02  0.22   0.22  0.17  0.38  0.13  0.98
-                    large      50 -0.11  0.22   0.19  0.19  0.98  0.06  0.99
-        HKNA        small      61  0.02  0.09   0.09  0.08  0.88  0.05  1.00
-                    large     324 -0.23  0.38   0.30  0.28  0.96  0.09  0.99
         """
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
-        df = self.sel_df(
+        cmp = self.sel(
             model=model,
             observation=observation,
             variable=variable,
             start=start,
             end=end,
             area=area,
-            df=df,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
-        n_models = len(df.model.unique())
-        n_obs = len(df.observation.unique())
-        n_var = len(df.variable.unique()) if (self.n_variables > 1) else 1
+        df = cmp.to_dataframe()
+        n_models = cmp.n_models  # len(df.model.unique())
+        n_obs = cmp.n_observations  # len(df.observation.unique())
+
+        # TODO: FIX
+        n_var = (
+            cmp.n_variables
+        )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
 
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
-        res = self._add_as_col_if_not_in_index(df, skilldf=res)
+        res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
 
     def _add_as_col_if_not_in_index(
@@ -1851,7 +1790,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
@@ -1888,8 +1826,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -1925,24 +1861,22 @@ class ComparerCollection(Mapping, Sequence):
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
-        df = self.sel_df(
+        cmp = self.sel(
             model=model,
             observation=observation,
             variable=variable,
             start=start,
             end=end,
             area=area,
-            df=df,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
+        df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        n_models = len(df.model.unique())
-        n_obs = len(df.observation.unique())
-        by = _parse_groupby(by, n_models, n_obs)
+        by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]
         if not "x" in by:
@@ -1976,7 +1910,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
         binsize: float = None,
         nbins: int = None,
         skill_table: Union[str, List[str], bool] = None,
@@ -2040,8 +1973,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
         skill_table : str, List[str], bool, optional
             list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
@@ -2063,11 +1994,10 @@ class ComparerCollection(Mapping, Sequence):
 
         # select variable
         var_id = _get_id(variable, self.var_names)
-        var_name = self._var_names[var_id]
+        var_name = self.var_names[var_id]
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=mod_name,
             observation=observation,
             variable=var_name,
@@ -2075,31 +2005,26 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             raise Exception("No data found in selection")
 
+        df = cmp.to_dataframe()
         x = df.obs_val
         y = df.mod_val
 
-        unit_text = self._obs_unit_text
-        if isinstance(self, ComparerCollection):
-            unit_text = self[df.observation[0]]._obs_unit_text
+        unit_text = self[df.observation[0]]._unit_text
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{self.mod_names[mod_id]} vs {self.name}"
+        title = title or f"{mod_name} vs {cmp.name}"
 
         skill_df = None
         units = None
         if skill_table:
-            if isinstance(self, ComparerCollection) and self.n_observations == 1:
-                skill_df = self.skill(
-                    df=df, model=model, observation=observation, variable=variable
-                )
+            if isinstance(self, ComparerCollection) and cmp.n_observations == 1:
+                skill_df = cmp.skill()
             else:
-                skill_df = self.mean_skill(
-                    df=df, model=model, observation=observation, variable=variable
-                )
+                skill_df = self.mean_skill()
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except:
@@ -2138,7 +2063,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
         title: str = None,
         density=True,
         alpha: float = 0.5,
@@ -2166,8 +2090,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
         title : str, optional
             plot title, default: observation name
         density: bool, optional
@@ -2189,8 +2111,7 @@ class ComparerCollection(Mapping, Sequence):
         mod_name = self.mod_names[mod_id]
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=mod_name,
             observation=observation,
             variable=variable,
@@ -2198,19 +2119,25 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
         title = f"{mod_name} vs Observations" if title is None else title
 
+        df = cmp.to_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
         ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
-        df.obs_val.hist(bins=bins, color=self[0].observation.color, ax=ax, **kwargs)
+        df.obs_val.hist(
+            bins=bins,
+            color=self[0].data[self[0]._obs_name].attrs["color"],
+            ax=ax,
+            **kwargs,
+        )
         ax.legend([mod_name, "observations"])
         plt.title(title)
-        plt.xlabel(f"{self._obs_unit_text}")
+        plt.xlabel(f"{self[df.observation[0]]._unit_text}")
 
         if density:
             plt.ylabel("density")
@@ -2230,7 +2157,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> AggregatedSkill:
         """Weighted mean of skills
 
@@ -2265,8 +2191,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -2292,8 +2216,7 @@ class ComparerCollection(Mapping, Sequence):
         """
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=model,
             observation=observation,
             variable=variable,
@@ -2301,41 +2224,40 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
-        mod_names = df.model.unique()
-        obs_names = df.observation.unique()
-        var_names = self.var_names
-        if self.n_variables > 1:
-            var_names = df.variable.unique()
-        n_models = len(mod_names)
+        df = cmp.to_dataframe()
+        mod_names = cmp.mod_names  # df.model.unique()
+        # obs_names = cmp.obs_names  # df.observation.unique()
+        var_names = cmp.var_names  # self.var_names
 
         # skill assessment
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
-        s = self.skill(df=df, metrics=metrics)
+        # s = self.skill(df=df, metrics=metrics)
+        s = cmp.skill(metrics=metrics)
         if s is None:
             return
         skilldf = s.df
 
         # weights
-        weights = self._parse_weights(weights, obs_names)
+        weights = cmp._parse_weights(weights, s.obs_names)
         skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, n_models)
+            skilldf.n if weights is None else np.tile(weights, len(mod_names))
         )
 
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
-        by = self._mean_skill_by(skilldf, mod_names, var_names)
+        by = cmp._mean_skill_by(skilldf, mod_names, var_names)
         agg = {"n": np.sum}
         for metric in metrics:
             agg[metric.__name__] = weighted_mean
         res = skilldf.groupby(by).agg(agg)
 
         # output
-        res = self._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
+        res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
         return AggregatedSkill(res.astype({"n": int}))
 
     def mean_skill_points(
@@ -2348,7 +2270,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> AggregatedSkill:
         """Mean skill of all observational points
 
@@ -2380,8 +2301,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -2402,8 +2321,7 @@ class ComparerCollection(Mapping, Sequence):
         """
 
         # filter data
-        df = self.sel_df(
-            df=df,
+        cmp = self.sel(
             model=model,
             observation=observation,
             variable=variable,
@@ -2411,13 +2329,16 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if len(df) == 0:
+        if cmp.n_points == 0:
             warnings.warn("No data!")
             return
 
-        dfall = df.copy()
+        dfall = cmp.to_dataframe()
         dfall["observation"] = "all"
-        return self.skill(df=dfall, metrics=metrics)
+
+        # TODO: no longer possible to do this way
+        # return self.skill(df=dfall, metrics=metrics)
+        return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
     def _mean_skill_by(self, skilldf, mod_names, var_names):
         by = []
@@ -2446,7 +2367,7 @@ class ComparerCollection(Mapping, Sequence):
         if weights is None:
             # get weights from observation objects
             # default is equal weight to all
-            weights = [self.comparers[o].observation.weight for o in observations]
+            weights = [self.comparers[o].weight for o in observations]
         else:
             if isinstance(weights, int):
                 weights = np.ones(n_obs)  # equal weight to all
@@ -2489,7 +2410,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
     ) -> float:
         """Weighted mean score of model(s) over all observations
 
@@ -2522,8 +2442,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            user-provided data instead of the comparers own data, by default None
 
         Returns
         -------
@@ -2555,7 +2473,7 @@ class ComparerCollection(Mapping, Sequence):
             raise ValueError("metric must be a string or a function")
 
         if model is None:
-            models = self._mod_names
+            models = self.mod_names
         else:
             models = [model] if np.isscalar(model) else model
             models = [_get_name(m, self.mod_names) for m in models]
@@ -2570,7 +2488,6 @@ class ComparerCollection(Mapping, Sequence):
             start=start,
             end=end,
             area=area,
-            df=df,
         )
         if skill is None:
             return
@@ -2598,7 +2515,6 @@ class ComparerCollection(Mapping, Sequence):
         start: Union[str, datetime] = None,
         end: Union[str, datetime] = None,
         area: List[float] = None,
-        df: pd.DataFrame = None,
         normalize_std: bool = False,
         aggregate_observations: bool = True,
         figsize: List[float] = (7, 7),
@@ -2625,8 +2541,6 @@ class ComparerCollection(Mapping, Sequence):
             bbox coordinates [x0, y0, x1, y1],
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
-        df : pd.dataframe, optional
-            show user-provided data instead of the comparers own data, by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         aggregate_observations : bool, optional

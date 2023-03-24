@@ -280,7 +280,7 @@ def test_extract_gaps2(o2_gaps, mr12_gaps):
     # one day gap in mr2
     cc = con2.extract(max_model_gap=7200)
     assert cc[0].data["mr2"].count() == 42  # 66 - 24
-    assert cc[0].data.loc["2017-10-28", "mr2"].count() == 0
+    assert cc[0].data["mr2"].sel(time="2017-10-28").count() == 0
 
     # will syncronize the two models,
     # so gap in one will remove points from the other
@@ -292,7 +292,7 @@ def test_extract_gaps2(o2_gaps, mr12_gaps):
     # with the max_model_gap=27200
     cc = con2.extract(max_model_gap=27200)
     assert cc[0].data["mr2"].count() == 42
-    assert cc[0].data.loc["2017-10-28", "mr2"].count() == 0
+    assert cc[0].data["mr2"].sel(time="2017-10-28").count() == 0
 
 
 def test_extract_gaps_big(o2_gaps, mr12_gaps):

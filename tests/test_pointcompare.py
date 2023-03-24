@@ -1,3 +1,4 @@
+import datetime
 import pytest
 import numpy as np
 
@@ -155,9 +156,7 @@ def test_misc_properties(klagshamn, drogden):
     assert cc.n_comparers == 2
 
     assert cc.n_models == 1
-    assert cc._mod_names == [
-        "Oresund2D"
-    ]  # TODO this fails when all tests are run, something is spilling over from another test !!
+    assert cc.mod_names == ["Oresund2D"]
 
     ck = cc["Klagshamn"]
     assert ck.name == "Klagshamn"
@@ -168,6 +167,12 @@ def test_misc_properties(klagshamn, drogden):
     assert ck.end.year == 2018
 
     assert ck.x == 366844
+
+
+# def test_sel_time(cc):
+#     c1 = cc["Klagshamn"]
+#     c2 = c1.sel(time=slice("2018-01-01", "2018-01-02"))
+#     assert c2.start == datetime(2018, 1, 1)
 
 
 def test_skill(klagshamn, drogden):
