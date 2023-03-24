@@ -473,7 +473,8 @@ class SingleObsComparer:
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
-    def _construct_all_df(self) -> pd.DataFrame:
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert to pandas DataFrame"""
         res = _all_df_template(n_variables=1)
         frames = []
         cols = res.keys()
@@ -689,7 +690,7 @@ class SingleObsComparer:
 
         by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
 
-        df = cmp._construct_all_df()  # TODO: avoid df if possible?
+        df = cmp.to_dataframe()  # TODO: avoid df if possible?
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
@@ -857,7 +858,7 @@ class SingleObsComparer:
             warnings.warn("No data!")
             return
 
-        df = cmp._construct_all_df()
+        df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
         # n_models = len(df.model.unique())
@@ -1546,10 +1547,11 @@ class ComparerCollection(Mapping, Sequence):
 
     @property
     def data(self) -> pd.DataFrame:
-        """Return a copy of the data"""
-        return self._construct_all_df()
+        """Return a copy of the data as a pandas DataFrame"""
+        return self.to_dataframe()
 
-    def _construct_all_df(self) -> pd.DataFrame:
+    def to_dataframe(self) -> pd.DataFrame:
+        """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
         res = _all_df_template(self.n_variables)
         frames = []
@@ -1569,9 +1571,9 @@ class ComparerCollection(Mapping, Sequence):
                 frames.append(df[cols])
         if len(frames) > 0:
             res = pd.concat(frames)
-        _all_df = res.sort_index()
-        _all_df.index.name = "time"
-        return _all_df
+        res = res.sort_index()
+        res.index.name = "time"
+        return res
 
     def __repr__(self):
         out = []
@@ -1742,7 +1744,7 @@ class ComparerCollection(Mapping, Sequence):
             warnings.warn("No data!")
             return
 
-        df = cmp._construct_all_df()
+        df = cmp.to_dataframe()
         n_models = cmp.n_models  # len(df.model.unique())
         n_obs = cmp.n_observations  # len(df.observation.unique())
 
@@ -1867,7 +1869,7 @@ class ComparerCollection(Mapping, Sequence):
             warnings.warn("No data!")
             return
 
-        df = cmp._construct_all_df()
+        df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
         by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
@@ -2002,7 +2004,7 @@ class ComparerCollection(Mapping, Sequence):
         if cmp.n_points == 0:
             raise Exception("No data found in selection")
 
-        df = cmp._construct_all_df()
+        df = cmp.to_dataframe()
         x = df.obs_val
         y = df.mod_val
 
@@ -2119,7 +2121,7 @@ class ComparerCollection(Mapping, Sequence):
 
         title = f"{mod_name} vs Observations" if title is None else title
 
-        df = cmp._construct_all_df()
+        df = cmp.to_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
         ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
@@ -2222,7 +2224,7 @@ class ComparerCollection(Mapping, Sequence):
             warnings.warn("No data!")
             return
 
-        df = cmp._construct_all_df()
+        df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
         # obs_names = cmp.obs_names  # df.observation.unique()
         var_names = cmp.var_names  # self.var_names
@@ -2327,7 +2329,7 @@ class ComparerCollection(Mapping, Sequence):
             warnings.warn("No data!")
             return
 
-        dfall = cmp._construct_all_df()
+        dfall = cmp.to_dataframe()
         dfall["observation"] = "all"
 
         # TODO: no longer possible to do this way
