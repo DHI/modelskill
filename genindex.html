@@ -363,8 +363,6 @@ document.write(`
         <li><a href="api.html#fmskill.observation.TrackObservation.filename">(fmskill.observation.TrackObservation property)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     fmskill.connection
 
@@ -372,11 +370,19 @@ document.write(`
         <li><a href="api.html#module-fmskill.connection">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     fmskill.metrics
 
       <ul>
         <li><a href="api.html#module-fmskill.metrics">module</a>
+</li>
+      </ul></li>
+      <li><a href="api.html#fmskill.comparison.PointComparer.from_compared_data">from_compared_data() (fmskill.comparison.PointComparer class method)</a>
+
+      <ul>
+        <li><a href="api.html#fmskill.comparison.TrackComparer.from_compared_data">(fmskill.comparison.TrackComparer class method)</a>
 </li>
       </ul></li>
       <li><a href="api.html#fmskill.connection.Connector.from_config">from_config() (fmskill.connection.Connector static method)</a>
@@ -453,11 +459,11 @@ document.write(`
 </li>
       <li><a href="api.html#fmskill.metrics.mef">mef() (in module fmskill.metrics)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#fmskill.connection.Connector.mod_names">mod_names (fmskill.connection.Connector property)</a>
+      <li><a href="api.html#fmskill.comparison.ComparerCollection.mod_names">mod_names (fmskill.comparison.ComparerCollection property)</a>
 
       <ul>
+        <li><a href="api.html#fmskill.connection.Connector.mod_names">(fmskill.connection.Connector property)</a>
+</li>
         <li><a href="api.html#fmskill.connection.PointConnector.mod_names">(fmskill.connection.PointConnector property)</a>
 </li>
         <li><a href="api.html#fmskill.connection.TrackConnector.mod_names">(fmskill.connection.TrackConnector property)</a>
@@ -467,6 +473,8 @@ document.write(`
         <li><a href="api.html#fmskill.spatial.SpatialSkill.mod_names">(fmskill.spatial.SpatialSkill property)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#fmskill.metrics.model_efficiency_factor">model_efficiency_factor() (in module fmskill.metrics)</a>
 </li>
       <li>
@@ -575,7 +583,11 @@ document.write(`
       <li><a href="api.html#fmskill.connection.Connector.plot_temporal_coverage">plot_temporal_coverage() (fmskill.connection.Connector method)</a>
 </li>
       <li><a href="api.html#fmskill.comparison.PointComparer.plot_timeseries">plot_timeseries() (fmskill.comparison.PointComparer method)</a>
+
+      <ul>
+        <li><a href="api.html#fmskill.comparison.TrackComparer.plot_timeseries">(fmskill.comparison.TrackComparer method)</a>
 </li>
+      </ul></li>
       <li><a href="api.html#fmskill.comparison.PointComparer">PointComparer (class in fmskill.comparison)</a>
 </li>
       <li><a href="api.html#fmskill.connection.PointConnector">PointConnector (class in fmskill.connection)</a>
@@ -634,18 +646,8 @@ document.write(`
       </ul></li>
       <li><a href="api.html#fmskill.skill.AggregatedSkill.sel">sel() (fmskill.skill.AggregatedSkill method)</a>
 </li>
-      <li><a href="api.html#fmskill.comparison.ComparerCollection.sel_df">sel_df() (fmskill.comparison.ComparerCollection method)</a>
-
-      <ul>
-        <li><a href="api.html#fmskill.comparison.PointComparer.sel_df">(fmskill.comparison.PointComparer method)</a>
-</li>
-        <li><a href="api.html#fmskill.comparison.TrackComparer.sel_df">(fmskill.comparison.TrackComparer method)</a>
-</li>
-      </ul></li>
       <li><a href="api.html#fmskill.metrics.si">si() (in module fmskill.metrics)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#fmskill.comparison.ComparerCollection.skill">skill() (fmskill.comparison.ComparerCollection method)</a>
 
       <ul>
@@ -654,6 +656,8 @@ document.write(`
         <li><a href="api.html#fmskill.comparison.TrackComparer.skill">(fmskill.comparison.TrackComparer method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#fmskill.comparison.ComparerCollection.spatial_skill">spatial_skill() (fmskill.comparison.ComparerCollection method)</a>
 
       <ul>
@@ -696,18 +700,30 @@ document.write(`
         <li><a href="api.html#fmskill.comparison.TrackComparer.taylor">(fmskill.comparison.TrackComparer method)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#fmskill.observation.PointObservation.time">time (fmskill.observation.PointObservation property)</a>
+      <li><a href="api.html#fmskill.comparison.PointComparer.time">time (fmskill.comparison.PointComparer property)</a>
 
       <ul>
+        <li><a href="api.html#fmskill.comparison.TrackComparer.time">(fmskill.comparison.TrackComparer property)</a>
+</li>
+        <li><a href="api.html#fmskill.observation.PointObservation.time">(fmskill.observation.PointObservation property)</a>
+</li>
         <li><a href="api.html#fmskill.observation.TrackObservation.time">(fmskill.observation.TrackObservation property)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#fmskill.connection.Connector.to_config">to_config() (fmskill.connection.Connector method)</a>
 </li>
-      <li><a href="api.html#fmskill.spatial.SpatialSkill.to_dataframe">to_dataframe() (fmskill.spatial.SpatialSkill method)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#fmskill.comparison.ComparerCollection.to_dataframe">to_dataframe() (fmskill.comparison.ComparerCollection method)</a>
+
+      <ul>
+        <li><a href="api.html#fmskill.comparison.PointComparer.to_dataframe">(fmskill.comparison.PointComparer method)</a>
 </li>
+        <li><a href="api.html#fmskill.comparison.TrackComparer.to_dataframe">(fmskill.comparison.TrackComparer method)</a>
+</li>
+        <li><a href="api.html#fmskill.spatial.SpatialSkill.to_dataframe">(fmskill.spatial.SpatialSkill method)</a>
+</li>
+      </ul></li>
       <li><a href="api.html#fmskill.comparison.TrackComparer">TrackComparer (class in fmskill.comparison)</a>
 </li>
       <li><a href="api.html#fmskill.connection.TrackConnector">TrackConnector (class in fmskill.connection)</a>
@@ -736,12 +752,18 @@ document.write(`
         <li><a href="api.html#fmskill.observation.TrackObservation.values">(fmskill.observation.TrackObservation property)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#fmskill.comparison.ComparerCollection.var_names">var_names (fmskill.comparison.ComparerCollection property)</a>
 
       <ul>
         <li><a href="api.html#fmskill.skill.AggregatedSkill.var_names">(fmskill.skill.AggregatedSkill property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#fmskill.comparison.PointComparer.variable_name">variable_name (fmskill.comparison.PointComparer property)</a>
+
+      <ul>
+        <li><a href="api.html#fmskill.comparison.TrackComparer.variable_name">(fmskill.comparison.TrackComparer property)</a>
 </li>
       </ul></li>
   </ul></td>
