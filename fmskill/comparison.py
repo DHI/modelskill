@@ -497,7 +497,7 @@ class SingleObsComparer:
     def copy(self):
         return self.__copy__()
 
-    def to_observation(self) -> Observation:
+    def _to_observation(self) -> Observation:
         """Convert to Observation"""
         if self.gtype == "point":
             df = self.data[self._obs_name].to_dataframe()
@@ -553,7 +553,8 @@ class SingleObsComparer:
 
                 cls = self.__class__
                 cmp = cls.__new__(cls)
-                cmp.__init__(self.to_observation(), mod_data)
+                cmp.__init__(self._to_observation(), mod_data)
+                # TODO cmp = cls.clone()
 
             return cmp
         else:
