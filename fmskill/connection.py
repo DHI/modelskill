@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 import os
 
@@ -70,7 +70,7 @@ def _parse_model(mod, item=None):
     return mod
 
 
-class _BaseConnector:
+class _BaseConnector(ABC):
     def __init__(self) -> None:
         self.modelresults = {}
         self.name = None
@@ -88,7 +88,7 @@ class _BaseConnector:
 
     @abstractmethod
     def extract(self):
-        raise NotImplementedError()
+        pass
 
 
 class _SingleObsConnector(_BaseConnector):
