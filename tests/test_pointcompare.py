@@ -157,7 +157,6 @@ def test_misc_properties(klagshamn, drogden):
 
     assert cc.n_models == 1
     assert cc.mod_names == ["Oresund2D"]
-    # TODO this fails when all tests are run, something is spilling over from another test !!
 
     ck = cc["Klagshamn"]
     assert ck.name == "Klagshamn"
