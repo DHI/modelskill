@@ -338,10 +338,9 @@ class SingleObsComparer:
 
         # TODO consider if this constraint is necessary
         assert isinstance(observation, PointObservation)
-        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
-        mod_end = self._mod_end + timedelta(seconds=1)
         observation = deepcopy(observation)
-        observation.data = observation.data[mod_start:mod_end]
+
+        observation.trim(self._mod_start, self._mod_end)
 
         modeldata_list = list(self.raw_mod_data.values())
         if len(modeldata_list) == 0:
@@ -1360,7 +1359,7 @@ class TrackComparer(SingleObsComparer):
         )
         assert isinstance(observation, TrackObservation)
         observation = deepcopy(observation)
-        observation.data = observation.data[self._mod_start : self._mod_end]
+        observation.trim(self._mod_start, self._mod_end)
 
         modeldata_list = list(self.raw_mod_data.values())
         if len(modeldata_list) == 0:
