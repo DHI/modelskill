@@ -335,6 +335,8 @@ class SingleObsComparer:
         self.data = self._initialise_comparer(observation, max_model_gap)
 
     def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
+
+        # TODO consider if this constraint is necessary
         assert isinstance(observation, PointObservation)
         mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
         mod_end = self._mod_end + timedelta(seconds=1)
@@ -356,6 +358,8 @@ class SingleObsComparer:
         data.dropna(inplace=True)
         data = data.to_xarray()
         data.attrs["gtype"] = "point"
+        data["x"] = observation.x
+        data["y"] = observation.y
         data.attrs["name"] = observation.name
         data.attrs["variable_name"] = observation.variable_name
         data[self._obs_name].attrs["kind"] = "observation"
@@ -406,13 +410,13 @@ class SingleObsComparer:
             cmp.raw_mod_data = raw_mod_data
         return cmp
 
-    # def __repr__(self):
-    #    out = []
-    #    out.append(f"<{type(self).__name__}>")
-    #    out.append(f"Observation: {self.name}, n_points={self.n_points}")
-    #    for model in self.mod_names:
-    #        out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
-    #    return str.join("\n", out)
+    def __repr__(self):
+        out = []
+        out.append(f"<{type(self).__name__}>")
+        out.append(f"Observation: {self.name}, n_points={self.n_points}")
+        for model in self.mod_names:
+            out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
+        return str.join("\n", out)
 
     @property
     def name(self) -> str:
@@ -522,8 +526,8 @@ class SingleObsComparer:
             df.columns = ["mod_val"]
             df["model"] = mod_name
             df["observation"] = self.name
-            df["x"] = self.x
-            df["y"] = self.y
+            df["x"] = self.data.x
+            df["y"] = self.data.y
             df["obs_val"] = self.obs
             frames.append(df[cols])
 
@@ -1549,6 +1553,7 @@ class ComparerCollection(Mapping, Sequence):
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
+        # TODO delegate to each comparer
         res = _all_df_template(self.n_variables)
         frames = []
         cols = res.keys()
