@@ -515,26 +515,26 @@ class SingleObsComparer:
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
+    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
+        """Convert single model data to pandas DataFrame"""
+
+        df = self.data[[mod_name]].to_dataframe().copy()
+        df.columns = ["mod_val"]
+        df["model"] = mod_name
+        df["observation"] = self.name
+        df["x"] = self.data.x
+        df["y"] = self.data.y
+        df["obs_val"] = self.obs
+
+        return df
+
     def to_dataframe(self) -> pd.DataFrame:
-        """Convert to pandas DataFrame"""
-        res = _all_df_template(n_variables=1)
-        frames = []
-        cols = res.keys()
-        for j in range(self.n_models):
-            mod_name = self.mod_names[j]
-            df = self.data[[mod_name]].to_dataframe().copy()
-            df.columns = ["mod_val"]
-            df["model"] = mod_name
-            df["observation"] = self.name
-            df["x"] = self.data.x
-            df["y"] = self.data.y
-            df["obs_val"] = self.obs
-            frames.append(df[cols])
+        """Convert to pandas DataFrame with all model data concatenated"""
 
-        if len(frames) > 0:
-            res = pd.concat(frames)
+        # TODO is this needed?, comment out for now
+        # df = df.sort_index()
 
-        return res.sort_index()
+        return pd.concat([self._model_to_frame(name) for name in self.mod_names])
 
     def __copy__(self):
         return deepcopy(self)
