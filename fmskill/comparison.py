@@ -355,32 +355,13 @@ class SingleObsComparer:
         # TODO refactor common functionality, to minimize duplication
         if gtype == "point":
             for j, mdata in enumerate(modeldata_list):
-
                 df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[
                     :, ::-1
-                ]
+                ]  # TODO why reverse?
                 if j == 0:
                     data = df
                 else:
                     data[self.mod_names[j]] = df[self.mod_names[j]]
-
-            data.index.name = "time"
-            data.dropna(inplace=True)
-            data = data.to_xarray()
-            data.attrs["gtype"] = "point"
-            data["x"] = observation.x
-            data["y"] = observation.y
-            data.attrs["name"] = observation.name
-            data.attrs["variable_name"] = observation.variable_name
-            data[self._obs_name].attrs["kind"] = "observation"
-            data[self._obs_name].attrs["x"] = observation.x
-            data[self._obs_name].attrs["y"] = observation.y
-            data[self._obs_name].attrs["unit"] = observation._unit_text()
-            data[self._obs_name].attrs["color"] = observation.color
-            data[self._obs_name].attrs["weight"] = observation.weight
-            for n in self.mod_names:
-                data[n].attrs["kind"] = "model"
-                data.attrs["gtype"] = "point"
 
         elif gtype == "track":
             for j, mdata in enumerate(modeldata_list):
@@ -402,20 +383,25 @@ class SingleObsComparer:
                 else:
                     data[self.mod_names[j]] = df[self.mod_names[j]]
 
-            data.index.name = "time"
-            data = data.dropna()
-            data = data.to_xarray()
-            data.attrs["gtype"] = "track"
-            data.attrs["name"] = observation.name
-            data.attrs["variable_name"] = observation.variable_name
-            data["x"].attrs["kind"] = "position"
-            data["y"].attrs["kind"] = "position"
-            data[self._obs_name].attrs["kind"] = "observation"
-            data[self._obs_name].attrs["unit"] = observation._unit_text()
-            data[self._obs_name].attrs["color"] = observation.color
-            data[self._obs_name].attrs["weight"] = observation.weight
-            for n in self.mod_names:
-                data[n].attrs["kind"] = "model"
+        data.index.name = "time"
+        data = data.dropna()
+        data = data.to_xarray()
+        data.attrs["gtype"] = gtype
+
+        if gtype == "point":
+            data["x"] = observation.x
+            data["y"] = observation.y
+
+        data.attrs["name"] = observation.name
+        data.attrs["variable_name"] = observation.variable_name
+        data["x"].attrs["kind"] = "position"
+        data["y"].attrs["kind"] = "position"
+        data[self._obs_name].attrs["kind"] = "observation"
+        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["color"] = observation.color
+        data[self._obs_name].attrs["weight"] = observation.weight
+        for n in self.mod_names:
+            data[n].attrs["kind"] = "model"
 
         return data
 
