@@ -695,9 +695,11 @@ class SingleObsComparer:
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
 
-    def _add_as_col_if_not_in_index(self, df, skilldf, fields=["model", "observation"]):
+    def _add_as_col_if_not_in_index(self, df, skilldf):
         """Add a field to skilldf if unique in df"""
-        for field in reversed(fields):
+        FIELDS = ("observation","model")
+
+        for field in FIELDS:
             if (field == "model") and (self.n_models <= 1):
                 continue
             if field not in skilldf.index.names:
