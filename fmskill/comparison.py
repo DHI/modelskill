@@ -36,6 +36,28 @@ register_option(
 )
 
 
+MOD_COLORS = (
+    "#1f78b4",
+    "#33a02c",
+    "#ff7f00",
+    "#93509E",
+    "#63CEFF",
+    "#fdbf6f",
+    "#004165",
+    "#8B8D8E",
+    "#0098DB",
+    "#61C250",
+    "#a6cee3",
+    "#b2df8a",
+    "#fb9a99",
+    "#cab2d6",
+    "#003f5c",
+    "#2f4b7c",
+    "#665191",
+    "#e31a1c",
+)
+
+
 def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
     """Interpolate time series to new time index"""
     new_df = (
@@ -296,39 +318,57 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 class SingleObsComparer:
-    _mod_colors = [
-        "#1f78b4",
-        "#33a02c",
-        "#ff7f00",
-        "#93509E",
-        "#63CEFF",
-        "#fdbf6f",
-        "#004165",
-        "#8B8D8E",
-        "#0098DB",
-        "#61C250",
-        "#a6cee3",
-        "#b2df8a",
-        "#fb9a99",
-        "#cab2d6",
-        "#003f5c",
-        "#2f4b7c",
-        "#665191",
-        "#e31a1c",
-    ]
-    #      darkblue: #004165
-    #      midblue:  #0098DB,
-    #      gray:     #8B8D8E,
-    #      lightblue:#63CEFF,
-    #      green:    #61C250
-    #      purple:   #93509E
+
     _obs_name = "Observation"
 
-    # def __init__(self, observation, modeldata):
-    #    self.data = None
-    #    self.raw_mod_data = (
-    #        self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-    #    )
+    def __init__(
+        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
+    ):
+        # TODO this makes no sense, returning None is not a good idea
+        if observation is None and modeldata is None:
+            return
+
+        self.raw_mod_data = (
+            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        )
+
+        self.data = self._initialise_comparer(observation, max_model_gap)
+
+    def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
+        assert isinstance(observation, PointObservation)
+        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
+        mod_end = self._mod_end + timedelta(seconds=1)
+        observation = deepcopy(observation)
+        observation.data = observation.data[mod_start:mod_end]
+
+        modeldata_list = list(self.raw_mod_data.values())
+        if len(modeldata_list) == 0:
+            return
+
+        for j, mdata in enumerate(modeldata_list):
+            df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[:, ::-1]
+            if j == 0:
+                data = df
+            else:
+                data[self.mod_names[j]] = df[self.mod_names[j]]
+
+        data.index.name = "time"
+        data.dropna(inplace=True)
+        data = data.to_xarray()
+        data.attrs["gtype"] = "point"
+        data.attrs["name"] = observation.name
+        data.attrs["variable_name"] = observation.variable_name
+        data[self._obs_name].attrs["kind"] = "observation"
+        data[self._obs_name].attrs["x"] = observation.x
+        data[self._obs_name].attrs["y"] = observation.y
+        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["color"] = observation.color
+        data[self._obs_name].attrs["weight"] = observation.weight
+        for n in self.mod_names:
+            data[n].attrs["kind"] = "model"
+            data.attrs["gtype"] = "point"
+
+        return data
 
     def _parse_modeldata_list(self, modeldata):
         """Convert to dict of dataframes"""
@@ -359,19 +399,20 @@ class SingleObsComparer:
     @classmethod
     def from_compared_data(cls, data, raw_mod_data=None):
         """Initialize from compared data"""
+        # TODO this is not a clean solution
         cmp = cls(observation=None, modeldata=None)
         cmp.data = data
         if raw_mod_data is not None:
             cmp.raw_mod_data = raw_mod_data
         return cmp
 
-    def __repr__(self):
-        out = []
-        out.append(f"<{type(self).__name__}>")
-        out.append(f"Observation: {self.name}, n_points={self.n_points}")
-        for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
-        return str.join("\n", out)
+    # def __repr__(self):
+    #    out = []
+    #    out.append(f"<{type(self).__name__}>")
+    #    out.append(f"Observation: {self.name}, n_points={self.n_points}")
+    #    for model in self.mod_names:
+    #        out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
+    #    return str.join("\n", out)
 
     @property
     def name(self) -> str:
@@ -530,9 +571,7 @@ class SingleObsComparer:
         if not isinstance(other, (SingleObsComparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        if isinstance(other, (PointComparer, TrackComparer)) and (
-            self.name == other.name
-        ):
+        if isinstance(other, SingleObsComparer) and (self.name == other.name):
             assert type(self) == type(other), "Must be same type!"
             missing_models = set(self.mod_names) - set(other.mod_names)
             if len(missing_models) == 0:
@@ -1193,7 +1232,7 @@ class SingleObsComparer:
         ax = (
             self.data[mod_name]
             .to_series()
-            .hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
+            .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
         self.data[self._obs_name].to_series().hist(
             bins=bins, color=self.data[self._obs_name].attrs["color"], ax=ax, **kwargs
@@ -1241,7 +1280,7 @@ class SingleObsComparer:
             for j in range(self.n_models):
                 key = self.mod_names[j]
                 mod_df = self.raw_mod_data[key]
-                mod_df[key].plot(ax=ax, color=self._mod_colors[j])
+                mod_df[key].plot(ax=ax, color=MOD_COLORS[j])
 
             ax.scatter(
                 self.time,
@@ -1267,7 +1306,7 @@ class SingleObsComparer:
                         x=mod_df.index,
                         y=mod_df[key],
                         name=key,
-                        line=dict(color=self._mod_colors[j]),
+                        line=dict(color=MOD_COLORS[j]),
                     )
                 )
 
@@ -1293,59 +1332,7 @@ class SingleObsComparer:
 
 
 class PointComparer(SingleObsComparer):
-    """
-    Comparer for observations from fixed locations
-
-    Examples
-    --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
-    >>> con = Connector(o1, mr)
-    >>> comparer = con.extract()
-    >>> comparer['Klagshamn']
-    """
-
-    def __init__(
-        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
-    ):
-        if observation is None and modeldata is None:
-            return
-        self.raw_mod_data = (
-            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-        )
-        assert isinstance(observation, PointObservation)
-        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
-        mod_end = self._mod_end + timedelta(seconds=1)
-        observation = deepcopy(observation)
-        observation.data = observation.data[mod_start:mod_end]
-
-        modeldata_list = list(self.raw_mod_data.values())
-        if len(modeldata_list) == 0:
-            return
-
-        for j, mdata in enumerate(modeldata_list):
-            df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[:, ::-1]
-            if j == 0:
-                data = df
-            else:
-                data[self.mod_names[j]] = df[self.mod_names[j]]
-
-        data.index.name = "time"
-        data.dropna(inplace=True)
-        data = data.to_xarray()
-        data.attrs["gtype"] = "point"
-        data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
-        data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["x"] = observation.x
-        data[self._obs_name].attrs["y"] = observation.y
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
-        data[self._obs_name].attrs["color"] = observation.color
-        data[self._obs_name].attrs["weight"] = observation.weight
-        for n in self.mod_names:
-            data[n].attrs["kind"] = "model"
-            data.attrs["gtype"] = "point"
-        self.data = data
+    pass
 
 
 class TrackComparer(SingleObsComparer):
@@ -1408,6 +1395,7 @@ class TrackComparer(SingleObsComparer):
         data[self._obs_name].attrs["weight"] = observation.weight
         for n in self.mod_names:
             data[n].attrs["kind"] = "model"
+
         self.data = data
 
     def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
@@ -2132,7 +2120,7 @@ class ComparerCollection(Mapping, Sequence):
         df = cmp.to_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
+        ax = df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         df.obs_val.hist(
             bins=bins,
             color=self[0].data[self[0]._obs_name].attrs["color"],
