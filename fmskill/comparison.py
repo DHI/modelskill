@@ -322,10 +322,17 @@ class SingleObsComparer:
     _obs_name = "Observation"
 
     def __init__(
-        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
+        self,
+        observation=None,
+        modeldata=None,
+        max_model_gap: Optional[TimeDeltaTypes] = None,
+        matched_data: xr.Dataset = None,
+        raw_mod_data: Optional[Dict[str, xr.Dataset]] = None,
     ):
-        # TODO this makes no sense, returning None is not a good idea
-        if observation is None and modeldata is None:
+
+        if matched_data is not None:
+            self.data = matched_data
+            self.raw_mod_data = raw_mod_data
             return
 
         self.raw_mod_data = (
@@ -336,42 +343,95 @@ class SingleObsComparer:
 
     def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
 
-        # TODO consider if this constraint is necessary
-        assert isinstance(observation, PointObservation)
+        assert isinstance(observation, (PointObservation, TrackObservation))
+        gtype = "point" if isinstance(observation, PointObservation) else "track"
         observation = deepcopy(observation)
-
         observation.trim(self._mod_start, self._mod_end)
 
         modeldata_list = list(self.raw_mod_data.values())
         if len(modeldata_list) == 0:
             return
 
-        for j, mdata in enumerate(modeldata_list):
-            df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[:, ::-1]
-            if j == 0:
-                data = df
-            else:
-                data[self.mod_names[j]] = df[self.mod_names[j]]
+        # TODO refactor common functionality, to minimize duplication
+        if gtype == "point":
+            for j, mdata in enumerate(modeldata_list):
 
-        data.index.name = "time"
-        data.dropna(inplace=True)
-        data = data.to_xarray()
-        data.attrs["gtype"] = "point"
-        data["x"] = observation.x
-        data["y"] = observation.y
-        data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
-        data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["x"] = observation.x
-        data[self._obs_name].attrs["y"] = observation.y
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
-        data[self._obs_name].attrs["color"] = observation.color
-        data[self._obs_name].attrs["weight"] = observation.weight
-        for n in self.mod_names:
-            data[n].attrs["kind"] = "model"
+                df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[
+                    :, ::-1
+                ]
+                if j == 0:
+                    data = df
+                else:
+                    data[self.mod_names[j]] = df[self.mod_names[j]]
+
+            data.index.name = "time"
+            data.dropna(inplace=True)
+            data = data.to_xarray()
             data.attrs["gtype"] = "point"
+            data["x"] = observation.x
+            data["y"] = observation.y
+            data.attrs["name"] = observation.name
+            data.attrs["variable_name"] = observation.variable_name
+            data[self._obs_name].attrs["kind"] = "observation"
+            data[self._obs_name].attrs["x"] = observation.x
+            data[self._obs_name].attrs["y"] = observation.y
+            data[self._obs_name].attrs["unit"] = observation._unit_text()
+            data[self._obs_name].attrs["color"] = observation.color
+            data[self._obs_name].attrs["weight"] = observation.weight
+            for n in self.mod_names:
+                data[n].attrs["kind"] = "model"
+                data.attrs["gtype"] = "point"
+
+        elif gtype == "track":
+            for j, mdata in enumerate(modeldata_list):
+                df = self._model2obs_interp(observation, mdata, max_model_gap)
+                # rename first columns to x, y
+                df.columns = ["x", "y", *list(df.columns)[2:]]
+                if (len(df) > 0) and (len(df) == len(observation.data)):
+                    ok = self._obs_mod_xy_distance_acceptable(df, observation.data)
+                    # set model to NaN if too far away from obs location
+                    df.loc[~ok, self.mod_names[j]] = np.nan
+                    if sum(ok) == 0:
+                        warnings.warn(
+                            "no (spatial) overlap between model and observation points"
+                        )
+                if j == 0:
+                    # change order of obs and model
+                    cols = ["x", "y", self._obs_name, self.mod_names[j]]
+                    data = df[cols]
+                else:
+                    data[self.mod_names[j]] = df[self.mod_names[j]]
+
+            data.index.name = "time"
+            data = data.dropna()
+            data = data.to_xarray()
+            data.attrs["gtype"] = "track"
+            data.attrs["name"] = observation.name
+            data.attrs["variable_name"] = observation.variable_name
+            data["x"].attrs["kind"] = "position"
+            data["y"].attrs["kind"] = "position"
+            data[self._obs_name].attrs["kind"] = "observation"
+            data[self._obs_name].attrs["unit"] = observation._unit_text()
+            data[self._obs_name].attrs["color"] = observation.color
+            data[self._obs_name].attrs["weight"] = observation.weight
+            for n in self.mod_names:
+                data[n].attrs["kind"] = "model"
 
         return data
+
+    def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
+        mod_xy = df_mod.loc[:, ["x", "y"]].values
+        obs_xy = df_obs.iloc[:, :2].values
+        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
+        tol_xy = self._minimal_accepted_distance(obs_xy)
+        return d_xy < tol_xy
+
+    @staticmethod
+    def _minimal_accepted_distance(obs_xy):
+        # all consequtive distances
+        vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
+        # fraction of small quantile
+        return 0.5 * np.quantile(vec, 0.1)
 
     def _parse_modeldata_list(self, modeldata):
         """Convert to dict of dataframes"""
@@ -403,10 +463,11 @@ class SingleObsComparer:
     def from_compared_data(cls, data, raw_mod_data=None):
         """Initialize from compared data"""
         # TODO this is not a clean solution
-        cmp = cls(observation=None, modeldata=None)
-        cmp.data = data
-        if raw_mod_data is not None:
-            cmp.raw_mod_data = raw_mod_data
+        # cmp = cls(observation=None, modeldata=None)
+        # cmp.data = data
+        # if raw_mod_data is not None:
+        #    cmp.raw_mod_data = raw_mod_data
+        cmp = cls(matched_data=data, raw_mod_data=raw_mod_data)
         return cmp
 
     def __repr__(self):
@@ -1339,6 +1400,10 @@ class PointComparer(SingleObsComparer):
 
 
 class TrackComparer(SingleObsComparer):
+    pass
+
+
+class FrackComparer(SingleObsComparer):
     """
     Comparer for observations from changing locations i.e. `TrackObservation`
 
@@ -1351,55 +1416,70 @@ class TrackComparer(SingleObsComparer):
     >>> comparer['c2']
     """
 
-    def __init__(self, observation, modeldata, max_model_gap: float = None):
-        if observation is None and modeldata is None:
-            return
-        self.raw_mod_data = (
-            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-        )
+    def __init__(
+        self, observation, modeldata, max_model_gap: float = None, matched_data=None
+    ):
+
         assert isinstance(observation, TrackObservation)
-        observation = deepcopy(observation)
-        observation.trim(self._mod_start, self._mod_end)
+        super().__init__(
+            observation=observation,
+            modeldata=modeldata,
+            max_model_gap=max_model_gap,
+            matched_data=matched_data,
+            gtype="track",
+        )
 
-        modeldata_list = list(self.raw_mod_data.values())
-        if len(modeldata_list) == 0:
-            return
+        # if observation is None and modeldata is None:
+        #    return
+        # self.raw_mod_data = (
+        #    self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        # )
 
-        for j, mdata in enumerate(modeldata_list):
-            df = self._model2obs_interp(observation, mdata, max_model_gap)
-            # rename first columns to x, y
-            df.columns = ["x", "y", *list(df.columns)[2:]]
-            if (len(df) > 0) and (len(df) == len(observation.data)):
-                ok = self._obs_mod_xy_distance_acceptable(df, observation.data)
-                # set model to NaN if too far away from obs location
-                df.loc[~ok, self.mod_names[j]] = np.nan
-                if sum(ok) == 0:
-                    warnings.warn(
-                        "no (spatial) overlap between model and observation points"
-                    )
-            if j == 0:
-                # change order of obs and model
-                cols = ["x", "y", self._obs_name, self.mod_names[j]]
-                data = df[cols]
-            else:
-                data[self.mod_names[j]] = df[self.mod_names[j]]
+        # observation = deepcopy(observation)
+        # observation.trim(self._mod_start, self._mod_end)
 
-        data.index.name = "time"
-        data = data.dropna()
-        data = data.to_xarray()
-        data.attrs["gtype"] = "track"
-        data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
-        data["x"].attrs["kind"] = "position"
-        data["y"].attrs["kind"] = "position"
-        data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
-        data[self._obs_name].attrs["color"] = observation.color
-        data[self._obs_name].attrs["weight"] = observation.weight
-        for n in self.mod_names:
-            data[n].attrs["kind"] = "model"
+        # modeldata_list = list(self.raw_mod_data.values())
+        # if len(modeldata_list) == 0:
+        #    return
 
-        self.data = data
+        # for j, mdata in enumerate(modeldata_list):
+        #    df = self._model2obs_interp(observation, mdata, max_model_gap)
+        #    # rename first columns to x, y
+        #    df.columns = ["x", "y", *list(df.columns)[2:]]
+        #    if (len(df) > 0) and (len(df) == len(observation.data)):
+        #        ok = self._obs_mod_xy_distance_acceptable(df, observation.data)
+        #        # set model to NaN if too far away from obs location
+        #        df.loc[~ok, self.mod_names[j]] = np.nan
+        #        if sum(ok) == 0:
+        #            warnings.warn(
+        #                "no (spatial) overlap between model and observation points"
+        #            )
+        #    if j == 0:
+        #        # change order of obs and model
+        #        cols = ["x", "y", self._obs_name, self.mod_names[j]]
+        #        data = df[cols]
+        #    else:
+        #        data[self.mod_names[j]] = df[self.mod_names[j]]
+
+        # data.index.name = "time"
+        # data = data.dropna()
+        # data = data.to_xarray()
+        # data.attrs["gtype"] = "track"
+        # data.attrs["name"] = observation.name
+        # data.attrs["variable_name"] = observation.variable_name
+        # data["x"].attrs["kind"] = "position"
+        # data["y"].attrs["kind"] = "position"
+        # data[self._obs_name].attrs["kind"] = "observation"
+        # data[self._obs_name].attrs["unit"] = observation._unit_text()
+        # data[self._obs_name].attrs["color"] = observation.color
+        # data[self._obs_name].attrs["weight"] = observation.weight
+        # for n in self.mod_names:
+        #    data[n].attrs["kind"] = "model"
+
+        # self.data = data
+
+        # TODO is this the best place to do this?
+        # self.data.attrs["gtype"] = "track"
 
     def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
         mod_xy = df_mod.loc[:, ["x", "y"]].values
