@@ -697,7 +697,7 @@ class SingleObsComparer:
 
     def _add_as_col_if_not_in_index(self, df, skilldf):
         """Add a field to skilldf if unique in df"""
-        FIELDS = ("observation","model")
+        FIELDS = ("observation", "model")
 
         for field in FIELDS:
             if (field == "model") and (self.n_models <= 1):
@@ -865,7 +865,9 @@ class SingleObsComparer:
 
         # n_models = len(df.model.unique())
         # n_obs = len(df.observation.unique())
-        by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
+
+        # n_obs=1 because we only have one observation (**SingleObsComparer**)
+        by = _parse_groupby(by=by, n_models=cmp.n_models, n_obs=1)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]
         if not "x" in by:
