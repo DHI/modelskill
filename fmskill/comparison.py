@@ -317,7 +317,7 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
     return by
 
 
-class SingleObsComparer:
+class Comparer:
 
     _obs_name = "Observation"
 
@@ -615,13 +615,13 @@ class SingleObsComparer:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def __add__(
-        self, other: Union["SingleObsComparer", "ComparerCollection"]
+        self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
 
-        if not isinstance(other, (SingleObsComparer, ComparerCollection)):
+        if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        if isinstance(other, SingleObsComparer) and (self.name == other.name):
+        if isinstance(other, Comparer) and (self.name == other.name):
             assert type(self) == type(other), "Must be same type!"
             missing_models = set(self.mod_names) - set(other.mod_names)
             if len(missing_models) == 0:
@@ -671,7 +671,7 @@ class SingleObsComparer:
         end: Union[str, datetime] = None,
         time: Union[str, datetime] = None,
         area: List[float] = None,
-    ) -> "SingleObsComparer":
+    ) -> "Comparer":
         d = self.data
         raw_mod_data = self.raw_mod_data
         if model is not None:
@@ -1381,11 +1381,11 @@ class SingleObsComparer:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
 
-class PointComparer(SingleObsComparer):
+class PointComparer(Comparer):
     pass
 
 
-class TrackComparer(SingleObsComparer):
+class TrackComparer(Comparer):
     pass
 
 
@@ -1408,9 +1408,7 @@ class ComparerCollection(Mapping, Sequence):
         self.comparers = {}
         self.add_comparer(comparers)
 
-    def add_comparer(
-        self, comparer: Union["SingleObsComparer", "ComparerCollection"]
-    ) -> None:
+    def add_comparer(self, comparer: Union["Comparer", "ComparerCollection"]) -> None:
         """Add another Comparer to this collection.
 
         Parameters
@@ -1424,11 +1422,11 @@ class ComparerCollection(Mapping, Sequence):
         else:
             self._add_comparer(comparer)
 
-    def _add_comparer(self, comparer: SingleObsComparer) -> None:
+    def _add_comparer(self, comparer: Comparer) -> None:
         if comparer is None:
             return
         assert isinstance(
-            comparer, SingleObsComparer
+            comparer, Comparer
         ), f"comparer must be a SingleObsComparer, not {type(comparer)}"
         if comparer.name in self.comparers:
             # comparer with this name already exists!
@@ -1584,10 +1582,10 @@ class ComparerCollection(Mapping, Sequence):
         return self.__copy__()
 
     def __add__(
-        self, other: Union["SingleObsComparer", "ComparerCollection"]
+        self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
 
-        if not isinstance(other, (SingleObsComparer, ComparerCollection)):
+        if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
         cc = ComparerCollection()
@@ -1620,7 +1618,7 @@ class ComparerCollection(Mapping, Sequence):
 
         cc = ComparerCollection()
         for cmp in self.comparers.values():
-            cmp: SingleObsComparer
+            cmp: Comparer
             if cmp.name in observation and cmp.variable_name in variable:
                 cmpsel = cmp.sel(
                     model=model,
