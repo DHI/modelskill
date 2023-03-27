@@ -30,15 +30,11 @@ result file path and a name:
 .. code-block:: python
 
    from fmskill import ModelResult
-   mr = ModelResult("HKZN_local_2017.dfsu", name="HKZN_local")
+   mr = ModelResult("HKZN_local_2017.dfsu", name="HKZN_local", item="Sign. Wave Heigt")
 
 Currently, ModelResult supports .dfs0 and .dfsu files and pandas DataFrame.  
 Only the file header is read when the ModelResult object is created. 
 The data will be read later. 
-
-The ModelResult can be constructed without specifying a specific item as shown here. 
-But the the item must be specified later (e.g. when connecting to an observation) 
-by mr[0] or similar.
 
 
 
@@ -78,14 +74,7 @@ The observations are connected with a model result using the
 .. code-block:: python
 
    from fmskill import Connector
-   con = Connector([HKNA, c2], mr[0])
-
-Note
-----
-Only ModelResults with a single item can be added to the Connector.
-From a multi-item ModelResult 'mr' an item must selected e.g. with
-'mr[0]' before adding.
-
+   con = Connector([HKNA, c2], mr)
 
 
 4. Extract ModelResults at observation positions
