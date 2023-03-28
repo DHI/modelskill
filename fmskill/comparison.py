@@ -710,29 +710,25 @@ class Comparer:
     def where(
         self,
         cond: Union[bool, np.ndarray, xr.DataArray],
-        drop: bool = True,
-        other: Union[float, np.ndarray, xr.DataArray] = np.nan,
     ) -> "Comparer":
-        """Return a new Comparer with values where cond is True and other
-        otherwise.
+        """Return a new Comparer with values where cond is True
 
         Parameters
         ----------
         cond : bool, np.ndarray, xr.DataArray
             This selects the values to return.
-        drop : bool, optional
-            If True, drop the points where cond is False, by default True
-        other : float, np.ndarray, xr.DataArray, optional
-            Values to use where cond is False, by default np.nan
 
         Returns
         -------
         Comparer
             New Comparer with values where cond is True and other otherwise.
+        
+        Examples
+        --------
+        >>> c2 = c.where(c.data.Observation > 0)
         """
-        d = self.data.where(cond, other)
-        if drop:
-            d = d.dropna(dim="time", how="all")
+        d = self.data.where(cond, other=np.nan)
+        d = d.dropna(dim="time", how="all")
         return self.__class__.from_compared_data(d, self.raw_mod_data)
 
     def skill(
