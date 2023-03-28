@@ -73,6 +73,25 @@ class Observation:
         self.variable_name = variable_name
         self.override_units = override_units
 
+    def trim(
+        self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
+    ) -> None:
+        """Trim observation data to a given time interval
+
+        Parameters
+        ----------
+        start_time : pd.Timestamp
+            start time
+        end_time : pd.Timestamp
+            end time
+        buffer : str, optional
+            buffer time around start and end time, by default "1s"
+        """
+        # Expand time interval with buffer
+        start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
+        end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
+        self.data = self.data.loc[start_time:end_time]
+
     @property
     def time(self) -> pd.DatetimeIndex:
         "Time index"
@@ -286,7 +305,9 @@ class PointObservation(Observation):
                 item = 0
             else:
                 item_names = [i.name for i in dfs.items]
-                raise ValueError(f"item needs to be specified (more than one in file). Available items: {item_names} ")
+                raise ValueError(
+                    f"item needs to be specified (more than one in file). Available items: {item_names} "
+                )
         ds = dfs.read(items=item)
         itemInfo = ds.items[0]
         df = ds.to_dataframe()

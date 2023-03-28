@@ -36,6 +36,28 @@ register_option(
 )
 
 
+MOD_COLORS = (
+    "#1f78b4",
+    "#33a02c",
+    "#ff7f00",
+    "#93509E",
+    "#63CEFF",
+    "#fdbf6f",
+    "#004165",
+    "#8B8D8E",
+    "#0098DB",
+    "#61C250",
+    "#a6cee3",
+    "#b2df8a",
+    "#fb9a99",
+    "#cab2d6",
+    "#003f5c",
+    "#2f4b7c",
+    "#665191",
+    "#e31a1c",
+)
+
+
 def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
     """Interpolate time series to new time index"""
     new_df = (
@@ -295,40 +317,107 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
     return by
 
 
-class SingleObsComparer:
-    _mod_colors = [
-        "#1f78b4",
-        "#33a02c",
-        "#ff7f00",
-        "#93509E",
-        "#63CEFF",
-        "#fdbf6f",
-        "#004165",
-        "#8B8D8E",
-        "#0098DB",
-        "#61C250",
-        "#a6cee3",
-        "#b2df8a",
-        "#fb9a99",
-        "#cab2d6",
-        "#003f5c",
-        "#2f4b7c",
-        "#665191",
-        "#e31a1c",
-    ]
-    #      darkblue: #004165
-    #      midblue:  #0098DB,
-    #      gray:     #8B8D8E,
-    #      lightblue:#63CEFF,
-    #      green:    #61C250
-    #      purple:   #93509E
+class Comparer:
+
     _obs_name = "Observation"
 
-    # def __init__(self, observation, modeldata):
-    #    self.data = None
-    #    self.raw_mod_data = (
-    #        self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-    #    )
+    def __init__(
+        self,
+        observation=None,
+        modeldata=None,
+        max_model_gap: Optional[TimeDeltaTypes] = None,
+        matched_data: xr.Dataset = None,
+        raw_mod_data: Optional[Dict[str, xr.Dataset]] = None,
+    ):
+
+        if matched_data is not None:
+            self.data = matched_data
+            self.raw_mod_data = raw_mod_data
+            return
+
+        self.raw_mod_data = (
+            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+        )
+
+        self.data = self._initialise_comparer(observation, max_model_gap)
+
+    def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
+
+        assert isinstance(observation, (PointObservation, TrackObservation))
+        gtype = "point" if isinstance(observation, PointObservation) else "track"
+        observation = deepcopy(observation)
+        observation.trim(self._mod_start, self._mod_end)
+
+        modeldata_list = list(self.raw_mod_data.values())
+        if len(modeldata_list) == 0:
+            return
+
+        # TODO refactor common functionality, to minimize duplication
+        if gtype == "point":
+            for j, mdata in enumerate(modeldata_list):
+                df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[
+                    :, ::-1
+                ]  # TODO why reverse?
+                if j == 0:
+                    data = df
+                else:
+                    data[self.mod_names[j]] = df[self.mod_names[j]]
+
+        elif gtype == "track":
+            for j, mdata in enumerate(modeldata_list):
+                df = self._model2obs_interp(observation, mdata, max_model_gap)
+                # rename first columns to x, y
+                df.columns = ["x", "y", *list(df.columns)[2:]]
+                if (len(df) > 0) and (len(df) == len(observation.data)):
+                    ok = self._obs_mod_xy_distance_acceptable(df, observation.data)
+                    # set model to NaN if too far away from obs location
+                    df.loc[~ok, self.mod_names[j]] = np.nan
+                    if sum(ok) == 0:
+                        warnings.warn(
+                            "no (spatial) overlap between model and observation points"
+                        )
+                if j == 0:
+                    # change order of obs and model
+                    cols = ["x", "y", self._obs_name, self.mod_names[j]]
+                    data = df[cols]
+                else:
+                    data[self.mod_names[j]] = df[self.mod_names[j]]
+
+        data.index.name = "time"
+        data = data.dropna()
+        data = data.to_xarray()
+        data.attrs["gtype"] = gtype
+
+        if gtype == "point":
+            data["x"] = observation.x
+            data["y"] = observation.y
+
+        data.attrs["name"] = observation.name
+        data.attrs["variable_name"] = observation.variable_name
+        data["x"].attrs["kind"] = "position"
+        data["y"].attrs["kind"] = "position"
+        data[self._obs_name].attrs["kind"] = "observation"
+        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["color"] = observation.color
+        data[self._obs_name].attrs["weight"] = observation.weight
+        for n in self.mod_names:
+            data[n].attrs["kind"] = "model"
+
+        return data
+
+    def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
+        mod_xy = df_mod.loc[:, ["x", "y"]].values
+        obs_xy = df_obs.iloc[:, :2].values
+        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
+        tol_xy = self._minimal_accepted_distance(obs_xy)
+        return d_xy < tol_xy
+
+    @staticmethod
+    def _minimal_accepted_distance(obs_xy):
+        # all consequtive distances
+        vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
+        # fraction of small quantile
+        return 0.5 * np.quantile(vec, 0.1)
 
     def _parse_modeldata_list(self, modeldata):
         """Convert to dict of dataframes"""
@@ -359,10 +448,12 @@ class SingleObsComparer:
     @classmethod
     def from_compared_data(cls, data, raw_mod_data=None):
         """Initialize from compared data"""
-        cmp = cls(observation=None, modeldata=None)
-        cmp.data = data
-        if raw_mod_data is not None:
-            cmp.raw_mod_data = raw_mod_data
+        # TODO this is not a clean solution
+        # cmp = cls(observation=None, modeldata=None)
+        # cmp.data = data
+        # if raw_mod_data is not None:
+        #    cmp.raw_mod_data = raw_mod_data
+        cmp = cls(matched_data=data, raw_mod_data=raw_mod_data)
         return cmp
 
     def __repr__(self):
@@ -470,26 +561,26 @@ class SingleObsComparer:
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
+    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
+        """Convert single model data to pandas DataFrame"""
+
+        df = self.data[[mod_name]].to_dataframe().copy()
+        df.columns = ["mod_val"]
+        df["model"] = mod_name
+        df["observation"] = self.name
+        df["x"] = self.data.x
+        df["y"] = self.data.y
+        df["obs_val"] = self.obs
+
+        return df
+
     def to_dataframe(self) -> pd.DataFrame:
-        """Convert to pandas DataFrame"""
-        res = _all_df_template(n_variables=1)
-        frames = []
-        cols = res.keys()
-        for j in range(self.n_models):
-            mod_name = self.mod_names[j]
-            df = self.data[[mod_name]].to_dataframe().copy()
-            df.columns = ["mod_val"]
-            df["model"] = mod_name
-            df["observation"] = self.name
-            df["x"] = self.x
-            df["y"] = self.y
-            df["obs_val"] = self.obs
-            frames.append(df[cols])
+        """Convert to pandas DataFrame with all model data concatenated"""
 
-        if len(frames) > 0:
-            res = pd.concat(frames)
+        # TODO is this needed?, comment out for now
+        # df = df.sort_index()
 
-        return res.sort_index()
+        return pd.concat([self._model_to_frame(name) for name in self.mod_names])
 
     def __copy__(self):
         return deepcopy(self)
@@ -524,15 +615,13 @@ class SingleObsComparer:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def __add__(
-        self, other: Union["SingleObsComparer", "ComparerCollection"]
+        self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
 
-        if not isinstance(other, (SingleObsComparer, ComparerCollection)):
+        if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        if isinstance(other, (PointComparer, TrackComparer)) and (
-            self.name == other.name
-        ):
+        if isinstance(other, Comparer) and (self.name == other.name):
             assert type(self) == type(other), "Must be same type!"
             missing_models = set(self.mod_names) - set(other.mod_names)
             if len(missing_models) == 0:
@@ -582,7 +671,7 @@ class SingleObsComparer:
         end: Union[str, datetime] = None,
         time: Union[str, datetime] = None,
         area: List[float] = None,
-    ) -> "SingleObsComparer":
+    ) -> "Comparer":
         d = self.data
         raw_mod_data = self.raw_mod_data
         if model is not None:
@@ -695,9 +784,11 @@ class SingleObsComparer:
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
 
-    def _add_as_col_if_not_in_index(self, df, skilldf, fields=["model", "observation"]):
+    def _add_as_col_if_not_in_index(self, df, skilldf):
         """Add a field to skilldf if unique in df"""
-        for field in reversed(fields):
+        FIELDS = ("observation", "model")
+
+        for field in FIELDS:
             if (field == "model") and (self.n_models <= 1):
                 continue
             if field not in skilldf.index.names:
@@ -863,7 +954,9 @@ class SingleObsComparer:
 
         # n_models = len(df.model.unique())
         # n_obs = len(df.observation.unique())
-        by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
+
+        # n_obs=1 because we only have one observation (**SingleObsComparer**)
+        by = _parse_groupby(by=by, n_models=cmp.n_models, n_obs=1)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]
         if not "x" in by:
@@ -1189,7 +1282,7 @@ class SingleObsComparer:
         ax = (
             self.data[mod_name]
             .to_series()
-            .hist(bins=bins, color=self._mod_colors[mod_id], **kwargs)
+            .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
         self.data[self._obs_name].to_series().hist(
             bins=bins, color=self.data[self._obs_name].attrs["color"], ax=ax, **kwargs
@@ -1237,7 +1330,7 @@ class SingleObsComparer:
             for j in range(self.n_models):
                 key = self.mod_names[j]
                 mod_df = self.raw_mod_data[key]
-                mod_df[key].plot(ax=ax, color=self._mod_colors[j])
+                mod_df[key].plot(ax=ax, color=MOD_COLORS[j])
 
             ax.scatter(
                 self.time,
@@ -1263,7 +1356,7 @@ class SingleObsComparer:
                         x=mod_df.index,
                         y=mod_df[key],
                         name=key,
-                        line=dict(color=self._mod_colors[j]),
+                        line=dict(color=MOD_COLORS[j]),
                     )
                 )
 
@@ -1288,137 +1381,12 @@ class SingleObsComparer:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
 
-class PointComparer(SingleObsComparer):
-    """
-    Comparer for observations from fixed locations
-
-    Examples
-    --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
-    >>> con = Connector(o1, mr)
-    >>> comparer = con.extract()
-    >>> comparer['Klagshamn']
-    """
-
-    def __init__(
-        self, observation, modeldata, max_model_gap: Optional[TimeDeltaTypes] = None
-    ):
-        if observation is None and modeldata is None:
-            return
-        self.raw_mod_data = (
-            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-        )
-        assert isinstance(observation, PointObservation)
-        mod_start = self._mod_start - timedelta(seconds=1)  # avoid rounding err
-        mod_end = self._mod_end + timedelta(seconds=1)
-        observation = deepcopy(observation)
-        observation.data = observation.data[mod_start:mod_end]
-
-        modeldata_list = list(self.raw_mod_data.values())
-        if len(modeldata_list) == 0:
-            return
-
-        for j, mdata in enumerate(modeldata_list):
-            df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[:, ::-1]
-            if j == 0:
-                data = df
-            else:
-                data[self.mod_names[j]] = df[self.mod_names[j]]
-
-        data.index.name = "time"
-        data.dropna(inplace=True)
-        data = data.to_xarray()
-        data.attrs["gtype"] = "point"
-        data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
-        data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["x"] = observation.x
-        data[self._obs_name].attrs["y"] = observation.y
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
-        data[self._obs_name].attrs["color"] = observation.color
-        data[self._obs_name].attrs["weight"] = observation.weight
-        for n in self.mod_names:
-            data[n].attrs["kind"] = "model"
-            data.attrs["gtype"] = "point"
-        self.data = data
+class PointComparer(Comparer):
+    pass
 
 
-class TrackComparer(SingleObsComparer):
-    """
-    Comparer for observations from changing locations i.e. `TrackObservation`
-
-    Examples
-    --------
-    >>> mr = ModelResult("HKZN_local_2017.dfsu", item=2)
-    >>> c2 = TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
-    >>> con = Connector(c2, mr)
-    >>> comparer = con.extract()
-    >>> comparer['c2']
-    """
-
-    def __init__(self, observation, modeldata, max_model_gap: float = None):
-        if observation is None and modeldata is None:
-            return
-        self.raw_mod_data = (
-            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-        )
-        assert isinstance(observation, TrackObservation)
-        observation = deepcopy(observation)
-        observation.data = observation.data[self._mod_start : self._mod_end]
-
-        modeldata_list = list(self.raw_mod_data.values())
-        if len(modeldata_list) == 0:
-            return
-
-        for j, mdata in enumerate(modeldata_list):
-            df = self._model2obs_interp(observation, mdata, max_model_gap)
-            # rename first columns to x, y
-            df.columns = ["x", "y", *list(df.columns)[2:]]
-            if (len(df) > 0) and (len(df) == len(observation.data)):
-                ok = self._obs_mod_xy_distance_acceptable(df, observation.data)
-                # set model to NaN if too far away from obs location
-                df.loc[~ok, self.mod_names[j]] = np.nan
-                if sum(ok) == 0:
-                    warnings.warn(
-                        "no (spatial) overlap between model and observation points"
-                    )
-            if j == 0:
-                # change order of obs and model
-                cols = ["x", "y", self._obs_name, self.mod_names[j]]
-                data = df[cols]
-            else:
-                data[self.mod_names[j]] = df[self.mod_names[j]]
-
-        data.index.name = "time"
-        data = data.dropna()
-        data = data.to_xarray()
-        data.attrs["gtype"] = "track"
-        data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
-        data["x"].attrs["kind"] = "position"
-        data["y"].attrs["kind"] = "position"
-        data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
-        data[self._obs_name].attrs["color"] = observation.color
-        data[self._obs_name].attrs["weight"] = observation.weight
-        for n in self.mod_names:
-            data[n].attrs["kind"] = "model"
-        self.data = data
-
-    def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
-        mod_xy = df_mod.loc[:, ["x", "y"]].values
-        obs_xy = df_obs.iloc[:, :2].values
-        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-        tol_xy = self._minimal_accepted_distance(obs_xy)
-        return d_xy < tol_xy
-
-    @staticmethod
-    def _minimal_accepted_distance(obs_xy):
-        # all consequtive distances
-        vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
-        # fraction of small quantile
-        return 0.5 * np.quantile(vec, 0.1)
+class TrackComparer(Comparer):
+    pass
 
 
 class ComparerCollection(Mapping, Sequence):
@@ -1440,9 +1408,7 @@ class ComparerCollection(Mapping, Sequence):
         self.comparers = {}
         self.add_comparer(comparers)
 
-    def add_comparer(
-        self, comparer: Union["SingleObsComparer", "ComparerCollection"]
-    ) -> None:
+    def add_comparer(self, comparer: Union["Comparer", "ComparerCollection"]) -> None:
         """Add another Comparer to this collection.
 
         Parameters
@@ -1456,11 +1422,11 @@ class ComparerCollection(Mapping, Sequence):
         else:
             self._add_comparer(comparer)
 
-    def _add_comparer(self, comparer: SingleObsComparer) -> None:
+    def _add_comparer(self, comparer: Comparer) -> None:
         if comparer is None:
             return
         assert isinstance(
-            comparer, SingleObsComparer
+            comparer, Comparer
         ), f"comparer must be a SingleObsComparer, not {type(comparer)}"
         if comparer.name in self.comparers:
             # comparer with this name already exists!
@@ -1557,6 +1523,7 @@ class ComparerCollection(Mapping, Sequence):
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
+        # TODO delegate to each comparer
         res = _all_df_template(self.n_variables)
         frames = []
         cols = res.keys()
@@ -1615,10 +1582,10 @@ class ComparerCollection(Mapping, Sequence):
         return self.__copy__()
 
     def __add__(
-        self, other: Union["SingleObsComparer", "ComparerCollection"]
+        self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
 
-        if not isinstance(other, (SingleObsComparer, ComparerCollection)):
+        if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
         cc = ComparerCollection()
@@ -1651,7 +1618,7 @@ class ComparerCollection(Mapping, Sequence):
 
         cc = ComparerCollection()
         for cmp in self.comparers.values():
-            cmp: SingleObsComparer
+            cmp: Comparer
             if cmp.name in observation and cmp.variable_name in variable:
                 cmpsel = cmp.sel(
                     model=model,
@@ -2128,7 +2095,7 @@ class ComparerCollection(Mapping, Sequence):
         df = cmp.to_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        ax = df.mod_val.hist(bins=bins, color=self[0]._mod_colors[mod_id], **kwargs)
+        ax = df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         df.obs_val.hist(
             bins=bins,
             color=self[0].data[self[0]._obs_name].attrs["color"],

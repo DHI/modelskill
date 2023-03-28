@@ -346,6 +346,7 @@ class TrackConnector(_SingleObsConnector):
             warnings.warn(
                 f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
             )
+            # TODO returning None is not consistent with type hint
             return None
 
         comparer = TrackComparer(self.obs, df_model, max_model_gap=max_model_gap)
