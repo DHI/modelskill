@@ -26,6 +26,8 @@ def pc():
     data["x"].attrs["kind"] = "position"
     data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
 
     return fmskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
