@@ -5,11 +5,6 @@ import xarray as xr
 import fmskill.comparison
 
 
-def _get_df() -> pd.DataFrame:
-
-    return df
-
-
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data.attrs["variable_name"] = "fake var"
     data["x"].attrs["kind"] = "position"
@@ -96,7 +91,6 @@ def test_cc_properties(cc):
 def test_cc_sel_model(cc):
     cc1 = cc.sel(model="m1")
     assert cc1.n_comparers == 2
-    assert len(cc1) == 2
     assert cc1.n_models == 1
     assert cc1.n_points == 10
     assert cc1.start == pd.Timestamp("2019-01-01")
@@ -108,5 +102,16 @@ def test_cc_sel_model(cc):
 def test_cc_sel_model_m3(cc):
     cc1 = cc.sel(model="m3")
     assert cc1.n_comparers == 1
-    assert len(cc1) == 1
     assert cc1.n_models == 1
+
+
+def test_cc_sel_model_last(cc):
+    # last is m3 which is not in the first comparer
+    cc1 = cc.sel(model=-1)
+    assert cc1.n_comparers == 1
+    assert cc1.n_models == 1
+    assert cc1.n_points == 5
+    assert cc1.start == pd.Timestamp("2019-01-03")
+    assert cc1.end == pd.Timestamp("2019-01-07")
+    assert cc1.obs_names == ["fake track obs"]
+    assert cc1.mod_names == ["m3"]
