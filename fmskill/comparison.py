@@ -1725,6 +1725,28 @@ class ComparerCollection(Mapping, Sequence):
                 )
                 if cmpsel is not None:
                     # TODO: check if cmpsel is empty
+                    if cmpsel.n_points > 0:
+                        cc.add_comparer(cmpsel)
+        return cc
+
+    def query(self, query: str) -> "ComparerCollection":
+        """Select data based on a query.
+
+        Parameters
+        ----------
+        query : str
+            Query string. See pandas.DataFrame.query() for details.
+
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with selected data.
+        """
+        cc = ComparerCollection()
+        for cmp in self.comparers.values():
+            cmpsel = cmp.query(query)
+            if cmpsel is not None:
+                if cmpsel.n_points > 0:
                     cc.add_comparer(cmpsel)
         return cc
 
