@@ -89,29 +89,59 @@ def test_cc_properties(cc):
 
 
 def test_cc_sel_model(cc):
-    cc1 = cc.sel(model="m1")
-    assert cc1.n_comparers == 2
-    assert cc1.n_models == 1
-    assert cc1.n_points == 10
-    assert cc1.start == pd.Timestamp("2019-01-01")
-    assert cc1.end == pd.Timestamp("2019-01-07")
-    assert cc1.obs_names == ["fake point obs", "fake track obs"]
-    assert cc1.mod_names == ["m1"]
+    cc2 = cc.sel(model="m1")
+    assert cc2.n_comparers == 2
+    assert cc2.n_models == 1
+    assert cc2.n_points == 10
+    assert cc2.start == pd.Timestamp("2019-01-01")
+    assert cc2.end == pd.Timestamp("2019-01-07")
+    assert cc2.obs_names == ["fake point obs", "fake track obs"]
+    assert cc2.mod_names == ["m1"]
 
 
 def test_cc_sel_model_m3(cc):
-    cc1 = cc.sel(model="m3")
-    assert cc1.n_comparers == 1
-    assert cc1.n_models == 1
+    cc2 = cc.sel(model="m3")
+    assert cc2.n_comparers == 1
+    assert cc2.n_models == 1
 
 
 def test_cc_sel_model_last(cc):
     # last is m3 which is not in the first comparer
-    cc1 = cc.sel(model=-1)
-    assert cc1.n_comparers == 1
-    assert cc1.n_models == 1
-    assert cc1.n_points == 5
-    assert cc1.start == pd.Timestamp("2019-01-03")
-    assert cc1.end == pd.Timestamp("2019-01-07")
-    assert cc1.obs_names == ["fake track obs"]
-    assert cc1.mod_names == ["m3"]
+    cc2 = cc.sel(model=-1)
+    assert cc2.n_comparers == 1
+    assert cc2.n_models == 1
+    assert cc2.n_points == 5
+    assert cc2.start == pd.Timestamp("2019-01-03")
+    assert cc2.end == pd.Timestamp("2019-01-07")
+    assert cc2.obs_names == ["fake track obs"]
+    assert cc2.mod_names == ["m3"]
+
+
+# TODO: FAILS
+# def test_cc_sel_time_single(cc):
+#     cc1 = cc.sel(time="2019-01-03")
+#     assert cc1.n_comparers == 2
+#     assert cc1.n_models == 3
+#     assert cc1.n_points == 6
+#     assert cc1.start == pd.Timestamp("2019-01-03")
+#     assert cc1.end == pd.Timestamp("2019-01-05")
+#     assert cc1.obs_names == ["fake point obs", "fake track obs"]
+#     assert cc1.mod_names == ["m1", "m2", "m3"]
+
+
+def test_cc_sel_time(cc):
+    cc2 = cc.sel(time=slice("2019-01-03", "2019-01-05"))
+    assert cc2.n_comparers == 2
+    assert cc2.n_models == 3
+    assert cc2.n_points == 6
+    assert cc2.start == pd.Timestamp("2019-01-03")
+    assert cc2.end == pd.Timestamp("2019-01-05")
+    assert cc2.obs_names == ["fake point obs", "fake track obs"]
+    assert cc2.mod_names == ["m1", "m2", "m3"]
+
+
+def test_cc_query(cc):
+    cc2 = cc.query("Observation > 3")
+    assert cc2.n_comparers == 1
+    assert cc2.n_models == 2
+    assert cc2.n_points == 2
