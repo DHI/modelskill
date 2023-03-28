@@ -73,6 +73,19 @@ def test_pc_properties(pc):
     assert pc.mod_names == ["m1", "m2"]
 
 
+def test_tc_properties(tc):
+    assert tc.n_models == 2
+    assert tc.n_points == 5
+    assert tc.gtype == "track"
+    assert np.all(tc.x == [10.1, 10.2, 10.3, 10.4, 10.5])
+    assert np.all(tc.y == [55.1, 55.2, 55.3, 55.4, 55.5])
+    assert tc.name == "fake track obs"
+    assert tc.variable_name == "fake var"
+    assert tc.start == pd.Timestamp("2019-01-01")
+    assert tc.end == pd.Timestamp("2019-01-05")
+    assert tc.mod_names == ["m1", "m2"]
+
+
 def test_pc_sel_time(pc):
     pc2 = pc.sel(time=slice("2019-01-03", "2019-01-04"))
     assert pc2.n_points == 2
@@ -96,7 +109,6 @@ def test_tc_sel_area(tc):
     tc2 = tc.sel(area=bbox)
     assert tc2.n_points == 2
     assert tc2.data.Observation.values.tolist() == [1.0, 2.0]
-
 
 
 def test_pc_where(pc):
@@ -124,3 +136,10 @@ def test_tc_where_derived(tc):
     tc2 = tc.where(dist > 0.4)
     assert tc2.n_points == 3
     assert tc2.data.Observation.values.tolist() == [3.0, 4.0, 5.0]
+
+
+def test_tc_where_array(tc):
+    cond = np.array([True, False, True, False, True])
+    tc2 = tc.where(cond)
+    assert tc2.n_points == 3
+    assert tc2.data.Observation.values.tolist() == [1.0, 3.0, 5.0]
