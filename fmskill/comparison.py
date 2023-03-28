@@ -58,6 +58,11 @@ MOD_COLORS = (
 )
 
 
+TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
+TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
+IdOrNameTypes = Union[int, str, List[int], List[str]]
+
+
 def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
     """Interpolate time series to new time index"""
     new_df = (
@@ -66,11 +71,6 @@ def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
         .reindex(new_time)
     )
     return new_df
-
-
-TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
-TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
-IdOrNameTypes = Union[int, str, List[int], List[str]]
 
 
 def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
@@ -1669,6 +1669,30 @@ class ComparerCollection(Mapping, Sequence):
         time: TimeTypes = None,
         area: List[float] = None,
     ) -> "ComparerCollection":
+        """Select data based on model, time and/or area.
+
+        Parameters
+        ----------
+        model : str or int or list of str or list of int, optional
+            Model name or index. If None, all models are selected.
+        observation : str or int or list of str or list of int, optional
+            Observation name or index. If None, all observations are selected.
+        variable : str or int or list of str or list of int, optional
+            Variable name or index. If None, all variables are selected.
+        start : str or datetime, optional
+            Start time. If None, all times are selected.
+        end : str or datetime, optional
+            End time. If None, all times are selected.
+        time : str or datetime, optional
+            Time. If None, all times are selected.
+        area : list of float, optional
+            bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with selected data.
+        """
 
         if observation is None:
             observation = self.obs_names
