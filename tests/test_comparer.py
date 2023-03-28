@@ -172,12 +172,12 @@ def test_tc_sel_area_polygon(tc):
     assert tc2.n_points == 2
     assert tc2.data.Observation.values.tolist() == [1.0, 2.0]
 
+
 def test_tc_sel_time_and_area(tc):
     bbox = [9.9, 54.9, 10.25, 55.25]
     tc2 = tc.sel(time=slice("2019-01-02", "2019-01-03"), area=bbox)
     assert tc2.n_points == 1
     assert tc2.data.Observation.values.tolist() == [2.0]
-
 
 
 def test_pc_where(pc):
