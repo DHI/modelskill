@@ -1694,6 +1694,9 @@ class ComparerCollection(Mapping, Sequence):
             New ComparerCollection with selected data.
         """
 
+        if model is not None:
+            model = [model] if np.isscalar(model) else model
+            model = [_get_name(m, self.mod_names) for m in model]
         if observation is None:
             observation = self.obs_names
         else:
@@ -1710,6 +1713,8 @@ class ComparerCollection(Mapping, Sequence):
         for cmp in self.comparers.values():
             cmp: Comparer
             if cmp.name in observation and cmp.variable_name in variable:
+                if any([m not in cmp.mod_names for m in model]):
+                    continue
                 cmpsel = cmp.sel(
                     model=model,
                     start=start,
