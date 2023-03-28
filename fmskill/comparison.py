@@ -318,7 +318,8 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 class Comparer:
-
+    data: xr.Dataset
+    raw_mod_data: Dict[str, pd.DataFrame]
     _obs_name = "Observation"
 
     def __init__(
@@ -327,7 +328,7 @@ class Comparer:
         modeldata=None,
         max_model_gap: Optional[TimeDeltaTypes] = None,
         matched_data: xr.Dataset = None,
-        raw_mod_data: Optional[Dict[str, xr.Dataset]] = None,
+        raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
 
         if matched_data is not None:
@@ -419,7 +420,7 @@ class Comparer:
         # fraction of small quantile
         return 0.5 * np.quantile(vec, 0.1)
 
-    def _parse_modeldata_list(self, modeldata):
+    def _parse_modeldata_list(self, modeldata) -> Dict[str, pd.DataFrame]:
         """Convert to dict of dataframes"""
         if not isinstance(modeldata, Sequence):
             modeldata = [modeldata]
@@ -428,7 +429,7 @@ class Comparer:
         return {m.columns[-1]: m for m in mod_dfs if m is not None}
 
     @staticmethod
-    def _parse_single_modeldata(modeldata):
+    def _parse_single_modeldata(modeldata) -> pd.DataFrame:
         """Convert to dataframe and set index to pd.DatetimeIndex"""
         if isinstance(modeldata, (mikeio.Dataset, xr.DataArray, xr.Dataset)):
             mod_df = modeldata.to_dataframe()
@@ -1404,6 +1405,9 @@ class ComparerCollection(Mapping, Sequence):
     >>> comparer = con.extract()
     """
 
+    comparers: Dict[str, Comparer]
+    """Collection of Comparers, indexed by name"""
+
     def __init__(self, comparers=None):
         self.comparers = {}
         self.add_comparer(comparers)
@@ -1514,11 +1518,6 @@ class ComparerCollection(Mapping, Sequence):
             reset_option("metrics.list")
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
-
-    @property
-    def data(self) -> pd.DataFrame:
-        """Return a copy of the data as a pandas DataFrame"""
-        return self.to_dataframe()
 
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
