@@ -25,6 +25,8 @@ def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["x"].attrs["kind"] = "position"
     data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"
+    data["Observation"].attrs["weight"] = 1.0
+    data["Observation"].attrs["unit"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     return data
@@ -169,6 +171,13 @@ def test_tc_sel_area_polygon(tc):
     tc2 = tc.sel(area=area)
     assert tc2.n_points == 2
     assert tc2.data.Observation.values.tolist() == [1.0, 2.0]
+
+def test_tc_sel_time_and_area(tc):
+    bbox = [9.9, 54.9, 10.25, 55.25]
+    tc2 = tc.sel(time=slice("2019-01-02", "2019-01-03"), area=bbox)
+    assert tc2.n_points == 1
+    assert tc2.data.Observation.values.tolist() == [2.0]
+
 
 
 def test_pc_where(pc):
