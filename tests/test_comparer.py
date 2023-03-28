@@ -8,13 +8,13 @@ import fmskill.comparison
 def _get_df() -> pd.DataFrame:
     df = pd.DataFrame(
         {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0],
-            "x": [10.1, 10.2, 10.3, 10.4, 10.5],
-            "y": [55.1, 55.2, 55.3, 55.4, 55.5],
-            "m1": [1.5, 2.4, 3.6, 4.9, 5.6],
-            "m2": [1.1, 2.2, 3.1, 4.2, 5.1],
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
+            "x": [10.1, 10.2, 10.3, 10.4, 10.5, 10.6],
+            "y": [55.1, 55.2, 55.3, 55.4, 55.5, 55.6],
+            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
+            "m2": [1.1, 2.2, 3.1, 4.2, 5.1, 6.2],
         },
-        index=pd.date_range("2019-01-01", periods=5, freq="D"),
+        index=pd.date_range("2019-01-01", periods=6, freq="D"),
     )
     df.index.name = "time"
     return df
@@ -37,7 +37,7 @@ def pc() -> fmskill.comparison.Comparer:
     df = _get_df().drop(columns=["x", "y"])
     raw_data = {"m1": df[["m1"]], "m2": df[["m2"]]}
 
-    data = df.to_xarray()
+    data = df.dropna().to_xarray()
     data.attrs["gtype"] = "point"
     data.attrs["name"] = "fake point obs"
     data["x"] = x
@@ -52,7 +52,7 @@ def tc() -> fmskill.comparison.Comparer:
     df = _get_df()
     raw_data = {"m1": df[["x", "y", "m1"]], "m2": df[["x", "y", "m2"]]}
 
-    data = df.to_xarray()
+    data = df.dropna().to_xarray()
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
@@ -71,6 +71,11 @@ def test_pc_properties(pc):
     assert pc.start == pd.Timestamp("2019-01-01")
     assert pc.end == pd.Timestamp("2019-01-05")
     assert pc.mod_names == ["m1", "m2"]
+    assert pc.obs[-1] == 5.0
+    assert pc.mod[-1, 1] == 5.1
+
+    assert pc.raw_mod_data["m1"].columns.tolist() == ["m1"]
+    assert np.all(pc.raw_mod_data["m1"]["m1"] == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
 
 
 def test_tc_properties(tc):
@@ -84,6 +89,12 @@ def test_tc_properties(tc):
     assert tc.start == pd.Timestamp("2019-01-01")
     assert tc.end == pd.Timestamp("2019-01-05")
     assert tc.mod_names == ["m1", "m2"]
+    assert tc.obs[-1] == 5.0
+    assert tc.mod[-1, 1] == 5.1
+
+    assert tc.raw_mod_data["m1"].columns.tolist() == ["x", "y", "m1"]
+    assert np.all(tc.raw_mod_data["m1"]["m1"] == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
+    assert np.all(tc.raw_mod_data["m1"]["x"] == [10.1, 10.2, 10.3, 10.4, 10.5, 10.6])
 
 
 def test_pc_sel_time(pc):
@@ -102,11 +113,60 @@ def test_pc_sel_model(pc):
     assert pc2.n_points == 5
     assert pc2.n_models == 1
     assert np.all(pc2.data.m2 == pc.data.m2)
+    assert np.all(pc2.raw_mod_data["m2"] == pc.raw_mod_data["m2"])
+
+
+def test_pc_sel_model_first(pc):
+    pc2 = pc.sel(model=0)
+    assert pc2.n_points == 5
+    assert pc2.n_models == 1
+    assert np.all(pc2.data.m1 == pc.data.m1)
+
+
+def test_pc_sel_model_last(pc):
+    pc2 = pc.sel(model=-1)
+    assert pc2.n_points == 5
+    assert pc2.n_models == 1
+    assert np.all(pc2.data.m2 == pc.data.m2)
+
+
+def test_pc_sel_models_reversed(pc):
+    pc2 = pc.sel(model=["m2", "m1"])
+    assert pc2.n_points == 5
+    assert pc2.n_models == 2
+    assert pc2.mod_names == ["m2", "m1"]
+    assert np.all(pc2.data.m2 == pc.data.m2)
+
+
+def test_pc_sel_model_error(pc):
+    with pytest.raises(KeyError):
+        pc.sel(model="m3")
+
+
+def test_pc_sel_area(pc):
+    bbox = [9.9, 54.9, 10.25, 55.25]
+    pc2 = pc.sel(area=bbox)
+    assert pc2.n_points == 5
+    assert pc2.data.Observation.values.tolist() == [1.0, 2.0, 3.0, 4.0, 5.0]
+
+
+def test_tc_sel_model(tc):
+    tc2 = tc.sel(model="m2")
+    assert tc2.n_points == 5
+    assert tc2.n_models == 1
+    assert np.all(tc2.data.m2 == tc.data.m2)
 
 
 def test_tc_sel_area(tc):
     bbox = [9.9, 54.9, 10.25, 55.25]
     tc2 = tc.sel(area=bbox)
+    assert tc2.n_points == 2
+    assert tc2.data.Observation.values.tolist() == [1.0, 2.0]
+
+
+def test_tc_sel_area_polygon(tc):
+    area = [(9.9, 54.9), (10.25, 54.9), (10.25, 55.25), (9.9, 55.25)]
+    tc2 = tc.sel(area=area)
     assert tc2.n_points == 2
     assert tc2.data.Observation.values.tolist() == [1.0, 2.0]
 
