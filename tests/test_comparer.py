@@ -12,7 +12,7 @@ def _get_df() -> pd.DataFrame:
             "x": [10.1, 10.2, 10.3, 10.4, 10.5, 10.6],
             "y": [55.1, 55.2, 55.3, 55.4, 55.5, 55.6],
             "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
-            "m2": [1.1, 2.2, 3.1, 4.2, 5.1, 6.2],
+            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
         },
         index=pd.date_range("2019-01-01", periods=6, freq="D"),
     )
@@ -74,7 +74,7 @@ def test_pc_properties(pc):
     assert pc.end == pd.Timestamp("2019-01-05")
     assert pc.mod_names == ["m1", "m2"]
     assert pc.obs[-1] == 5.0
-    assert pc.mod[-1, 1] == 5.1
+    assert pc.mod[-1, 1] == 4.9
 
     assert pc.raw_mod_data["m1"].columns.tolist() == ["m1"]
     assert np.all(pc.raw_mod_data["m1"]["m1"] == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
@@ -92,7 +92,7 @@ def test_tc_properties(tc):
     assert tc.end == pd.Timestamp("2019-01-05")
     assert tc.mod_names == ["m1", "m2"]
     assert tc.obs[-1] == 5.0
-    assert tc.mod[-1, 1] == 5.1
+    assert tc.mod[-1, 1] == 4.9
 
     assert tc.raw_mod_data["m1"].columns.tolist() == ["x", "y", "m1"]
     assert np.all(tc.raw_mod_data["m1"]["m1"] == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
@@ -212,3 +212,20 @@ def test_tc_where_array(tc):
     tc2 = tc.where(cond)
     assert tc2.n_points == 3
     assert tc2.data.Observation.values.tolist() == [1.0, 3.0, 5.0]
+
+
+def test_pc_query(pc):
+    pc2 = pc.query("Observation > 2.5")
+    assert pc2.n_points == 3
+    assert pc2.data.Observation.values.tolist() == [3.0, 4.0, 5.0]
+
+
+def test_pc_query2(pc):
+    pc2 = pc.query("Observation < m2")
+    assert pc2.n_points == 4
+    assert pc2.data.Observation.values.tolist() == [1.0, 2.0, 3.0, 4.0]
+
+
+def test_pc_query_empty(pc):
+    pc2 = pc.query("Observation > 10.0")
+    assert pc2.n_points == 0
