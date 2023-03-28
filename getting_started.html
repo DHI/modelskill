@@ -284,10 +284,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow">Workflow</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-modelresults">1. Define ModelResults</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-observations">2. Define Observations</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#connect-observations-and-modelresults">3. Connect observations and ModelResults</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#note">Note</a></li>
-</ul>
-</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#connect-observations-and-modelresults">3. Connect observations and ModelResults</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#extract-modelresults-at-observation-positions">4. Extract ModelResults at observation positions</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#do-analysis-plotting-etc-with-a-comparer">5. Do analysis, plotting, etc with a Comparer</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering">Filtering</a></li>
@@ -328,15 +325,12 @@ The most common formats are .dfsu for distributed data and .dfs0 for
 time series point data. A FMskill <a class="reference external" href="api.html#fmskill.model.ModelResult">ModelResult</a> is defined by the
 result file path and a name:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fmskill</span> <span class="kn">import</span> <span class="n">ModelResult</span>
-<span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;HKZN_local_2017.dfsu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKZN_local&quot;</span><span class="p">)</span>
+<span class="n">mr</span> <span class="o">=</span> <span class="n">ModelResult</span><span class="p">(</span><span class="s2">&quot;HKZN_local_2017.dfsu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKZN_local&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="s2">&quot;Sign. Wave Heigt&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Currently, ModelResult supports .dfs0 and .dfsu files and pandas DataFrame.
 Only the file header is read when the ModelResult object is created.
 The data will be read later.</p>
-<p>The ModelResult can be constructed without specifying a specific item as shown here.
-But the the item must be specified later (e.g. when connecting to an observation)
-by mr[0] or similar.</p>
 </section>
 <section id="define-observations">
 <h3>2. Define Observations<a class="headerlink" href="#define-observations" title="Permalink to this headline">#</a></h3>
@@ -362,15 +356,9 @@ the item number (or item name) and a name. A PointObservation further needs to b
 <p>The observations are connected with a model result using the
 <a class="reference external" href="api.html#fmskill.connection.Connector">Connector</a> like this:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">fmskill</span> <span class="kn">import</span> <span class="n">Connector</span>
-<span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">([</span><span class="n">HKNA</span><span class="p">,</span> <span class="n">c2</span><span class="p">],</span> <span class="n">mr</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">con</span> <span class="o">=</span> <span class="n">Connector</span><span class="p">([</span><span class="n">HKNA</span><span class="p">,</span> <span class="n">c2</span><span class="p">],</span> <span class="n">mr</span><span class="p">)</span>
 </pre></div>
 </div>
-<section id="note">
-<h4>Note<a class="headerlink" href="#note" title="Permalink to this headline">#</a></h4>
-<p>Only ModelResults with a single item can be added to the Connector.
-From a multi-item ModelResult ‘mr’ an item must selected e.g. with
-‘mr[0]’ before adding.</p>
-</section>
 </section>
 <section id="extract-modelresults-at-observation-positions">
 <h3>4. Extract ModelResults at observation positions<a class="headerlink" href="#extract-modelresults-at-observation-positions" title="Permalink to this headline">#</a></h3>
@@ -451,10 +439,7 @@ for plotting and skill assessment.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow">Workflow</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-modelresults">1. Define ModelResults</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-observations">2. Define Observations</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#connect-observations-and-modelresults">3. Connect observations and ModelResults</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#note">Note</a></li>
-</ul>
-</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#connect-observations-and-modelresults">3. Connect observations and ModelResults</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#extract-modelresults-at-observation-positions">4. Extract ModelResults at observation positions</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#do-analysis-plotting-etc-with-a-comparer">5. Do analysis, plotting, etc with a Comparer</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering">Filtering</a></li>
