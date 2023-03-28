@@ -693,10 +693,10 @@ class Comparer:
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
-                mask = (self.x > x0) & (self.x < x1) & (self.y > y0) & (self.y < y1)
+                mask = (d.x > x0) & (d.x < x1) & (d.y > y0) & (d.y < y1)
             elif _area_is_polygon(area):
                 polygon = np.array(area)
-                xy = np.column_stack((self.x, self.y))
+                xy = np.column_stack((d.x, d.y))
                 mask = _inside_polygon(polygon, xy)
             else:
                 raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
@@ -722,7 +722,7 @@ class Comparer:
         -------
         Comparer
             New Comparer with values where cond is True and other otherwise.
-        
+
         Examples
         --------
         >>> c2 = c.where(c.data.Observation > 0)
