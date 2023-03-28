@@ -1713,10 +1713,11 @@ class ComparerCollection(Mapping, Sequence):
         for cmp in self.comparers.values():
             cmp: Comparer
             if cmp.name in observation and cmp.variable_name in variable:
-                if any([m not in cmp.mod_names for m in model]):
+                thismodel = [m for m in model if m in cmp.mod_names] if model else None
+                if (thismodel is not None) and (len(thismodel) == 0):
                     continue
                 cmpsel = cmp.sel(
-                    model=model,
+                    model=thismodel,
                     start=start,
                     end=end,
                     time=time,
