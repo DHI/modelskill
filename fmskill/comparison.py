@@ -1742,13 +1742,10 @@ class ComparerCollection(Mapping, Sequence):
         ComparerCollection
             New ComparerCollection with selected data.
         """
-        cc = ComparerCollection()
-        for cmp in self.comparers.values():
-            cmpsel = cmp.query(query)
-            if cmpsel is not None:
-                if cmpsel.n_points > 0:
-                    cc.add_comparer(cmpsel)
-        return cc
+        q_cmps = [cmp.query(query) for cmp in self.comparers.values()]
+        cmps_with_data = [cmp for cmp in q_cmps if cmp.n_points > 0]
+
+        return ComparerCollection(cmps_with_data)
 
     def skill(
         self,
