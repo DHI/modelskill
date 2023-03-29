@@ -58,6 +58,11 @@ MOD_COLORS = (
 )
 
 
+TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
+TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
+IdOrNameTypes = Union[int, str, List[int], List[str]]
+
+
 def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
     """Interpolate time series to new time index"""
     new_df = (
@@ -66,9 +71,6 @@ def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
         .reindex(new_time)
     )
     return new_df
-
-
-TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 
 
 def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
@@ -318,7 +320,8 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 class Comparer:
-
+    data: xr.Dataset
+    raw_mod_data: Dict[str, pd.DataFrame]
     _obs_name = "Observation"
 
     def __init__(
@@ -327,7 +330,7 @@ class Comparer:
         modeldata=None,
         max_model_gap: Optional[TimeDeltaTypes] = None,
         matched_data: xr.Dataset = None,
-        raw_mod_data: Optional[Dict[str, xr.Dataset]] = None,
+        raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
 
         if matched_data is not None:
@@ -419,7 +422,7 @@ class Comparer:
         # fraction of small quantile
         return 0.5 * np.quantile(vec, 0.1)
 
-    def _parse_modeldata_list(self, modeldata):
+    def _parse_modeldata_list(self, modeldata) -> Dict[str, pd.DataFrame]:
         """Convert to dict of dataframes"""
         if not isinstance(modeldata, Sequence):
             modeldata = [modeldata]
@@ -428,7 +431,7 @@ class Comparer:
         return {m.columns[-1]: m for m in mod_dfs if m is not None}
 
     @staticmethod
-    def _parse_single_modeldata(modeldata):
+    def _parse_single_modeldata(modeldata) -> pd.DataFrame:
         """Convert to dataframe and set index to pd.DatetimeIndex"""
         if isinstance(modeldata, (mikeio.Dataset, xr.DataArray, xr.Dataset)):
             mod_df = modeldata.to_dataframe()
@@ -666,12 +669,32 @@ class Comparer:
 
     def sel(
         self,
-        model: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
-        time: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
+        time: TimeTypes = None,
         area: List[float] = None,
     ) -> "Comparer":
+        """Select data based on model, time and/or area.
+
+        Parameters
+        ----------
+        model : str or int or list of str or list of int, optional
+            Model name or index. If None, all models are selected.
+        start : str or datetime, optional
+            Start time. If None, all times are selected.
+        end : str or datetime, optional
+            End time. If None, all times are selected.
+        time : str or datetime, optional
+            Time. If None, all times are selected.
+        area : list of float, optional
+            bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+
+        Returns
+        -------
+        Comparer
+            New Comparer with selected data.
+        """
         d = self.data
         raw_mod_data = self.raw_mod_data
         if model is not None:
@@ -692,10 +715,10 @@ class Comparer:
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
-                mask = (self.x > x0) & (self.x < x1) & (self.y > y0) & (self.y < y1)
+                mask = (d.x > x0) & (d.x < x1) & (d.y > y0) & (d.y < y1)
             elif _area_is_polygon(area):
                 polygon = np.array(area)
-                xy = np.column_stack((self.x, self.y))
+                xy = np.column_stack((d.x, d.y))
                 mask = _inside_polygon(polygon, xy)
             else:
                 raise ValueError("area supports bbox [x0,y0,x1,y1] and closed polygon")
@@ -706,13 +729,58 @@ class Comparer:
                 d = d.isel(time=mask)
         return self.__class__.from_compared_data(d, raw_mod_data)
 
+    def where(
+        self,
+        cond: Union[bool, np.ndarray, xr.DataArray],
+    ) -> "Comparer":
+        """Return a new Comparer with values where cond is True
+
+        Parameters
+        ----------
+        cond : bool, np.ndarray, xr.DataArray
+            This selects the values to return.
+
+        Returns
+        -------
+        Comparer
+            New Comparer with values where cond is True and other otherwise.
+
+        Examples
+        --------
+        >>> c2 = c.where(c.data.Observation > 0)
+        """
+        d = self.data.where(cond, other=np.nan)
+        d = d.dropna(dim="time", how="all")
+        return self.__class__.from_compared_data(d, self.raw_mod_data)
+
+    def query(self, query: str) -> "Comparer":
+        """Return a new Comparer with values where query cond is True
+
+        Parameters
+        ----------
+        query : str
+            Query string, see pandas.DataFrame.query
+
+        Returns
+        -------
+        Comparer
+            New Comparer with values where cond is True and other otherwise.
+
+        Examples
+        --------
+        >>> c2 = c.query("Observation > 0")
+        """
+        d = self.data.query({"time": query})
+        d = d.dropna(dim="time", how="all")
+        return self.__class__.from_compared_data(d, self.raw_mod_data)
+
     def skill(
         self,
         by: Union[str, List[str]] = None,
         metrics: list = None,
-        model: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
     ) -> AggregatedSkill:
         """Skill assessment of model(s)
@@ -800,9 +868,9 @@ class Comparer:
     def score(
         self,
         metric=mtr.rmse,
-        model: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
     ) -> float:
         """Model skill score
@@ -868,9 +936,9 @@ class Comparer:
         by: Union[str, List[str]] = None,
         metrics: list = None,
         n_min: int = None,
-        model: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
@@ -985,8 +1053,8 @@ class Comparer:
         xlabel: str = None,
         ylabel: str = None,
         model: Union[str, int] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
         binsize: float = None,
         nbins: int = None,
@@ -1119,9 +1187,9 @@ class Comparer:
 
     def taylor(
         self,
-        model: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
         df: pd.DataFrame = None,
         normalize_std: bool = False,
@@ -1404,6 +1472,9 @@ class ComparerCollection(Mapping, Sequence):
     >>> comparer = con.extract()
     """
 
+    comparers: Dict[str, Comparer]
+    """Collection of Comparers, indexed by name"""
+
     def __init__(self, comparers=None):
         self.comparers = {}
         self.add_comparer(comparers)
@@ -1515,11 +1586,6 @@ class ComparerCollection(Mapping, Sequence):
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
-    @property
-    def data(self) -> pd.DataFrame:
-        """Return a copy of the data as a pandas DataFrame"""
-        return self.to_dataframe()
-
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
@@ -1595,15 +1661,42 @@ class ComparerCollection(Mapping, Sequence):
 
     def sel(
         self,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
-        time: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
+        time: TimeTypes = None,
         area: List[float] = None,
     ) -> "ComparerCollection":
+        """Select data based on model, time and/or area.
 
+        Parameters
+        ----------
+        model : str or int or list of str or list of int, optional
+            Model name or index. If None, all models are selected.
+        observation : str or int or list of str or list of int, optional
+            Observation name or index. If None, all observations are selected.
+        variable : str or int or list of str or list of int, optional
+            Variable name or index. If None, all variables are selected.
+        start : str or datetime, optional
+            Start time. If None, all times are selected.
+        end : str or datetime, optional
+            End time. If None, all times are selected.
+        time : str or datetime, optional
+            Time. If None, all times are selected.
+        area : list of float, optional
+            bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with selected data.
+        """
+
+        if model is not None:
+            model = [model] if np.isscalar(model) else model
+            model = [_get_name(m, self.mod_names) for m in model]
         if observation is None:
             observation = self.obs_names
         else:
@@ -1620,8 +1713,11 @@ class ComparerCollection(Mapping, Sequence):
         for cmp in self.comparers.values():
             cmp: Comparer
             if cmp.name in observation and cmp.variable_name in variable:
+                thismodel = [m for m in model if m in cmp.mod_names] if model else None
+                if (thismodel is not None) and (len(thismodel) == 0):
+                    continue
                 cmpsel = cmp.sel(
-                    model=model,
+                    model=thismodel,
                     start=start,
                     end=end,
                     time=time,
@@ -1629,18 +1725,37 @@ class ComparerCollection(Mapping, Sequence):
                 )
                 if cmpsel is not None:
                     # TODO: check if cmpsel is empty
-                    cc.add_comparer(cmpsel)
+                    if cmpsel.n_points > 0:
+                        cc.add_comparer(cmpsel)
         return cc
+
+    def query(self, query: str) -> "ComparerCollection":
+        """Select data based on a query.
+
+        Parameters
+        ----------
+        query : str
+            Query string. See pandas.DataFrame.query() for details.
+
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with selected data.
+        """
+        q_cmps = [cmp.query(query) for cmp in self.comparers.values()]
+        cmps_with_data = [cmp for cmp in q_cmps if cmp.n_points > 0]
+
+        return ComparerCollection(cmps_with_data)
 
     def skill(
         self,
         by: Union[str, List[str]] = None,
         metrics: list = None,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
     ) -> AggregatedSkill:
         """Aggregated skill assessment of model(s)
@@ -1751,11 +1866,11 @@ class ComparerCollection(Mapping, Sequence):
         by: Union[str, List[str]] = None,
         metrics: list = None,
         n_min: int = None,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
@@ -1872,10 +1987,10 @@ class ComparerCollection(Mapping, Sequence):
         xlabel: str = None,
         ylabel: str = None,
         model: Union[str, int] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
         binsize: float = None,
         nbins: int = None,
@@ -2025,10 +2140,10 @@ class ComparerCollection(Mapping, Sequence):
         self,
         bins=100,
         model: Union[str, int] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
         title: str = None,
         density=True,
@@ -2118,11 +2233,11 @@ class ComparerCollection(Mapping, Sequence):
         *,
         weights: Union[str, List[float], Dict[str, float]] = None,
         metrics: list = None,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
     ) -> AggregatedSkill:
         """Weighted mean of skills
@@ -2231,11 +2346,11 @@ class ComparerCollection(Mapping, Sequence):
         self,
         *,
         metrics: list = None,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
     ) -> AggregatedSkill:
         """Mean skill of all observational points
@@ -2371,11 +2486,11 @@ class ComparerCollection(Mapping, Sequence):
         *,
         weights: Union[str, List[float], Dict[str, float]] = None,
         metric=mtr.rmse,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
     ) -> float:
         """Weighted mean score of model(s) over all observations
@@ -2476,11 +2591,11 @@ class ComparerCollection(Mapping, Sequence):
 
     def taylor(
         self,
-        model: Union[str, int, List[str], List[int]] = None,
-        observation: Union[str, int, List[str], List[int]] = None,
-        variable: Union[str, int, List[str], List[int]] = None,
-        start: Union[str, datetime] = None,
-        end: Union[str, datetime] = None,
+        model: IdOrNameTypes = None,
+        observation: IdOrNameTypes = None,
+        variable: IdOrNameTypes = None,
+        start: TimeTypes = None,
+        end: TimeTypes = None,
         area: List[float] = None,
         normalize_std: bool = False,
         aggregate_observations: bool = True,
