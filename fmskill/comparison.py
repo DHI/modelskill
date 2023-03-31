@@ -27,6 +27,7 @@ from copy import deepcopy
 
 import mikeio
 import fmskill.metrics as mtr
+from . import __version__
 from .observation import Observation, PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
@@ -409,6 +410,8 @@ class Comparer:
         data[self._obs_name].attrs["weight"] = observation.weight
         for n in self.mod_names:
             data[n].attrs["kind"] = "model"
+
+        data.attrs["fmskill_version"] = __version__
 
         return data
 
