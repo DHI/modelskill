@@ -2721,7 +2721,8 @@ class ComparerCollection(Mapping, Sequence):
         for f in zip.namelist():
             f = os.path.join(folder, f)
             if f.endswith(".nc"):
-                data = xr.open_dataset(f)
+                with xr.open_dataset(f) as ds:
+                    data = ds.copy()
                 os.remove(f)
                 cmp = Comparer(matched_data=data)
                 comparers.append(cmp)
