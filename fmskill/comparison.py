@@ -598,6 +598,33 @@ class Comparer:
     def copy(self):
         return self.__copy__()
 
+    def save(self, fn: Union[str, Path]) -> None:
+        """Save to netcdf file
+
+        Parameters
+        ----------
+        fn : str or Path
+            filename
+        """
+        self.data.to_netcdf(fn)
+
+    @staticmethod
+    def load(fn: Union[str, Path]) -> "Comparer":
+        """Load from netcdf file
+
+        Parameters
+        ----------
+        fn : str or Path
+            filename
+
+        Returns
+        -------
+        Comparer
+        """
+        with xr.open_dataset(fn) as ds:
+            data = ds.copy()
+        return Comparer(matched_data=data)
+
     def _to_observation(self) -> Observation:
         """Convert to Observation"""
         if self.gtype == "point":
@@ -2704,7 +2731,7 @@ class ComparerCollection(Mapping, Sequence):
         files = []
         for name, cmp in self.comparers.items():
             cmp_fn = f"{name}.nc"
-            cmp.data.to_netcdf(cmp_fn)
+            cmp.save(cmp_fn)
             files.append(cmp_fn)
 
         with zipfile.ZipFile(fn, "w") as zip:
@@ -2724,9 +2751,7 @@ class ComparerCollection(Mapping, Sequence):
         for f in zip.namelist():
             f = os.path.join(folder, f)
             if f.endswith(".nc"):
-                with xr.open_dataset(f) as ds:
-                    data = ds.copy()
+                cmp = Comparer.load(f)
                 os.remove(f)
-                cmp = Comparer(matched_data=data)
                 comparers.append(cmp)
         return ComparerCollection(comparers)
