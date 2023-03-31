@@ -11,9 +11,13 @@ Examples
 >>> comparer = con.extract()
 """
 from collections.abc import Mapping, Iterable, Sequence
+import os
+from pathlib import Path
+import tempfile
 from typing import Dict, List, Optional, Union
 import warnings
 from inspect import getmembers, isfunction
+import zipfile
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -2689,3 +2693,36 @@ class ComparerCollection(Mapping, Sequence):
             normalize_std=normalize_std,
             title=title,
         )
+
+    def save(self, fn: Union[str, Path]) -> None:
+        # save to file in netcdf format using xarray
+        # save each comparer to a netcdf and pack them into a zip file
+
+        files = []
+        for name, cmp in self.comparers.items():
+            cmp_fn = f"{name}.nc"
+            cmp.data.to_netcdf(cmp_fn)
+            files.append(cmp_fn)
+
+        with zipfile.ZipFile(fn, "w") as zip:
+            for f in files:
+                zip.write(f)
+                os.remove(f)
+
+    @staticmethod
+    def load(fn: Union[str, Path]) -> "ComparerCollection":
+        # load each comparer stored as a netcdf in a zip file
+        folder = tempfile.TemporaryDirectory().name
+
+        with zipfile.ZipFile(fn, "r") as zip:
+            zip.extractall(path=folder)
+
+        comparers = []
+        for f in zip.namelist():
+            f = os.path.join(folder, f)
+            if f.endswith(".nc"):
+                data = xr.open_dataset(f)
+                os.remove(f)
+                cmp = Comparer(matched_data=data)
+                comparers.append(cmp)
+        return ComparerCollection(comparers)

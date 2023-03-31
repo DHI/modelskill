@@ -145,3 +145,13 @@ def test_cc_query(cc):
     assert cc2.n_comparers == 1
     assert cc2.n_models == 2
     assert cc2.n_points == 2
+
+
+def test_save(cc: fmskill.comparison.ComparerCollection, tmp_path):
+
+    # fn = tmp_path / "test_cc.msk"
+    fn = "test_cc.msk"
+    cc.save(fn)
+
+    cc2 = fmskill.comparison.ComparerCollection.load(fn)
+    assert cc2.n_comparers == 2
