@@ -1,26 +1,66 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 import os
+from pathlib import Path
 
 import yaml
-from typing import List, Union
+from typing import List, Literal, Optional, Union
 import warnings
 import numpy as np
 import pandas as pd
+import xarray as xr
 import matplotlib.pyplot as plt
 
 import mikeio
 
 from fmskill import ModelResult
+from fmskill.types import DataInputType, GeometryType
 from .model import protocols, DfsuModelResult
 from .observation import Observation, PointObservation, TrackObservation
-from .comparison import PointComparer, ComparerCollection, TrackComparer
+from .comparison import Comparer, PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 from .plot import plot_observation_positions
 
 
-def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
-    """Quick-and-dirty compare of observation and model
+IdOrNameTypes = Optional[Union[int, str]]
+# ModelResultTypes = Union[ModelResult, DfsuModelResult, str]
+GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
+MRInputType = Union[
+    str,
+    Path,
+    mikeio.DataArray,
+    mikeio.Dataset,
+    mikeio.Dfs0,
+    mikeio.dfsu.Dfsu2DH,
+    pd.DataFrame,
+    pd.Series,
+    xr.Dataset,
+    xr.DataArray,
+    protocols.ModelResult,
+]
+ObsInputType = Union[
+    str,
+    Path,
+    mikeio.DataArray,
+    mikeio.Dataset,
+    mikeio.Dfs0,
+    pd.DataFrame,
+    pd.Series,
+    PointObservation, 
+    TrackObservation,
+]
+
+
+def compare(
+    obs: Union[ObsInputType, Sequence[ObsInputType]],
+    mod: Union[MRInputType, Sequence[MRInputType]],
+    *,
+    obs_item: IdOrNameTypes = None,
+    mod_item: IdOrNameTypes = None,
+    gtype: GeometryTypes = None,
+    max_model_gap=None,
+):
+    """Compare observations and model results
 
     Parameters
     ----------
@@ -32,42 +72,141 @@ def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
         observation item, by default None
     mod_item : (int, str), optional
         model item, by default None
+    gtype : (str, optional)
+        Geometry type of the model result. If not specified, it will be guessed.
+    max_model_gap : (float, optional)
+        Maximum gap in the model result, by default None
 
     Returns
     -------
-    fmskill.PointComparer
+    fmskill.Comparer
         A comparer object for further analysis and plotting
     """
-    # return SingleConnection(obs, mod).extract()
+    if isinstance(obs, ObsInputType):
+        return _single_obs_compare(
+            obs,
+            mod,
+            obs_item=obs_item,
+            mod_item=mod_item,
+            gtype=gtype,
+            max_model_gap=max_model_gap,
+        )
+    elif isinstance(obs, Sequence):
+        clist = [
+            compare(
+                o,
+                mod,
+                obs_item=obs_item,
+                mod_item=mod_item,
+                gtype=gtype,
+                max_model_gap=max_model_gap,
+            )
+            for o in obs
+        ]
+        return ComparerCollection(clist)
+    else:
+        raise ValueError(f"Unknown obs type {type(obs)}")
+        
+
+
+def _single_obs_compare(
+    obs,
+    mod: Union[MRInputType, Sequence[MRInputType]],
+    *,
+    obs_item=None,
+    mod_item=None,
+    gtype: GeometryTypes = None,
+    max_model_gap=None,
+) -> Comparer:
+    """Compare a single observation with multiple models"""
+    obs = _parse_single_obs(obs, obs_item, gtype=gtype)
+    mod = _parse_models(mod, mod_item, gtype=gtype)
+    df_mod = _extract_from_models(obs, mod)
+    if not df_mod:
+        warnings.warn(f"No overlapping data was found for Observation '{obs.name}'!")
+        return None
+    return Comparer(obs, df_mod, max_model_gap=max_model_gap)
+
+
+def _parse_single_obs(
+    obs, item: IdOrNameTypes = None, gtype: GeometryTypes = None
+) -> protocols.Observation:
     if isinstance(obs, Observation):
-        if obs_item is not None:
+        if item is not None:
             raise ValueError(
                 "obs_item argument not allowed if obs is an fmskill.Observation type"
             )
     else:
-        obs = PointObservation(obs, item=obs_item)
+        if (gtype is not None) and (
+            GeometryType.from_string(gtype) == GeometryType.TRACK
+        ):
+            return TrackObservation(obs, item=item)
+        else:
+            return PointObservation(obs, item=item)
 
-    mod = _parse_model(mod, mod_item)
 
-    return PointComparer(obs, mod, max_model_gap=max_model_gap)
+def _parse_models(
+    mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None
+) -> List[protocols.ModelResult]:
+    """Return a list of ModelResult objects"""
+    if isinstance(mod, MRInputType):
+        return [_parse_single_model(mod, item=item, gtype=gtype)]
+    elif isinstance(mod, Sequence):
+        return [_parse_single_model(m, item=item, gtype=gtype) for m in mod]
+    else:
+        raise ValueError(f"Unknown mod type {type(mod)}")
 
 
-def _parse_model(mod, item=None):
-    if isinstance(mod, str):
-        dfs = mikeio.open(mod)
-        if (len(dfs.items) > 1) and (item is None):
-            raise ValueError("Model ambiguous - please provide item")
-        mod = dfs.read(items=item).to_dataframe()
-    elif isinstance(mod, pd.DataFrame):
-        mod = ModelResult(mod, item=item).data
-    elif isinstance(mod, pd.Series):
-        mod = mod.to_frame()
+def _parse_single_model(
+    mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None
+) -> protocols.ModelResult:
+    if isinstance(mod, protocols.ModelResult):
+        if item is not None:
+            raise ValueError(
+                "mod_item argument not allowed if mod is an fmskill.ModelResult"
+            )
+        return mod
 
-    assert mod.shape[1] == 1  # A single item
+    try:
+        return ModelResult(mod, item=item, gtype=gtype)
+    except ValueError as e:
+        raise ValueError(
+            f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
+        )
 
-    mod.columns = ["Model"]
 
-    return mod
+def _extract_from_models(obs, mod: List[protocols.ModelResult]) -> List[pd.DataFrame]:
+    df_model = []
+    for mr in mod:
+        if hasattr(mr, "extract"):
+            mr = mr.extract(obs)
+
+        df = mr.data
+        if (df is not None) and (len(df) > 0):
+            df_model.append(df)
+        else:
+            warnings.warn(
+                f"No data found when extracting '{obs.name}' from model '{mr.name}'"
+            )
+    return df_model
+
+
+# def _parse_model(mod, item: IdOrNameTypes = None) -> protocols.ModelResult:
+#     if isinstance(mod, str):
+#         dfs = mikeio.open(mod)
+#         if (len(dfs.items) > 1) and (item is None):
+#             raise ValueError("Model ambiguous - please provide item")
+#         mod = dfs.read(items=item).to_dataframe()
+#     elif isinstance(mod, pd.DataFrame):
+#         mod = ModelResult(mod, item=item).data
+#     elif isinstance(mod, pd.Series):
+#         mod = mod.to_frame()
+
+#     assert mod.shape[1] == 1  # A single item
+
+#     mod.columns = ["Model"]
+
+#     return mod
 
 
 class _BaseConnector(ABC):
