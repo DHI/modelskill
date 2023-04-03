@@ -1,8 +1,8 @@
+from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 import os
 
 import yaml
-from fmskill.plot import plot_observation_positions
 from typing import Dict, List, Union
 import warnings
 import numpy as np
@@ -10,16 +10,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import mikeio
-from .model import ModelResult
-from .model.dfs import DfsModelResult, DfsModelResultItem
-from .model.pandas import DataFramePointModelResultItem
-from .model.abstract import ModelResultInterface, MultiItemModelResult
+
+from fmskill import ModelResult
+from .model import protocols, DfsuModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
+from .plot import plot_observation_positions
 
 
-def compare(obs, mod, *, obs_item=None, mod_item=None):
+def compare(obs, mod, *, obs_item=None, mod_item=None, max_model_gap=None):
     """Quick-and-dirty compare of observation and model
 
     Parameters
@@ -48,7 +48,8 @@ def compare(obs, mod, *, obs_item=None, mod_item=None):
         obs = PointObservation(obs, item=obs_item)
 
     mod = _parse_model(mod, mod_item)
-    return PointComparer(obs, mod)
+
+    return PointComparer(obs, mod, max_model_gap=max_model_gap)
 
 
 def _parse_model(mod, item=None):
@@ -58,19 +59,9 @@ def _parse_model(mod, item=None):
             raise ValueError("Model ambiguous - please provide item")
         mod = dfs.read(items=item).to_dataframe()
     elif isinstance(mod, pd.DataFrame):
-        mod = DataFramePointModelResultItem(mod, item=item).df
+        mod = ModelResult(mod, item=item).data
     elif isinstance(mod, pd.Series):
         mod = mod.to_frame()
-    elif isinstance(mod, DfsModelResultItem):
-        if not mod.is_dfs0:
-            raise ValueError("Only dfs0 ModelResults are supported")
-        mod = mod._extract_point_dfs0(mod.item).to_dataframe()
-    elif isinstance(mod, DfsModelResult):
-        if not mod.is_dfs0:
-            raise ValueError("Only dfs0 ModelResults are supported")
-        if mod.item is None:
-            raise ValueError("Model ambiguous - please provide item")
-        mod = mod._extract_point_dfs0(mod.item).to_dataframe()
 
     assert mod.shape[1] == 1  # A single item
 
@@ -79,29 +70,11 @@ def _parse_model(mod, item=None):
     return mod
 
 
-# class _BaseConnector:
-#    def __init__(self) -> None:
-#        self.modelresults = {}
-#        self.name = None
-#        self.obs = None
-
-#    @property
-#   def n_models(self):
-#        """Number of (unique) model results in Connector."""
-#        return len(self.modelresults)
-#
-#    @property
-#    def mod_names(self):
-#        """Names of (unique) model results in Connector."""
-#        return list(self.modelresults.keys())
-#
-#    @abstractmethod
-#    def extract(self):
-#        raise NotImplementedError()
-
-
-class _SingleObsConnector:
-    """A connection between a single observation and model(s)"""
+class _BaseConnector(ABC):
+    def __init__(self) -> None:
+        self.modelresults = {}
+        self.name = None
+        self.obs = None
 
     @property
     def n_models(self):
@@ -111,6 +84,14 @@ class _SingleObsConnector:
     @property
     def mod_names(self) -> List[str]:
         return [m.name for m in self.modelresults]
+
+    @abstractmethod
+    def extract(self):
+        pass
+
+
+class _SingleObsConnector(_BaseConnector):
+    """A connection between a single observation and model(s)"""
 
     def __repr__(self):
         if self.n_models > 0:
@@ -151,15 +132,7 @@ class _SingleObsConnector:
             self.obs = obs
             self.obs.weight = weight
 
-    def _parse_model(self, mod) -> List[ModelResultInterface]:
-
-        if isinstance(mod, pd.DataFrame):
-            if len(mod.columns) == 1:
-                return [self._parse_single_model(mod)]
-            else:
-                raise NotImplementedError(
-                    "Only data frames with a single column are allowed"
-                )
+    def _parse_model(self, mod) -> List[protocols.ModelResult]:
 
         if is_iterable_not_str(mod):
             mr = []
@@ -169,22 +142,13 @@ class _SingleObsConnector:
             mr = [self._parse_single_model(mod)]
         return mr
 
-    def _parse_single_model(self, mod) -> ModelResultInterface:
-        if isinstance(mod, (pd.Series, pd.DataFrame)):
-            mod = self._parse_pandas_model(mod)
-
-        if isinstance(mod, ModelResultInterface):
+    def _parse_single_model(self, mod) -> protocols.ModelResult:
+        if isinstance(mod, protocols.ModelResult):
             return mod
-        elif isinstance(mod, MultiItemModelResult):
-            raise ValueError("Please select model item! e.g. mr[0]")
+        elif isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
+            return ModelResult(mod)
         else:
             raise ValueError(f"Unknown model result type {type(mod)}")
-
-    def _parse_pandas_model(self, df, item=None) -> ModelResultInterface:
-        return DataFramePointModelResultItem(df, item=item)
-
-    def _parse_filename_model(self, filename, item=None) -> ModelResultInterface:
-        return ModelResult(filename, item=item)
 
     def _validate(self, obs, modelresults):
         # TODO: add validation errors to list
@@ -201,7 +165,7 @@ class _SingleObsConnector:
     def _validate_eum(obs, mod):
         """Check that observation and model item eum match"""
         assert isinstance(obs, Observation)
-        assert isinstance(mod, ModelResultInterface)
+        assert isinstance(mod, protocols.ModelResult)
         ok = True
         _has_eum = lambda x: (x.itemInfo is not None) and (
             x.itemInfo.type != mikeio.EUMType.Undefined
@@ -224,12 +188,12 @@ class _SingleObsConnector:
     @staticmethod
     def _validate_in_domain(obs, mod):
         in_domain = True
-        if isinstance(mod, ModelResultInterface) and isinstance(obs, PointObservation):
-            in_domain = mod._in_domain(obs.x, obs.y)
-            if not in_domain:
-                warnings.warn(
-                    f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
-                )
+        # if isinstance(mod, protocols.ModelResult) and isinstance(obs, PointObservation):
+        #     in_domain = mod._in_domain(obs.x, obs.y)
+        #     if not in_domain:
+        #         warnings.warn(
+        #             f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
+        #         )
         return in_domain
 
     @staticmethod
@@ -260,14 +224,14 @@ class _SingleObsConnector:
         """
         mr = self.modelresults[0]
 
-        if (not isinstance(mr, DfsModelResultItem)) or mr.is_dfs0:
-            warnings.warn(
-                "Plotting observations is only supported for dfsu ModelResults"
-            )
+        if isinstance(mr, DfsuModelResult):
+            geometry = mr.data.geometry
+        else:
+            warnings.warn("Only supported for dfsu ModelResults")
             return
 
         ax = plot_observation_positions(
-            dfs=mr.dfs, observations=[self.obs], figsize=figsize
+            geometry=geometry, observations=[self.obs], figsize=figsize
         )
 
         return ax
@@ -275,9 +239,9 @@ class _SingleObsConnector:
     @staticmethod
     def _comparer_or_None(comparer, warn=True):
         """If comparer is empty issue warning and return None."""
-        if len(comparer.df) == 0:
+        if comparer.n_points == 0:
             if warn:
-                name = comparer.observation.name
+                name = comparer.name
                 warnings.warn(f"No overlapping data was found for {name}!")
             return None
         return comparer
@@ -306,7 +270,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self) -> PointComparer:
+    def extract(self, max_model_gap: float = None) -> PointComparer:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -318,7 +282,10 @@ class PointConnector(_SingleObsConnector):
         assert isinstance(self.obs, PointObservation)
         df_model = []
         for mr in self.modelresults:
-            df = mr._extract_point(self.obs)
+            if isinstance(mr, protocols.Extractable):
+                mr = mr.extract(self.obs)
+
+            df = mr.data
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -332,11 +299,7 @@ class PointConnector(_SingleObsConnector):
             )
             return None
 
-        # Rename dataframe columns to match model names
-        for i, name in enumerate(self.mod_names):
-            df_model[i].columns = [name]
-
-        comparer = PointComparer(self.obs, df_model)
+        comparer = PointComparer(self.obs, df_model, max_model_gap=max_model_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -359,7 +322,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self) -> TrackComparer:
+    def extract(self, max_model_gap: float = None) -> TrackComparer:
         """Extract model results at times and positions of track observation.
 
         Returns
@@ -370,7 +333,10 @@ class TrackConnector(_SingleObsConnector):
         assert isinstance(self.obs, TrackObservation)
         df_model = []
         for mr in self.modelresults:
-            df = mr._extract_track(self.obs)
+            if isinstance(mr, protocols.Extractable):
+                mr = mr.extract(self.obs)
+
+            df = mr.data
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
@@ -382,9 +348,10 @@ class TrackConnector(_SingleObsConnector):
             warnings.warn(
                 f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
             )
+            # TODO returning None is not consistent with type hint
             return None
 
-        comparer = TrackComparer(self.obs, df_model)
+        comparer = TrackComparer(self.obs, df_model, max_model_gap=max_model_gap)
         return self._comparer_or_None(comparer)
 
 
@@ -578,7 +545,7 @@ class Connector(Mapping, Sequence):
     def __iter__(self):
         return iter(self.connections.values())
 
-    def extract(self) -> ComparerCollection:
+    def extract(self, *args, **kwargs) -> ComparerCollection:
         """Extract model results at times and positions of all observations.
 
         Returns
@@ -586,13 +553,9 @@ class Connector(Mapping, Sequence):
         ComparerCollection
             A comparer object for further analysis and plotting.
         """
-        cc = ComparerCollection()
 
-        for con in self.connections.values():
-            comparer = con.extract()
-            # assert comparer.mod_names == self.mod_names # TODO consider this
-            if comparer is not None:
-                cc.add_comparer(comparer)
+        cmps = [con.extract(*args, **kwargs) for con in self.connections.values()]
+        cc = ComparerCollection(cmps)
         return cc
 
     def plot_observation_positions(self, title=None, figsize=None):
@@ -613,13 +576,15 @@ class Connector(Mapping, Sequence):
         """
         mod = list(self.modelresults.values())[0]
 
-        if (not isinstance(mod, DfsModelResultItem)) or mod.is_dfs0:
+        if isinstance(mod, DfsuModelResult):
+            geometry = mod.data.geometry
+        else:
             warnings.warn("Only supported for dfsu ModelResults")
             return
 
         observations = list(self.observations.values())
         ax = plot_observation_positions(
-            dfs=mod.dfs, observations=observations, title=title, figsize=figsize
+            geometry=geometry, observations=observations, title=title, figsize=figsize
         )
         return ax
 
@@ -750,7 +715,7 @@ class Connector(Mapping, Sequence):
             d["filename"] = mr.filename
         else:
             d["filename"] = os.path.relpath(mr.filename, start=folder)
-        d["item"] = mr._selected_item
+        d["item"] = mr.item
         return d
 
     @staticmethod

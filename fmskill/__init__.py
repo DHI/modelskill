@@ -18,7 +18,7 @@ from typing import Union
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = "0.8.dev0"
+__version__ = "0.9.dev0"
 
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
@@ -26,6 +26,7 @@ if "64" not in architecture()[0]:
 from .model.factory import ModelResult
 from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector
+from .settings import options, get_option, set_option, reset_option, load_style
 
 
 def from_config(

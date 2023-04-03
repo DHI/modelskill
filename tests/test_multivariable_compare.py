@@ -7,15 +7,27 @@ from fmskill import Connector
 
 
 @pytest.fixture
-def mr1():
+def mr1Hm0():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, name="SW_1")
+    return ModelResult(fn, item="Sign. Wave Height", name="SW_1")
 
 
 @pytest.fixture
-def mr2():
+def mr1WS():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    return ModelResult(fn, item="Wind speed", name="SW_1")
+
+
+@pytest.fixture
+def mr2Hm0():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, name="SW_2")
+    return ModelResult(fn, item="Sign. Wave Height", name="SW_2")
+
+
+@pytest.fixture
+def mr2WS():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    return ModelResult(fn, item="Wind speed", name="SW_2")
 
 
 @pytest.fixture
@@ -55,18 +67,18 @@ def wind3():
 
 
 @pytest.fixture
-def cc_1model(mr1, o1, o2, o3, wind1, wind2, wind3):
+def cc_1model(mr1Hm0, mr1WS, o1, o2, o3, wind1, wind2, wind3):
     con = Connector()
-    con.add([o1, o2, o3], mr1["Sign. Wave Height"])
-    con.add([wind1, wind2, wind3], mr1["Wind speed"])
+    con.add([o1, o2, o3], mr1Hm0)
+    con.add([wind1, wind2, wind3], mr1WS)
     return con.extract()
 
 
 @pytest.fixture
-def cc(mr1, mr2, o1, o2, o3, wind1, wind2, wind3):
+def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):
     con = Connector()
-    con.add([o1, o2, o3], [mr1["Sign. Wave Height"], mr2["Sign. Wave Height"]])
-    con.add([wind1, wind2, wind3], [mr1["Wind speed"], mr2["Wind speed"]])
+    con.add([o1, o2, o3], [mr1Hm0, mr2Hm0])
+    con.add([wind1, wind2, wind3], [mr1WS, mr2WS])
     return con.extract()
 
 
@@ -98,7 +110,7 @@ def test_mv_mm_skill(cc):
     idx = ("HKNA_wind", "Wind_speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.skill(variable=1).df
+    df = cc.skill(variable="Wind_speed").df
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     idx = ("SW_1", "HKNA_wind")
@@ -112,14 +124,16 @@ def test_mv_mm_mean_skill(cc):
     idx = ("SW_1", "Wind_speed")
     assert pytest.approx(df.loc[idx].r2) == 0.65238805170
 
-    df = cc.mean_skill(variable=0).df
+    df = cc.mean_skill(variable="Significant_wave_height").df
     assert pytest.approx(df.loc["SW_1"].cc) == 0.971791458
 
 
 def test_mv_mm_scatter(cc):
     cc.scatter(model="SW_1", variable="Wind_speed")
     cc.scatter(model="SW_1", variable="Wind_speed", show_density=True)
-    cc.scatter(model="SW_1", variable="Wind_speed", observation = 'F16_wind', skill_table=True)
+    cc.scatter(
+        model="SW_1", variable="Wind_speed", observation="F16_wind", skill_table=True
+    )
     assert True
     plt.close("all")
 

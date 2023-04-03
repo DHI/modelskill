@@ -9,7 +9,6 @@ Examples
 import os
 import numpy as np
 import pandas as pd
-from datetime import datetime
 import mikeio
 from copy import deepcopy
 from .utils import make_unique_index
@@ -45,7 +44,12 @@ class Observation:
     # matplotlib: red=#d62728
 
     def __init__(
-        self, name: str = None, df=None, itemInfo=None, variable_name: str = None, override_units: str = None,
+        self,
+        name: str = None,
+        df=None,
+        itemInfo=None,
+        variable_name: str = None,
+        override_units: str = None,
     ):
         self.color = "#d62728"
 
@@ -58,7 +62,7 @@ class Observation:
             )
         time = df.index.round(freq="100us")  # 0.0001s accuracy
         df.index = pd.DatetimeIndex(time, freq="infer")
-        self.df = df
+        self.data = df
         if itemInfo is None:
             self.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         else:
@@ -67,11 +71,31 @@ class Observation:
         if variable_name is None:
             variable_name = self.itemInfo.type.name
         self.variable_name = variable_name
-        self.override_units= override_units
+        self.override_units = override_units
+
+    def trim(
+        self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
+    ) -> None:
+        """Trim observation data to a given time interval
+
+        Parameters
+        ----------
+        start_time : pd.Timestamp
+            start time
+        end_time : pd.Timestamp
+            end time
+        buffer : str, optional
+            buffer time around start and end time, by default "1s"
+        """
+        # Expand time interval with buffer
+        start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
+        end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
+        self.data = self.data.loc[start_time:end_time]
+
     @property
     def time(self) -> pd.DatetimeIndex:
         "Time index"
-        return self.df.index
+        return self.data.index
 
     @property
     def start_time(self) -> pd.Timestamp:
@@ -86,12 +110,12 @@ class Observation:
     @property
     def values(self) -> np.ndarray:
         "Observed values"
-        return self.df.values
+        return self.data.values
 
     @property
     def n_points(self):
         """Number of observations"""
-        return len(self.df)
+        return len(self.data)
 
     @property
     def filename(self):
@@ -99,12 +123,12 @@ class Observation:
         return self._filename
 
     def _unit_text(self):
-        override_units=self.override_units
+        override_units = self.override_units
         if self.itemInfo is None:
             return ""
         txt = f"{self.itemInfo.type.display_name}"
         if self.itemInfo.type != mikeio.EUMType.Undefined:
-            if override_units==None:
+            if override_units == None:
                 unit = self.itemInfo.unit.display_name
                 txt = f"{txt} [{unit_display_name(unit)}]"
             else:
@@ -134,7 +158,7 @@ class Observation:
         title = self.name if title is None else title
         kwargs["color"] = self.color if color is None else color
 
-        ax = self.df.iloc[:, -1].hist(bins=bins, **kwargs)
+        ax = self.data.iloc[:, -1].hist(bins=bins, **kwargs)
         ax.set_title(title)
         ax.set_xlabel(self._unit_text())
         return ax
@@ -153,7 +177,7 @@ class PointObservation(Observation):
 
     Parameters
     ----------
-    input : (str, pd.DataFrame, pd.Series)
+    data : (str, pd.DataFrame, pd.Series)
         dfs0 filename or dataframe with the data
     item : (int, str), optional
         index or name of the wanted item, by default None
@@ -168,7 +192,7 @@ class PointObservation(Observation):
     variable_name : str, optional
         user-defined variable name in case of multiple variables, by default eumType name
     units : str, optional
-        user-defined units name in case user wants to override eumUnits 
+        user-defined units name in case user wants to override eumUnits
 
     Examples
     --------
@@ -190,7 +214,7 @@ class PointObservation(Observation):
 
     def __init__(
         self,
-        filename,
+        data,
         *,
         item=None,
         x: float = None,
@@ -208,20 +232,20 @@ class PointObservation(Observation):
         self._filename = None
         self._item = None
 
-        if isinstance(filename, pd.Series):
-            df = filename.to_frame()
+        if isinstance(data, pd.Series):
+            df = data.to_frame()
             if name is None:
                 name = "Observation"
             itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
-        elif isinstance(filename, pd.DataFrame):
-            df = filename
+        elif isinstance(data, pd.DataFrame):
+            df = data
             default_name = "Observation"
             if item is None:
                 if len(df.columns) == 1:
                     item = 0
                 else:
                     raise ValueError(
-                        "item needs to be specified (more than one column in dataframe)"
+                        f"item must be specified (more than one column in dataframe). Available columns: {list(df.columns)}"
                     )
             self._item = item
 
@@ -238,21 +262,21 @@ class PointObservation(Observation):
             if name is None:
                 name = default_name
             itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
-        elif isinstance(filename, str):
-            assert os.path.exists(filename)
-            self._filename = filename
+        elif isinstance(data, str):
+            assert os.path.exists(data)
+            self._filename = data
             if name is None:
-                name = os.path.basename(filename).split(".")[0]
+                name = os.path.basename(data).split(".")[0]
 
-            ext = os.path.splitext(filename)[-1]
+            ext = os.path.splitext(data)[-1]
             if ext == ".dfs0":
-                df, itemInfo = self._read_dfs0(mikeio.open(filename), item)
+                df, itemInfo = self._read_dfs0(mikeio.open(data), item)
                 self._item = itemInfo.name
             else:
                 raise NotImplementedError("Only dfs0 files supported")
         else:
             raise TypeError(
-                f"input must be str, pandas Series/DataFrame! Given input has type {type(filename)}"
+                f"input must be str, pandas Series/DataFrame! Given input has type {type(data)}"
             )
 
         if not df.index.is_unique:
@@ -262,20 +286,16 @@ class PointObservation(Observation):
             )
 
         super().__init__(
-            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name, override_units=units, 
+            name=name,
+            df=df,
+            itemInfo=itemInfo,
+            variable_name=variable_name,
+            override_units=units,
         )
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
         return out
-
-    @staticmethod
-    def from_dataframe(df):
-        pass
-
-    @staticmethod
-    def from_dfs0(dfs, item_number):
-        pass
 
     @staticmethod
     def _read_dfs0(dfs, item):
@@ -284,7 +304,10 @@ class PointObservation(Observation):
             if len(dfs.items) == 1:
                 item = 0
             else:
-                raise ValueError("item needs to be specified (more than one in file)")
+                item_names = [i.name for i in dfs.items]
+                raise ValueError(
+                    f"item needs to be specified (more than one in file). Available items: {item_names} "
+                )
         ds = dfs.read(items=item)
         itemInfo = ds.items[0]
         df = ds.to_dataframe()
@@ -309,7 +332,7 @@ class PointObservation(Observation):
         kwargs: other keyword arguments to df.plot()
         """
         kwargs["color"] = self.color if color is None else color
-        ax = self.df.plot(marker=marker, linestyle=linestyle, **kwargs)
+        ax = self.data.plot(marker=marker, linestyle=linestyle, **kwargs)
 
         title = self.name if title is None else title
         ax.set_title(title)
@@ -327,7 +350,7 @@ class TrackObservation(Observation):
 
     Parameters
     ----------
-    input : (str, pd.DataFrame)
+    data : (str, pd.DataFrame)
         path to dfs0 file or DataFrame with track data
     item : (str, int), optional
         item name or index of values, by default 2
@@ -342,7 +365,7 @@ class TrackObservation(Observation):
     offset_duplicates : float, optional
         in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001
     units : str, optional
-        user-defined units name in case user wants to override eumUnits 
+        user-defined units name in case user wants to override eumUnits
 
 
     Examples
@@ -394,23 +417,23 @@ class TrackObservation(Observation):
         from shapely.geometry import MultiPoint
 
         """Coordinates of observation"""
-        return MultiPoint(self.df.iloc[:, 0:2].values)
+        return MultiPoint(self.data.iloc[:, 0:2].values)
 
     @property
     def x(self):
-        return self.df.iloc[:, 0].values
+        return self.data.iloc[:, 0].values
 
     @property
     def y(self):
-        return self.df.iloc[:, 1].values
+        return self.data.iloc[:, 1].values
 
     @property
     def values(self):
-        return self.df.iloc[:, 2].values
+        return self.data.iloc[:, 2].values
 
     def __init__(
         self,
-        input,
+        data,
         *,
         item: int = None,
         name: str = None,
@@ -424,21 +447,21 @@ class TrackObservation(Observation):
         self._filename = None
         self._item = None
 
-        if isinstance(input, pd.DataFrame):
-            df = input
+        if isinstance(data, pd.DataFrame):
+            df = data
             df_items = df.columns.to_list()
             items = self._parse_track_items(df_items, x_item, y_item, item)
             df = df.iloc[:, items].copy()
             itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
-        elif isinstance(input, str):
-            assert os.path.exists(input)
-            self._filename = input
+        elif isinstance(data, str):
+            assert os.path.exists(data)
+            self._filename = data
             if name is None:
-                name = os.path.basename(input).split(".")[0]
+                name = os.path.basename(data).split(".")[0]
 
-            ext = os.path.splitext(input)[-1]
+            ext = os.path.splitext(data)[-1]
             if ext == ".dfs0":
-                dfs = mikeio.open(input)
+                dfs = mikeio.open(data)
                 file_items = [i.name for i in dfs.items]
                 items = self._parse_track_items(file_items, x_item, y_item, item)
                 df, itemInfo = self._read_dfs0(dfs, items)
@@ -449,7 +472,7 @@ class TrackObservation(Observation):
                 )
         else:
             raise TypeError(
-                f"input must be str or pandas DataFrame! Given input has type {type(input)}"
+                f"input must be str or pandas DataFrame! Given input has type {type(data)}"
             )
 
         # A unique index makes lookup much faster O(1)
@@ -457,7 +480,11 @@ class TrackObservation(Observation):
             df.index = make_unique_index(df.index, offset_duplicates=offset_duplicates)
 
         super().__init__(
-            name=name, df=df, itemInfo=itemInfo, variable_name=variable_name,override_units=units,
+            name=name,
+            df=df,
+            itemInfo=itemInfo,
+            variable_name=variable_name,
+            override_units=units,
         )
 
     @staticmethod
@@ -505,6 +532,12 @@ def unit_display_name(name: str) -> str:
     m
     """
 
-    res = name.replace("meter", "m").replace("_per_", "/").replace(" per ", "/").replace("second", "s").replace("sec", "s")
+    res = (
+        name.replace("meter", "m")
+        .replace("_per_", "/")
+        .replace(" per ", "/")
+        .replace("second", "s")
+        .replace("sec", "s")
+    )
 
     return res

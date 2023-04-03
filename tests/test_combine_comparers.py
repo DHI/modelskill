@@ -1,15 +1,8 @@
-import sys
 import pytest
-import numpy as np
 
 from fmskill import ModelResult
 from fmskill import PointObservation, TrackObservation
 from fmskill import Connector
-import fmskill.metrics as mtr
-
-python3_7_or_above = pytest.mark.skipif(
-    sys.version_info < (3, 7), reason="requires Python3.7+"
-)
 
 
 @pytest.fixture
@@ -56,7 +49,6 @@ def o123():
     return o1, o2, o3
 
 
-@python3_7_or_above
 def test_concat_time(o123, mr28, mr29, mr2days):
     con1 = Connector(o123, mr28)
     with pytest.warns(UserWarning, match="No overlapping data"):
@@ -80,7 +72,6 @@ def test_concat_time(o123, mr28, mr29, mr2days):
     assert cc12b.n_points == cc1.n_points + cc2.n_points
 
 
-@python3_7_or_above
 def test_concat_model(o123, mrmike, mrmike2):
     con1 = Connector(o123, mrmike)
     cc1 = con1.extract()
@@ -101,7 +92,6 @@ def test_concat_model(o123, mrmike, mrmike2):
     assert cc12b.n_points == cc12.n_points
 
 
-@python3_7_or_above
 def test_concat_model_different_time(o123, mrmike, mr2days):
     con1 = Connector(o123, mrmike)
     cc1 = con1.extract()
@@ -132,7 +122,7 @@ def test_concat_same_model(o123, mrmike):
     # if we add the same model multiple times it has no effect
     cc12 = cc1 + cc2
     assert cc12.n_points == cc1.n_points
-    assert cc12[0].df.index.is_unique
+    assert cc12[0].data.time.to_index().is_unique
     assert cc1.score() == cc12.score()
 
 
@@ -142,13 +132,13 @@ def test_concat_time_overlap(o123, mrmike):
 
     # if there they don't cover the same period...
     o1 = o123[0].copy()
-    o1.df = o1.df["2017-10-26":"2017-10-27"]
+    o1.data = o1.data["2017-10-26":"2017-10-27"]
 
     o2 = o123[1].copy()
-    o2.df = o2.df["2017-10-26":"2017-10-27"]
+    o2.data = o2.data["2017-10-26":"2017-10-27"]
 
     o3 = o123[2].copy()
-    o3.df = o3.df["2017-10-26":"2017-10-27"]
+    o3.data = o3.data["2017-10-26":"2017-10-27"]
 
     con26 = Connector([o1, o2, o3], mrmike)
     cc26 = con26.extract()
@@ -165,13 +155,13 @@ def test_concat_time_overlap(o123, mrmike):
     assert cc1.score() == cc12.score()
 
     o1 = o123[0].copy()
-    o1.df = o1.df["2017-10-27 12:00":"2017-10-29 23:00"]
+    o1.data = o1.data["2017-10-27 12:00":"2017-10-29 23:00"]
 
     o2 = o123[1].copy()
-    o2.df = o2.df["2017-10-27 12:00":"2017-10-29 23:00"]
+    o2.data = o2.data["2017-10-27 12:00":"2017-10-29 23:00"]
 
     o3 = o123[2].copy()
-    o3.df = o3.df["2017-10-27 12:00":"2017-10-29 23:00"]
+    o3.data = o3.data["2017-10-27 12:00":"2017-10-29 23:00"]
 
     con2 = Connector([o1, o2, o3], mrmike)
     cc2 = con2.extract()
