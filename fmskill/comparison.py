@@ -334,8 +334,21 @@ class Comparer:
     ):
 
         if matched_data is not None:
+
+            for key in matched_data.data_vars:
+                if "kind" not in matched_data[key].attrs:
+                    matched_data[key].attrs["kind"] = "auxiliary"
+
             self.data = matched_data
-            self.raw_mod_data = raw_mod_data
+            self.raw_mod_data = (
+                raw_mod_data
+                if raw_mod_data is not None
+                else {
+                    key: value.to_dataframe()
+                    for key, value in matched_data.data_vars.items()
+                    if value.attrs["kind"] == "model"
+                }
+            )
             return
 
         self.raw_mod_data = (
@@ -433,7 +446,7 @@ class Comparer:
     @staticmethod
     def _parse_single_modeldata(modeldata) -> pd.DataFrame:
         """Convert to dataframe and set index to pd.DatetimeIndex"""
-        if isinstance(modeldata, (mikeio.Dataset, xr.DataArray, xr.Dataset)):
+        if hasattr(modeldata, "to_dataframe"):
             mod_df = modeldata.to_dataframe()
         elif isinstance(modeldata, pd.DataFrame):
             mod_df = modeldata
@@ -441,9 +454,12 @@ class Comparer:
             raise ValueError(
                 f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
             )
-        if len(mod_df) == 0:
-            warnings.warn(f"Cannot add zero-length modeldata ({mod_df.columns[-1]})")
-            return
+
+        if not isinstance(mod_df.index, pd.DatetimeIndex):
+            raise ValueError(
+                "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
+            )
+
         time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
         return mod_df
@@ -451,13 +467,7 @@ class Comparer:
     @classmethod
     def from_compared_data(cls, data, raw_mod_data=None):
         """Initialize from compared data"""
-        # TODO this is not a clean solution
-        # cmp = cls(observation=None, modeldata=None)
-        # cmp.data = data
-        # if raw_mod_data is not None:
-        #    cmp.raw_mod_data = raw_mod_data
-        cmp = cls(matched_data=data, raw_mod_data=raw_mod_data)
-        return cmp
+        return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
         out = []

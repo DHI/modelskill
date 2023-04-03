@@ -1,11 +1,12 @@
 import datetime
+import pandas as pd
 import pytest
 import numpy as np
 
 import fmskill
 from fmskill import ModelResult, PointObservation, Connector
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
-from fmskill.comparison import PointComparer, ComparerCollection
+from fmskill.comparison import Comparer, PointComparer, ComparerCollection
 
 
 @pytest.fixture
@@ -282,3 +283,11 @@ def test_comparison_from_yml():
     assert c.n_comparers == 2
     assert c.n_models == 1
     assert con.observations["Klagshamn"].itemInfo.name == "Water Level"
+
+
+def test_comparer_dataframe_without_time_not_allowed(klagshamn):
+
+    mr = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    with pytest.raises(ValueError):
+        Comparer(klagshamn, modeldata=mr)
