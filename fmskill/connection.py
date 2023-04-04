@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
 import os
 from pathlib import Path
 
 import yaml
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Optional, Union, Mapping, Sequence
 import warnings
 import numpy as np
 import pandas as pd
@@ -46,7 +45,7 @@ ObsInputType = Union[
     mikeio.Dfs0,
     pd.DataFrame,
     pd.Series,
-    PointObservation, 
+    PointObservation,
     TrackObservation,
 ]
 
@@ -106,7 +105,6 @@ def compare(
         return ComparerCollection(clist)
     else:
         raise ValueError(f"Unknown obs type {type(obs)}")
-        
 
 
 def _single_obs_compare(
