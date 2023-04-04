@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 import yaml
-from typing import List, Literal, Optional, Union, Mapping, Sequence
+from typing import List, Literal, Optional, Union, Mapping, Sequence, get_args
 import warnings
 import numpy as np
 import pandas as pd
@@ -152,7 +152,7 @@ def _parse_models(
     mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None
 ) -> List[protocols.ModelResult]:
     """Return a list of ModelResult objects"""
-    if isinstance(mod, MRInputType):
+    if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
     elif isinstance(mod, Sequence):
         return [_parse_single_model(m, item=item, gtype=gtype) for m in mod]
