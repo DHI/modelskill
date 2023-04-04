@@ -384,29 +384,19 @@ class Comparer:
         observation = deepcopy(observation)
         observation.trim(self._mod_start, self._mod_end)
 
-        modeldata_list = list(self.raw_mod_data.values())
-        if len(modeldata_list) == 0:
-            return
-
-        for j, mdata in enumerate(modeldata_list):
-            name = self.mod_names[j]
+        first = True
+        for name, mdata in self.raw_mod_data.items():
             df = self._model2obs_interp(observation, mdata, max_model_gap)
-            if j == 0:
+            if gtype == "track":
+                # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
+                self._mask_model_outside_observation_track(name, df, observation.data)
+
+            if first:
                 data = df
             else:
                 data[name] = df[name]
 
-            if gtype == "track":
-
-                # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
-                self._mask_model_outside_observation_track(name, df, observation.data)
-
-                if j == 0:
-                    # change order of obs and model
-                    cols = ["x", "y", self._obs_name, name]
-                    data = df[cols]
-                else:
-                    data[name] = df[name]
+            first = False
 
         data.index.name = "time"
         data = data.dropna()
