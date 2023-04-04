@@ -366,9 +366,10 @@ class Comparer:
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
         if (len(df_mod) > 0) and (len(df_mod) == len(df_obs)):
-            mod_xy = df_mod.loc[:, ["x", "y"]].values
-            obs_xy = df_obs.iloc[:, :2].values
+            mod_xy = df_mod[["x", "y"]]
+            obs_xy = df_obs[["x", "y"]]
             d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
+            # TODO why not use a fixed tolerance?
             tol_xy = self._minimal_accepted_distance(obs_xy)
             mask = d_xy > tol_xy
             df_mod.loc[mask, name] = np.nan

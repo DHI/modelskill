@@ -20,6 +20,8 @@ def test_read(c2):
     o2 = TrackObservation(c2, item=2, name="c2", units="inches/hour")
     assert o2.override_units == "inches/hour"
     assert o2._unit_text() == "Wind speed [inches/hour]"
+    assert "x" in o1.data
+    assert "y" in o1.data
 
 
 def test_from_df():
