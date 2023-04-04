@@ -365,18 +365,20 @@ class Comparer:
         self.data = self._initialise_comparer(observation, max_model_gap)
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
-        if (len(df_mod) > 0) and (len(df_mod) == len(df_obs)):
-            mod_xy = df_mod[["x", "y"]]
-            obs_xy = df_obs[["x", "y"]]
-            d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-            # TODO why not use a fixed tolerance?
-            tol_xy = self._minimal_accepted_distance(obs_xy)
-            mask = d_xy > tol_xy
-            df_mod.loc[mask, name] = np.nan
-            if sum(mask) > 0:
-                warnings.warn(
-                    "no (spatial) overlap between model and observation points"
-                )
+        if len(df_mod) == 0:
+            return
+        if len(df_mod) != len(df_obs):
+            raise ValueError("model and observation data must have same length")
+
+        mod_xy = df_mod[["x", "y"]]
+        obs_xy = df_obs[["x", "y"]]
+        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
+        # TODO why not use a fixed tolerance?
+        tol_xy = self._minimal_accepted_distance(obs_xy)
+        mask = d_xy > tol_xy
+        df_mod.loc[mask, name] = np.nan
+        if any(mask):
+            warnings.warn("no (spatial) overlap between model and observation points")
 
     def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
 

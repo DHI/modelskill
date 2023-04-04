@@ -289,5 +289,5 @@ def test_comparer_dataframe_without_time_not_allowed(klagshamn):
 
     mr = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="datetime"):
         Comparer(klagshamn, modeldata=mr)
