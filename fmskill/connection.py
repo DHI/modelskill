@@ -85,7 +85,7 @@ def compare(
     fmskill.Comparer
         A comparer object for further analysis and plotting
     """
-    if isinstance(obs, ObsInputType):
+    if isinstance(obs, get_args(ObsInputType)):
         return _single_obs_compare(
             obs,
             mod,
