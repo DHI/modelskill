@@ -134,6 +134,7 @@ def _parse_single_obs(
             raise ValueError(
                 "obs_item argument not allowed if obs is an fmskill.Observation type"
             )
+        return obs
     else:
         if (gtype is not None) and (
             GeometryType.from_string(gtype) == GeometryType.TRACK
