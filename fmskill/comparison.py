@@ -389,23 +389,24 @@ class Comparer:
             return
 
         for j, mdata in enumerate(modeldata_list):
+            name = self.mod_names[j]
             df = self._model2obs_interp(observation, mdata, max_model_gap)
             if j == 0:
                 data = df
             else:
-                data[self.mod_names[j]] = df[self.mod_names[j]]
+                data[name] = df[name]
 
             if gtype == "track":
-                name = self.mod_names[j]
+
                 # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
                 self._mask_model_outside_observation_track(name, df, observation.data)
 
                 if j == 0:
                     # change order of obs and model
-                    cols = ["x", "y", self._obs_name, self.mod_names[j]]
+                    cols = ["x", "y", self._obs_name, name]
                     data = df[cols]
                 else:
-                    data[self.mod_names[j]] = df[self.mod_names[j]]
+                    data[name] = df[name]
 
         data.index.name = "time"
         data = data.dropna()
