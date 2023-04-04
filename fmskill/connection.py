@@ -15,6 +15,7 @@ import mikeio
 from fmskill import ModelResult
 from fmskill.types import DataInputType, GeometryType
 from .model import protocols, DfsuModelResult
+from .model._base import ModelResultBase
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -35,7 +36,8 @@ MRInputType = Union[
     pd.Series,
     xr.Dataset,
     xr.DataArray,
-    protocols.ModelResult,
+    ModelResultBase,
+    # protocols.ModelResult,
 ]
 ObsInputType = Union[
     str,
@@ -45,8 +47,10 @@ ObsInputType = Union[
     mikeio.Dfs0,
     pd.DataFrame,
     pd.Series,
-    PointObservation,
-    TrackObservation,
+    # protocols.Observation,
+    Observation,
+    # PointObservation,
+    # TrackObservation,
 ]
 
 
@@ -108,7 +112,7 @@ def compare(
 
 
 def _single_obs_compare(
-    obs,
+    obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
     obs_item=None,
