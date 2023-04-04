@@ -397,6 +397,7 @@ class Comparer:
 
             if gtype == "track":
                 name = self.mod_names[j]
+                # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
                 self._mask_model_outside_observation_track(name, df, observation.data)
 
                 if j == 0:
@@ -427,15 +428,6 @@ class Comparer:
             data[n].attrs["kind"] = "model"
 
         return data
-
-    def _obs_mod_xy_distance_acceptable(
-        self, df_mod: pd.DataFrame, df_obs: pd.DataFrame
-    ) -> pd.Series:
-        mod_xy = df_mod.loc[:, ["x", "y"]].values
-        obs_xy = df_obs.iloc[:, :2].values
-        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-        tol_xy = self._minimal_accepted_distance(obs_xy)
-        return d_xy < tol_xy
 
     @staticmethod
     def _minimal_accepted_distance(obs_xy):
