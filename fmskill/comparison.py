@@ -334,10 +334,17 @@ class Comparer:
     ):
 
         if matched_data is not None:
-
+            # TODO extract method
             for key in matched_data.data_vars:
                 if "kind" not in matched_data[key].attrs:
                     matched_data[key].attrs["kind"] = "auxiliary"
+            if "x" not in matched_data:
+                matched_data["x"] = np.nan
+                matched_data["x"].attrs["kind"] = "position"
+
+            if "y" not in matched_data:
+                matched_data["y"] = np.nan
+                matched_data["y"].attrs["kind"] = "position"
 
             self.data = matched_data
             self.raw_mod_data = (
