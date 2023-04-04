@@ -364,6 +364,19 @@ class Comparer:
 
         self.data = self._initialise_comparer(observation, max_model_gap)
 
+    def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
+        if (len(df_mod) > 0) and (len(df_mod) == len(df_obs)):
+            mod_xy = df_mod.loc[:, ["x", "y"]].values
+            obs_xy = df_obs.iloc[:, :2].values
+            d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
+            tol_xy = self._minimal_accepted_distance(obs_xy)
+            mask = d_xy > tol_xy
+            df_mod.loc[mask, name] = np.nan
+            if sum(mask) > 0:
+                warnings.warn(
+                    "no (spatial) overlap between model and observation points"
+                )
+
     def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
 
         assert isinstance(observation, (PointObservation, TrackObservation))
@@ -375,30 +388,17 @@ class Comparer:
         if len(modeldata_list) == 0:
             return
 
-        # TODO refactor common functionality, to minimize duplication
-        if gtype == "point":
-            for j, mdata in enumerate(modeldata_list):
-                df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[
-                    :, ::-1
-                ]  # TODO why reverse?
-                if j == 0:
-                    data = df
-                else:
-                    data[self.mod_names[j]] = df[self.mod_names[j]]
+        for j, mdata in enumerate(modeldata_list):
+            df = self._model2obs_interp(observation, mdata, max_model_gap)
+            if j == 0:
+                data = df
+            else:
+                data[self.mod_names[j]] = df[self.mod_names[j]]
 
-        elif gtype == "track":
-            for j, mdata in enumerate(modeldata_list):
-                df = self._model2obs_interp(observation, mdata, max_model_gap)
-                # rename first columns to x, y
-                df.columns = ["x", "y", *list(df.columns)[2:]]
-                if (len(df) > 0) and (len(df) == len(observation.data)):
-                    ok = self._obs_mod_xy_distance_acceptable(df, observation.data)
-                    # set model to NaN if too far away from obs location
-                    df.loc[~ok, self.mod_names[j]] = np.nan
-                    if sum(ok) == 0:
-                        warnings.warn(
-                            "no (spatial) overlap between model and observation points"
-                        )
+            if gtype == "track":
+                name = self.mod_names[j]
+                self._mask_model_outside_observation_track(name, df, observation.data)
+
                 if j == 0:
                     # change order of obs and model
                     cols = ["x", "y", self._obs_name, self.mod_names[j]]
@@ -428,7 +428,9 @@ class Comparer:
 
         return data
 
-    def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
+    def _obs_mod_xy_distance_acceptable(
+        self, df_mod: pd.DataFrame, df_obs: pd.DataFrame
+    ) -> pd.Series:
         mod_xy = df_mod.loc[:, ["x", "y"]].values
         obs_xy = df_obs.iloc[:, :2].values
         d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
