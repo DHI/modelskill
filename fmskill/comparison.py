@@ -1624,11 +1624,13 @@ class ComparerCollection(Mapping, Sequence):
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
 
-    def __getitem__(self, x):
+    def __getitem__(self, x) -> Comparer:
+
         if isinstance(x, slice):
-            cmps = [self[xi] for xi in range(*x.indices(len(self)))]
-            cc = ComparerCollection(cmps)
-            return cc
+            raise NotImplementedError("slicing not implemented")
+        #    cmps = [self[xi] for xi in range(*x.indices(len(self)))]
+        #    cc = ComparerCollection(cmps)
+        #    return cc
 
         if isinstance(x, int):
             x = _get_name(x, self.obs_names)
@@ -2218,7 +2220,7 @@ class ComparerCollection(Mapping, Sequence):
         ax = df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         df.obs_val.hist(
             bins=bins,
-            color=self[0].data[self[0]._obs_name].attrs["color"],
+            color=self[0].data["Observation"].attrs["color"],
             ax=ax,
             **kwargs,
         )
