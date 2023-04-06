@@ -49,8 +49,6 @@ ObsInputType = Union[
     pd.Series,
     # protocols.Observation,
     Observation,
-    # PointObservation,
-    # TrackObservation,
 ]
 
 
