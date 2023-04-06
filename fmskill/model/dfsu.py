@@ -9,7 +9,10 @@ from fmskill.model import protocols
 from fmskill.model._base import ModelResultBase
 from fmskill.model.point import PointModelResult
 from fmskill.model.track import TrackModelResult
-from fmskill.observation import Observation, PointObservation, TrackObservation
+from fmskill.observation import (
+    Point,
+    Track,
+)
 
 
 class DfsuModelResult(ModelResultBase):
@@ -82,31 +85,32 @@ class DfsuModelResult(ModelResultBase):
     def _in_domain(self, x, y) -> bool:
         return self.data.geometry.contains([x, y])
 
-    def extract(self, observation: Observation) -> protocols.Comparable:
+    def extract(self, pos: Union[Point, Track]) -> protocols.Comparable:
         """Extract ModelResult at observation positions
 
         Parameters
         ----------
-        observation : <PointObservation> or <TrackObservation>
-            positions (and times) at which modelresult should be extracted
+        pos : Union[Point, Track]
+            The observation positions (and times)
+
 
         Returns
         -------
         <fmskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
-        extractor_lookup: Mapping[Observation, Callable] = {
-            PointObservation: self._extract_point,
-            TrackObservation: self._extract_track,
+        extractor_lookup = {
+            Point: self._extract_point,
+            Track: self._extract_track,
         }
-        extraction_func = extractor_lookup.get(type(observation))
+        extraction_func = extractor_lookup.get(type(pos))
         if extraction_func is None:
             raise NotImplementedError(
-                f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
+                f"Extraction from {type(self.data)} to {type(pos)} is not implemented."
             )
-        return extraction_func(observation)
+        return extraction_func(pos)
 
-    def _extract_point(self, observation: PointObservation) -> PointModelResult:
+    def _extract_point(self, point: Point) -> PointModelResult:
         """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
         given a PointObservation. No time interpolation is done!"""
 
@@ -114,15 +118,16 @@ class DfsuModelResult(ModelResultBase):
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
         )
 
-        x, y = observation.x, observation.y
+        x, y = point.x, point.y
         if not self._in_domain(x, y):
             raise ValueError(
-                f"PointObservation '{observation.name}' ({x}, {y}) outside model domain!"
+                f"PointObservation '{point.name}' ({x}, {y}) outside model domain!"
             )
 
-        self._validate_any_obs_in_model_time(
-            observation.name, observation.data.index, self.time
-        )
+        #
+        # self._validate_any_obs_in_model_time(
+        #    observation.name, observation.data.index, self.time
+        # )
 
         # TODO: interp2d
         xy = np.atleast_2d([x, y])
@@ -146,24 +151,20 @@ class DfsuModelResult(ModelResultBase):
             quantity=self.quantity,
         )
 
-    def _extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def _extract_track(self, track: Track) -> TrackModelResult:
         """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
-        given a TrackObservation."""
+        given a Track."""
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
         )
 
-        self._validate_any_obs_in_model_time(
-            observation.name, observation.data.index, self.time
-        )
+        # self._validate_any_obs_in_model_time(track.name, track.time, self.time)
 
         if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-            ds_model = self.data.extract_track(
-                track=observation.data, items=[self.item]
-            )
+            ds_model = self.data.extract_track(track=track.data, items=[self.item])
         elif isinstance(self.data, (mikeio.Dataset, mikeio.DataArray)):
-            ds_model = self.data.extract_track(track=observation.data)
+            ds_model = self.data.extract_track(track=track.data)
         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
 
         return TrackModelResult(

@@ -7,10 +7,13 @@ Examples
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
 import os
+from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import mikeio
 from copy import deepcopy
+from functools import cached_property
+
 from .utils import make_unique_index
 
 
@@ -24,6 +27,27 @@ def _parse_item(items, item, item_str="item"):
     else:
         raise TypeError(f"{item_str} must be int or string")
     return item
+
+
+# TODO move to separate file
+@dataclass
+class Point:
+    name: str
+    x: float
+    y: float
+
+
+# TODO move to separate file
+@dataclass
+class Track:
+    @cached_property
+    def data(self):
+        return pd.DataFrame({"x": self.x, "y": self.y}, index=self.time)
+
+    name: str
+    time: pd.DatetimeIndex
+    x: np.ndarray
+    y: np.ndarray
 
 
 class Observation:
@@ -340,6 +364,9 @@ class PointObservation(Observation):
         ax.set_ylabel(self._unit_text())
         return ax
 
+    def to_point(self) -> Point:
+        return Point(name=self.name, x=self.x, y=self.y)
+
 
 class TrackObservation(Observation):
     """Class for observation with locations moving in space, e.g. satellite altimetry
@@ -521,6 +548,10 @@ class TrackObservation(Observation):
         df = dfs.read(items=items).to_dataframe()
         df.dropna(inplace=True)
         return df, dfs.items[items[-1]]
+
+    def to_track(self):
+        """Convert to Track"""
+        return Track(name=self.name, time=self.time, x=self.x, y=self.y)
 
 
 def unit_display_name(name: str) -> str:

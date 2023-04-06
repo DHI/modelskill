@@ -7,7 +7,10 @@ import mikeio
 from fmskill import types, utils
 from fmskill.model import protocols, PointModelResult, TrackModelResult
 from fmskill.model._base import ModelResultBase
-from fmskill.observation import Observation, PointObservation, TrackObservation
+from fmskill.observation import (
+    Point,
+    Track,
+)
 
 
 class GridModelResult(ModelResultBase):
@@ -88,7 +91,7 @@ class GridModelResult(ModelResultBase):
         ymax = self.data.y.values.max()
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
-    def extract(self, observation: Observation) -> protocols.Comparable:
+    def extract(self, pos: Union[Point, Track]) -> protocols.Comparable:
         """Extract ModelResult at observation positions
 
         Parameters
@@ -101,36 +104,36 @@ class GridModelResult(ModelResultBase):
         <fmskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
-        extractor_lookup: Mapping[Observation, Callable] = {
-            PointObservation: self._extract_point,
-            TrackObservation: self._extract_track,
+        extractor_lookup = {
+            Point: self._extract_point,
+            Track: self._extract_track,
         }
-        extraction_func = extractor_lookup.get(type(observation))
+        extraction_func = extractor_lookup.get(type(pos))
         if extraction_func is None:
             raise NotImplementedError(
-                f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
+                f"Extraction from {type(self.data)} to {type(pos)} is not implemented."
             )
-        return extraction_func(observation)
+        return extraction_func(pos)
 
-    def _extract_point(self, observation: PointObservation) -> PointModelResult:
+    def _extract_point(self, point: Point) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
-        given a PointObservation. No time interpolation is done!"""
+        given a Point. No time interpolation is done!"""
 
-        x, y = observation.x, observation.y
+        x, y = point.x, point.y
         if (x is None) or (y is None):
             raise ValueError(
-                f"PointObservation '{observation.name}' cannot be used for extraction "
+                f"PointObservation '{point.name}' cannot be used for extraction "
                 + f"because it has None position x={x}, y={y}. Please provide position "
                 + "when creating PointObservation."
             )
         if not self._in_domain(x, y):
             raise ValueError(
-                f"PointObservation '{observation.name}' ({x}, {y}) is outside model domain!"
+                f"PointObservation '{point.name}' ({x}, {y}) is outside model domain!"
             )
 
-        self._validate_any_obs_in_model_time(
-            observation.name, observation.data.index, self.time
-        )
+        # self._validate_any_obs_in_model_time(
+        #    point.name, point.data.index, self.time
+        # )
 
         da = self.data[self.item].interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
@@ -146,15 +149,13 @@ class GridModelResult(ModelResultBase):
             quantity=self.quantity,
         )
 
-    def _extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def _extract_track(self, track: Track) -> TrackModelResult:
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
 
-        self._validate_any_obs_in_model_time(
-            observation.name, observation.data.index, self.time
-        )
+        # self._validate_any_obs_in_model_time(track.name, track.data.index, self.time)
 
-        renamed_obs_data = utils.rename_coords_pd(observation.data)
+        renamed_obs_data = utils.rename_coords_pd(track.data)
         t = xr.DataArray(renamed_obs_data.index, dims="track")
         x = xr.DataArray(renamed_obs_data.x, dims="track")
         y = xr.DataArray(renamed_obs_data.y, dims="track")

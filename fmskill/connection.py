@@ -13,7 +13,7 @@ import mikeio
 
 from fmskill import ModelResult
 from .model import protocols, DfsuModelResult
-from .observation import Observation, PointObservation, TrackObservation
+from .observation import Observation, Point, PointObservation, TrackObservation
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 from .plot import plot_observation_positions
@@ -281,7 +281,8 @@ class PointConnector(_SingleObsConnector):
         df_model = []
         for mr in self.modelresults:
             if isinstance(mr, protocols.Extractable):
-                mr = mr.extract(self.obs)
+                p = Point(name=self.obs.name, x=self.obs.x, y=self.obs.y)
+                mr = mr.extract(p)
 
             df = mr.data
             if (df is not None) and (len(df) > 0):
@@ -332,7 +333,8 @@ class TrackConnector(_SingleObsConnector):
         df_model = []
         for mr in self.modelresults:
             if isinstance(mr, protocols.Extractable):
-                mr = mr.extract(self.obs)
+                track = self.obs.to_track()
+                mr = mr.extract(track)
 
             df = mr.data
             if (df is not None) and (len(df) > 0):
