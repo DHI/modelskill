@@ -6,13 +6,14 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
+from abc import ABC
 import os
-from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 import mikeio
 from copy import deepcopy
-from functools import cached_property
+
 
 from .utils import make_unique_index
 
@@ -29,25 +30,15 @@ def _parse_item(items, item, item_str="item"):
     return item
 
 
-# TODO move to separate file
-@dataclass
-class Point:
+class Point(ABC):
     name: str
     x: float
     y: float
 
 
-# TODO move to separate file
-@dataclass
-class Track:
-    @cached_property
-    def data(self):
-        return pd.DataFrame({"x": self.x, "y": self.y}, index=self.time)
-
+class Track(ABC):
+    data: pd.DataFrame
     name: str
-    time: pd.DatetimeIndex
-    x: np.ndarray
-    y: np.ndarray
 
 
 class Observation:
@@ -194,7 +185,7 @@ class Observation:
         return self.__copy__()
 
 
-class PointObservation(Observation):
+class PointObservation(Observation, Point):
     """Class for observations of fixed locations
 
     Create a PointObservation from a dfs0 file or a pd.DataFrame.
@@ -364,11 +355,8 @@ class PointObservation(Observation):
         ax.set_ylabel(self._unit_text())
         return ax
 
-    def to_point(self) -> Point:
-        return Point(name=self.name, x=self.x, y=self.y)
 
-
-class TrackObservation(Observation):
+class TrackObservation(Observation, Track):
     """Class for observation with locations moving in space, e.g. satellite altimetry
 
     The data needs in addition to the datetime of each single observation point also, x and y coordinates.
@@ -548,10 +536,6 @@ class TrackObservation(Observation):
         df = dfs.read(items=items).to_dataframe()
         df.dropna(inplace=True)
         return df, dfs.items[items[-1]]
-
-    def to_track(self):
-        """Convert to Track"""
-        return Track(name=self.name, time=self.time, x=self.x, y=self.y)
 
 
 def unit_display_name(name: str) -> str:

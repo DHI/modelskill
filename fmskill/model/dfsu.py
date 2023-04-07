@@ -99,16 +99,15 @@ class DfsuModelResult(ModelResultBase):
         <fmskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
-        extractor_lookup = {
-            Point: self._extract_point,
-            Track: self._extract_track,
-        }
-        extraction_func = extractor_lookup.get(type(pos))
-        if extraction_func is None:
+        # start with the most specific type
+        if isinstance(pos, Track):
+            return self._extract_track(pos)
+        elif isinstance(pos, Point):
+            return self._extract_point(pos)
+        else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(pos)} is not implemented."
             )
-        return extraction_func(pos)
 
     def _extract_point(self, point: Point) -> PointModelResult:
         """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),

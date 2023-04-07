@@ -146,9 +146,9 @@ def test_connector_add_two_models(
 def test_connector_add_two_model_dataframes(
     o1: PointObservation, mr1: ModelResult, mr2: ModelResult
 ):
-    mr1_extr = mr1.extract(o1.to_point())
+    mr1_extr = mr1.extract(o1)
     # mr1_df = mr1._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
-    mr2_extr = mr2.extract(o1.to_point())
+    mr2_extr = mr2.extract(o1)
     # mr2_df = mr2._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
 
     assert isinstance(mr1_extr.data, pd.DataFrame)

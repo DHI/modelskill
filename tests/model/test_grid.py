@@ -131,7 +131,7 @@ def test_grid_validate_point(mf_modelresult, pointobs_epl_hm0):
 
 
 def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
-    pmr = mr_ERA5_swh.extract(pointobs_epl_hm0.to_point())
+    pmr = mr_ERA5_swh.extract(pointobs_epl_hm0)
     df = pmr.data
 
     assert isinstance(pmr, PointModelResult)
@@ -144,7 +144,7 @@ def test_grid_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
     mri = mr_ERA5_pp1d
     pointobs_epl_hm0.x = -50
     with pytest.raises(ValueError, match="outside"):
-        mri.extract(pointobs_epl_hm0.to_point())
+        mri.extract(pointobs_epl_hm0)
 
 
 # TODO Do we need this warning?
@@ -155,7 +155,7 @@ def test_grid_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
 #    da["time"] = pd.Timedelta("365D") + da.time
 #    mr = ModelResult(da)
 #    with pytest.warns(UserWarning, match="outside"):
-#        mr.extract(pointobs_epl_hm0.to_point())
+#        mr.extract(pointobs_epl_hm0)
 
 
 @pytest.mark.skip(
@@ -163,13 +163,13 @@ def test_grid_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
 )
 def test_grid_extract_point_wrongitem(mr_ERA5_pp1d, pointobs_epl_hm0):
     mri = mr_ERA5_pp1d
-    pc = mri.extract(pointobs_epl_hm0.to_point())
+    pc = mri.extract(pointobs_epl_hm0)
     assert pc == None
 
 
 def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     mri = mr_ERA5_pp1d
-    tmr = mri.extract(trackobs_c2_hm0.to_track())
+    tmr = mri.extract(trackobs_c2_hm0)
     df = tmr.data
 
     assert isinstance(tmr, TrackModelResult)

@@ -281,8 +281,7 @@ class PointConnector(_SingleObsConnector):
         df_model = []
         for mr in self.modelresults:
             if isinstance(mr, protocols.Extractable):
-                p = Point(name=self.obs.name, x=self.obs.x, y=self.obs.y)
-                mr = mr.extract(p)
+                mr = mr.extract(self.obs)
 
             df = mr.data
             if (df is not None) and (len(df) > 0):
@@ -333,8 +332,7 @@ class TrackConnector(_SingleObsConnector):
         df_model = []
         for mr in self.modelresults:
             if isinstance(mr, protocols.Extractable):
-                track = self.obs.to_track()
-                mr = mr.extract(track)
+                mr = mr.extract(self.obs)
 
             df = mr.data
             if (df is not None) and (len(df) > 0):
