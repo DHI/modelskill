@@ -106,17 +106,32 @@ class GridModelResult(ModelResultBase):
         """
         # start with the most specific type
         if isinstance(pos, Track):
-            return self._extract_track(pos)
+            return self.extract_track(pos)
         elif isinstance(pos, Point):
-            return self._extract_point(pos)
+            return self.extract_point(pos)
         else:
             raise NotImplementedError(
                 f"Cannot extract from {type(pos)} to {type(self)}"
             )
 
-    def _extract_point(self, point: Point) -> PointModelResult:
-        """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
-        given a Point. No time interpolation is done!"""
+    def extract_point(self, point: Point) -> PointModelResult:
+        """Spatial extraction
+
+        Parameters
+        ----------
+        point : Point
+            The location of where to extract the model result
+
+        Returns
+        -------
+        PointModelResult
+            The model result at the given location
+
+        Raises
+        ------
+        ValueError
+            If the point is outside the model domain
+        """
 
         x, y = point.x, point.y
         if (x is None) or (y is None):
@@ -148,9 +163,19 @@ class GridModelResult(ModelResultBase):
             quantity=self.quantity,
         )
 
-    def _extract_track(self, track: Track) -> TrackModelResult:
-        """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
-        given a TrackObservation."""
+    def extract_track(self, track: Track) -> TrackModelResult:
+        """Spatiotemporal extraction
+
+        Parameters
+        ----------
+        track : Track
+            The locations in time and space where to extract the model result
+
+        Returns
+        -------
+        TrackModelResult
+            The model result interpolated to the given track
+        """
 
         # self._validate_any_obs_in_model_time(track.name, track.data.index, self.time)
 

@@ -101,17 +101,32 @@ class DfsuModelResult(ModelResultBase):
         """
         # start with the most specific type
         if isinstance(pos, Track):
-            return self._extract_track(pos)
+            return self.extract_track(pos)
         elif isinstance(pos, Point):
-            return self._extract_point(pos)
+            return self.extract_point(pos)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(pos)} is not implemented."
             )
 
-    def _extract_point(self, point: Point) -> PointModelResult:
-        """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
-        given a PointObservation. No time interpolation is done!"""
+    def extract_point(self, point: Point) -> PointModelResult:
+        """Spatial extraction
+
+        Parameters
+        ----------
+        point : Point
+            The location of where to extract the model result
+
+        Returns
+        -------
+        PointModelResult
+            The model result at the given location
+
+        Raises
+        ------
+        ValueError
+            If the point is outside the model domain
+        """
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
@@ -150,9 +165,19 @@ class DfsuModelResult(ModelResultBase):
             quantity=self.quantity,
         )
 
-    def _extract_track(self, track: Track) -> TrackModelResult:
-        """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
-        given a Track."""
+    def extract_track(self, track: Track) -> TrackModelResult:
+        """Spatiotemporal extraction
+
+        Parameters
+        ----------
+        track : Track
+            The locations in time and space where to extract the model result
+
+        Returns
+        -------
+        TrackModelResult
+            The model result interpolated to the given track
+        """
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
