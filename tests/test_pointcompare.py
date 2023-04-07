@@ -1,11 +1,12 @@
 import datetime
+import pandas as pd
 import pytest
 import numpy as np
 
 import fmskill
 from fmskill import ModelResult, PointObservation, Connector
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
-from fmskill.comparison import PointComparer, ComparerCollection
+from fmskill.comparison import Comparer, PointComparer, ComparerCollection
 
 
 @pytest.fixture
@@ -48,7 +49,7 @@ def test_get_comparer_by_name(modelresult_oresund_WL, klagshamn, drogden):
     assert "Atlantis" not in cc.keys()
 
 
-def test_get_comparer_slice(cc):
+def test_get_comparer_by_position(cc):
     cc0 = cc[0]
     assert isinstance(cc0, PointComparer)
     assert cc0.name == "Klagshamn"
@@ -57,9 +58,12 @@ def test_get_comparer_slice(cc):
     assert isinstance(cc1, PointComparer)
     assert cc1.name == "dmi_30357_Drogden_Fyr"
 
-    ccs = cc[0:2]
-    assert len(ccs) == 2
-    assert isinstance(ccs, ComparerCollection)
+    with pytest.raises(NotImplementedError):
+        cc[0:2]
+
+    # ccs = cc[0:2]
+    # assert len(ccs) == 2
+    # assert isinstance(ccs, ComparerCollection)
 
 
 def test_iterate_over_comparers(modelresult_oresund_WL, klagshamn, drogden):
@@ -282,3 +286,11 @@ def test_comparison_from_yml():
     assert c.n_comparers == 2
     assert c.n_models == 1
     assert con.observations["Klagshamn"].itemInfo.name == "Water Level"
+
+
+def test_comparer_dataframe_without_time_not_allowed(klagshamn):
+
+    mr = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    with pytest.raises(ValueError, match="datetime"):
+        Comparer(klagshamn, modeldata=mr)

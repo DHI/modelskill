@@ -62,6 +62,86 @@ def tc() -> fmskill.comparison.Comparer:
     return fmskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
+def test_minimal_matched_data():
+
+    df = pd.DataFrame(
+        {
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
+            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
+            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+
+    data = xr.Dataset(df)
+    data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "mini"
+    cmp = fmskill.comparison.Comparer.from_compared_data(
+        data=data
+    )  # no additional raw_mod_data
+    assert len(cmp.raw_mod_data["m1"]) == 6
+
+    assert cmp.mod_names == ["m1", "m2"]
+    assert cmp.n_models == 2
+
+
+def test_multiple_forecasts_matched_data():
+
+    # an example on how a forecast dataset could be constructed
+    df = pd.DataFrame(
+        {
+            "Observation": [1.0, 2.0, 1.1, 2.1, 3.1],
+            "m1": [1.1, 2.5, 1.2, 4.9, 3.8],
+            "time": pd.DatetimeIndex(
+                ["2019-01-01", "2019-01-02", "2019-01-02", "2019-01-03", "2019-01-04"]
+            ),
+            "leadtime": [0, 24, 0, 24, 48],
+        }
+    ).set_index("time")
+    data = xr.Dataset(df)
+    data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data.attrs["name"] = "a fcst"
+    cmp = fmskill.comparison.Comparer.from_compared_data(
+        data=data
+    )  # no additional raw_mod_data
+    assert len(cmp.raw_mod_data["m1"]) == 5
+    assert cmp.mod_names == ["m1"]
+    assert cmp.data["leadtime"].attrs["kind"] == "auxiliary"
+    analysis = cmp.where(cmp.data["leadtime"] == 0)
+    analysis.score()
+    assert len(analysis.raw_mod_data["m1"]) == 5
+    assert len(analysis.data["m1"]) == 2
+
+    f_s = cmp.score("rmse")
+    a_s = analysis.score("rmse")
+
+    assert a_s < f_s
+
+
+def test_matched_aux_variables():
+
+    df = pd.DataFrame(
+        {
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
+            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
+            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
+            "wind": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+
+    data = xr.Dataset(df)
+    data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    cmp = fmskill.comparison.Comparer.from_compared_data(data=data)
+    assert "wind" not in cmp.mod_names
+    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+
+
 def test_pc_properties(pc):
     assert pc.n_models == 2
     assert pc.n_points == 5

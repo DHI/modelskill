@@ -334,8 +334,28 @@ class Comparer:
     ):
 
         if matched_data is not None:
+            # TODO extract method
+            for key in matched_data.data_vars:
+                if "kind" not in matched_data[key].attrs:
+                    matched_data[key].attrs["kind"] = "auxiliary"
+            if "x" not in matched_data:
+                matched_data["x"] = np.nan
+                matched_data["x"].attrs["kind"] = "position"
+
+            if "y" not in matched_data:
+                matched_data["y"] = np.nan
+                matched_data["y"].attrs["kind"] = "position"
+
             self.data = matched_data
-            self.raw_mod_data = raw_mod_data
+            self.raw_mod_data = (
+                raw_mod_data
+                if raw_mod_data is not None
+                else {
+                    key: value.to_dataframe()
+                    for key, value in matched_data.data_vars.items()
+                    if value.attrs["kind"] == "model"
+                }
+            )
             return
 
         self.raw_mod_data = (
@@ -344,6 +364,22 @@ class Comparer:
 
         self.data = self._initialise_comparer(observation, max_model_gap)
 
+    def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
+        if len(df_mod) == 0:
+            return
+        if len(df_mod) != len(df_obs):
+            raise ValueError("model and observation data must have same length")
+
+        mod_xy = df_mod[["x", "y"]]
+        obs_xy = df_obs[["x", "y"]]
+        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
+        # TODO why not use a fixed tolerance?
+        tol_xy = self._minimal_accepted_distance(obs_xy)
+        mask = d_xy > tol_xy
+        df_mod.loc[mask, name] = np.nan
+        if any(mask):
+            warnings.warn("no (spatial) overlap between model and observation points")
+
     def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
 
         assert isinstance(observation, (PointObservation, TrackObservation))
@@ -351,40 +387,19 @@ class Comparer:
         observation = deepcopy(observation)
         observation.trim(self._mod_start, self._mod_end)
 
-        modeldata_list = list(self.raw_mod_data.values())
-        if len(modeldata_list) == 0:
-            return
+        first = True
+        for name, mdata in self.raw_mod_data.items():
+            df = self._model2obs_interp(observation, mdata, max_model_gap)
+            if gtype == "track":
+                # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
+                self._mask_model_outside_observation_track(name, df, observation.data)
 
-        # TODO refactor common functionality, to minimize duplication
-        if gtype == "point":
-            for j, mdata in enumerate(modeldata_list):
-                df = self._model2obs_interp(observation, mdata, max_model_gap).iloc[
-                    :, ::-1
-                ]  # TODO why reverse?
-                if j == 0:
-                    data = df
-                else:
-                    data[self.mod_names[j]] = df[self.mod_names[j]]
+            if first:
+                data = df
+            else:
+                data[name] = df[name]
 
-        elif gtype == "track":
-            for j, mdata in enumerate(modeldata_list):
-                df = self._model2obs_interp(observation, mdata, max_model_gap)
-                # rename first columns to x, y
-                df.columns = ["x", "y", *list(df.columns)[2:]]
-                if (len(df) > 0) and (len(df) == len(observation.data)):
-                    ok = self._obs_mod_xy_distance_acceptable(df, observation.data)
-                    # set model to NaN if too far away from obs location
-                    df.loc[~ok, self.mod_names[j]] = np.nan
-                    if sum(ok) == 0:
-                        warnings.warn(
-                            "no (spatial) overlap between model and observation points"
-                        )
-                if j == 0:
-                    # change order of obs and model
-                    cols = ["x", "y", self._obs_name, self.mod_names[j]]
-                    data = df[cols]
-                else:
-                    data[self.mod_names[j]] = df[self.mod_names[j]]
+            first = False
 
         data.index.name = "time"
         data = data.dropna()
@@ -408,13 +423,6 @@ class Comparer:
 
         return data
 
-    def _obs_mod_xy_distance_acceptable(self, df_mod, df_obs):
-        mod_xy = df_mod.loc[:, ["x", "y"]].values
-        obs_xy = df_obs.iloc[:, :2].values
-        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-        tol_xy = self._minimal_accepted_distance(obs_xy)
-        return d_xy < tol_xy
-
     @staticmethod
     def _minimal_accepted_distance(obs_xy):
         # all consequtive distances
@@ -433,7 +441,7 @@ class Comparer:
     @staticmethod
     def _parse_single_modeldata(modeldata) -> pd.DataFrame:
         """Convert to dataframe and set index to pd.DatetimeIndex"""
-        if isinstance(modeldata, (mikeio.Dataset, xr.DataArray, xr.Dataset)):
+        if hasattr(modeldata, "to_dataframe"):
             mod_df = modeldata.to_dataframe()
         elif isinstance(modeldata, pd.DataFrame):
             mod_df = modeldata
@@ -441,9 +449,12 @@ class Comparer:
             raise ValueError(
                 f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
             )
-        if len(mod_df) == 0:
-            warnings.warn(f"Cannot add zero-length modeldata ({mod_df.columns[-1]})")
-            return
+
+        if not isinstance(mod_df.index, pd.DatetimeIndex):
+            raise ValueError(
+                "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
+            )
+
         time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
         mod_df.index = pd.DatetimeIndex(time, freq="infer")
         return mod_df
@@ -451,13 +462,7 @@ class Comparer:
     @classmethod
     def from_compared_data(cls, data, raw_mod_data=None):
         """Initialize from compared data"""
-        # TODO this is not a clean solution
-        # cmp = cls(observation=None, modeldata=None)
-        # cmp.data = data
-        # if raw_mod_data is not None:
-        #    cmp.raw_mod_data = raw_mod_data
-        cmp = cls(matched_data=data, raw_mod_data=raw_mod_data)
-        return cmp
+        return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
         out = []
@@ -1619,11 +1624,13 @@ class ComparerCollection(Mapping, Sequence):
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
 
-    def __getitem__(self, x):
+    def __getitem__(self, x) -> Comparer:
+
         if isinstance(x, slice):
-            cmps = [self[xi] for xi in range(*x.indices(len(self)))]
-            cc = ComparerCollection(cmps)
-            return cc
+            raise NotImplementedError("slicing not implemented")
+        #    cmps = [self[xi] for xi in range(*x.indices(len(self)))]
+        #    cc = ComparerCollection(cmps)
+        #    return cc
 
         if isinstance(x, int):
             x = _get_name(x, self.obs_names)
@@ -2213,7 +2220,7 @@ class ComparerCollection(Mapping, Sequence):
         ax = df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         df.obs_val.hist(
             bins=bins,
-            color=self[0].data[self[0]._obs_name].attrs["color"],
+            color=self[0].data["Observation"].attrs["color"],
             ax=ax,
             **kwargs,
         )

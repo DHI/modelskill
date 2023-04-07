@@ -479,6 +479,20 @@ class TrackObservation(Observation):
         if not df.index.is_unique:
             df.index = make_unique_index(df.index, offset_duplicates=offset_duplicates)
 
+        # TODO is this needed elsewhere?
+        # make sure location columns are named x and y
+        if isinstance(x_item, str):
+            old_x_name = x_item
+        else:
+            old_x_name = df.columns[x_item]
+
+        if isinstance(y_item, str):
+            old_y_name = y_item
+        else:
+            old_y_name = df.columns[y_item]
+
+        df = df.rename(columns={old_x_name: "x", old_y_name: "y"})
+
         super().__init__(
             name=name,
             df=df,
