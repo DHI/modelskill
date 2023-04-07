@@ -60,7 +60,7 @@ def compare(
     mod_item: IdOrNameTypes = None,
     gtype: GeometryTypes = None,
     max_model_gap=None,
-):
+) -> Union[Comparer, ComparerCollection]:
     """Compare observations and model results
 
     Parameters
@@ -80,8 +80,8 @@ def compare(
 
     Returns
     -------
-    fmskill.Comparer
-        A comparer object for further analysis and plotting
+    Comparer or ComparerCollection
+        To be used for plotting and statistics
     """
     if isinstance(obs, get_args(ObsInputType)):
         return _single_obs_compare(
@@ -122,9 +122,7 @@ def _single_obs_compare(
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
     mod = _parse_models(mod, mod_item, gtype=gtype)
     df_mod = _extract_from_models(obs, mod)
-    if not df_mod:
-        warnings.warn(f"No overlapping data was found for Observation '{obs.name}'!")
-        return None
+    
     return Comparer(obs, df_mod, max_model_gap=max_model_gap)
 
 
