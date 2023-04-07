@@ -166,3 +166,29 @@ def test_compare_gaps_types(o2_gaps, mr12_gaps):
     for gap in gaps:
         cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=gap)
         assert cmp.data["mr1"].count() == 42
+
+
+def test_small_multi_model_shifted_time_compare():
+
+    obs = pd.DataFrame(
+        {"HKNA": [1.1, 2.0, 3.0, 4.0]}, index=pd.date_range("2017-01-01", periods=4)
+    )
+    mod = pd.DataFrame(
+        {"Simple": [1.1, 2.0, 3.0]}, index=pd.date_range("2017-01-01", periods=3)
+    )
+
+    mod2 = pd.DataFrame(
+        {"NotSimple": [2.1, 3.0, 4.0]}, index=pd.date_range("2017-01-02", periods=3)
+    )
+
+    # observation has four timesteps, but only three of them are in the Simple model and three in the NotSimple model
+    # the number of overlapping points for all three datasets are 2, but three if we look at the models individually
+
+    cmp1 = ms.compare(obs=obs, mod=mod)
+    assert cmp1.n_points == 3
+
+    cmp2 = ms.compare(obs=obs, mod=mod2)
+    assert cmp2.n_points == 3
+
+    mcmp = ms.compare(obs=obs, mod=[mod, mod2])
+    assert mcmp.n_points == 2
