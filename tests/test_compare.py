@@ -15,6 +15,12 @@ def o1():
 
 
 @pytest.fixture
+def o2():
+    fn = "tests/testdata/SW/eur_Hm0.dfs0"
+    return PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
+
+
+@pytest.fixture
 def o2_gaps():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
     obs = mikeio.read(fn, items=0).to_dataframe().rename(columns=dict(Hm0="obs")) + 1
@@ -47,9 +53,29 @@ def mr12_gaps():
 
 
 @pytest.fixture
+def mr1():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    return ModelResult(fn, item=0, name="SW_1")
+
+
+@pytest.fixture
+def mr2():
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    return ModelResult(fn, item=0, name="SW_2")
+
+
+@pytest.fixture
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
     return ModelResult(fn, item=0, name="SW_3")
+
+
+def test_compare_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
+    cc = ms.compare([o1, o2, o3], [mr1, mr2])
+    assert cc.n_models == 2
+    assert cc.n_observations == 3
+    assert cc["c2"].n_points == 113
+    assert cc["HKNA"].name == "HKNA"
 
 
 def test_compare_dataarray(o1, o3):
