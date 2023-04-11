@@ -234,7 +234,8 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-
+        
+        
     if show_hist:
         # if histogram is wanted (explicit non-default flag) then density is off
         if show_density == True:
@@ -256,9 +257,10 @@ def scatter(
         z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
         # Sort data by colormaps
-        x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]
+        x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]        
         # scale Z by sample size
-        z = z * len(x) / len(x_sample)
+        z = z * len(x) / len(x_sample)     
+ 
 
     # linear fit
     slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
@@ -273,8 +275,8 @@ def scatter(
         _,ax=plt.subplots(figsize=figsize)
         #plt.figure(figsize=figsize)
         plt.plot(
-            [xlim[0], xlim[1]],
-            [xlim[0], xlim[1]],
+            [xlim[0]- binsize, xlim[1]+ binsize],
+            [xlim[0]- binsize, xlim[1]+ binsize],
             label=options.plot.scatter.oneone_line.label,
             c=options.plot.scatter.oneone_line.color,
             zorder=3,
@@ -321,8 +323,8 @@ def scatter(
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
-        plt.xlim(xlim)
-        plt.ylim(ylim)
+        plt.xlim([xlim[0] - binsize, xlim[1] + binsize])
+        plt.ylim([ylim[0] - binsize, ylim[1] + binsize])
         plt.minorticks_on()
         plt.grid(which="both", axis="both", linewidth="0.2", color="k",alpha=0.6)
         max_cbar = None
@@ -532,8 +534,8 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     """
 
     # Make linear-grid for interpolation
-    minxy = min(min(x), min(y))
-    maxxy = max(max(x), max(y))
+    minxy = min(min(x), min(y))-binsize
+    maxxy = max(max(x), max(y))+binsize
     # Center points of the bins
     cxy = np.arange(minxy, maxxy, binsize)
 
