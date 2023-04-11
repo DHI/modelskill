@@ -534,11 +534,10 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     """
 
     # Make linear-grid for interpolation
-    minxy = min(min(x), min(y))-binsize
-    maxxy = max(max(x), max(y))+binsize
+    minxy = min(min(x), min(y))-binsize/2
+    maxxy = max(max(x), max(y))+binsize/2
     # Center points of the bins
     cxy = np.arange(minxy, maxxy, binsize)
-
     # Edges of the bins
     exy = np.arange(minxy - binsize * 0.5, maxxy + binsize * 0.5, binsize)
 
