@@ -193,11 +193,7 @@ def scatter(
     xymin = min([xmin, ymin])
     xymax = max([xmax, ymax])
 
-    if xlim is None:
-        xlim = [xymin, xymax]
 
-    if ylim is None:
-        ylim = [xymin, xymax]
 
     if quantiles is None:
         if len(x) >= 3000:
@@ -226,6 +222,12 @@ def scatter(
         else:
             nbins_hist = int((xmax - xmin) / binsize_aux)
     # Remove previous piece of code when nbins and bin_size are deprecated.
+
+    if xlim is None:
+        xlim = [xymin - binsize, xymax+ binsize]
+
+    if ylim is None:
+        ylim = [xymin - binsize, xymax+ binsize]
 
     if type(quantiles) == int:
         xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
@@ -275,8 +277,8 @@ def scatter(
         _,ax=plt.subplots(figsize=figsize)
         #plt.figure(figsize=figsize)
         plt.plot(
-            [xlim[0]- binsize, xlim[1]+ binsize],
-            [xlim[0]- binsize, xlim[1]+ binsize],
+            [xlim[0], xlim[1]],
+            [xlim[0], xlim[1]],
             label=options.plot.scatter.oneone_line.label,
             c=options.plot.scatter.oneone_line.color,
             zorder=3,
@@ -323,8 +325,8 @@ def scatter(
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
-        plt.xlim([xlim[0] - binsize, xlim[1] + binsize])
-        plt.ylim([ylim[0] - binsize, ylim[1] + binsize])
+        plt.xlim([xlim[0], xlim[1]])
+        plt.ylim([ylim[0], ylim[1]])
         plt.minorticks_on()
         plt.grid(which="both", axis="both", linewidth="0.2", color="k",alpha=0.6)
         max_cbar = None
