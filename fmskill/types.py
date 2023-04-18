@@ -56,6 +56,8 @@ DataInputType = Union[
     List[Path],
     mikeio.DataArray,
     mikeio.Dataset,
+    mikeio.Dfs0,
+    mikeio.dfsu.Dfsu2DH,
     pd.DataFrame,
     pd.Series,
     xr.Dataset,
@@ -79,9 +81,11 @@ UnstructuredType = Union[
 ]
 GridType = Union[str, Path, List, xr.Dataset, xr.DataArray]
 
-PointType = Union[str, Path, pd.DataFrame, pd.Series, mikeio.Dfs0, mikeio.DataArray, mikeio.Dataset]
+PointType = Union[
+    str, Path, pd.DataFrame, pd.Series, mikeio.Dfs0, mikeio.DataArray, mikeio.Dataset
+]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset]
 
-DfsType = Union[mikeio.Dfs0, mikeio.Dfsu]
+# DfsType = Union[mikeio.Dfs0, mikeio.Dfsu]
 
 ItemType = Optional[Union[str, int]]
