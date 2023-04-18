@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import List, Sequence, Tuple, Union
 import warnings
 import numpy as np
 from collections import namedtuple
@@ -55,6 +55,7 @@ register_option(
 )
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
+
 
 def scatter(
     x,
@@ -152,14 +153,14 @@ def scatter(
 
     x_sample = x
     y_sample = y
-    sample_warning=False
+    sample_warning = False
     if show_points is None:
         # If nothing given, and more than 50k points, 50k sample will be shown
         if len(x) < 5e4:
             show_points = True
         else:
             show_points = 50000
-            sample_warning=True
+            sample_warning = True
     if type(show_points) == float:
         if show_points < 0 or show_points > 1:
             raise ValueError(" `show_points` fraction must be in [0,1]")
@@ -170,24 +171,25 @@ def scatter(
             )
             x_sample = x[ran_index]
             y_sample = y[ran_index]
-            if len(x_sample)<len(x):
-                sample_warning=True
+            if len(x_sample) < len(x):
+                sample_warning = True
     # if show_points is an int
     elif type(show_points) == int:
         np.random.seed(20)
         ran_index = np.random.choice(range(len(x)), show_points, replace=False)
         x_sample = x[ran_index]
         y_sample = y[ran_index]
-        if len(x_sample)<len(x):
-            sample_warning=True
+        if len(x_sample) < len(x):
+            sample_warning = True
     elif type(show_points) == bool:
         pass
     else:
         raise TypeError(" `show_points` must be either bool, int or float")
     if sample_warning:
         warnings.warn(
-            message=f'Showing only {len(x_sample)} points in plot. If all scatter points wanted in plot, use `show_points=True`',
-            stacklevel=2)
+            message=f"Showing only {len(x_sample)} points in plot. If all scatter points wanted in plot, use `show_points=True`",
+            stacklevel=2,
+        )
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
     xymin = min([xmin, ymin])
@@ -270,8 +272,8 @@ def scatter(
     reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
 
     if backend == "matplotlib":
-        _,ax=plt.subplots(figsize=figsize)
-        #plt.figure(figsize=figsize)
+        _, ax = plt.subplots(figsize=figsize)
+        # plt.figure(figsize=figsize)
         plt.plot(
             [xlim[0], xlim[1]],
             [xlim[0], xlim[1]],
@@ -324,7 +326,7 @@ def scatter(
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.minorticks_on()
-        plt.grid(which="both", axis="both", linewidth="0.2", color="k",alpha=0.6)
+        plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
         max_cbar = None
         if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
@@ -424,7 +426,7 @@ def scatter(
 
 
 def plot_temporal_coverage(
-    obs,
+    obs=None,
     mod=None,
     *,
     limit_to_model_period=True,
@@ -436,7 +438,7 @@ def plot_temporal_coverage(
 
     Parameters
     ----------
-    obs : List[Observation]
+    obs : List[Observation], optional
         Show observation(s) as separate lines on plot
     mod : List[ModelResult], optional
         Show model(s) as separate lines on plot, by default None
@@ -453,16 +455,19 @@ def plot_temporal_coverage(
     Examples
     --------
     >>> import fmskill as ms
-    >>> ms.plot_temporal_coverage()
-    >>> ms.plot_temporal_coverage(show_model=False)
-    >>> ms.plot_temporal_coverage(limit_to_model_period=False)
-    >>> ms.plot_temporal_coverage(marker=".")
-    >>> ms.plot_temporal_coverage(figsize=(5,3))
+    >>> o1 = ms.PointObservation('HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
+    >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+    >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
+    >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
+    >>> ms.plot_temporal_coverage([o1, o2], [mr1, mr2])
+    >>> ms.plot_temporal_coverage([o1, o2], mr2, limit_to_model_period=False)
+    >>> ms.plot_temporal_coverage(o2, [mr1, mr2], marker=".")
+    >>> ms.plot_temporal_coverage(mod=[mr1, mr2], figsize=(5,3))
     """
-    obs = 
-    #n_obs = 
-    n_models = self.n_models if show_model else 0
-    n_lines = n_models + self.n_observations
+    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
+    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
+
+    n_lines = len(obs) + len(mod)
     if figsize is None:
         ysize = max(2.0, 0.45 * n_lines)
         figsize = (7, ysize)
@@ -471,24 +476,24 @@ def plot_temporal_coverage(
     y = np.repeat(0.0, 2)
     labels = []
 
-    if n_models > 0:
-        for key, mr in self.modelresults.items():
+    if len(mod) > 0:
+        for mr in mod:
             y += 1.0
             plt.plot([mr.start_time, mr.end_time], y)
-            labels.append(key)
+            labels.append(mr.name)
 
-    for key, obs in self.observations.items():
+    for o in obs:
         y += 1.0
-        plt.plot(obs.time, y[0] * np.ones_like(obs.values), marker, markersize=5)
-        labels.append(key)
+        plt.plot(o.time, y[0] * np.ones(len(o.time)), marker, markersize=5)
+        labels.append(o.name)
 
-    if limit_to_model_period:
-        mr = list(self.modelresults.values())[0]  # take first
+    if len(mod) > 0 and limit_to_model_period:
+        mr = mod[0]  # take first model
         plt.xlim([mr.start_time, mr.end_time])
 
     plt.yticks(np.arange(n_lines) + 1, labels)
-    if n_models > 0:
-        for j in range(n_models):
+    if len(mod) > 0:
+        for j in range(len(mod)):
             ax.get_yticklabels()[j].set_fontstyle("italic")
             ax.get_yticklabels()[j].set_weight("bold")
             # set_color("#004165")
