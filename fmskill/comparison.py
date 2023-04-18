@@ -2332,9 +2332,24 @@ class ComparerCollection(Mapping, Sequence):
 
         # weights
         weights = cmp._parse_weights(weights, s.obs_names)
-        skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, len(mod_names))
-        )
+        # skilldf["weights_old"] = (
+        #    skilldf.n if weights is None else np.tile(weights, len(mod_names)) # This is not correct
+        # )
+        skilldf["weights"] = skilldf.n
+
+        if weights is not None:
+            for w, obs in zip(weights, s.obs_names):
+                if skilldf.index.nlevels == 1:
+                    skilldf.loc[obs, "weights"] = w
+                else:
+                    # TODO there must be a better way to assign weights (I don't understand the value of multiindex 🙄)
+                    idx = tuple(skilldf.index.names)
+                    if idx == ("model", "observation"):
+                        skilldf.loc[(slice(None), obs), "weights"] = w
+                    elif idx == ("model", "observation", "variable"):
+                        skilldf.loc[(slice(None), obs, (slice(None))), "weights"] = w
+                    elif idx == ("observation", "variable"):
+                        skilldf.loc[(obs, slice(None)), "weights"] = w
 
         weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
 
@@ -2463,6 +2478,7 @@ class ComparerCollection(Mapping, Sequence):
             elif isinstance(weights, dict):
                 w_dict = weights
                 weights = [w_dict.get(name, 1.0) for name in (self.obs_names)]
+                return weights
 
             elif isinstance(weights, str):
                 if weights.lower() == "equal":
@@ -2474,16 +2490,7 @@ class ComparerCollection(Mapping, Sequence):
                         "unknown weights argument (None, 'equal', 'points', or list of floats)"
                     )
             elif not np.isscalar(weights):
-                if n_obs == 1:
-                    if len(weights) > 1:
-                        warnings.warn(
-                            "Cannot apply multiple weights to one observation"
-                        )
-                    weights = [1.0]
-                if not len(weights) == n_obs:
-                    raise ValueError(
-                        f"weights must have same length as observations: {observations}"
-                    )
+                raise ValueError("Assign weights with a dictionary")
         if weights is not None:
             assert len(weights) == n_obs
         return weights

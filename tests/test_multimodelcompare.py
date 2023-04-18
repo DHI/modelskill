@@ -21,10 +21,12 @@ def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     return ModelResult(fn, item=0, name="SW_2")
 
+
 @pytest.fixture
 def mr3():
     fn = "tests/testdata/SW/HKZA_Hm0.dfs0"
     return ModelResult(fn, item=0, name="SW_3")
+
 
 @pytest.fixture
 def o1():
@@ -43,21 +45,25 @@ def o3():
     fn = "tests/testdata/SW/Alti_c2_Dutch.dfs0"
     return TrackObservation(fn, item=3, name="c2")
 
+
 @pytest.fixture
 def o4():
     fn = "tests/testdata/SW/HKZA_Hm0.dfs0"
     return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKZA")
+
 
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3):
     con = Connector([o1, o2, o3], [mr1, mr2])
     return con.extract()
 
+
 @pytest.fixture
 def cc2(mr1, mr3, o1, o4):
     con = Connector([o4], [mr3])
-    con.add(mr1,o1)
+    con.add(obs=o1, mod=mr1)
     return con.extract()
+
 
 def test_connector(mr1, mr2, o1):
     con = Connector(o1, [mr1, mr2])
@@ -241,25 +247,17 @@ def test_mm_mean_skill(cc):
     assert len(s) == 2
     assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
 
+
 def test_mm_mean_skill_2(cc2):
     s = cc2.mean_skill()
     assert s
-    
+
+
 def test_mm_mean_skill_weights_list(cc):
-    s = cc.mean_skill(weights=[0.3, 0.2, 1.0])
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.3261788143)
 
-    s = cc.mean_skill(weights=[100000000000.0, 1.0, 1.0])
-    assert s.loc["SW_1"].rmse < 1.0
-
-    s = cc.mean_skill(weights=1)
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
-
+    # assigning weights with a list is way to error prone
     with pytest.raises(ValueError):
-        # too many weights
-        cc.mean_skill(weights=[0.2, 0.3, 0.4, 0.5])
+        cc.mean_skill(weights=[0.3, 0.2, 1.0])
 
 
 def test_mm_mean_skill_weights_str(cc):
@@ -277,9 +275,9 @@ def test_mm_mean_skill_weights_dict(cc):
     assert len(s) == 2
     assert s.loc["SW_1"].rmse == pytest.approx(0.3261788143)
 
-    s2 = cc.mean_skill(weights=[0.3, 0.2, 1.0])
-    assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
-    assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
+    # s2 = cc.mean_skill(weights=[0.3, 0.2, 1.0])
+    # assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
+    # assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
 
     s = cc.mean_skill(weights={"EPL": 2.0})
     assert len(s) == 2
