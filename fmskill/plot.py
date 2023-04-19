@@ -193,11 +193,7 @@ def scatter(
     xymin = min([xmin, ymin])
     xymax = max([xmax, ymax])
 
-    if xlim is None:
-        xlim = [xymin, xymax]
 
-    if ylim is None:
-        ylim = [xymin, xymax]
 
     if quantiles is None:
         if len(x) >= 3000:
@@ -227,6 +223,12 @@ def scatter(
             nbins_hist = int((xmax - xmin) / binsize_aux)
     # Remove previous piece of code when nbins and bin_size are deprecated.
 
+    if xlim is None:
+        xlim = [xymin - binsize, xymax+ binsize]
+
+    if ylim is None:
+        ylim = [xymin - binsize, xymax+ binsize]
+
     if type(quantiles) == int:
         xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
         yq = np.quantile(y, q=np.linspace(0, 1, num=quantiles))
@@ -234,7 +236,8 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-
+    x_trend= np.array([xlim[0],xlim[1]])   
+        
     if show_hist:
         # if histogram is wanted (explicit non-default flag) then density is off
         if show_density == True:
@@ -256,9 +259,10 @@ def scatter(
         z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
         # Sort data by colormaps
-        x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]
+        x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]        
         # scale Z by sample size
-        z = z * len(x) / len(x_sample)
+        z = z * len(x) / len(x_sample)     
+ 
 
     # linear fit
     slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
@@ -308,8 +312,8 @@ def scatter(
             **settings.get_option("plot.scatter.quantiles.kwargs"),
         )
         plt.plot(
-            x,
-            intercept + slope * x,
+            x_trend,
+            intercept + slope * x_trend,
             **settings.get_option("plot.scatter.reg_line.kwargs"),
             label=reglabel,
             zorder=2,
@@ -321,8 +325,8 @@ def scatter(
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.axis("square")
-        plt.xlim(xlim)
-        plt.ylim(ylim)
+        plt.xlim([xlim[0], xlim[1]])
+        plt.ylim([ylim[0], ylim[1]])
         plt.minorticks_on()
         plt.grid(which="both", axis="both", linewidth="0.2", color="k",alpha=0.6)
         max_cbar = None
@@ -532,11 +536,10 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     """
 
     # Make linear-grid for interpolation
-    minxy = min(min(x), min(y))
-    maxxy = max(max(x), max(y))
+    minxy = min(min(x), min(y))-binsize/2
+    maxxy = max(max(x), max(y))+binsize/2
     # Center points of the bins
     cxy = np.arange(minxy, maxxy, binsize)
-
     # Edges of the bins
     exy = np.arange(minxy - binsize * 0.5, maxxy + binsize * 0.5, binsize)
 
