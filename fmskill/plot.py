@@ -236,7 +236,7 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-        
+    x_trend= np.array([xlim[0],xlim[1]])   
         
     if show_hist:
         # if histogram is wanted (explicit non-default flag) then density is off
@@ -312,8 +312,8 @@ def scatter(
             **settings.get_option("plot.scatter.quantiles.kwargs"),
         )
         plt.plot(
-            x,
-            intercept + slope * x,
+            x_trend,
+            intercept + slope * x_trend,
             **settings.get_option("plot.scatter.reg_line.kwargs"),
             label=reglabel,
             zorder=2,
