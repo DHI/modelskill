@@ -27,7 +27,7 @@ from .model.factory import ModelResult
 from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector
 from .settings import options, get_option, set_option, reset_option, load_style
-
+from .plot import plot_temporal_coverage
 
 def from_config(
     configuration: Union[dict, str], *, validate_eum=True, relative_path=True
