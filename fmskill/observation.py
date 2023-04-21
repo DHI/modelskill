@@ -552,6 +552,7 @@ def unit_display_name(name: str) -> str:
         .replace(" per ", "/")
         .replace("second", "s")
         .replace("sec", "s")
+        .replace("degree", "°")
     )
 
     return res
