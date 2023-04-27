@@ -536,12 +536,16 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     """
 
     # Make linear-grid for interpolation
-    minxy = min(min(x), min(y))-binsize/2
-    maxxy = max(max(x), max(y))+binsize/2
+    minxy = min(min(x), min(y))-binsize
+    maxxy = max(max(x), max(y))+binsize
     # Center points of the bins
     cxy = np.arange(minxy, maxxy, binsize)
     # Edges of the bins
     exy = np.arange(minxy - binsize * 0.5, maxxy + binsize * 0.5, binsize)
+    if exy[-1]<=cxy[-1]:
+        #sometimes, given the bin size, the edges array ended before (left side) of the bins-center array
+        # in such case, and extra half-bin is added at the end
+        exy = np.arange(minxy - binsize * 0.5, maxxy + binsize, binsize)
 
     # Calculate 2D histogram
     histodata, exh, eyh = np.histogram2d(x, y, [exy, exy])
