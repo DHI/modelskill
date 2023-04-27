@@ -256,7 +256,7 @@ def scatter(
                 "if `show_density=True` then `show_hist` must be either `False` or `None`"
             )
         # calculate density data
-        z = _scatter_density(x_sample, y_sample, binsize=binsize)
+        z = __scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
         # Sort data by colormaps
         x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]        
@@ -515,8 +515,8 @@ def taylor_diagram(
     fig.suptitle(title, size="x-large")
 
 
-def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
-    """Interpolates scatter data on a 2D histogram (gridded) based on data density.
+def __hist2d(x, y, binsize):
+    """Calculates 2D histogram (gridded) of data.
 
     Parameters
     ----------
@@ -525,16 +525,17 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     y: np.array
         Y values e.g observation values, must be same length as x
     binsize: float, optional
-        2D grid resolution, by default = 0.1
-    method: str, optional
-        Scipy griddata interpolation method, by default 'linear'
+        2D histogram (bin) resolution, by default = 0.1
 
     Returns
     ----------
-    Z_grid: np.array
-        Array with the colors based on histogram density
+    histodata: np.array
+        2D-histogram data
+    cxy: np.array
+        Center points of the histogram bins
+    exy: np.array
+        Edges of the histogram bins
     """
-
     # Make linear-grid for interpolation
     minxy = min(min(x), min(y))-binsize
     maxxy = max(max(x), max(y))+binsize
@@ -549,6 +550,30 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 
     # Calculate 2D histogram
     histodata, exh, eyh = np.histogram2d(x, y, [exy, exy])
+
+    return histodata,cxy,exy
+
+def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
+    """Interpolates scatter data on a 2D histogram (gridded) based on data density.
+
+    Parameters
+    ----------
+    x: np.array
+        X values e.g model values, must be same length as y
+    y: np.array
+        Y values e.g observation values, must be same length as x
+    binsize: float, optional
+        2D histogram (bin) resolution, by default = 0.1
+    method: str, optional
+        Scipy griddata interpolation method, by default 'linear'
+
+    Returns
+    ----------
+    Z_grid: np.array
+        Array with the colors based on histogram density
+    """
+
+    histodata,cxy,exy=__hist2d(x, y, binsize)
 
     # Histogram values
     hist = []
