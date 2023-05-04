@@ -446,10 +446,9 @@ class Comparer:
         elif isinstance(modeldata, pd.DataFrame):
             mod_df = modeldata
         else:
-            if self.validate:
-                raise ValueError(
-                    f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
-                )
+            raise ValueError(
+                f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
+            )
 
         if not isinstance(mod_df.index, pd.DatetimeIndex):
             raise ValueError(
