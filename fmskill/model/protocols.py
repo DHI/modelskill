@@ -8,7 +8,6 @@ from fmskill import types
 @runtime_checkable
 class ModelResult(Protocol):
     data: Any
-    item: str
     name: str
     quantity: str
     time: pd.DatetimeIndex

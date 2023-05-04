@@ -169,10 +169,8 @@ def test_extract_observation_validation(hd_oresund_2d, klagshamn):
         with pytest.warns(UserWarning, match="Item type should match"):
             c = Connector(klagshamn, mr, validate=True).extract()
 
-    with pytest.warns(UserWarning) as wn:
-        c = Connector(klagshamn, mr, validate=False).extract()
-        assert "Item type mismatch" in str(wn[0].message)
-    # c = mr.extract_observation(klagshamn, validate=False)
+    # No error if validate==False
+    c = Connector(klagshamn, mr, validate=False).extract()
     assert c.n_points > 0
 
 

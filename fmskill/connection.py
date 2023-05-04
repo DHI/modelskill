@@ -291,9 +291,10 @@ class _SingleObsConnector(_BaseConnector):
         ok = True
         for mod in modelresults:
             # has_mod_item = self._has_mod_item(mod)
+            quantity_match = obs.quantity == mod.quantity
             in_domain = self._validate_in_domain(obs, mod)
             time_overlaps = self._validate_start_end(obs, mod)
-            ok = ok and in_domain and time_overlaps
+            ok = ok and quantity_match and in_domain and time_overlaps
         return ok
 
     @staticmethod

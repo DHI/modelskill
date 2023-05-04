@@ -39,8 +39,6 @@ class GridModelResult(ModelResultBase):
             data, get_args(types.GridType)
         ), "Could not construct GridModelResult from provided data."
 
-        name = name or super()._default_name(data)
-
         if isinstance(data, (str, Path)):
             if "*" in str(data):
                 data = xr.open_mfdataset(data)
@@ -70,7 +68,8 @@ class GridModelResult(ModelResultBase):
 
         assert isinstance(data, xr.Dataset)
 
-        super().__init__(data=data, name=name, item=item, quantity=quantity)
+        super().__init__(data=data, name=name, quantity=quantity)
+        self.item = item  # TODO remove this
 
     def _in_domain(self, x: float, y: float) -> bool:
         assert hasattr(self.data, "x") and hasattr(
