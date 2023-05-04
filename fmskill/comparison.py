@@ -415,7 +415,7 @@ class Comparer:
         data["x"].attrs["kind"] = "position"
         data["y"].attrs["kind"] = "position"
         data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["unit"] = observation.quantity.unit
         data[self._obs_name].attrs["color"] = observation.color
         data[self._obs_name].attrs["weight"] = observation.weight
         for n in self.mod_names:

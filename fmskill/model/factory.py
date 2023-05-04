@@ -38,9 +38,7 @@ class ModelResult:
     >>> mr = ModelResult("Oresund2D.dfsu", item=0)
     >>> mr = ModelResult("Oresund2D.dfsu", item="Surface elevation")
     >>> mr = ModelResult(df, item="Water Level")
-    >>> mr = ModelResult(df, item="Water Level", itemInfo=mikeio.EUMType.Water_Level)
     >>> mr = ModelResult("ThirdParty.nc", item="WL")
-    >>> mr = ModelResult("ThirdParty.nc", item="WL", itemInfo=mikeio.EUMType.Water_Level)
     """
 
     def __new__(

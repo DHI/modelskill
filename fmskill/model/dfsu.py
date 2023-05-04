@@ -4,44 +4,26 @@ from typing import Callable, Mapping, Optional, Union, get_args
 import mikeio
 import numpy as np
 
-from fmskill import types, utils
-from fmskill.model import protocols
-from fmskill.model._base import ModelResultBase
-from fmskill.model.point import PointModelResult
-from fmskill.model.track import TrackModelResult
-from fmskill.observation import Observation, PointObservation, TrackObservation
+from ._base import Quantity
+from .. import types, utils
+from . import protocols
+from ._base import ModelResultBase
+from .point import PointModelResult
+from .track import TrackModelResult
+from ..observation import Observation, PointObservation, TrackObservation
 
 
 class DfsuModelResult(ModelResultBase):
-    """Construct a DfsuModelResult from a dfsu file or mikeio.Dataset/DataArray.
-
-    Parameters
-    ----------
-    data : types.UnstructuredType
-        the input data or file path
-    name : Optional[str], optional
-        The name of the model result,
-        by default None (will be set to file name or item name)
-    item : Optional[Union[str, int]], optional
-        If multiple items/arrays are present in the input an item
-        must be given (as either an index or a string), by default None
-    itemInfo : Optional[mikeio.ItemInfo], optional
-        Optionally, a MIKE IO ItemInfo (MIKE EUM system) can be given
-        to *override* the type and unit of the quantity, by default None
-    quantity : Optional[str], optional
-        A string to identify the quantity, by default None
-    """
+    """Construct a DfsuModelResult from a dfsu file or mikeio.Dataset/DataArray."""
 
     def __init__(
         self,
         data: types.UnstructuredType,
         *,
-        name: Optional[str] = None,
+        name: Optional[str] = None,  # TODO should this be mandatory
         item: Optional[Union[str, int]] = None,
-        itemInfo=None,
-        quantity: Optional[str] = None,
+        quantity: Optional[Quantity] = None,
     ) -> None:
-        name = name or super()._default_name(data)
 
         assert isinstance(
             data, get_args(types.UnstructuredType)
@@ -65,17 +47,18 @@ class DfsuModelResult(ModelResultBase):
             if isinstance(item, int):
                 raise ValueError("item must be a string when data is a DataArray")
             item_name = item or data.name
-            itemInfo = itemInfo or data.item
+            quantity = Quantity(name=data.type.name, unit=data.unit.name)
         else:
             item_names = [i.name for i in data.items]
             item_name, idx = utils.get_item_name_and_idx(item_names, item)
-            itemInfo = itemInfo or data.items[idx]
+            item_info = data.items[idx]
+            quantity = Quantity(name=repr(item_info.type), unit=item_info.unit.name)
 
-        name = name or item_name
+        name = name or filename  # TODO
 
-        super().__init__(
-            data=data, name=name, item=item_name, itemInfo=itemInfo, quantity=quantity
-        )
+        self.item = item
+
+        super().__init__(data=data, name=name, quantity=quantity)
 
         self.filename = filename  # TODO: remove? backward compatibility
 
@@ -140,8 +123,7 @@ class DfsuModelResult(ModelResultBase):
             data=ds_model,
             x=ds_model.geometry.x,
             y=ds_model.geometry.y,
-            item=self.name,
-            itemInfo=self.itemInfo,
+            item=self.name,  # TODO is this needed
             name=self.name,
             quantity=self.quantity,
         )
@@ -169,7 +151,6 @@ class DfsuModelResult(ModelResultBase):
         return TrackModelResult(
             data=ds_model.dropna(),  # .to_dataframe().dropna(),
             item=self.name,
-            itemInfo=self.itemInfo,
             name=self.name,
             quantity=self.quantity,
         )

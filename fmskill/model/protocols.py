@@ -12,7 +12,6 @@ class ModelResult(Protocol):
     name: str
     quantity: str
     time: pd.DatetimeIndex
-    itemInfo: Any  # TODO drop this?
 
 
 @runtime_checkable

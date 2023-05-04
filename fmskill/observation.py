@@ -7,11 +7,14 @@ Examples
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
 import os
+from typing import Optional
 import numpy as np
 import pandas as pd
 import mikeio
 from copy import deepcopy
+
 from .utils import make_unique_index
+from .types import Quantity
 
 
 def _parse_item(items, item, item_str="item"):
@@ -47,9 +50,9 @@ class Observation:
         self,
         name: str = None,
         df=None,
-        itemInfo=None,
-        variable_name: str = None,
-        override_units: str = None,
+        quantity: Optional[Quantity] = None,
+        variable_name: str = None,  # TODO quantity
+        override_units: str = None,  # TODO quantity
     ):
         self.color = "#d62728"
 
@@ -63,13 +66,9 @@ class Observation:
         time = df.index.round(freq="100us")  # 0.0001s accuracy
         df.index = pd.DatetimeIndex(time, freq="infer")
         self.data = df
-        if itemInfo is None:
-            self.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
-        else:
-            self.itemInfo = itemInfo
         self.weight = 1.0
-        if variable_name is None:
-            variable_name = self.itemInfo.type.name
+
+        self.quantity = Quantity.undefined() if quantity is None else quantity
         self.variable_name = variable_name
         self.override_units = override_units
 
@@ -121,20 +120,6 @@ class Observation:
     def filename(self):
         """Filename of the observation input"""
         return self._filename
-
-    def _unit_text(self):
-        override_units = self.override_units
-        if self.itemInfo is None:
-            return ""
-        txt = f"{self.itemInfo.type.display_name}"
-        if self.itemInfo.type != mikeio.EUMType.Undefined:
-            if override_units == None:
-                unit = self.itemInfo.unit.display_name
-                txt = f"{txt} [{unit_display_name(unit)}]"
-            else:
-                unit = override_units
-                txt = f"{txt} [{override_units}]"
-        return txt
 
     def hist(self, bins=100, title=None, color=None, **kwargs):
         """plot histogram of observation values
@@ -236,7 +221,6 @@ class PointObservation(Observation):
             df = data.to_frame()
             if name is None:
                 name = "Observation"
-            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(data, pd.DataFrame):
             df = data
             default_name = "Observation"
@@ -261,7 +245,6 @@ class PointObservation(Observation):
                 raise TypeError("item must be int or string")
             if name is None:
                 name = default_name
-            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(data, str):
             assert os.path.exists(data)
             self._filename = data
@@ -270,8 +253,7 @@ class PointObservation(Observation):
 
             ext = os.path.splitext(data)[-1]
             if ext == ".dfs0":
-                df, itemInfo = self._read_dfs0(mikeio.open(data), item)
-                self._item = itemInfo.name
+                df, _ = self._read_dfs0(mikeio.open(data), item)
             else:
                 raise NotImplementedError("Only dfs0 files supported")
         else:
@@ -288,7 +270,6 @@ class PointObservation(Observation):
         super().__init__(
             name=name,
             df=df,
-            itemInfo=itemInfo,
             variable_name=variable_name,
             override_units=units,
         )
@@ -337,7 +318,7 @@ class PointObservation(Observation):
         title = self.name if title is None else title
         ax.set_title(title)
 
-        ax.set_ylabel(self._unit_text())
+        ax.set_ylabel(self.quantity.unit)
         return ax
 
 
@@ -496,7 +477,6 @@ class TrackObservation(Observation):
         super().__init__(
             name=name,
             df=df,
-            itemInfo=itemInfo,
             variable_name=variable_name,
             override_units=units,
         )

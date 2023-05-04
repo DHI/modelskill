@@ -23,9 +23,6 @@ class GridModelResult(ModelResultBase):
     item : Optional[Union[str, int]], optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
-    itemInfo : Optional[mikeio.ItemInfo], optional
-        Optionally, a MIKE IO ItemInfo (MIKE EUM system)
-        can be given to define the type and unit of the quantity, by default None
     quantity : Optional[str], optional
         A string to identify the quantity, by default None
     """
@@ -36,7 +33,6 @@ class GridModelResult(ModelResultBase):
         *,
         name: Optional[str] = None,
         item: Optional[Union[str, int]] = None,
-        itemInfo: Optional[mikeio.ItemInfo] = None,
         quantity: Optional[str] = None,
     ) -> None:
         assert isinstance(
@@ -74,9 +70,7 @@ class GridModelResult(ModelResultBase):
 
         assert isinstance(data, xr.Dataset)
 
-        super().__init__(
-            data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
-        )
+        super().__init__(data=data, name=name, item=item, quantity=quantity)
 
     def _in_domain(self, x: float, y: float) -> bool:
         assert hasattr(self.data, "x") and hasattr(
@@ -141,7 +135,6 @@ class GridModelResult(ModelResultBase):
             x=da.x.item(),
             y=da.y.item(),
             item=self.name,
-            itemInfo=self.itemInfo,
             name=self.name,
             quantity=self.quantity,
         )
@@ -166,7 +159,6 @@ class GridModelResult(ModelResultBase):
         return TrackModelResult(
             data=df.dropna(),
             item=self.name,
-            itemInfo=self.itemInfo,
             name=self.name,
             quantity=self.quantity,
         )

@@ -122,7 +122,7 @@ def _single_obs_compare(
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
     mod = _parse_models(mod, mod_item, gtype=gtype)
     df_mod = _extract_from_models(obs, mod)
-    
+
     return Comparer(obs, df_mod, max_model_gap=max_model_gap)
 
 
@@ -291,34 +291,9 @@ class _SingleObsConnector(_BaseConnector):
         ok = True
         for mod in modelresults:
             # has_mod_item = self._has_mod_item(mod)
-            eum_match = self._validate_eum(obs, mod)
             in_domain = self._validate_in_domain(obs, mod)
             time_overlaps = self._validate_start_end(obs, mod)
-            ok = ok and eum_match and in_domain and time_overlaps
-        return ok
-
-    @staticmethod
-    def _validate_eum(obs, mod):
-        """Check that observation and model item eum match"""
-        assert isinstance(obs, Observation)
-        assert isinstance(mod, protocols.ModelResult)
-        ok = True
-        _has_eum = lambda x: (x.itemInfo is not None) and (
-            x.itemInfo.type != mikeio.EUMType.Undefined
-        )
-
-        # we can only check if both have eum itemInfo
-        if _has_eum(obs) and _has_eum(mod):
-            if obs.itemInfo.type != mod.itemInfo.type:
-                ok = False
-                warnings.warn(
-                    f"Item type mismatch! Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
-                )
-            if obs.itemInfo.unit != mod.itemInfo.unit:
-                ok = False
-                warnings.warn(
-                    f"Item unit mismatch! Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
-                )
+            ok = ok and in_domain and time_overlaps
         return ok
 
     @staticmethod

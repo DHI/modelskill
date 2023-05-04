@@ -2,6 +2,8 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Optional, Union, List
 
+from dataclasses import dataclass
+
 import mikeio
 import pandas as pd
 import xarray as xr
@@ -89,3 +91,21 @@ TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset]
 # DfsType = Union[mikeio.Dfs0, mikeio.Dfsu]
 
 ItemType = Optional[Union[str, int]]
+
+
+@dataclass
+class Quantity:
+    name: str
+    unit: str
+    long_name: str = None
+    standard_name: str = None
+
+    def __str__(self):
+        return f"{self.name} [{self.unit}]"
+
+    @staticmethod
+    def undefined():
+        return Quantity(name="Undefined", unit="Undefined")
+
+
+UNDEFINED_QUANTITY = Quantity(name="Undefined", unit="Undefined")
