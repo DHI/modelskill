@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 
 import fmskill
-from fmskill import ModelResult, PointObservation, Connector
+from fmskill import ModelResult, PointObservation, Connector, Quantity
 from fmskill.metrics import root_mean_squared_error, mean_absolute_error
 from fmskill.comparison import Comparer, PointComparer, ComparerCollection
 
@@ -18,7 +18,13 @@ def klagshamn():
 @pytest.fixture
 def drogden():
     fn = "tests/testdata/dmi_30357_Drogden_Fyr.dfs0"
-    return PointObservation(fn, item=0, x=355568.0, y=6156863.0)
+    return PointObservation(
+        fn,
+        item=0,
+        x=355568.0,
+        y=6156863.0,
+        quantity=Quantity("Water Level", unit="meter"),
+    )
 
 
 @pytest.fixture
