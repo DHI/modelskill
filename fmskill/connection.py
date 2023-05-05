@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 import yaml
-from typing import List, Literal, Optional, Union, Mapping, Sequence, get_args
+from typing import Iterable, List, Literal, Optional, Union, Mapping, Sequence, get_args
 import warnings
 import numpy as np
 import pandas as pd
@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import mikeio
 
 from fmskill import ModelResult
+from fmskill.model.point import PointModelResult
 from fmskill.types import DataInputType, GeometryType
 from .model import protocols, DfsuModelResult
 from .model._base import ModelResultBase
@@ -50,6 +51,41 @@ ObsInputType = Union[
     # protocols.Observation,
     Observation,
 ]
+
+
+def from_matched(
+    df: pd.DataFrame, *, obs_item: str, mod_items: Optional[Iterable[str]] = None
+) -> Comparer:
+    """Create a Comparer from observation and model results that are already matched (aligned)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with columns [obs_item, mod_item]
+    obs_item : str
+        Name of observation item
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fmskill as ms
+    >>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1]}, index=pd.date_range('2010-01-01', periods=3))
+    >>> cmp = ms.from_matched(df, obs_item='stn_a')
+    >>> cmp
+    <Comparer>
+    Observation: stn_a, n_points=3
+     Model: local, rmse=0.100
+    """
+    obs = df[obs_item]
+
+    if mod_items is None:
+        # all remaining columns are model results
+        pmods = [PointModelResult(df[c], item=c) for c in df.columns if c != obs_item]
+    else:
+        pmods = [PointModelResult(df[c], item=c) for c in mod_items]
+    pobs = PointObservation(obs, item=obs_item, name=obs_item)
+
+    return _single_obs_compare(pobs, pmods)
 
 
 def compare(
@@ -122,7 +158,7 @@ def _single_obs_compare(
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
     mod = _parse_models(mod, mod_item, gtype=gtype)
     df_mod = _extract_from_models(obs, mod)
-    
+
     return Comparer(obs, df_mod, max_model_gap=max_model_gap)
 
 
@@ -269,7 +305,6 @@ class _SingleObsConnector(_BaseConnector):
             self.obs.weight = weight
 
     def _parse_model(self, mod) -> List[protocols.ModelResult]:
-
         if is_iterable_not_str(mod):
             mr = []
             for m in mod:
