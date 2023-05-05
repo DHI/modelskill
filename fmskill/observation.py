@@ -145,7 +145,7 @@ class Observation:
 
         ax = self.data.iloc[:, -1].hist(bins=bins, **kwargs)
         ax.set_title(title)
-        ax.set_xlabel(self._unit_text())
+        ax.set_xlabel(self.quantity.unit)
         return ax
 
     def __copy__(self):
@@ -174,10 +174,7 @@ class PointObservation(Observation):
         z-coordinate of the observation point, by default None
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
-    variable_name : str, optional
-        user-defined variable name in case of multiple variables, by default eumType name
-    units : str, optional
-        user-defined units name in case user wants to override eumUnits
+
 
     Examples
     --------
@@ -205,8 +202,7 @@ class PointObservation(Observation):
         y: float = None,
         z: float = None,
         name: str = None,
-        variable_name: str = None,
-        units: str = None,
+        quantity: Optional[Quantity] = None,
     ):
 
         self.x = x
@@ -215,8 +211,6 @@ class PointObservation(Observation):
 
         self._filename = None
         self._item = None
-
-        quantity = None
 
         if isinstance(data, pd.Series):
             df = data.to_frame()
@@ -255,7 +249,8 @@ class PointObservation(Observation):
             ext = os.path.splitext(data)[-1]
             if ext == ".dfs0":
                 df, iteminfo = self._read_dfs0(mikeio.open(data), item)
-                quantity = Quantity.from_mikeio_iteminfo(iteminfo)
+                if quantity is None:
+                    quantity = Quantity.from_mikeio_iteminfo(iteminfo)
             else:
                 raise NotImplementedError("Only dfs0 files supported")
         else:
@@ -273,14 +268,13 @@ class PointObservation(Observation):
             name=name,
             df=df,
             quantity=quantity,
-            variable_name=variable_name,
-            override_units=units,
         )
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
         return out
 
+    # TODO does this belong here?
     @staticmethod
     def _read_dfs0(dfs, item):
         """Read data from dfs0 file"""
@@ -340,16 +334,12 @@ class TrackObservation(Observation):
         item name or index of values, by default 2
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
-    variable_name : str, optional
-        user-defined variable name in case of multiple variables, by default eumType name
     x_item : (str, int), optional
         item name or index of x-coordinate, by default 0
     y_item : (str, int), optional
         item name or index of y-coordinate, by default 1
     offset_duplicates : float, optional
         in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001
-    units : str, optional
-        user-defined units name in case user wants to override eumUnits
 
 
     Examples
@@ -421,11 +411,10 @@ class TrackObservation(Observation):
         *,
         item: int = None,
         name: str = None,
-        variable_name: str = None,
         x_item=0,
         y_item=1,
         offset_duplicates: float = 0.001,
-        units: str = None,
+        quantity: Optional[Quantity] = None,
     ):
 
         self._filename = None
@@ -436,7 +425,6 @@ class TrackObservation(Observation):
             df_items = df.columns.to_list()
             items = self._parse_track_items(df_items, x_item, y_item, item)
             df = df.iloc[:, items].copy()
-            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(data, str):
             assert os.path.exists(data)
             self._filename = data
@@ -448,8 +436,9 @@ class TrackObservation(Observation):
                 dfs = mikeio.open(data)
                 file_items = [i.name for i in dfs.items]
                 items = self._parse_track_items(file_items, x_item, y_item, item)
-                df, itemInfo = self._read_dfs0(dfs, items)
-                self._item = itemInfo.name
+                df, iteminfo = self._read_dfs0(dfs, items)
+                if quantity is None:
+                    quantity = Quantity.from_mikeio_iteminfo(iteminfo)
             else:
                 raise NotImplementedError(
                     "Only dfs0 files and DataFrames are supported"
@@ -480,8 +469,7 @@ class TrackObservation(Observation):
         super().__init__(
             name=name,
             df=df,
-            variable_name=variable_name,
-            override_units=units,
+            quantity=quantity,
         )
 
     @staticmethod

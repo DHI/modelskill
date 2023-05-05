@@ -20,7 +20,7 @@ class DfsuModelResult(ModelResultBase):
         self,
         data: types.UnstructuredType,
         *,
-        name: Optional[str] = None,  # TODO should this be mandatory
+        name: str = "Undefined",
         item: Optional[Union[str, int]] = None,
         quantity: Optional[Quantity] = None,
     ) -> None:
@@ -46,15 +46,12 @@ class DfsuModelResult(ModelResultBase):
         if isinstance(data, mikeio.DataArray):
             if isinstance(item, int):
                 raise ValueError("item must be a string when data is a DataArray")
-            item_name = item or data.name
-            quantity = Quantity(name=data.type.name, unit=data.unit.name)
+            quantity = Quantity(name=repr(data.type), unit=data.unit.name)
         else:
             item_names = [i.name for i in data.items]
-            item_name, idx = utils.get_item_name_and_idx(item_names, item)
+            _, idx = utils.get_item_name_and_idx(item_names, item)
             item_info = data.items[idx]
-            quantity = Quantity(name=repr(item_info.type), unit=item_info.unit.name)
-
-        name = name or filename  # TODO
+            quantity = Quantity.from_mikeio_iteminfo(item_info)
 
         self.item = item
 
@@ -117,6 +114,9 @@ class DfsuModelResult(ModelResultBase):
         elif isinstance(self.data, mikeio.DataArray):
             da = self.data.isel(element=elemids)
             ds_model = mikeio.Dataset({da.name: da})
+
+        # TODO not sure we rename here
+        assert self.name is not None
         ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
 
         return PointModelResult(
