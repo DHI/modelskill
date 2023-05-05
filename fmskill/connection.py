@@ -64,17 +64,26 @@ def from_matched(
         DataFrame with columns [obs_item, mod_item]
     obs_item : str
         Name of observation item
+    mod_items : Optional[Iterable[str]], optional
+        Names of model items, if None all remaining columns are model items, by default None
 
     Examples
     --------
     >>> import pandas as pd
     >>> import fmskill as ms
     >>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1]}, index=pd.date_range('2010-01-01', periods=3))
-    >>> cmp = ms.from_matched(df, obs_item='stn_a')
+    >>> cmp = ms.from_matched(df, obs_item='stn_a') # remaining columns are model results
     >>> cmp
     <Comparer>
     Observation: stn_a, n_points=3
      Model: local, rmse=0.100
+    >>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1], 'global': [1.2,2.2,3.2], 'nonsense':[1,2,3]}, index=pd.date_range('2010-01-01', periods=3))
+    >>> cmp = ms.from_matched(df, obs_item='stn_a', mod_items=['local', 'global'])
+    >>> cmp
+    <Comparer>
+    Observation: stn_a, n_points=3
+        Model: local, rmse=0.100
+        Model: global, rmse=0.200
     """
     obs = df[obs_item]
 
