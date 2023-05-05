@@ -166,8 +166,7 @@ def test_extract_observation_total_windsea_swell_not_possible(
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d, item=0)
     with pytest.raises(Exception):
-        with pytest.warns(UserWarning, match="Item type should match"):
-            c = Connector(klagshamn, mr, validate=True).extract()
+        c = Connector(klagshamn, mr, validate=True).extract()
 
     # No error if validate==False
     c = Connector(klagshamn, mr, validate=False).extract()

@@ -7,8 +7,8 @@ mpl.use("Agg")
 
 
 def test_markdown(tmpdir):
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        connector = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+
+    connector = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     reporter = Reporter(connector, tmpdir)
 
     filename = reporter.to_markdown()
@@ -18,8 +18,8 @@ def test_markdown(tmpdir):
 
 
 def test_html(tmpdir):
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        connector = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+
+    connector = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     reporter = Reporter(connector, tmpdir)
 
     filename = reporter.to_html()

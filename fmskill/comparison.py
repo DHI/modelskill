@@ -605,7 +605,7 @@ class Comparer:
                 name=self.name,
                 x=self.x,
                 y=self.y,
-                variable_name=self.variable_name,
+                # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
         elif self.gtype == "track":
@@ -616,7 +616,7 @@ class Comparer:
                 x_item=0,
                 y_item=1,
                 name=self.name,
-                variable_name=self.variable_name,
+                # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
         else:
