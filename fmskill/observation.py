@@ -51,8 +51,6 @@ class Observation:
         name: str = None,
         df=None,
         quantity: Optional[Quantity] = None,
-        variable_name: str = None,  # TODO quantity
-        override_units: str = None,  # TODO quantity
     ):
         self.color = "#d62728"
 
@@ -69,8 +67,6 @@ class Observation:
         self.weight = 1.0
 
         self.quantity = Quantity.undefined() if quantity is None else quantity
-        self.variable_name = variable_name
-        self.override_units = override_units
 
     def trim(
         self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"

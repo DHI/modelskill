@@ -91,7 +91,7 @@ def test_mv_skill(cc_1model):
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
     assert pytest.approx(df.iloc[0].rmse) == 0.22359663
-    idx = ("HKNA_wind", "Wind_speed")
+    idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
 
@@ -100,17 +100,17 @@ def test_mv_mm_skill(cc):
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     assert df.index.names[2] == "variable"
-    idx = ("SW_1", "HKNA_wind", "Wind_speed")
+    idx = ("SW_1", "HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
     df = cc.skill(model="SW_1").df
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
     assert pytest.approx(df.iloc[0].rmse) == 0.22359663
-    idx = ("HKNA_wind", "Wind_speed")
+    idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.skill(variable="Wind_speed").df
+    df = cc.skill(variable="Wind speed").df
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     idx = ("SW_1", "HKNA_wind")
@@ -121,25 +121,25 @@ def test_mv_mm_mean_skill(cc):
     df = cc.mean_skill().df
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "variable"
-    idx = ("SW_1", "Wind_speed")
+    idx = ("SW_1", "Wind speed")
     assert pytest.approx(df.loc[idx].r2) == 0.65238805170
 
-    df = cc.mean_skill(variable="Significant_wave_height").df
+    df = cc.mean_skill(variable="Significant wave height").df
     assert pytest.approx(df.loc["SW_1"].cc) == 0.971791458
 
 
 def test_mv_mm_scatter(cc):
-    cc.scatter(model="SW_1", variable="Wind_speed")
-    cc.scatter(model="SW_1", variable="Wind_speed", show_density=True)
+    cc.scatter(model="SW_1", variable="Wind speed")
+    cc.scatter(model="SW_1", variable="Wind speed", show_density=True)
     cc.scatter(
-        model="SW_1", variable="Wind_speed", observation="F16_wind", skill_table=True
+        model="SW_1", variable="Wind speed", observation="F16_wind", skill_table=True
     )
     assert True
     plt.close("all")
 
 
 def test_mv_mm_taylor(cc):
-    cc.taylor(variable="Wind_speed")
+    cc.taylor(variable="Wind speed")
     cc.taylor(figsize=(4, 4))
     cc.taylor(model="SW_2", start="2017-10-28")
     assert True

@@ -411,7 +411,8 @@ class Comparer:
             data["y"] = observation.y
 
         data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
+        # data.attrs["variable_name"] = observation.variable_name
+        data.attrs["variable_name"] = observation.quantity.name
         data["x"].attrs["kind"] = "position"
         data["y"].attrs["kind"] = "position"
         data[self._obs_name].attrs["kind"] = "observation"
