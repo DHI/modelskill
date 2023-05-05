@@ -97,11 +97,31 @@ ItemType = Optional[Union[str, int]]
 class Quantity:
     name: str
     unit: str
-    long_name: str = None
-    standard_name: str = None
 
     def __str__(self):
         return f"{self.name} [{self.unit}]"
+
+    def is_compatible(self, other) -> bool:
+        """Check if the quantity is compatible with another quantity
+
+        Examples
+        --------
+        >>> wl = Quantity(name="Water Level", unit="meter")
+        >>> ws = Quantity(name="Wind Speed", unit="meter per second")
+        >>> wl.is_compatible(ws)
+        False
+        >>> uq = Quantity(name="Undefined", unit="Undefined")
+        >>> wl.is_compatible(uq)
+        True
+        """
+
+        if self == other:
+            return True
+
+        if (self.name == "Undefined") or (other.name == "Undefined"):
+            return True
+
+        return False
 
     @staticmethod
     def undefined():
