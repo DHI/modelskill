@@ -175,6 +175,7 @@ def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
 
 
 # TODO: move to test_connector.py
+# TODO this test seems to be broken, comparing peak period with significant wave height 🤨
 def test_xarray_connector(mr_ERA5_pp1d, pointobs_epl_hm0, trackobs_c2_hm0):
     con = fmskill.Connector([pointobs_epl_hm0, trackobs_c2_hm0], mr_ERA5_pp1d)
     assert len(con) == 2
