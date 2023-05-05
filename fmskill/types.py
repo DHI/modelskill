@@ -107,5 +107,6 @@ class Quantity:
     def undefined():
         return Quantity(name="Undefined", unit="Undefined")
 
-
-UNDEFINED_QUANTITY = Quantity(name="Undefined", unit="Undefined")
+    @staticmethod
+    def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo):
+        return Quantity(name=repr(iteminfo.type), unit=iteminfo.unit.name)

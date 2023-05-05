@@ -191,7 +191,6 @@ class PointObservation(Observation):
     def geometry(self):
         from shapely.geometry import Point
 
-        """Coordinates of observation"""
         if self.z is None:
             return Point(self.x, self.y)
         else:
@@ -216,6 +215,8 @@ class PointObservation(Observation):
 
         self._filename = None
         self._item = None
+
+        quantity = None
 
         if isinstance(data, pd.Series):
             df = data.to_frame()
@@ -253,7 +254,8 @@ class PointObservation(Observation):
 
             ext = os.path.splitext(data)[-1]
             if ext == ".dfs0":
-                df, _ = self._read_dfs0(mikeio.open(data), item)
+                df, iteminfo = self._read_dfs0(mikeio.open(data), item)
+                quantity = Quantity.from_mikeio_iteminfo(iteminfo)
             else:
                 raise NotImplementedError("Only dfs0 files supported")
         else:
@@ -270,6 +272,7 @@ class PointObservation(Observation):
         super().__init__(
             name=name,
             df=df,
+            quantity=quantity,
             variable_name=variable_name,
             override_units=units,
         )
