@@ -557,7 +557,7 @@ class Comparer:
 
     @property
     def _unit_text(self) -> str:
-        return self.data[self._obs_name].attrs["unit"]
+        return f"{self.data.attrs['variable_name']} [{self.data[self._obs_name].attrs['unit']}]"
 
     @property
     def metrics(self):
