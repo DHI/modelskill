@@ -141,7 +141,7 @@ class Observation:
 
         ax = self.data.iloc[:, -1].hist(bins=bins, **kwargs)
         ax.set_title(title)
-        ax.set_xlabel(self.quantity.unit)
+        ax.set_xlabel(str(self.quantity))
         return ax
 
     def __copy__(self):
@@ -311,7 +311,7 @@ class PointObservation(Observation):
         title = self.name if title is None else title
         ax.set_title(title)
 
-        ax.set_ylabel(self.quantity.unit)
+        ax.set_ylabel(str(self.quantity))
         return ax
 
 
