@@ -60,9 +60,9 @@ def test_from_df(klagshamn):
 
 def test_hist(klagshamn):
     o1 = PointObservation(klagshamn, item=0, x=366844, y=6154291, name="Klagshamn1")
-    o1.hist()
-    o1.hist(density=False)
-    o1.hist(bins=20, title="new_title", color="red")
+    o1.plot.hist()
+    o1.plot.hist(density=False)
+    o1.plot.hist(bins=20, title="new_title", color="red")
 
 
 def test_force_keyword_args(klagshamn):

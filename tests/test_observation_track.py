@@ -97,9 +97,9 @@ def test_trackobservation_item_csv():
 
 def test_hist(c2):
     o1 = TrackObservation(c2, item=2)
-    o1.hist()
+    o1.plot.hist()
 
-    o1.hist(bins=20, title="new_title", color="red")
+    o1.plot.hist(bins=20, title="new_title", color="red")
 
 
 def test_trackobservation_x_y_item(c2):
