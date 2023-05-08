@@ -31,41 +31,45 @@ def _parse_item(items, item, item_str="item"):
 
 
 class Observation(TimeSeries):
-    "Base class for all types of observations"
+    """Base class for observations
 
-    # DHI: darkblue: #004165,
-    #      midblue:  #0098DB,
-    #      gray:     #8B8D8E,
-    #      lightblue:#63CEFF,
-    # DHI secondary
-    #      yellow:   #FADC41,
-    #      orange:   #FF8849
-    #      lightblue2:#C1E2E5
-    #      green:    #61C250
-    #      purple:   #93509E
-    #      darkgray: #51626F
-
-    # matplotlib: red=#d62728
+    Parameters
+    ----------
+    data : pd.DataFrame
+    name : str, optional
+        user-defined name, e.g. "Station A", by default "Observation"
+    quantity : Optional[Quantity], optional
+        The quantity of the observation, for validation with model results
+    weight : float, optional
+        weighting factor, to be used in weighted skill scores, by default 1.0
+    color : str, optional
+        color of the observation in plots, by default "#d62728"
+    """
 
     def __init__(
         self,
-        name: str = None,
-        df=None,
+        data: pd.DataFrame,
+        name: str = "Observation",
         quantity: Optional[Quantity] = None,
+        weight: float = 1.0,
+        color: str = "#d62728",
     ):
-        self.color = "#d62728"
 
         if name is None:
             name = "Observation"
-        if not isinstance(df.index, pd.DatetimeIndex):
-            raise TypeError(
-                f"Input must have a datetime index! Provided index was {type(df.index)}"
-            )
-        time = df.index.round(freq="100us")  # 0.0001s accuracy
-        df.index = pd.DatetimeIndex(time, freq="infer")
-        self.weight = 1.0
 
-        super().__init__(name=name, data=df, quantity=quantity)
+        # TODO move this to TimeSeries?
+        if not isinstance(data.index, pd.DatetimeIndex):
+            raise TypeError(
+                f"Input must have a datetime index! Provided index was {type(data.index)}"
+            )
+        time = data.index.round(freq="100us")  # 0.0001s accuracy
+        data.index = pd.DatetimeIndex(time, freq="infer")
+
+        self.weight = weight
+        self.color = color
+
+        super().__init__(name=name, data=data, quantity=quantity)
 
     @property
     def values(self) -> np.ndarray:
@@ -77,16 +81,8 @@ class Observation(TimeSeries):
         """Number of observations"""
         return len(self.data)
 
-    @property
-    def filename(self):
-        """Filename of the observation input"""
-        return self._filename
-
-    def __copy__(self):
-        return deepcopy(self)
-
     def copy(self):
-        return self.__copy__()
+        return deepcopy(self)
 
 
 class PointObservation(Observation):
@@ -200,7 +196,7 @@ class PointObservation(Observation):
 
         super().__init__(
             name=name,
-            df=df,
+            data=df,
             quantity=quantity,
         )
 
@@ -376,7 +372,7 @@ class TrackObservation(Observation):
 
         super().__init__(
             name=name,
-            df=df,
+            data=df,
             quantity=quantity,
         )
 

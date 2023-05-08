@@ -115,15 +115,14 @@ class DfsuModelResult(ModelResultBase):
             da = self.data.isel(element=elemids)
             ds_model = mikeio.Dataset({da.name: da})
 
-        # TODO not sure we rename here
+        # TODO not sure why we rename here
         assert self.name is not None
         ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
 
         return PointModelResult(
-            data=ds_model,
+            data=ds_model,  # TODO convert to dataframe?
             x=ds_model.geometry.x,
             y=ds_model.geometry.y,
-            item=self.name,  # TODO is this needed
             name=self.name,
             quantity=self.quantity,
         )
