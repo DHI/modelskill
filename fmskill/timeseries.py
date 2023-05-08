@@ -1,13 +1,28 @@
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Callable, ClassVar
+from typing import Callable, ClassVar, Protocol
 
 import pandas as pd
+
 
 from .types import Quantity
 
 
-class MatplotlibTimeSeriesPlotter(Callable):
+class TimeSeriesPlotter(Protocol):
+    def __init__(self, ts: "TimeSeries") -> None:
+        pass
+
+    def __call__(self):
+        pass
+
+    def plot(self):
+        pass
+
+    def hist(self):
+        pass
+
+
+class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
     def __init__(self, ts: "TimeSeries") -> None:
         self._ts = ts
 
@@ -92,7 +107,7 @@ class MatplotlibTimeSeriesPlotter(Callable):
         return ax
 
 
-class PlotlyTimeSeriesPlotter(Callable):
+class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
     def __init__(self, ts: "TimeSeries") -> None:
         self._ts: pd.DataFrame = ts
 
@@ -103,6 +118,12 @@ class PlotlyTimeSeriesPlotter(Callable):
         import plotly.express as px
 
         fig = px.line(self._ts.data)
+        fig.show()
+
+    def hist(self):
+        import plotly.express as px
+
+        fig = px.histogram(self._ts.data)
         fig.show()
 
 
@@ -123,7 +144,8 @@ class TimeSeries:
         if self.quantity is None:
             self.quantity = Quantity.undefined()
 
-        self.plot = TimeSeries.plotter(self)
+        self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
+        self.hist = self.plot.hist  # TODO remove this
 
     @property
     def time(self) -> pd.DatetimeIndex:
