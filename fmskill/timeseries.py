@@ -13,6 +13,7 @@ class TimeSeries:
     name: str
     data: pd.DataFrame
     quantity: Quantity
+    color: str = "#d62728"
 
     def __post_init__(self):
         if self.quantity is None:

@@ -67,9 +67,8 @@ class Observation(TimeSeries):
         data.index = pd.DatetimeIndex(time, freq="infer")
 
         self.weight = weight
-        self.color = color
 
-        super().__init__(name=name, data=data, quantity=quantity)
+        super().__init__(name=name, data=data, quantity=quantity, color=color)
 
     @property
     def values(self) -> np.ndarray:
