@@ -15,6 +15,7 @@ from copy import deepcopy
 
 from .utils import make_unique_index
 from .types import Quantity
+from .timeseries import TimeSeries
 
 
 def _parse_item(items, item, item_str="item"):
@@ -29,7 +30,7 @@ def _parse_item(items, item, item_str="item"):
     return item
 
 
-class Observation:
+class Observation(TimeSeries):
     "Base class for all types of observations"
 
     # DHI: darkblue: #004165,
@@ -56,51 +57,15 @@ class Observation:
 
         if name is None:
             name = "Observation"
-        self.name = name
         if not isinstance(df.index, pd.DatetimeIndex):
             raise TypeError(
                 f"Input must have a datetime index! Provided index was {type(df.index)}"
             )
         time = df.index.round(freq="100us")  # 0.0001s accuracy
         df.index = pd.DatetimeIndex(time, freq="infer")
-        self.data = df
         self.weight = 1.0
 
-        self.quantity = Quantity.undefined() if quantity is None else quantity
-
-    def trim(
-        self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
-    ) -> None:
-        """Trim observation data to a given time interval
-
-        Parameters
-        ----------
-        start_time : pd.Timestamp
-            start time
-        end_time : pd.Timestamp
-            end time
-        buffer : str, optional
-            buffer time around start and end time, by default "1s"
-        """
-        # Expand time interval with buffer
-        start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
-        end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
-        self.data = self.data.loc[start_time:end_time]
-
-    @property
-    def time(self) -> pd.DatetimeIndex:
-        "Time index"
-        return self.data.index
-
-    @property
-    def start_time(self) -> pd.Timestamp:
-        """First time instance (as pd.Timestamp)"""
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        """Last time instance (as pd.Timestamp)"""
-        return self.time[-1]
+        super().__init__(name=name, data=df, quantity=quantity)
 
     @property
     def values(self) -> np.ndarray:
@@ -116,33 +81,6 @@ class Observation:
     def filename(self):
         """Filename of the observation input"""
         return self._filename
-
-    def hist(self, bins=100, title=None, color=None, **kwargs):
-        """plot histogram of observation values
-
-        Wraps pandas.DataFrame hist() method.
-
-        Parameters
-        ----------
-        bins : int, optional
-            specification of bins, by default 100
-        title : str, optional
-            plot title, default: observation name
-        color : str, optional
-            plot color, by default "#d62728"
-        kwargs : other keyword arguments to df.hist()
-
-        Returns
-        -------
-        matplotlib axes
-        """
-        title = self.name if title is None else title
-        kwargs["color"] = self.color if color is None else color
-
-        ax = self.data.iloc[:, -1].hist(bins=bins, **kwargs)
-        ax.set_title(title)
-        ax.set_xlabel(str(self.quantity))
-        return ax
 
     def __copy__(self):
         return deepcopy(self)
@@ -287,32 +225,6 @@ class PointObservation(Observation):
         df = ds.to_dataframe()
         df.dropna(inplace=True)
         return df, itemInfo
-
-    def plot(self, title=None, color=None, marker=".", linestyle="None", **kwargs):
-        """plot observation timeseries
-
-        Wraps pandas.DataFrame plot() method.
-
-        Parameters
-        ----------
-        title : str, optional
-            plot title, default: [name]
-        color : str, optional
-            plot color, by default '#d62728'
-        marker : str, optional
-            plot marker, by default '.'
-        linestyle : str, optional
-            line style, by default None
-        kwargs: other keyword arguments to df.plot()
-        """
-        kwargs["color"] = self.color if color is None else color
-        ax = self.data.plot(marker=marker, linestyle=linestyle, **kwargs)
-
-        title = self.name if title is None else title
-        ax.set_title(title)
-
-        ax.set_ylabel(str(self.quantity))
-        return ax
 
 
 class TrackObservation(Observation):

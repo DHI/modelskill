@@ -5,7 +5,8 @@ import pandas as pd
 
 from .. import types, utils
 from ._base import ModelResultBase
-from ..types import GeometryType, TimeSeries
+from ..types import GeometryType
+from ..timeseries import TimeSeries  # TODO move to main module
 
 
 class PointModelResult(TimeSeries):

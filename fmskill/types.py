@@ -94,7 +94,7 @@ TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset]
 ItemType = Optional[Union[str, int]]
 
 
-@dataclass
+@dataclass(frozen=True)
 class Quantity:
     name: str
     unit: str
@@ -131,29 +131,3 @@ class Quantity:
     @staticmethod
     def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo):
         return Quantity(name=repr(iteminfo.type), unit=iteminfo.unit.name)
-
-
-@dataclass
-class TimeSeries:
-    """Time series data"""
-
-    name: str
-    data: pd.DataFrame
-    quantity: Quantity
-
-    @property
-    def time(self) -> pd.DatetimeIndex:
-        return self.data.index
-
-    @property
-    def start_time(self) -> datetime:
-        return self.time[0]
-
-    @property
-    def end_time(self) -> datetime:
-        return self.time[-1]
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}> '{self.name}'"
-
-    # TODO add plot method defined in a separate class, .e.g MatplotlibTimeSeriesPlotter, PlotlyTimeSeriesPlotter
