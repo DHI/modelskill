@@ -549,7 +549,7 @@ def __hist2d(x, y, binsize):
         exy = np.arange(minxy - binsize * 0.5, maxxy + binsize, binsize)
 
     # Calculate 2D histogram
-    histodata, exh, eyh = np.histogram2d(x, y, [exy, exy])
+    histodata, exh, _ = np.histogram2d(x, y, [exy, exy])
 
     # Histogram values
     hist = []
@@ -557,7 +557,7 @@ def __hist2d(x, y, binsize):
         for i in range(len(cxy)):
             hist.append(histodata[i, j])
 
-    return hist,cxy,exy
+    return hist,cxy
 
 def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     """Interpolates scatter data on a 2D histogram (gridded) based on data density.
@@ -579,7 +579,7 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
         Array with the colors based on histogram density
     """
 
-    hist,cxy,exy=__hist2d(x, y, binsize)
+    hist,cxy=__hist2d(x, y, binsize)
 
     # Grid-data
     xg, yg = np.meshgrid(cxy, cxy)
