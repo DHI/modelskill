@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import mikeio
 
 from fmskill import ModelResult
+from fmskill.model.point import PointModelResult
 from fmskill.types import DataInputType, GeometryType
 from .model import protocols, DfsuModelResult
 from .model._base import ModelResultBase
@@ -37,6 +38,7 @@ MRInputType = Union[
     xr.Dataset,
     xr.DataArray,
     ModelResultBase,
+    PointModelResult,
     # protocols.ModelResult,
 ]
 ObsInputType = Union[

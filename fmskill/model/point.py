@@ -3,11 +3,12 @@ from typing import Union, get_args
 import mikeio
 import pandas as pd
 
-from fmskill import types, utils
-from fmskill.model._base import ModelResultBase
+from .. import types, utils
+from ._base import ModelResultBase
+from ..types import GeometryType, TimeSeries
 
 
-class PointModelResult(ModelResultBase):
+class PointModelResult(TimeSeries):
     """Construct a PointModelResult from a dfs0 file,
     mikeio.Dataset/DataArray or pandas.DataFrame/Series
 
@@ -79,3 +80,5 @@ class PointModelResult(ModelResultBase):
         super().__init__(data=data, name=name, quantity=quantity)
         self.x = x
         self.y = y
+
+        # self.gtype = GeometryType.POINT
