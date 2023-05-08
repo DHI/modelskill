@@ -149,7 +149,9 @@ class TimeSeries:
         if self.quantity is None:
             self.quantity = Quantity.undefined()
 
-        assert isinstance(self.data, pd.DataFrame), "data must be a pandas.DataFrame"
+        assert isinstance(
+            self.data, (pd.DataFrame, pd.Series)
+        ), f"data must be a pandas.DataFrame, not type: {type(self.data)}"  # TODO shouldnt this only be Series?
         assert isinstance(
             self.data.index, pd.DatetimeIndex
         ), "index must be a DatetimeIndex"
