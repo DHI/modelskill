@@ -7,6 +7,9 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 import mikeio
+from fmskill.model.point import PointModelResult
+
+from fmskill.model.track import TrackModelResult
 
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
@@ -55,6 +58,12 @@ register_option(
 )
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
+
+
+def _get_ax(ax=None, figsize=None):
+    if ax is None:
+        _, ax = plt.subplots(figsize=figsize)
+    return ax
 
 
 def scatter(
@@ -195,8 +204,6 @@ def scatter(
     xymin = min([xmin, ymin])
     xymax = max([xmax, ymax])
 
-
-
     if quantiles is None:
         if len(x) >= 3000:
             quantiles = 1000
@@ -226,10 +233,10 @@ def scatter(
     # Remove previous piece of code when nbins and bin_size are deprecated.
 
     if xlim is None:
-        xlim = [xymin - binsize, xymax+ binsize]
+        xlim = [xymin - binsize, xymax + binsize]
 
     if ylim is None:
-        ylim = [xymin - binsize, xymax+ binsize]
+        ylim = [xymin - binsize, xymax + binsize]
 
     if type(quantiles) == int:
         xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
@@ -238,8 +245,8 @@ def scatter(
         # if not an int nor None, it must be a squence of floats
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
-    x_trend= np.array([xlim[0],xlim[1]])   
-        
+    x_trend = np.array([xlim[0], xlim[1]])
+
     if show_hist:
         # if histogram is wanted (explicit non-default flag) then density is off
         if show_density == True:
@@ -261,10 +268,9 @@ def scatter(
         z = _scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
         # Sort data by colormaps
-        x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]        
+        x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]
         # scale Z by sample size
-        z = z * len(x) / len(x_sample)     
- 
+        z = z * len(x) / len(x_sample)
 
     # linear fit
     slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
@@ -508,41 +514,64 @@ def plot_temporal_coverage(
     return ax
 
 
-def plot_observation_positions(
-    geometry: mikeio.spatial.FM_geometry.GeometryFM,
-    observations: List[Observation],
+def plot_spatial_coverage(
+    obs: List[Observation],
+    mod=None,
     figsize: Tuple = None,
-    title=None,
+    title: str = None,
 ):
     """Plot observation points on a map showing the model domain
 
     Parameters
     ----------
-    geometry: mikeio.GeometryFM
-        A MIKE IO geometry object
-    observations: list
-        Observation collection
+    obs: list[Observation]
+        List of observations to be shown on map
+    mod : Union[ModelResult, mikeio.GeometryFM], optional
+        Model domain to be shown as outline
     figsize : (float, float), optional
         figure size, by default None
     title: str, optional
         plot title, default empty
     """
+    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
+    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
 
-    xn = geometry.node_coordinates[:, 0]
-    offset_x = 0.02 * (max(xn) - min(xn))
-    ax = geometry.plot(plot_type="outline_only", figsize=figsize)
-    for obs in observations:
-        if isinstance(obs, PointObservation):
-            ax.scatter(x=obs.x, y=obs.y, marker="x")
-            ax.annotate(obs.name, (obs.x + offset_x, obs.y))
-        elif isinstance(obs, TrackObservation):
-            if obs.n_points < 10000:
-                ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
+    ax = _get_ax(ax=None, figsize=figsize)
+    offset_x = 1  # TODO: better default
+
+    for m in mod:
+        # TODO: support Gridded ModelResults
+        if isinstance(m, (PointModelResult, TrackModelResult)):
+            raise ValueError(
+                f"Model type {type(m)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
+            )
+        if hasattr(m, "data") and hasattr(m.data, "geometry"):
+            # mod_name = m.name  # TODO: better support for multiple models
+            m = m.data.geometry
+        if hasattr(m, "node_coordinates"):
+            xn = m.node_coordinates[:, 0]
+            offset_x = 0.02 * (max(xn) - min(xn))
+        m.plot.outline(ax=ax)
+
+    for o in obs:
+        if isinstance(o, PointObservation):
+            ax.scatter(x=o.x, y=o.y, marker="x")
+            ax.annotate(o.name, (o.x + offset_x, o.y))
+        elif isinstance(o, TrackObservation):
+            if o.n_points < 10000:
+                ax.scatter(x=o.x, y=o.y, c=o.values, marker=".", cmap="Reds")
             else:
-                print("Too many points to plot")
-                # TODO: group by lonlat bin
-    if title:
-        ax.set_title(title)
+                print(f"{o.name}: Too many points to plot")
+                # TODO: group by lonlat bin or sample randomly
+        else:
+            raise ValueError(
+                f"Could not show observation {o}. Only PointObservation and TrackObservation supported."
+            )
+
+    if not title:
+        title = "Spatial coverage"
+    ax.set_title(title)
+
     return ax
 
 
@@ -617,8 +646,8 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     """
 
     # Make linear-grid for interpolation
-    minxy = min(min(x), min(y))-binsize/2
-    maxxy = max(max(x), max(y))+binsize/2
+    minxy = min(min(x), min(y)) - binsize / 2
+    maxxy = max(max(x), max(y)) + binsize / 2
     # Center points of the bins
     cxy = np.arange(minxy, maxxy, binsize)
     # Edges of the bins

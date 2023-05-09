@@ -19,7 +19,7 @@ from .model._base import ModelResultBase
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
-from .plot import plot_observation_positions
+from .plot import plot_spatial_coverage
 
 
 IdOrNameTypes = Optional[Union[int, str]]
@@ -122,7 +122,7 @@ def _single_obs_compare(
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
     mod = _parse_models(mod, mod_item, gtype=gtype)
     df_mod = _extract_from_models(obs, mod)
-    
+
     return Comparer(obs, df_mod, max_model_gap=max_model_gap)
 
 
@@ -366,9 +366,7 @@ class _SingleObsConnector(_BaseConnector):
             warnings.warn("Only supported for dfsu ModelResults")
             return
 
-        ax = plot_observation_positions(
-            geometry=geometry, observations=[self.obs], figsize=figsize
-        )
+        ax = plot_spatial_coverage(geometry=geometry, o=[self.obs], figsize=figsize)
 
         return ax
 
@@ -698,8 +696,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             return
 
         observations = list(self.observations.values())
-        ax = plot_observation_positions(
-            geometry=geometry, observations=observations, title=title, figsize=figsize
+        ax = plot_spatial_coverage(
+            geometry=geometry, o=observations, title=title, figsize=figsize
         )
         return ax
 
