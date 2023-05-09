@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import pytest
 import fmskill as ms
 
@@ -34,10 +35,28 @@ def mr2():
 
 def test_plot_temporal_coverage_11(o1, mr1):
     ms.plot_temporal_coverage(o1, mr1)
+    plt.close()
 
 
 def test_plot_temporal_coverage_12(o1, mr1, mr2):
     ms.plot_temporal_coverage(o1, [mr1, mr2])
+    plt.close()
+
 
 def test_plot_temporal_coverage_31(o1, o2, o3, mr1):
     ms.plot_temporal_coverage([o1, o2, o3], mr1)
+    plt.close()
+
+
+def test_plot_temporal_coverage_settings(o1, o2, o3, mr1, mr2):
+    ms.plot_temporal_coverage([o1, o2, o3], [mr1, mr2], limit_to_model_period=False)
+    ms.plot_temporal_coverage([o1, o2, o3], [mr1, mr2], marker=".")
+    ms.plot_temporal_coverage([o1, o2, o3], [mr1, mr2], title="test", figsize=(3, 4))
+    plt.close()
+
+
+def test_plot_spatial_coverage(o1, o2, o3, mr1):
+    ms.plot_temporal_coverage([o1, o2, o3], mr1)
+    ms.plot_temporal_coverage(o1, mr1, figsize=(3, 6))
+    ms.plot_temporal_coverage([o1, o2, o3], mod=[], title="test")
+    plt.close()
