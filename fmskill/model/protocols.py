@@ -9,7 +9,7 @@ from fmskill import types
 class ModelResult(Protocol):
     data: Any
     name: str
-    quantity: str
+    quantity: types.Quantity
     time: pd.DatetimeIndex
 
 
