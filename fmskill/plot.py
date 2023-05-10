@@ -134,7 +134,7 @@ def scatter(
         user default units to override default units, eg 'metre', by default None
     kwargs
     """
-    if show_hist == None and show_density == None:
+    if show_hist is None and show_density is None:
         # Default: points density
         show_density = True
 
@@ -240,7 +240,7 @@ def scatter(
 
     if show_hist:
         # if histogram is wanted (explicit non-default flag) then density is off
-        if show_density == True:
+        if show_density is True:
             raise TypeError(
                 "if `show_hist=True` then `show_density` must be either `False` or `None`"
             )
@@ -251,7 +251,7 @@ def scatter(
                 "if `show_density=True` then bins must be either float or int"
             )
         # if point density is wanted, then 2D histogram is not shown
-        if show_hist == True:
+        if show_hist is True:
             raise TypeError(
                 "if `show_density=True` then `show_hist` must be either `False` or `None`"
             )
@@ -337,7 +337,7 @@ def scatter(
 
         plt.title(title)
         # Add skill table
-        if skill_df != None:
+        if skill_df is not None:
             _plot_summary_table(skill_df, units, max_cbar=max_cbar)
         return ax
 
@@ -548,7 +548,7 @@ def __hist2d(x, y, binsize):
         exy = np.arange(minxy - binsize * 0.5, maxxy + binsize, binsize)
 
     # Calculate 2D histogram
-    histodata, exh, _ = np.histogram2d(x, y, [exy, exy])
+    histodata, _, _ = np.histogram2d(x, y, [exy, exy])
 
     # Histogram values
     hist = []
@@ -620,7 +620,7 @@ def _plot_summary_table(skill_df, units, max_cbar):
 
     text_ = "\n".join(lines)
 
-    if max_cbar == None:
+    if max_cbar is None:
         x = 0.93
     elif max_cbar < 1e3:
         x = 0.99
