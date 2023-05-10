@@ -146,8 +146,13 @@ class TimeSeries:
     color: str = "#d62728"
 
     def __post_init__(self) -> None:
+        # TODO is __post_init__ the most elegant way to handle this?
         if self.quantity is None:
             self.quantity = Quantity.undefined()
+        elif isinstance(self.quantity, str):
+            self.quantity = Quantity.from_mikeio_eum_name(self.quantity)
+
+        assert isinstance(self.quantity, Quantity)
 
         assert isinstance(
             self.data, (pd.DataFrame, pd.Series)

@@ -7,7 +7,7 @@ Examples
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
 import os
-from typing import Optional
+from typing import Optional, Union
 import numpy as np
 import pandas as pd
 import mikeio
@@ -131,7 +131,7 @@ class PointObservation(Observation):
         y: float = None,
         z: float = None,
         name: str = None,
-        quantity: Optional[Quantity] = None,
+        quantity: Optional[Union[str, Quantity]] = None,
     ):
 
         self.x = x

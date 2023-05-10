@@ -1,9 +1,9 @@
-from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Optional, Union, List
 
 from dataclasses import dataclass
+import warnings
 
 import mikeio
 import pandas as pd
@@ -131,3 +131,31 @@ class Quantity:
     @staticmethod
     def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo):
         return Quantity(name=repr(iteminfo.type), unit=iteminfo.unit.name)
+
+    @staticmethod
+    def from_mikeio_eum_name(type_name: str):
+        """Create a Quantity from a name recognized by mikeio
+
+        Parameters
+        ----------
+        type_name : str
+            Name of the quantity
+
+        Examples
+        --------
+        >>> Quantity.from_mikeio_eum_name("Water Level")
+        Quantity(name='Water Level', unit='meter')
+        """
+        try:
+            etype = mikeio.EUMType[type_name]
+        except KeyError:
+            name_underscore = type_name.replace(" ", "_")
+            try:
+                etype = mikeio.EUMType[name_underscore]
+            except KeyError:
+                raise ValueError(
+                    f"{type_name=} is not recognized as a known type. Please create a Quantity(name='{type_name}' unit='<FILL IN UNIT>')"
+                )
+        unit = etype.units[0].name
+        warnings.warn(f"{unit=} was automatically set for {type_name=}")
+        return Quantity(name=type_name, unit=unit)

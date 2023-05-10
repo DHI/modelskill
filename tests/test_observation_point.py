@@ -40,6 +40,32 @@ def test_from_dfs0(klagshamn):
     assert o6.quantity.unit == "feet"
 
 
+def test_from_df_quantity_from_string(klagshamn):
+    o1 = PointObservation(
+        klagshamn,
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn1",
+        quantity="Water_Level",  # TODO is this intuitive ?
+    )
+
+    assert o1.quantity.unit == "meter"
+
+
+def test_from_df_quantity_from_string_without_underscore(klagshamn):
+    o1 = PointObservation(
+        klagshamn,
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn1",
+        quantity="Water Level",  # TODO is this intuitive ?
+    )
+
+    assert o1.quantity.unit == "meter"
+
+
 def test_from_df(klagshamn):
     o1 = PointObservation(klagshamn, item=0, x=366844, y=6154291, name="Klagshamn1")
 
