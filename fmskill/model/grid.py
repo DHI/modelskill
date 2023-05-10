@@ -23,8 +23,8 @@ class GridModelResult(ModelResultBase):
     item : Optional[Union[str, int]], optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
-    quantity : Optional[str], optional
-        A string to identify the quantity, by default None
+    quantity : Quantity, optional
+        Model quantity, for MIKE files this is inferred from the EUM information
     """
 
     def __init__(
@@ -33,7 +33,7 @@ class GridModelResult(ModelResultBase):
         *,
         name: Optional[str] = None,
         item: Optional[Union[str, int]] = None,
-        quantity: Optional[str] = None,
+        quantity: Optional[types.Quantity] = None,
     ) -> None:
         assert isinstance(
             data, get_args(types.GridType)

@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Union, get_args
+from typing import Optional, Union, get_args
 import mikeio
 import pandas as pd
 
 from .. import types, utils
 from ._base import ModelResultBase
-from ..types import GeometryType
+from ..types import GeometryType, Quantity
 from ..timeseries import TimeSeries  # TODO move to main module
 
 
@@ -27,19 +27,19 @@ class PointModelResult(TimeSeries):
     item : Optional[Union[str, int]], optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
-    quantity : Optional[str], optional
-        A string to identify the quantity, by default None
+    quantity : Quantity, optional
+        Model quantity, for MIKE files this is inferred from the EUM information
     """
 
     def __init__(
         self,
         data: types.PointType,
         *,
-        name: str = None,
-        x: float = None,
-        y: float = None,
-        item: Union[str, int] = None,
-        quantity: str = None,
+        name: Optional[str] = None,  # TODO should maybe be required?
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        item: Optional[Union[str, int]] = None,
+        quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
             data, get_args(types.PointType)
