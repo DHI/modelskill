@@ -134,8 +134,8 @@ def test_mv_mm_scatter(cc):
     cc.scatter(
         model="SW_1", variable="Wind speed", observation="F16_wind", skill_table=True
     )
-    cc.scatter(model="SW_1", variable="Wind_speed", show_density=True,bins=19)
-    cc.scatter(model="SW_1", variable="Wind_speed", show_density=True,bins=21)
+    cc.scatter(model="SW_1", variable="Wind speed", show_density=True, bins=19)
+    cc.scatter(model="SW_1", variable="Wind speed", show_density=True, bins=21)
     assert True
     plt.close("all")
 
