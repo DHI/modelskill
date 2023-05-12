@@ -411,11 +411,12 @@ class Comparer:
             data["y"] = observation.y
 
         data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
+        # data.attrs["variable_name"] = observation.variable_name
+        data.attrs["variable_name"] = observation.quantity.name
         data["x"].attrs["kind"] = "position"
         data["y"].attrs["kind"] = "position"
         data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["unit"] = observation.quantity.unit
         data[self._obs_name].attrs["color"] = observation.color
         data[self._obs_name].attrs["weight"] = observation.weight
         for n in self.mod_names:
@@ -556,7 +557,7 @@ class Comparer:
 
     @property
     def _unit_text(self) -> str:
-        return self.data[self._obs_name].attrs["unit"]
+        return f"{self.data.attrs['variable_name']} [{self.data[self._obs_name].attrs['unit']}]"
 
     @property
     def metrics(self):
@@ -605,7 +606,7 @@ class Comparer:
                 name=self.name,
                 x=self.x,
                 y=self.y,
-                variable_name=self.variable_name,
+                # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
         elif self.gtype == "track":
@@ -616,7 +617,7 @@ class Comparer:
                 x_item=0,
                 y_item=1,
                 name=self.name,
-                variable_name=self.variable_name,
+                # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
         else:

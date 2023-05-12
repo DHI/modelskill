@@ -4,6 +4,7 @@ import sys
 import mikeio
 
 from fmskill.observation import PointObservation
+from fmskill import Quantity
 
 
 @pytest.fixture
@@ -19,20 +20,50 @@ def test_from_dfs0(klagshamn):
     assert o1.n_points == o2.n_points
 
     o3 = PointObservation(
-        klagshamn, item="Water Level", x=366844, y=6154291, units="meter"
+        klagshamn,
+        item="Water Level",
+        x=366844,
+        y=6154291,
+        quantity=Quantity(name="Water level", unit="meter"),
     )
-    assert o3.override_units == o2.itemInfo.unit.name
 
-    o4 = PointObservation(klagshamn, item="Water Level", x=366844, y=6154291)
-    assert o4.override_units == None
-
-    o5 = PointObservation(klagshamn, item="Water Level", x=366844, y=6154291)
-    assert o5._unit_text() == "Water Level [m]"
+    assert o3.quantity.unit == "meter"
 
     o6 = PointObservation(
-        klagshamn, item="Water Level", x=366844, y=6154291, units="inches"
+        klagshamn,
+        item="Water Level",
+        x=366844,
+        y=6154291,
+        quantity=Quantity(name="Water level", unit="feet"),
     )
-    assert o6._unit_text() == "Water Level [inches]"
+
+    assert o6.quantity.unit == "feet"
+
+
+def test_from_df_quantity_from_string(klagshamn):
+    o1 = PointObservation(
+        klagshamn,
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn1",
+        quantity="Water_Level",  # TODO is this intuitive ?
+    )
+
+    assert o1.quantity.unit == "meter"
+
+
+def test_from_df_quantity_from_string_without_underscore(klagshamn):
+    o1 = PointObservation(
+        klagshamn,
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn1",
+        quantity="Water Level",  # TODO is this intuitive ?
+    )
+
+    assert o1.quantity.unit == "meter"
 
 
 def test_from_df(klagshamn):
@@ -52,30 +83,12 @@ def test_from_df(klagshamn):
     o3 = PointObservation(s, x=366844, y=6154291, name="Klagshamn3")
     assert o1.n_points == o3.n_points
 
-    o4 = PointObservation(df, item="Water Level", x=366844, y=6154291, units="metre")
-    assert o4.override_units == "metre"
-
-    o5 = PointObservation(df, item="Water Level", x=366844, y=6154291, units="inches")
-    o5.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Water_Level)
-    assert o5._unit_text() == "Water Level [inches]"
-
-
-@pytest.mark.skipif("shapely" not in sys.modules, reason="requires the shapely")
-def test_coordinates(klagshamn):
-    from shapely.geometry import Point
-
-    x0, y0 = 366844, 6154291
-    o1 = PointObservation(klagshamn, item=0, x=x0, y=y0, name="Klagshamn")
-    assert isinstance(o1.geometry, Point)
-    assert o1.geometry.x == x0
-    assert o1.geometry.y == y0
-
 
 def test_hist(klagshamn):
     o1 = PointObservation(klagshamn, item=0, x=366844, y=6154291, name="Klagshamn1")
-    o1.hist()
-    o1.hist(density=False)
-    o1.hist(bins=20, title="new_title", color="red")
+    o1.plot.hist()
+    o1.plot.hist(density=False)
+    o1.plot.hist(bins=20, title="new_title", color="red")
 
 
 def test_force_keyword_args(klagshamn):

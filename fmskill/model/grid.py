@@ -23,11 +23,8 @@ class GridModelResult(ModelResultBase):
     item : Optional[Union[str, int]], optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
-    itemInfo : Optional[mikeio.ItemInfo], optional
-        Optionally, a MIKE IO ItemInfo (MIKE EUM system)
-        can be given to define the type and unit of the quantity, by default None
-    quantity : Optional[str], optional
-        A string to identify the quantity, by default None
+    quantity : Quantity, optional
+        Model quantity, for MIKE files this is inferred from the EUM information
     """
 
     def __init__(
@@ -36,14 +33,11 @@ class GridModelResult(ModelResultBase):
         *,
         name: Optional[str] = None,
         item: Optional[Union[str, int]] = None,
-        itemInfo: Optional[mikeio.ItemInfo] = None,
-        quantity: Optional[str] = None,
+        quantity: Optional[types.Quantity] = None,
     ) -> None:
         assert isinstance(
             data, get_args(types.GridType)
         ), "Could not construct GridModelResult from provided data."
-
-        name = name or super()._default_name(data)
 
         if isinstance(data, (str, Path)):
             if "*" in str(data):
@@ -74,9 +68,8 @@ class GridModelResult(ModelResultBase):
 
         assert isinstance(data, xr.Dataset)
 
-        super().__init__(
-            data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
-        )
+        super().__init__(data=data, name=name, quantity=quantity)
+        self.item = item  # TODO remove this
 
     def _in_domain(self, x: float, y: float) -> bool:
         assert hasattr(self.data, "x") and hasattr(
@@ -141,7 +134,6 @@ class GridModelResult(ModelResultBase):
             x=da.x.item(),
             y=da.y.item(),
             item=self.name,
-            itemInfo=self.itemInfo,
             name=self.name,
             quantity=self.quantity,
         )
@@ -166,7 +158,6 @@ class GridModelResult(ModelResultBase):
         return TrackModelResult(
             data=df.dropna(),
             item=self.name,
-            itemInfo=self.itemInfo,
             name=self.name,
             quantity=self.quantity,
         )

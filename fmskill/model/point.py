@@ -1,13 +1,15 @@
 from pathlib import Path
-from typing import Union, get_args
+from typing import Optional, Union, get_args
 import mikeio
 import pandas as pd
 
-from fmskill import types, utils
-from fmskill.model._base import ModelResultBase
+from .. import types, utils
+from ._base import ModelResultBase
+from ..types import GeometryType, Quantity
+from ..timeseries import TimeSeries  # TODO move to main module
 
 
-class PointModelResult(ModelResultBase):
+class PointModelResult(TimeSeries):
     """Construct a PointModelResult from a dfs0 file,
     mikeio.Dataset/DataArray or pandas.DataFrame/Series
 
@@ -25,23 +27,19 @@ class PointModelResult(ModelResultBase):
     item : Optional[Union[str, int]], optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
-    itemInfo : Optional[mikeio.ItemInfo], optional
-        Optionally, a MIKE IO ItemInfo (MIKE EUM system) can be given
-        to set or override the type and unit of the quantity, by default None
-    quantity : Optional[str], optional
-        A string to identify the quantity, by default None
+    quantity : Quantity, optional
+        Model quantity, for MIKE files this is inferred from the EUM information
     """
 
     def __init__(
         self,
         data: types.PointType,
         *,
-        name: str = None,
-        x: float = None,
-        y: float = None,
-        item: Union[str, int] = None,
-        itemInfo: mikeio.ItemInfo = None,
-        quantity: str = None,
+        name: Optional[str] = None,  # TODO should maybe be required?
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        item: Optional[Union[str, int]] = None,
+        quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
             data, get_args(types.PointType)
@@ -58,11 +56,9 @@ class PointModelResult(ModelResultBase):
         if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
             item, idx = utils.get_item_name_and_idx(item_names, item)
-            itemInfo = itemInfo or data.items[idx]
             data = data[[item]].to_dataframe()
         elif isinstance(data, mikeio.DataArray):
             item = item or data.name
-            itemInfo = itemInfo or data.item
             data = mikeio.Dataset({data.name: data}).to_dataframe()
         elif isinstance(data, pd.DataFrame):
             item_names = list(data.columns)
@@ -82,8 +78,8 @@ class PointModelResult(ModelResultBase):
             raise ValueError("No data.")
         data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
 
-        super().__init__(
-            data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
-        )
+        super().__init__(data=data, name=name, quantity=quantity)
         self.x = x
         self.y = y
+
+        # self.gtype = GeometryType.POINT

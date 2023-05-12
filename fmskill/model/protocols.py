@@ -8,11 +8,9 @@ from fmskill import types
 @runtime_checkable
 class ModelResult(Protocol):
     data: Any
-    item: str
     name: str
-    quantity: str
+    quantity: types.Quantity
     time: pd.DatetimeIndex
-    itemInfo: Any  # TODO drop this?
 
 
 @runtime_checkable

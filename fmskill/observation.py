@@ -7,11 +7,15 @@ Examples
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
 import os
+from typing import Optional, Union
 import numpy as np
 import pandas as pd
 import mikeio
 from copy import deepcopy
+
 from .utils import make_unique_index
+from .types import Quantity
+from .timeseries import TimeSeries
 
 
 def _parse_item(items, item, item_str="item"):
@@ -26,86 +30,45 @@ def _parse_item(items, item, item_str="item"):
     return item
 
 
-class Observation:
-    "Base class for all types of observations"
+class Observation(TimeSeries):
+    """Base class for observations
 
-    # DHI: darkblue: #004165,
-    #      midblue:  #0098DB,
-    #      gray:     #8B8D8E,
-    #      lightblue:#63CEFF,
-    # DHI secondary
-    #      yellow:   #FADC41,
-    #      orange:   #FF8849
-    #      lightblue2:#C1E2E5
-    #      green:    #61C250
-    #      purple:   #93509E
-    #      darkgray: #51626F
-
-    # matplotlib: red=#d62728
+    Parameters
+    ----------
+    data : pd.DataFrame
+    name : str, optional
+        user-defined name, e.g. "Station A", by default "Observation"
+    quantity : Optional[Quantity], optional
+        The quantity of the observation, for validation with model results
+    weight : float, optional
+        weighting factor, to be used in weighted skill scores, by default 1.0
+    color : str, optional
+        color of the observation in plots, by default "#d62728"
+    """
 
     def __init__(
         self,
-        name: str = None,
-        df=None,
-        itemInfo=None,
-        variable_name: str = None,
-        override_units: str = None,
+        data: pd.DataFrame,
+        name: str = "Observation",
+        quantity: Optional[Quantity] = None,
+        weight: float = 1.0,
+        color: str = "#d62728",
     ):
-        self.color = "#d62728"
 
         if name is None:
             name = "Observation"
-        self.name = name
-        if not isinstance(df.index, pd.DatetimeIndex):
+
+        # TODO move this to TimeSeries?
+        if not isinstance(data.index, pd.DatetimeIndex):
             raise TypeError(
-                f"Input must have a datetime index! Provided index was {type(df.index)}"
+                f"Input must have a datetime index! Provided index was {type(data.index)}"
             )
-        time = df.index.round(freq="100us")  # 0.0001s accuracy
-        df.index = pd.DatetimeIndex(time, freq="infer")
-        self.data = df
-        if itemInfo is None:
-            self.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
-        else:
-            self.itemInfo = itemInfo
-        self.weight = 1.0
-        if variable_name is None:
-            variable_name = self.itemInfo.type.name
-        self.variable_name = variable_name
-        self.override_units = override_units
+        time = data.index.round(freq="100us")  # 0.0001s accuracy
+        data.index = pd.DatetimeIndex(time, freq="infer")
 
-    def trim(
-        self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
-    ) -> None:
-        """Trim observation data to a given time interval
+        self.weight = weight
 
-        Parameters
-        ----------
-        start_time : pd.Timestamp
-            start time
-        end_time : pd.Timestamp
-            end time
-        buffer : str, optional
-            buffer time around start and end time, by default "1s"
-        """
-        # Expand time interval with buffer
-        start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
-        end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
-        self.data = self.data.loc[start_time:end_time]
-
-    @property
-    def time(self) -> pd.DatetimeIndex:
-        "Time index"
-        return self.data.index
-
-    @property
-    def start_time(self) -> pd.Timestamp:
-        """First time instance (as pd.Timestamp)"""
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        """Last time instance (as pd.Timestamp)"""
-        return self.time[-1]
+        super().__init__(name=name, data=data, quantity=quantity, color=color)
 
     @property
     def values(self) -> np.ndarray:
@@ -117,57 +80,8 @@ class Observation:
         """Number of observations"""
         return len(self.data)
 
-    @property
-    def filename(self):
-        """Filename of the observation input"""
-        return self._filename
-
-    def _unit_text(self):
-        override_units = self.override_units
-        if self.itemInfo is None:
-            return ""
-        txt = f"{self.itemInfo.type.display_name}"
-        if self.itemInfo.type != mikeio.EUMType.Undefined:
-            if override_units == None:
-                unit = self.itemInfo.unit.display_name
-                txt = f"{txt} [{unit_display_name(unit)}]"
-            else:
-                unit = override_units
-                txt = f"{txt} [{override_units}]"
-        return txt
-
-    def hist(self, bins=100, title=None, color=None, **kwargs):
-        """plot histogram of observation values
-
-        Wraps pandas.DataFrame hist() method.
-
-        Parameters
-        ----------
-        bins : int, optional
-            specification of bins, by default 100
-        title : str, optional
-            plot title, default: observation name
-        color : str, optional
-            plot color, by default "#d62728"
-        kwargs : other keyword arguments to df.hist()
-
-        Returns
-        -------
-        matplotlib axes
-        """
-        title = self.name if title is None else title
-        kwargs["color"] = self.color if color is None else color
-
-        ax = self.data.iloc[:, -1].hist(bins=bins, **kwargs)
-        ax.set_title(title)
-        ax.set_xlabel(self._unit_text())
-        return ax
-
-    def __copy__(self):
-        return deepcopy(self)
-
     def copy(self):
-        return self.__copy__()
+        return deepcopy(self)
 
 
 class PointObservation(Observation):
@@ -189,10 +103,7 @@ class PointObservation(Observation):
         z-coordinate of the observation point, by default None
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
-    variable_name : str, optional
-        user-defined variable name in case of multiple variables, by default eumType name
-    units : str, optional
-        user-defined units name in case user wants to override eumUnits
+
 
     Examples
     --------
@@ -206,7 +117,6 @@ class PointObservation(Observation):
     def geometry(self):
         from shapely.geometry import Point
 
-        """Coordinates of observation"""
         if self.z is None:
             return Point(self.x, self.y)
         else:
@@ -221,8 +131,7 @@ class PointObservation(Observation):
         y: float = None,
         z: float = None,
         name: str = None,
-        variable_name: str = None,
-        units: str = None,
+        quantity: Optional[Union[str, Quantity]] = None,
     ):
 
         self.x = x
@@ -236,7 +145,6 @@ class PointObservation(Observation):
             df = data.to_frame()
             if name is None:
                 name = "Observation"
-            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(data, pd.DataFrame):
             df = data
             default_name = "Observation"
@@ -261,7 +169,6 @@ class PointObservation(Observation):
                 raise TypeError("item must be int or string")
             if name is None:
                 name = default_name
-            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(data, str):
             assert os.path.exists(data)
             self._filename = data
@@ -270,8 +177,9 @@ class PointObservation(Observation):
 
             ext = os.path.splitext(data)[-1]
             if ext == ".dfs0":
-                df, itemInfo = self._read_dfs0(mikeio.open(data), item)
-                self._item = itemInfo.name
+                df, iteminfo = self._read_dfs0(mikeio.open(data), item)
+                if quantity is None:
+                    quantity = Quantity.from_mikeio_iteminfo(iteminfo)
             else:
                 raise NotImplementedError("Only dfs0 files supported")
         else:
@@ -287,16 +195,15 @@ class PointObservation(Observation):
 
         super().__init__(
             name=name,
-            df=df,
-            itemInfo=itemInfo,
-            variable_name=variable_name,
-            override_units=units,
+            data=df,
+            quantity=quantity,
         )
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
         return out
 
+    # TODO does this belong here?
     @staticmethod
     def _read_dfs0(dfs, item):
         """Read data from dfs0 file"""
@@ -314,32 +221,6 @@ class PointObservation(Observation):
         df.dropna(inplace=True)
         return df, itemInfo
 
-    def plot(self, title=None, color=None, marker=".", linestyle="None", **kwargs):
-        """plot observation timeseries
-
-        Wraps pandas.DataFrame plot() method.
-
-        Parameters
-        ----------
-        title : str, optional
-            plot title, default: [name]
-        color : str, optional
-            plot color, by default '#d62728'
-        marker : str, optional
-            plot marker, by default '.'
-        linestyle : str, optional
-            line style, by default None
-        kwargs: other keyword arguments to df.plot()
-        """
-        kwargs["color"] = self.color if color is None else color
-        ax = self.data.plot(marker=marker, linestyle=linestyle, **kwargs)
-
-        title = self.name if title is None else title
-        ax.set_title(title)
-
-        ax.set_ylabel(self._unit_text())
-        return ax
-
 
 class TrackObservation(Observation):
     """Class for observation with locations moving in space, e.g. satellite altimetry
@@ -356,16 +237,12 @@ class TrackObservation(Observation):
         item name or index of values, by default 2
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
-    variable_name : str, optional
-        user-defined variable name in case of multiple variables, by default eumType name
     x_item : (str, int), optional
         item name or index of x-coordinate, by default 0
     y_item : (str, int), optional
         item name or index of y-coordinate, by default 1
     offset_duplicates : float, optional
         in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001
-    units : str, optional
-        user-defined units name in case user wants to override eumUnits
 
 
     Examples
@@ -437,11 +314,10 @@ class TrackObservation(Observation):
         *,
         item: int = None,
         name: str = None,
-        variable_name: str = None,
         x_item=0,
         y_item=1,
         offset_duplicates: float = 0.001,
-        units: str = None,
+        quantity: Optional[Quantity] = None,
     ):
 
         self._filename = None
@@ -452,7 +328,6 @@ class TrackObservation(Observation):
             df_items = df.columns.to_list()
             items = self._parse_track_items(df_items, x_item, y_item, item)
             df = df.iloc[:, items].copy()
-            itemInfo = mikeio.ItemInfo(mikeio.EUMType.Undefined)
         elif isinstance(data, str):
             assert os.path.exists(data)
             self._filename = data
@@ -464,8 +339,9 @@ class TrackObservation(Observation):
                 dfs = mikeio.open(data)
                 file_items = [i.name for i in dfs.items]
                 items = self._parse_track_items(file_items, x_item, y_item, item)
-                df, itemInfo = self._read_dfs0(dfs, items)
-                self._item = itemInfo.name
+                df, iteminfo = self._read_dfs0(dfs, items)
+                if quantity is None:
+                    quantity = Quantity.from_mikeio_iteminfo(iteminfo)
             else:
                 raise NotImplementedError(
                     "Only dfs0 files and DataFrames are supported"
@@ -495,10 +371,8 @@ class TrackObservation(Observation):
 
         super().__init__(
             name=name,
-            df=df,
-            itemInfo=itemInfo,
-            variable_name=variable_name,
-            override_units=units,
+            data=df,
+            quantity=quantity,
         )
 
     @staticmethod
