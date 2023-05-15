@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 import mikeio
-from fmskill import ModelResult, PointObservation
+from fmskill import ModelResult, PointObservation, Quantity
 from fmskill.model import protocols, PointModelResult
 
 
@@ -43,7 +43,7 @@ def test_point_dfs0(fn_point_eq):
 
     mr1 = PointModelResult(fn, item=0)
     assert mr1.name == "smhi_2095_klagshamn_shifted"
-    assert mr1.item == "Viken: Surface elevation"
+
     assert isinstance(mr1, PointModelResult)
     assert mr1.start_time == datetime(2019, 4, 8, 0, 10, 0)  # first non-NaN
     assert mr1.end_time == datetime(2019, 4, 14, 23, 35, 0)  # last non-NaN
@@ -66,7 +66,6 @@ def test_point_dfs0_noneq(fn_point_noneq):
     mr1 = PointModelResult(fn, item=0, name="test")
     assert isinstance(mr1, PointModelResult)
     assert mr1.name == "test"
-    assert mr1.item == "Water Level"
     assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
     assert mr1.end_time == datetime(2015, 1, 9, 8, 0, 0)
     assert len(mr1.data) == 198  # 200 - 2 NaNs
@@ -81,7 +80,6 @@ def test_point_dfs0_multi_item(fn_point_eq2):
     mr1 = PointModelResult(fn, item=2, name="test")
     assert isinstance(mr1, PointModelResult)
     assert mr1.name == "test"
-    assert mr1.item == "Drogden: Surface elevation"
     assert mr1.start_time == datetime(2018, 3, 4, 0, 0, 0)
     assert mr1.end_time == datetime(2018, 3, 11, 0, 0, 0)
     assert len(mr1.data) == 2017
@@ -89,7 +87,6 @@ def test_point_dfs0_multi_item(fn_point_eq2):
     mr2 = PointModelResult(fn, item="Drogden: Surface elevation")
     assert isinstance(mr2, PointModelResult)
     assert mr2.name == "TS"  # default to filename
-    assert mr2.item == "Drogden: Surface elevation"
     assert np.all(mr2.data.values == mr1.data.values)
 
     with pytest.raises(ValueError):
@@ -101,7 +98,6 @@ def test_point_dfs0_last_item(fn_point_eq2):
     mr1 = PointModelResult(fn, item=-1, name="test")
     assert isinstance(mr1, PointModelResult)
     assert mr1.name == "test"
-    assert mr1.item == "Klagshamn: V velocity"
 
 
 def test_point_df_item(point_df):
@@ -113,12 +109,10 @@ def test_point_df_item(point_df):
     assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
     assert mr1.end_time == datetime(2015, 1, 9, 8, 0, 0)
     assert mr1.name == "Water Level"
-    assert mr1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     # item as string
     mr2 = PointModelResult(df, item="Water Level")
     assert len(mr2.data) == len(mr1.data)
-    assert mr2.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
     mr3 = PointModelResult(df[["Water Level"]])
     assert len(mr3.data) == len(mr1.data)
@@ -132,13 +126,13 @@ def test_point_df_item(point_df):
 def test_point_df_itemInfo(point_df):
     df = point_df
     df["ones"] = 1.0
-    itemInfo = mikeio.EUMType.Surface_Elevation
-    mr1 = ModelResult(df, item="Water Level", itemInfo=itemInfo)
-    assert mr1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
-
-    itemInfo = mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
-    mr2 = ModelResult(df, item=0, itemInfo=itemInfo)
-    assert mr2.itemInfo == mikeio.ItemInfo("WL", mikeio.EUMType.Surface_Elevation)
+    # itemInfo = mikeio.EUMType.Surface_Elevation
+    mr1 = ModelResult(
+        df,
+        item="Water Level",
+        quantity=Quantity(name="Surface elevation", unit="meter"),
+    )
+    assert mr1.quantity.name == "Surface elevation"
 
 
 def test_point_df(point_df):

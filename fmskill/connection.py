@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import mikeio
 
 from fmskill import ModelResult
-from fmskill.model.point import PointModelResult
+from fmskill.timeseries import TimeSeries
 from fmskill.types import DataInputType, GeometryType
 from .model import protocols, DfsuModelResult
 from .model._base import ModelResultBase
@@ -38,6 +38,7 @@ MRInputType = Union[
     xr.Dataset,
     xr.DataArray,
     ModelResultBase,
+    TimeSeries
     # protocols.ModelResult,
 ]
 ObsInputType = Union[
@@ -335,34 +336,10 @@ class _SingleObsConnector(_BaseConnector):
         ok = True
         for mod in modelresults:
             # has_mod_item = self._has_mod_item(mod)
-            eum_match = self._validate_eum(obs, mod)
+            quantity_match = obs.quantity.is_compatible(mod.quantity)
             in_domain = self._validate_in_domain(obs, mod)
             time_overlaps = self._validate_start_end(obs, mod)
-            ok = ok and eum_match and in_domain and time_overlaps
-        return ok
-
-    @staticmethod
-    def _validate_eum(obs, mod):
-        """Check that observation and model item eum match"""
-        assert isinstance(obs, Observation)
-        assert isinstance(mod, protocols.ModelResult)
-        ok = True
-        _has_eum = lambda x: (x.itemInfo is not None) and (
-            x.itemInfo.type != mikeio.EUMType.Undefined
-        )
-
-        # we can only check if both have eum itemInfo
-        if _has_eum(obs) and _has_eum(mod):
-            if obs.itemInfo.type != mod.itemInfo.type:
-                ok = False
-                warnings.warn(
-                    f"Item type mismatch! Obs '{obs.name}' item: {obs.itemInfo.type.display_name}, model '{mod.name}' item: {mod.itemInfo.type.display_name}"
-                )
-            if obs.itemInfo.unit != mod.itemInfo.unit:
-                ok = False
-                warnings.warn(
-                    f"Item unit mismatch! Obs '{obs.name}' unit: {obs.itemInfo.unit.display_name}, model '{mod.name}' unit: {mod.itemInfo.unit.display_name}"
-                )
+            ok = ok and quantity_match and in_domain and time_overlaps
         return ok
 
     @staticmethod

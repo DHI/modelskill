@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import Union, get_args
+from typing import Union, get_args, Optional
 import pandas as pd
-import mikeio
-from fmskill import types, utils
 
-from fmskill.model import protocols
-from fmskill.model._base import ModelResultBase
+import mikeio
+
+from ._base import Quantity, ModelResultBase
+from .. import types, utils
+from . import protocols
 
 
 class TrackModelResult(ModelResultBase):
@@ -26,20 +27,17 @@ class TrackModelResult(ModelResultBase):
         Item of the first coordinate of positions, by default None
     y_item : Optional[Union[str, int]], optional
         Item of the second coordinate of positions, by default None
-    itemInfo : Optional[mikeio.ItemInfo], optional
-        Optionally, a MIKE IO ItemInfo (MIKE EUM system) can be given
-        to set or override the type and unit of the quantity, by default None
     quantity : Optional[str], optional
         A string to identify the quantity, by default None
-    """    
+    """
+
     def __init__(
         self,
         data: types.TrackType,
         *,
         name: str = None,
         item: Union[str, int] = None,
-        itemInfo=None,
-        quantity: str = None,
+        quantity: Optional[Quantity] = None,
         x_item: Union[str, int] = 0,
         y_item: Union[str, int] = 1,
     ) -> None:
@@ -63,8 +61,6 @@ class TrackModelResult(ModelResultBase):
         item = items[-1]
         item, idx = utils.get_item_name_and_idx(item_names, item)
         name = name or item
-        if itemInfo is None and isinstance(data, mikeio.Dataset):
-            itemInfo = data.items[idx]
 
         # select relevant items and convert to dataframe
         data = data[items]
@@ -74,6 +70,4 @@ class TrackModelResult(ModelResultBase):
         data = data.rename(columns={items[0]: "x", items[1]: "y"})
         data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
 
-        super().__init__(
-            data=data, name=name, item=item, itemInfo=itemInfo, quantity=quantity
-        )
+        super().__init__(data=data, name=name, quantity=quantity)
