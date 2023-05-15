@@ -38,6 +38,7 @@ setuptools.setup(
             "jupyter",
             "plotly",
             "shapely",
+            "scikit-learn",
         ],
     },
     entry_points="""

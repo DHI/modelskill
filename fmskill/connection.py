@@ -14,6 +14,7 @@ import mikeio
 
 from fmskill import ModelResult
 from fmskill.timeseries import TimeSeries
+from fmskill.model import PointModelResult
 from fmskill.types import DataInputType, GeometryType
 from .model import protocols, DfsuModelResult
 from .model._base import ModelResultBase
