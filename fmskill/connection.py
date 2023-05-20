@@ -56,8 +56,11 @@ ObsInputType = Union[
 
 
 def from_matched(
-    df: pd.DataFrame, *, obs_item: str, mod_items: Optional[Iterable[str]] = None,
-    quantity: Optional[Quantity] = None
+    df: pd.DataFrame,
+    *,
+    obs_item: str,
+    mod_items: Optional[Iterable[str]] = None,
+    quantity: Optional[Quantity] = None,
 ) -> Comparer:
     """Create a Comparer from observation and model results that are already matched (aligned)
 
@@ -80,12 +83,14 @@ def from_matched(
     >>> cmp = ms.from_matched(df, obs_item='stn_a') # remaining columns are model results
     >>> cmp
     <Comparer>
+    Quantity: Undefined [Undefined]
     Observation: stn_a, n_points=3
      Model: local, rmse=0.100
     >>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1], 'global': [1.2,2.2,3.2], 'nonsense':[1,2,3]}, index=pd.date_range('2010-01-01', periods=3))
     >>> cmp = ms.from_matched(df, obs_item='stn_a', mod_items=['local', 'global'])
     >>> cmp
     <Comparer>
+    Quantity: Undefined [Undefined]
     Observation: stn_a, n_points=3
         Model: local, rmse=0.100
         Model: global, rmse=0.200
@@ -94,7 +99,11 @@ def from_matched(
 
     if mod_items is None:
         # all remaining columns are model results
-        pmods = [PointModelResult(df[c], item=c, quantity=quantity) for c in df.columns if c != obs_item]
+        pmods = [
+            PointModelResult(df[c], item=c, quantity=quantity)
+            for c in df.columns
+            if c != obs_item
+        ]
     else:
         pmods = [PointModelResult(df[c], item=c, quantity=quantity) for c in mod_items]
     pobs = PointObservation(obs, item=obs_item, name=obs_item, quantity=quantity)
