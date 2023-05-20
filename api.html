@@ -931,6 +931,20 @@ by the model, by default True</p></li>
 </div>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.comparison.PointComparer.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">fmskill.comparison.Comparer</span></span></span><a class="headerlink" href="#fmskill.comparison.PointComparer.load" title="Permalink to this definition">#</a></dt>
+<dd><p>Load from netcdf file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fn</strong> (<em>str</em><em> or </em><em>Path</em>) – filename</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Comparer</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="fmskill.comparison.PointComparer.n_points">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_points</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#fmskill.comparison.PointComparer.n_points" title="Permalink to this definition">#</a></dt>
@@ -1000,6 +1014,17 @@ by the model, by default True</p></li>
 <li><p><strong>color</strong> (<em>str</em><em>, </em><em>optional</em>) – residual color, by default “#8B8D8E”</p></li>
 <li><p><strong>kwargs</strong> (<em>other keyword arguments to plt.hist</em><em>(</em><em>)</em>) – </p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.comparison.PointComparer.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fmskill.comparison.PointComparer.save" title="Permalink to this definition">#</a></dt>
+<dd><p>Save to netcdf file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fn</strong> (<em>str</em><em> or </em><em>Path</em>) – filename</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1365,6 +1390,20 @@ by default None</p></li>
 </div>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.comparison.TrackComparer.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">fmskill.comparison.Comparer</span></span></span><a class="headerlink" href="#fmskill.comparison.TrackComparer.load" title="Permalink to this definition">#</a></dt>
+<dd><p>Load from netcdf file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fn</strong> (<em>str</em><em> or </em><em>Path</em>) – filename</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Comparer</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="fmskill.comparison.TrackComparer.n_points">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_points</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#fmskill.comparison.TrackComparer.n_points" title="Permalink to this definition">#</a></dt>
@@ -1434,6 +1473,17 @@ by default None</p></li>
 <li><p><strong>color</strong> (<em>str</em><em>, </em><em>optional</em>) – residual color, by default “#8B8D8E”</p></li>
 <li><p><strong>kwargs</strong> (<em>other keyword arguments to plt.hist</em><em>(</em><em>)</em>) – </p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="fmskill.comparison.TrackComparer.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#fmskill.comparison.TrackComparer.save" title="Permalink to this definition">#</a></dt>
+<dd><p>Save to netcdf file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fn</strong> (<em>str</em><em> or </em><em>Path</em>) – filename</p>
 </dd>
 </dl>
 </dd></dl>
