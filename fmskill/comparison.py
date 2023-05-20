@@ -21,8 +21,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
 
-import mikeio
-import fmskill.metrics as mtr
+from . import metrics as mtr
+from . import Quantity
 from .observation import Observation, PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
@@ -356,6 +356,8 @@ class Comparer:
                     if value.attrs["kind"] == "model"
                 }
             )
+            # TODO get quantity from matched_data object
+            self.quantity: Quantity = Quantity.undefined()
             return
 
         self.raw_mod_data = (
@@ -363,6 +365,7 @@ class Comparer:
         )
 
         self.data = self._initialise_comparer(observation, max_model_gap)
+        self.quantity: Quantity = observation.quantity
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
         if len(df_mod) == 0:
@@ -466,9 +469,11 @@ class Comparer:
         return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
-        out = []
-        out.append(f"<{type(self).__name__}>")
-        out.append(f"Observation: {self.name}, n_points={self.n_points}")
+        out = [
+            f"<{type(self).__name__}>",
+            f"Quantity: {self.quantity}",
+            f"Observation: {self.name}, n_points={self.n_points}",
+        ]
         for model in self.mod_names:
             out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
         return str.join("\n", out)

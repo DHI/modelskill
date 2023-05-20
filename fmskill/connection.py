@@ -15,7 +15,7 @@ import mikeio
 from fmskill import ModelResult
 from fmskill.timeseries import TimeSeries
 from fmskill.model import PointModelResult
-from fmskill.types import DataInputType, GeometryType
+from fmskill.types import DataInputType, GeometryType, Quantity
 from .model import protocols, DfsuModelResult
 from .model._base import ModelResultBase
 from .observation import Observation, PointObservation, TrackObservation
@@ -56,7 +56,8 @@ ObsInputType = Union[
 
 
 def from_matched(
-    df: pd.DataFrame, *, obs_item: str, mod_items: Optional[Iterable[str]] = None
+    df: pd.DataFrame, *, obs_item: str, mod_items: Optional[Iterable[str]] = None,
+    quantity: Optional[Quantity] = None
 ) -> Comparer:
     """Create a Comparer from observation and model results that are already matched (aligned)
 
@@ -68,6 +69,8 @@ def from_matched(
         Name of observation item
     mod_items : Optional[Iterable[str]], optional
         Names of model items, if None all remaining columns are model items, by default None
+    quantity : Quantity, optional
+        Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
 
     Examples
     --------
@@ -91,10 +94,10 @@ def from_matched(
 
     if mod_items is None:
         # all remaining columns are model results
-        pmods = [PointModelResult(df[c], item=c) for c in df.columns if c != obs_item]
+        pmods = [PointModelResult(df[c], item=c, quantity=quantity) for c in df.columns if c != obs_item]
     else:
-        pmods = [PointModelResult(df[c], item=c) for c in mod_items]
-    pobs = PointObservation(obs, item=obs_item, name=obs_item)
+        pmods = [PointModelResult(df[c], item=c, quantity=quantity) for c in mod_items]
+    pobs = PointObservation(obs, item=obs_item, name=obs_item, quantity=quantity)
 
     return _single_obs_compare(pobs, pmods)
 

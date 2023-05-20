@@ -3,6 +3,7 @@ import pytest
 import pandas as pd
 import xarray as xr
 import fmskill.comparison
+from fmskill import Quantity
 
 
 def _get_df() -> pd.DataFrame:
@@ -85,7 +86,8 @@ def test_minimal_matched_data():
 
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_models == 2
-
+    assert cmp.quantity.name == "Undefined"
+    assert cmp.quantity.unit == "Undefined"
 
 def test_multiple_forecasts_matched_data():
 

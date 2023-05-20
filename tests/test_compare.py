@@ -5,6 +5,7 @@ import pytest
 import mikeio
 import fmskill as ms
 from fmskill import ModelResult
+import fmskill
 from fmskill.observation import PointObservation, TrackObservation
 
 
@@ -225,6 +226,19 @@ def test_matched_data_single_model():
 
     cmp = ms.from_matched(df, obs_item="sensor_a")
     assert cmp.n_points == 4
+
+
+def test_matched_data_quantity():
+
+    df = pd.DataFrame(
+        {"ts_1": [1.1, 2.0, 3.0, 4.0], "sensor_a": [0.9, 2.0, 3.0, 4.1]},
+        index=pd.date_range("2017-01-01", periods=4),
+    )
+    quantity = fmskill.Quantity(name="Water level", unit="m")
+    cmp = ms.from_matched(df, obs_item="sensor_a", quantity=quantity)
+
+    # Model and observation have the same quantity by definition
+    assert cmp.quantity == quantity
 
 
 def test_matched_data_multiple_models():
