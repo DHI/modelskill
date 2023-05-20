@@ -14,6 +14,7 @@ def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["Observation"].attrs["unit"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
+    data.attrs["fmskill_version"] = fmskill.__version__
     return data
 
 
@@ -37,6 +38,7 @@ def pc() -> fmskill.comparison.Comparer:
     data.attrs["name"] = "fake point obs"
     data["x"] = x
     data["y"] = y
+
     data = _set_attrs(data)
     return fmskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
@@ -145,3 +147,16 @@ def test_cc_query(cc):
     assert cc2.n_comparers == 1
     assert cc2.n_models == 2
     assert cc2.n_points == 2
+
+
+def test_save(cc: fmskill.comparison.ComparerCollection, tmp_path):
+
+    fn = tmp_path / "test_cc.msk"
+    assert cc[0].data.attrs["fmskill_version"] == fmskill.__version__
+    cc.save(fn)
+
+    cc2 = fmskill.comparison.ComparerCollection.load(fn)
+    assert cc2.n_comparers == 2
+
+    # this belongs to the comparer, but ComparerCollection is the commonly used class
+    assert cc[0].data.attrs["fmskill_version"] == fmskill.__version__
