@@ -2,10 +2,14 @@ from pathlib import Path
 import warnings
 from typing import Optional
 
+from dataclasses import dataclass
+
 import pandas as pd
 
 from fmskill import types, utils
 from fmskill.observation import Observation
+
+from ..types import Quantity
 
 
 class ModelResultBase:
@@ -13,34 +17,15 @@ class ModelResultBase:
         self,
         data: types.DataInputType,
         name: str,
-        item: Optional[str] = None,
-        itemInfo=None,
-        quantity: Optional[str] = None,
-        **kwargs,
+        quantity: Optional[Quantity] = None,
     ) -> None:
 
         self.data = data
-        self.item = item
-        if name is None:
-            raise ValueError("name must be specified!")
         self.name = name
-        self.quantity = quantity
-        self.itemInfo = utils.parse_itemInfo(itemInfo)
+        self.quantity = Quantity.undefined() if quantity is None else quantity
 
     def __repr__(self):
-        txt = [f"<{self.__class__.__name__}> '{self.name}'"]
-        txt.append(f"- Item: {self.item}")  # TODO: only if item is not None?
-        return "\n".join(txt)
-
-    @property
-    def item_name(self):
-        # backwards compatibility, delete?
-        return self.item
-
-    @staticmethod
-    def _default_name(data) -> str:
-        if isinstance(data, (str, Path)):
-            return Path(data).stem
+        return f"<{self.__class__.__name__}> '{self.name}'"
 
     @staticmethod
     def _any_obs_in_model_time(
@@ -90,31 +75,3 @@ class ModelResultBase:
         if observation.start_time > self.end_time:
             return False
         return True
-
-    def _validate_observation(self, observation: Observation):
-        ok = utils.validate_item_eum(self.itemInfo, observation)
-        if not ok:
-            raise ValueError("Could not extract observation")
-
-    # TODO: does not do anything except validation???
-    # def extract_observation(
-    #     self, observation: Union[PointObservation, TrackObservation], validate=True
-    # ) -> SingleObsComparer:
-    #     """Extract ModelResult at observation for comparison
-
-    #     Parameters
-    #     ----------
-    #     observation : <PointObservation> or <TrackObservation>
-    #         points and times at which modelresult should be extracted
-    #     validate: bool, optional
-    #         Validate if observation is inside domain and that eum type
-    #         and units match; Default: True
-
-    #     Returns
-    #     -------
-    #     <fmskill.SingleObsComparer>
-    #         A comparer object for further analysis or plotting
-    #     """
-
-    #     if validate:
-    #         self._validate_observation(observation)

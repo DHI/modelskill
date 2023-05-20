@@ -94,7 +94,7 @@ def _parse_track_items(items, x_item, y_item, item):
             item = 2
         elif len(items) > 3:
             raise ValueError("Input has more than 3 items, but item was not given!")
-        
+
     item, _ = get_item_name_and_idx(items, item)
     x_item, _ = get_item_name_and_idx(items, x_item)
     y_item, _ = get_item_name_and_idx(items, y_item)
@@ -153,31 +153,3 @@ def make_unique_index(df_index, offset_duplicates=0.001, warn=True):
     tmp = np.cumsum(values.astype(int)).astype("timedelta64[ns]")
     new_index = df_index + offset_in_ns * tmp
     return new_index
-
-
-def parse_itemInfo(itemInfo):
-    if itemInfo is None:
-        return mikeio.ItemInfo(mikeio.EUMType.Undefined)
-    if isinstance(itemInfo, mikeio.ItemInfo):
-        return itemInfo
-    return mikeio.ItemInfo(itemInfo)
-
-
-def validate_item_eum(mod_item: mikeio.ItemInfo, obs) -> bool:
-    """Check that observation and model item eum match"""
-    ok = True
-    if obs.itemInfo.type == mikeio.EUMType.Undefined:
-        warnings.warn(f"{obs.name}: Cannot validate as type is Undefined.")
-        return ok
-
-    if mod_item.type != obs.itemInfo.type:
-        ok = False
-        warnings.warn(
-            f"{obs.name}: Item type should match. Model item: {mod_item.type.display_name}, obs item: {obs.itemInfo.type.display_name}"
-        )
-    if mod_item.unit != obs.itemInfo.unit:
-        ok = False
-        warnings.warn(
-            f"{obs.name}: Unit should match. Model unit: {mod_item.unit.display_name}, obs unit: {obs.itemInfo.unit.display_name}"
-        )
-    return ok

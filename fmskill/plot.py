@@ -134,7 +134,7 @@ def scatter(
         user default units to override default units, eg 'metre', by default None
     kwargs
     """
-    if show_hist == None and show_density == None:
+    if show_hist is None and show_density is None:
         # Default: points density
         show_density = True
 
@@ -240,7 +240,7 @@ def scatter(
 
     if show_hist:
         # if histogram is wanted (explicit non-default flag) then density is off
-        if show_density == True:
+        if show_density is True:
             raise TypeError(
                 "if `show_hist=True` then `show_density` must be either `False` or `None`"
             )
@@ -251,12 +251,12 @@ def scatter(
                 "if `show_density=True` then bins must be either float or int"
             )
         # if point density is wanted, then 2D histogram is not shown
-        if show_hist == True:
+        if show_hist is True:
             raise TypeError(
                 "if `show_density=True` then `show_hist` must be either `False` or `None`"
             )
         # calculate density data
-        z = _scatter_density(x_sample, y_sample, binsize=binsize)
+        z = __scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
         # Sort data by colormaps
         x_sample, y_sample, z = x_sample[idx], y_sample[idx], z[idx]
@@ -337,7 +337,7 @@ def scatter(
 
         plt.title(title)
         # Add skill table
-        if skill_df != None:
+        if skill_df is not None:
             _plot_summary_table(skill_df, units, max_cbar=max_cbar)
         return ax
 
@@ -514,7 +514,52 @@ def taylor_diagram(
     fig.suptitle(title, size="x-large")
 
 
-def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
+def __hist2d(x, y, binsize):
+    """Calculates 2D histogram (gridded) of data.
+
+    Parameters
+    ----------
+    x: np.array
+        X values e.g model values, must be same length as y
+    y: np.array
+        Y values e.g observation values, must be same length as x
+    binsize: float, optional
+        2D histogram (bin) resolution, by default = 0.1
+
+    Returns
+    ----------
+    histodata: np.array
+        2D-histogram data
+    cxy: np.array
+        Center points of the histogram bins
+    exy: np.array
+        Edges of the histogram bins
+    """
+    # Make linear-grid for interpolation
+    minxy = min(min(x), min(y)) - binsize
+    maxxy = max(max(x), max(y)) + binsize
+    # Center points of the bins
+    cxy = np.arange(minxy, maxxy, binsize)
+    # Edges of the bins
+    exy = np.arange(minxy - binsize * 0.5, maxxy + binsize * 0.5, binsize)
+    if exy[-1] <= cxy[-1]:
+        # sometimes, given the bin size, the edges array ended before (left side) of the bins-center array
+        # in such case, and extra half-bin is added at the end
+        exy = np.arange(minxy - binsize * 0.5, maxxy + binsize, binsize)
+
+    # Calculate 2D histogram
+    histodata, _, _ = np.histogram2d(x, y, [exy, exy])
+
+    # Histogram values
+    hist = []
+    for j in range(len(cxy)):
+        for i in range(len(cxy)):
+            hist.append(histodata[i, j])
+
+    return hist, cxy
+
+
+def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     """Interpolates scatter data on a 2D histogram (gridded) based on data density.
 
     Parameters
@@ -524,7 +569,7 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     y: np.array
         Y values e.g observation values, must be same length as x
     binsize: float, optional
-        2D grid resolution, by default = 0.1
+        2D histogram (bin) resolution, by default = 0.1
     method: str, optional
         Scipy griddata interpolation method, by default 'linear'
 
@@ -534,22 +579,7 @@ def _scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
         Array with the colors based on histogram density
     """
 
-    # Make linear-grid for interpolation
-    minxy = min(min(x), min(y)) - binsize / 2
-    maxxy = max(max(x), max(y)) + binsize / 2
-    # Center points of the bins
-    cxy = np.arange(minxy, maxxy, binsize)
-    # Edges of the bins
-    exy = np.arange(minxy - binsize * 0.5, maxxy + binsize * 0.5, binsize)
-
-    # Calculate 2D histogram
-    histodata, exh, eyh = np.histogram2d(x, y, [exy, exy])
-
-    # Histogram values
-    hist = []
-    for j in range(len(cxy)):
-        for i in range(len(cxy)):
-            hist.append(histodata[i, j])
+    hist, cxy = __hist2d(x, y, binsize)
 
     # Grid-data
     xg, yg = np.meshgrid(cxy, cxy)
@@ -590,7 +620,7 @@ def _plot_summary_table(skill_df, units, max_cbar):
 
     text_ = "\n".join(lines)
 
-    if max_cbar == None:
+    if max_cbar is None:
         x = 0.93
     elif max_cbar < 1e3:
         x = 0.99

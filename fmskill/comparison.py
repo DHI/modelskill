@@ -11,9 +11,13 @@ Examples
 >>> comparer = con.extract()
 """
 from collections.abc import Mapping, Iterable, Sequence
+import os
+from pathlib import Path
+import tempfile
 from typing import Dict, List, Optional, Union
 import warnings
 from inspect import getmembers, isfunction
+import zipfile
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -23,6 +27,7 @@ from copy import deepcopy
 
 import mikeio
 import fmskill.metrics as mtr
+from . import __version__
 from .observation import Observation, PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
@@ -411,15 +416,18 @@ class Comparer:
             data["y"] = observation.y
 
         data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
+        # data.attrs["variable_name"] = observation.variable_name
+        data.attrs["variable_name"] = observation.quantity.name
         data["x"].attrs["kind"] = "position"
         data["y"].attrs["kind"] = "position"
         data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["unit"] = observation.quantity.unit
         data[self._obs_name].attrs["color"] = observation.color
         data[self._obs_name].attrs["weight"] = observation.weight
         for n in self.mod_names:
             data[n].attrs["kind"] = "model"
+
+        data.attrs["fmskill_version"] = __version__
 
         return data
 
@@ -556,7 +564,7 @@ class Comparer:
 
     @property
     def _unit_text(self) -> str:
-        return self.data[self._obs_name].attrs["unit"]
+        return f"{self.data.attrs['variable_name']} [{self.data[self._obs_name].attrs['unit']}]"
 
     @property
     def metrics(self):
@@ -596,6 +604,33 @@ class Comparer:
     def copy(self):
         return self.__copy__()
 
+    def save(self, fn: Union[str, Path]) -> None:
+        """Save to netcdf file
+
+        Parameters
+        ----------
+        fn : str or Path
+            filename
+        """
+        self.data.to_netcdf(fn)
+
+    @staticmethod
+    def load(fn: Union[str, Path]) -> "Comparer":
+        """Load from netcdf file
+
+        Parameters
+        ----------
+        fn : str or Path
+            filename
+
+        Returns
+        -------
+        Comparer
+        """
+        with xr.open_dataset(fn) as ds:
+            data = ds.copy()
+        return Comparer(matched_data=data)
+
     def _to_observation(self) -> Observation:
         """Convert to Observation"""
         if self.gtype == "point":
@@ -605,7 +640,7 @@ class Comparer:
                 name=self.name,
                 x=self.x,
                 y=self.y,
-                variable_name=self.variable_name,
+                # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
         elif self.gtype == "track":
@@ -616,7 +651,7 @@ class Comparer:
                 x_item=0,
                 y_item=1,
                 name=self.name,
-                variable_name=self.variable_name,
+                # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
         else:
@@ -2696,3 +2731,35 @@ class ComparerCollection(Mapping, Sequence):
             normalize_std=normalize_std,
             title=title,
         )
+
+    def save(self, fn: Union[str, Path]) -> None:
+        # save to file in netcdf format using xarray
+        # save each comparer to a netcdf and pack them into a zip file
+
+        files = []
+        for name, cmp in self.comparers.items():
+            cmp_fn = f"{name}.nc"
+            cmp.save(cmp_fn)
+            files.append(cmp_fn)
+
+        with zipfile.ZipFile(fn, "w") as zip:
+            for f in files:
+                zip.write(f)
+                os.remove(f)
+
+    @staticmethod
+    def load(fn: Union[str, Path]) -> "ComparerCollection":
+        # load each comparer stored as a netcdf in a zip file
+        folder = tempfile.TemporaryDirectory().name
+
+        with zipfile.ZipFile(fn, "r") as zip:
+            zip.extractall(path=folder)
+
+        comparers = []
+        for f in zip.namelist():
+            f = os.path.join(folder, f)
+            if f.endswith(".nc"):
+                cmp = Comparer.load(f)
+                os.remove(f)
+                comparers.append(cmp)
+        return ComparerCollection(comparers)
