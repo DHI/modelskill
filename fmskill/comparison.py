@@ -639,7 +639,7 @@ class Comparer:
         Comparer
         """
         with xr.open_dataset(fn) as ds:
-            data = ds.copy()
+            data = ds.load()
         return Comparer(matched_data=data)
 
     def _to_observation(self) -> Observation:
