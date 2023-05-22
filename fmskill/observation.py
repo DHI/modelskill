@@ -103,7 +103,8 @@ class PointObservation(Observation):
         z-coordinate of the observation point, by default None
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
-
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
 
     Examples
     --------
@@ -141,10 +142,19 @@ class PointObservation(Observation):
         self._filename = None
         self._item = None
 
+        # TODO move this to TimeSeries?
         if isinstance(data, pd.Series):
             df = data.to_frame()
             if name is None:
                 name = "Observation"
+        elif isinstance(data, mikeio.DataArray):
+            df = data.to_dataframe()
+            if quantity is None:
+                quantity = Quantity.from_mikeio_iteminfo(data.item)
+        elif isinstance(data, mikeio.Dataset):
+            df = data.to_dataframe()[[item]]
+            if quantity is None:
+                quantity = Quantity.from_mikeio_iteminfo(data[item].item)
         elif isinstance(data, pd.DataFrame):
             df = data
             default_name = "Observation"
@@ -184,7 +194,7 @@ class PointObservation(Observation):
                 raise NotImplementedError("Only dfs0 files supported")
         else:
             raise TypeError(
-                f"input must be str, pandas Series/DataFrame! Given input has type {type(data)}"
+                f"input must be str, mikeio.DataArray/Dataset or pandas Series/DataFrame! Given input has type {type(data)}"
             )
 
         if not df.index.is_unique:
