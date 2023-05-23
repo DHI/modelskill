@@ -54,7 +54,8 @@ Examples
 >>> hit_ratio(obs, mod, a=0.5)
 0.6666666666666666
 """
-from typing import Tuple
+import sys
+from typing import Set, Tuple
 import warnings
 import numpy as np
 
@@ -559,3 +560,12 @@ def _std_obs(obs: np.ndarray, model: np.ndarray) -> float:
 
 def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
     return model.std()
+
+
+DEFINED_METRICS: Set[str] = set(
+    [
+        func
+        for func in dir()
+        if callable(getattr(sys.modules[__name__], func)) and not func.startswith("_")
+    ]
+)

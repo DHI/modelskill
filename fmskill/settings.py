@@ -63,6 +63,7 @@ _global_settings: Dict[str, Any] = {}
 
 
 class OptionError(AttributeError, KeyError):
+    "Error in options handling, e.g. unknown option"
     pass
 
 

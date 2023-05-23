@@ -34,9 +34,20 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option, reset_option
 
+
+def _validate_metrics(metrics) -> None:
+    for m in metrics:
+        if isinstance(m, str):
+            if m not in mtr.DEFINED_METRICS:
+                raise ValueError(
+                    f"Metric '{m}' is not defined. Valid metrics are {mtr.DEFINED_METRICS}"
+                )
+
+
 register_option(
-    "metrics.list",
-    [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    key="metrics.list",
+    defval=[mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    validator=_validate_metrics,
     doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
 )
 
