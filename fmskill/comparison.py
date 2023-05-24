@@ -1092,7 +1092,7 @@ class Comparer:
         *,
         bins: Union[int, float, List[int], List[float]] = 20,
         quantiles: Union[int, List[float]] = None,
-        fit_to_quantiles: bool = False, 
+        fit_to_quantiles: bool = False,
         show_points: Union[bool, int, float] = None,
         show_hist: bool = None,
         show_density: bool = None,
@@ -1127,6 +1127,9 @@ class Comparer:
             number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
             if int, this is the number of points
             if sequence (list of floats), represents the desired quantiles (from 0 to 1)
+        fit_to_quantiles: bool, optional, by default False
+            by default the regression line is fitted to all data, if True, it is fitted to the quantiles
+            which can be useful to represent the extremes of the distribution
         show_points : (bool, int, float), optional
             Should the scatter points be displayed?
             None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
@@ -1218,7 +1221,7 @@ class Comparer:
             y=y,
             bins=bins,
             quantiles=quantiles,
-            fit_to_quantiles=fit_to_quantiles, 
+            fit_to_quantiles=fit_to_quantiles,
             show_points=show_points,
             show_hist=show_hist,
             show_density=show_density,
@@ -2030,6 +2033,7 @@ class ComparerCollection(Mapping, Sequence):
         *,
         bins: Union[int, float, List[int], List[float]] = 20,
         quantiles: Union[int, List[float]] = None,
+        fit_to_quantiles: bool = False,
         show_points: Union[bool, int, float] = None,
         show_hist: bool = None,
         show_density: bool = None,
@@ -2066,6 +2070,9 @@ class ComparerCollection(Mapping, Sequence):
             number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
             if int, this is the number of points
             if sequence (list of floats), represents the desired quantiles (from 0 to 1)
+        fit_to_quantiles: bool, optional, by default False
+            by default the regression line is fitted to all data, if True, it is fitted to the quantiles
+            which can be useful to represent the extremes of the distribution
         show_points : (bool, int, float), optional
             Should the scatter points be displayed?
             None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
@@ -2172,6 +2179,7 @@ class ComparerCollection(Mapping, Sequence):
             y=y,
             bins=bins,
             quantiles=quantiles,
+            fit_to_quantiles=fit_to_quantiles,
             show_points=show_points,
             show_hist=show_hist,
             show_density=show_density,
