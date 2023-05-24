@@ -317,22 +317,16 @@ def scatter(
             **settings.get_option("plot.scatter.quantiles.kwargs"),
         )
         
-        if fit_to_quantiles: 
-            plt.plot(
-                xq,
-                intercept + slope * xq,
-                **settings.get_option("plot.scatter.reg_line.kwargs"),
-                label=reglabel,
-                zorder=2,
-            )
-        else:
-            plt.plot(
-                x_trend,
-                intercept + slope * x_trend,
-                **settings.get_option("plot.scatter.reg_line.kwargs"),
-                label=reglabel,
-                zorder=2,
-            )
+        
+        x_trend = xq if fit_to_quantiles else x_trend 
+        plt.plot(
+            x_trend,
+            intercept + slope * x_trend,
+            **settings.get_option("plot.scatter.reg_line.kwargs"),
+            label=reglabel,
+            zorder=2,
+        )
+
     
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
@@ -366,23 +360,14 @@ def scatter(
                 x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
             ),
         ]
-        
-        if fit_to_quantiles:
-            regression_line = go.Scatter(
-                x=xq,
-                y=intercept + slope * xq,
-                name=reglabel,
-                mode="lines",
-                line=dict(color="red"),
-            )
-        else:
-            regression_line = go.Scatter(
-                x=x,
-                y=intercept + slope * x,
-                name=reglabel,
-                mode="lines",
-                line=dict(color="red"),
-            )
+
+        regression_line = go.Scatter(
+            x=x_trend,
+            y=intercept + slope * x_trend,
+            name=reglabel,
+            mode="lines",
+            line=dict(color="red"),
+        )
         data.append(regression_line)
 
         if show_hist:
