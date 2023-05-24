@@ -63,6 +63,7 @@ def scatter(
     *,
     bins: Union[int, float, List[int], List[float]] = 20,
     quantiles: Union[int, List[float]] = None,
+    fit_to_quantiles: bool = False, 
     show_points: Union[bool, int, float] = None,
     show_hist: bool = None,
     show_density: bool = None,
@@ -264,7 +265,12 @@ def scatter(
         z = z * len(x) / len(x_sample)
 
     # linear fit
-    slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+    if fit_to_quantiles:
+        slope, intercept = _linear_regression(obs=xq, model=yq, reg_method=reg_method)
+    else:
+        slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+
+
 
     if intercept < 0:
         sign = ""
@@ -310,13 +316,24 @@ def scatter(
             markersize=options.plot.scatter.quantiles.markersize,
             **settings.get_option("plot.scatter.quantiles.kwargs"),
         )
-        plt.plot(
-            x_trend,
-            intercept + slope * x_trend,
-            **settings.get_option("plot.scatter.reg_line.kwargs"),
-            label=reglabel,
-            zorder=2,
-        )
+        
+        if fit_to_quantiles: 
+            plt.plot(
+                xq,
+                intercept + slope * xq,
+                **settings.get_option("plot.scatter.reg_line.kwargs"),
+                label=reglabel,
+                zorder=2,
+            )
+        else:
+            plt.plot(
+                x_trend,
+                intercept + slope * x_trend,
+                **settings.get_option("plot.scatter.reg_line.kwargs"),
+                label=reglabel,
+                zorder=2,
+            )
+    
         if show_hist:
             plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
 
@@ -346,16 +363,27 @@ def scatter(
 
         data = [
             go.Scatter(
+                x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
+            ),
+        ]
+        
+        if fit_to_quantiles:
+            regression_line = go.Scatter(
+                x=xq,
+                y=intercept + slope * xq,
+                name=reglabel,
+                mode="lines",
+                line=dict(color="red"),
+            )
+        else:
+            regression_line = go.Scatter(
                 x=x,
                 y=intercept + slope * x,
                 name=reglabel,
                 mode="lines",
                 line=dict(color="red"),
-            ),
-            go.Scatter(
-                x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
-            ),
-        ]
+            )
+        data.append(regression_line)
 
         if show_hist:
             data.append(
