@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 import mikeio
 
-from .observation import Observation, PointObservation, TrackObservation
+from .observation import Observation, PointObservation, TrackObservation, unit_display_name
 from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
 import fmskill.settings as settings
@@ -617,7 +617,7 @@ def _plot_summary_table(skill_df, units, max_cbar):
             continue
         if col in stats_with_units:
             # if statistic has dimensions, then add units
-            item_unit = units
+            item_unit = unit_display_name(units)
         else:
             # else, add empty space (for fomatting)
             item_unit = " "
