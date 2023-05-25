@@ -11,9 +11,13 @@ Examples
 >>> comparer = con.extract()
 """
 from collections.abc import Mapping, Iterable, Sequence
+import os
+from pathlib import Path
+import tempfile
 from typing import Dict, List, Optional, Union
 import warnings
 from inspect import getmembers, isfunction
+import zipfile
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -23,15 +27,27 @@ from copy import deepcopy
 
 import mikeio
 import fmskill.metrics as mtr
+from . import __version__
 from .observation import Observation, PointObservation, TrackObservation
 from .plot import scatter, taylor_diagram, TaylorPoint
 from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option, reset_option
 
+
+def _validate_metrics(metrics) -> None:
+    for m in metrics:
+        if isinstance(m, str):
+            if m not in mtr.DEFINED_METRICS:
+                raise ValueError(
+                    f"Metric '{m}' is not defined. Valid metrics are {mtr.DEFINED_METRICS}"
+                )
+
+
 register_option(
-    "metrics.list",
-    [mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    key="metrics.list",
+    defval=[mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    validator=_validate_metrics,
     doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
 )
 
@@ -411,15 +427,18 @@ class Comparer:
             data["y"] = observation.y
 
         data.attrs["name"] = observation.name
-        data.attrs["variable_name"] = observation.variable_name
+        # data.attrs["variable_name"] = observation.variable_name
+        data.attrs["variable_name"] = observation.quantity.name
         data["x"].attrs["kind"] = "position"
         data["y"].attrs["kind"] = "position"
         data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["unit"] = observation._unit_text()
+        data[self._obs_name].attrs["unit"] = observation.quantity.unit
         data[self._obs_name].attrs["color"] = observation.color
         data[self._obs_name].attrs["weight"] = observation.weight
         for n in self.mod_names:
             data[n].attrs["kind"] = "model"
+
+        data.attrs["fmskill_version"] = __version__
 
         return data
 
@@ -556,7 +575,7 @@ class Comparer:
 
     @property
     def _unit_text(self) -> str:
-        return self.data[self._obs_name].attrs["unit"]
+        return f"{self.data.attrs['variable_name']} [{self.data[self._obs_name].attrs['unit']}]"
 
     @property
     def metrics(self):
@@ -596,6 +615,33 @@ class Comparer:
     def copy(self):
         return self.__copy__()
 
+    def save(self, fn: Union[str, Path]) -> None:
+        """Save to netcdf file
+
+        Parameters
+        ----------
+        fn : str or Path
+            filename
+        """
+        self.data.to_netcdf(fn)
+
+    @staticmethod
+    def load(fn: Union[str, Path]) -> "Comparer":
+        """Load from netcdf file
+
+        Parameters
+        ----------
+        fn : str or Path
+            filename
+
+        Returns
+        -------
+        Comparer
+        """
+        with xr.open_dataset(fn) as ds:
+            data = ds.load()
+        return Comparer(matched_data=data)
+
     def _to_observation(self) -> Observation:
         """Convert to Observation"""
         if self.gtype == "point":
@@ -605,7 +651,7 @@ class Comparer:
                 name=self.name,
                 x=self.x,
                 y=self.y,
-                variable_name=self.variable_name,
+                # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
         elif self.gtype == "track":
@@ -616,7 +662,7 @@ class Comparer:
                 x_item=0,
                 y_item=1,
                 name=self.name,
-                variable_name=self.variable_name,
+                # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
         else:
@@ -1046,6 +1092,7 @@ class Comparer:
         *,
         bins: Union[int, float, List[int], List[float]] = 20,
         quantiles: Union[int, List[float]] = None,
+        fit_to_quantiles: bool = False,
         show_points: Union[bool, int, float] = None,
         show_hist: bool = None,
         show_density: bool = None,
@@ -1080,6 +1127,9 @@ class Comparer:
             number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
             if int, this is the number of points
             if sequence (list of floats), represents the desired quantiles (from 0 to 1)
+        fit_to_quantiles: bool, optional, by default False
+            by default the regression line is fitted to all data, if True, it is fitted to the quantiles
+            which can be useful to represent the extremes of the distribution
         show_points : (bool, int, float), optional
             Should the scatter points be displayed?
             None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
@@ -1171,6 +1221,7 @@ class Comparer:
             y=y,
             bins=bins,
             quantiles=quantiles,
+            fit_to_quantiles=fit_to_quantiles,
             show_points=show_points,
             show_hist=show_hist,
             show_density=show_density,
@@ -1982,6 +2033,7 @@ class ComparerCollection(Mapping, Sequence):
         *,
         bins: Union[int, float, List[int], List[float]] = 20,
         quantiles: Union[int, List[float]] = None,
+        fit_to_quantiles: bool = False,
         show_points: Union[bool, int, float] = None,
         show_hist: bool = None,
         show_density: bool = None,
@@ -2018,6 +2070,9 @@ class ComparerCollection(Mapping, Sequence):
             number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
             if int, this is the number of points
             if sequence (list of floats), represents the desired quantiles (from 0 to 1)
+        fit_to_quantiles: bool, optional, by default False
+            by default the regression line is fitted to all data, if True, it is fitted to the quantiles
+            which can be useful to represent the extremes of the distribution
         show_points : (bool, int, float), optional
             Should the scatter points be displayed?
             None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
@@ -2124,6 +2179,7 @@ class ComparerCollection(Mapping, Sequence):
             y=y,
             bins=bins,
             quantiles=quantiles,
+            fit_to_quantiles=fit_to_quantiles,
             show_points=show_points,
             show_hist=show_hist,
             show_density=show_density,
@@ -2696,3 +2752,35 @@ class ComparerCollection(Mapping, Sequence):
             normalize_std=normalize_std,
             title=title,
         )
+
+    def save(self, fn: Union[str, Path]) -> None:
+        # save to file in netcdf format using xarray
+        # save each comparer to a netcdf and pack them into a zip file
+
+        files = []
+        for name, cmp in self.comparers.items():
+            cmp_fn = f"{name}.nc"
+            cmp.save(cmp_fn)
+            files.append(cmp_fn)
+
+        with zipfile.ZipFile(fn, "w") as zip:
+            for f in files:
+                zip.write(f)
+                os.remove(f)
+
+    @staticmethod
+    def load(fn: Union[str, Path]) -> "ComparerCollection":
+        # load each comparer stored as a netcdf in a zip file
+        folder = tempfile.TemporaryDirectory().name
+
+        with zipfile.ZipFile(fn, "r") as zip:
+            zip.extractall(path=folder)
+
+        comparers = []
+        for f in zip.namelist():
+            f = os.path.join(folder, f)
+            if f.endswith(".nc"):
+                cmp = Comparer.load(f)
+                os.remove(f)
+                comparers.append(cmp)
+        return ComparerCollection(comparers)
