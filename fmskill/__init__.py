@@ -26,14 +26,13 @@ if "64" not in architecture()[0]:
 from .types import Quantity
 from .model.factory import ModelResult
 from .observation import PointObservation, TrackObservation
-from .connection import compare, Connector
+from .connection import compare, Connector, from_matched
 from .settings import options, get_option, set_option, reset_option, load_style
 
 
 def from_config(
     configuration: Union[dict, str], *, validate_eum=True, relative_path=True
 ):
-
     return Connector.from_config(
         configuration, validate_eum=validate_eum, relative_path=relative_path
     )

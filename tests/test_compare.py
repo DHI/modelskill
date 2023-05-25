@@ -5,6 +5,7 @@ import pytest
 import mikeio
 import fmskill as ms
 from fmskill import ModelResult
+import fmskill
 from fmskill.observation import PointObservation, TrackObservation
 
 
@@ -79,7 +80,6 @@ def test_compare_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
 
 
 def test_compare_dataarray(o1, o3):
-
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]  # Skip warm-up period
 
@@ -126,7 +126,6 @@ def test_extract_gaps1(o1, mr3):
 
 
 def test_extract_gaps2(o2_gaps, mr12_gaps):
-
     # mr2 has no data between 2017-10-28 00:00 and 2017-10-29 00:00
     # we therefore expect the the 24 observations in this interval to be removed
     mr1, mr2 = mr12_gaps
@@ -195,7 +194,6 @@ def test_compare_gaps_types(o2_gaps, mr12_gaps):
 
 
 def test_small_multi_model_shifted_time_compare():
-
     obs = pd.DataFrame(
         {"HKNA": [1.1, 2.0, 3.0, 4.0]}, index=pd.date_range("2017-01-01", periods=4)
     )
@@ -218,3 +216,59 @@ def test_small_multi_model_shifted_time_compare():
 
     mcmp = ms.compare(obs=obs, mod=[mod, mod2])
     assert mcmp.n_points == 2
+
+
+def test_matched_data_single_model():
+    df = pd.DataFrame(
+        {"ts_1": [1.1, 2.0, 3.0, 4.0], "sensor_a": [0.9, 2.0, 3.0, 4.1]},
+        index=pd.date_range("2017-01-01", periods=4),
+    )
+
+    cmp = ms.from_matched(df, obs_item="sensor_a")
+    assert cmp.n_points == 4
+
+
+def test_matched_data_quantity():
+
+    df = pd.DataFrame(
+        {"ts_1": [1.1, 2.0, 3.0, 4.0], "sensor_a": [0.9, 2.0, 3.0, 4.1]},
+        index=pd.date_range("2017-01-01", periods=4),
+    )
+    quantity = fmskill.Quantity(name="Water level", unit="m")
+    cmp = ms.from_matched(df, obs_item="sensor_a", quantity=quantity)
+
+    # Model and observation have the same quantity by definition
+    assert cmp.quantity == quantity
+
+
+def test_matched_data_multiple_models():
+    df = pd.DataFrame(
+        {
+            "cal_42": [1.1, 2.0, 3.0, 4.0],
+            "cal_43": [0.9, 2.0, 3.0, 4.01],
+            "sensor_a": [0.9, 2.0, 3.0, 4.1],
+        },
+        index=pd.date_range("2017-01-01", periods=4),
+    )
+
+    # TODO not sure about the _item suffix
+    cmp = ms.from_matched(df, obs_item="sensor_a")
+    assert cmp.n_points == 4
+    assert cmp.n_models == 2
+
+
+def test_matched_data_multiple_models_additional_columns():
+    df = pd.DataFrame(
+        {
+            "cal_42": [1.1, 2.0, 3.0, 4.0],
+            "cal_43": [0.9, 2.0, 3.0, 4.01],
+            "sensor_a": [0.9, 2.0, 3.0, 4.1],
+            "additional": [0.9, 2.0, 3.0, 4.1],
+        },
+        index=pd.date_range("2017-01-01", periods=4),
+    )
+
+    # TODO not sure about the _item suffix
+    cmp = ms.from_matched(df, obs_item="sensor_a", mod_items=["cal_42", "cal_43"])
+    assert cmp.n_points == 4
+    assert cmp.n_models == 2

@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 import yaml
-from typing import List, Literal, Optional, Union, Mapping, Sequence, get_args
+from typing import Iterable, List, Literal, Optional, Union, Mapping, Sequence, get_args
 import warnings
 import numpy as np
 import pandas as pd
@@ -14,7 +14,8 @@ import mikeio
 
 from fmskill import ModelResult
 from fmskill.timeseries import TimeSeries
-from fmskill.types import DataInputType, GeometryType
+from fmskill.model import PointModelResult
+from fmskill.types import DataInputType, GeometryType, Quantity
 from .model import protocols, DfsuModelResult
 from .model._base import ModelResultBase
 from .observation import Observation, PointObservation, TrackObservation
@@ -52,6 +53,62 @@ ObsInputType = Union[
     # protocols.Observation,
     Observation,
 ]
+
+
+def from_matched(
+    df: pd.DataFrame,
+    *,
+    obs_item: str,
+    mod_items: Optional[Iterable[str]] = None,
+    quantity: Optional[Quantity] = None,
+) -> Comparer:
+    """Create a Comparer from observation and model results that are already matched (aligned)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with columns [obs_item, mod_item]
+    obs_item : str
+        Name of observation item
+    mod_items : Optional[Iterable[str]], optional
+        Names of model items, if None all remaining columns are model items, by default None
+    quantity : Quantity, optional
+        Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import fmskill as ms
+    >>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1]}, index=pd.date_range('2010-01-01', periods=3))
+    >>> cmp = ms.from_matched(df, obs_item='stn_a') # remaining columns are model results
+    >>> cmp
+    <Comparer>
+    Quantity: Undefined [Undefined]
+    Observation: stn_a, n_points=3
+     Model: local, rmse=0.100
+    >>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1], 'global': [1.2,2.2,3.2], 'nonsense':[1,2,3]}, index=pd.date_range('2010-01-01', periods=3))
+    >>> cmp = ms.from_matched(df, obs_item='stn_a', mod_items=['local', 'global'])
+    >>> cmp
+    <Comparer>
+    Quantity: Undefined [Undefined]
+    Observation: stn_a, n_points=3
+        Model: local, rmse=0.100
+        Model: global, rmse=0.200
+    """
+    obs = df[obs_item]
+
+    if mod_items is None:
+        # all remaining columns are model results
+        pmods = [
+            PointModelResult(df[c], item=c, quantity=quantity)
+            for c in df.columns
+            if c != obs_item
+        ]
+    else:
+        pmods = [PointModelResult(df[c], item=c, quantity=quantity) for c in mod_items]
+    pobs = PointObservation(obs, item=obs_item, name=obs_item, quantity=quantity)
+
+    return _single_obs_compare(pobs, pmods)
 
 
 def compare(
@@ -271,7 +328,6 @@ class _SingleObsConnector(_BaseConnector):
             self.obs.weight = weight
 
     def _parse_model(self, mod) -> List[protocols.ModelResult]:
-
         if is_iterable_not_str(mod):
             mr = []
             for m in mod:
