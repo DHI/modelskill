@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import xarray as xr
-from fmskill import (
+from modelskill import (
     ModelResult,
     PointObservation,
     TrackObservation,

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import pandas as pd
 import xarray as xr
-import fmskill.comparison
+import modelskill.comparison
 
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
@@ -14,12 +14,12 @@ def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["Observation"].attrs["unit"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
-    data.attrs["fmskill_version"] = fmskill.__version__
+    data.attrs["modelskill_version"] = modelskill.__version__
     return data
 
 
 @pytest.fixture
-def pc() -> fmskill.comparison.Comparer:
+def pc() -> modelskill.comparison.Comparer:
     """A comparer with fake point data and 2 models"""
     x, y = 10.0, 55.0
     df = pd.DataFrame(
@@ -40,11 +40,11 @@ def pc() -> fmskill.comparison.Comparer:
     data["y"] = y
 
     data = _set_attrs(data)
-    return fmskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
+    return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
 @pytest.fixture
-def tc() -> fmskill.comparison.Comparer:
+def tc() -> modelskill.comparison.Comparer:
     """A comparer with fake track data and 3 models"""
     df = pd.DataFrame(
         {
@@ -69,14 +69,14 @@ def tc() -> fmskill.comparison.Comparer:
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
 
-    return fmskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
+    return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
 @pytest.fixture
-def cc(pc, tc) -> fmskill.comparison.ComparerCollection:
+def cc(pc, tc) -> modelskill.comparison.ComparerCollection:
     """A comparer collection with two comparers, with partial overlap in time
     one comparer with 2 models, one comparer with 3 models"""
-    return fmskill.comparison.ComparerCollection([pc, tc])
+    return modelskill.comparison.ComparerCollection([pc, tc])
 
 
 def test_cc_properties(cc):
@@ -149,14 +149,14 @@ def test_cc_query(cc):
     assert cc2.n_points == 2
 
 
-def test_save(cc: fmskill.comparison.ComparerCollection, tmp_path):
+def test_save(cc: modelskill.comparison.ComparerCollection, tmp_path):
 
     fn = tmp_path / "test_cc.msk"
-    assert cc[0].data.attrs["fmskill_version"] == fmskill.__version__
+    assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__
     cc.save(fn)
 
-    cc2 = fmskill.comparison.ComparerCollection.load(fn)
+    cc2 = modelskill.comparison.ComparerCollection.load(fn)
     assert cc2.n_comparers == 2
 
     # this belongs to the comparer, but ComparerCollection is the commonly used class
-    assert cc[0].data.attrs["fmskill_version"] == fmskill.__version__
+    assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__

@@ -1,5 +1,5 @@
 import pytest
-from fmskill import Quantity
+from modelskill import Quantity
 import mikeio
 
 

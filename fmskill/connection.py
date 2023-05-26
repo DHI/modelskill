@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 
 import mikeio
 
-from fmskill import ModelResult
-from fmskill.timeseries import TimeSeries
-from fmskill.model import PointModelResult
-from fmskill.types import DataInputType, GeometryType, Quantity
+from modelskill import ModelResult
+from modelskill.timeseries import TimeSeries
+from modelskill.model import PointModelResult
+from modelskill.types import DataInputType, GeometryType, Quantity
 from .model import protocols, DfsuModelResult
 from .model._base import ModelResultBase
 from .observation import Observation, PointObservation, TrackObservation
@@ -78,7 +78,7 @@ def from_matched(
     Examples
     --------
     >>> import pandas as pd
-    >>> import fmskill as ms
+    >>> import modelskill as ms
     >>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1]}, index=pd.date_range('2010-01-01', periods=3))
     >>> cmp = ms.from_matched(df, obs_item='stn_a') # remaining columns are model results
     >>> cmp
@@ -191,7 +191,7 @@ def _parse_single_obs(
     if isinstance(obs, Observation):
         if item is not None:
             raise ValueError(
-                "obs_item argument not allowed if obs is an fmskill.Observation type"
+                "obs_item argument not allowed if obs is an modelskill.Observation type"
             )
         return obs
     else:
@@ -221,7 +221,7 @@ def _parse_single_model(
     if isinstance(mod, protocols.ModelResult):
         if item is not None:
             raise ValueError(
-                "mod_item argument not allowed if mod is an fmskill.ModelResult"
+                "mod_item argument not allowed if mod is an modelskill.ModelResult"
             )
         return mod
 
@@ -528,7 +528,7 @@ class TrackConnector(_SingleObsConnector):
 class Connector(_BaseConnector, Mapping, Sequence):
     """The Connector is used for matching Observations and ModelResults
 
-    It is one of the most important classes in fmskill. The connections are
+    It is one of the most important classes in modelskill. The connections are
     added either at construction of the Connector or by using the add()
     method.
 
@@ -819,7 +819,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
         Notes
         -----
-        1. Manually create your Connector in fmskill as usual
+        1. Manually create your Connector in modelskill as usual
         2. When you are satisfied, save config: connector.to_config('conf.yml')
         3. Later: run your reporting from the commandline e.g. directly after model execution
         """

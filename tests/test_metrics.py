@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-import fmskill.metrics as mtr
+import modelskill.metrics as mtr
 
 
 def test_nse_optimal():

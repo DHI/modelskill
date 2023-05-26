@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "FMskill"
+project = "ModelSkill"
 copyright = "2021, Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger"
 author = "Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger"
 

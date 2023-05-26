@@ -1,6 +1,6 @@
 import click
-import fmskill
-from fmskill.report import Reporter
+import modelskill
+from modelskill.report import Reporter
 
 
 @click.command()
@@ -14,10 +14,10 @@ from fmskill.report import Reporter
 )
 def report(configuration: str, output_folder=None, output_format="html") -> None:
     """
-    fmskill: Automatic model skill assessment
+    modelskill: Automatic model skill assessment
     """
 
-    con = fmskill.from_config(configuration)
+    con = modelskill.from_config(configuration)
     reporter = Reporter(con, output_folder)
 
     if output_format == "md":

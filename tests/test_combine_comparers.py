@@ -1,8 +1,8 @@
 import pytest
 
-from fmskill import ModelResult
-from fmskill import PointObservation, TrackObservation
-from fmskill import Connector
+from modelskill import ModelResult
+from modelskill import PointObservation, TrackObservation
+from modelskill import Connector
 
 
 @pytest.fixture

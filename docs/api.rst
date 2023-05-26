@@ -6,62 +6,62 @@ API Documentation
 
 Model
 -----
-.. autoclass:: fmskill.model.ModelResult
+.. autoclass:: modelskill.model.ModelResult
 	:members:
 
-.. autoclass:: fmskill.model.PointModelResult
+.. autoclass:: modelskill.model.PointModelResult
 	:members:
 
-.. autoclass:: fmskill.model.TrackModelResult
+.. autoclass:: modelskill.model.TrackModelResult
 	:members:
 
-.. autoclass:: fmskill.model.DfsuModelResult
+.. autoclass:: modelskill.model.DfsuModelResult
 	:members:
 
-.. autoclass:: fmskill.model.GridModelResult
+.. autoclass:: modelskill.model.GridModelResult
 	:members:
 
 Observation
 -----------
-.. autoclass:: fmskill.observation.PointObservation
+.. autoclass:: modelskill.observation.PointObservation
 	:members:
 	:inherited-members:
 
-.. autoclass:: fmskill.observation.TrackObservation
+.. autoclass:: modelskill.observation.TrackObservation
 	:members:
 	:inherited-members:
 
 
 Connector
 ---------
-.. automodule:: fmskill.connection
+.. automodule:: modelskill.connection
 	:members: compare
 
-.. autoclass:: fmskill.connection.Connector
+.. autoclass:: modelskill.connection.Connector
 	:members:
 	:inherited-members:
 	:exclude-members: keys, values, get, items, count, index
 
-.. autoclass:: fmskill.connection.PointConnector
+.. autoclass:: modelskill.connection.PointConnector
 	:members:
 	:inherited-members:
 
-.. autoclass:: fmskill.connection.TrackConnector
+.. autoclass:: modelskill.connection.TrackConnector
 	:members:
 	:inherited-members:
 
 
 Compare
 -------
-.. autoclass:: fmskill.comparison.PointComparer
+.. autoclass:: modelskill.comparison.PointComparer
 	:members:
 	:inherited-members:
 
-.. autoclass:: fmskill.comparison.TrackComparer
+.. autoclass:: modelskill.comparison.TrackComparer
 	:members:
 	:inherited-members:
 
-.. autoclass:: fmskill.comparison.ComparerCollection
+.. autoclass:: modelskill.comparison.ComparerCollection
 	:members:
 	:inherited-members:
 	:exclude-members: keys, values, get, items, count, index
@@ -69,14 +69,14 @@ Compare
 
 Skill
 -------------
-.. autoclass:: fmskill.skill.AggregatedSkill
+.. autoclass:: modelskill.skill.AggregatedSkill
 	:members:
 	:inherited-members:
 
 
 Spatial Skill
 -------------
-.. autoclass:: fmskill.spatial.SpatialSkill
+.. autoclass:: modelskill.spatial.SpatialSkill
 	:members:
 
 
@@ -85,31 +85,31 @@ Metrics
 .. autosummary:: 
 	:nosignatures:
 	
-	fmskill.metrics.bias	
-	fmskill.metrics.max_error
-	fmskill.metrics.root_mean_squared_error
-	fmskill.metrics.rmse
-	fmskill.metrics.urmse
-	fmskill.metrics.mean_absolute_error
-	fmskill.metrics.mae
-	fmskill.metrics.mean_absolute_percentage_error
-	fmskill.metrics.mape
-	fmskill.metrics.nash_sutcliffe_efficiency
-	fmskill.metrics.nse
-	fmskill.metrics.kling_gupta_efficiency
-	fmskill.metrics.kge
-	fmskill.metrics.model_efficiency_factor
-	fmskill.metrics.mef
-	fmskill.metrics.scatter_index
-	fmskill.metrics.si
-	fmskill.metrics.corrcoef
-	fmskill.metrics.cc
-	fmskill.metrics.spearmanr
-	fmskill.metrics.rho
-	fmskill.metrics.r2
-	fmskill.metrics.lin_slope
-	fmskill.metrics.willmott
-	fmskill.metrics.hit_ratio
+	modelskill.metrics.bias	
+	modelskill.metrics.max_error
+	modelskill.metrics.root_mean_squared_error
+	modelskill.metrics.rmse
+	modelskill.metrics.urmse
+	modelskill.metrics.mean_absolute_error
+	modelskill.metrics.mae
+	modelskill.metrics.mean_absolute_percentage_error
+	modelskill.metrics.mape
+	modelskill.metrics.nash_sutcliffe_efficiency
+	modelskill.metrics.nse
+	modelskill.metrics.kling_gupta_efficiency
+	modelskill.metrics.kge
+	modelskill.metrics.model_efficiency_factor
+	modelskill.metrics.mef
+	modelskill.metrics.scatter_index
+	modelskill.metrics.si
+	modelskill.metrics.corrcoef
+	modelskill.metrics.cc
+	modelskill.metrics.spearmanr
+	modelskill.metrics.rho
+	modelskill.metrics.r2
+	modelskill.metrics.lin_slope
+	modelskill.metrics.willmott
+	modelskill.metrics.hit_ratio
 	
-.. automodule:: fmskill.metrics
+.. automodule:: modelskill.metrics
 	:members:

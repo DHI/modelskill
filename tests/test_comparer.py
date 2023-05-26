@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 import pandas as pd
 import xarray as xr
-import fmskill.comparison
-from fmskill import Quantity
+import modelskill.comparison
+from modelskill import Quantity
 
 
 def _get_df() -> pd.DataFrame:
@@ -34,7 +34,7 @@ def _set_attrs(data: xr.Dataset) -> xr.Dataset:
 
 
 @pytest.fixture
-def pc() -> fmskill.comparison.Comparer:
+def pc() -> modelskill.comparison.Comparer:
     """A comparer with fake point data"""
     x, y = 10.0, 55.0
     df = _get_df().drop(columns=["x", "y"])
@@ -46,11 +46,11 @@ def pc() -> fmskill.comparison.Comparer:
     data["x"] = x
     data["y"] = y
     data = _set_attrs(data)
-    return fmskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
+    return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
 @pytest.fixture
-def tc() -> fmskill.comparison.Comparer:
+def tc() -> modelskill.comparison.Comparer:
     """A comparer with fake track data"""
     df = _get_df()
     raw_data = {"m1": df[["x", "y", "m1"]], "m2": df[["x", "y", "m2"]]}
@@ -60,7 +60,7 @@ def tc() -> fmskill.comparison.Comparer:
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
 
-    return fmskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
+    return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
 def test_minimal_matched_data():
@@ -79,7 +79,7 @@ def test_minimal_matched_data():
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
-    cmp = fmskill.comparison.Comparer.from_compared_data(
+    cmp = modelskill.comparison.Comparer.from_compared_data(
         data=data
     )  # no additional raw_mod_data
     assert len(cmp.raw_mod_data["m1"]) == 6
@@ -88,6 +88,7 @@ def test_minimal_matched_data():
     assert cmp.n_models == 2
     assert cmp.quantity.name == "Undefined"
     assert cmp.quantity.unit == "Undefined"
+
 
 def test_multiple_forecasts_matched_data():
 
@@ -106,7 +107,7 @@ def test_multiple_forecasts_matched_data():
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data.attrs["name"] = "a fcst"
-    cmp = fmskill.comparison.Comparer.from_compared_data(
+    cmp = modelskill.comparison.Comparer.from_compared_data(
         data=data
     )  # no additional raw_mod_data
     assert len(cmp.raw_mod_data["m1"]) == 5
@@ -139,7 +140,7 @@ def test_matched_aux_variables():
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
-    cmp = fmskill.comparison.Comparer.from_compared_data(data=data)
+    cmp = modelskill.comparison.Comparer.from_compared_data(data=data)
     assert "wind" not in cmp.mod_names
     assert cmp.data["wind"].attrs["kind"] == "auxiliary"
 

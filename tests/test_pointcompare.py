@@ -3,10 +3,10 @@ import pandas as pd
 import pytest
 import numpy as np
 
-import fmskill
-from fmskill import ModelResult, PointObservation, Connector, Quantity
-from fmskill.metrics import root_mean_squared_error, mean_absolute_error
-from fmskill.comparison import Comparer, PointComparer, ComparerCollection
+import modelskill
+from modelskill import ModelResult, PointObservation, Connector, Quantity
+from modelskill.metrics import root_mean_squared_error, mean_absolute_error
+from modelskill.comparison import Comparer, PointComparer, ComparerCollection
 
 
 @pytest.fixture
@@ -265,7 +265,7 @@ def test_comparison_from_dict():
         ),
     )
 
-    con = fmskill.from_config(configuration, validate_eum=False)
+    con = modelskill.from_config(configuration, validate_eum=False)
     c = con.extract()
     assert len(c) == 2
     assert c.n_comparers == 2
@@ -274,7 +274,7 @@ def test_comparison_from_dict():
 
 def test_comparison_from_yml():
 
-    con = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    con = modelskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     c = con.extract()
 
     assert len(c) == 2

@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from fmskill import types, utils
-from fmskill.observation import Observation
+from modelskill import types, utils
+from modelskill.observation import Observation
 
 from ..types import Quantity
 

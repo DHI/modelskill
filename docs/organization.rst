@@ -8,7 +8,7 @@ xxx
 Core concepts
 *************
 
-FMskill is an object-oriented package built around a few basic concepts:
+ModelSkill is an object-oriented package built around a few basic concepts:
 
 * ModelResult: defined by a MIKE FM output (.dfsu or .dfs0 file), observations can be added to a ModelResult 
 * Observation: e.g. point or track observation
