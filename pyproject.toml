@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name="modelskill"
-version="0.9.dev0"
+version="1.0.a0"
 dependencies = [
     "numpy",
     "pandas",
@@ -12,7 +12,7 @@ dependencies = [
     "matplotlib",
     "xarray",
     "markdown",
-    "jinja2", # TODO remove?
+    "jinja2",
 ]
 
 authors = [
@@ -24,8 +24,9 @@ license="MIT"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
-    "License :: OSI Approved :: BSD License",
-    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Development Status :: 3 - Alpha", # TODO: change to stable
+    #"Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
