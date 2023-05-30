@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/DHI/modelskill/main/images/logo/mike-fm-skill-rgb.svg" width="300">
+<img src="https://raw.githubusercontent.com/DHI/modelskill/main/images/logo/modelskill.svg" width="300">
 
 # ModelSkill: Flexible Model skill evaluation.
  ![Python version](https://img.shields.io/pypi/pyversions/modelskill.svg) 
