@@ -3,12 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: https://raw.githubusercontent.com/DHI/modelskill/main/images/logo/mike-fm-skill-rgb.svg
+.. image:: https://raw.githubusercontent.com/DHI/modelskill/main/images/logo/modelskill.svg
 
 |
  
 ModelSkill: Assess the skill of your MIKE FM model
-===============================================
+==================================================
 
 Compare results from MIKE FM simulations with observations. `ModelSkill <https://github.com/DHI/modelskill>`_ would like to be your companion during the different phases of a MIKE FM modelling workflow.
 
