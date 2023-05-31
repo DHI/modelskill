@@ -72,7 +72,7 @@ class DfsuModelResult(ModelResultBase):
 
         Returns
         -------
-        <fmskill.protocols.Comparable>
+        <modelskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
         extractor_lookup: Mapping[Observation, Callable] = {

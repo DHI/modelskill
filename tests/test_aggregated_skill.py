@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from fmskill import (
+from modelskill import (
     ModelResult,
     PointObservation,
     TrackObservation,

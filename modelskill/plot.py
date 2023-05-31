@@ -11,7 +11,7 @@ import mikeio
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
-import fmskill.settings as settings
+import modelskill.settings as settings
 from .settings import options, register_option
 
 

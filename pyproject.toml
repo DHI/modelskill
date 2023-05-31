@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name="fmskill"
+name="modelskill"
 version="0.9.dev0"
 dependencies = [
     "numpy",
@@ -37,7 +37,7 @@ classifiers = [
 ]
 
 [project.scripts]
-fmskill = "fmskill.cli:report"
+modelskill = "modelskill.cli:report"
 
 [project.optional-dependencies]
 dev = ["pytest",
@@ -62,7 +62,7 @@ notebooks = [
         ]
 
 [project.urls]
-"Homepage" = "https://github.com/DHI/fmskill"
-"Bug Tracker" = "https://github.com/DHI/fmskill/issues"
+"Homepage" = "https://github.com/DHI/modelskill"
+"Bug Tracker" = "https://github.com/DHI/modelskill/issues"
 
 

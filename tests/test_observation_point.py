@@ -3,8 +3,8 @@ import pytest
 import sys
 import mikeio
 
-from fmskill.observation import PointObservation
-from fmskill import Quantity
+from modelskill.observation import PointObservation
+from modelskill import Quantity
 
 
 @pytest.fixture

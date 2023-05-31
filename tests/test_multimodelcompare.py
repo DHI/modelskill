@@ -2,10 +2,10 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from fmskill import ModelResult
-from fmskill import PointObservation, TrackObservation
-from fmskill import Connector
-import fmskill.metrics as mtr
+from modelskill import ModelResult
+from modelskill import PointObservation, TrackObservation
+from modelskill import Connector
+import modelskill.metrics as mtr
 
 plt.rcParams.update({"figure.max_open_warning": 0})
 

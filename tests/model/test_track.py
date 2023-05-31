@@ -2,9 +2,9 @@ import pandas as pd
 import pytest
 import mikeio
 
-from fmskill import ModelResult, TrackObservation
-from fmskill.model import TrackModelResult, protocols
-from fmskill import Quantity
+from modelskill import ModelResult, TrackObservation
+from modelskill.model import TrackModelResult, protocols
+from modelskill import Quantity
 
 
 @pytest.fixture

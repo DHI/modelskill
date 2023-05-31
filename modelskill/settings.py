@@ -105,8 +105,8 @@ def _set_option(*args, **kwargs) -> None:
 
     Examples
     --------
-    >>> fmskill.set_option("plot.scatter.point_size", 4)
-    >>> fmskill.set_option({"plot.scatter.point_size": 4})
+    >>> modelskill.set_option("plot.scatter.point_size", 4)
+    >>> modelskill.set_option({"plot.scatter.point_size": 4})
     """
     # must at least 1 arg deal with constraints later
 
@@ -325,7 +325,7 @@ def register_option(
     # cb: Optional[Callable[[str], Any]] = None,
 ) -> None:
     """
-    Register an option in the package-wide fmskill settingss object
+    Register an option in the package-wide modelskill settingss object
 
     Parameters
     ----------
@@ -503,8 +503,8 @@ def load_style(name: str) -> None:
 
     Examples
     --------
-    >>> import fmskill
-    >>> fmskill.load_style('MOOD')
+    >>> import modelskill
+    >>> modelskill.load_style('MOOD')
     """
 
     lname = name.lower()

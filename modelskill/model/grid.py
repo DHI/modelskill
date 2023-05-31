@@ -4,10 +4,10 @@ import xarray as xr
 
 import mikeio
 
-from fmskill import types, utils
-from fmskill.model import protocols, PointModelResult, TrackModelResult
-from fmskill.model._base import ModelResultBase
-from fmskill.observation import Observation, PointObservation, TrackObservation
+from modelskill import types, utils
+from modelskill.model import protocols, PointModelResult, TrackModelResult
+from modelskill.model._base import ModelResultBase
+from modelskill.observation import Observation, PointObservation, TrackObservation
 
 
 class GridModelResult(ModelResultBase):
@@ -91,7 +91,7 @@ class GridModelResult(ModelResultBase):
 
         Returns
         -------
-        <fmskill.protocols.Comparable>
+        <modelskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
         extractor_lookup: Mapping[Observation, Callable] = {

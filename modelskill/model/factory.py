@@ -4,9 +4,9 @@ from typing import Literal, Optional
 import pandas as pd
 import xarray as xr
 
-from fmskill import model
-from fmskill.model import protocols
-from fmskill.types import GeometryType, DataInputType
+from modelskill import model
+from modelskill.model import protocols
+from modelskill.types import GeometryType, DataInputType
 
 _modelresult_lookup = {
     GeometryType.POINT: model.PointModelResult,

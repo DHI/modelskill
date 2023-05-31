@@ -441,7 +441,7 @@ class Comparer:
         for n in self.mod_names:
             data[n].attrs["kind"] = "model"
 
-        data.attrs["fmskill_version"] = __version__
+        data.attrs["modelskill_version"] = __version__
 
         return data
 
@@ -849,7 +849,7 @@ class Comparer:
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model"]
         metrics : list, optional
-            list of fmskill.metrics, by default fmskill.options.metrics.list
+            list of modelskill.metrics, by default modelskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         freq : string, optional
@@ -934,7 +934,7 @@ class Comparer:
         Parameters
         ----------
         metric : list, optional
-            a single metric from fmskill.metrics, by default rmse
+            a single metric from modelskill.metrics, by default rmse
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         start : (str, datetime), optional
@@ -962,7 +962,7 @@ class Comparer:
         >>> cc['c2'].score()
         0.3517964910888918
 
-        >>> import fmskill.metrics as mtr
+        >>> import modelskill.metrics as mtr
         >>> cc['c2'].score(metric=mtr.mape)
         11.567399646108198
         """
@@ -1014,7 +1014,7 @@ class Comparer:
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model","observation"]
         metrics : list, optional
-            list of fmskill.metrics, by default fmskill.options.metrics.list
+            list of modelskill.metrics, by default modelskill.options.metrics.list
         n_min : int, optional
             minimum number of observations in a grid cell;
             cells with fewer observations get a score of `np.nan`
@@ -1176,7 +1176,7 @@ class Comparer:
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
         skill_table : str, List[str], bool, optional
-            list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
+            list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
             by default False
         kwargs
@@ -1831,7 +1831,7 @@ class ComparerCollection(Mapping, Sequence):
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model","observation"]
         metrics : list, optional
-            list of fmskill.metrics, by default fmskill.options.metrics.list
+            list of modelskill.metrics, by default modelskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
@@ -1953,7 +1953,7 @@ class ComparerCollection(Mapping, Sequence):
             e.g.: 'freq:M' = monthly; 'freq:D' daily
             by default ["model","observation"]
         metrics : list, optional
-            list of fmskill.metrics, by default fmskill.options.metrics.list
+            list of modelskill.metrics, by default modelskill.options.metrics.list
         n_min : int, optional
             minimum number of observations in a grid cell;
             cells with fewer observations get a score of `np.nan`
@@ -2123,7 +2123,7 @@ class ComparerCollection(Mapping, Sequence):
             or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
             by default None
         skill_table : str, List[str], bool, optional
-            list of fmskill.metrics or boolean, if True then by default fmskill.options.metrics.list.
+            list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
             by default False
         kwargs
@@ -2326,7 +2326,7 @@ class ComparerCollection(Mapping, Sequence):
             dictionary of observations with special weigths, others will be set to 1.0
             by default None (i.e. observations weight attribute if assigned else "equal")
         metrics : list, optional
-            list of fmskill.metrics, by default fmskill.options.metrics.list
+            list of modelskill.metrics, by default modelskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
@@ -2436,7 +2436,7 @@ class ComparerCollection(Mapping, Sequence):
         Parameters
         ----------
         metrics : list, optional
-            list of fmskill.metrics, by default fmskill.options.metrics.list
+            list of modelskill.metrics, by default modelskill.options.metrics.list
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional
@@ -2577,7 +2577,7 @@ class ComparerCollection(Mapping, Sequence):
             dictionary of observations with special weigths, others will be set to 1.0
             by default None (i.e. observations weight attribute if assigned else "equal")
         metric : list, optional
-            a single metric from fmskill.metrics, by default rmse
+            a single metric from modelskill.metrics, by default rmse
         model : (str, int, List[str], List[int]), optional
             name or ids of models to be compared, by default all
         observation : (str, int, List[str], List[int])), optional

@@ -2,7 +2,7 @@ from typing import Any, Optional, Protocol, Union, runtime_checkable
 
 import pandas as pd
 
-from fmskill import types
+from modelskill import types
 
 
 @runtime_checkable

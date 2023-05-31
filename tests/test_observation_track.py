@@ -2,8 +2,8 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from fmskill.observation import TrackObservation
-from fmskill import Quantity
+from modelskill.observation import TrackObservation
+from modelskill import Quantity
 
 
 @pytest.fixture

@@ -22,7 +22,7 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install fmskill
+    - name: Install modelskill
       run: |
         pip install .[test]
     - name: Test with pytest
