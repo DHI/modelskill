@@ -9,7 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Simple time series comparison &#8212; FMskill  documentation</title>
+    <title>Simple time series comparison &#8212; ModelSkill  documentation</title>
   
   
   
@@ -306,7 +306,7 @@ very simple and described below. The general many-to-many comparison is decribed
 in the <a class="reference external" href="getting_started.html">getting started guide</a>.</p>
 <section id="workflow">
 <h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">#</a></h2>
-<p>The simplified fmskill workflow consists of these four steps:</p>
+<p>The simplified modelskill workflow consists of these four steps:</p>
 <ol class="arabic simple">
 <li><p>Specify <strong>model result</strong></p></li>
 <li><p>Specify <strong>observation</strong></p></li>
@@ -330,16 +330,16 @@ in the <a class="reference external" href="getting_started.html">getting started
 </section>
 <section id="compare">
 <h3>3. compare()<a class="headerlink" href="#compare" title="Permalink to this headline">#</a></h3>
-<p>The <a class="reference external" href="api.html#fmskill.connection.compare">compare()</a> method will interpolate the modelresult to the time of the observation
+<p>The <a class="reference external" href="api.html#modelskill.connection.compare">compare()</a> method will interpolate the modelresult to the time of the observation
 and return an object that can be used for analysis and plotting</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">fmskill</span>
-<span class="n">c</span> <span class="o">=</span> <span class="n">fmskill</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">fn_obs</span><span class="p">,</span> <span class="n">fn_mod</span><span class="p">,</span> <span class="n">mod_item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">modelskill</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">modelskill</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">fn_obs</span><span class="p">,</span> <span class="n">fn_mod</span><span class="p">,</span> <span class="n">mod_item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="analysis-and-plotting">
 <h3>4. Analysis and plotting<a class="headerlink" href="#analysis-and-plotting" title="Permalink to this headline">#</a></h3>
-<p>The returned <a class="reference external" href="api.html#fmskill.comparison.PointComparer">PointComparer</a> can make
+<p>The returned <a class="reference external" href="api.html#modelskill.comparison.PointComparer">PointComparer</a> can make
 scatter plots, skill assessment, time series plots etc.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">plot_timeseries</span><span class="p">()</span>
 </pre></div>

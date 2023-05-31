@@ -11,7 +11,7 @@ in the `getting started guide <getting_started.html>`_.
 Workflow
 ********
 
-The simplified fmskill workflow consists of these four steps:
+The simplified modelskill workflow consists of these four steps:
 
 #. Specify **model result**
 #. Specify **observation**
@@ -41,19 +41,19 @@ The observation can be either a dfs0, a DataFrame or a PointObservation object.
 
 3. compare()
 ============
-The `compare() <api.html#fmskill.connection.compare>`_ method will interpolate the modelresult to the time of the observation
+The `compare() <api.html#modelskill.connection.compare>`_ method will interpolate the modelresult to the time of the observation
 and return an object that can be used for analysis and plotting
 
 .. code-block:: python
 
-    import fmskill
-    c = fmskill.compare(fn_obs, fn_mod, mod_item=0)
+    import modelskill
+    c = modelskill.compare(fn_obs, fn_mod, mod_item=0)
 
 
 4. Analysis and plotting
 ========================
 
-The returned `PointComparer <api.html#fmskill.comparison.PointComparer>`_ can make
+The returned `PointComparer <api.html#modelskill.comparison.PointComparer>`_ can make
 scatter plots, skill assessment, time series plots etc.
 
 
