@@ -34,6 +34,40 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option, reset_option
 
+# TODO remove in v1.1
+def _get_deprecated_args(kwargs):
+    model, start, end, area = None, None, None, None
+
+    if "model" in kwargs:
+        model = kwargs.pop("model")
+        warnings.warn(
+            f"The 'model' argument is deprecated, use 'sel(model='{model})' instead",
+            FutureWarning,
+        )
+
+    if "start" in kwargs:
+        start = kwargs.pop("start")
+        warnings.warn(
+            f"The 'start' argument is deprecated, use 'sel(start='{start})' instead",
+            FutureWarning,
+        )
+
+    if "end" in kwargs:
+        end = kwargs.pop("end")
+        warnings.warn(
+            f"The 'end' argument is deprecated, use 'sel(end='{end})' instead",
+            FutureWarning,
+        )
+
+    if "area" in kwargs:
+        area = kwargs.pop("area")
+        warnings.warn(
+            f"The 'area' argument is deprecated, use 'sel(area={area})' instead",
+            FutureWarning,
+        )
+
+    return model, start, end, area
+
 
 def _validate_metrics(metrics) -> None:
     for m in metrics:
@@ -834,10 +868,7 @@ class Comparer:
         self,
         by: Union[str, List[str]] = None,
         metrics: list = None,
-        model: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        **kwargs,
     ) -> AggregatedSkill:
         """Skill assessment of model(s)
 
@@ -850,19 +881,9 @@ class Comparer:
             by default ["model"]
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
         freq : string, optional
             do temporal binning using pandas pd.Grouper(freq),
             typical examples: 'M' = monthly; 'D' daily
-            by default None
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
             by default None
 
         Returns
@@ -891,6 +912,9 @@ class Comparer:
         """
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+
         cmp = self.sel(
             model=model,
             start=start,
@@ -898,8 +922,7 @@ class Comparer:
             area=area,
         )
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return
+            raise ValueError("No data selected for skill assessment")
 
         by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
 
@@ -924,10 +947,7 @@ class Comparer:
     def score(
         self,
         metric=mtr.rmse,
-        model: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        **kwargs,
     ) -> float:
         """Model skill score
 
@@ -935,16 +955,6 @@ class Comparer:
         ----------
         metric : list, optional
             a single metric from modelskill.metrics, by default rmse
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
 
         Returns
         -------
@@ -970,6 +980,9 @@ class Comparer:
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+
         s = self.skill(
             metrics=[metric],
             model=model,
@@ -992,10 +1005,7 @@ class Comparer:
         by: Union[str, List[str]] = None,
         metrics: list = None,
         n_min: int = None,
-        model: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
@@ -1018,16 +1028,6 @@ class Comparer:
         n_min : int, optional
             minimum number of observations in a grid cell;
             cells with fewer observations get a score of `np.nan`
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
 
         Returns
         -------
@@ -1061,7 +1061,8 @@ class Comparer:
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        # TODO remove in v1.1
+        model, start, end, area = self._get_deprecated_args(kwargs)
 
         cmp = self.sel(
             model=model,
@@ -1069,9 +1070,10 @@ class Comparer:
             end=end,
             area=area,
         )
+
+        metrics = _parse_metric(metrics, self.metrics, return_list=True)
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return
+            raise ValueError("No data to compare")
 
         df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
@@ -1109,10 +1111,6 @@ class Comparer:
         title: str = None,
         xlabel: str = None,
         ylabel: str = None,
-        model: Union[str, int] = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
         binsize: float = None,
         nbins: int = None,
         skill_table: Union[str, List[str], bool] = None,
@@ -1165,16 +1163,6 @@ class Comparer:
             x-label text on plot, by default None
         ylabel : str, optional
             y-label text on plot, by default None
-        model : (int, str), optional
-            name or id of model to be compared, by default first
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
         skill_table : str, List[str], bool, optional
             list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
@@ -1189,7 +1177,10 @@ class Comparer:
         >>> comparer.scatter(xlabel='all observations', ylabel='my model')
         >>> comparer.scatter(model='HKZN_v2', figsize=(10, 10))
         """
-        # select model
+
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+
         mod_id = _get_id(model, self.mod_names)
         mod_name = self.mod_names[mod_id]
 
@@ -1202,7 +1193,7 @@ class Comparer:
         )
 
         if cmp.n_points == 0:
-            raise Exception("No data found in selection")
+            raise ValueError("No data found in selection")
 
         x = np.squeeze(cmp.obs)
         y = np.squeeze(cmp.mod)
@@ -1814,12 +1805,7 @@ class ComparerCollection(Mapping, Sequence):
         self,
         by: Union[str, List[str]] = None,
         metrics: list = None,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        **kwargs,
     ) -> AggregatedSkill:
         """Aggregated skill assessment of model(s)
 
@@ -1832,20 +1818,6 @@ class ComparerCollection(Mapping, Sequence):
             by default ["model","observation"]
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
 
         Returns
         -------
@@ -1878,6 +1850,24 @@ class ComparerCollection(Mapping, Sequence):
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
         """
+
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        variable, observation = None, None
+
+        if "observation" in kwargs:
+            observation = kwargs.pop("observation")
+            warnings.warn(
+                f"The 'observation' argument is deprecated, use 'sel(observation='{observation})' instead",
+                FutureWarning,
+            )
+
+        if "variable" in kwargs:
+            variable = kwargs.pop("variable")
+            warnings.warn(
+                f"The 'variable' argument is deprecated, use 'sel(variable='{variable})' instead",
+                FutureWarning,
+            )
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
@@ -2050,12 +2040,12 @@ class ComparerCollection(Mapping, Sequence):
         title: str = None,
         xlabel: str = None,
         ylabel: str = None,
-        model: Union[str, int] = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        # model: Union[str, int] = None,
+        # observation: IdOrNameTypes = None,
+        # variable: IdOrNameTypes = None,
+        # start: TimeTypes = None,
+        # end: TimeTypes = None,
+        # area: List[float] = None,
         binsize: float = None,
         nbins: int = None,
         skill_table: Union[str, List[str], bool] = None,
@@ -2108,20 +2098,6 @@ class ComparerCollection(Mapping, Sequence):
             x-label text on plot, by default None
         ylabel : str, optional
             y-label text on plot, by default None
-        model : (int, str), optional
-            name or id of model to be compared, by default first
-        observation : (int, str, List[str], List[int])), optional
-            name or ids of observations to be compared, by default None
-        variable : (str, int), optional
-            name or id of variable to be compared, by default first
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
         skill_table : str, List[str], bool, optional
             list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
@@ -2137,6 +2113,51 @@ class ComparerCollection(Mapping, Sequence):
         >>> comparer.scatter(model='HKZN_v2', figsize=(10, 10))
         >>> comparer.scatter(observations=['c2','HKNA'])
         """
+
+        # TODO remove in v1.1
+        model, observation, variable, start, end, area = (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+
+        if "model" in kwargs:
+            model = kwargs.pop("model")
+            warnings.warn(
+                "model is deprecated, use sel(model=...) instead", FutureWarning
+            )
+
+        if "observation" in kwargs:
+            observation = kwargs.pop("observation")
+            warnings.warn(
+                "observation is deprecated, use sel(observation=...) instead",
+                FutureWarning,
+            )
+        if "variable" in kwargs:
+            variable = kwargs.pop("variable")
+            warnings.warn(
+                "variable is deprecated, use sel(variable=...) instead", FutureWarning
+            )
+
+        if "start" in kwargs:
+            start = kwargs.pop("start")
+            warnings.warn(
+                "start is deprecated, use sel(start=...) instead", FutureWarning
+            )
+
+        if "end" in kwargs:
+            end = kwargs.pop("end")
+            warnings.warn("end is deprecated, use sel(end=...) instead", FutureWarning)
+
+        if "area" in kwargs:
+            area = kwargs.pop("area")
+            warnings.warn(
+                "area is deprecated, use sel(area=...) instead", FutureWarning
+            )
+
         # select model
         mod_id = _get_id(model, self.mod_names)
         mod_name = self.mod_names[mod_id]
@@ -2155,7 +2176,7 @@ class ComparerCollection(Mapping, Sequence):
             area=area,
         )
         if cmp.n_points == 0:
-            raise Exception("No data found in selection")
+            raise ValueError("No data found in selection")
 
         df = cmp.to_dataframe()
         x = df.obs_val

@@ -85,7 +85,17 @@ def test_add_same_comparer_twice(mr1, mr2, o1, o2):
 
 
 def test_mm_skill(cc):
-    df = cc.skill(start="2017-10-27 00:01").df
+
+    df = cc.sel(start="2017-10-27 00:01").skill().df
+
+    assert df.iloc[4].name[0] == "SW_2"
+    assert df.iloc[4].name[1] == "HKNA"
+    assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.214476
+
+    # TODO remove in v1.1
+    with pytest.warns(FutureWarning):
+        df = cc.skill(start="2017-10-27 00:01").df
+
     assert df.iloc[4].name[0] == "SW_2"
     assert df.iloc[4].name[1] == "HKNA"
     assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.214476
