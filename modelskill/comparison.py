@@ -2056,8 +2056,6 @@ class ComparerCollection(Mapping, Sequence):
         start: TimeTypes = None,
         end: TimeTypes = None,
         area: List[float] = None,
-        binsize: float = None,
-        nbins: int = None,
         skill_table: Union[str, List[str], bool] = None,
         **kwargs,
     ):
@@ -2198,8 +2196,6 @@ class ComparerCollection(Mapping, Sequence):
             ylabel=ylabel,
             skill_df=skill_df,
             units=units,
-            binsize=binsize,
-            nbins=nbins,
             **kwargs,
         )
         return ax
