@@ -120,8 +120,6 @@ def scatter(
     ylabel: str = "",
     skill_df: object = None,
     units: str = "",
-    binsize: float = None,
-    nbins: int = None,
     **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled
@@ -185,16 +183,6 @@ def scatter(
         # Default: points density
         show_density = True
 
-    if (binsize is not None) or (nbins is not None):
-        warnings.warn(
-            "`binsize` and `nbins` are deprecated and will be removed soon, use `bins` instead",
-        )
-        binsize_aux = binsize
-        nbins_aux = nbins
-    else:
-        binsize_aux = None
-        nbins_aux = None
-
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
 
@@ -223,15 +211,6 @@ def scatter(
         # Then bins = Sequence
         binsize = bins
         nbins_hist = bins
-
-    # Check deprecated kwords; Remove this verification in future release
-    if (binsize_aux is not None) or (nbins_aux is not None):
-        if binsize_aux is None:
-            binsize = (xmax - xmin) / nbins_aux
-            nbins_hist = nbins_aux
-        else:
-            nbins_hist = int((xmax - xmin) / binsize_aux)
-    # Remove previous piece of code when nbins and bin_size are deprecated.
 
     if xlim is None:
         xlim = [xymin - binsize, xymax + binsize]

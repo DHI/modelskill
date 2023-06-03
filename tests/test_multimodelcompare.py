@@ -286,8 +286,6 @@ def test_mm_scatter(cc):
     cc.scatter(model="SW_2", show_points=False)
     cc.scatter(model="SW_2", show_hist=False)
     cc.scatter(model="SW_2", bins=0.5)
-    with pytest.warns(UserWarning, match="`binsize` and `nbins` are deprecated"):
-        cc.scatter(model="SW_2", nbins=5, reg_method="odr")
     cc.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
     cc.scatter(model="SW_2", show_points=True)
     cc.scatter(model="SW_2", show_points=100)
