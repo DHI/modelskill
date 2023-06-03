@@ -1240,8 +1240,6 @@ class Comparer:
             ylabel=ylabel,
             skill_df=skill_df,
             units=units,
-            binsize=binsize,
-            nbins=nbins,
             **kwargs,
         )
         return ax
