@@ -57,6 +57,49 @@ register_option(
 register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
 
 
+def _sample_points(x, y, show_points: bool):
+    x_sample = x
+    y_sample = y
+    sample_warning = False
+    if show_points is None:
+        # If nothing given, and more than 50k points, 50k sample will be shown
+        if len(x) < 5e4:
+            show_points = True
+        else:
+            show_points = 50000
+            sample_warning = True
+    if type(show_points) == float:
+        if show_points < 0 or show_points > 1:
+            raise ValueError(" `show_points` fraction must be in [0,1]")
+        else:
+            np.random.seed(20)
+            ran_index = np.random.choice(
+                range(len(x)), int(len(x) * show_points), replace=False
+            )
+            x_sample = x[ran_index]
+            y_sample = y[ran_index]
+            if len(x_sample) < len(x):
+                sample_warning = True
+    # if show_points is an int
+    elif type(show_points) == int:
+        np.random.seed(20)
+        ran_index = np.random.choice(range(len(x)), show_points, replace=False)
+        x_sample = x[ran_index]
+        y_sample = y[ran_index]
+        if len(x_sample) < len(x):
+            sample_warning = True
+    elif type(show_points) == bool:
+        pass
+    else:
+        raise TypeError(" `show_points` must be either bool, int or float")
+    if sample_warning:
+        warnings.warn(
+            message=f"Showing only {len(x_sample)} points in plot. If all scatter points wanted in plot, use `show_points=True`",
+            stacklevel=2,
+        )
+    return x_sample, y_sample
+
+
 def scatter(
     x,
     y,
@@ -155,45 +198,8 @@ def scatter(
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
 
-    x_sample = x
-    y_sample = y
-    sample_warning = False
-    if show_points is None:
-        # If nothing given, and more than 50k points, 50k sample will be shown
-        if len(x) < 5e4:
-            show_points = True
-        else:
-            show_points = 50000
-            sample_warning = True
-    if type(show_points) == float:
-        if show_points < 0 or show_points > 1:
-            raise ValueError(" `show_points` fraction must be in [0,1]")
-        else:
-            np.random.seed(20)
-            ran_index = np.random.choice(
-                range(len(x)), int(len(x) * show_points), replace=False
-            )
-            x_sample = x[ran_index]
-            y_sample = y[ran_index]
-            if len(x_sample) < len(x):
-                sample_warning = True
-    # if show_points is an int
-    elif type(show_points) == int:
-        np.random.seed(20)
-        ran_index = np.random.choice(range(len(x)), show_points, replace=False)
-        x_sample = x[ran_index]
-        y_sample = y[ran_index]
-        if len(x_sample) < len(x):
-            sample_warning = True
-    elif type(show_points) == bool:
-        pass
-    else:
-        raise TypeError(" `show_points` must be either bool, int or float")
-    if sample_warning:
-        warnings.warn(
-            message=f"Showing only {len(x_sample)} points in plot. If all scatter points wanted in plot, use `show_points=True`",
-            stacklevel=2,
-        )
+    x_sample, y_sample = _sample_points(x, y, show_points)
+
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
     xymin = min([xmin, ymin])
