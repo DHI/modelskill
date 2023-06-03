@@ -100,6 +100,210 @@ def _sample_points(x, y, show_points: bool):
     return x_sample, y_sample
 
 
+def _scatter_matplotlib(
+    x,
+    y,
+    x_sample,
+    y_sample,
+    z,
+    xq,
+    yq,
+    x_trend,
+    show_density,
+    show_points,
+    show_hist,
+    nbins_hist,
+    intercept,
+    slope,
+    reglabel,
+    xlabel,
+    ylabel,
+    figsize,
+    xlim,
+    ylim,
+    title,
+    skill_df,
+    units,
+    **kwargs,
+):
+    _, ax = plt.subplots(figsize=figsize)
+
+    plt.plot(
+        [xlim[0], xlim[1]],
+        [xlim[0], xlim[1]],
+        label=options.plot.scatter.oneone_line.label,
+        c=options.plot.scatter.oneone_line.color,
+        zorder=3,
+    )
+    if show_points:
+        if show_density:
+            c = z
+        else:
+            c = "0.25"
+        plt.scatter(
+            x_sample,
+            y_sample,
+            c=c,
+            s=options.plot.scatter.points.size,
+            alpha=options.plot.scatter.points.alpha,
+            marker=".",
+            label=options.plot.scatter.points.label,
+            zorder=1,
+            **kwargs,
+        )
+    plt.plot(
+        xq,
+        yq,
+        options.plot.scatter.quantiles.marker,
+        label=options.plot.scatter.quantiles.label,
+        c=options.plot.scatter.quantiles.color,
+        zorder=4,
+        markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+        markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
+        markersize=options.plot.scatter.quantiles.markersize,
+        **settings.get_option("plot.scatter.quantiles.kwargs"),
+    )
+
+    plt.plot(
+        x_trend,
+        intercept + slope * x_trend,
+        **settings.get_option("plot.scatter.reg_line.kwargs"),
+        label=reglabel,
+        zorder=2,
+    )
+
+    if show_hist:
+        plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
+
+    plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.axis("square")
+    plt.xlim([xlim[0], xlim[1]])
+    plt.ylim([ylim[0], ylim[1]])
+    plt.minorticks_on()
+    plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
+    max_cbar = None
+    if show_hist or (show_density and show_points):
+        cbar = plt.colorbar(fraction=0.046, pad=0.04)
+        ticks = cbar.ax.get_yticks()
+        max_cbar = ticks[-1]
+        cbar.set_label("# points")
+
+    plt.title(title)
+    # Add skill table
+    if skill_df is not None:
+        _plot_summary_table(skill_df, units, max_cbar=max_cbar)
+    return ax
+
+
+def _scatter_plotly(
+    x,
+    y,
+    x_sample,
+    y_sample,
+    z,
+    xq,
+    yq,
+    x_trend,
+    show_density,
+    show_points,
+    show_hist,
+    nbins_hist,
+    intercept,
+    slope,
+    reglabel,
+    xlabel,
+    ylabel,
+    figsize,  # TODO not used by plotly, remove or keep for consistency?
+    xlim,
+    ylim,
+    title,
+    skill_df,  # TODO implement
+    units,  # TODO implement
+    **kwargs,
+):
+
+    import plotly.graph_objects as go
+
+    data = [
+        go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
+    ]
+
+    regression_line = go.Scatter(
+        x=x_trend,
+        y=intercept + slope * x_trend,
+        name=reglabel,
+        mode="lines",
+        line=dict(color="red"),
+    )
+    data.append(regression_line)
+
+    if show_hist:
+        data.append(
+            go.Histogram2d(
+                x=x,
+                y=y,
+                nbinsx=nbins_hist,
+                nbinsy=nbins_hist,
+                colorscale=[
+                    [0.0, "rgba(0,0,0,0)"],
+                    [0.1, "purple"],
+                    [0.5, "green"],
+                    [1.0, "yellow"],
+                ],
+                colorbar=dict(title="# of points"),
+            )
+        )
+
+    if show_points:
+
+        if show_density:
+            c = z
+            cbar = dict(thickness=20, title="# of points")
+        else:
+            c = "black"
+            cbar = None
+        data.append(
+            go.Scatter(
+                x=x_sample,
+                y=y_sample,
+                mode="markers",
+                name="Data",
+                marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
+            )
+        )
+    data.append(
+        go.Scatter(
+            x=xq,
+            y=yq,
+            name=options.plot.scatter.quantiles.label,
+            mode="markers",
+            marker_symbol="x",
+            marker_color=options.plot.scatter.quantiles.color,
+            marker_line_color="midnightblue",
+            marker_line_width=0.6,
+        )
+    )
+
+    defaults = {"width": 600, "height": 600}
+    defaults = {**defaults, **kwargs}
+
+    layout = layout = go.Layout(
+        legend=dict(x=0.01, y=0.99),
+        yaxis=dict(scaleanchor="x", scaleratio=1),
+        title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
+        yaxis_title=ylabel,
+        xaxis_title=xlabel,
+        **defaults,
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+    fig.update_xaxes(range=xlim)
+    fig.update_yaxes(range=ylim)
+    fig.show()  # Should this be here
+
+
 def scatter(
     x,
     y,
@@ -265,159 +469,63 @@ def scatter(
     reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
 
     if backend == "matplotlib":
-        _, ax = plt.subplots(figsize=figsize)
-        # plt.figure(figsize=figsize)
-        plt.plot(
-            [xlim[0], xlim[1]],
-            [xlim[0], xlim[1]],
-            label=options.plot.scatter.oneone_line.label,
-            c=options.plot.scatter.oneone_line.color,
-            zorder=3,
-        )
-        if show_points:
-            if show_density:
-                c = z
-            else:
-                c = "0.25"
-            plt.scatter(
-                x_sample,
-                y_sample,
-                c=c,
-                s=options.plot.scatter.points.size,
-                alpha=options.plot.scatter.points.alpha,
-                marker=".",
-                label=options.plot.scatter.points.label,
-                zorder=1,
-                **kwargs,
-            )
-        plt.plot(
+
+        # TODO collect args in groups
+        _scatter_matplotlib(
+            x,
+            y,
+            x_sample,
+            y_sample,
+            z,
             xq,
             yq,
-            options.plot.scatter.quantiles.marker,
-            label=options.plot.scatter.quantiles.label,
-            c=options.plot.scatter.quantiles.color,
-            zorder=4,
-            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
-            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
-            markersize=options.plot.scatter.quantiles.markersize,
-            **settings.get_option("plot.scatter.quantiles.kwargs"),
-        )
-
-        x_trend = xq if fit_to_quantiles else x_trend
-        plt.plot(
             x_trend,
-            intercept + slope * x_trend,
-            **settings.get_option("plot.scatter.reg_line.kwargs"),
-            label=reglabel,
-            zorder=2,
+            show_density,
+            show_points,
+            show_hist,
+            nbins_hist,
+            intercept,
+            slope,
+            reglabel,
+            xlabel,
+            ylabel,
+            figsize,
+            xlim,
+            ylim,
+            title,
+            skill_df,
+            units,
+            **kwargs,
         )
-
-        if show_hist:
-            plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
-
-        plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.axis("square")
-        plt.xlim([xlim[0], xlim[1]])
-        plt.ylim([ylim[0], ylim[1]])
-        plt.minorticks_on()
-        plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
-        max_cbar = None
-        if show_hist or (show_density and show_points):
-            cbar = plt.colorbar(fraction=0.046, pad=0.04)
-            ticks = cbar.ax.get_yticks()
-            max_cbar = ticks[-1]
-            cbar.set_label("# points")
-
-        plt.title(title)
-        # Add skill table
-        if skill_df is not None:
-            _plot_summary_table(skill_df, units, max_cbar=max_cbar)
-        return ax
 
     elif backend == "plotly":  # pragma: no cover
-        import plotly.graph_objects as go
 
-        data = [
-            go.Scatter(
-                x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
-            ),
-        ]
-
-        regression_line = go.Scatter(
-            x=x_trend,
-            y=intercept + slope * x_trend,
-            name=reglabel,
-            mode="lines",
-            line=dict(color="red"),
+        _scatter_plotly(
+            x,
+            y,
+            x_sample,
+            y_sample,
+            z,
+            xq,
+            yq,
+            x_trend,
+            show_density,
+            show_points,
+            show_hist,
+            nbins_hist,
+            intercept,
+            slope,
+            reglabel,
+            xlabel,
+            ylabel,
+            figsize,
+            xlim,
+            ylim,
+            title,
+            skill_df,
+            units,
+            **kwargs,
         )
-        data.append(regression_line)
-
-        if show_hist:
-            data.append(
-                go.Histogram2d(
-                    x=x,
-                    y=y,
-                    xbins=dict(size=binsize),
-                    ybins=dict(size=binsize),
-                    colorscale=[
-                        [0.0, "rgba(0,0,0,0)"],
-                        [0.1, "purple"],
-                        [0.5, "green"],
-                        [1.0, "yellow"],
-                    ],
-                    colorbar=dict(title="# of points"),
-                )
-            )
-
-        if show_points:
-
-            if show_density:
-                c = z
-                cbar = dict(thickness=20, title="# of points")
-            else:
-                c = "black"
-                cbar = None
-            data.append(
-                go.Scatter(
-                    x=x_sample,
-                    y=y_sample,
-                    mode="markers",
-                    name="Data",
-                    marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
-                )
-            )
-        data.append(
-            go.Scatter(
-                x=xq,
-                y=yq,
-                name=options.plot.scatter.quantiles.label,
-                mode="markers",
-                marker_symbol="x",
-                marker_color=options.plot.scatter.quantiles.color,
-                marker_line_color="midnightblue",
-                marker_line_width=0.6,
-            )
-        )
-
-        defaults = {"width": 600, "height": 600}
-        defaults = {**defaults, **kwargs}
-
-        layout = layout = go.Layout(
-            legend=dict(x=0.01, y=0.99),
-            yaxis=dict(scaleanchor="x", scaleratio=1),
-            title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
-            yaxis_title=ylabel,
-            xaxis_title=xlabel,
-            **defaults,
-        )
-
-        fig = go.Figure(data=data, layout=layout)
-        fig.update_xaxes(range=xlim)
-        fig.update_yaxes(range=ylim)
-        fig.show()  # Should this be here
-
     else:
 
         raise ValueError(f"Plotting backend: {backend} not supported")
