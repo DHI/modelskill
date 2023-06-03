@@ -1,6 +1,8 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 import warnings
+from matplotlib.axes import Axes
 import numpy as np
+import pandas as pd
 from collections import namedtuple
 from scipy import interpolate
 
@@ -36,13 +38,15 @@ register_option(
 register_option(
     "plot.scatter.quantiles.markeredgewidth", 0.5, validator=settings.is_positive
 )
-register_option("plot.scatter.quantiles.kwargs", {}, settings.is_dict)
+register_option("plot.scatter.quantiles.kwargs", {}, validator=settings.is_dict)
 register_option("plot.scatter.oneone_line.label", "1:1", validator=settings.is_str)
 register_option(
     "plot.scatter.oneone_line.color", "blue", validator=settings.is_tuple_list_or_str
 )
-register_option("plot.scatter.legend.kwargs", {}, settings.is_dict)
-register_option("plot.scatter.reg_line.kwargs", {"color": "r"}, settings.is_dict)
+register_option("plot.scatter.legend.kwargs", {}, validator=settings.is_dict)
+register_option(
+    "plot.scatter.reg_line.kwargs", {"color": "r"}, validator=settings.is_dict
+)
 register_option(
     "plot.scatter.legend.bbox",
     {
@@ -51,13 +55,15 @@ register_option(
         "boxstyle": "round",
         "alpha": 0.05,
     },
-    settings.is_dict,
+    validator=settings.is_dict,
 )
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
 
 
-def _sample_points(x, y, show_points: bool):
+def _sample_points(
+    x: np.ndarray, y: np.ndarray, show_points: Union[bool, int, float]
+) -> Tuple[np.ndarray, np.ndarray]:
     x_sample = x
     y_sample = y
     sample_warning = False
@@ -125,7 +131,7 @@ def _scatter_matplotlib(
     skill_df,
     units,
     **kwargs,
-):
+) -> Axes:
     _, ax = plt.subplots(figsize=figsize)
 
     plt.plot(
@@ -305,24 +311,24 @@ def _scatter_plotly(
 
 
 def scatter(
-    x,
-    y,
+    x: np.ndarray,
+    y: np.ndarray,
     *,
     bins: Union[int, float, List[int], List[float]] = 20,
-    quantiles: Union[int, List[float]] = None,
+    quantiles: Optional[Union[int, List[float]]] = None,
     fit_to_quantiles: bool = False,
-    show_points: Union[bool, int, float] = None,
-    show_hist: bool = None,
-    show_density: bool = None,
+    show_points: Optional[Union[bool, int, float]] = None,
+    show_hist: Optional[bool] = None,
+    show_density: Optional[bool] = None,
     backend: str = "matplotlib",
-    figsize: List[float] = (8, 8),
-    xlim: List[float] = None,
-    ylim: List[float] = None,
+    figsize: Tuple[float, float] = (8, 8),
+    xlim: Optional[List[float]] = None,
+    ylim: Optional[List[float]] = None,
     reg_method: str = "ols",
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_df: object = None,
+    skill_df: Optional[pd.DataFrame] = None,
     units: str = "",
     **kwargs,
 ):
@@ -438,6 +444,7 @@ def scatter(
                 "if `show_hist=True` then `show_density` must be either `False` or `None`"
             )
 
+    z = None
     if show_density:
         if not ((type(bins) == float) or (type(bins) == int)):
             raise TypeError(
@@ -470,8 +477,7 @@ def scatter(
 
     if backend == "matplotlib":
 
-        # TODO collect args in groups
-        _scatter_matplotlib(
+        return _scatter_matplotlib(
             x,
             y,
             x_sample,
