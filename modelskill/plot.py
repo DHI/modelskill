@@ -62,48 +62,60 @@ register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positi
 
 
 def sample_points(
-    x: np.ndarray, y: np.ndarray, show_points: Union[bool, int, float]
+    x: np.ndarray, y: np.ndarray, include: Optional[Union[bool, int, float]] = None
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Sample points to be plotted"""
-    x_sample = x
-    y_sample = y
-    sample_warning = False
+    """Sample points to be plotted
 
-    if show_points is None:
-        # If nothing given, and more than 50k points, 50k sample will be shown
+    Parameters
+    ----------
+    x: np.ndarray, 1d
+    y: np.ndarray, 1d
+    include: bool, int or float, optional
+        default is subset the data to 50k points
+
+    Returns
+    -------
+    np.ndarray, np.ndarray
+        x and y arrays with sampled points
+    """
+
+    assert len(x) == len(y), "x and y must have same length"
+
+    if include is True:
+        return x, y
+
+    if include is None:
         if len(x) < 5e4:
-            show_points = True
+            return x, y
         else:
-            show_points = 50000
-            sample_warning = True
+            include = 50000
+            warnings.warn(
+                message=f"Showing only {include} points in plot. Set `include` to True to show all points."
+            )
     else:
-        if not isinstance(show_points, (bool, int, float)):
-            raise TypeError(" `show_points` must be either bool, int or float")
+        if not isinstance(include, (bool, int, float)):
+            raise TypeError(f"'subset' must be bool, int or float, not {type(include)}")
 
-    if show_points is True:
-        return x_sample, y_sample
-    elif show_points is False:
-        n_samples = 0
+    if include is False:
+        return np.array([]), np.array([])
 
-    if type(show_points) == float:
-        if show_points < 0 or show_points > 1:
-            raise ValueError(" `show_points` fraction must be in [0,1]")
-        n_samples = int(len(x) * show_points)
-    elif type(show_points) == int:
-        n_samples = show_points
+    if isinstance(include, float):
+        if not 0 <= include <= 1:
+            raise ValueError("`include` fraction must be in [0,1]")
 
-    np.random.seed(20)
+        n_samples = int(len(x) * include)
+    elif isinstance(include, int):
+        if include < 0:
+            raise ValueError("`include` must be positive integer")
+        if include > len(x):
+            include = len(x)
+        n_samples = include
+
+    np.random.seed(20)  # TODO should this be a parameter?
     ran_index = np.random.choice(range(len(x)), n_samples, replace=False)
     x_sample = x[ran_index]
     y_sample = y[ran_index]
-    if len(x_sample) < len(x):
-        sample_warning = True
 
-    if sample_warning:
-        warnings.warn(
-            message=f"Showing only {len(x_sample)} points in plot. If all scatter points wanted in plot, use `show_points=True`",
-            stacklevel=2,
-        )
     return x_sample, y_sample
 
 
