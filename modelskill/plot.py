@@ -328,6 +328,28 @@ def _reglabel(slope: float, intercept: float) -> str:
     return f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
 
 
+def _get_bins(
+    bins: Union[int, float, Sequence[float]], xymin, xymax
+):  # TODO return type
+
+    assert xymax >= xymin
+    xyspan = xymax - xymin
+
+    if isinstance(bins, int):
+        nbins_hist = bins
+        binsize = xyspan / nbins_hist
+    elif isinstance(bins, float):
+        binsize = bins
+        nbins_hist = int(xyspan / binsize)
+    elif isinstance(bins, Sequence):
+        binsize = bins
+        nbins_hist = bins
+    else:
+        raise TypeError("bins must be an int, float or sequence")
+
+    return nbins_hist, binsize
+
+
 def scatter(
     x: np.ndarray,
     y: np.ndarray,
@@ -340,8 +362,8 @@ def scatter(
     show_density: Optional[bool] = None,
     backend: str = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
-    xlim: Optional[List[float]] = None,
-    ylim: Optional[List[float]] = None,
+    xlim: Optional[Tuple[float, float]] = None,
+    ylim: Optional[Tuple[float, float]] = None,
     reg_method: str = "ols",
     title: str = "",
     xlabel: str = "",
@@ -429,24 +451,13 @@ def scatter(
         else:
             quantiles = 10
 
-    xyspan = xymax - xymin
-    if isinstance(bins, int):
-        nbins_hist = bins
-        binsize = xyspan / nbins_hist
-    elif isinstance(bins, float):
-        binsize = bins
-        nbins_hist = int(xyspan / binsize)
-    elif isinstance(bins, Sequence):
-        binsize = bins
-        nbins_hist = bins
-    else:
-        raise TypeError("bins must be an int, float or sequence")
+    nbins_hist, binsize = _get_bins(bins, xymin=xymin, xymax=xymax)
 
     if xlim is None:
-        xlim = [xymin - binsize, xymax + binsize]
+        xlim = (xymin - binsize, xymax + binsize)
 
     if ylim is None:
-        ylim = [xymin - binsize, xymax + binsize]
+        ylim = (xymin - binsize, xymax + binsize)
 
     if isinstance(quantiles, int):
         xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
