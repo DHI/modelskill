@@ -61,12 +61,14 @@ register_option(
 register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
 
 
-def _sample_points(
+def sample_points(
     x: np.ndarray, y: np.ndarray, show_points: Union[bool, int, float]
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """Sample points to be plotted"""
     x_sample = x
     y_sample = y
     sample_warning = False
+
     if show_points is None:
         # If nothing given, and more than 50k points, 50k sample will be shown
         if len(x) < 5e4:
@@ -74,30 +76,29 @@ def _sample_points(
         else:
             show_points = 50000
             sample_warning = True
+    else:
+        if not isinstance(show_points, (bool, int, float)):
+            raise TypeError(" `show_points` must be either bool, int or float")
+
+    if show_points is True:
+        return x_sample, y_sample
+    elif show_points is False:
+        n_samples = 0
+
     if type(show_points) == float:
         if show_points < 0 or show_points > 1:
             raise ValueError(" `show_points` fraction must be in [0,1]")
-        else:
-            np.random.seed(20)
-            ran_index = np.random.choice(
-                range(len(x)), int(len(x) * show_points), replace=False
-            )
-            x_sample = x[ran_index]
-            y_sample = y[ran_index]
-            if len(x_sample) < len(x):
-                sample_warning = True
-    # if show_points is an int
+        n_samples = int(len(x) * show_points)
     elif type(show_points) == int:
-        np.random.seed(20)
-        ran_index = np.random.choice(range(len(x)), show_points, replace=False)
-        x_sample = x[ran_index]
-        y_sample = y[ran_index]
-        if len(x_sample) < len(x):
-            sample_warning = True
-    elif type(show_points) == bool:
-        pass
-    else:
-        raise TypeError(" `show_points` must be either bool, int or float")
+        n_samples = show_points
+
+    np.random.seed(20)
+    ran_index = np.random.choice(range(len(x)), n_samples, replace=False)
+    x_sample = x[ran_index]
+    y_sample = y[ran_index]
+    if len(x_sample) < len(x):
+        sample_warning = True
+
     if sample_warning:
         warnings.warn(
             message=f"Showing only {len(x_sample)} points in plot. If all scatter points wanted in plot, use `show_points=True`",
@@ -396,7 +397,7 @@ def scatter(
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
 
-    x_sample, y_sample = _sample_points(x, y, show_points)
+    x_sample, y_sample = sample_points(x, y, show_points)
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
@@ -445,7 +446,7 @@ def scatter(
             )
 
     z = None
-    if show_density:
+    if show_density and len(x_sample) > 0:
         if not ((type(bins) == float) or (type(bins) == int)):
             raise TypeError(
                 "if `show_density=True` then bins must be either float or int"
