@@ -1,6 +1,8 @@
-from typing import List, Tuple, Union
+import math
+from typing import List, Tuple, Union, Optional
 import warnings
 import numpy as np
+import pandas as pd
 from collections import namedtuple
 from scipy import interpolate
 
@@ -348,6 +350,7 @@ def scatter(
         plt.title(title)
         # Add skill table
         if skill_df is not None:
+            assert isinstance(skill_df, pd.DataFrame)
             _plot_summary_table(skill_df, units, max_cbar=max_cbar)
         return ax
 
@@ -607,29 +610,51 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     return Z_grid
 
 
-def _plot_summary_table(skill_df, units, max_cbar):
+def _format_skill_line(series, units, precision, max_str_len) -> str:
+
+    # TODO get this info from the metrics module
     stats_with_units = ["bias", "rmse", "urmse", "mae"]
+
+    if series.name in stats_with_units:
+        # if statistic has dimensions, then add units
+        item_unit = units
+    else:
+        # else, add empty space (for fomatting)
+        item_unit = " "
+
+    if series.name == "n":
+        # Number of samples, integer, else, 2 decimals by default
+        decimals = f".{0}f"
+    else:
+        decimals = f".{precision}f"
+
+    return f"{(series.name.ljust(max_str_len)).upper()} = {np.round(series.values[0],precision): {decimals}} {item_unit}"
+
+
+def format_skill_df(
+    skill_df: pd.DataFrame, units: str, precision: int = 2
+) -> List[str]:
+
     max_str_len = skill_df.columns.str.len().max()
     lines = []
 
-    for col in skill_df.columns:
-        if col == "model" or col == "variable":
-            continue
-        if col in stats_with_units:
-            # if statistic has dimensions, then add units
-            item_unit = units
-        else:
-            # else, add empty space (for fomatting)
-            item_unit = " "
-        if col == "n":
-            # Number of samples, integer, else, 2 decimals
-            decimals = f".{0}f"
-        else:
-            decimals = f".{2}f"
-        lines.append(
-            f"{(col.ljust(max_str_len)).upper()} = {np.round(skill_df[col].values[0],2): {decimals}} {item_unit}"
-        )
+    # remove model and variable columns if present, i.e. keep all other columns
+    df = skill_df.drop(["model", "variable"], axis=1, errors="ignore")
 
+    # loop over series in dataframe, (columns)
+    lines = [
+        _format_skill_line(df[col], units, precision, max_str_len)
+        for col in list(df.columns)
+    ]
+
+    return lines
+
+
+def _plot_summary_table(
+    skill_df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
+) -> None:
+
+    lines = format_skill_df(skill_df, units)
     text_ = "\n".join(lines)
 
     if max_cbar is None:
