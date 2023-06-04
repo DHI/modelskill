@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional, Sequence
 import warnings
 from matplotlib.axes import Axes
 import numpy as np
@@ -120,6 +120,7 @@ def sample_points(
 
 
 def _scatter_matplotlib(
+    *,
     x,
     y,
     x_sample,
@@ -134,7 +135,6 @@ def _scatter_matplotlib(
     nbins_hist,
     intercept,
     slope,
-    reglabel,
     xlabel,
     ylabel,
     figsize,
@@ -187,7 +187,7 @@ def _scatter_matplotlib(
         x_trend,
         intercept + slope * x_trend,
         **settings.get_option("plot.scatter.reg_line.kwargs"),
-        label=reglabel,
+        label=_reglabel(slope=slope, intercept=intercept),
         zorder=2,
     )
 
@@ -217,6 +217,7 @@ def _scatter_matplotlib(
 
 
 def _scatter_plotly(
+    *,
     x,
     y,
     x_sample,
@@ -231,7 +232,6 @@ def _scatter_plotly(
     nbins_hist,
     intercept,
     slope,
-    reglabel,
     xlabel,
     ylabel,
     figsize,  # TODO not used by plotly, remove or keep for consistency?
@@ -252,7 +252,7 @@ def _scatter_plotly(
     regression_line = go.Scatter(
         x=x_trend,
         y=intercept + slope * x_trend,
-        name=reglabel,
+        name=_reglabel(slope=slope, intercept=intercept),
         mode="lines",
         line=dict(color="red"),
     )
@@ -321,6 +321,11 @@ def _scatter_plotly(
     fig.update_xaxes(range=xlim)
     fig.update_yaxes(range=ylim)
     fig.show()  # Should this be here
+
+
+def _reglabel(slope: float, intercept: float) -> str:
+    sign = "" if intercept < 0 else "+"
+    return f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
 
 
 def scatter(
@@ -424,16 +429,18 @@ def scatter(
         else:
             quantiles = 10
 
-    if type(bins) == int:
+    xyspan = xymax - xymin
+    if isinstance(bins, int):
         nbins_hist = bins
-        binsize = (xymax - xymin) / nbins_hist
-    elif type(bins) == float:
+        binsize = xyspan / nbins_hist
+    elif isinstance(bins, float):
         binsize = bins
-        nbins_hist = int((xymax - xymin) / binsize)
+        nbins_hist = int(xyspan / binsize)
+    elif isinstance(bins, Sequence):
+        binsize = bins
+        nbins_hist = bins
     else:
-        # Then bins = Sequence
-        binsize = bins
-        nbins_hist = bins
+        raise TypeError("bins must be an int, float or sequence")
 
     if xlim is None:
         xlim = [xymin - binsize, xymax + binsize]
@@ -441,33 +448,29 @@ def scatter(
     if ylim is None:
         ylim = [xymin - binsize, xymax + binsize]
 
-    if type(quantiles) == int:
+    if isinstance(quantiles, int):
         xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
         yq = np.quantile(y, q=np.linspace(0, 1, num=quantiles))
-    else:
-        # if not an int nor None, it must be a squence of floats
+    elif isinstance(quantiles, Sequence):
         xq = np.quantile(x, q=quantiles)
         yq = np.quantile(y, q=quantiles)
+    else:
+        raise TypeError("quantiles must be an int or sequence of floats")
+
     x_trend = np.array([xlim[0], xlim[1]])
 
-    if show_hist:
-        # if histogram is wanted (explicit non-default flag) then density is off
-        if show_density is True:
-            raise TypeError(
-                "if `show_hist=True` then `show_density` must be either `False` or `None`"
-            )
+    if show_hist and show_density:
+        raise TypeError(
+            "if `show_hist=True` then `show_density` must be either `False` or `None`"
+        )
 
     z = None
     if show_density and len(x_sample) > 0:
-        if not ((type(bins) == float) or (type(bins) == int)):
+        if not isinstance(bins, (float, int)):
             raise TypeError(
                 "if `show_density=True` then bins must be either float or int"
             )
-        # if point density is wanted, then 2D histogram is not shown
-        if show_hist is True:
-            raise TypeError(
-                "if `show_density=True` then `show_hist` must be either `False` or `None`"
-            )
+
         # calculate density data
         z = __scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
@@ -482,72 +485,39 @@ def scatter(
     else:
         slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
 
-    if intercept < 0:
-        sign = ""
-    else:
-        sign = "+"
-    reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
+    PLOTTING_BACKENDS = {
+        "matplotlib": _scatter_matplotlib,
+        "plotly": _scatter_plotly,
+    }
 
-    if backend == "matplotlib":
+    if backend not in PLOTTING_BACKENDS:
+        raise ValueError(f"backend must be one of {list(PLOTTING_BACKENDS.keys())}")
 
-        return _scatter_matplotlib(
-            x,
-            y,
-            x_sample,
-            y_sample,
-            z,
-            xq,
-            yq,
-            x_trend,
-            show_density,
-            show_points,
-            show_hist,
-            nbins_hist,
-            intercept,
-            slope,
-            reglabel,
-            xlabel,
-            ylabel,
-            figsize,
-            xlim,
-            ylim,
-            title,
-            skill_df,
-            units,
-            **kwargs,
-        )
-
-    elif backend == "plotly":  # pragma: no cover
-
-        _scatter_plotly(
-            x,
-            y,
-            x_sample,
-            y_sample,
-            z,
-            xq,
-            yq,
-            x_trend,
-            show_density,
-            show_points,
-            show_hist,
-            nbins_hist,
-            intercept,
-            slope,
-            reglabel,
-            xlabel,
-            ylabel,
-            figsize,
-            xlim,
-            ylim,
-            title,
-            skill_df,
-            units,
-            **kwargs,
-        )
-    else:
-
-        raise ValueError(f"Plotting backend: {backend} not supported")
+    return PLOTTING_BACKENDS[backend](
+        x=x,
+        y=y,
+        x_sample=x_sample,
+        y_sample=y_sample,
+        z=z,
+        xq=xq,
+        yq=yq,
+        x_trend=x_trend,
+        show_density=show_density,
+        show_points=show_points,
+        show_hist=show_hist,
+        nbins_hist=nbins_hist,
+        intercept=intercept,
+        slope=slope,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        figsize=figsize,
+        xlim=xlim,
+        ylim=ylim,
+        title=title,
+        skill_df=skill_df,
+        units=units,
+        **kwargs,
+    )
 
 
 def plot_observation_positions(
