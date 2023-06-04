@@ -25,10 +25,9 @@ def test_format_skill_df():
     )
 
     lines = format_skill_df(df, units="degC")
-
-    assert any(["RMSE  =  0.04 degC" in line for line in lines])
-    assert any(["MAE   =  0.03 degC" in line for line in lines])
-    assert any(["CC    =  0.84 " in line for line in lines])
-
-    lines_3 = format_skill_df(df, units="ft", precision=3)
-    assert any(["RMSE  =  0.041 ft" in line for line in lines_3])
+    assert "N     =  167" in lines[0]
+    assert "BIAS  =  0.00 degC" in lines[1]
+    assert "RMSE  =  0.04 degC" in lines[2]
+    assert "URMSE =  0.04 degC" in lines[3]
+    assert "MAE   =  0.03 degC" in lines[4]
+    assert "CC    =  0.84 " in lines[5]

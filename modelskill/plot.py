@@ -15,6 +15,7 @@ from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
 import modelskill.settings as settings
 from .settings import options, register_option
+from .observation import unit_display_name
 
 
 register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
@@ -620,18 +621,25 @@ def _format_skill_line(
 
     if series.name in stats_with_units:
         # if statistic has dimensions, then add units
-        item_unit = units
+        item_unit = unit_display_name(units)
     else:
         # else, add empty space (for fomatting)
         item_unit = " "
 
     if series.name == "n":
         # Number of samples, integer, else, 2 decimals by default
-        decimals = f".{0}f"
+        fvalue = series.values[0]
     else:
-        decimals = f".{precision}f"
+        rounded_value = np.round(series.values[0], precision)
+        fmt = f".{precision}f"
+        fvalue = f"{rounded_value:{fmt}}"
 
-    return f"{(series.name.ljust(max_str_len)).upper()} = {np.round(series.values[0],precision): {decimals}} {item_unit}"
+    name = series.name.ljust(max_str_len).upper()
+
+    # e.g
+    # RMSE =  0.12 mm
+
+    return f"{name} =  {fvalue} {item_unit}"
 
 
 def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
