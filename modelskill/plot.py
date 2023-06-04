@@ -350,8 +350,9 @@ def scatter(
         plt.title(title)
         # Add skill table
         if skill_df is not None:
-            assert isinstance(skill_df, pd.DataFrame)
-            _plot_summary_table(skill_df, units, max_cbar=max_cbar)
+            df = skill_df.df
+            assert isinstance(df, pd.DataFrame)
+            _plot_summary_table(df, units, max_cbar=max_cbar)
         return ax
 
     elif backend == "plotly":  # pragma: no cover
@@ -610,7 +611,9 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     return Z_grid
 
 
-def _format_skill_line(series, units, precision, max_str_len) -> str:
+def _format_skill_line(
+    series: pd.Series, units: str, precision: int, max_str_len: int
+) -> str:
 
     # TODO get this info from the metrics module
     stats_with_units = ["bias", "rmse", "urmse", "mae"]
@@ -631,15 +634,12 @@ def _format_skill_line(series, units, precision, max_str_len) -> str:
     return f"{(series.name.ljust(max_str_len)).upper()} = {np.round(series.values[0],precision): {decimals}} {item_unit}"
 
 
-def format_skill_df(
-    skill_df: pd.DataFrame, units: str, precision: int = 2
-) -> List[str]:
+def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
 
-    max_str_len = skill_df.columns.str.len().max()
-    lines = []
+    max_str_len = df.columns.str.len().max()
 
     # remove model and variable columns if present, i.e. keep all other columns
-    df = skill_df.drop(["model", "variable"], axis=1, errors="ignore")
+    df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
 
     # loop over series in dataframe, (columns)
     lines = [
@@ -651,10 +651,10 @@ def format_skill_df(
 
 
 def _plot_summary_table(
-    skill_df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
+    df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
 ) -> None:
 
-    lines = format_skill_df(skill_df, units)
+    lines = format_skill_df(df, units)
     text_ = "\n".join(lines)
 
     if max_cbar is None:
