@@ -31,3 +31,12 @@ def test_format_skill_df():
     assert "URMSE =  0.04 degC" in lines[3]
     assert "MAE   =  0.03 degC" in lines[4]
     assert "CC    =  0.84 " in lines[5]
+
+    lines_with_short_units = format_skill_df(df, units="meter")
+
+    assert "N     =  167" in lines_with_short_units[0]
+    assert "BIAS  =  0.00 m" in lines_with_short_units[1]
+    assert "RMSE  =  0.04 m" in lines_with_short_units[2]
+    assert "URMSE =  0.04 m" in lines_with_short_units[3]
+    assert "MAE   =  0.03 m" in lines_with_short_units[4]
+    assert "CC    =  0.84 " in lines_with_short_units[5]
