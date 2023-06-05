@@ -2138,71 +2138,77 @@ class ComparerCollection(Mapping, Sequence):
         >>> comparer.scatter(observations=['c2','HKNA'])
         """
         # select model
-        mod_id = _get_id(model, self.mod_names)
-        mod_name = self.mod_names[mod_id]
+        # mod_id = _get_id(model, self.mod_names)
+        # mod_name = self.mod_names[mod_id]
 
         # select variable
         var_id = _get_id(variable, self.var_names)
         var_name = self.var_names[var_id]
 
-        # filter data
-        cmp = self.sel(
-            model=mod_name,
-            observation=observation,
-            variable=var_name,
-            start=start,
-            end=end,
-            area=area,
-        )
-        if cmp.n_points == 0:
-            raise Exception("No data found in selection")
+        # TODO implement other visualization strategies
+        # subplots, multiple models color coded in the same plot?
+        for mod_name in self.mod_names:
+            # filter data
+            cmp = self.sel(
+                model=mod_name,
+                observation=observation,
+                variable=var_name,
+                start=start,
+                end=end,
+                area=area,
+            )
+            if cmp.n_points == 0:
+                raise Exception("No data found in selection")
 
-        df = cmp.to_dataframe()
-        x = df.obs_val
-        y = df.mod_val
+            df = cmp.to_dataframe()
+            x = df.obs_val
+            y = df.mod_val
 
-        unit_text = self[df.observation[0]]._unit_text
+            unit_text = self[df.observation[0]]._unit_text
 
-        xlabel = xlabel or f"Observation, {unit_text}"
-        ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{mod_name} vs {cmp.name}"
+            xlabel = xlabel or f"Observation, {unit_text}"
+            ylabel = ylabel or f"Model, {unit_text}"
+            title = title or f"{mod_name} vs {cmp.name}"
 
-        skill_df = None
-        units = None
-        if skill_table:
-            if isinstance(self, ComparerCollection) and cmp.n_observations == 1:
-                skill_df = cmp.skill()
-            else:
-                skill_df = self.mean_skill()
-            try:
-                units = unit_text.split("[")[1].split("]")[0]
-            except:
-                units = ""  # Dimensionless
+            skill_df = None
+            units = None
+            if skill_table:
+                if isinstance(self, ComparerCollection) and cmp.n_observations == 1:
+                    skill_df = cmp.skill()
+                else:
+                    skill_df = self.mean_skill()
+                try:
+                    units = unit_text.split("[")[1].split("]")[0]
+                except:
+                    units = ""  # Dimensionless
 
-        ax = scatter(
-            x=x,
-            y=y,
-            bins=bins,
-            quantiles=quantiles,
-            fit_to_quantiles=fit_to_quantiles,
-            show_points=show_points,
-            show_hist=show_hist,
-            show_density=show_density,
-            backend=backend,
-            figsize=figsize,
-            xlim=xlim,
-            ylim=ylim,
-            reg_method=reg_method,
-            title=title,
-            xlabel=xlabel,
-            ylabel=ylabel,
-            skill_df=skill_df,
-            units=units,
-            binsize=binsize,
-            nbins=nbins,
-            **kwargs,
-        )
-        return ax
+            ax = scatter(
+                x=x,
+                y=y,
+                bins=bins,
+                quantiles=quantiles,
+                fit_to_quantiles=fit_to_quantiles,
+                show_points=show_points,
+                show_hist=show_hist,
+                show_density=show_density,
+                backend=backend,
+                figsize=figsize,
+                xlim=xlim,
+                ylim=ylim,
+                reg_method=reg_method,
+                title=title,
+                xlabel=xlabel,
+                ylabel=ylabel,
+                skill_df=skill_df,
+                units=units,
+                binsize=binsize,
+                nbins=nbins,
+                **kwargs,
+            )
+            # reset title
+            title = None
+
+        return ax  # TODO: return list of axes?
 
     def hist(
         self,
