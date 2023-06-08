@@ -3,14 +3,14 @@
 Getting started
 ###############
 
-This page describes the typical FMskill workflow for comparing 
+This page describes the typical ModelSkill workflow for comparing 
 model results and observations. If you just need a simple one-to-one 
 time series comparison, see the `simple time series comparison <simple_compare.html>`_.
 
 Workflow
 ********
 
-The typical FMskill workflow consists of these five steps:
+The typical ModelSkill workflow consists of these five steps:
 
 #. Define **ModelResults**
 #. Define **Observations**
@@ -24,12 +24,12 @@ The typical FMskill workflow consists of these five steps:
 
 The result of a MIKE 21/3 simulation is stored in one or more dfs files. 
 The most common formats are .dfsu for distributed data and .dfs0 for 
-time series point data. A FMskill `ModelResult <api.html#fmskill.model.ModelResult>`_ is defined by the 
+time series point data. A ModelSkill `ModelResult <api.html#modelskill.model.ModelResult>`_ is defined by the 
 result file path and a name:
 
 .. code-block:: python
 
-   from fmskill import ModelResult
+   from modelskill import ModelResult
    mr = ModelResult("HKZN_local_2017.dfsu", name="HKZN_local", item="Sign. Wave Heigt")
 
 Currently, ModelResult supports .dfs0 and .dfsu files and pandas DataFrame.  
@@ -44,14 +44,14 @@ The data will be read later.
 The next step is to define the measurements to be used for the skill assessment. 
 Two types of observation are available: 
 
-* `PointObservation <api.html#fmskill.observation.PointObservation>`_
-* `TrackObservation <api.html#fmskill.observation.TrackObservation>`_
+* `PointObservation <api.html#modelskill.observation.PointObservation>`_
+* `TrackObservation <api.html#modelskill.observation.TrackObservation>`_
 
 Let's assume that we have one PointObservation and one TrackObservation: 
 
 .. code-block:: python
 
-   from fmskill import PointObservation, TrackObservation
+   from modelskill import PointObservation, TrackObservation
    HKNA = PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
    c2 = TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
 
@@ -68,12 +68,12 @@ the item number (or item name) and a name. A PointObservation further needs to b
 ========================================
 
 The observations are connected with a model result using the 
-`Connector <api.html#fmskill.connection.Connector>`_ like this:
+`Connector <api.html#modelskill.connection.Connector>`_ like this:
 
 
 .. code-block:: python
 
-   from fmskill import Connector
+   from modelskill import Connector
    con = Connector([HKNA, c2], mr)
 
 
@@ -82,13 +82,13 @@ The observations are connected with a model result using the
 
 Once the observations and the model results have been connected, 
 its very simple to do the extraction which interpolates the model results 
-in space and time to the observation points using the `extract() <api.html#fmskill.connection.Connector.extract>`_ method: 
+in space and time to the observation points using the `extract() <api.html#modelskill.connection.Connector.extract>`_ method: 
 
 .. code-block:: python
 
    cc = con.extract()
 
-The extract method returns a `ComparerCollection <api.html#fmskill.comparison.ComparerCollection>`_ for further analysis and plotting. 
+The extract method returns a `ComparerCollection <api.html#modelskill.comparison.ComparerCollection>`_ for further analysis and plotting. 
 
 
 5. Do analysis, plotting, etc with a Comparer
@@ -100,8 +100,8 @@ for plotting and skill assessment.
 
 The primary comparer methods are:
 
-* `skill() <api.html#fmskill.comparison.ComparerCollection.skill>`_ which returns a pandas dataframe with the skill scores
-* `scatter() <api.html#fmskill.comparison.ComparerCollection.scatter>`_ which shows a scatter density plot of the data
+* `skill() <api.html#modelskill.comparison.ComparerCollection.skill>`_ which returns a pandas dataframe with the skill scores
+* `scatter() <api.html#modelskill.comparison.ComparerCollection.scatter>`_ which shows a scatter density plot of the data
 
 
 Filtering

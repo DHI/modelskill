@@ -35,12 +35,12 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Install fmskill
+    - name: Install modelskill
       run: |
         pip install .[test]
     - name: Test with pytest
       run: |
-        pytest --cov=fmskill --ignore tests/notebooks/
+        pytest --cov=modelskill --ignore tests/notebooks/
     - name: Test docstrings with pytest
       run: |
-        pytest ./fmskill/metrics.py --doctest-modules
+        pytest ./modelskill/metrics.py --doctest-modules

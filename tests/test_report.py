@@ -1,6 +1,6 @@
 import pytest
-import fmskill
-from fmskill.report import Reporter
+import modelskill
+from modelskill.report import Reporter
 import matplotlib as mpl
 
 mpl.use("Agg")
@@ -8,7 +8,7 @@ mpl.use("Agg")
 
 def test_markdown(tmpdir):
 
-    connector = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    connector = modelskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     reporter = Reporter(connector, tmpdir)
 
     filename = reporter.to_markdown()
@@ -19,7 +19,7 @@ def test_markdown(tmpdir):
 
 def test_html(tmpdir):
 
-    connector = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    connector = modelskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     reporter = Reporter(connector, tmpdir)
 
     filename = reporter.to_html()

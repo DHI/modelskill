@@ -135,7 +135,7 @@ tests/testdata/tmp
 
 # ignore .bak files
 *.bak
-fmskill/*.bak
+modelskill/*.bak
 
 # .ini 
 *.ini

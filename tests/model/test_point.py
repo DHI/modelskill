@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 
 import mikeio
-from fmskill import ModelResult, PointObservation, Quantity
-from fmskill.model import protocols, PointModelResult
+from modelskill import ModelResult, PointObservation, Quantity
+from modelskill.model import protocols, PointModelResult
 
 
 @pytest.fixture

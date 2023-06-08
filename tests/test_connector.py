@@ -5,10 +5,10 @@ import pandas as pd
 
 import mikeio
 
-from fmskill import ModelResult
-from fmskill import PointObservation, TrackObservation
-from fmskill import Connector
-from fmskill.connection import PointConnector, TrackConnector
+from modelskill import ModelResult
+from modelskill import PointObservation, TrackObservation
+from modelskill import Connector
+from modelskill.connection import PointConnector, TrackConnector
 
 
 @pytest.fixture

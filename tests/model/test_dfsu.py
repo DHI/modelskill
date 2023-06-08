@@ -2,10 +2,10 @@ import numpy as np
 import pytest
 
 import mikeio
-from fmskill import ModelResult
-from fmskill.connection import Connector
-from fmskill.model import DfsuModelResult, PointModelResult, TrackModelResult
-from fmskill.observation import PointObservation, TrackObservation
+from modelskill import ModelResult
+from modelskill.connection import Connector
+from modelskill.model import DfsuModelResult, PointModelResult, TrackModelResult
+from modelskill.observation import PointObservation, TrackObservation
 
 
 @pytest.fixture
