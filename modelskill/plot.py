@@ -439,7 +439,7 @@ def scatter(
 
 
 def plot_observation_positions(
-    geometry: mikeio.spatial.FM_geometry.GeometryFM,
+    geometry,
     observations: List[Observation],
     figsize: Tuple = None,
     title=None,
