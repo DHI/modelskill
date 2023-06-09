@@ -119,6 +119,38 @@ def sample_points(
     return x_sample, y_sample
 
 
+def quantiles_xy(
+    x: np.ndarray, y: np.ndarray, quantiles: Union[int, Sequence[float]] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Calculate quantiles of x and y
+
+    Parameters
+    ----------
+    x: np.ndarray, 1d        
+    y: np.ndarray, 1d
+    q: int, Sequence[float]
+        quantiles to calculate
+
+    Returns
+    -------
+    np.ndarray, np.ndarray
+        x and y arrays with quantiles
+    """
+
+    if quantiles is None:
+        if len(x) >= 3000:
+            quantiles = 1000
+        elif len(x) >= 300:
+            quantiles = 100
+        else:
+            quantiles = 10
+
+    if not isinstance(quantiles, (int, Sequence)):
+        raise TypeError("quantiles must be an int or sequence of floats")
+    
+    q = np.linspace(0, 1, num=quantiles) if isinstance(quantiles, int) else quantiles
+    return np.quantile(x, q=q), np.quantile(y, q=q)
+
 def _scatter_matplotlib(
     *,
     x,
@@ -437,20 +469,13 @@ def scatter(
         raise ValueError("x & y are not of equal length")
 
     x_sample, y_sample = sample_points(x, y, show_points)
+    xq, yq = quantiles_xy(x, y, quantiles)
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
     xymin = min([xmin, ymin])
     xymax = max([xmax, ymax])
-
-    if quantiles is None:
-        if len(x) >= 3000:
-            quantiles = 1000
-        elif len(x) >= 300:
-            quantiles = 100
-        else:
-            quantiles = 10
-
+    
     nbins_hist, binsize = _get_bins(bins, xymin=xymin, xymax=xymax)
 
     if xlim is None:
@@ -459,14 +484,6 @@ def scatter(
     if ylim is None:
         ylim = (xymin - binsize, xymax + binsize)
 
-    if isinstance(quantiles, int):
-        xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
-        yq = np.quantile(y, q=np.linspace(0, 1, num=quantiles))
-    elif isinstance(quantiles, Sequence):
-        xq = np.quantile(x, q=quantiles)
-        yq = np.quantile(y, q=quantiles)
-    else:
-        raise TypeError("quantiles must be an int or sequence of floats")
 
     x_trend = np.array([xlim[0], xlim[1]])
 
