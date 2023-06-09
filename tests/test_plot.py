@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 import pytest
-import fmskill as ms
+import modelskill as ms
 
 
 @pytest.fixture
