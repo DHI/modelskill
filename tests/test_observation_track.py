@@ -2,7 +2,8 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from fmskill.observation import TrackObservation
+from modelskill.observation import TrackObservation
+from modelskill import Quantity
 
 
 @pytest.fixture
@@ -16,10 +17,10 @@ def test_read(c2):
     assert len(o1.x) == o1.n_points
     assert o1.name == "c2"
     assert pytest.approx(o1.values.max()) == 17.67
-    assert o1.override_units == None
-    o2 = TrackObservation(c2, item=2, name="c2", units="inches/hour")
-    assert o2.override_units == "inches/hour"
-    assert o2._unit_text() == "Wind speed [inches/hour]"
+    # o2 = TrackObservation(c2, item=2, name="c2", units="inches/hour")
+    o2 = TrackObservation(
+        c2, item=2, name="c2", quantity=Quantity(name="Wind speed", unit="inches/hour")
+    )
     assert "x" in o1.data
     assert "y" in o1.data
 
@@ -96,9 +97,9 @@ def test_trackobservation_item_csv():
 
 def test_hist(c2):
     o1 = TrackObservation(c2, item=2)
-    o1.hist()
+    o1.plot.hist()
 
-    o1.hist(bins=20, title="new_title", color="red")
+    o1.plot.hist(bins=20, title="new_title", color="red")
 
 
 def test_trackobservation_x_y_item(c2):

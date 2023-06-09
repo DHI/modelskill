@@ -2,10 +2,10 @@ import numpy as np
 import pytest
 
 import mikeio
-from fmskill import ModelResult
-from fmskill.connection import Connector
-from fmskill.model import DfsuModelResult, PointModelResult, TrackModelResult
-from fmskill.observation import PointObservation, TrackObservation
+from modelskill import ModelResult
+from modelskill.connection import Connector
+from modelskill.model import DfsuModelResult, PointModelResult, TrackModelResult
+from modelskill.observation import PointObservation, TrackObservation
 
 
 @pytest.fixture
@@ -67,19 +67,25 @@ def Hm0_C2():
 
 
 def test_dfsu_repr(hd_oresund_2d):
-    mr = ModelResult(hd_oresund_2d, item="Surface elevation")
+    mr = ModelResult(hd_oresund_2d, name="Oresund2D", item="Surface elevation")
     txt = repr(mr)
     assert "Oresund2D" in txt
 
 
 def test_dfsu_properties(hd_oresund_2d):
-    mr = ModelResult(hd_oresund_2d, item="Surface elevation")
+    mr = ModelResult(hd_oresund_2d, name="Oresund2d", item="Surface elevation")
 
     assert mr.data.is_2d
 
+    # Note != name of item
+    assert mr.quantity.name == "Surface Elevation"
+
+    # this is the unit, shortening it is a presentation concern
+    assert mr.quantity.unit == "meter"
+
 
 def test_dfsu_sw(sw_dutch_coast):
-    mr = ModelResult(sw_dutch_coast, item=0)
+    mr = ModelResult(sw_dutch_coast, name="SW", item=0)
 
     assert isinstance(mr, DfsuModelResult)
 
@@ -106,7 +112,6 @@ def test_dfsu_dataarray(hd_oresund_2d):
     assert isinstance(da, mikeio.DataArray)
 
     mr = ModelResult(da, name="Oresund")
-    assert mr.item_name == da.item.name
     assert mr.name == "Oresund"
     assert isinstance(mr.data, mikeio.DataArray)
 
@@ -119,9 +124,9 @@ def test_dfsu_factory(hd_oresund_2d):
     assert isinstance(mr1, DfsuModelResult)
     assert mr1.name == "myname"
 
-    mr2 = ModelResult(hd_oresund_2d, item="Surface elevation")
+    mr2 = ModelResult(hd_oresund_2d, name="Oresund2d", item="Surface elevation")
     assert isinstance(mr2, DfsuModelResult)
-    assert mr2.item == "Surface elevation"
+    assert mr2.name == "Oresund2d"
 
 
 # def test_extract_observation(sw_dutch_coast, Hm0_HKNA):
@@ -141,7 +146,7 @@ def test_dfsu_factory(hd_oresund_2d):
 def test_extract_observation_total_windsea_swell_not_possible(
     sw_total_windsea, Hm0_HKNA
 ):
-    mr = ModelResult(sw_total_windsea, item="Sign. Wave Height, S")
+    mr = ModelResult(sw_total_windsea, name="SW", item="Sign. Wave Height, S")
     """
     Items:
         0:  Sign. Wave Height <Significant wave height> (meter)
@@ -161,13 +166,10 @@ def test_extract_observation_total_windsea_swell_not_possible(
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d, item=0)
     with pytest.raises(Exception):
-        with pytest.warns(UserWarning, match="Item type should match"):
-            c = Connector(klagshamn, mr, validate=True).extract()
+        c = Connector(klagshamn, mr, validate=True).extract()
 
-    with pytest.warns(UserWarning) as wn:
-        c = Connector(klagshamn, mr, validate=False).extract()
-        assert "Item type mismatch" in str(wn[0].message)
-    # c = mr.extract_observation(klagshamn, validate=False)
+    # No error if validate==False
+    c = Connector(klagshamn, mr, validate=False).extract()
     assert c.n_points > 0
 
 
@@ -175,7 +177,6 @@ def test_extract_observation_validation(hd_oresund_2d, klagshamn):
 def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     mr = ModelResult(hd_oresund_2d, item=0)
     # correct eum, but outside domain
-    klagshamn.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Surface_Elevation)
     klagshamn.y = -10
     with pytest.raises(ValueError):
         _ = Connector(klagshamn, mr, validate=True).extract()
@@ -185,7 +186,6 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
 
 def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
     mr1 = ModelResult(sw_dutch_coast, item=0, name="SW1")
-    assert mr1.itemInfo.type == mikeio.EUMType.Significant_wave_height
     mr_extr_1 = mr1.extract(Hm0_EPL.copy())
     # df1 = mr1._extract_point(Hm0_EPL)
     assert mr_extr_1.data.columns == ["SW1"]
@@ -193,7 +193,6 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ModelResult(da, name="SW1")
-    assert mr2.itemInfo.type == mikeio.EUMType.Significant_wave_height
     mr_extr_2 = mr2.extract(Hm0_EPL.copy())
 
     assert mr_extr_1.data.columns == mr_extr_2.data.columns

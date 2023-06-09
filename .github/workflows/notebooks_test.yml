@@ -17,7 +17,7 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'    
-    - name: Install fmskill
+    - name: Install modelskill
       run: |
         pip install .[test,notebooks]    
     - name: Test notebooks    

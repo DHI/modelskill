@@ -5,10 +5,10 @@ import pandas as pd
 
 import mikeio
 
-from fmskill import ModelResult
-from fmskill import PointObservation, TrackObservation
-from fmskill import Connector
-from fmskill.connection import PointConnector, TrackConnector
+from modelskill import ModelResult
+from modelskill import PointObservation, TrackObservation
+from modelskill import Connector
+from modelskill.connection import PointConnector, TrackConnector
 
 
 @pytest.fixture
@@ -196,30 +196,6 @@ def test_connector_add_two_model_dataframes(
 #         mr.add_observation(klagshamn, item=0)
 
 
-def test_add_fail(o2, mr1):
-    # mr.add_observation(Hm0_EPL)  # infer item by EUM
-    # assert len(mr.observations) == 1
-
-    con = Connector()
-    # with pytest.raises(Exception):
-    #     with pytest.warns(UserWarning):
-    #         # item not specified
-    #         con.add(o2, mr1)
-
-    eumHm0 = mikeio.EUMType.Significant_wave_height
-    o2.itemInfo = mikeio.ItemInfo(eumHm0, unit=mikeio.EUMUnit.feet)
-    with pytest.raises(Exception):
-        with pytest.warns(UserWarning):
-            # EUM unit doesn't match
-            con.add(o2, mr1)
-
-    o2.itemInfo = mikeio.ItemInfo(mikeio.EUMType.Water_Level, unit=mikeio.EUMUnit.meter)
-    with pytest.raises(Exception):
-        with pytest.warns(UserWarning):
-            # EUM type doesn't match
-            con.add(o2, mr1)
-
-
 # TODO: remove, obsolete (has been moved to test_compare.py)
 def test_extract(con32):
     collection = con32.extract()
@@ -262,6 +238,7 @@ def test_extract_gaps1(con13):
     cc = con13.extract(max_model_gap=2 * 24 * 60 * 60)
     assert cc.n_points == 278
 
+
 # TODO: remove, obsolete
 def test_extract_gaps2(o2_gaps, mr12_gaps):
 
@@ -297,12 +274,14 @@ def test_extract_gaps2(o2_gaps, mr12_gaps):
     assert cc[0].data["mr2"].count() == 42
     assert cc[0].data["mr2"].sel(time="2017-10-28").count() == 0
 
+
 # TODO: remove, obsolete
 def test_extract_gaps_big(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
     con2 = Connector(o2_gaps, mr2)
     cc = con2.extract(max_model_gap=86401)  # 24 hours + 1 second
     assert cc[0].data["mr2"].count() == 66  # no data removed
+
 
 # TODO: remove, obsolete
 def test_extract_gaps_small(o2_gaps, mr12_gaps):
@@ -312,6 +291,7 @@ def test_extract_gaps_small(o2_gaps, mr12_gaps):
         cc = con2.extract(max_model_gap=10)  # no data with that small gap
     assert cc.n_comparers == 0
 
+
 # TODO: remove, obsolete
 def test_extract_gaps_negative(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
@@ -319,6 +299,7 @@ def test_extract_gaps_negative(o2_gaps, mr12_gaps):
     with pytest.warns(UserWarning, match="No overlapping data"):
         cc = con2.extract(max_model_gap=-10)
     assert cc.n_comparers == 0
+
 
 # TODO: remove, obsolete
 def test_extract_gaps_types(o2_gaps, mr12_gaps):

@@ -3,24 +3,28 @@ import pandas as pd
 import pytest
 import numpy as np
 
-import fmskill
-from fmskill import ModelResult, PointObservation, Connector
-from fmskill.metrics import root_mean_squared_error, mean_absolute_error
-from fmskill.comparison import Comparer, PointComparer, ComparerCollection
+import modelskill
+from modelskill import ModelResult, PointObservation, Connector, Quantity
+from modelskill.metrics import root_mean_squared_error, mean_absolute_error
+from modelskill.comparison import Comparer, PointComparer, ComparerCollection
 
 
 @pytest.fixture
 def klagshamn():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
-    return PointObservation(
-        fn, item=0, x=366844, y=6154291, name="Klagshamn", variable_name="WL"
-    )
+    return PointObservation(fn, item=0, x=366844, y=6154291, name="Klagshamn")
 
 
 @pytest.fixture
 def drogden():
     fn = "tests/testdata/dmi_30357_Drogden_Fyr.dfs0"
-    return PointObservation(fn, item=0, x=355568.0, y=6156863.0, variable_name="WL")
+    return PointObservation(
+        fn,
+        item=0,
+        x=355568.0,
+        y=6156863.0,
+        quantity=Quantity("Water Level", unit="meter"),
+    )
 
 
 @pytest.fixture
@@ -31,16 +35,14 @@ def modelresult_oresund_WL():
 @pytest.fixture
 def cc(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector([klagshamn, drogden], mr, validate=False)
+    con = Connector([klagshamn, drogden], mr, validate=False)
     return con.extract()
 
 
 def test_get_comparer_by_name(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector([klagshamn, drogden], mr, validate=False)
+    con = Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -69,8 +71,7 @@ def test_get_comparer_by_position(cc):
 def test_iterate_over_comparers(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector([klagshamn, drogden], mr, validate=False)
+    con = Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -115,8 +116,7 @@ def test_extraction_no_overlap(modelresult_oresund_WL):
 def test_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector([klagshamn, drogden], mr, validate=False)
+    con = Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     assert cc.score(metric=root_mean_squared_error) > 0.0
@@ -126,22 +126,21 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector([klagshamn, drogden], mr, validate=False)
+    con = Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
     unweighted_skill = cc.score()
 
     con = Connector()
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con.add(klagshamn, mr, weight=0.9, validate=False)
+
+    con.add(klagshamn, mr, weight=0.9, validate=False)
     con.add(drogden, mr, weight=0.1, validate=False)
     cc = con.extract()
     weighted_skill = cc.score()
     assert unweighted_skill != weighted_skill
 
     obs = [klagshamn, drogden]
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector(obs, mr, weight=[0.9, 0.1], validate=False)
+
+    con = Connector(obs, mr, weight=[0.9, 0.1], validate=False)
     cc = con.extract()
     weighted_skill2 = cc.score()
 
@@ -152,15 +151,14 @@ def test_misc_properties(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector([klagshamn, drogden], mr, validate=False)
+    con = Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
     assert cc.n_comparers == 2
 
     assert cc.n_models == 1
-    assert cc.mod_names == ["Oresund2D"]
+    assert cc.mod_names == ["Undefined"]
 
     ck = cc["Klagshamn"]
     assert ck.name == "Klagshamn"
@@ -183,8 +181,7 @@ def test_skill(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector([klagshamn, drogden], mr, validate=False)
+    con = Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     df = cc.skill().df
@@ -199,8 +196,7 @@ def test_skill_choose_metrics(klagshamn, drogden):
 
     mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = Connector([klagshamn, drogden], mr, validate=False)
+    con = Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     cc.metrics = ["mae", "si"]
@@ -268,8 +264,8 @@ def test_comparison_from_dict():
             ),
         ),
     )
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = fmskill.from_config(configuration, validate_eum=False)
+
+    con = modelskill.from_config(configuration, validate_eum=False)
     c = con.extract()
     assert len(c) == 2
     assert c.n_comparers == 2
@@ -278,14 +274,13 @@ def test_comparison_from_dict():
 
 def test_comparison_from_yml():
 
-    with pytest.warns(UserWarning, match="Item type mismatch!"):
-        con = fmskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    con = modelskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     c = con.extract()
 
     assert len(c) == 2
     assert c.n_comparers == 2
     assert c.n_models == 1
-    assert con.observations["Klagshamn"].itemInfo.name == "Water Level"
+    assert con.observations["Klagshamn"].quantity.name == "Water Level"
 
 
 def test_comparer_dataframe_without_time_not_allowed(klagshamn):

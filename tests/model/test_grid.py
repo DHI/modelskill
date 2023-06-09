@@ -5,10 +5,15 @@ import pandas as pd
 
 import mikeio
 
-import fmskill
-from fmskill import ModelResult
-from fmskill.model import GridModelResult, PointModelResult, TrackModelResult, protocols
-from fmskill.observation import PointObservation, TrackObservation
+import modelskill
+from modelskill import ModelResult
+from modelskill.model import (
+    GridModelResult,
+    PointModelResult,
+    TrackModelResult,
+    protocols,
+)
+from modelskill.observation import PointObservation, TrackObservation
 
 
 @pytest.fixture
@@ -18,12 +23,12 @@ def ERA5_DutchCoast_nc():
 
 @pytest.fixture
 def mr_ERA5_pp1d(ERA5_DutchCoast_nc):
-    return ModelResult(ERA5_DutchCoast_nc, item="pp1d")
+    return ModelResult(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="pp1d")
 
 
 @pytest.fixture
 def mr_ERA5_swh(ERA5_DutchCoast_nc):
-    return ModelResult(ERA5_DutchCoast_nc, item="swh")
+    return ModelResult(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="swh")
 
 
 @pytest.fixture
@@ -47,10 +52,8 @@ def trackobs_c2_hm0():
 def test_grid_from_nc(mr_ERA5_pp1d):
     mr = mr_ERA5_pp1d
     assert mr.name == "ERA5_DutchCoast"
-    assert mr.item_name == "pp1d"
     assert mr.start_time == datetime(2017, 10, 27, 0, 0, 0)
     assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
-    assert mr.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
 def test_grid_from_DataArray(ERA5_DutchCoast_nc):
@@ -59,9 +62,10 @@ def test_grid_from_DataArray(ERA5_DutchCoast_nc):
 
     assert isinstance(mr, GridModelResult)
     assert isinstance(mr.data, xr.Dataset)
-    assert mr.item_name == "swh"
-    # assert not mr.filename
-    assert mr.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
+
+    # TODO get quantity info from nc
+    # assert mr.quantity.name == "Significant Wave Height"
+    assert mr.quantity.name == "Undefined"
 
 
 def test_dataset_with_missing_coordinates(ERA5_DutchCoast_nc):
@@ -98,20 +102,19 @@ def test_grid_name(ERA5_DutchCoast_nc):
     assert isinstance(mri2, GridModelResult)
 
     assert mri1.name == mri2.name
-    assert mri1.item == mri2.item
 
 
-def test_grid_itemInfo(ERA5_DutchCoast_nc):
-    mri1 = ModelResult(ERA5_DutchCoast_nc, item="pp1d")
-    assert mri1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
+# def test_grid_itemInfo(ERA5_DutchCoast_nc):
+#     mri1 = ModelResult(ERA5_DutchCoast_nc, item="pp1d")
+#     assert mri1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
-    itemInfo = mikeio.EUMType.Wave_period
-    mri3 = ModelResult(ERA5_DutchCoast_nc, item="pp1d", itemInfo=itemInfo)
-    mri3.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Wave_period)
+#     itemInfo = mikeio.EUMType.Wave_period
+#     mri3 = ModelResult(ERA5_DutchCoast_nc, item="pp1d", itemInfo=itemInfo)
+#     mri3.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Wave_period)
 
-    itemInfo = mikeio.ItemInfo("Peak period", mikeio.EUMType.Wave_period)
-    mri3 = ModelResult(ERA5_DutchCoast_nc, item="pp1d", itemInfo=itemInfo)
-    mri3.itemInfo == mikeio.ItemInfo("Peak period", mikeio.EUMType.Wave_period)
+#     itemInfo = mikeio.ItemInfo("Peak period", mikeio.EUMType.Wave_period)
+#     mri3 = ModelResult(ERA5_DutchCoast_nc, item="pp1d", itemInfo=itemInfo)
+#     mri3.itemInfo == mikeio.ItemInfo("Peak period", mikeio.EUMType.Wave_period)
 
 
 def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
@@ -177,8 +180,9 @@ def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
 
 
 # TODO: move to test_connector.py
+# TODO this test seems to be broken, comparing peak period with significant wave height 🤨
 def test_xarray_connector(mr_ERA5_pp1d, pointobs_epl_hm0, trackobs_c2_hm0):
-    con = fmskill.Connector([pointobs_epl_hm0, trackobs_c2_hm0], mr_ERA5_pp1d)
+    con = modelskill.Connector([pointobs_epl_hm0, trackobs_c2_hm0], mr_ERA5_pp1d)
     assert len(con) == 2
     assert con.n_models == 1
 

@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "FMskill"
+project = "ModelSkill"
 copyright = "2021, Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger"
 author = "Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger"
 
@@ -54,4 +54,4 @@ html_theme = "sphinx_book_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
 
-html_logo = "../images/logo/mike-fm-skill-rgb.svg"
+html_logo = "../images/logo/modelskill.svg"

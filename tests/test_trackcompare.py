@@ -2,9 +2,9 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from fmskill import ModelResult
-from fmskill import TrackObservation
-from fmskill import Connector
+from modelskill import ModelResult
+from modelskill import TrackObservation
+from modelskill import Connector
 
 
 @pytest.fixture
@@ -160,7 +160,8 @@ def test_hist(comparer):
     cc[0].hist(bins=10)
     cc[0].hist(density=False)
     cc[0].hist(model=0, title="new_title", alpha=0.2)
-    
+
+
 def test_resicual_hist(comparer):
     cc = comparer
     cc[0].residual_hist()

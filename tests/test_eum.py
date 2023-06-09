@@ -1,4 +1,4 @@
-from fmskill.observation import unit_display_name
+from modelskill.observation import unit_display_name
 
 
 def test_units_display_name():

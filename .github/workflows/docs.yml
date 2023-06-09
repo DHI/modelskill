@@ -17,7 +17,7 @@ jobs:
       with:
         python-version: 3.8
         
-    - name: Install fmskill
+    - name: Install modelskill
       run: |
         pip install .[dev]
     
@@ -28,7 +28,7 @@ jobs:
     
     - name: Commit documentation changes
       run: |
-        git clone https://github.com/DHI/fmskill.git --branch gh-pages --single-branch gh-pages
+        git clone https://github.com/DHI/modelskill.git --branch gh-pages --single-branch gh-pages
         xcopy docs\_build\html gh-pages\ /sy
         cd gh-pages
         touch .nojekyll

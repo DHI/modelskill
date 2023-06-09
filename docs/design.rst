@@ -24,7 +24,7 @@ Easy to install
 
 From PyPI::
 
-    pip install fmskill
+    pip install modelskill
 
 
 Easy to get started
@@ -33,31 +33,31 @@ By providing many examples to cut/paste from.
 
 Examples are available in two forms:
 
-* `Unit tests <https://github.com/DHI/fmskill/tree/main/tests>`_
-* `Jupyter notebooks <https://nbviewer.jupyter.org/github/DHI/fmskill/tree/main/notebooks/>`_
+* `Unit tests <https://github.com/DHI/modelskill/tree/main/tests>`_
+* `Jupyter notebooks <https://nbviewer.jupyter.org/github/DHI/modelskill/tree/main/notebooks/>`_
 
 Open Source​
 ------------
 
-FMskill is an open source project licensed under the `MIT license <https://github.com/DHI/fmskill/blob/main/License>`_.
+ModelSkill is an open source project licensed under the `MIT license <https://github.com/DHI/modelskill/blob/main/License>`_.
 The software is provided free of charge with the source code available for inspection and modification.
 
 
 Easy to collaborate​
 --------------------
 
-By developing `FMskill` on GitHub along with a completely open discussion, we believe that the collaboration between developers and end-users results in a useful library.
+By developing `ModelSkill` on GitHub along with a completely open discussion, we believe that the collaboration between developers and end-users results in a useful library.
 
 Reproducible
 ------------
 
-By providing the historical versions of `FMskill` on PyPI it is possible to reproduce the behaviour of an older existing system, based on an older version.
+By providing the historical versions of `ModelSkill` on PyPI it is possible to reproduce the behaviour of an older existing system, based on an older version.
 
 Install specific version::
 
-    pip install fmskill==0.1.2
+    pip install modelskill==0.1.2
 
 
 Install development version::
 
-    pip install https://github.com/DHI/fmskill/archive/main.zip
+    pip install https://github.com/DHI/modelskill/archive/main.zip
