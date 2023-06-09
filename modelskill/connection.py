@@ -392,17 +392,7 @@ class _SingleObsConnector(_BaseConnector):
         figsize : (float, float), optional
             figure size, by default None
         """
-        mr = self.modelresults[0]
-
-        if isinstance(mr, DfsuModelResult):
-            geometry = mr.data.geometry
-        else:
-            warnings.warn("Only supported for dfsu ModelResults")
-            return
-
-        ax = plot_spatial_coverage(geometry=geometry, o=[self.obs], figsize=figsize)
-
-        return ax
+        return plot_spatial_coverage(obs=[self.obs], mod=self.modelresults, figsize=figsize)
 
     @staticmethod
     def _comparer_or_None(comparer, warn=True):
@@ -721,19 +711,11 @@ class Connector(_BaseConnector, Mapping, Sequence):
         >>> con.plot_observation_positions(figsize=(10,10))
         >>> con.plot_observation_positions("A Map")
         """
-        mod = list(self.modelresults.values())[0]
-
-        if isinstance(mod, DfsuModelResult):
-            geometry = mod.data.geometry
-        else:
-            warnings.warn("Only supported for dfsu ModelResults")
-            return
-
-        observations = list(self.observations.values())
-        ax = plot_spatial_coverage(
-            geometry=geometry, o=observations, title=title, figsize=figsize
+        obs = list(self.observations.values())
+        mod = list(self.modelresults.values())
+        return plot_spatial_coverage(
+            obs=obs, mod=mod, title=title, figsize=figsize
         )
-        return ax
 
     def plot_temporal_coverage(
         self,
