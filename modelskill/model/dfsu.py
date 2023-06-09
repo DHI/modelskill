@@ -36,8 +36,10 @@ class DfsuModelResult(ModelResultBase):
             data = mikeio.open(data)
 
         elif isinstance(data, (mikeio.DataArray, mikeio.Dataset)):
-            if not isinstance(data.geometry, mikeio.spatial.FM_geometry.GeometryFM):
-                raise ValueError(f"Geometry of {type(data)} is not supported.")
+            pass
+            # we could check that geometry has FM in the name, but ideally we would like to support more or all geometries
+            # if not "FM" in str(type(data.geometry)):
+            #    raise ValueError(f"Geometry of {type(data.geometry)} is not supported.")
         else:
             raise ValueError(
                 f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
