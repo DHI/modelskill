@@ -428,6 +428,7 @@ class Comparer:
         if gtype == "point":
             data["x"] = observation.x
             data["y"] = observation.y
+            data["z"] = observation.z
 
         data.attrs["name"] = observation.name
         # data.attrs["variable_name"] = observation.variable_name
@@ -602,6 +603,7 @@ class Comparer:
         df["observation"] = self.name
         df["x"] = self.data.x
         df["y"] = self.data.y
+        df["z"] = self.data.z
         df["obs_val"] = self.obs
 
         return df
@@ -656,6 +658,7 @@ class Comparer:
                 name=self.name,
                 x=self.x,
                 y=self.y,
+                z=self.z,
                 # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
