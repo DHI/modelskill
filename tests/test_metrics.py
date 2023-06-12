@@ -174,3 +174,22 @@ def test_willmott():
     mod = np.array([1.0, 0.0, 0.5])  # mean 0.5
 
     assert mtr.willmott(obs, mod) == pytest.approx(1 - 0.5 / 1.5)
+
+
+def test_metric_has_dimension():
+
+    # the following metrics are dimensionless
+
+    assert not mtr.metric_has_units("nse")
+    assert not mtr.metric_has_units(mtr.nash_sutcliffe_efficiency)
+    assert not mtr.metric_has_units("kge")
+    assert not mtr.metric_has_units("r2")
+
+    # while these metrics are in units of the observations
+    assert mtr.metric_has_units("mae")
+    assert mtr.metric_has_units("bias")
+    assert mtr.metric_has_units("rmse")
+    assert mtr.metric_has_units(mtr.rmse)
+
+    with pytest.raises(ValueError):
+        mtr.metric_has_units("unknown")

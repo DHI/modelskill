@@ -18,6 +18,7 @@ from .plot_taylor import TaylorDiagram
 import modelskill.settings as settings
 from .settings import options, register_option
 from .observation import unit_display_name
+from .metrics import metric_has_units
 
 
 register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
@@ -726,28 +727,22 @@ def _format_skill_line(
     series: pd.Series, units: str, precision: int, max_str_len: int
 ) -> str:
 
-    # TODO get this info from the metrics module
-    stats_with_units = ["bias", "rmse", "urmse", "mae"]
+    name = series.name
 
-    if series.name in stats_with_units:
-        # if statistic has dimensions, then add units
-        item_unit = unit_display_name(units)
-    else:
-        # else, add empty space (for fomatting)
-        item_unit = " "
+    item_unit = " "
 
-    if series.name == "n":
-        # Number of samples, integer, else, 2 decimals by default
+    if name == "n":
         fvalue = series.values[0]
     else:
+        if metric_has_units(metric=name):
+            # if statistic has dimensions, then add units
+            item_unit = unit_display_name(units)
+
         rounded_value = np.round(series.values[0], precision)
         fmt = f".{precision}f"
         fvalue = f"{rounded_value:{fmt}}"
 
     name = series.name.ljust(max_str_len).upper()
-
-    # e.g
-    # RMSE =  0.12 mm
 
     return f"{name} =  {fvalue} {item_unit}"
 
