@@ -2947,6 +2947,31 @@ difference between a model and an observation.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="modelskill.metrics.metric_has_units">
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">metric_has_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#modelskill.metrics.metric_has_units" title="Permalink to this definition">#</a></dt>
+<dd><p>Check if a metric has units (dimension).</p>
+<p>Some metrics are dimensionless, others have the same dimension as the observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>metric</strong> (<em>str</em><em> or </em><em>callable</em>) – Metric name or function</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if metric has a dimension, False otherwise</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">metric_has_units</span><span class="p">(</span><span class="s2">&quot;rmse&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metric_has_units</span><span class="p">(</span><span class="s2">&quot;kge&quot;</span><span class="p">)</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="modelskill.metrics.model_efficiency_factor">
 <span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">model_efficiency_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#modelskill.metrics.model_efficiency_factor" title="Permalink to this definition">#</a></dt>
 <dd><p>Model Efficiency Factor (MEF)</p>
