@@ -55,7 +55,7 @@ Examples
 0.6666666666666666
 """
 import sys
-from typing import Set, Tuple
+from typing import Callable, Set, Tuple, Union
 import warnings
 import numpy as np
 
@@ -560,6 +560,42 @@ def _std_obs(obs: np.ndarray, model: np.ndarray) -> float:
 
 def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
     return model.std()
+
+
+METRICS_WITH_DIMENSION = set(["urmse", "rmse", "bias", "mae"])  # TODO is this complete?
+
+
+def metric_has_units(metric: Union[str, Callable]) -> bool:
+    """Check if a metric has units (dimension).
+
+    Some metrics are dimensionless, others have the same dimension as the observations.
+
+    Parameters
+    ----------
+    metric : str or callable
+        Metric name or function
+
+    Returns
+    -------
+    bool
+        True if metric has a dimension, False otherwise
+
+    Examples
+    --------
+    >>> metric_has_units("rmse")
+    True
+    >>> metric_has_units("kge")
+    False
+    """
+    if isinstance(metric, Callable):
+        name = metric.__name__
+    else:
+        name = metric
+
+    if name not in DEFINED_METRICS:
+        raise ValueError(f"Metric {name} not defined. Choose from {DEFINED_METRICS}")
+
+    return name in METRICS_WITH_DIMENSION
 
 
 DEFINED_METRICS: Set[str] = set(

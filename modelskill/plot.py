@@ -1,7 +1,9 @@
-from typing import List, Tuple, Union, Optional, Sequence
+import math
+from typing import List, Tuple, Union, Optional, Optional, Sequence
 import warnings
 from matplotlib.axes import Axes
 import numpy as np
+import pandas as pd
 import pandas as pd
 from collections import namedtuple
 from scipy import interpolate
@@ -15,6 +17,8 @@ from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
 import modelskill.settings as settings
 from .settings import options, register_option
+from .observation import unit_display_name
+from .metrics import metric_has_units
 
 
 register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
@@ -126,7 +130,7 @@ def quantiles_xy(
 
     Parameters
     ----------
-    x: np.ndarray, 1d        
+    x: np.ndarray, 1d
     y: np.ndarray, 1d
     q: int, Sequence[float]
         quantiles to calculate
@@ -147,9 +151,10 @@ def quantiles_xy(
 
     if not isinstance(quantiles, (int, Sequence)):
         raise TypeError("quantiles must be an int or sequence of floats")
-    
+
     q = np.linspace(0, 1, num=quantiles) if isinstance(quantiles, int) else quantiles
     return np.quantile(x, q=q), np.quantile(y, q=q)
+
 
 def _scatter_matplotlib(
     *,
@@ -241,11 +246,13 @@ def _scatter_matplotlib(
         max_cbar = ticks[-1]
         cbar.set_label("# points")
 
-    plt.title(title)
-    # Add skill table
-    if skill_df is not None:
-        _plot_summary_table(skill_df, units, max_cbar=max_cbar)
-    return ax
+        plt.title(title)
+        # Add skill table
+        if skill_df is not None:
+            df = skill_df.df
+            assert isinstance(df, pd.DataFrame)
+            _plot_summary_table(df, units, max_cbar=max_cbar)
+        return ax
 
 
 def _scatter_plotly(
@@ -475,7 +482,7 @@ def scatter(
     ymin, ymax = y.min(), y.max()
     xymin = min([xmin, ymin])
     xymax = max([xmax, ymax])
-    
+
     nbins_hist, binsize = _get_bins(bins, xymin=xymin, xymax=xymax)
 
     if xlim is None:
@@ -483,7 +490,6 @@ def scatter(
 
     if ylim is None:
         ylim = (xymin - binsize, xymax + binsize)
-
 
     x_trend = np.array([xlim[0], xlim[1]])
 
@@ -717,29 +723,51 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     return Z_grid
 
 
-def _plot_summary_table(skill_df, units, max_cbar):
-    stats_with_units = ["bias", "rmse", "urmse", "mae"]
-    max_str_len = skill_df.columns.str.len().max()
-    lines = []
+def _format_skill_line(
+    series: pd.Series, units: str, precision: int, max_str_len: int
+) -> str:
 
-    for col in skill_df.columns:
-        if col == "model" or col == "variable":
-            continue
-        if col in stats_with_units:
+    name = series.name
+
+    item_unit = " "
+
+    if name == "n":
+        fvalue = series.values[0]
+    else:
+        if metric_has_units(metric=name):
             # if statistic has dimensions, then add units
-            item_unit = units
-        else:
-            # else, add empty space (for fomatting)
-            item_unit = " "
-        if col == "n":
-            # Number of samples, integer, else, 2 decimals
-            decimals = f".{0}f"
-        else:
-            decimals = f".{2}f"
-        lines.append(
-            f"{(col.ljust(max_str_len)).upper()} = {np.round(skill_df[col].values[0],2): {decimals}} {item_unit}"
-        )
+            item_unit = unit_display_name(units)
 
+        rounded_value = np.round(series.values[0], precision)
+        fmt = f".{precision}f"
+        fvalue = f"{rounded_value:{fmt}}"
+
+    name = series.name.ljust(max_str_len).upper()
+
+    return f"{name} =  {fvalue} {item_unit}"
+
+
+def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
+
+    max_str_len = df.columns.str.len().max()
+
+    # remove model and variable columns if present, i.e. keep all other columns
+    df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
+
+    # loop over series in dataframe, (columns)
+    lines = [
+        _format_skill_line(df[col], units, precision, max_str_len)
+        for col in list(df.columns)
+    ]
+
+    return lines
+
+
+def _plot_summary_table(
+    df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
+) -> None:
+
+    lines = format_skill_df(df, units)
     text_ = "\n".join(lines)
 
     if max_cbar is None:
