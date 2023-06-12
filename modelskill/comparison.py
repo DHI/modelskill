@@ -560,6 +560,13 @@ class Comparer:
             return self.data["y"].values
 
     @property
+    def z(self):
+        if "z" in self.data[self._obs_name].attrs.keys():
+            return self.data[self._obs_name].attrs["z"]
+        else:
+            return self.data["z"].values
+        
+    @property
     def obs(self) -> np.ndarray:
         return self.data[self._obs_name].to_dataframe().values
 
