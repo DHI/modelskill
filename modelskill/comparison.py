@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Union
 import warnings
 from inspect import getmembers, isfunction
 import zipfile
+from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -2196,6 +2197,39 @@ class ComparerCollection(Mapping, Sequence):
             units=units,
             **kwargs,
         )
+        return ax
+
+    def kde(self, **kwargs) -> Axes:
+        """Plot kernel density estimate of observation and model data.
+
+        Parameters
+        ----------
+        **kwargs
+            passed to pandas.DataFrame.plot.kde()
+
+        Returns
+        -------
+        Axes
+            matplotlib axes
+
+        Examples
+        --------
+        >>> comparer.kde()
+
+        """
+        df = self.to_dataframe()
+        ax = df.obs_val.plot.kde(
+            linestyle="dashed", label="Observation", **kwargs
+        )  # TODO observation should be easy to distinguish
+
+        for model in self.mod_names:
+            df_model = df[df.model == model]
+            df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
+
+        plt.xlabel(f"{self[df.observation[0]]._unit_text}")
+
+        ax.legend()
+
         return ax
 
     def hist(
