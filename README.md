@@ -56,26 +56,23 @@ Read more about the workflow in the [getting started guide](https://dhi.github.i
 Start by defining model results and observations:
 
 ```python
->>> from modelskill import ModelResult
->>> from modelskill import PointObservation, TrackObservation
->>> mr = ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
->>> HKNA = PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
->>> EPL = PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
->>> c2 = TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+>>> import modelskill as ms
+>>> mr = ms.ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
+>>> HKNA = ms.PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
+>>> EPL = ms.PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
+>>> c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
 ```
 
 Then, connect observations and model results, and extract data at observation points:
 
 ```python
->>> from modelskill import Connector
->>> con = Connector([HKNA, EPL, c2], mr)
->>> comparer = con.extract()
+>>> cc = ms.compare([HKNA, EPL, c2], mr)
 ```
 
-With the comparer, all sorts of skill assessments and plots can be made:
+With the comparer object, cc, all sorts of skill assessments and plots can be made:
 
 ```python
->>> comparer.skill().round(2)
+>>> cc.skill().round(2)
                n  bias  rmse  urmse   mae    cc    si    r2
 observation                                                
 HKNA         385 -0.20  0.35   0.29  0.25  0.97  0.09  0.99
@@ -86,7 +83,7 @@ c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 ### Overview of observation locations
 
 ```python
-con.plot_observation_positions(figsize=(7,7))
+ms.plot_spatial_coverage([HKNA, EPL, c2], mr, figsize=(7,7))
 ```
 
 ![map](https://raw.githubusercontent.com/DHI/modelskill/main/images/map.png)
@@ -96,7 +93,7 @@ con.plot_observation_positions(figsize=(7,7))
 ### Scatter plot
 
 ```python
-comparer.scatter()
+cc.scatter()
 ```
 
 ![scatter](https://raw.githubusercontent.com/DHI/modelskill/main/images/scatter.png)
@@ -106,7 +103,7 @@ comparer.scatter()
 Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
 
 ```python
-comparer["HKNA"].plot_timeseries(width=1000, backend="plotly")
+cc["HKNA"].plot_timeseries(width=1000, backend="plotly")
 ```
 
 ![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
