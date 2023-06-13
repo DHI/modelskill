@@ -59,4 +59,5 @@ def test_plot_spatial_coverage(o1, o2, o3, mr1):
     ms.plot_spatial_coverage([o1, o2, o3], mr1)
     ms.plot_spatial_coverage(o1, mr1, figsize=(3, 6))
     ms.plot_spatial_coverage([o1, o2, o3], mod=[], title="test")
+    ms.plot_spatial_coverage(obs=[], mod=mr1, title="test")
     plt.close()
