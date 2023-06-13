@@ -64,6 +64,12 @@ def _get_ax(ax=None, figsize=None):
         _, ax = plt.subplots(figsize=figsize)
     return ax
 
+def _get_fig_ax(ax=None, figsize=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = plt.gcf()
+    return fig, ax
 
 def scatter(
     x,
@@ -452,8 +458,9 @@ def plot_temporal_coverage(
     *,
     limit_to_model_period=True,
     marker="_",
-    title=None,
+    ax=None,
     figsize=None,
+    title=None,
 ):
     """Plot graph showing temporal coverage for all observations and models
 
@@ -468,10 +475,20 @@ def plot_temporal_coverage(
         by the model, by default True
     marker : str, optional
         plot marker for observations, by default "_"
-    title: str, optional
-        plot title, default empty
+    ax: matplotlib.axes, optional
+        Adding to existing axis, instead of creating new fig    
     figsize : Tuple(float, float), optional
         size of figure, by default (7, 0.45*n_lines)
+    title: str, optional
+        plot title, default empty
+
+    See Also
+    --------
+    plot_spatial_coverage
+
+    Returns
+    -------
+    <matplotlib.axes>
 
     Examples
     --------
@@ -483,7 +500,7 @@ def plot_temporal_coverage(
     >>> ms.plot_temporal_coverage([o1, o2], [mr1, mr2])
     >>> ms.plot_temporal_coverage([o1, o2], mr2, limit_to_model_period=False)
     >>> ms.plot_temporal_coverage(o2, [mr1, mr2], marker=".")
-    >>> ms.plot_temporal_coverage(mod=[mr1, mr2], figsize=(5,3))
+    >>> ms.plot_temporal_coverage(mod=[mr1, mr2], figsize=(5,3))    
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
@@ -493,7 +510,7 @@ def plot_temporal_coverage(
         ysize = max(2.0, 0.45 * n_lines)
         figsize = (7, ysize)
 
-    fig, ax = plt.subplots(figsize=figsize)
+    fig, ax = _get_fig_ax(ax=ax, figsize=figsize)
     y = np.repeat(0.0, 2)
     labels = []
 
@@ -528,6 +545,7 @@ def plot_temporal_coverage(
 def plot_spatial_coverage(
     obs: List[Observation],
     mod=None,
+    ax=None,
     figsize: Tuple = None,
     title: str = None,
 ):
@@ -539,15 +557,34 @@ def plot_spatial_coverage(
         List of observations to be shown on map
     mod : Union[ModelResult, mikeio.GeometryFM], optional
         Model domain to be shown as outline
+    ax: matplotlib.axes, optional
+        Adding to existing axis, instead of creating new fig
     figsize : (float, float), optional
         figure size, by default None
     title: str, optional
         plot title, default empty
+
+    See Also
+    --------
+    plot_temporal_coverage
+
+    Returns
+    -------
+    <matplotlib.axes>
+    
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.PointObservation('HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
+    >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+    >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
+    >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
+    >>> ms.plot_spatial_coverage([o1, o2], [mr1, mr2])
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
 
-    ax = _get_ax(ax=None, figsize=figsize)
+    ax = _get_ax(ax=ax, figsize=figsize)
     offset_x = 1  # TODO: better default
 
     for m in mod:
