@@ -610,7 +610,6 @@ class Comparer:
         df["observation"] = self.name
         df["x"] = self.data.x
         df["y"] = self.data.y
-        df["z"] = self.data.z
         df["obs_val"] = self.obs
 
         return df
