@@ -1437,11 +1437,13 @@ class Comparer:
 
         return ax
 
-    def kde(self, **kwargs) -> Axes:
+    def kde(self, ax=None, **kwargs) -> Axes:
         """Plot kernel density estimate of observation and model data.
 
         Parameters
         ----------
+        ax : matplotlib axes, optional
+            axes to plot on, by default None
         **kwargs
             passed to pandas.DataFrame.plot.kde()
 
@@ -1453,20 +1455,33 @@ class Comparer:
         Examples
         --------
         >>> cmp.kde()
-
+        >>> cmp.kde(bw_method=0.3)
         """
-        # TODO howto supply user defined bandwidth?
+        if ax is None:
+            ax = plt.gca()
 
-        ax = self.data.Observation.to_series().plot.kde(
-            linestyle="dashed", label="Observation", **kwargs
+        self.data.Observation.to_series().plot.kde(
+            ax=ax, linestyle="dashed", label="Observation", **kwargs
         )  # TODO observation should be easy to distinguish
 
         for model in self.mod_names:
             self.data[model].to_series().plot.kde(ax=ax, label=model, **kwargs)
 
-        plt.xlabel(f"{self._unit_text}")
+        ax.set_xlabel(f"{self._unit_text}")
 
         ax.legend()
+
+        # remove y-axis
+        ax.yaxis.set_visible(False)
+        # remove y-ticks
+        ax.tick_params(axis="y", which="both", length=0)
+        # remove y-label
+        ax.set_ylabel("")
+
+        # remove box around plot
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
 
         return ax
 
@@ -2244,11 +2259,13 @@ class ComparerCollection(Mapping, Sequence):
         )
         return ax
 
-    def kde(self, **kwargs) -> Axes:
+    def kde(self, ax=None, **kwargs) -> Axes:
         """Plot kernel density estimate of observation and model data.
 
         Parameters
         ----------
+        ax : Axes, optional
+            matplotlib axes, by default None
         **kwargs
             passed to pandas.DataFrame.plot.kde()
 
@@ -2260,11 +2277,15 @@ class ComparerCollection(Mapping, Sequence):
         Examples
         --------
         >>> cc.kde()
+        >>> cc.kde(bw_method=0.5)
 
         """
+        if ax is None:
+            ax = plt.gca()
+
         df = self.to_dataframe()
-        ax = df.obs_val.plot.kde(
-            linestyle="dashed", label="Observation", **kwargs
+        ax = df.obs_val.d.kde(
+            ax=ax, linestyle="dashed", label="Observation", **kwargs
         )  # TODO observation should be easy to distinguish
 
         for model in self.mod_names:
@@ -2273,7 +2294,20 @@ class ComparerCollection(Mapping, Sequence):
 
         plt.xlabel(f"{self[df.observation[0]]._unit_text}")
 
+        # TODO title?
         ax.legend()
+
+        # remove y-axis
+        ax.yaxis.set_visible(False)
+        # remove y-ticks
+        ax.tick_params(axis="y", which="both", length=0)
+        # remove y-label
+        ax.set_ylabel("")
+
+        # remove box around plot
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
 
         return ax
 
