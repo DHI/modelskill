@@ -2107,20 +2107,8 @@ class ComparerCollection(Mapping, Sequence):
         """
 
         # TODO remove in v1.1
-        model, observation, variable, start, end, area = (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
-
-        if "model" in kwargs:
-            model = kwargs.pop("model")
-            warnings.warn(
-                "model is deprecated, use sel(model=...) instead", FutureWarning
-            )
+        model, start, end, area = _get_deprecated_args(kwargs)
+        variable, observation = None, None
 
         if "observation" in kwargs:
             observation = kwargs.pop("observation")
@@ -2132,22 +2120,6 @@ class ComparerCollection(Mapping, Sequence):
             variable = kwargs.pop("variable")
             warnings.warn(
                 "variable is deprecated, use sel(variable=...) instead", FutureWarning
-            )
-
-        if "start" in kwargs:
-            start = kwargs.pop("start")
-            warnings.warn(
-                "start is deprecated, use sel(start=...) instead", FutureWarning
-            )
-
-        if "end" in kwargs:
-            end = kwargs.pop("end")
-            warnings.warn("end is deprecated, use sel(end=...) instead", FutureWarning)
-
-        if "area" in kwargs:
-            area = kwargs.pop("area")
-            warnings.warn(
-                "area is deprecated, use sel(area=...) instead", FutureWarning
             )
 
         # select model
