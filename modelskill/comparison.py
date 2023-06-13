@@ -350,8 +350,10 @@ class Comparer:
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
 
+        # TODO extract method
         if matched_data is not None:
-            # TODO extract method
+            assert "Observation" in matched_data.data_vars
+
             for key in matched_data.data_vars:
                 if "kind" not in matched_data[key].attrs:
                     matched_data[key].attrs["kind"] = "auxiliary"
@@ -362,6 +364,15 @@ class Comparer:
             if "y" not in matched_data:
                 matched_data["y"] = np.nan
                 matched_data["y"].attrs["kind"] = "position"
+
+            if "color" not in matched_data["Observation"].attrs:
+                matched_data["Observation"].attrs["color"] = "black"
+
+            if "variable_name" not in matched_data.attrs:
+                matched_data.attrs["variable_name"] = Quantity.undefined().name
+
+            if "unit" not in matched_data["Observation"].attrs:
+                matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
 
             self.data = matched_data
             self.raw_mod_data = (
@@ -1412,6 +1423,7 @@ class Comparer:
             .to_series()
             .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
+
         self.data[self._obs_name].to_series().hist(
             bins=bins, color=self.data[self._obs_name].attrs["color"], ax=ax, **kwargs
         )
@@ -1422,6 +1434,39 @@ class Comparer:
             plt.ylabel("density")
         else:
             plt.ylabel("count")
+
+        return ax
+
+    def kde(self, **kwargs) -> Axes:
+        """Plot kernel density estimate of observation and model data.
+
+        Parameters
+        ----------
+        **kwargs
+            passed to pandas.DataFrame.plot.kde()
+
+        Returns
+        -------
+        Axes
+            matplotlib axes
+
+        Examples
+        --------
+        >>> cmp.kde()
+
+        """
+        # TODO howto supply user defined bandwidth?
+
+        ax = self.data.Observation.to_series().plot.kde(
+            linestyle="dashed", label="Observation", **kwargs
+        )  # TODO observation should be easy to distinguish
+
+        for model in self.mod_names:
+            self.data[model].to_series().plot.kde(ax=ax, label=model, **kwargs)
+
+        plt.xlabel(f"{self._unit_text}")
+
+        ax.legend()
 
         return ax
 
@@ -2214,7 +2259,7 @@ class ComparerCollection(Mapping, Sequence):
 
         Examples
         --------
-        >>> comparer.kde()
+        >>> cc.kde()
 
         """
         df = self.to_dataframe()
