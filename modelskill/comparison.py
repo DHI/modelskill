@@ -2284,7 +2284,7 @@ class ComparerCollection(Mapping, Sequence):
             ax = plt.gca()
 
         df = self.to_dataframe()
-        ax = df.obs_val.d.kde(
+        ax = df.obs_val.plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
         )  # TODO observation should be easy to distinguish
 
