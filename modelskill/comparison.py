@@ -928,21 +928,7 @@ class Comparer:
 
         df = cmp.to_dataframe()  # TODO: avoid df if possible?
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
-        res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return AggregatedSkill(res)
-
-    def _add_as_col_if_not_in_index(self, df, skilldf):
-        """Add a field to skilldf if unique in df"""
-        FIELDS = ("observation", "model")
-
-        for field in FIELDS:
-            if (field == "model") and (self.n_models <= 1):
-                continue
-            if field not in skilldf.index.names:
-                unames = df[field].unique()
-                if len(unames) == 1:
-                    skilldf.insert(loc=0, column=field, value=unames[0])
-        return skilldf
 
     def score(
         self,
