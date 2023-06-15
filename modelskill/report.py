@@ -63,7 +63,7 @@ class Reporter:
     def to_html(self):
         """Create report in html format"""
 
-        filename = self.basedir / f"index.html"
+        filename = self.basedir / "index.html"
 
         md = self._markdown()
 

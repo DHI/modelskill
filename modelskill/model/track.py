@@ -6,7 +6,6 @@ import mikeio
 
 from ._base import Quantity, ModelResultBase
 from .. import types, utils
-from . import protocols
 
 
 class TrackModelResult(ModelResultBase):

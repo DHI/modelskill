@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 import mikeio
 from datetime import datetime
 import modelskill
@@ -28,6 +27,12 @@ def test_compare_mod_item(fn_obs, fn_mod):
     c = modelskill.compare(fn_obs, fn_mod, mod_item=0)
     dfs = mikeio.open(fn_mod)
     assert c.mod_names[0] == dfs.items[0].name
+
+
+def test_compare_mod_item_2(fn_obs, fn_mod):
+    df_mod = mikeio.open(fn_mod).read(items=[0, 1, 2]).to_dataframe()
+    c = modelskill.compare(fn_obs, df_mod, mod_item=0)
+    assert c.n_points > 0
 
 
 def test_compare_fn(fn_obs):
@@ -100,12 +105,6 @@ def test_compare_obs_item_pointobs_inconsistent_item_error(fn_mod):
 
     with pytest.raises(ValueError):
         modelskill.compare(o1, fn_mod, mod_item=0, obs_item=1)  # item=0 != obs_item==1
-
-
-def test_compare_mod_item(fn_obs, fn_mod):
-    df_mod = mikeio.open(fn_mod).read(items=[0, 1, 2]).to_dataframe()
-    c = modelskill.compare(fn_obs, df_mod, mod_item=0)
-    assert c.n_points > 0
 
 
 def test_force_keyword_args(fn_obs, fn_mod):

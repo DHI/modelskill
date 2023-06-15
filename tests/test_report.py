@@ -1,4 +1,3 @@
-import pytest
 import modelskill
 from modelskill.report import Reporter
 import matplotlib as mpl

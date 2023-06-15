@@ -1062,7 +1062,7 @@ class Comparer:
         """
 
         # TODO remove in v1.1
-        model, start, end, area = self._get_deprecated_args(kwargs)
+        model, start, end, area = _get_deprecated_args(kwargs)
 
         cmp = self.sel(
             model=model,
@@ -1085,9 +1085,9 @@ class Comparer:
         by = _parse_groupby(by=by, n_models=cmp.n_models, n_obs=1)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]
-        if not "x" in by:
+        if "x" not in by:
             by.insert(0, "x")
-        if not "y" in by:
+        if "y" not in by:
             by.insert(0, "y")
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
@@ -1209,7 +1209,7 @@ class Comparer:
             skill_df = cmp.skill()
             try:
                 units = unit_text.split("[")[1].split("]")[0]
-            except:
+            except IndexError:
                 units = ""  # Dimensionless
 
         ax = scatter(
@@ -2012,9 +2012,9 @@ class ComparerCollection(Mapping, Sequence):
         by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]
-        if not "x" in by:
+        if "x" not in by:
             by.insert(0, "x")
-        if not "y" in by:
+        if "y" not in by:
             by.insert(0, "y")
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
@@ -2159,9 +2159,11 @@ class ComparerCollection(Mapping, Sequence):
                 skill_df = cmp.skill()
             else:
                 skill_df = self.mean_skill()
+
+            # TODO improve this
             try:
                 units = unit_text.split("[")[1].split("]")[0]
-            except:
+            except IndexError:
                 units = ""  # Dimensionless
 
         ax = scatter(
@@ -2380,7 +2382,8 @@ class ComparerCollection(Mapping, Sequence):
             skilldf.n if weights is None else np.tile(weights, len(mod_names))
         )
 
-        weighted_mean = lambda x: np.average(x, weights=skilldf.loc[x.index, "weights"])
+        def weighted_mean(x):
+            return np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
         by = cmp._mean_skill_by(skilldf, mod_names, var_names)
