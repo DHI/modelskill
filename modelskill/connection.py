@@ -451,7 +451,7 @@ class PointConnector(_SingleObsConnector):
         assert isinstance(self.obs, PointObservation)
         df_model = []
         for mr in self.modelresults:
-            if isinstance(mr, protocols.Extractable):
+            if hasattr(mr, "extract"):
                 mr = mr.extract(self.obs)
 
             df = mr.data
@@ -502,7 +502,7 @@ class TrackConnector(_SingleObsConnector):
         assert isinstance(self.obs, TrackObservation)
         df_model = []
         for mr in self.modelresults:
-            if isinstance(mr, protocols.Extractable):
+            if hasattr(mr, "extract"):
                 mr = mr.extract(self.obs)
 
             df = mr.data
