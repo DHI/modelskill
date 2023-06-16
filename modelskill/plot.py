@@ -5,6 +5,9 @@ from collections import namedtuple
 from scipy import interpolate
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+from matplotlib.collections import PatchCollection
+from matplotlib import patches
 
 import mikeio
 
@@ -56,30 +59,35 @@ register_option(
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
 
+# TODO: Auto-implement
+# still requires plt.rcParams.update(modelskill.settings.get_option('plot.rcParams'))
+register_option("plot.rcParams", {}, settings.is_dict) # still have to 
+
 
 def scatter(
-    x,
-    y,
-    *,
-    bins: Union[int, float, List[int], List[float]] = 20,
-    quantiles: Union[int, List[float]] = None,
-    fit_to_quantiles: bool = False,
-    show_points: Union[bool, int, float] = None,
-    show_hist: bool = None,
-    show_density: bool = None,
-    backend: str = "matplotlib",
-    figsize: List[float] = (8, 8),
-    xlim: List[float] = None,
-    ylim: List[float] = None,
-    reg_method: str = "ols",
-    title: str = "",
-    xlabel: str = "",
-    ylabel: str = "",
-    skill_df: object = None,
-    units: str = "",
-    binsize: float = None,
-    nbins: int = None,
-    **kwargs,
+        x,
+        y,
+        *,
+        bins: Union[int, float, List[int], List[float]] = 20,
+        quantiles: Union[int, List[float]] = None,
+        fit_to_quantiles: bool = False,
+        show_points: Union[bool, int, float] = None,
+        show_hist: bool = None,
+        show_density: bool = None,
+        norm: colors = None,
+        backend: str = "matplotlib",
+        figsize: List[float] = (8, 8),
+        xlim: List[float] = None,
+        ylim: List[float] = None,
+        reg_method: str = "ols",
+        title: str = "",
+        xlabel: str = "",
+        ylabel: str = "",
+        skill_df: object = None,
+        units: str = "",
+        binsize: float = None,
+        nbins: int = None,
+        **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled
     Optionally, with density histogram.
@@ -113,6 +121,9 @@ def scatter(
         show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
         are None, then `show_density` is used by default.
         for binning the data, the previous kword `bins=Float` is used
+    norm : matplotlib.colors norm
+        colormap normalization
+        If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
     backend : str, optional
         use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
     figsize : tuple, optional
@@ -154,6 +165,10 @@ def scatter(
 
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
+        
+    if norm is None:
+        # Default: PowerNorm with gamma of 0.5
+        norm = colors.PowerNorm(vmin=1,gamma=0.5)
 
     x_sample = x
     y_sample = y
@@ -298,6 +313,7 @@ def scatter(
                 x_sample,
                 y_sample,
                 c=c,
+                norm=norm,
                 s=options.plot.scatter.points.size,
                 alpha=options.plot.scatter.points.alpha,
                 marker=".",
@@ -342,6 +358,7 @@ def scatter(
         if show_hist or (show_density and show_points):
             cbar = plt.colorbar(fraction=0.046, pad=0.04)
             ticks = cbar.ax.get_yticks()
+            cbar.ax.set_ylim(1,)
             max_cbar = ticks[-1]
             cbar.set_label("# points")
 
@@ -603,6 +620,7 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 
     # Replace negative values (should there be some) in case of 'cubic' interpolation
     Z_grid[(Z_grid < 0)] = 0
+    Z_grid[np.isnan(Z_grid)] = 0
 
     return Z_grid
 
@@ -610,8 +628,8 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 def _plot_summary_table(skill_df, units, max_cbar):
     stats_with_units = ["bias", "rmse", "urmse", "mae"]
     max_str_len = skill_df.columns.str.len().max()
-    lines = []
-
+    # Setup text (3x columns)
+    lines_1, lines_2, lines_3 = [],[],[]
     for col in skill_df.columns:
         if col == "model" or col == "variable":
             continue
@@ -626,11 +644,14 @@ def _plot_summary_table(skill_df, units, max_cbar):
             decimals = f".{0}f"
         else:
             decimals = f".{2}f"
-        lines.append(
-            f"{(col.ljust(max_str_len)).upper()} = {np.round(skill_df[col].values[0],2): {decimals}} {item_unit}"
-        )
+        lines_1.append(f"{(col.ljust(max_str_len)).upper()}")
+        lines_2.append(" = ")
+        lines_3.append(f"{np.round(skill_df[col].values[0],2): {decimals}} {item_unit}")
 
-    text_ = "\n".join(lines)
+    text1_ = "\n".join(lines_1)
+    text2_ = "\n".join(lines_2)
+    text3_ = "\n".join(lines_3)
+
 
     if max_cbar is None:
         x = 0.93
@@ -646,11 +667,45 @@ def _plot_summary_table(skill_df, units, max_cbar):
         # When more than 1e6 samples, matplotlib changes to scientific notation
         x = 0.97
 
-    plt.gcf().text(
-        x,
-        0.6,
-        text_,
-        bbox=settings.get_option("plot.scatter.legend.bbox"),
+    fig = plt.gcf()
+    figure_transform = fig.transFigure.get_affine()
+
+    txt_settings = dict(
         fontsize=options.plot.scatter.legend.fontsize,
-        family="monospace",
     )
+
+    # Column 1
+    t1 = fig.text(x,0.6, text1_,**txt_settings)
+    ## Render, and get width
+    plt.draw()
+    dx1 = figure_transform.inverted().transform([t1.get_window_extent().bounds[2], 0])[0]
+
+    # Column 2
+    t2 = fig.text(x+dx1,0.6, text2_,**txt_settings)
+    ## Render, and get width
+    plt.draw()
+    dx2 = figure_transform.inverted().transform([t2.get_window_extent().bounds[2], 0])[0]
+
+    # Column 3
+    t3 = fig.text(x+dx1+dx2,0.6, text3_,**txt_settings)
+    ## Render, and get width
+    plt.draw()
+    dx3 = figure_transform.inverted().transform([t3.get_window_extent().bounds[2], 0])[0]
+
+    boderpad=0.01
+    # Add outline
+    ## Define coordintes
+    x0,y0 = figure_transform.inverted().transform(t1.get_window_extent().bounds[0:2])
+    _,dy = figure_transform.inverted().transform((0, t1.get_window_extent().bounds[3]))
+    dx = dx1+dx2+dx3
+    ## Define rectangle
+    ptch = patches.Rectangle((x0-boderpad,y0-boderpad), dx+boderpad*2, dy+boderpad*2)
+    ## Load settings
+    bbox_kwargs = {}
+    bbox_kwargs.update(settings.get_option("plot.scatter.legend.bbox"))
+    lgkw = settings.get_option("plot.scatter.legend.kwargs")
+    if 'edgecolor' in lgkw:
+        bbox_kwargs['edgecolor'] = lgkw['edgecolor']
+    ## Draw
+    px = PatchCollection([ptch],clip_on=False,transform=figure_transform,**bbox_kwargs)
+    plt.gca().add_collection(px)

@@ -6,6 +6,7 @@ plot.scatter.legend.kwargs:
   bbox_to_anchor: [1.2,0.1]
   edgecolor: k
   loc: center left
+  frameon: True
 plot.scatter.oneone_line.color: darkorange
 plot.scatter.oneone_line.label: 1:1 (45°)
 plot.scatter.points.alpha: 0.9
@@ -20,3 +21,5 @@ plot.scatter.quantiles.markersize: 3.5
 plot.scatter.reg_line.kwargs:
   color: [0, 0.596078431372549, 0.8588235294117647]
   dashes: [2,5]
+plot.rcParams:
+  mathtext.default: regular
