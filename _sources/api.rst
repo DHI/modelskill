@@ -6,9 +6,6 @@ API Documentation
 
 Model
 -----
-.. autoclass:: modelskill.model.ModelResult
-	:members:
-
 .. autoclass:: modelskill.model.PointModelResult
 	:members:
 
