@@ -742,7 +742,7 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 
 
 def _format_skill_line(
-    series: pd.Series, units: str, precision: int, max_str_len: int
+    series: pd.Series, units: str, precision: int,
 ) -> str:
 
     name = series.name
@@ -760,22 +760,19 @@ def _format_skill_line(
         fmt = f".{precision}f"
         fvalue = f"{rounded_value:{fmt}}"
 
-    name = series.name.ljust(max_str_len).upper()
+    name = series.name.upper()
 
-    # return f"{name} =  {fvalue} {item_unit}"
     return f"{name}", " =  ", f"{fvalue} {item_unit}"
 
 
 def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
-
-    max_str_len = df.columns.str.len().max()
 
     # remove model and variable columns if present, i.e. keep all other columns
     df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
 
     # loop over series in dataframe, (columns)
     lines = [
-        _format_skill_line(df[col], units, precision, max_str_len)
+        _format_skill_line(df[col], units, precision)
         for col in list(df.columns)
     ]
 
@@ -813,15 +810,6 @@ def _plot_summary_border(
         clip_on=False,
         **bbox_kwargs,
     )
-    # bbox = patches.Rectangle(
-    #    (x0 - boderpad, y0 - boderpad), dx + boderpad * 2, dy + boderpad * 2,clip_on=False,transform=figure_transform,**bbox_kwargs
-    # )
-    print(x0, y0, dx, dy)
-
-    ## Draw
-    # bbox_ = [bbox]
-    # p = PatchCollection(bbox_,clip_on=False,transform=figure_transform)
-    # plt.gca().add_collection(p)
 
     px = plt.gca().add_patch(bbox)
 
