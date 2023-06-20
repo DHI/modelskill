@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Union
 import warnings
 from inspect import getmembers, isfunction
 import zipfile
+from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -383,8 +384,10 @@ class Comparer:
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
 
+        # TODO extract method
         if matched_data is not None:
-            # TODO extract method
+            assert "Observation" in matched_data.data_vars
+
             for key in matched_data.data_vars:
                 if "kind" not in matched_data[key].attrs:
                     matched_data[key].attrs["kind"] = "auxiliary"
@@ -395,6 +398,15 @@ class Comparer:
             if "y" not in matched_data:
                 matched_data["y"] = np.nan
                 matched_data["y"].attrs["kind"] = "position"
+
+            if "color" not in matched_data["Observation"].attrs:
+                matched_data["Observation"].attrs["color"] = "black"
+
+            if "variable_name" not in matched_data.attrs:
+                matched_data.attrs["variable_name"] = Quantity.undefined().name
+
+            if "unit" not in matched_data["Observation"].attrs:
+                matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
 
             self.data = matched_data
             self.raw_mod_data = (
@@ -1402,6 +1414,7 @@ class Comparer:
             .to_series()
             .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
+
         self.data[self._obs_name].to_series().hist(
             bins=bins, color=self.data[self._obs_name].attrs["color"], ax=ax, **kwargs
         )
@@ -1412,6 +1425,54 @@ class Comparer:
             plt.ylabel("density")
         else:
             plt.ylabel("count")
+
+        return ax
+
+    def kde(self, ax=None, **kwargs) -> Axes:
+        """Plot kernel density estimate of observation and model data.
+
+        Parameters
+        ----------
+        ax : matplotlib axes, optional
+            axes to plot on, by default None
+        **kwargs
+            passed to pandas.DataFrame.plot.kde()
+
+        Returns
+        -------
+        Axes
+            matplotlib axes
+
+        Examples
+        --------
+        >>> cmp.kde()
+        >>> cmp.kde(bw_method=0.3)
+        """
+        if ax is None:
+            ax = plt.gca()
+
+        self.data.Observation.to_series().plot.kde(
+            ax=ax, linestyle="dashed", label="Observation", **kwargs
+        )  # TODO observation should be easy to distinguish
+
+        for model in self.mod_names:
+            self.data[model].to_series().plot.kde(ax=ax, label=model, **kwargs)
+
+        ax.set_xlabel(f"{self._unit_text}")
+
+        ax.legend()
+
+        # remove y-axis
+        ax.yaxis.set_visible(False)
+        # remove y-ticks
+        ax.tick_params(axis="y", which="both", length=0)
+        # remove y-label
+        ax.set_ylabel("")
+
+        # remove box around plot
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
 
         return ax
 
@@ -2185,6 +2246,58 @@ class ComparerCollection(Mapping, Sequence):
             units=units,
             **kwargs,
         )
+        return ax
+
+    def kde(self, ax=None, **kwargs) -> Axes:
+        """Plot kernel density estimate of observation and model data.
+
+        Parameters
+        ----------
+        ax : Axes, optional
+            matplotlib axes, by default None
+        **kwargs
+            passed to pandas.DataFrame.plot.kde()
+
+        Returns
+        -------
+        Axes
+            matplotlib axes
+
+        Examples
+        --------
+        >>> cc.kde()
+        >>> cc.kde(bw_method=0.5)
+
+        """
+        if ax is None:
+            ax = plt.gca()
+
+        df = self.to_dataframe()
+        ax = df.obs_val.plot.kde(
+            ax=ax, linestyle="dashed", label="Observation", **kwargs
+        )  # TODO observation should be easy to distinguish
+
+        for model in self.mod_names:
+            df_model = df[df.model == model]
+            df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
+
+        plt.xlabel(f"{self[df.observation[0]]._unit_text}")
+
+        # TODO title?
+        ax.legend()
+
+        # remove y-axis
+        ax.yaxis.set_visible(False)
+        # remove y-ticks
+        ax.tick_params(axis="y", which="both", length=0)
+        # remove y-label
+        ax.set_ylabel("")
+
+        # remove box around plot
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+
         return ax
 
     def hist(
