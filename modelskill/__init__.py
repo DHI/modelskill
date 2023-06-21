@@ -29,6 +29,21 @@ from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector, from_matched
 from .settings import options, get_option, set_option, reset_option, load_style
 
+__all__ = [
+    "Quantity",
+    "ModelResult",
+    "PointObservation",
+    "TrackObservation",
+    "compare",
+    "Connector",
+    "from_matched",
+    "options",
+    "get_option",
+    "set_option",
+    "reset_option",
+    "load_style",
+]
+
 
 def from_config(
     configuration: Union[dict, str], *, validate_eum=True, relative_path=True

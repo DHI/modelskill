@@ -1,9 +1,7 @@
-import math
-from typing import List, Tuple, Union, Optional, Optional, Sequence
+from typing import List, Tuple, Union, Optional, Sequence
 import warnings
 from matplotlib.axes import Axes
 import numpy as np
-import pandas as pd
 import pandas as pd
 from collections import namedtuple
 from scipy import interpolate
@@ -13,7 +11,6 @@ from matplotlib import patches
 import matplotlib.colors as colors
 from matplotlib.ticker import MaxNLocator
 
-import mikeio
 
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression

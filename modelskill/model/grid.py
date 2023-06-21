@@ -2,8 +2,6 @@ from pathlib import Path
 from typing import Callable, Mapping, Optional, Sequence, Union, get_args
 import xarray as xr
 
-import mikeio
-
 from modelskill import types, utils
 from modelskill.model import protocols, PointModelResult, TrackModelResult
 from modelskill.model._base import ModelResultBase

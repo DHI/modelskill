@@ -15,7 +15,7 @@ import mikeio
 from modelskill import ModelResult
 from modelskill.timeseries import TimeSeries
 from modelskill.model import PointModelResult
-from modelskill.types import DataInputType, GeometryType, Quantity
+from modelskill.types import GeometryType, Quantity
 from .model import protocols, DfsuModelResult
 from .model._base import ModelResultBase
 from .observation import Observation, PointObservation, TrackObservation
@@ -368,20 +368,19 @@ class _SingleObsConnector(_BaseConnector):
 
     @staticmethod
     def _validate_start_end(obs, mod):
-        try:
-            # need to put this in try-catch due to error in dfs0 in mikeio
-            if obs.end_time < mod.start_time:
-                warnings.warn(
-                    f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
-                )
-                return False
-            if obs.start_time > mod.end_time:
-                warnings.warn(
-                    f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
-                )
-                return False
-        except:
-            pass
+
+        if obs.end_time < mod.start_time:
+            warnings.warn(
+                f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
+            )
+            return False
+
+        if obs.start_time > mod.end_time:
+            warnings.warn(
+                f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
+            )
+            return False
+
         return True
 
     def plot_observation_positions(self, figsize=None):

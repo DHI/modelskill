@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from collections.abc import Iterable
-import mikeio
 
 POS_COORDINATE_NAME_MAPPING = {
     "lon": "x",
