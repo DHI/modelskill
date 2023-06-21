@@ -11,6 +11,7 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 from matplotlib import patches
 import matplotlib.colors as colors
+from matplotlib.ticker import MaxNLocator
 
 import mikeio
 
@@ -253,6 +254,7 @@ def _scatter_matplotlib(
         ticks = cbar.ax.get_yticks()
         max_cbar = ticks[-1]
         cbar.set_label("# points")
+        cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
         plt.title(title)
     # Add skill table
@@ -408,7 +410,7 @@ def scatter(
     show_points: Optional[Union[bool, int, float]] = None,
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
-    norm: colors = None,
+    norm: colors.Normalize = None,
     backend: str = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
@@ -453,7 +455,7 @@ def scatter(
         show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
         are None, then `show_density` is used by default.
         for binning the data, the previous kword `bins=Float` is used
-    norm : matplotlib.colors norm
+    norm : matplotlib.colors.Normalize
         colormap normalization
         If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
     backend : str, optional
@@ -742,7 +744,9 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 
 
 def _format_skill_line(
-    series: pd.Series, units: str, precision: int,
+    series: pd.Series,
+    units: str,
+    precision: int,
 ) -> str:
 
     name = series.name
@@ -771,10 +775,7 @@ def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[st
     df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
 
     # loop over series in dataframe, (columns)
-    lines = [
-        _format_skill_line(df[col], units, precision)
-        for col in list(df.columns)
-    ]
+    lines = [_format_skill_line(df[col], units, precision) for col in list(df.columns)]
 
     return np.array(lines)
 
@@ -785,7 +786,7 @@ def _plot_summary_border(
     y0,
     dx,
     dy,
-    boderpad=0.01,
+    borderpad=0.01,
 ) -> None:
 
     ## Load settings
@@ -794,18 +795,18 @@ def _plot_summary_border(
     if (
         "boxstyle" in bbox_kwargs and "pad" not in bbox_kwargs["boxstyle"]
     ):  # default padding results in massive bbox
-        bbox_kwargs["boxstyle"] = bbox_kwargs["boxstyle"] + f",pad={boderpad}"
+        bbox_kwargs["boxstyle"] = bbox_kwargs["boxstyle"] + f",pad={borderpad}"
     else:
-        bbox_kwargs["boxstyle"] = f"square,pad={boderpad}"
+        bbox_kwargs["boxstyle"] = f"square,pad={borderpad}"
     lgkw = settings.get_option("plot.scatter.legend.kwargs")
     if "edgecolor" in lgkw:
         bbox_kwargs["edgecolor"] = lgkw["edgecolor"]
 
     ## Define rectangle
     bbox = patches.FancyBboxPatch(
-        (x0 - boderpad, y0 - boderpad),
-        dx + boderpad * 2,
-        dy + boderpad * 2,
+        (x0 - borderpad, y0 - borderpad),
+        dx + borderpad * 2,
+        dy + borderpad * 2,
         transform=figure_transform,
         clip_on=False,
         **bbox_kwargs,
@@ -819,9 +820,7 @@ def _plot_summary_table(
 ) -> None:
 
     lines = format_skill_df(df, units)
-    text1_ = "\n".join(lines[:, 0])
-    text2_ = "\n".join(lines[:, 1])
-    text3_ = "\n".join(lines[:, 2])
+    text_ = ["\n".join(lines[:, i]) for i in range(lines.shape[1])]
 
     if max_cbar is None:
         x = 0.93
@@ -846,32 +845,27 @@ def _plot_summary_table(
     )
 
     # Column 1
-    t1 = fig.text(x, 0.6, text1_, **txt_settings)
-    ## Render, and get width
-    plt.draw()
-    dx1 = figure_transform.inverted().transform([t1.get_window_extent().bounds[2], 0])[
-        0
-    ]
+    text_columns = []
+    dx = 0
+    for ti in text_:
+        text_col_i = fig.text(x + dx, 0.6, ti, **txt_settings)
+        ## Render, and get width
+        plt.draw()
+        dx = (
+            dx
+            + figure_transform.inverted().transform(
+                [text_col_i.get_window_extent().bounds[2], 0]
+            )[0]
+        )
+        text_columns.append(text_col_i)
 
-    # Column 2
-    t2 = fig.text(x + dx1, 0.6, text2_, **txt_settings)
-    ## Render, and get width
-    plt.draw()
-    dx2 = figure_transform.inverted().transform([t2.get_window_extent().bounds[2], 0])[
-        0
-    ]
-
-    # Column 3
-    t3 = fig.text(x + dx1 + dx2, 0.6, text3_, **txt_settings)
-    ## Render, and get width
-    plt.draw()
-    dx3 = figure_transform.inverted().transform([t3.get_window_extent().bounds[2], 0])[
-        0
-    ]
-
-    # Plot bordr
+    # Plot border
     ## Define coordintes
-    x0, y0 = figure_transform.inverted().transform(t1.get_window_extent().bounds[0:2])
-    _, dy = figure_transform.inverted().transform((0, t1.get_window_extent().bounds[3]))
-    dx = dx1 + dx2 + dx3
+    x0, y0 = figure_transform.inverted().transform(
+        text_columns[0].get_window_extent().bounds[0:2]
+    )
+    _, dy = figure_transform.inverted().transform(
+        (0, text_columns[0].get_window_extent().bounds[3])
+    )
+
     _plot_summary_border(figure_transform, x0, y0, dx, dy)
