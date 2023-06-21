@@ -160,3 +160,13 @@ def test_save(cc: modelskill.comparison.ComparerCollection, tmp_path):
 
     # this belongs to the comparer, but ComparerCollection is the commonly used class
     assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__
+
+
+def test_hist(cc):
+    ax = cc.hist()
+    assert ax is not None
+
+
+def test_kde(cc):
+    ax = cc.kde()
+    assert ax is not None

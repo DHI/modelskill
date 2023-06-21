@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Union
 import warnings
 from inspect import getmembers, isfunction
 import zipfile
+from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -29,7 +30,7 @@ from . import metrics as mtr
 from . import Quantity
 from . import __version__
 from .observation import Observation, PointObservation, TrackObservation
-from .plot import scatter, taylor_diagram, TaylorPoint
+from .plot import scatter, taylor_diagram, TaylorPoint, colors
 from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option, reset_option
@@ -38,33 +39,41 @@ from .settings import options, register_option, reset_option
 def _get_deprecated_args(kwargs):
     model, start, end, area = None, None, None, None
 
+    # Don't bother refactoring this, it will be removed in v1.1
     if "model" in kwargs:
         model = kwargs.pop("model")
-        warnings.warn(
-            f"The 'model' argument is deprecated, use 'sel(model='{model})' instead",
-            FutureWarning,
-        )
+        if model is not None:
+            warnings.warn(
+                f"The 'model' argument is deprecated, use 'sel(model='{model})' instead",
+                FutureWarning,
+            )
 
     if "start" in kwargs:
         start = kwargs.pop("start")
-        warnings.warn(
-            f"The 'start' argument is deprecated, use 'sel(start='{start})' instead",
-            FutureWarning,
-        )
+
+        if start is not None:
+            warnings.warn(
+                f"The 'start' argument is deprecated, use 'sel(start='{start})' instead",
+                FutureWarning,
+            )
 
     if "end" in kwargs:
         end = kwargs.pop("end")
-        warnings.warn(
-            f"The 'end' argument is deprecated, use 'sel(end='{end})' instead",
-            FutureWarning,
-        )
+
+        if end is not None:
+            warnings.warn(
+                f"The 'end' argument is deprecated, use 'sel(end='{end})' instead",
+                FutureWarning,
+            )
 
     if "area" in kwargs:
         area = kwargs.pop("area")
-        warnings.warn(
-            f"The 'area' argument is deprecated, use 'sel(area={area})' instead",
-            FutureWarning,
-        )
+
+        if area is not None:
+            warnings.warn(
+                f"The 'area' argument is deprecated, use 'sel(area={area})' instead",
+                FutureWarning,
+            )
 
     return model, start, end, area
 
@@ -383,8 +392,10 @@ class Comparer:
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
 
+        # TODO extract method
         if matched_data is not None:
-            # TODO extract method
+            assert "Observation" in matched_data.data_vars
+
             for key in matched_data.data_vars:
                 if "kind" not in matched_data[key].attrs:
                     matched_data[key].attrs["kind"] = "auxiliary"
@@ -395,6 +406,15 @@ class Comparer:
             if "y" not in matched_data:
                 matched_data["y"] = np.nan
                 matched_data["y"].attrs["kind"] = "position"
+
+            if "color" not in matched_data["Observation"].attrs:
+                matched_data["Observation"].attrs["color"] = "black"
+
+            if "variable_name" not in matched_data.attrs:
+                matched_data.attrs["variable_name"] = Quantity.undefined().name
+
+            if "unit" not in matched_data["Observation"].attrs:
+                matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
 
             self.data = matched_data
             self.raw_mod_data = (
@@ -527,7 +547,7 @@ class Comparer:
             f"Observation: {self.name}, n_points={self.n_points}",
         ]
         for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
+            out.append(f" Model: {model}, rmse={self.sel(model=model).score():.3f}")
         return str.join("\n", out)
 
     @property
@@ -1103,6 +1123,7 @@ class Comparer:
         show_points: Union[bool, int, float] = None,
         show_hist: bool = None,
         show_density: bool = None,
+        norm: colors = None,
         backend: str = "matplotlib",
         figsize: List[float] = (8, 8),
         xlim: List[float] = None,
@@ -1142,6 +1163,9 @@ class Comparer:
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
             show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
+        norm : matplotlib.colors norm
+            colormap normalization
+            If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
         are None, then `show_density` is used by default.
             for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
@@ -1221,6 +1245,7 @@ class Comparer:
             show_points=show_points,
             show_hist=show_hist,
             show_density=show_density,
+            norm=norm,
             backend=backend,
             figsize=figsize,
             xlim=xlim,
@@ -1237,32 +1262,19 @@ class Comparer:
 
     def taylor(
         self,
-        model: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
         df: pd.DataFrame = None,
         normalize_std: bool = False,
         figsize: List[float] = (7, 7),
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
+        **kwargs,
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
         ----------
-        model : (int, str), optional
-            name or id of model to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         figsize : tuple, optional
@@ -1284,15 +1296,14 @@ class Comparer:
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
 
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        ss = self.sel(model=model, start=start, end=end, area=area)
+
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        s = self.skill(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-            metrics=metrics,
-        )
-        if s is None:
+        s = ss.skill(metrics=metrics)
+
+        if s is None:  # TODO
             return
         df = s.df
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
@@ -1402,6 +1413,7 @@ class Comparer:
             .to_series()
             .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
+
         self.data[self._obs_name].to_series().hist(
             bins=bins, color=self.data[self._obs_name].attrs["color"], ax=ax, **kwargs
         )
@@ -1412,6 +1424,54 @@ class Comparer:
             plt.ylabel("density")
         else:
             plt.ylabel("count")
+
+        return ax
+
+    def kde(self, ax=None, **kwargs) -> Axes:
+        """Plot kernel density estimate of observation and model data.
+
+        Parameters
+        ----------
+        ax : matplotlib axes, optional
+            axes to plot on, by default None
+        **kwargs
+            passed to pandas.DataFrame.plot.kde()
+
+        Returns
+        -------
+        Axes
+            matplotlib axes
+
+        Examples
+        --------
+        >>> cmp.kde()
+        >>> cmp.kde(bw_method=0.3)
+        """
+        if ax is None:
+            ax = plt.gca()
+
+        self.data.Observation.to_series().plot.kde(
+            ax=ax, linestyle="dashed", label="Observation", **kwargs
+        )  # TODO observation should be easy to distinguish
+
+        for model in self.mod_names:
+            self.data[model].to_series().plot.kde(ax=ax, label=model, **kwargs)
+
+        ax.set_xlabel(f"{self._unit_text}")
+
+        ax.legend()
+
+        # remove y-axis
+        ax.yaxis.set_visible(False)
+        # remove y-ticks
+        ax.tick_params(axis="y", which="both", length=0)
+        # remove y-label
+        ax.set_ylabel("")
+
+        # remove box around plot
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
 
         return ax
 
@@ -2187,6 +2247,58 @@ class ComparerCollection(Mapping, Sequence):
             units=units,
             **kwargs,
         )
+        return ax
+
+    def kde(self, ax=None, **kwargs) -> Axes:
+        """Plot kernel density estimate of observation and model data.
+
+        Parameters
+        ----------
+        ax : Axes, optional
+            matplotlib axes, by default None
+        **kwargs
+            passed to pandas.DataFrame.plot.kde()
+
+        Returns
+        -------
+        Axes
+            matplotlib axes
+
+        Examples
+        --------
+        >>> cc.kde()
+        >>> cc.kde(bw_method=0.5)
+
+        """
+        if ax is None:
+            ax = plt.gca()
+
+        df = self.to_dataframe()
+        ax = df.obs_val.plot.kde(
+            ax=ax, linestyle="dashed", label="Observation", **kwargs
+        )  # TODO observation should be easy to distinguish
+
+        for model in self.mod_names:
+            df_model = df[df.model == model]
+            df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
+
+        plt.xlabel(f"{self[df.observation[0]]._unit_text}")
+
+        # TODO title?
+        ax.legend()
+
+        # remove y-axis
+        ax.yaxis.set_visible(False)
+        # remove y-ticks
+        ax.tick_params(axis="y", which="both", length=0)
+        # remove y-label
+        ax.set_ylabel("")
+
+        # remove box around plot
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+
         return ax
 
     def hist(
