@@ -48,7 +48,7 @@ def _get_deprecated_args(kwargs):
                 FutureWarning,
             )
 
-    if "start" in kwargs and kwargs["start"] is not None:
+    if "start" in kwargs:
         start = kwargs.pop("start")
 
         if start is not None:
