@@ -39,33 +39,41 @@ from .settings import options, register_option, reset_option
 def _get_deprecated_args(kwargs):
     model, start, end, area = None, None, None, None
 
+    # Don't bother refactoring this, it will be removed in v1.1
     if "model" in kwargs:
         model = kwargs.pop("model")
-        warnings.warn(
-            f"The 'model' argument is deprecated, use 'sel(model='{model})' instead",
-            FutureWarning,
-        )
+        if model is not None:
+            warnings.warn(
+                f"The 'model' argument is deprecated, use 'sel(model='{model})' instead",
+                FutureWarning,
+            )
 
-    if "start" in kwargs:
+    if "start" in kwargs and kwargs["start"] is not None:
         start = kwargs.pop("start")
-        warnings.warn(
-            f"The 'start' argument is deprecated, use 'sel(start='{start})' instead",
-            FutureWarning,
-        )
+
+        if start is not None:
+            warnings.warn(
+                f"The 'start' argument is deprecated, use 'sel(start='{start})' instead",
+                FutureWarning,
+            )
 
     if "end" in kwargs:
         end = kwargs.pop("end")
-        warnings.warn(
-            f"The 'end' argument is deprecated, use 'sel(end='{end})' instead",
-            FutureWarning,
-        )
+
+        if end is not None:
+            warnings.warn(
+                f"The 'end' argument is deprecated, use 'sel(end='{end})' instead",
+                FutureWarning,
+            )
 
     if "area" in kwargs:
         area = kwargs.pop("area")
-        warnings.warn(
-            f"The 'area' argument is deprecated, use 'sel(area={area})' instead",
-            FutureWarning,
-        )
+
+        if area is not None:
+            warnings.warn(
+                f"The 'area' argument is deprecated, use 'sel(area={area})' instead",
+                FutureWarning,
+            )
 
     return model, start, end, area
 
@@ -539,7 +547,7 @@ class Comparer:
             f"Observation: {self.name}, n_points={self.n_points}",
         ]
         for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.score(model=model):.3f}")
+            out.append(f" Model: {model}, rmse={self.sel(model=model).score():.3f}")
         return str.join("\n", out)
 
     @property
@@ -1249,32 +1257,19 @@ class Comparer:
 
     def taylor(
         self,
-        model: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
         df: pd.DataFrame = None,
         normalize_std: bool = False,
         figsize: List[float] = (7, 7),
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
+        **kwargs,
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
         ----------
-        model : (int, str), optional
-            name or id of model to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         figsize : tuple, optional
@@ -1296,15 +1291,14 @@ class Comparer:
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
 
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        ss = self.sel(model=model, start=start, end=end, area=area)
+
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        s = self.skill(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-            metrics=metrics,
-        )
-        if s is None:
+        s = ss.skill(metrics=metrics)
+
+        if s is None:  # TODO
             return
         df = s.df
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
