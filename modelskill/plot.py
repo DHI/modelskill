@@ -1,10 +1,16 @@
-from typing import List, Sequence, Tuple, Union
+import math
+from typing import List, Tuple, Union, Optional, Optional, Sequence
 import warnings
+from matplotlib.axes import Axes
 import numpy as np
+import pandas as pd
 from collections import namedtuple
 from scipy import interpolate
 
 import matplotlib.pyplot as plt
+from matplotlib import patches
+import matplotlib.colors as colors
+from matplotlib.ticker import MaxNLocator
 
 import mikeio
 from .model.point import PointModelResult
@@ -15,6 +21,8 @@ from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
 import modelskill.settings as settings
 from .settings import options, register_option
+from .observation import unit_display_name
+from .metrics import metric_has_units
 
 
 register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
@@ -38,13 +46,15 @@ register_option(
 register_option(
     "plot.scatter.quantiles.markeredgewidth", 0.5, validator=settings.is_positive
 )
-register_option("plot.scatter.quantiles.kwargs", {}, settings.is_dict)
+register_option("plot.scatter.quantiles.kwargs", {}, validator=settings.is_dict)
 register_option("plot.scatter.oneone_line.label", "1:1", validator=settings.is_str)
 register_option(
     "plot.scatter.oneone_line.color", "blue", validator=settings.is_tuple_list_or_str
 )
-register_option("plot.scatter.legend.kwargs", {}, settings.is_dict)
-register_option("plot.scatter.reg_line.kwargs", {"color": "r"}, settings.is_dict)
+register_option("plot.scatter.legend.kwargs", {}, validator=settings.is_dict)
+register_option(
+    "plot.scatter.reg_line.kwargs", {"color": "r"}, validator=settings.is_dict
+)
 register_option(
     "plot.scatter.legend.bbox",
     {
@@ -53,11 +63,14 @@ register_option(
         "boxstyle": "round",
         "alpha": 0.05,
     },
-    settings.is_dict,
+    validator=settings.is_dict,
 )
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
 
+# TODO: Auto-implement
+# still requires plt.rcParams.update(modelskill.settings.get_option('plot.rcParams'))
+register_option("plot.rcParams", {}, settings.is_dict)  # still have to
 
 def _get_ax(ax=None, figsize=None):
     if ax is None:
@@ -71,28 +84,356 @@ def _get_fig_ax(ax=None, figsize=None):
         fig = plt.gcf()
     return fig, ax
 
-def scatter(
+
+def sample_points(
+    x: np.ndarray, y: np.ndarray, include: Optional[Union[bool, int, float]] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Sample points to be plotted
+
+    Parameters
+    ----------
+    x: np.ndarray, 1d
+    y: np.ndarray, 1d
+    include: bool, int or float, optional
+        default is subset the data to 50k points
+
+    Returns
+    -------
+    np.ndarray, np.ndarray
+        x and y arrays with sampled points
+    """
+
+    assert len(x) == len(y), "x and y must have same length"
+
+    if include is True:
+        return x, y
+
+    if include is None:
+        if len(x) < 5e4:
+            return x, y
+        else:
+            include = 50000
+            warnings.warn(
+                message=f"Showing only {include} points in plot. Set `include` to True to show all points."
+            )
+    else:
+        if not isinstance(include, (bool, int, float)):
+            raise TypeError(f"'subset' must be bool, int or float, not {type(include)}")
+
+    if include is False:
+        return np.array([]), np.array([])
+
+    if isinstance(include, float):
+        if not 0 <= include <= 1:
+            raise ValueError("`include` fraction must be in [0,1]")
+
+        n_samples = int(len(x) * include)
+    elif isinstance(include, int):
+        if include < 0:
+            raise ValueError("`include` must be positive integer")
+        if include > len(x):
+            include = len(x)
+        n_samples = include
+
+    np.random.seed(20)  # TODO should this be a parameter?
+    ran_index = np.random.choice(range(len(x)), n_samples, replace=False)
+    x_sample = x[ran_index]
+    y_sample = y[ran_index]
+
+    return x_sample, y_sample
+
+
+def quantiles_xy(
+    x: np.ndarray, y: np.ndarray, quantiles: Union[int, Sequence[float]] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Calculate quantiles of x and y
+
+    Parameters
+    ----------
+    x: np.ndarray, 1d
+    y: np.ndarray, 1d
+    q: int, Sequence[float]
+        quantiles to calculate
+
+    Returns
+    -------
+    np.ndarray, np.ndarray
+        x and y arrays with quantiles
+    """
+
+    if quantiles is None:
+        if len(x) >= 3000:
+            quantiles = 1000
+        elif len(x) >= 300:
+            quantiles = 100
+        else:
+            quantiles = 10
+
+    if not isinstance(quantiles, (int, Sequence)):
+        raise TypeError("quantiles must be an int or sequence of floats")
+
+    q = np.linspace(0, 1, num=quantiles) if isinstance(quantiles, int) else quantiles
+    return np.quantile(x, q=q), np.quantile(y, q=q)
+
+
+def _scatter_matplotlib(
+    *,
     x,
     y,
+    x_sample,
+    y_sample,
+    z,
+    xq,
+    yq,
+    x_trend,
+    show_density,
+    show_points,
+    show_hist,
+    norm,
+    nbins_hist,
+    intercept,
+    slope,
+    xlabel,
+    ylabel,
+    figsize,
+    xlim,
+    ylim,
+    title,
+    skill_df,
+    units,
+    **kwargs,
+) -> Axes:
+    _, ax = plt.subplots(figsize=figsize)
+
+    plt.plot(
+        [xlim[0], xlim[1]],
+        [xlim[0], xlim[1]],
+        label=options.plot.scatter.oneone_line.label,
+        c=options.plot.scatter.oneone_line.color,
+        zorder=3,
+    )
+    if show_points:
+        if show_density:
+            c = z
+        else:
+            c = "0.25"
+        plt.scatter(
+            x_sample,
+            y_sample,
+            c=c,
+            s=options.plot.scatter.points.size,
+            alpha=options.plot.scatter.points.alpha,
+            marker=".",
+            label=options.plot.scatter.points.label,
+            zorder=1,
+            norm=norm,
+            **kwargs,
+        )
+    plt.plot(
+        xq,
+        yq,
+        options.plot.scatter.quantiles.marker,
+        label=options.plot.scatter.quantiles.label,
+        c=options.plot.scatter.quantiles.color,
+        zorder=4,
+        markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+        markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
+        markersize=options.plot.scatter.quantiles.markersize,
+        **settings.get_option("plot.scatter.quantiles.kwargs"),
+    )
+
+    plt.plot(
+        x_trend,
+        intercept + slope * x_trend,
+        **settings.get_option("plot.scatter.reg_line.kwargs"),
+        label=_reglabel(slope=slope, intercept=intercept),
+        zorder=2,
+    )
+
+    if show_hist:
+        plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
+
+    plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.axis("square")
+    plt.xlim([xlim[0], xlim[1]])
+    plt.ylim([ylim[0], ylim[1]])
+    plt.minorticks_on()
+    plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
+    max_cbar = None
+    if show_hist or (show_density and show_points):
+        cbar = plt.colorbar(fraction=0.046, pad=0.04)
+        ticks = cbar.ax.get_yticks()
+        max_cbar = ticks[-1]
+        cbar.set_label("# points")
+        cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+        plt.title(title)
+    # Add skill table
+    if skill_df is not None:
+        df = skill_df.df
+        assert isinstance(df, pd.DataFrame)
+        _plot_summary_table(df, units, max_cbar=max_cbar)
+    return ax
+
+
+def _scatter_plotly(
+    *,
+    x,
+    y,
+    x_sample,
+    y_sample,
+    z,
+    xq,
+    yq,
+    x_trend,
+    show_density,
+    show_points,
+    norm,  # TODO not used by plotly, remove or keep for consistency?
+    show_hist,
+    nbins_hist,
+    intercept,
+    slope,
+    xlabel,
+    ylabel,
+    figsize,  # TODO not used by plotly, remove or keep for consistency?
+    xlim,
+    ylim,
+    title,
+    skill_df,  # TODO implement
+    units,  # TODO implement
+    **kwargs,
+):
+
+    import plotly.graph_objects as go
+
+    data = [
+        go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
+    ]
+
+    regression_line = go.Scatter(
+        x=x_trend,
+        y=intercept + slope * x_trend,
+        name=_reglabel(slope=slope, intercept=intercept),
+        mode="lines",
+        line=dict(color="red"),
+    )
+    data.append(regression_line)
+
+    if show_hist:
+        data.append(
+            go.Histogram2d(
+                x=x,
+                y=y,
+                nbinsx=nbins_hist,
+                nbinsy=nbins_hist,
+                colorscale=[
+                    [0.0, "rgba(0,0,0,0)"],
+                    [0.1, "purple"],
+                    [0.5, "green"],
+                    [1.0, "yellow"],
+                ],
+                colorbar=dict(title="# of points"),
+            )
+        )
+
+    if show_points:
+
+        if show_density:
+            c = z
+            cbar = dict(thickness=20, title="# of points")
+        else:
+            c = "black"
+            cbar = None
+        data.append(
+            go.Scatter(
+                x=x_sample,
+                y=y_sample,
+                mode="markers",
+                name="Data",
+                marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
+            )
+        )
+    data.append(
+        go.Scatter(
+            x=xq,
+            y=yq,
+            name=options.plot.scatter.quantiles.label,
+            mode="markers",
+            marker_symbol="x",
+            marker_color=options.plot.scatter.quantiles.color,
+            marker_line_color="midnightblue",
+            marker_line_width=0.6,
+        )
+    )
+
+    defaults = {"width": 600, "height": 600}
+    defaults = {**defaults, **kwargs}
+
+    layout = layout = go.Layout(
+        legend=dict(x=0.01, y=0.99),
+        yaxis=dict(scaleanchor="x", scaleratio=1),
+        title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
+        yaxis_title=ylabel,
+        xaxis_title=xlabel,
+        **defaults,
+    )
+
+    fig = go.Figure(data=data, layout=layout)
+    fig.update_xaxes(range=xlim)
+    fig.update_yaxes(range=ylim)
+    fig.show()  # Should this be here
+
+
+def _reglabel(slope: float, intercept: float) -> str:
+    sign = "" if intercept < 0 else "+"
+    return f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
+
+
+def _get_bins(
+    bins: Union[int, float, Sequence[float]], xymin, xymax
+):  # TODO return type
+
+    assert xymax >= xymin
+    xyspan = xymax - xymin
+
+    if isinstance(bins, int):
+        nbins_hist = bins
+        binsize = xyspan / nbins_hist
+    elif isinstance(bins, float):
+        binsize = bins
+        nbins_hist = int(xyspan / binsize)
+    elif isinstance(bins, Sequence):
+        binsize = bins
+        nbins_hist = bins
+    else:
+        raise TypeError("bins must be an int, float or sequence")
+
+    return nbins_hist, binsize
+
+
+def scatter(
+    x: np.ndarray,
+    y: np.ndarray,
     *,
     bins: Union[int, float, List[int], List[float]] = 20,
-    quantiles: Union[int, List[float]] = None,
+    quantiles: Optional[Union[int, List[float]]] = None,
     fit_to_quantiles: bool = False,
-    show_points: Union[bool, int, float] = None,
-    show_hist: bool = None,
-    show_density: bool = None,
+    show_points: Optional[Union[bool, int, float]] = None,
+    show_hist: Optional[bool] = None,
+    show_density: Optional[bool] = None,
+    norm: colors.Normalize = None,
     backend: str = "matplotlib",
-    figsize: List[float] = (8, 8),
-    xlim: List[float] = None,
-    ylim: List[float] = None,
+    figsize: Tuple[float, float] = (8, 8),
+    xlim: Optional[Tuple[float, float]] = None,
+    ylim: Optional[Tuple[float, float]] = None,
     reg_method: str = "ols",
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_df: object = None,
+    skill_df: Optional[pd.DataFrame] = None,
     units: str = "",
-    binsize: float = None,
-    nbins: int = None,
     **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled
@@ -127,6 +468,9 @@ def scatter(
         show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
         are None, then `show_density` is used by default.
         for binning the data, the previous kword `bins=Float` is used
+    norm : matplotlib.colors.Normalize
+        colormap normalization
+        If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
     backend : str, optional
         use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
     figsize : tuple, optional
@@ -156,123 +500,43 @@ def scatter(
         # Default: points density
         show_density = True
 
-    if (binsize is not None) or (nbins is not None):
-        warnings.warn(
-            "`binsize` and `nbins` are deprecated and will be removed soon, use `bins` instead",
-        )
-        binsize_aux = binsize
-        nbins_aux = nbins
-    else:
-        binsize_aux = None
-        nbins_aux = None
-
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
 
-    x_sample = x
-    y_sample = y
-    sample_warning = False
-    if show_points is None:
-        # If nothing given, and more than 50k points, 50k sample will be shown
-        if len(x) < 5e4:
-            show_points = True
-        else:
-            show_points = 50000
-            sample_warning = True
-    if type(show_points) == float:
-        if show_points < 0 or show_points > 1:
-            raise ValueError(" `show_points` fraction must be in [0,1]")
-        else:
-            np.random.seed(20)
-            ran_index = np.random.choice(
-                range(len(x)), int(len(x) * show_points), replace=False
-            )
-            x_sample = x[ran_index]
-            y_sample = y[ran_index]
-            if len(x_sample) < len(x):
-                sample_warning = True
-    # if show_points is an int
-    elif type(show_points) == int:
-        np.random.seed(20)
-        ran_index = np.random.choice(range(len(x)), show_points, replace=False)
-        x_sample = x[ran_index]
-        y_sample = y[ran_index]
-        if len(x_sample) < len(x):
-            sample_warning = True
-    elif type(show_points) == bool:
-        pass
-    else:
-        raise TypeError(" `show_points` must be either bool, int or float")
-    if sample_warning:
-        warnings.warn(
-            message=f"Showing only {len(x_sample)} points in plot. If all scatter points wanted in plot, use `show_points=True`",
-            stacklevel=2,
-        )
+    if norm is None:
+        # Default: PowerNorm with gamma of 0.5
+        norm = colors.PowerNorm(vmin=1, gamma=0.5)
+
+    x_sample, y_sample = sample_points(x, y, show_points)
+    xq, yq = quantiles_xy(x, y, quantiles)
+
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
     xymin = min([xmin, ymin])
     xymax = max([xmax, ymax])
 
-    if quantiles is None:
-        if len(x) >= 3000:
-            quantiles = 1000
-        elif len(x) >= 300:
-            quantiles = 100
-        else:
-            quantiles = 10
-
-    if type(bins) == int:
-        nbins_hist = bins
-        binsize = (xymax - xymin) / nbins_hist
-    elif type(bins) == float:
-        binsize = bins
-        nbins_hist = int((xymax - xymin) / binsize)
-    else:
-        # Then bins = Sequence
-        binsize = bins
-        nbins_hist = bins
-
-    # Check deprecated kwords; Remove this verification in future release
-    if (binsize_aux is not None) or (nbins_aux is not None):
-        if binsize_aux is None:
-            binsize = (xmax - xmin) / nbins_aux
-            nbins_hist = nbins_aux
-        else:
-            nbins_hist = int((xmax - xmin) / binsize_aux)
-    # Remove previous piece of code when nbins and bin_size are deprecated.
+    nbins_hist, binsize = _get_bins(bins, xymin=xymin, xymax=xymax)
 
     if xlim is None:
-        xlim = [xymin - binsize, xymax + binsize]
+        xlim = (xymin - binsize, xymax + binsize)
 
     if ylim is None:
-        ylim = [xymin - binsize, xymax + binsize]
+        ylim = (xymin - binsize, xymax + binsize)
 
-    if type(quantiles) == int:
-        xq = np.quantile(x, q=np.linspace(0, 1, num=quantiles))
-        yq = np.quantile(y, q=np.linspace(0, 1, num=quantiles))
-    else:
-        # if not an int nor None, it must be a squence of floats
-        xq = np.quantile(x, q=quantiles)
-        yq = np.quantile(y, q=quantiles)
     x_trend = np.array([xlim[0], xlim[1]])
 
-    if show_hist:
-        # if histogram is wanted (explicit non-default flag) then density is off
-        if show_density is True:
-            raise TypeError(
-                "if `show_hist=True` then `show_density` must be either `False` or `None`"
-            )
+    if show_hist and show_density:
+        raise TypeError(
+            "if `show_hist=True` then `show_density` must be either `False` or `None`"
+        )
 
-    if show_density:
-        if not ((type(bins) == float) or (type(bins) == int)):
+    z = None
+    if show_density and len(x_sample) > 0:
+        if not isinstance(bins, (float, int)):
             raise TypeError(
                 "if `show_density=True` then bins must be either float or int"
             )
-        # if point density is wanted, then 2D histogram is not shown
-        if show_hist is True:
-            raise TypeError(
-                "if `show_density=True` then `show_hist` must be either `False` or `None`"
-            )
+
         # calculate density data
         z = __scatter_density(x_sample, y_sample, binsize=binsize)
         idx = z.argsort()
@@ -287,169 +551,40 @@ def scatter(
     else:
         slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
 
-    if intercept < 0:
-        sign = ""
-    else:
-        sign = "+"
-    reglabel = f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
+    PLOTTING_BACKENDS = {
+        "matplotlib": _scatter_matplotlib,
+        "plotly": _scatter_plotly,
+    }
 
-    if backend == "matplotlib":
-        _, ax = plt.subplots(figsize=figsize)
-        # plt.figure(figsize=figsize)
-        plt.plot(
-            [xlim[0], xlim[1]],
-            [xlim[0], xlim[1]],
-            label=options.plot.scatter.oneone_line.label,
-            c=options.plot.scatter.oneone_line.color,
-            zorder=3,
-        )
-        if show_points:
-            if show_density:
-                c = z
-            else:
-                c = "0.25"
-            plt.scatter(
-                x_sample,
-                y_sample,
-                c=c,
-                s=options.plot.scatter.points.size,
-                alpha=options.plot.scatter.points.alpha,
-                marker=".",
-                label=options.plot.scatter.points.label,
-                zorder=1,
-                **kwargs,
-            )
-        plt.plot(
-            xq,
-            yq,
-            options.plot.scatter.quantiles.marker,
-            label=options.plot.scatter.quantiles.label,
-            c=options.plot.scatter.quantiles.color,
-            zorder=4,
-            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
-            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
-            markersize=options.plot.scatter.quantiles.markersize,
-            **settings.get_option("plot.scatter.quantiles.kwargs"),
-        )
+    if backend not in PLOTTING_BACKENDS:
+        raise ValueError(f"backend must be one of {list(PLOTTING_BACKENDS.keys())}")
 
-        x_trend = xq if fit_to_quantiles else x_trend
-        plt.plot(
-            x_trend,
-            intercept + slope * x_trend,
-            **settings.get_option("plot.scatter.reg_line.kwargs"),
-            label=reglabel,
-            zorder=2,
-        )
-
-        if show_hist:
-            plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
-
-        plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.axis("square")
-        plt.xlim([xlim[0], xlim[1]])
-        plt.ylim([ylim[0], ylim[1]])
-        plt.minorticks_on()
-        plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
-        max_cbar = None
-        if show_hist or (show_density and show_points):
-            cbar = plt.colorbar(fraction=0.046, pad=0.04)
-            ticks = cbar.ax.get_yticks()
-            max_cbar = ticks[-1]
-            cbar.set_label("# points")
-
-        plt.title(title)
-        # Add skill table
-        if skill_df is not None:
-            _plot_summary_table(skill_df, units, max_cbar=max_cbar)
-        return ax
-
-    elif backend == "plotly":  # pragma: no cover
-        import plotly.graph_objects as go
-
-        data = [
-            go.Scatter(
-                x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")
-            ),
-        ]
-
-        regression_line = go.Scatter(
-            x=x_trend,
-            y=intercept + slope * x_trend,
-            name=reglabel,
-            mode="lines",
-            line=dict(color="red"),
-        )
-        data.append(regression_line)
-
-        if show_hist:
-            data.append(
-                go.Histogram2d(
-                    x=x,
-                    y=y,
-                    xbins=dict(size=binsize),
-                    ybins=dict(size=binsize),
-                    colorscale=[
-                        [0.0, "rgba(0,0,0,0)"],
-                        [0.1, "purple"],
-                        [0.5, "green"],
-                        [1.0, "yellow"],
-                    ],
-                    colorbar=dict(title="# of points"),
-                )
-            )
-
-        if show_points:
-
-            if show_density:
-                c = z
-                cbar = dict(thickness=20, title="# of points")
-            else:
-                c = "black"
-                cbar = None
-            data.append(
-                go.Scatter(
-                    x=x_sample,
-                    y=y_sample,
-                    mode="markers",
-                    name="Data",
-                    marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
-                )
-            )
-        data.append(
-            go.Scatter(
-                x=xq,
-                y=yq,
-                name=options.plot.scatter.quantiles.label,
-                mode="markers",
-                marker_symbol="x",
-                marker_color=options.plot.scatter.quantiles.color,
-                marker_line_color="midnightblue",
-                marker_line_width=0.6,
-            )
-        )
-
-        defaults = {"width": 600, "height": 600}
-        defaults = {**defaults, **kwargs}
-
-        layout = layout = go.Layout(
-            legend=dict(x=0.01, y=0.99),
-            yaxis=dict(scaleanchor="x", scaleratio=1),
-            title=dict(text=title, xanchor="center", yanchor="top", x=0.5, y=0.9),
-            yaxis_title=ylabel,
-            xaxis_title=xlabel,
-            **defaults,
-        )
-
-        fig = go.Figure(data=data, layout=layout)
-        fig.update_xaxes(range=xlim)
-        fig.update_yaxes(range=ylim)
-        fig.show()  # Should this be here
-
-    else:
-
-        raise ValueError(f"Plotting backend: {backend} not supported")
+    return PLOTTING_BACKENDS[backend](
+        x=x,
+        y=y,
+        x_sample=x_sample,
+        y_sample=y_sample,
+        z=z,
+        xq=xq,
+        yq=yq,
+        x_trend=x_trend,
+        show_density=show_density,
+        norm=norm,
+        show_points=show_points,
+        show_hist=show_hist,
+        nbins_hist=nbins_hist,
+        intercept=intercept,
+        slope=slope,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        figsize=figsize,
+        xlim=xlim,
+        ylim=ylim,
+        title=title,
+        skill_df=skill_df,
+        units=units,
+        **kwargs,
+    )
 
 
 def plot_temporal_coverage(
@@ -754,30 +889,84 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
     return Z_grid
 
 
-def _plot_summary_table(skill_df, units, max_cbar):
-    stats_with_units = ["bias", "rmse", "urmse", "mae"]
-    max_str_len = skill_df.columns.str.len().max()
-    lines = []
+def _format_skill_line(
+    series: pd.Series,
+    units: str,
+    precision: int,
+) -> str:
 
-    for col in skill_df.columns:
-        if col == "model" or col == "variable":
-            continue
-        if col in stats_with_units:
+    name = series.name
+
+    item_unit = " "
+
+    if name == "n":
+        fvalue = series.values[0]
+    else:
+        if metric_has_units(metric=name):
             # if statistic has dimensions, then add units
-            item_unit = units
-        else:
-            # else, add empty space (for fomatting)
-            item_unit = " "
-        if col == "n":
-            # Number of samples, integer, else, 2 decimals
-            decimals = f".{0}f"
-        else:
-            decimals = f".{2}f"
-        lines.append(
-            f"{(col.ljust(max_str_len)).upper()} = {np.round(skill_df[col].values[0],2): {decimals}} {item_unit}"
-        )
+            item_unit = unit_display_name(units)
 
-    text_ = "\n".join(lines)
+        rounded_value = np.round(series.values[0], precision)
+        fmt = f".{precision}f"
+        fvalue = f"{rounded_value:{fmt}}"
+
+    name = series.name.upper()
+
+    return f"{name}", " =  ", f"{fvalue} {item_unit}"
+
+
+def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
+
+    # remove model and variable columns if present, i.e. keep all other columns
+    df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
+
+    # loop over series in dataframe, (columns)
+    lines = [_format_skill_line(df[col], units, precision) for col in list(df.columns)]
+
+    return np.array(lines)
+
+
+def _plot_summary_border(
+    figure_transform,
+    x0,
+    y0,
+    dx,
+    dy,
+    borderpad=0.01,
+) -> None:
+
+    ## Load settings
+    bbox_kwargs = {}
+    bbox_kwargs.update(settings.get_option("plot.scatter.legend.bbox"))
+    if (
+        "boxstyle" in bbox_kwargs and "pad" not in bbox_kwargs["boxstyle"]
+    ):  # default padding results in massive bbox
+        bbox_kwargs["boxstyle"] = bbox_kwargs["boxstyle"] + f",pad={borderpad}"
+    else:
+        bbox_kwargs["boxstyle"] = f"square,pad={borderpad}"
+    lgkw = settings.get_option("plot.scatter.legend.kwargs")
+    if "edgecolor" in lgkw:
+        bbox_kwargs["edgecolor"] = lgkw["edgecolor"]
+
+    ## Define rectangle
+    bbox = patches.FancyBboxPatch(
+        (x0 - borderpad, y0 - borderpad),
+        dx + borderpad * 2,
+        dy + borderpad * 2,
+        transform=figure_transform,
+        clip_on=False,
+        **bbox_kwargs,
+    )
+
+    px = plt.gca().add_patch(bbox)
+
+
+def _plot_summary_table(
+    df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
+) -> None:
+
+    lines = format_skill_df(df, units)
+    text_ = ["\n".join(lines[:, i]) for i in range(lines.shape[1])]
 
     if max_cbar is None:
         x = 0.93
@@ -793,11 +982,36 @@ def _plot_summary_table(skill_df, units, max_cbar):
         # When more than 1e6 samples, matplotlib changes to scientific notation
         x = 0.97
 
-    plt.gcf().text(
-        x,
-        0.6,
-        text_,
-        bbox=settings.get_option("plot.scatter.legend.bbox"),
+    fig = plt.gcf()
+    figure_transform = fig.transFigure.get_affine()
+
+    # General text settings
+    txt_settings = dict(
         fontsize=options.plot.scatter.legend.fontsize,
-        family="monospace",
     )
+
+    # Column 1
+    text_columns = []
+    dx = 0
+    for ti in text_:
+        text_col_i = fig.text(x + dx, 0.6, ti, **txt_settings)
+        ## Render, and get width
+        plt.draw()
+        dx = (
+            dx
+            + figure_transform.inverted().transform(
+                [text_col_i.get_window_extent().bounds[2], 0]
+            )[0]
+        )
+        text_columns.append(text_col_i)
+
+    # Plot border
+    ## Define coordintes
+    x0, y0 = figure_transform.inverted().transform(
+        text_columns[0].get_window_extent().bounds[0:2]
+    )
+    _, dy = figure_transform.inverted().transform(
+        (0, text_columns[0].get_window_extent().bounds[3])
+    )
+
+    _plot_summary_border(figure_transform, x0, y0, dx, dy)

@@ -20,3 +20,5 @@ plot.scatter.quantiles.markersize: 3.5
 plot.scatter.reg_line.kwargs:
   color: [0, 0.596078431372549, 0.8588235294117647]
   dashes: [2,5]
+plot.rcParams:
+  mathtext.default: regular
