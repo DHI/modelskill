@@ -9,6 +9,9 @@ from collections import namedtuple
 from scipy import interpolate
 
 import matplotlib.pyplot as plt
+from matplotlib import patches
+import matplotlib.colors as colors
+from matplotlib.ticker import MaxNLocator
 
 import mikeio
 
@@ -63,6 +66,10 @@ register_option(
 )
 # register_option("plot.scatter.table.show", False, validator=settings.is_bool)
 register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positive)
+
+# TODO: Auto-implement
+# still requires plt.rcParams.update(modelskill.settings.get_option('plot.rcParams'))
+register_option("plot.rcParams", {}, settings.is_dict)  # still have to
 
 
 def sample_points(
@@ -169,6 +176,7 @@ def _scatter_matplotlib(
     show_density,
     show_points,
     show_hist,
+    norm,
     nbins_hist,
     intercept,
     slope,
@@ -205,6 +213,7 @@ def _scatter_matplotlib(
             marker=".",
             label=options.plot.scatter.points.label,
             zorder=1,
+            norm=norm,
             **kwargs,
         )
     plt.plot(
@@ -245,14 +254,15 @@ def _scatter_matplotlib(
         ticks = cbar.ax.get_yticks()
         max_cbar = ticks[-1]
         cbar.set_label("# points")
+        cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
         plt.title(title)
-        # Add skill table
-        if skill_df is not None:
-            df = skill_df.df
-            assert isinstance(df, pd.DataFrame)
-            _plot_summary_table(df, units, max_cbar=max_cbar)
-        return ax
+    # Add skill table
+    if skill_df is not None:
+        df = skill_df.df
+        assert isinstance(df, pd.DataFrame)
+        _plot_summary_table(df, units, max_cbar=max_cbar)
+    return ax
 
 
 def _scatter_plotly(
@@ -267,6 +277,7 @@ def _scatter_plotly(
     x_trend,
     show_density,
     show_points,
+    norm,  # TODO not used by plotly, remove or keep for consistency?
     show_hist,
     nbins_hist,
     intercept,
@@ -399,6 +410,7 @@ def scatter(
     show_points: Optional[Union[bool, int, float]] = None,
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
+    norm: colors.Normalize = None,
     backend: str = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
@@ -443,6 +455,9 @@ def scatter(
         show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
         are None, then `show_density` is used by default.
         for binning the data, the previous kword `bins=Float` is used
+    norm : matplotlib.colors.Normalize
+        colormap normalization
+        If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
     backend : str, optional
         use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
     figsize : tuple, optional
@@ -474,6 +489,10 @@ def scatter(
 
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
+
+    if norm is None:
+        # Default: PowerNorm with gamma of 0.5
+        norm = colors.PowerNorm(vmin=1, gamma=0.5)
 
     x_sample, y_sample = sample_points(x, y, show_points)
     xq, yq = quantiles_xy(x, y, quantiles)
@@ -537,6 +556,7 @@ def scatter(
         yq=yq,
         x_trend=x_trend,
         show_density=show_density,
+        norm=norm,
         show_points=show_points,
         show_hist=show_hist,
         nbins_hist=nbins_hist,
@@ -724,7 +744,9 @@ def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
 
 
 def _format_skill_line(
-    series: pd.Series, units: str, precision: int, max_str_len: int
+    series: pd.Series,
+    units: str,
+    precision: int,
 ) -> str:
 
     name = series.name
@@ -742,25 +764,55 @@ def _format_skill_line(
         fmt = f".{precision}f"
         fvalue = f"{rounded_value:{fmt}}"
 
-    name = series.name.ljust(max_str_len).upper()
+    name = series.name.upper()
 
-    return f"{name} =  {fvalue} {item_unit}"
+    return f"{name}", " =  ", f"{fvalue} {item_unit}"
 
 
 def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
-
-    max_str_len = df.columns.str.len().max()
 
     # remove model and variable columns if present, i.e. keep all other columns
     df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
 
     # loop over series in dataframe, (columns)
-    lines = [
-        _format_skill_line(df[col], units, precision, max_str_len)
-        for col in list(df.columns)
-    ]
+    lines = [_format_skill_line(df[col], units, precision) for col in list(df.columns)]
 
-    return lines
+    return np.array(lines)
+
+
+def _plot_summary_border(
+    figure_transform,
+    x0,
+    y0,
+    dx,
+    dy,
+    borderpad=0.01,
+) -> None:
+
+    ## Load settings
+    bbox_kwargs = {}
+    bbox_kwargs.update(settings.get_option("plot.scatter.legend.bbox"))
+    if (
+        "boxstyle" in bbox_kwargs and "pad" not in bbox_kwargs["boxstyle"]
+    ):  # default padding results in massive bbox
+        bbox_kwargs["boxstyle"] = bbox_kwargs["boxstyle"] + f",pad={borderpad}"
+    else:
+        bbox_kwargs["boxstyle"] = f"square,pad={borderpad}"
+    lgkw = settings.get_option("plot.scatter.legend.kwargs")
+    if "edgecolor" in lgkw:
+        bbox_kwargs["edgecolor"] = lgkw["edgecolor"]
+
+    ## Define rectangle
+    bbox = patches.FancyBboxPatch(
+        (x0 - borderpad, y0 - borderpad),
+        dx + borderpad * 2,
+        dy + borderpad * 2,
+        transform=figure_transform,
+        clip_on=False,
+        **bbox_kwargs,
+    )
+
+    px = plt.gca().add_patch(bbox)
 
 
 def _plot_summary_table(
@@ -768,7 +820,7 @@ def _plot_summary_table(
 ) -> None:
 
     lines = format_skill_df(df, units)
-    text_ = "\n".join(lines)
+    text_ = ["\n".join(lines[:, i]) for i in range(lines.shape[1])]
 
     if max_cbar is None:
         x = 0.93
@@ -784,11 +836,36 @@ def _plot_summary_table(
         # When more than 1e6 samples, matplotlib changes to scientific notation
         x = 0.97
 
-    plt.gcf().text(
-        x,
-        0.6,
-        text_,
-        bbox=settings.get_option("plot.scatter.legend.bbox"),
+    fig = plt.gcf()
+    figure_transform = fig.transFigure.get_affine()
+
+    # General text settings
+    txt_settings = dict(
         fontsize=options.plot.scatter.legend.fontsize,
-        family="monospace",
     )
+
+    # Column 1
+    text_columns = []
+    dx = 0
+    for ti in text_:
+        text_col_i = fig.text(x + dx, 0.6, ti, **txt_settings)
+        ## Render, and get width
+        plt.draw()
+        dx = (
+            dx
+            + figure_transform.inverted().transform(
+                [text_col_i.get_window_extent().bounds[2], 0]
+            )[0]
+        )
+        text_columns.append(text_col_i)
+
+    # Plot border
+    ## Define coordintes
+    x0, y0 = figure_transform.inverted().transform(
+        text_columns[0].get_window_extent().bounds[0:2]
+    )
+    _, dy = figure_transform.inverted().transform(
+        (0, text_columns[0].get_window_extent().bounds[3])
+    )
+
+    _plot_summary_border(figure_transform, x0, y0, dx, dy)

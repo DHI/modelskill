@@ -30,7 +30,7 @@ from . import metrics as mtr
 from . import Quantity
 from . import __version__
 from .observation import Observation, PointObservation, TrackObservation
-from .plot import scatter, taylor_diagram, TaylorPoint
+from .plot import scatter, taylor_diagram, TaylorPoint, colors
 from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option, reset_option
@@ -1115,6 +1115,7 @@ class Comparer:
         show_points: Union[bool, int, float] = None,
         show_hist: bool = None,
         show_density: bool = None,
+        norm: colors = None,
         backend: str = "matplotlib",
         figsize: List[float] = (8, 8),
         xlim: List[float] = None,
@@ -1154,6 +1155,9 @@ class Comparer:
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
             show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
+        norm : matplotlib.colors norm
+            colormap normalization
+            If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
         are None, then `show_density` is used by default.
             for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
@@ -1233,6 +1237,7 @@ class Comparer:
             show_points=show_points,
             show_hist=show_hist,
             show_density=show_density,
+            norm=norm,
             backend=backend,
             figsize=figsize,
             xlim=xlim,
