@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# Copyright: This document has been placed in the public domain.
-
 """
 Taylor diagram (Taylor, 2001) implementation.
 Note: If you have found these software useful for your research, I would
@@ -14,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class TaylorDiagram(object):
+class TaylorDiagram:
     """
     Taylor diagram.
     Plot model standard deviation and correlation to reference (data)
@@ -111,13 +108,14 @@ class TaylorDiagram(object):
         self.ax = ax.get_aux_axes(tr)  # Polar coordinates
 
         # Add reference point and stddev contour
-        (l,) = self.ax.plot([0], self.refstd, "k*", ls="", ms=10, label=label)
+        (points,) = self.ax.plot([0], self.refstd, "k*", ls="", ms=10, label=label)
+
         t = np.linspace(0, self.tmax)
         r = np.zeros_like(t) + self.refstd
         self.ax.plot(t, r, "k--", label="_")
 
         # Collect sample points for latter use (e.g. legend)
-        self.samplePoints = [l]
+        self.samplePoints = [points]
 
     def add_sample(self, stddev, corrcoef, *args, **kwargs):
         """
@@ -126,12 +124,12 @@ class TaylorDiagram(object):
         `Figure.plot` command.
         """
 
-        (l,) = self.ax.plot(
+        (point,) = self.ax.plot(
             np.arccos(corrcoef), stddev, *args, **kwargs
         )  # (theta, radius)
-        self.samplePoints.append(l)
+        self.samplePoints.append(point)
 
-        return l
+        return point
 
     def add_grid(self, *args, **kwargs):
         """Add a grid."""
@@ -144,7 +142,7 @@ class TaylorDiagram(object):
             np.linspace(self.smin, self.smax), np.linspace(0, self.tmax)
         )
         # Compute centered RMS difference
-        rms = np.sqrt(self.refstd ** 2 + rs ** 2 - 2 * self.refstd * rs * np.cos(ts))
+        rms = np.sqrt(self.refstd**2 + rs**2 - 2 * self.refstd * rs * np.cos(ts))
 
         contours = self.ax.contour(ts, rs, rms, levels, **kwargs)
 

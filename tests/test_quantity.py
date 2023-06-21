@@ -1,6 +1,5 @@
 import pytest
 from modelskill import Quantity
-import mikeio
 
 
 def test_str():

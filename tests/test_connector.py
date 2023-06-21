@@ -8,7 +8,7 @@ import mikeio
 from modelskill import ModelResult
 from modelskill import PointObservation, TrackObservation
 from modelskill import Connector
-from modelskill.connection import PointConnector, TrackConnector
+from modelskill.connection import PointConnector
 
 
 @pytest.fixture

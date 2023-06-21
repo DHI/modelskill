@@ -3,7 +3,6 @@ import pytest
 import pandas as pd
 import xarray as xr
 import modelskill.comparison
-from modelskill import Quantity
 
 
 def _get_df() -> pd.DataFrame:

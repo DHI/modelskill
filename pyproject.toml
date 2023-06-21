@@ -67,3 +67,6 @@ notebooks = [
 "Bug Tracker" = "https://github.com/DHI/modelskill/issues"
 
 
+[tool.ruff]
+# ignore line too long
+ignore = ["E501"]

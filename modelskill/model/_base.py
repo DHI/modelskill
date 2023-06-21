@@ -1,21 +1,16 @@
-from pathlib import Path
 import warnings
 from typing import Optional
 
-from dataclasses import dataclass
-
 import pandas as pd
 
-from modelskill import types, utils
-from modelskill.observation import Observation
-
-from ..types import Quantity
+from ..observation import Observation
+from ..types import Quantity, DataInputType
 
 
 class ModelResultBase:
     def __init__(
         self,
-        data: types.DataInputType,
+        data: DataInputType,
         name: str,
         quantity: Optional[Quantity] = None,
     ) -> None:

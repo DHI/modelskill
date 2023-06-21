@@ -4,8 +4,7 @@ import mikeio
 import pandas as pd
 
 from .. import types, utils
-from ._base import ModelResultBase
-from ..types import GeometryType, Quantity
+from ..types import Quantity
 from ..timeseries import TimeSeries  # TODO move to main module
 
 

@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-import sys
 import mikeio
 
 from modelskill.observation import PointObservation

@@ -1,5 +1,4 @@
-import math
-from typing import List, Tuple, Union, Optional, Optional, Sequence
+from typing import List, Tuple, Union, Optional, Sequence
 import warnings
 from matplotlib.axes import Axes
 import numpy as np
@@ -13,9 +12,9 @@ import matplotlib.colors as colors
 from matplotlib.ticker import MaxNLocator
 
 import mikeio
+
 from .model.point import PointModelResult
 from .model.track import TrackModelResult
-
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
@@ -72,10 +71,12 @@ register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positi
 # still requires plt.rcParams.update(modelskill.settings.get_option('plot.rcParams'))
 register_option("plot.rcParams", {}, settings.is_dict)  # still have to
 
+
 def _get_ax(ax=None, figsize=None):
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
     return ax
+
 
 def _get_fig_ax(ax=None, figsize=None):
     if ax is None:
@@ -611,7 +612,7 @@ def plot_temporal_coverage(
     marker : str, optional
         plot marker for observations, by default "_"
     ax: matplotlib.axes, optional
-        Adding to existing axis, instead of creating new fig    
+        Adding to existing axis, instead of creating new fig
     figsize : Tuple(float, float), optional
         size of figure, by default (7, 0.45*n_lines)
     title: str, optional
@@ -635,7 +636,7 @@ def plot_temporal_coverage(
     >>> ms.plot_temporal_coverage([o1, o2], [mr1, mr2])
     >>> ms.plot_temporal_coverage([o1, o2], mr2, limit_to_model_period=False)
     >>> ms.plot_temporal_coverage(o2, [mr1, mr2], marker=".")
-    >>> ms.plot_temporal_coverage(mod=[mr1, mr2], figsize=(5,3))    
+    >>> ms.plot_temporal_coverage(mod=[mr1, mr2], figsize=(5,3))
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
@@ -706,7 +707,7 @@ def plot_spatial_coverage(
     Returns
     -------
     <matplotlib.axes>
-    
+
     Examples
     --------
     >>> import modelskill as ms

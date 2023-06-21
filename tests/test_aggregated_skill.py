@@ -157,13 +157,13 @@ def test_skill_sel_columns(cc2):
 def test_skill_sel_fail(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
     with pytest.raises(KeyError):
-        s2 = s.sel(columns=["cc"])
+        s.sel(columns=["cc"])
 
     with pytest.raises(KeyError):
-        s2 = s.sel(variable="Hm0")
+        s.sel(variable="Hm0")
 
     with pytest.raises(KeyError):
-        s2 = s.sel(model=99)
+        s.sel(model=99)
 
 
 def test_skill_plot_bar(cc1):

@@ -368,20 +368,19 @@ class _SingleObsConnector(_BaseConnector):
 
     @staticmethod
     def _validate_start_end(obs, mod):
-        try:
-            # need to put this in try-catch due to error in dfs0 in mikeio
-            if obs.end_time < mod.start_time:
-                warnings.warn(
-                    f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
-                )
-                return False
-            if obs.start_time > mod.end_time:
-                warnings.warn(
-                    f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
-                )
-                return False
-        except:
-            pass
+
+        if obs.end_time < mod.start_time:
+            warnings.warn(
+                f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
+            )
+            return False
+
+        if obs.start_time > mod.end_time:
+            warnings.warn(
+                f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
+            )
+            return False
+
         return True
 
     def plot_observation_positions(self, figsize=None):
@@ -392,7 +391,9 @@ class _SingleObsConnector(_BaseConnector):
         figsize : (float, float), optional
             figure size, by default None
         """
-        return plot_spatial_coverage(obs=[self.obs], mod=self.modelresults, figsize=figsize)
+        return plot_spatial_coverage(
+            obs=[self.obs], mod=self.modelresults, figsize=figsize
+        )
 
     @staticmethod
     def _comparer_or_None(comparer, warn=True):
@@ -713,9 +714,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         obs = list(self.observations.values())
         mod = list(self.modelresults.values())
-        return plot_spatial_coverage(
-            obs=obs, mod=mod, title=title, figsize=figsize
-        )
+        return plot_spatial_coverage(obs=obs, mod=mod, title=title, figsize=figsize)
 
     def plot_temporal_coverage(
         self,
