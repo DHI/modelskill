@@ -1365,7 +1365,7 @@ class Comparer:
         matplotlib.axes.Axes.hist
 
         """
-        warnings.warn(FutureWarning("hist is deprecated. Use plot.hist instead."))
+        warnings.warn("hist is deprecated. Use plot.hist instead.", FutureWarning)
         return self.plot.hist(**kwargs)
 
     def kde(self, ax=None, **kwargs) -> Axes:
@@ -1388,7 +1388,7 @@ class Comparer:
         >>> cmp.kde()
         >>> cmp.kde(bw_method=0.3)
         """
-        warnings.warn(FutureWarning("kde is deprecated. Use plot.kde instead."))
+        warnings.warn("kde is deprecated. Use plot.kde instead.", FutureWarning)
 
         return self.plot.kde(ax=ax, **kwargs)
 
@@ -1416,64 +1416,13 @@ class Comparer:
         >>> comparer.plot_timeseries(backend="plotly")
         >>> comparer.plot_timeseries(backend="plotly", showlegend=False)
         """
+        warnings.warn(
+            "plot_timeseries is deprecated. Use plot.timeseries instead.", FutureWarning
+        )
 
-        if title is None:
-            title = self.name
-
-        if backend == "matplotlib":
-            _, ax = plt.subplots(figsize=figsize)
-            for j in range(self.n_models):
-                key = self.mod_names[j]
-                mod_df = self.raw_mod_data[key]
-                mod_df[key].plot(ax=ax, color=MOD_COLORS[j])
-
-            ax.scatter(
-                self.time,
-                self.data[self._obs_name].values,
-                marker=".",
-                color=self.data[self._obs_name].attrs["color"],
-            )
-            ax.set_ylabel(self._unit_text)
-            ax.legend([*self.mod_names, self._obs_name])
-            ax.set_ylim(ylim)
-            plt.title(title)
-            return ax
-
-        elif backend == "plotly":  # pragma: no cover
-            import plotly.graph_objects as go
-
-            mod_scatter_list = []
-            for j in range(self.n_models):
-                key = self.mod_names[j]
-                mod_df = self.raw_mod_data[key]
-                mod_scatter_list.append(
-                    go.Scatter(
-                        x=mod_df.index,
-                        y=mod_df[key],
-                        name=key,
-                        line=dict(color=MOD_COLORS[j]),
-                    )
-                )
-
-            fig = go.Figure(
-                [
-                    *mod_scatter_list,
-                    go.Scatter(
-                        x=self.time,
-                        y=self.data[self._obs_name].values,
-                        name=self._obs_name,
-                        mode="markers",
-                        marker=dict(color=self.data[self._obs_name].attrs["color"]),
-                    ),
-                ]
-            )
-
-            fig.update_layout(title=title, yaxis_title=self._unit_text, **kwargs)
-            fig.update_yaxes(range=ylim)
-
-            fig.show()
-        else:
-            raise ValueError(f"Plotting backend: {backend} not supported")
+        return self.plot.timeseries(
+            title=title, ylim=ylim, figsize=figsize, backend=backend, **kwargs
+        )
 
 
 class PointComparer(Comparer):

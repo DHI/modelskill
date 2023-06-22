@@ -94,7 +94,7 @@ def test_minimal_matched_data():
     assert cmp.quantity.unit == "Undefined"
 
 
-def test_minimal_hist_kde():
+def test_minimal_plots():
 
     df = pd.DataFrame(
         {
@@ -122,10 +122,16 @@ def test_minimal_hist_kde():
     with pytest.warns(FutureWarning, match="plot.kde"):
         cmp.kde()
 
+    with pytest.warns(FutureWarning, match="plot.timeseries"):
+        cmp.plot_timeseries()
+
     ax = cmp.plot.kde()
     assert ax is not None
 
     ax = cmp.plot.hist()
+    assert ax is not None
+
+    ax = cmp.plot.timeseries()
     assert ax is not None
 
 
