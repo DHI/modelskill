@@ -1205,8 +1205,12 @@ class Comparer:
 
         skill_df = None
         units = None
+
         if skill_table:
-            skill_df = cmp.skill()
+            if skill_table is True:
+                skill_df = cmp.skill()
+            else:
+                skill_df = cmp.skill(metrics=skill_table)
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except:
@@ -2156,9 +2160,15 @@ class ComparerCollection(Mapping, Sequence):
         units = None
         if skill_table:
             if isinstance(self, ComparerCollection) and cmp.n_observations == 1:
-                skill_df = cmp.skill()
+                if skill_table is True:
+                    skill_df = cmp.skill()
+                else:                    
+                    skill_df = cmp.skill(metrics=skill_table)
             else:
-                skill_df = self.mean_skill()
+                if skill_table is True:
+                    skill_df = self.mean_skill()
+                else:
+                    skill_df = self.mean_skill(metrics=skill_table)
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except:
