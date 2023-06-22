@@ -20,7 +20,7 @@ from .. import __version__
 from ..observation import Observation, PointObservation, TrackObservation
 from ..plot import scatter, taylor_diagram, TaylorPoint, colors
 
-# from ._plot import ComparerPlotter, ComparisonCollectionPlotter
+from ._plot import ComparerPlotter, ComparisonCollectionPlotter
 from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
@@ -382,6 +382,8 @@ class Comparer:
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
 
+        self.plot = ComparerPlotter(self)
+
         # TODO extract method
         if matched_data is not None:
             assert "Observation" in matched_data.data_vars
@@ -426,8 +428,6 @@ class Comparer:
 
         self.data = self._initialise_comparer(observation, max_model_gap)
         self.quantity: Quantity = observation.quantity
-
-        # self.plot = ComparerPlotter(self)
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
         if len(df_mod) == 0:
@@ -1439,33 +1439,9 @@ class Comparer:
         >>> cmp.kde()
         >>> cmp.kde(bw_method=0.3)
         """
-        if ax is None:
-            ax = plt.gca()
+        warnings.warn(FutureWarning("kde is deprecated. Use plot.kde instead."))
 
-        self.data.Observation.to_series().plot.kde(
-            ax=ax, linestyle="dashed", label="Observation", **kwargs
-        )  # TODO observation should be easy to distinguish
-
-        for model in self.mod_names:
-            self.data[model].to_series().plot.kde(ax=ax, label=model, **kwargs)
-
-        ax.set_xlabel(f"{self._unit_text}")
-
-        ax.legend()
-
-        # remove y-axis
-        ax.yaxis.set_visible(False)
-        # remove y-ticks
-        ax.tick_params(axis="y", which="both", length=0)
-        # remove y-label
-        ax.set_ylabel("")
-
-        # remove box around plot
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-
-        return ax
+        return self.plot.kde(ax=ax, **kwargs)
 
     def plot_timeseries(
         self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs

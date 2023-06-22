@@ -117,7 +117,11 @@ def test_minimal_hist_kde():
 
     # Not very elaborate testing other than these two methods can be called without errors
     cmp.hist()
-    cmp.kde()
+
+    with pytest.warns(FutureWarning, match="plot.kde"):
+        cmp.kde()
+
+    cmp.plot.kde()
 
 
 def test_multiple_forecasts_matched_data():
