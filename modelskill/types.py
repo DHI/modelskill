@@ -67,14 +67,6 @@ DataInputType = Union[
     xr.DataArray,
 ]
 
-ExtractableType = Union[
-    mikeio.dfsu._Dfsu,
-    mikeio.Dfs2,
-    mikeio.DataArray,
-    xr.DataArray,
-    xr.Dataset,
-]
-
 UnstructuredType = Union[
     str,
     Path,
