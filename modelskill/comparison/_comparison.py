@@ -1,15 +1,3 @@
-"""The `compare` module contains different types of comparer classes for
-fixed locations (PointComparer), or locations moving in space (TrackComparer).
-
-These Comparers are constructed by extracting data from the combination of observation and model results
-
-Examples
---------
->>> mr = ModelResult("Oresund2D.dfsu", item=0)
->>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
->>> con = Connector(o1, mr)
->>> comparer = con.extract()
-"""
 from collections.abc import Mapping, Iterable, Sequence
 import os
 from pathlib import Path
@@ -26,14 +14,16 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
 
-from . import metrics as mtr
-from . import Quantity
-from . import __version__
-from .observation import Observation, PointObservation, TrackObservation
-from .plot import scatter, taylor_diagram, TaylorPoint, colors
-from .skill import AggregatedSkill
-from .spatial import SpatialSkill
-from .settings import options, register_option, reset_option
+from .. import metrics as mtr
+from .. import Quantity
+from .. import __version__
+from ..observation import Observation, PointObservation, TrackObservation
+from ..plot import scatter, taylor_diagram, TaylorPoint, colors
+
+# from ._plot import ComparerPlotter, ComparisonCollectionPlotter
+from ..skill import AggregatedSkill
+from ..spatial import SpatialSkill
+from ..settings import options, register_option, reset_option
 
 # TODO remove in v1.1
 def _get_deprecated_args(kwargs):
@@ -436,6 +426,8 @@ class Comparer:
 
         self.data = self._initialise_comparer(observation, max_model_gap)
         self.quantity: Quantity = observation.quantity
+
+        # self.plot = ComparerPlotter(self)
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
         if len(df_mod) == 0:
