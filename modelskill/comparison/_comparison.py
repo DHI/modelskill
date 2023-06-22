@@ -25,6 +25,8 @@ from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
 
+from ._utils import _get_id, _get_name
+
 # TODO remove in v1.1
 def _get_deprecated_args(kwargs):
     model, start, end, area = None, None, None, None
@@ -163,35 +165,6 @@ def _get_valid_query_time(
     # valid query times where time delta is less than max_gap
     valid_idx = df.dt <= max_gap
     return valid_idx
-
-
-def _get_name(x: Optional[Union[str, int]], valid_names: List[str]):
-    """Parse name/id from list of valid names (e.g. obs from obs_names), return name"""
-    return valid_names[_get_id(x, valid_names)]
-
-
-def _get_id(x: Optional[Union[str, int]], valid_names: List[str]):
-    """Parse name/id from list of valid names (e.g. obs from obs_names), return id"""
-    n = len(valid_names)
-    if n == 0:
-        raise ValueError("Cannot select {x} from empty list!")
-    if x is None:
-        return 0  # default to first
-    elif isinstance(x, str):
-        if x in valid_names:
-            id = valid_names.index(x)
-        else:
-            raise KeyError(f"Name {x} could not be found in {valid_names}")
-    elif isinstance(x, int):
-        if x < 0:  # Handle negative indices
-            x += n
-        if x >= 0 and x < n:
-            id = x
-        else:
-            raise IndexError(f"Id {x} is out of range for {valid_names}")
-    else:
-        raise TypeError(f"Input {x} invalid! Must be None, str or int, not {type(x)}")
-    return id
 
 
 def _all_df_template(n_variables: int = 1):
@@ -1392,32 +1365,8 @@ class Comparer:
         matplotlib.axes.Axes.hist
 
         """
-        mod_id = _get_id(model, self.mod_names)
-        mod_name = self.mod_names[mod_id]
-
-        title = f"{mod_name} vs {self.name}" if title is None else title
-
-        kwargs["alpha"] = alpha
-        kwargs["density"] = density
-
-        ax = (
-            self.data[mod_name]
-            .to_series()
-            .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
-        )
-
-        self.data[self._obs_name].to_series().hist(
-            bins=bins, color=self.data[self._obs_name].attrs["color"], ax=ax, **kwargs
-        )
-        ax.legend([mod_name, self._obs_name])
-        plt.title(title)
-        plt.xlabel(f"{self._unit_text}")
-        if density:
-            plt.ylabel("density")
-        else:
-            plt.ylabel("count")
-
-        return ax
+        warnings.warn(FutureWarning("hist is deprecated. Use plot.hist instead."))
+        return self.plot.hist(**kwargs)
 
     def kde(self, ax=None, **kwargs) -> Axes:
         """Plot kernel density estimate of observation and model data.

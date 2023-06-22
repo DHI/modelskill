@@ -116,12 +116,17 @@ def test_minimal_hist_kde():
     cmp = modelskill.comparison.Comparer.from_compared_data(data=data)
 
     # Not very elaborate testing other than these two methods can be called without errors
-    cmp.hist()
+    with pytest.warns(FutureWarning, match="plot.hist"):
+        cmp.hist()
 
     with pytest.warns(FutureWarning, match="plot.kde"):
         cmp.kde()
 
-    cmp.plot.kde()
+    ax = cmp.plot.kde()
+    assert ax is not None
+
+    ax = cmp.plot.hist()
+    assert ax is not None
 
 
 def test_multiple_forecasts_matched_data():
