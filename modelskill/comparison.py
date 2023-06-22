@@ -319,7 +319,7 @@ def _groupby_df(df, by, metrics, n_min: int = None):
         row = {}
         row["n"] = len(x)
         for metric in metrics:
-            row[metric.__name__] = metric(x.obs_val.values, x.mod_val.values)
+            row[metric.__name__] = metric(x.obs_val, x.mod_val)
         return pd.Series(row)
 
     # .drop(columns=["x", "y"])
