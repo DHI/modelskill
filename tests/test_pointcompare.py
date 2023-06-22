@@ -1,4 +1,3 @@
-import datetime
 import pandas as pd
 import pytest
 import numpy as np
@@ -6,7 +5,7 @@ import numpy as np
 import modelskill
 from modelskill import ModelResult, PointObservation, Connector, Quantity
 from modelskill.metrics import root_mean_squared_error, mean_absolute_error
-from modelskill.comparison import Comparer, PointComparer, ComparerCollection
+from modelskill.comparison import Comparer, PointComparer
 
 
 @pytest.fixture

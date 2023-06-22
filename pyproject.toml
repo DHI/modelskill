@@ -45,7 +45,8 @@ dev = ["pytest",
         "sphinx==4.5.0",  # pin version to work with sphinx-book-theme
         "sphinx-book-theme",
         "black==22.3.0",
-        "plotly >= 4.5",]
+        "plotly >= 4.5",
+        "ruff",]
 
 test =  [
             "pytest",
@@ -67,3 +68,6 @@ notebooks = [
 "Bug Tracker" = "https://github.com/DHI/modelskill/issues"
 
 
+[tool.ruff]
+# ignore line too long
+ignore = ["E501"]

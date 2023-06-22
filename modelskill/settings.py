@@ -123,7 +123,7 @@ def _set_option(*args, **kwargs) -> None:
         raise ValueError("Must provide an even number of non-keyword arguments")
 
     # default to false
-    silent = kwargs.pop("silent", False)
+    kwargs.pop("silent", False)
 
     if kwargs:
         kwarg = list(kwargs.keys())[0]

@@ -3,7 +3,6 @@ import pytest
 import xarray as xr
 import pandas as pd
 
-import mikeio
 
 import modelskill
 from modelskill import ModelResult
@@ -11,7 +10,6 @@ from modelskill.model import (
     GridModelResult,
     PointModelResult,
     TrackModelResult,
-    protocols,
 )
 from modelskill.observation import PointObservation, TrackObservation
 
@@ -118,9 +116,13 @@ def test_grid_name(ERA5_DutchCoast_nc):
 
 
 def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
-    mrp = mr_ERA5_swh.extract(pointobs_epl_hm0)
-    assert isinstance(mrp, PointModelResult)
-    df = mrp.data
+    pmr = mr_ERA5_swh.extract(pointobs_epl_hm0)
+    df = pmr.data
+
+    assert isinstance(pmr, PointModelResult)
+    assert pmr.start_time == datetime(2017, 10, 27, 0, 0, 0)
+    assert pmr.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert len(df.dropna()) == 67
     assert isinstance(df, pd.DataFrame)
     assert len(df.columns) == 1
     assert pytest.approx(df.iloc[0, 0]) == 0.875528
@@ -131,16 +133,6 @@ def test_grid_validate_point(mf_modelresult, pointobs_epl_hm0):
 
     ok = mr._validate_start_end(pointobs_epl_hm0)
     assert ok
-
-
-def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
-    pmr = mr_ERA5_swh.extract(pointobs_epl_hm0)
-    df = pmr.data
-
-    assert isinstance(pmr, PointModelResult)
-    assert pmr.start_time == datetime(2017, 10, 27, 0, 0, 0)
-    assert pmr.end_time == datetime(2017, 10, 29, 18, 0, 0)
-    assert len(df.dropna()) == 67
 
 
 def test_grid_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
@@ -165,7 +157,7 @@ def test_grid_extract_point_toutside(ERA5_DutchCoast_nc, pointobs_epl_hm0):
 def test_grid_extract_point_wrongitem(mr_ERA5_pp1d, pointobs_epl_hm0):
     mri = mr_ERA5_pp1d
     pc = mri.extract(pointobs_epl_hm0)
-    assert pc == None
+    assert pc is None
 
 
 def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):

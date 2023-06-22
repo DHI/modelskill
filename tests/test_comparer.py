@@ -3,7 +3,6 @@ import pytest
 import pandas as pd
 import xarray as xr
 import modelskill.comparison
-from modelskill import Quantity
 
 
 def _get_df() -> pd.DataFrame:
@@ -79,15 +78,46 @@ def test_minimal_matched_data():
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
+
     cmp = modelskill.comparison.Comparer.from_compared_data(
         data=data
     )  # no additional raw_mod_data
+
+    assert cmp.data["Observation"].attrs["color"] == "black"
+    assert cmp.data["Observation"].attrs["unit"] == "Undefined"
+    assert cmp.data.attrs["variable_name"] == "Undefined"
     assert len(cmp.raw_mod_data["m1"]) == 6
 
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_models == 2
     assert cmp.quantity.name == "Undefined"
     assert cmp.quantity.unit == "Undefined"
+
+
+def test_minimal_hist_kde():
+
+    df = pd.DataFrame(
+        {
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
+            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
+            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+
+    data = xr.Dataset(df)
+    data.attrs["variable_name"] = "Waterlevel"
+    data["Observation"].attrs["kind"] = "observation"
+    data["Observation"].attrs["color"] = "pink"
+    data["Observation"].attrs["unit"] = "m"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "mini"
+    cmp = modelskill.comparison.Comparer.from_compared_data(data=data)
+
+    # Not very elaborate testing other than these two methods can be called without errors
+    cmp.hist()
+    cmp.kde()
 
 
 def test_multiple_forecasts_matched_data():

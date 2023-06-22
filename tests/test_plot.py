@@ -28,21 +28,33 @@ def test_format_skill_df():
     )
 
     lines = format_skill_df(df, units="degC")
-    assert "N     =  167" in lines[0]
-    assert "BIAS  =  0.00 degC" in lines[1]
-    assert "RMSE  =  0.04 degC" in lines[2]
-    assert "URMSE =  0.04 degC" in lines[3]
-    assert "MAE   =  0.03 degC" in lines[4]
-    assert "CC    =  0.84 " in lines[5]
+    assert "N" in lines[0,0]
+    assert "167" in lines[0,2]
+    assert "BIAS" in lines[1,0]
+    assert "0.00 degC" in lines[1,2]
+    assert "RMSE" in lines[2,0]
+    assert "0.04 degC" in lines[2,2]
+    assert "URMSE" in lines[3,0]
+    assert "0.04 degC" in lines[3,2]
+    assert "MAE" in lines[4,0]
+    assert "0.03 degC" in lines[4,2]
+    assert "CC" in lines[5,0]
+    assert "0.84" in lines[5,2]
 
     lines_with_short_units = format_skill_df(df, units="meter")
 
-    assert "N     =  167" in lines_with_short_units[0]
-    assert "BIAS  =  0.00 m" in lines_with_short_units[1]
-    assert "RMSE  =  0.04 m" in lines_with_short_units[2]
-    assert "URMSE =  0.04 m" in lines_with_short_units[3]
-    assert "MAE   =  0.03 m" in lines_with_short_units[4]
-    assert "CC    =  0.84 " in lines_with_short_units[5]
+    assert "N" in lines_with_short_units[0,0]
+    assert "167" in lines_with_short_units[0,2]
+    assert "BIAS" in lines_with_short_units[1,0]
+    assert "0.00 m" in lines_with_short_units[1,2]
+    assert "RMSE" in lines_with_short_units[2,0]
+    assert "0.04 m" in lines_with_short_units[2,2]
+    assert "URMSE" in lines_with_short_units[3,0]
+    assert "0.04 m" in lines_with_short_units[3,2]
+    assert "MAE" in lines_with_short_units[4,0]
+    assert "0.03" in lines_with_short_units[4,2]
+    assert "CC" in lines_with_short_units[5,0]
+    assert "0.84" in lines_with_short_units[5,2]
 
 
 @pytest.fixture

@@ -24,7 +24,7 @@ And it should be
 
 * Difficult to make mistakes by verifying input 
 * Trustworthy by having >95% test coverage 
-* Easy to install (from pypi and conda)
+* Easy to install (`pip install modelskill`)
 * Easy to get started by providing many notebook examples and documentation
 
 
@@ -34,6 +34,7 @@ Scope
 `ModelSkill <https://github.com/DHI/modelskill>`_ wants to balance general and specific needs: 
 
 * It should be general enough to cover >90% of MIKE FM simulations
+* It should be general enough to cover generic modelling irrespective of software.
 * But specific enough to be useful
     - Support dfs files (using `mikeio <https://github.com/DHI/mikeio>`_)
     - Handle circular variables such as wave direction
@@ -48,9 +49,8 @@ Limitations
 `ModelSkill <https://github.com/DHI/modelskill>`_ does **not** wish to cover 
 
 * Extreme value analysis
-* Forecast skill assessments
 * Deterministic wave analysis such as crossing analysis
-* Alternative file types 
+* Rare alternative file types 
 * Rarely used model result types 
 * Rare observation types
 * Anything project specific

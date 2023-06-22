@@ -1,4 +1,4 @@
-from typing import Any, Optional, Protocol, Union, runtime_checkable
+from typing import Any, Protocol, Union, runtime_checkable
 
 import pandas as pd
 
@@ -38,19 +38,6 @@ class Comparable(ModelResult, Protocol):
 
     def compare(self, observation: Union[PointObservation, Observation]):
         # assert isinstance(self.data, ExtractableType), "data is not extractable"
-        ...
-
-
-@runtime_checkable
-class Extractable(ModelResult, Protocol):
-
-    # Declaring data as Any, because mikeio.open() returns some possible types
-    # that we currently don't handle. Instead checking for proper type in extract()
-    data: types.ExtractableType
-
-    def extract(
-        self, observation: Union[PointObservation, Observation]
-    ) -> Optional[Comparable]:
         ...
 
 

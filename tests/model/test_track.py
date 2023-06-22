@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 import mikeio
 
-from modelskill import ModelResult, TrackObservation
+from modelskill import ModelResult
 from modelskill.model import TrackModelResult, protocols
 from modelskill import Quantity
 
@@ -89,7 +89,7 @@ def test_track_df_default_items(track_df):
 
     with pytest.raises(ValueError):
         # cannot default item as x_item and y_item are not default
-        mr1 = ModelResult(df, gtype="track", x_item=1, y_item="lat")
+        ModelResult(df, gtype="track", x_item=1, y_item="lat")
     # assert isinstance(mr1, protocols.ModelResult)
     # assert mr1.item_name == "surface_elevation"
 

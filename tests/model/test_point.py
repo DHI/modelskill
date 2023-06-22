@@ -1,11 +1,10 @@
 from datetime import datetime
 import numpy as np
-import pandas as pd
 import pytest
 
 import mikeio
-from modelskill import ModelResult, PointObservation, Quantity
-from modelskill.model import protocols, PointModelResult
+from modelskill import ModelResult, Quantity
+from modelskill.model import PointModelResult
 
 
 @pytest.fixture
