@@ -16,12 +16,12 @@ from modelskill import ModelResult
 from modelskill.timeseries import TimeSeries
 from modelskill.model import PointModelResult
 from modelskill.types import GeometryType, Quantity
-from .model import protocols, DfsuModelResult
+from .model import protocols
 from .model._base import ModelResultBase
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
-from .plot import plot_observation_positions
+from .plot import plot_spatial_overview
 
 
 IdOrNameTypes = Optional[Union[int, str]]
@@ -391,19 +391,9 @@ class _SingleObsConnector(_BaseConnector):
         figsize : (float, float), optional
             figure size, by default None
         """
-        mr = self.modelresults[0]
-
-        if isinstance(mr, DfsuModelResult):
-            geometry = mr.data.geometry
-        else:
-            warnings.warn("Only supported for dfsu ModelResults")
-            return
-
-        ax = plot_observation_positions(
-            geometry=geometry, observations=[self.obs], figsize=figsize
+        return plot_spatial_overview(
+            obs=[self.obs], mod=self.modelresults, figsize=figsize
         )
-
-        return ax
 
     @staticmethod
     def _comparer_or_None(comparer, warn=True):
@@ -722,19 +712,9 @@ class Connector(_BaseConnector, Mapping, Sequence):
         >>> con.plot_observation_positions(figsize=(10,10))
         >>> con.plot_observation_positions("A Map")
         """
-        mod = list(self.modelresults.values())[0]
-
-        if isinstance(mod, DfsuModelResult):
-            geometry = mod.data.geometry
-        else:
-            warnings.warn("Only supported for dfsu ModelResults")
-            return
-
-        observations = list(self.observations.values())
-        ax = plot_observation_positions(
-            geometry=geometry, observations=observations, title=title, figsize=figsize
-        )
-        return ax
+        obs = list(self.observations.values())
+        mod = list(self.modelresults.values())
+        return plot_spatial_overview(obs=obs, mod=mod, title=title, figsize=figsize)
 
     def plot_temporal_coverage(
         self,
