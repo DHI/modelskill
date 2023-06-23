@@ -35,6 +35,7 @@ from .skill import AggregatedSkill
 from .spatial import SpatialSkill
 from .settings import options, register_option, reset_option
 
+
 # TODO remove in v1.1
 def _get_deprecated_args(kwargs):
     model, start, end, area = None, None, None, None
@@ -391,7 +392,6 @@ class Comparer:
         matched_data: xr.Dataset = None,
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
-
         # TODO extract method
         if matched_data is not None:
             assert "Observation" in matched_data.data_vars
@@ -454,7 +454,6 @@ class Comparer:
             warnings.warn("no (spatial) overlap between model and observation points")
 
     def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
-
         assert isinstance(observation, (PointObservation, TrackObservation))
         gtype = "point" if isinstance(observation, PointObservation) else "track"
         observation = deepcopy(observation)
@@ -730,7 +729,6 @@ class Comparer:
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
-
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
@@ -1229,8 +1227,10 @@ class Comparer:
 
         skill_df = None
         units = None
+
         if skill_table:
-            skill_df = cmp.skill()
+            metrics = None if skill_table is True else skill_table
+            skill_df = cmp.skill(metrics=metrics)
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:
@@ -1730,7 +1730,6 @@ class ComparerCollection(Mapping, Sequence):
         return str.join("\n", out)
 
     def __getitem__(self, x) -> Comparer:
-
         if isinstance(x, slice):
             raise NotImplementedError("slicing not implemented")
         #    cmps = [self[xi] for xi in range(*x.indices(len(self)))]
@@ -1762,7 +1761,6 @@ class ComparerCollection(Mapping, Sequence):
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
-
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
@@ -2215,11 +2213,11 @@ class ComparerCollection(Mapping, Sequence):
         skill_df = None
         units = None
         if skill_table:
+            metrics = None if skill_table is True else skill_table
             if isinstance(self, ComparerCollection) and cmp.n_observations == 1:
-                skill_df = cmp.skill()
+                skill_df = cmp.skill(metrics=metrics)
             else:
-                skill_df = self.mean_skill()
-
+                skill_df = self.mean_skill(metrics=metrics)
             # TODO improve this
             try:
                 units = unit_text.split("[")[1].split("]")[0]
@@ -2604,7 +2602,6 @@ class ComparerCollection(Mapping, Sequence):
         return by
 
     def _parse_weights(self, weights, observations):
-
         if observations is None:
             observations = self.obs_names
         else:
