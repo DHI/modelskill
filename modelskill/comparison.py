@@ -481,6 +481,7 @@ class Comparer:
         if gtype == "point":
             data["x"] = observation.x
             data["y"] = observation.y
+            data["z"] = observation.z
 
         data.attrs["name"] = observation.name
         # data.attrs["variable_name"] = observation.variable_name
@@ -612,6 +613,13 @@ class Comparer:
             return self.data["y"].values
 
     @property
+    def z(self):
+        if "z" in self.data[self._obs_name].attrs.keys():
+            return self.data[self._obs_name].attrs["z"]
+        else:
+            return self.data["z"].values
+        
+    @property
     def obs(self) -> np.ndarray:
         return self.data[self._obs_name].to_dataframe().values
 
@@ -709,6 +717,7 @@ class Comparer:
                 name=self.name,
                 x=self.x,
                 y=self.y,
+                z=self.z,
                 # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
