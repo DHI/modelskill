@@ -59,11 +59,11 @@ def test_plot_temporal_coverage_settings(o1, o2, o3, mr1, mr2):
     plt.close()
 
 
-def test_plot_spatial_coverage(o1, o2, o3, mr1):
-    ms.plot_spatial_coverage([o1, o2, o3], mr1)
-    ms.plot_spatial_coverage(o1, mr1, figsize=(3, 6))
-    ms.plot_spatial_coverage([o1, o2, o3], mod=[], title="test")
-    ms.plot_spatial_coverage(obs=[], mod=mr1, title="test")
+def test_plot_spatial_overview(o1, o2, o3, mr1):
+    ms.plot_spatial_overview([o1, o2, o3], mr1)
+    ms.plot_spatial_overview(o1, mr1, figsize=(3, 6))
+    ms.plot_spatial_overview([o1, o2, o3], mod=[], title="test")
+    ms.plot_spatial_overview(obs=[], mod=mr1, title="test")
     plt.close()
 
 

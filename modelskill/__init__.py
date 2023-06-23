@@ -28,7 +28,7 @@ from .model.factory import ModelResult
 from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector, from_matched
 from .settings import options, get_option, set_option, reset_option, load_style
-from .plot import plot_temporal_coverage, plot_spatial_coverage
+from .plot import plot_temporal_coverage, plot_spatial_overview
 
 __all__ = [
     "Quantity",

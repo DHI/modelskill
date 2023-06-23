@@ -83,7 +83,7 @@ c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 ### Overview of observation locations
 
 ```python
-ms.plot_spatial_coverage([HKNA, EPL, c2], mr, figsize=(7,7))
+ms.plot_spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
 ```
 
 ![map](https://raw.githubusercontent.com/DHI/modelskill/main/images/map.png)

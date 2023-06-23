@@ -620,7 +620,7 @@ def plot_temporal_coverage(
 
     See Also
     --------
-    plot_spatial_coverage
+    plot_spatial_overview
 
     Returns
     -------
@@ -678,7 +678,7 @@ def plot_temporal_coverage(
     return ax
 
 
-def plot_spatial_coverage(
+def plot_spatial_overview(
     obs: List[Observation],
     mod=None,
     ax=None,
@@ -715,7 +715,7 @@ def plot_spatial_coverage(
     >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
     >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
     >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
-    >>> ms.plot_spatial_coverage([o1, o2], [mr1, mr2])
+    >>> ms.plot_spatial_overview([o1, o2], [mr1, mr2])
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
