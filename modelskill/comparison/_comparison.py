@@ -20,7 +20,8 @@ from .. import __version__
 from ..observation import Observation, PointObservation, TrackObservation
 from ..plot import scatter, taylor_diagram, TaylorPoint, colors
 
-from ._plot import ComparerPlotter, ComparisonCollectionPlotter
+from ._comparer_plotter import ComparerPlotter
+from ._comparison_collection_plotter import ComparisonCollectionPlotter
 from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option

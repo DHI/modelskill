@@ -1,7 +1,5 @@
-from typing import Any, Union, List
+from typing import Union, List
 
-
-import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -336,7 +334,3 @@ class ComparerPlotter:
             **kwargs,
         )
         return ax
-
-
-class ComparisonCollectionPlotter:
-    pass

@@ -11,8 +11,6 @@ from matplotlib import patches
 import matplotlib.colors as colors
 from matplotlib.ticker import MaxNLocator
 
-import mikeio
-
 from .model.point import PointModelResult
 from .model.track import TrackModelResult
 from .observation import Observation, PointObservation, TrackObservation
@@ -213,7 +211,8 @@ def _scatter_matplotlib(
         c=options.plot.scatter.oneone_line.color,
         zorder=3,
     )
-    if not show_points is False:
+
+    if show_points is None or show_points:
         if show_density:
             c = z
         else:
@@ -339,8 +338,7 @@ def _scatter_plotly(
             )
         )
 
-    if not show_points is False:
-
+    if show_points is None or show_points:
         if show_density:
             c = z
             cbar = dict(thickness=20, title="# of points")
@@ -959,7 +957,7 @@ def _plot_summary_border(
         **bbox_kwargs,
     )
 
-    px = plt.gca().add_patch(bbox)
+    plt.gca().add_patch(bbox)
 
 
 def _plot_summary_table(
