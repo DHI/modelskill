@@ -1,15 +1,20 @@
-from typing import List, Union
+from typing import Any, List, Union
+from matplotlib.axes import Axes
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
-
+from .. import metrics as mtr
 from ._utils import _get_id
-from ..plot import colors, scatter
+from ..plot import colors, scatter, taylor_diagram, TaylorPoint
 
 
 class ComparerCollectionPlotter:
     def __init__(self, cc) -> None:
         self.cc = cc
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        return self.scatter(*args, **kwds)
 
     def scatter(
         self,
@@ -152,3 +157,209 @@ class ComparerCollectionPlotter:
             # **kwargs, # TODO
         )
         return ax
+
+    def kde(self, ax=None, **kwargs) -> Axes:
+        """Plot kernel density estimate of observation and model data.
+
+        Parameters
+        ----------
+        ax : Axes, optional
+            matplotlib axes, by default None
+        **kwargs
+            passed to pandas.DataFrame.plot.kde()
+
+        Returns
+        -------
+        Axes
+            matplotlib axes
+
+        Examples
+        --------
+        >>> cc.kde()
+        >>> cc.kde(bw_method=0.5)
+
+        """
+        if ax is None:
+            ax = plt.gca()
+
+        df = self.cc.to_dataframe()
+        ax = df.obs_val.plot.kde(
+            ax=ax, linestyle="dashed", label="Observation", **kwargs
+        )
+
+        for model in self.cc.mod_names:
+            df_model = df[df.model == model]
+            df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
+
+        plt.xlabel(f"{self.cc[df.observation[0]]._unit_text}")
+
+        # TODO title?
+        ax.legend()
+
+        # remove y-axis
+        ax.yaxis.set_visible(False)
+        # remove y-ticks
+        ax.tick_params(axis="y", which="both", length=0)
+        # remove y-label
+        ax.set_ylabel("")
+
+        # remove box around plot
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+
+        return ax
+
+    def hist(
+        self,
+        model=None,
+        bins=100,
+        title: str = None,
+        density=True,
+        alpha: float = 0.5,
+        **kwargs,
+    ):
+        """Plot histogram of specific model and all observations.
+
+        Wraps pandas.DataFrame hist() method.
+
+        Parameters
+        ----------
+        model : str, optional
+            model name, by default None, i.e. the first model
+        bins : int, optional
+            number of bins, by default 100
+        title : str, optional
+            plot title, default: observation name
+        density: bool, optional
+            If True, draw and return a probability density
+        alpha : float, optional
+            alpha transparency fraction, by default 0.5
+        kwargs : other keyword arguments to df.hist()
+
+        Returns
+        -------
+        matplotlib axes
+
+        See also
+        --------
+        pandas.Series.hist
+        matplotlib.axes.Axes.hist
+        """
+        from ._comparison import MOD_COLORS
+
+        mod_id = _get_id(model, self.cc.mod_names)
+        mod_name = self.cc.mod_names[mod_id]
+
+        title = f"{mod_name} vs Observations" if title is None else title
+
+        cmp = self.cc
+        df = cmp.to_dataframe()
+        kwargs["alpha"] = alpha
+        kwargs["density"] = density
+        ax = df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
+        df.obs_val.hist(
+            bins=bins,
+            color=self.cc[0].data["Observation"].attrs["color"],
+            ax=ax,
+            **kwargs,
+        )
+        ax.legend([mod_name, "observations"])
+        plt.title(title)
+        plt.xlabel(f"{self.cc[df.observation[0]]._unit_text}")
+
+        if density:
+            plt.ylabel("density")
+        else:
+            plt.ylabel("count")
+
+        return ax
+
+    def taylor(
+        self,
+        normalize_std: bool = False,
+        aggregate_observations: bool = True,
+        figsize: List[float] = (7, 7),
+        marker: str = "o",
+        marker_size: float = 6.0,
+        title: str = "Taylor diagram",
+    ):
+        """Taylor diagram showing model std and correlation to observation
+        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
+
+        Parameters
+        ----------
+        model : (int, str), optional
+            name or id of model to be compared, by default all
+        observation : (int, str, List[str], List[int])), optional
+            name or ids of observations to be compared, by default all
+        variable : (str, int), optional
+            name or id of variable to be compared, by default first
+        start : (str, datetime), optional
+            start time of comparison, by default None
+        end : (str, datetime), optional
+            end time of comparison, by default None
+        area : list(float), optional
+            bbox coordinates [x0, y0, x1, y1],
+            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
+            by default None
+        normalize_std : bool, optional
+            plot model std normalized with observation std, default False
+        aggregate_observations : bool, optional
+            should multiple observations be aggregated before plotting
+            (or shown individually), default True
+        figsize : tuple, optional
+            width and height of the figure (should be square), by default (7, 7)
+        marker : str, optional
+            marker type e.g. "x", "*", by default "o"
+        marker_size : float, optional
+            size of the marker, by default 6
+        title : str, optional
+            title of the plot, by default "Taylor diagram"
+
+        Examples
+        ------
+        >>> comparer.taylor()
+        >>> comparer.taylor(observation="c2")
+        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+
+        References
+        ----------
+        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
+        """
+
+        if (not aggregate_observations) and (not normalize_std):
+            raise ValueError(
+                "aggregate_observations=False is only possible if normalize_std=True!"
+            )
+
+        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        skill_func = self.cc.mean_skill if aggregate_observations else self.cc.skill
+        s = skill_func(
+            metrics=metrics,
+        )
+        if s is None:
+            return
+
+        df = s.df
+        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
+
+        if isinstance(df.index, pd.MultiIndex):
+            df.index = df.index.map("_".join)
+
+        df = df[["_std_obs", "_std_mod", "cc"]].copy()
+        df.columns = ["obs_std", "std", "cc"]
+        pts = [
+            TaylorPoint(
+                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+            )
+            for r in df.itertuples()
+        ]
+
+        taylor_diagram(
+            obs_std=ref_std,
+            points=pts,
+            figsize=figsize,
+            normalize_std=normalize_std,
+            title=title,
+        )

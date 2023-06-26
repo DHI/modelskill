@@ -1,10 +1,11 @@
 from typing import Union, List
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
-
+from .. import metrics as mtr
 from ._utils import _get_id
-from ..plot import colors, scatter
+from ..plot import colors, scatter, taylor_diagram, TaylorPoint
 
 
 class ComparerPlotter:
@@ -36,7 +37,7 @@ class ComparerPlotter:
         -------
         matplotlib.axes.Axes or plotly.graph_objects.Figure
         """
-        from ._comparison import MOD_COLORS  # TODO move to here
+        from ._comparison import MOD_COLORS
 
         cmp = self.comparer
 
@@ -334,3 +335,73 @@ class ComparerPlotter:
             **kwargs,
         )
         return ax
+
+    def taylor(
+        self,
+        df: pd.DataFrame = None,
+        normalize_std: bool = False,
+        figsize: List[float] = (7, 7),
+        marker: str = "o",
+        marker_size: float = 6.0,
+        title: str = "Taylor diagram",
+        **kwargs,
+    ) -> None:
+        """Taylor diagram showing model std and correlation to observation
+        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
+
+        Parameters
+        ----------
+        normalize_std : bool, optional
+            plot model std normalized with observation std, default False
+        figsize : tuple, optional
+            width and height of the figure (should be square), by default (7, 7)
+        marker : str, optional
+            marker type e.g. "x", "*", by default "o"
+        marker_size : float, optional
+            size of the marker, by default 6
+        title : str, optional
+            title of the plot, by default "Taylor diagram"
+
+        Examples
+        ------
+        >>> comparer.taylor()
+        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+
+        References
+        ----------
+        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
+        """
+        cmp = self.comparer
+
+        # TODO consider if this round-trip  via mtr is necessary to get the std:s
+        metrics = [
+            mtr._std_obs,
+            mtr._std_mod,
+            mtr.cc,
+        ]
+
+        s = cmp.skill(metrics=metrics)
+
+        if s is None:  # TODO
+            return
+        df = s.df
+        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
+
+        df = df[["_std_obs", "_std_mod", "cc"]].copy()
+        df.columns = ["obs_std", "std", "cc"]
+
+        pts = [
+            TaylorPoint(
+                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+            )
+            for r in df.itertuples()
+        ]
+
+        taylor_diagram(
+            obs_std=ref_std,
+            points=pts,
+            figsize=figsize,
+            obs_text=f"Obs: {cmp.name}",
+            normalize_std=normalize_std,
+            title=title,
+        )

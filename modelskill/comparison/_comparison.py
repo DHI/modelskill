@@ -18,7 +18,7 @@ from .. import metrics as mtr
 from .. import Quantity
 from .. import __version__
 from ..observation import Observation, PointObservation, TrackObservation
-from ..plot import scatter, taylor_diagram, TaylorPoint, colors
+from ..plot import taylor_diagram, TaylorPoint, colors
 
 from ._comparer_plotter import ComparerPlotter
 from ._collection_plotter import ComparerCollectionPlotter
@@ -1240,6 +1240,7 @@ class Comparer:
         ----------
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
+        warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
@@ -2002,150 +2003,6 @@ class ComparerCollection(Mapping, Sequence):
             **kwargs,
         )
 
-    def kde(self, ax=None, **kwargs) -> Axes:
-        """Plot kernel density estimate of observation and model data.
-
-        Parameters
-        ----------
-        ax : Axes, optional
-            matplotlib axes, by default None
-        **kwargs
-            passed to pandas.DataFrame.plot.kde()
-
-        Returns
-        -------
-        Axes
-            matplotlib axes
-
-        Examples
-        --------
-        >>> cc.kde()
-        >>> cc.kde(bw_method=0.5)
-
-        """
-        if ax is None:
-            ax = plt.gca()
-
-        df = self.to_dataframe()
-        ax = df.obs_val.plot.kde(
-            ax=ax, linestyle="dashed", label="Observation", **kwargs
-        )  # TODO observation should be easy to distinguish
-
-        for model in self.mod_names:
-            df_model = df[df.model == model]
-            df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
-
-        plt.xlabel(f"{self[df.observation[0]]._unit_text}")
-
-        # TODO title?
-        ax.legend()
-
-        # remove y-axis
-        ax.yaxis.set_visible(False)
-        # remove y-ticks
-        ax.tick_params(axis="y", which="both", length=0)
-        # remove y-label
-        ax.set_ylabel("")
-
-        # remove box around plot
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-
-        return ax
-
-    def hist(
-        self,
-        bins=100,
-        model: Union[str, int] = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
-        title: str = None,
-        density=True,
-        alpha: float = 0.5,
-        **kwargs,
-    ):
-        """Plot histogram of specific model and all observations.
-
-        Wraps pandas.DataFrame hist() method.
-
-        Parameters
-        ----------
-        bins : int, optional
-            number of bins, by default 100
-        model : (str, int), optional
-            name or id of specific model to be plotted, by default 0
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
-        title : str, optional
-            plot title, default: observation name
-        density: bool, optional
-            If True, draw and return a probability density
-        alpha : float, optional
-            alpha transparency fraction, by default 0.5
-        kwargs : other keyword arguments to df.hist()
-
-        Returns
-        -------
-        matplotlib axes
-
-        See also
-        --------
-        pandas.Series.hist
-        matplotlib.axes.Axes.hist
-        """
-        mod_id = _get_id(model, self.mod_names)
-        mod_name = self.mod_names[mod_id]
-
-        # filter data
-        cmp = self.sel(
-            model=mod_name,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-        if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return
-
-        title = f"{mod_name} vs Observations" if title is None else title
-
-        df = cmp.to_dataframe()
-        kwargs["alpha"] = alpha
-        kwargs["density"] = density
-        ax = df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
-        df.obs_val.hist(
-            bins=bins,
-            color=self[0].data["Observation"].attrs["color"],
-            ax=ax,
-            **kwargs,
-        )
-        ax.legend([mod_name, "observations"])
-        plt.title(title)
-        plt.xlabel(f"{self[df.observation[0]]._unit_text}")
-
-        if density:
-            plt.ylabel("density")
-        else:
-            plt.ylabel("count")
-
-        return ax
-
     def mean_skill(
         self,
         *,
@@ -2565,6 +2422,7 @@ class ComparerCollection(Mapping, Sequence):
         ----------
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
+        warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
 
         if (not aggregate_observations) and (not normalize_std):
             raise ValueError(
@@ -2639,3 +2497,25 @@ class ComparerCollection(Mapping, Sequence):
                 os.remove(f)
                 comparers.append(cmp)
         return ComparerCollection(comparers)
+
+    def kde(self, ax=None, **kwargs):
+
+        warnings.warn("kde is deprecated, use plot.kde instead", FutureWarning)
+
+        return self.plot.kde(ax=ax, **kwargs)
+
+    def hist(
+        self,
+        model=None,
+        bins=100,
+        title: str = None,
+        density=True,
+        alpha: float = 0.5,
+        **kwargs,
+    ):
+
+        warnings.warn("hist is deprecated, use plot.hist instead", FutureWarning)
+
+        return self.plot.hist(
+            model=model, bins=bins, title=title, density=density, alpha=alpha, **kwargs
+        )

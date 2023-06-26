@@ -146,6 +146,12 @@ def test_minimal_plots():
     with pytest.warns(FutureWarning, match="plot.scatter"):
         cmp.scatter()
 
+    with pytest.warns(FutureWarning, match="plot.taylor"):
+        cmp.taylor()
+
+    cmp.plot.taylor()
+    # TODO should taylor also return matplotlib axes?
+
     # default plot is scatter
     ax = cmp.plot()
     assert "m1" in ax.get_title()

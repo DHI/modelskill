@@ -297,6 +297,11 @@ def test_mm_scatter(cc):
     with pytest.warns(FutureWarning):
         cc.scatter(model="SW_1")
 
+    # scatter is the default plot
+    ax = cc.plot()
+
+    assert "SW_1" in ax.get_title()
+
     cc.plot.scatter(model="SW_1", observation=[0, 1])
     cc.plot.scatter(model="SW_2", show_points=False)
     cc.plot.scatter(model="SW_2", show_hist=False)
@@ -314,12 +319,35 @@ def test_mm_scatter(cc):
     plt.close("all")
 
 
+def test_mm_kde(cc):
+
+    with pytest.warns(FutureWarning):
+        cc.kde()
+
+    ax = cc.plot.kde()
+    assert ax is not None
+    # TODO more informative test
+
+
+def test_mm_hist(cc):
+
+    with pytest.warns(FutureWarning):
+        cc.hist()
+
+    ax = cc.plot.hist()
+    assert ax is not None
+
+
 def test_mm_taylor(cc):
-    cc.taylor(model="SW_1", observation=[0, 1])
-    cc.taylor(normalize_std=True)
-    cc.taylor(figsize=(4, 4))
-    cc.taylor(model="SW_2", start="2017-10-28")
-    cc[0].taylor(model=0, end="2017-10-29")
+
+    with pytest.warns(FutureWarning):
+        cc.taylor()
+
+    cc.sel(model="SW_1", observation=[0, 1]).plot.taylor()
+    cc.plot.taylor(normalize_std=True)
+    cc.plot.taylor(figsize=(4, 4))
+    cc.sel(model="SW_2", start="2017-10-28").plot.taylor()
+    cc[0].sel(model=0, end="2017-10-29").plot.taylor()
     assert True
     plt.close("all")
 
@@ -331,4 +359,8 @@ def test_mm_plot_timeseries(cc):
     # cc["EPL"].plot_timeseries(backend="plotly")
     with pytest.raises(ValueError):
         cc["EPL"].plot_timeseries(backend="mpl")
+
+    ax = cc["EPL"].plot.timeseries()
+    assert "EPL" in ax.get_title()
+
     plt.close("all")
