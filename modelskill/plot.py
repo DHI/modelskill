@@ -270,7 +270,7 @@ def _scatter_matplotlib(
         cbar.set_label("# points")
         cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
-        plt.title(title)
+    plt.title(title)
     # Add skill table
     if skill_df is not None:
         df = skill_df.df

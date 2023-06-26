@@ -66,7 +66,7 @@ def test_minimal_matched_data():
 
     df = pd.DataFrame(
         {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
             "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
             "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
             "time": pd.date_range("2019-01-01", periods=6, freq="D"),
@@ -94,11 +94,29 @@ def test_minimal_matched_data():
     assert cmp.quantity.unit == "Undefined"
 
 
+def test_from_compared_data_doesnt_accept_missing_values_in_obs():
+    df = pd.DataFrame(
+        {
+            "Observation": [1.0, np.nan],
+            "m1": [1.5, 6.4],
+            "time": pd.date_range("2019-01-01", periods=2, freq="D"),
+        }
+    ).set_index("time")
+
+    data = xr.Dataset(df)
+    data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data.attrs["name"] = "mini"
+
+    with pytest.raises(ValueError):
+        modelskill.comparison.Comparer.from_compared_data(data=data)
+
+
 def test_minimal_plots():
 
     df = pd.DataFrame(
         {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
             "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
             "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
             "time": pd.date_range("2019-01-01", periods=6, freq="D"),
@@ -125,6 +143,9 @@ def test_minimal_plots():
     with pytest.warns(FutureWarning, match="plot.timeseries"):
         cmp.plot_timeseries()
 
+    with pytest.warns(FutureWarning, match="plot.scatter"):
+        cmp.scatter()
+
     ax = cmp.plot.kde()
     assert ax is not None
 
@@ -133,6 +154,12 @@ def test_minimal_plots():
 
     ax = cmp.plot.timeseries()
     assert ax is not None
+
+    ax = cmp.plot.scatter()
+    assert "m1" in ax.get_title()
+
+    ax = cmp.plot.scatter(model="m2")
+    assert "m2" in ax.get_title()
 
 
 def test_multiple_forecasts_matched_data():
@@ -173,7 +200,7 @@ def test_matched_aux_variables():
 
     df = pd.DataFrame(
         {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
             "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
             "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
             "wind": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],

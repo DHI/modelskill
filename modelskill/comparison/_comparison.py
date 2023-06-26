@@ -362,6 +362,10 @@ class Comparer:
         if matched_data is not None:
             assert "Observation" in matched_data.data_vars
 
+            # no missing values allowed in Observation
+            if matched_data["Observation"].isnull().any():
+                raise ValueError("Observation data must not contain missing values.")
+
             for key in matched_data.data_vars:
                 if "kind" not in matched_data[key].attrs:
                     matched_data[key].attrs["kind"] = "auxiliary"
@@ -587,10 +591,12 @@ class Comparer:
 
     @property
     def obs(self) -> np.ndarray:
+        """Observation data as 1d numpy array"""
         return self.data[self._obs_name].to_dataframe().values
 
     @property
     def mod(self) -> np.ndarray:
+        """Model data as 2d numpy array. Each column is a model"""
         return self.data[self.mod_names].to_dataframe().values
 
     @property
@@ -1175,45 +1181,11 @@ class Comparer:
         >>> comparer.scatter(model='HKZN_v2', figsize=(10, 10))
         """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-
-        mod_id = _get_id(model, self.mod_names)
-        mod_name = self.mod_names[mod_id]
-
-        # filter data
-        cmp = self.sel(
-            model=mod_name,
-            start=start,
-            end=end,
-            area=area,
+        warnings.warn(
+            "This method is deprecated, use plot.scatter instead", FutureWarning
         )
 
-        if cmp.n_points == 0:
-            raise ValueError("No data found in selection")
-
-        x = np.squeeze(cmp.obs)
-        y = np.squeeze(cmp.mod)
-
-        unit_text = cmp._unit_text
-        xlabel = xlabel or f"Observation, {unit_text}"
-        ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{cmp.mod_names[mod_id]} vs {cmp.name}"
-
-        skill_df = None
-        units = None
-
-        if skill_table:
-            metrics = None if skill_table is True else skill_table
-            skill_df = cmp.skill(metrics=metrics)
-            try:
-                units = unit_text.split("[")[1].split("]")[0]
-            except IndexError:
-                units = ""  # Dimensionless
-
-        ax = scatter(
-            x=x,
-            y=y,
+        self.plot.scatter(
             bins=bins,
             quantiles=quantiles,
             fit_to_quantiles=fit_to_quantiles,
@@ -1229,11 +1201,8 @@ class Comparer:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
-            skill_df=skill_df,
-            units=units,
             **kwargs,
         )
-        return ax
 
     def taylor(
         self,
@@ -1376,7 +1345,7 @@ class Comparer:
 
         """
         warnings.warn("hist is deprecated. Use plot.hist instead.", FutureWarning)
-        return self.plot.hist(**kwargs)
+        return self.plot.hist(model=model, bins=bins, title=title, **kwargs)
 
     def kde(self, ax=None, **kwargs) -> Axes:
         """Plot kernel density estimate of observation and model data.
