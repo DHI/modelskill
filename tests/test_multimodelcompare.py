@@ -292,19 +292,24 @@ def test_mm_mean_skill_weights_dict(cc):
 
 
 def test_mm_scatter(cc):
-    cc.scatter(model="SW_1", observation=[0, 1])
-    cc.scatter(model="SW_2", show_points=False)
-    cc.scatter(model="SW_2", show_hist=False)
-    cc.scatter(model="SW_2", bins=0.5)
-    cc.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
-    cc.scatter(model="SW_2", show_points=True)
-    cc.scatter(model="SW_2", show_points=100)
-    cc.scatter(model="SW_2", show_points=0.75)
-    cc.scatter(model="SW_2", show_density=True)
-    cc.scatter(model="SW_2", show_points=0.75, show_density=True)
-    cc.scatter(model="SW_2", observation="HKNA", skill_table=True)
-    cc.scatter(model="SW_2", fit_to_quantiles=True)
-    # cc.scatter(model="SW_2", binsize=0.5, backend="plotly")
+
+    # deprecation warning cc.scatter
+    with pytest.warns(FutureWarning):
+        cc.scatter(model="SW_1")
+
+    cc.plot.scatter(model="SW_1", observation=[0, 1])
+    cc.plot.scatter(model="SW_2", show_points=False)
+    cc.plot.scatter(model="SW_2", show_hist=False)
+    cc.plot.scatter(model="SW_2", bins=0.5)
+    cc.plot.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
+    cc.plot.scatter(model="SW_2", show_points=True)
+    cc.plot.scatter(model="SW_2", show_points=100)
+    cc.plot.scatter(model="SW_2", show_points=0.75)
+    cc.plot.scatter(model="SW_2", show_density=True)
+    cc.plot.scatter(model="SW_2", show_points=0.75, show_density=True)
+    cc.plot.scatter(model="SW_2", observation="HKNA", skill_table=True)
+    cc.plot.scatter(model="SW_2", fit_to_quantiles=True)
+    # cc.plot.scatter(model="SW_2", binsize=0.5, backend="plotly")
     assert True
     plt.close("all")
 

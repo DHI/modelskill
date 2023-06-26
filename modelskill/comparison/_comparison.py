@@ -21,7 +21,7 @@ from ..observation import Observation, PointObservation, TrackObservation
 from ..plot import scatter, taylor_diagram, TaylorPoint, colors
 
 from ._comparer_plotter import ComparerPlotter
-from ._comparison_collection_plotter import ComparisonCollectionPlotter
+from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
@@ -1434,6 +1434,7 @@ class ComparerCollection(Mapping, Sequence):
     def __init__(self, comparers=None):
         self.comparers = {}
         self.add_comparer(comparers)
+        self.plot = ComparerCollectionPlotter(self)
 
     def add_comparer(self, comparer: Union["Comparer", "ComparerCollection"]) -> None:
         """Add another Comparer to this collection.
@@ -1942,73 +1943,11 @@ class ComparerCollection(Mapping, Sequence):
         title: str = None,
         xlabel: str = None,
         ylabel: str = None,
-        binsize: float = None,
-        nbins: int = None,
         skill_table: Union[str, List[str], bool] = None,
         **kwargs,
     ):
-        """Scatter plot showing compared data: observation vs modelled
-        Optionally, with density histogram.
 
-        Parameters
-        ----------
-        bins: (int, float, sequence), optional
-            bins for the 2D histogram on the background. By default 20 bins.
-            if int, represents the number of bins of 2D
-            if float, represents the bin size
-            if sequence (list of int or float), represents the bin edges
-        quantiles: (int, sequence), optional
-            number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
-            if int, this is the number of points
-            if sequence (list of floats), represents the desired quantiles (from 0 to 1)
-        fit_to_quantiles: bool, optional, by default False
-            by default the regression line is fitted to all data, if True, it is fitted to the quantiles
-            which can be useful to represent the extremes of the distribution
-        show_points : (bool, int, float), optional
-            Should the scatter points be displayed?
-            None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
-            float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
-            int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
-        show_hist : bool, optional
-            show the data density as a a 2d histogram, by default None
-        show_density: bool, optional
-            show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
-        are None, then `show_density` is used by default.
-            for binning the data, the previous kword `bins=Float` is used
-        backend : str, optional
-            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
-        figsize : tuple, optional
-            width and height of the figure, by default (8, 8)
-        xlim : tuple, optional
-            plot range for the observation (xmin, xmax), by default None
-        ylim : tuple, optional
-            plot range for the model (ymin, ymax), by default None
-        reg_method : str, optional
-            method for determining the regression line
-            "ols" : ordinary least squares regression
-            "odr" : orthogonal distance regression,
-            by default "ols"
-        title : str, optional
-            plot title, by default None
-        xlabel : str, optional
-            x-label text on plot, by default None
-        ylabel : str, optional
-            y-label text on plot, by default None
-        skill_table : str, List[str], bool, optional
-            list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
-            This kword adds a box at the right of the scatter plot,
-            by default False
-        kwargs
-
-        Examples
-        ------
-        >>> comparer.scatter()
-        >>> comparer.scatter(bins=0.2, backend='plotly')
-        >>> comparer.scatter(show_points=False, title='no points')
-        >>> comparer.scatter(xlabel='all observations', ylabel='my model')
-        >>> comparer.scatter(model='HKZN_v2', figsize=(10, 10))
-        >>> comparer.scatter(observations=['c2','HKNA'])
-        """
+        warnings.warn("scatter is deprecated, use plot.scatter instead", FutureWarning)
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
@@ -2043,36 +1982,8 @@ class ComparerCollection(Mapping, Sequence):
             end=end,
             area=area,
         )
-        if cmp.n_points == 0:
-            raise ValueError("No data found in selection")
 
-        df = cmp.to_dataframe()
-        x = df.obs_val
-        y = df.mod_val
-
-        unit_text = self[df.observation[0]]._unit_text
-
-        xlabel = xlabel or f"Observation, {unit_text}"
-        ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{mod_name} vs {cmp.name}"
-
-        skill_df = None
-        units = None
-        if skill_table:
-            metrics = None if skill_table is True else skill_table
-            if isinstance(self, ComparerCollection) and cmp.n_observations == 1:
-                skill_df = cmp.skill(metrics=metrics)
-            else:
-                skill_df = self.mean_skill(metrics=metrics)
-            # TODO improve this
-            try:
-                units = unit_text.split("[")[1].split("]")[0]
-            except IndexError:
-                units = ""  # Dimensionless
-
-        ax = scatter(
-            x=x,
-            y=y,
+        return cmp.plot.scatter(
             bins=bins,
             quantiles=quantiles,
             fit_to_quantiles=fit_to_quantiles,
@@ -2087,11 +1998,9 @@ class ComparerCollection(Mapping, Sequence):
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
-            skill_df=skill_df,
-            units=units,
+            skill_table=skill_table,
             **kwargs,
         )
-        return ax
 
     def kde(self, ax=None, **kwargs) -> Axes:
         """Plot kernel density estimate of observation and model data.
