@@ -11,7 +11,10 @@ from matplotlib import patches
 import matplotlib.colors as colors
 from matplotlib.ticker import MaxNLocator
 
+import mikeio
 
+from .model.point import PointModelResult
+from .model.track import TrackModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
@@ -67,6 +70,20 @@ register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positi
 # TODO: Auto-implement
 # still requires plt.rcParams.update(modelskill.settings.get_option('plot.rcParams'))
 register_option("plot.rcParams", {}, settings.is_dict)  # still have to
+
+
+def _get_ax(ax=None, figsize=None):
+    if ax is None:
+        _, ax = plt.subplots(figsize=figsize)
+    return ax
+
+
+def _get_fig_ax(ax=None, figsize=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig = plt.gcf()
+    return fig, ax
 
 
 def sample_points(
@@ -571,41 +588,174 @@ def scatter(
     )
 
 
-def plot_observation_positions(
-    geometry,
-    observations: List[Observation],
-    figsize: Tuple = None,
+def plot_temporal_coverage(
+    obs=None,
+    mod=None,
+    *,
+    limit_to_model_period=True,
+    marker="_",
+    ax=None,
+    figsize=None,
     title=None,
+):
+    """Plot graph showing temporal coverage for all observations and models
+
+    Parameters
+    ----------
+    obs : List[Observation], optional
+        Show observation(s) as separate lines on plot
+    mod : List[ModelResult], optional
+        Show model(s) as separate lines on plot, by default None
+    limit_to_model_period : bool, optional
+        Show temporal coverage only for period covered
+        by the model, by default True
+    marker : str, optional
+        plot marker for observations, by default "_"
+    ax: matplotlib.axes, optional
+        Adding to existing axis, instead of creating new fig
+    figsize : Tuple(float, float), optional
+        size of figure, by default (7, 0.45*n_lines)
+    title: str, optional
+        plot title, default empty
+
+    See Also
+    --------
+    plot_spatial_overview
+
+    Returns
+    -------
+    <matplotlib.axes>
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.PointObservation('HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
+    >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+    >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
+    >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
+    >>> ms.plot_temporal_coverage([o1, o2], [mr1, mr2])
+    >>> ms.plot_temporal_coverage([o1, o2], mr2, limit_to_model_period=False)
+    >>> ms.plot_temporal_coverage(o2, [mr1, mr2], marker=".")
+    >>> ms.plot_temporal_coverage(mod=[mr1, mr2], figsize=(5,3))
+    """
+    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
+    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
+
+    n_lines = len(obs) + len(mod)
+    if figsize is None:
+        ysize = max(2.0, 0.45 * n_lines)
+        figsize = (7, ysize)
+
+    fig, ax = _get_fig_ax(ax=ax, figsize=figsize)
+    y = np.repeat(0.0, 2)
+    labels = []
+
+    if len(mod) > 0:
+        for mr in mod:
+            y += 1.0
+            plt.plot([mr.start_time, mr.end_time], y)
+            labels.append(mr.name)
+
+    for o in obs:
+        y += 1.0
+        plt.plot(o.time, y[0] * np.ones(len(o.time)), marker, markersize=5)
+        labels.append(o.name)
+
+    if len(mod) > 0 and limit_to_model_period:
+        mr = mod[0]  # take first model
+        plt.xlim([mr.start_time, mr.end_time])
+
+    plt.yticks(np.arange(n_lines) + 1, labels)
+    if len(mod) > 0:
+        for j in range(len(mod)):
+            ax.get_yticklabels()[j].set_fontstyle("italic")
+            ax.get_yticklabels()[j].set_weight("bold")
+            # set_color("#004165")
+    fig.autofmt_xdate()
+
+    if title:
+        ax.set_title(title)
+    return ax
+
+
+def plot_spatial_overview(
+    obs: List[Observation],
+    mod=None,
+    ax=None,
+    figsize: Tuple = None,
+    title: str = None,
 ):
     """Plot observation points on a map showing the model domain
 
     Parameters
     ----------
-    geometry: mikeio.GeometryFM
-        A MIKE IO geometry object
-    observations: list
-        Observation collection
+    obs: list[Observation]
+        List of observations to be shown on map
+    mod : Union[ModelResult, mikeio.GeometryFM], optional
+        Model domain to be shown as outline
+    ax: matplotlib.axes, optional
+        Adding to existing axis, instead of creating new fig
     figsize : (float, float), optional
         figure size, by default None
     title: str, optional
         plot title, default empty
-    """
 
-    xn = geometry.node_coordinates[:, 0]
-    offset_x = 0.02 * (max(xn) - min(xn))
-    ax = geometry.plot(plot_type="outline_only", figsize=figsize)
-    for obs in observations:
-        if isinstance(obs, PointObservation):
-            ax.scatter(x=obs.x, y=obs.y, marker="x")
-            ax.annotate(obs.name, (obs.x + offset_x, obs.y))
-        elif isinstance(obs, TrackObservation):
-            if obs.n_points < 10000:
-                ax.scatter(x=obs.x, y=obs.y, c=obs.values, marker=".", cmap="Reds")
+    See Also
+    --------
+    plot_temporal_coverage
+
+    Returns
+    -------
+    <matplotlib.axes>
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.PointObservation('HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
+    >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+    >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
+    >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
+    >>> ms.plot_spatial_overview([o1, o2], [mr1, mr2])
+    """
+    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
+    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
+
+    ax = _get_ax(ax=ax, figsize=figsize)
+    offset_x = 1  # TODO: better default
+
+    for m in mod:
+        # TODO: support Gridded ModelResults
+        if isinstance(m, (PointModelResult, TrackModelResult)):
+            raise ValueError(
+                f"Model type {type(m)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
+            )
+        if hasattr(m, "data") and hasattr(m.data, "geometry"):
+            # mod_name = m.name  # TODO: better support for multiple models
+            m = m.data.geometry
+        if hasattr(m, "node_coordinates"):
+            xn = m.node_coordinates[:, 0]
+            offset_x = 0.02 * (max(xn) - min(xn))
+        m.plot.outline(ax=ax)
+
+    for o in obs:
+        if isinstance(o, PointObservation):
+            ax.scatter(x=o.x, y=o.y, marker="x")
+            ax.annotate(o.name, (o.x + offset_x, o.y))
+        elif isinstance(o, TrackObservation):
+            if o.n_points < 10000:
+                ax.scatter(x=o.x, y=o.y, c=o.values, marker=".", cmap="Reds")
             else:
-                print("Too many points to plot")
-                # TODO: group by lonlat bin
-    if title:
-        ax.set_title(title)
+                print(f"{o.name}: Too many points to plot")
+                # TODO: group by lonlat bin or sample randomly
+        else:
+            raise ValueError(
+                f"Could not show observation {o}. Only PointObservation and TrackObservation supported."
+            )
+
+    if not title:
+        title = "Spatial coverage"
+    ax.set_title(title)
+
     return ax
 
 

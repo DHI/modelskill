@@ -27,6 +27,7 @@ from ..settings import options, register_option, reset_option
 
 from ._utils import _get_id, _get_name
 
+
 # TODO remove in v1.1
 def _get_deprecated_args(kwargs):
     model, start, end, area = None, None, None, None
@@ -291,7 +292,7 @@ def _groupby_df(df, by, metrics, n_min: int = None):
         row = {}
         row["n"] = len(x)
         for metric in metrics:
-            row[metric.__name__] = metric(x.obs_val.values, x.mod_val.values)
+            row[metric.__name__] = metric(x.obs_val, x.mod_val)
         return pd.Series(row)
 
     # .drop(columns=["x", "y"])
@@ -419,7 +420,6 @@ class Comparer:
             warnings.warn("no (spatial) overlap between model and observation points")
 
     def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
-
         assert isinstance(observation, (PointObservation, TrackObservation))
         gtype = "point" if isinstance(observation, PointObservation) else "track"
         observation = deepcopy(observation)
@@ -447,6 +447,7 @@ class Comparer:
         if gtype == "point":
             data["x"] = observation.x
             data["y"] = observation.y
+            data["z"] = observation.z
 
         data.attrs["name"] = observation.name
         # data.attrs["variable_name"] = observation.variable_name
@@ -578,6 +579,13 @@ class Comparer:
             return self.data["y"].values
 
     @property
+    def z(self):
+        if "z" in self.data[self._obs_name].attrs.keys():
+            return self.data[self._obs_name].attrs["z"]
+        else:
+            return self.data["z"].values
+
+    @property
     def obs(self) -> np.ndarray:
         return self.data[self._obs_name].to_dataframe().values
 
@@ -675,6 +683,7 @@ class Comparer:
                 name=self.name,
                 x=self.x,
                 y=self.y,
+                z=self.z,
                 # variable_name=self.variable_name,
                 # units=self._unit_text,
             )
@@ -695,7 +704,6 @@ class Comparer:
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
-
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
@@ -1194,8 +1202,10 @@ class Comparer:
 
         skill_df = None
         units = None
+
         if skill_table:
-            skill_df = cmp.skill()
+            metrics = None if skill_table is True else skill_table
+            skill_df = cmp.skill(metrics=metrics)
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:
@@ -1596,7 +1606,6 @@ class ComparerCollection(Mapping, Sequence):
         return str.join("\n", out)
 
     def __getitem__(self, x) -> Comparer:
-
         if isinstance(x, slice):
             raise NotImplementedError("slicing not implemented")
         #    cmps = [self[xi] for xi in range(*x.indices(len(self)))]
@@ -1628,7 +1637,6 @@ class ComparerCollection(Mapping, Sequence):
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
-
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
@@ -2081,11 +2089,11 @@ class ComparerCollection(Mapping, Sequence):
         skill_df = None
         units = None
         if skill_table:
+            metrics = None if skill_table is True else skill_table
             if isinstance(self, ComparerCollection) and cmp.n_observations == 1:
-                skill_df = cmp.skill()
+                skill_df = cmp.skill(metrics=metrics)
             else:
-                skill_df = self.mean_skill()
-
+                skill_df = self.mean_skill(metrics=metrics)
             # TODO improve this
             try:
                 units = unit_text.split("[")[1].split("]")[0]
@@ -2470,7 +2478,6 @@ class ComparerCollection(Mapping, Sequence):
         return by
 
     def _parse_weights(self, weights, observations):
-
         if observations is None:
             observations = self.obs_names
         else:
