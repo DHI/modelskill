@@ -347,6 +347,7 @@ class Comparer:
     data: xr.Dataset
     raw_mod_data: Dict[str, pd.DataFrame]
     _obs_name = "Observation"
+    plot: ComparerPlotter
 
     def __init__(
         self,
@@ -1430,6 +1431,8 @@ class ComparerCollection(Mapping, Sequence):
     """
 
     comparers: Dict[str, Comparer]
+    plot: ComparerCollectionPlotter
+
     """Collection of Comparers, indexed by name"""
 
     def __init__(self, comparers=None):
