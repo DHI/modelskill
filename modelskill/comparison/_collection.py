@@ -25,6 +25,7 @@ from ._comparison import (
     _parse_metric,
     _parse_groupby,
     _groupby_df,
+    _add_spatial_grid_to_df,
 )
 from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
 
