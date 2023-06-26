@@ -146,6 +146,13 @@ def test_minimal_plots():
     with pytest.warns(FutureWarning, match="plot.scatter"):
         cmp.scatter()
 
+    # default plot is scatter
+    ax = cmp.plot()
+    assert "m1" in ax.get_title()
+
+    ax = cmp.plot.scatter()
+    assert "m1" in ax.get_title()
+
     ax = cmp.plot.kde()
     assert ax is not None
 

@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Any, Union, List
 
 
 import numpy as np
@@ -12,6 +12,10 @@ from ..plot import colors, scatter
 class ComparerPlotter:
     def __init__(self, comparer):
         self.comparer = comparer
+
+    def __call__(self, *args, **kwargs):
+        """Plot scatter plot of modelled vs observed data"""
+        return self.scatter(*args, **kwargs)
 
     def timeseries(
         self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
@@ -28,6 +32,11 @@ class ComparerPlotter:
             figure size, by default None
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"backend:
+
+
+        Returns
+        -------
+        matplotlib.axes.Axes or plotly.graph_objects.Figure
         """
         from ._comparison import MOD_COLORS  # TODO move to here
 
