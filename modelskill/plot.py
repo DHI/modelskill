@@ -213,7 +213,7 @@ def _scatter_matplotlib(
         c=options.plot.scatter.oneone_line.color,
         zorder=3,
     )
-    if show_points:
+    if not show_points is False:
         if show_density:
             c = z
         else:
@@ -339,7 +339,7 @@ def _scatter_plotly(
             )
         )
 
-    if show_points:
+    if not show_points is False:
 
         if show_density:
             c = z
