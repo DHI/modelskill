@@ -62,14 +62,14 @@ class ComparerCollection(Mapping, Sequence):
     """
 
     comparers: Dict[str, Comparer]
-    plot: ComparerCollectionPlotter
+    plotter = ComparerCollectionPlotter
 
     """Collection of Comparers, indexed by name"""
 
     def __init__(self, comparers=None):
         self.comparers = {}
         self.add_comparer(comparers)
-        self.plot = ComparerCollectionPlotter(self)
+        self.plot = ComparerCollection.plotter(self)
 
     def add_comparer(self, comparer: Union["Comparer", "ComparerCollection"]) -> None:
         """Add another Comparer to this collection.

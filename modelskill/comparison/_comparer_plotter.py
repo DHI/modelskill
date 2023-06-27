@@ -405,3 +405,24 @@ class ComparerPlotter:
             normalize_std=normalize_std,
             title=title,
         )
+
+    def residual_hist(self, bins=100, title=None, color=None, **kwargs):
+        """plot histogram of residual values
+
+        Parameters
+        ----------
+        bins : int, optional
+            specification of bins, by default 100
+        title : str, optional
+            plot title, default: Residuals, [name]
+        color : str, optional
+            residual color, by default "#8B8D8E"
+        kwargs : other keyword arguments to plt.hist()
+        """
+
+        default_color = "#8B8D8E"
+        color = default_color if color is None else color
+        title = f"Residuals, {self.comparer.name}" if title is None else title
+        plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
+        plt.title(title)
+        plt.xlabel(f"Residuals of {self.comparer._unit_text}")
