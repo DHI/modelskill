@@ -18,7 +18,7 @@ from typing import Union
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = "0.9.dev0"
+__version__ = "1.0.a1"
 
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
@@ -34,9 +34,9 @@ from .plot import plot_temporal_coverage, plot_spatial_overview
 __all__ = [
     "Quantity",
     "ModelResult",
-    "PointModelResult", 
-    "TrackModelResult", 
-    "GridModelResult", 
+    "PointModelResult",
+    "TrackModelResult",
+    "GridModelResult",
     "DfsuModelResult",
     "PointObservation",
     "TrackObservation",
@@ -48,7 +48,7 @@ __all__ = [
     "set_option",
     "reset_option",
     "load_style",
-    "plot_temporal_coverage", 
+    "plot_temporal_coverage",
     "plot_spatial_overview",
     "from_config",
 ]

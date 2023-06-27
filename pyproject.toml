@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name="modelskill"
-version="1.0.a0"
+version="1.0.a1"
 dependencies = [
     "numpy",
     "pandas",
