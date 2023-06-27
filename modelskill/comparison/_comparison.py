@@ -1206,7 +1206,10 @@ class Comparer:
 
     def residual_hist(self, bins=100, title=None, color=None, **kwargs):
 
-        warnings.warn("residual_hist is deprecated. Use plot.residual_hist instead.")
+        warnings.warn(
+            "residual_hist is deprecated. Use plot.residual_hist instead.",
+            FutureWarning,
+        )
 
         return self.plot.residual_hist(bins=bins, title=title, color=color, **kwargs)
 
