@@ -25,6 +25,7 @@ if "64" not in architecture()[0]:
 
 from .types import Quantity
 from .model.factory import ModelResult
+from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .observation import PointObservation, TrackObservation
 from .connection import compare, Connector, from_matched
 from .settings import options, get_option, set_option, reset_option, load_style
@@ -33,6 +34,10 @@ from .plot import plot_temporal_coverage, plot_spatial_overview
 __all__ = [
     "Quantity",
     "ModelResult",
+    "PointModelResult", 
+    "TrackModelResult", 
+    "GridModelResult", 
+    "DfsuModelResult",
     "PointObservation",
     "TrackObservation",
     "compare",
@@ -43,6 +48,9 @@ __all__ = [
     "set_option",
     "reset_option",
     "load_style",
+    "plot_temporal_coverage", 
+    "plot_spatial_overview",
+    "from_config",
 ]
 
 
