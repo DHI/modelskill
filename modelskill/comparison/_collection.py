@@ -564,21 +564,21 @@ class ComparerCollection(Mapping, Sequence):
     def scatter(
         self,
         *,
-        bins: Union[int, float, List[int], List[float]] = 20,
-        quantiles: Union[int, List[float]] = None,
-        fit_to_quantiles: bool = False,
-        show_points: Union[bool, int, float] = None,
-        show_hist: bool = None,
-        show_density: bool = None,
-        backend: str = "matplotlib",
-        figsize: List[float] = (8, 8),
-        xlim: List[float] = None,
-        ylim: List[float] = None,
-        reg_method: str = "ols",
-        title: str = None,
-        xlabel: str = None,
-        ylabel: str = None,
-        skill_table: Union[str, List[str], bool] = None,
+        bins=20,
+        quantiles=None,
+        fit_to_quantiles=False,
+        show_points=None,
+        show_hist=None,
+        show_density=None,
+        backend="matplotlib",
+        figsize=(8, 8),
+        xlim=None,
+        ylim=None,
+        reg_method="ols",
+        title=None,
+        xlabel=None,
+        ylabel=None,
+        skill_table=None,
         **kwargs,
     ):
 
@@ -1000,62 +1000,20 @@ class ComparerCollection(Mapping, Sequence):
 
     def taylor(
         self,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
-        normalize_std: bool = False,
-        aggregate_observations: bool = True,
-        figsize: List[float] = (7, 7),
-        marker: str = "o",
-        marker_size: float = 6.0,
-        title: str = "Taylor diagram",
+        model=None,
+        observation=None,
+        variable=None,
+        start=None,
+        end=None,
+        area=None,
+        normalize_std=False,
+        aggregate_observations=True,
+        figsize=(7, 7),
+        marker="o",
+        marker_size=6.0,
+        title="Taylor diagram",
     ):
-        """Taylor diagram showing model std and correlation to observation
-        in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
-        Parameters
-        ----------
-        model : (int, str), optional
-            name or id of model to be compared, by default all
-        observation : (int, str, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int), optional
-            name or id of variable to be compared, by default first
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
-        normalize_std : bool, optional
-            plot model std normalized with observation std, default False
-        aggregate_observations : bool, optional
-            should multiple observations be aggregated before plotting
-            (or shown individually), default True
-        figsize : tuple, optional
-            width and height of the figure (should be square), by default (7, 7)
-        marker : str, optional
-            marker type e.g. "x", "*", by default "o"
-        marker_size : float, optional
-            size of the marker, by default 6
-        title : str, optional
-            title of the plot, by default "Taylor diagram"
-
-        Examples
-        ------
-        >>> comparer.taylor()
-        >>> comparer.taylor(observation="c2")
-        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
-
-        References
-        ----------
-        Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
-        """
         warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
 
         if (not aggregate_observations) and (not normalize_std):
@@ -1142,9 +1100,9 @@ class ComparerCollection(Mapping, Sequence):
         self,
         model=None,
         bins=100,
-        title: str = None,
+        title=None,
         density=True,
-        alpha: float = 0.5,
+        alpha=0.5,
         **kwargs,
     ):
 
