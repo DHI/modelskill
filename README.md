@@ -93,7 +93,7 @@ ms.plot_spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
 ### Scatter plot
 
 ```python
-cc.scatter()
+cc.plot.scatter()
 ```
 
 ![scatter](https://raw.githubusercontent.com/DHI/modelskill/main/images/scatter.png)
@@ -103,7 +103,7 @@ cc.scatter()
 Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
 
 ```python
-cc["HKNA"].plot_timeseries(width=1000, backend="plotly")
+cc["HKNA"].plot.timeseries(width=1000, backend="plotly")
 ```
 
 ![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
