@@ -354,3 +354,34 @@ def test_add_tc_pc(pc, tc):
     cc = tc + pc
     assert cc.n_points == 10
     assert cc.n_comparers == 2
+
+    
+def test_pc_to_dataframe(pc):
+    df = pc.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (10, 6)
+    assert "mod_val" in df.columns
+    assert "obs_val" in df.columns
+    assert "x" in df.columns
+    assert "y" in df.columns
+    assert "model" in df.columns
+    assert "observation" in df.columns
+    assert df.mod_val.dtype == "float64"
+    assert df.obs_val.dtype == "float64"
+    assert df.x.dtype == "float64"
+    assert df.y.dtype == "float64"
+    assert df.model.dtype == "category"
+    assert df.observation.dtype == "category"
+    assert df.x[0] == 10.0
+    assert df.y[0] == 55.0
+    assert df.model[0] == "m1"
+    assert df.model[9] == "m2"
+
+
+def test_pc_to_dataframe_add_col(pc):
+    pc.data["derived"] = pc.data.m1 + pc.data.m2
+    df = pc.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (10, 7)
+    assert "derived" in df.columns
+    assert df.derived.dtype == "float64"
