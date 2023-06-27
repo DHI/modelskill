@@ -175,8 +175,9 @@ class ComparerCollectionPlotter:
 
         Examples
         --------
-        >>> cc.kde()
-        >>> cc.kde(bw_method=0.5)
+        >>> cc.plot.kde()
+        >>> cc.plot.kde(bw_method=0.5)
+        >>> cc.plot.kde(bw_method='silverman')
 
         """
         if ax is None:
@@ -232,7 +233,7 @@ class ComparerCollectionPlotter:
         title : str, optional
             plot title, default: observation name
         density: bool, optional
-            If True, draw and return a probability density
+            If True, draw and return a probability density, by default True
         alpha : float, optional
             alpha transparency fraction, by default 0.5
         kwargs : other keyword arguments to df.hist()
@@ -241,6 +242,11 @@ class ComparerCollectionPlotter:
         -------
         matplotlib axes
 
+        Examples
+        --------
+        >>> cc.plot.hist()
+        >>> cc.plot.hist(bins=100)
+        
         See also
         --------
         pandas.Series.hist
@@ -319,9 +325,9 @@ class ComparerCollectionPlotter:
 
         Examples
         ------
-        >>> comparer.taylor()
-        >>> comparer.taylor(observation="c2")
-        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+        >>> cc.plot.taylor()
+        >>> cc.plot.taylor(observation="c2")
+        >>> cc.plot.taylor(start="2017-10-28", figsize=(5,5))
 
         References
         ----------
