@@ -70,30 +70,6 @@ def _get_deprecated_args(kwargs):
     return model, start, end, area
 
 
-def _get_deprecated_obs_var_args(kwargs):
-    observation, variable = None, None
-
-    # Don't bother refactoring this, it will be removed in v1.1
-    if "observation" in kwargs:
-        observation = kwargs.pop("observation")
-        if observation is not None:
-            warnings.warn(
-                f"The 'observation' argument is deprecated, use 'sel(observation='{observation}') instead",
-                FutureWarning,
-            )
-
-    if "variable" in kwargs:
-        variable = kwargs.pop("variable")
-
-        if variable is not None:
-            warnings.warn(
-                f"The 'variable' argument is deprecated, use 'sel(variable='{variable}') instead",
-                FutureWarning,
-            )
-
-    return observation, variable
-
-
 def _validate_metrics(metrics) -> None:
     for m in metrics:
         if isinstance(m, str):
@@ -920,7 +896,8 @@ class Comparer:
 
         Examples
         --------
-        >>> cc = con.extract()
+        >>> import modelskill as ms
+        >>> cc = ms.compare(c2, mod)
         >>> cc['c2'].skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -990,12 +967,12 @@ class Comparer:
 
         Examples
         --------
-        >>> cc = con.extract()
-        >>> cc['c2'].score()
+        >>> import modelskill as ms
+        >>> cmp = ms.compare(c2, mod)
+        >>> cmp.score()
         0.3517964910888918
-
-        >>> import modelskill.metrics as mtr
-        >>> cc['c2'].score(metric=mtr.mape)
+        
+        >>> cmp.score(metric=ms.metrics.mape)
         11.567399646108198
         """
         metric = _parse_metric(metric, self.metrics)
@@ -1063,8 +1040,9 @@ class Comparer:
 
         Examples
         --------
-        >>> cc = con.extract()  # with satellite track measurements
-        >>> cc.spatial_skill(metrics='bias')
+        >>> import modelskill as ms
+        >>> cmp = ms.compare(c2, mod)   # satellite altimeter vs. model
+        >>> cmp.spatial_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
