@@ -155,14 +155,17 @@ def test_spatial_skill_misc(comparer):
 def test_hist(comparer):
     cc = comparer
 
-    cc.hist(bins=np.linspace(0, 7, num=15))
+    with pytest.warns(FutureWarning):
+        cc.hist()
 
-    cc[0].hist(bins=10)
-    cc[0].hist(density=False)
-    cc[0].hist(model=0, title="new_title", alpha=0.2)
+    cc.plot.hist(bins=np.linspace(0, 7, num=15))
+
+    cc[0].plot.hist(bins=10)
+    cc[0].plot.hist(density=False)
+    cc[0].plot.hist(model=0, title="new_title", alpha=0.2)
 
 
-def test_resicual_hist(comparer):
+def test_residual_hist(comparer):
     cc = comparer
-    cc[0].residual_hist()
-    cc[0].residual_hist(bins=10, title="new_title", color="blue")
+    cc[0].plot.residual_hist()
+    cc[0].plot.residual_hist(bins=10, title="new_title", color="blue")

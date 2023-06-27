@@ -122,16 +122,21 @@ def test_mm_skill_missing_model(cc):
 
 
 def test_mm_skill_obs(cc):
-    s = cc.skill(observation="c2")
+    with pytest.warns(FutureWarning):
+        s = cc.skill(observation="c2")
+        assert len(s) == 2
+        assert pytest.approx(s.loc["SW_2"].bias) == 0.081431053
+
+    s = cc.sel(observation="c2").skill()
     assert len(s) == 2
     assert pytest.approx(s.loc["SW_2"].bias) == 0.081431053
 
-    s2 = cc.skill(observation=-1)
+    s2 = cc.sel(observation=-1).skill()
     assert s.loc["SW_2"].bias == s2.loc["SW_2"].bias
 
 
 def test_mm_mean_skill_obs(cc):
-    df = cc.mean_skill(model=0, observation=[0, "c2"]).df
+    df = cc.sel(model=0, observation=[0, "c2"]).mean_skill().df
     assert pytest.approx(df.si[0]) == 0.11113215
 
 
@@ -147,42 +152,44 @@ def test_mm_skill_missing_obs(cc, o1):
 
 
 def test_mm_skill_start_end(cc):
-    s = cc.skill(model="SW_1", start="2017")
+
+    # TODO should we keep these tests?
+    s = cc.sel(model="SW_1", start="2017").skill()
     assert s.loc["EPL"].n == 67
-    s = cc.skill(model="SW_1", end="2017-10-28 00:00:00")
+    s = cc.sel(model="SW_1", end="2017-10-28 00:00:00").skill()
     assert s.loc["EPL"].n == 25
-    s = cc.skill(model="SW_1", start="2017-10-28 00:00:01")
+    s = cc.sel(model="SW_1", start="2017-10-28 00:00:01").skill()
     assert s.loc["EPL"].n == 42
 
 
 def test_mm_skill_area_bbox(cc):
     bbox = [0.5, 52.5, 5, 54]
-    s = cc.skill(model="SW_1", area=bbox)
+    s = cc.sel(model="SW_1", area=bbox).skill()
     assert pytest.approx(s.loc["HKNA"].urmse) == 0.293498777
     bbox = np.array([0.5, 52.5, 5, 54])
-    s = cc.skill(model="SW_1", area=bbox)
+    s = cc.sel(model="SW_1", area=bbox).skill()
     assert pytest.approx(s.loc["HKNA"].urmse) == 0.293498777
 
 
 def test_mm_skill_area_polygon(cc):
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
-    s = cc.skill(model="SW_2", area=polygon)
+    s = cc.sel(model="SW_2", area=polygon).skill()
     assert "HKNA" not in s.index
     assert s.df.n[1] == 66
     assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
     # same as above but not closed
     polygon = np.array([[6, 51], [0, 55], [0, 51]])
-    s = cc.skill(model="SW_2", area=polygon)
+    s = cc.sel(model="SW_2", area=polygon).skill()
     assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
     polygon = [6, 51, 0, 55, 0, 51, 6, 51]
-    s = cc.skill(model="SW_2", area=polygon)
+    s = cc.sel(model="SW_2", area=polygon).skill()
     assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
     # same as above but not closed
     polygon = [6, 51, 0, 55, 0, 51]
-    s = cc.skill(model="SW_2", area=polygon)
+    s = cc.sel(model="SW_2", area=polygon).skill()
     assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
 
@@ -192,11 +199,11 @@ def test_mm_mean_skill_area_polygon(cc):
     # It also states that if the exterior linear ring of a polygon is defined in a counterclockwise direction, then it will be seen from the "top".
     # Any interior linear rings should be defined in opposite fashion compared to the exterior ring, in this case, clockwise
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
-    s = cc.mean_skill(area=polygon)
+    s = cc.sel(area=polygon).mean_skill()
     assert pytest.approx(s.loc["SW_2"].rmse) == 0.3349027897
 
     closed_polygon = ((6, 51), (0, 55), (0, 51), (6, 51))
-    s2 = cc.mean_skill(area=closed_polygon)
+    s2 = cc.sel(area=closed_polygon).mean_skill()
     assert pytest.approx(s2.loc["SW_2"].rmse) == 0.3349027897
 
     # TODO support for polygons with holes
@@ -218,10 +225,10 @@ def test_mm_skill_area_error(cc):
 
 
 def test_mm_skill_metrics(cc):
-    df = cc.skill(model="SW_1", metrics=[mtr.mean_absolute_error]).df
+    df = cc.sel(model="SW_1").skill(metrics=[mtr.mean_absolute_error]).df
     assert df.mean_absolute_error.values.sum() > 0.0
 
-    s = cc.skill(model="SW_1", metrics=[mtr.bias, "rmse"])
+    s = cc.sel(model="SW_1").skill(metrics=[mtr.bias, "rmse"])
     assert pytest.approx(s.loc["EPL"].bias) == -0.06659714
     assert pytest.approx(s.loc["EPL"].rmse) == 0.22359664
 
@@ -292,29 +299,60 @@ def test_mm_mean_skill_weights_dict(cc):
 
 
 def test_mm_scatter(cc):
-    cc.scatter(model="SW_1", observation=[0, 1])
-    cc.scatter(model="SW_2", show_points=False)
-    cc.scatter(model="SW_2", show_hist=False)
-    cc.scatter(model="SW_2", bins=0.5)
-    cc.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
-    cc.scatter(model="SW_2", show_points=True)
-    cc.scatter(model="SW_2", show_points=100)
-    cc.scatter(model="SW_2", show_points=0.75)
-    cc.scatter(model="SW_2", show_density=True)
-    cc.scatter(model="SW_2", show_points=0.75, show_density=True)
-    cc.scatter(model="SW_2", observation="HKNA", skill_table=True)
-    cc.scatter(model="SW_2", fit_to_quantiles=True)
-    # cc.scatter(model="SW_2", binsize=0.5, backend="plotly")
+
+    with pytest.warns(FutureWarning):
+        cc.scatter()
+
+    # scatter is the default plot
+    ax = cc.sel(model="SW_2").plot()
+    assert "SW_2" in ax.get_title()
+
+    cc.sel(model="SW_1", observation=[0, 1]).plot.scatter()
+    cc.sel(model="SW_2").plot.scatter(show_points=False)
+    cc.sel(model="SW_2").plot.scatter(show_hist=False)
+    cc.sel(model="SW_2").plot.scatter(bins=0.5)
+    cc.sel(model="SW_2").plot.scatter(title="t", xlabel="x", ylabel="y")
+    cc.sel(model="SW_2").plot.scatter(show_points=True)
+    cc.sel(model="SW_2").plot.scatter(show_points=100)
+    cc.sel(model="SW_2").plot.scatter(show_points=0.75)
+    cc.sel(model="SW_2").plot.scatter(show_density=True)
+    cc.sel(model="SW_2").plot.scatter(show_points=0.75, show_density=True)
+    cc.sel(model="SW_2", observation="HKNA").plot.scatter(skill_table=True)
+    cc.sel(model="SW_2").plot.scatter(fit_to_quantiles=True)
+    # cc.sel(model="SW_2").plot.scatter(binsize=0.5, backend="plotly")
     assert True
     plt.close("all")
 
 
+def test_mm_kde(cc):
+
+    with pytest.warns(FutureWarning):
+        cc.kde()
+
+    ax = cc.sel(model="SW_2").plot.kde()
+    assert ax is not None
+    # TODO more informative test
+
+
+def test_mm_hist(cc):
+
+    with pytest.warns(FutureWarning):
+        cc.hist()
+
+    ax = cc.sel(model="SW_2").plot.hist()
+    assert ax is not None
+
+
 def test_mm_taylor(cc):
-    cc.taylor(model="SW_1", observation=[0, 1])
-    cc.taylor(normalize_std=True)
-    cc.taylor(figsize=(4, 4))
-    cc.taylor(model="SW_2", start="2017-10-28")
-    cc[0].taylor(model=0, end="2017-10-29")
+
+    with pytest.warns(FutureWarning):
+        cc.taylor()
+
+    cc.sel(model="SW_1", observation=[0, 1]).plot.taylor()
+    cc.sel(model="SW_2").plot.taylor(normalize_std=True)
+    cc.sel(model="SW_2").plot.taylor(figsize=(4, 4))
+    cc.sel(model="SW_2", start="2017-10-28").plot.taylor()
+    cc[0].sel(model=0, end="2017-10-29").plot.taylor()
     assert True
     plt.close("all")
 
@@ -326,4 +364,8 @@ def test_mm_plot_timeseries(cc):
     # cc["EPL"].plot_timeseries(backend="plotly")
     with pytest.raises(ValueError):
         cc["EPL"].plot_timeseries(backend="mpl")
+
+    ax = cc["EPL"].plot.timeseries()
+    assert "EPL" in ax.get_title()
+
     plt.close("all")
