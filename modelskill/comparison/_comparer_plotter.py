@@ -8,6 +8,7 @@ from ..plot import colors, scatter, taylor_diagram, TaylorPoint
 
 
 class ComparerPlotter:
+    """Plotter class for Comparer"""
     def __init__(self, comparer):
         self.comparer = comparer
 
@@ -30,7 +31,6 @@ class ComparerPlotter:
             figure size, by default None
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"backend:
-
 
         Returns
         -------
@@ -117,7 +117,7 @@ class ComparerPlotter:
             If True, draw and return a probability density
         alpha : float, optional
             alpha transparency fraction, by default 0.5
-        kwargs : other keyword arguments to df.hist()
+        kwargs : other keyword arguments to df.plot.hist()
 
         Returns
         -------
@@ -125,9 +125,8 @@ class ComparerPlotter:
 
         See also
         --------
-        pandas.Series.hist
+        pandas.Series.plot.hist
         matplotlib.axes.Axes.hist
-
         """
         from ._comparison import MOD_COLORS  # TODO move to here
 
@@ -160,7 +159,24 @@ class ComparerPlotter:
         return ax
 
     def kde(self, ax=None, **kwargs):
+        """Plot kde (kernel density estimates of distributions) of model data and observations.
 
+        Wraps pandas.DataFrame kde() method.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
+        kwargs : other keyword arguments to df.plot.kde()
+
+        Returns
+        -------
+        matplotlib axes
+
+        See also
+        --------
+        pandas.Series.plot.kde
+        """
         cmp = self.comparer
 
         if ax is None:
@@ -277,7 +293,7 @@ class ComparerPlotter:
         >>> cmp.plot.scatter(bins=0.2, backend='plotly')
         >>> cmp.plot.scatter(show_points=False, title='no points')
         >>> cm.plot.scatter(xlabel='all observations', ylabel='my model')
-        >>> cmp.plot.scatter(model='HKZN_v2', figsize=(10, 10))
+        >>> cmp.sel(model='HKZN_v2').plot.scatter(figsize=(10, 10))
         """
 
         cmp = self.comparer
