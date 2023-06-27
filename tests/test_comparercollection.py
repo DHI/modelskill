@@ -170,3 +170,33 @@ def test_hist(cc):
 def test_kde(cc):
     ax = cc.kde()
     assert ax is not None
+
+
+
+def test_add_cc_pc(cc, pc):
+    pc2 = pc.copy()
+    pc2.data.attrs["name"] = "pc2"
+    cc2 = cc + pc2
+    assert cc2.n_points == 15
+    assert cc2.n_comparers == 3
+
+
+def test_add_cc_tc(cc, tc):
+    tc2 = tc.copy()
+    tc2.data.attrs["name"] = "tc2"
+    cc2 = cc + tc2
+    assert cc2.n_points == 15
+    assert cc2.n_comparers == 3
+
+
+def test_add_cc_cc(cc, pc, tc):
+    pc2 = pc.copy()
+    pc2.data.attrs["name"] = "pc2"
+    tc2 = tc.copy()
+    tc2.data.attrs["name"] = "tc2"
+    tc3 = tc.copy() # keep name    
+    cc2 = pc2 + tc2 + tc3
+
+    cc3 = cc + cc2
+    #assert cc3.n_points == 15
+    assert cc3.n_comparers == 4

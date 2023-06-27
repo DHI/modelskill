@@ -342,3 +342,15 @@ def test_pc_query2(pc):
 def test_pc_query_empty(pc):
     pc2 = pc.query("Observation > 10.0")
     assert pc2.n_points == 0
+
+
+def test_add_pc_tc(pc, tc):
+    cc = pc + tc
+    assert cc.n_points == 10
+    assert cc.n_comparers == 2
+
+
+def test_add_tc_pc(pc, tc):
+    cc = tc + pc
+    assert cc.n_points == 10
+    assert cc.n_comparers == 2
