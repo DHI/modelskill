@@ -154,7 +154,7 @@ class ComparerCollectionPlotter:
             ylabel=ylabel,
             skill_df=skill_df,
             units=units,
-            # **kwargs, # TODO
+            **kwargs,
         )
         return ax
 

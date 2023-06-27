@@ -293,28 +293,26 @@ def test_mm_mean_skill_weights_dict(cc):
 
 def test_mm_scatter(cc):
 
-    # deprecation warning cc.scatter
     with pytest.warns(FutureWarning):
-        cc.scatter(model="SW_1")
+        cc.scatter()
 
     # scatter is the default plot
-    ax = cc.plot()
+    ax = cc.sel(model="SW_2").plot()
+    assert "SW_2" in ax.get_title()
 
-    assert "SW_1" in ax.get_title()
-
-    cc.plot.scatter(model="SW_1", observation=[0, 1])
-    cc.plot.scatter(model="SW_2", show_points=False)
-    cc.plot.scatter(model="SW_2", show_hist=False)
-    cc.plot.scatter(model="SW_2", bins=0.5)
-    cc.plot.scatter(model="SW_2", title="t", xlabel="x", ylabel="y")
-    cc.plot.scatter(model="SW_2", show_points=True)
-    cc.plot.scatter(model="SW_2", show_points=100)
-    cc.plot.scatter(model="SW_2", show_points=0.75)
-    cc.plot.scatter(model="SW_2", show_density=True)
-    cc.plot.scatter(model="SW_2", show_points=0.75, show_density=True)
-    cc.plot.scatter(model="SW_2", observation="HKNA", skill_table=True)
-    cc.plot.scatter(model="SW_2", fit_to_quantiles=True)
-    # cc.plot.scatter(model="SW_2", binsize=0.5, backend="plotly")
+    cc.sel(model="SW_1", observation=[0, 1]).plot.scatter()
+    cc.sel(model="SW_2").plot.scatter(show_points=False)
+    cc.sel(model="SW_2").plot.scatter(show_hist=False)
+    cc.sel(model="SW_2").plot.scatter(bins=0.5)
+    cc.sel(model="SW_2").plot.scatter(title="t", xlabel="x", ylabel="y")
+    cc.sel(model="SW_2").plot.scatter(show_points=True)
+    cc.sel(model="SW_2").plot.scatter(show_points=100)
+    cc.sel(model="SW_2").plot.scatter(show_points=0.75)
+    cc.sel(model="SW_2").plot.scatter(show_density=True)
+    cc.sel(model="SW_2").plot.scatter(show_points=0.75, show_density=True)
+    cc.sel(model="SW_2", observation="HKNA").plot.scatter(skill_table=True)
+    cc.sel(model="SW_2").plot.scatter(fit_to_quantiles=True)
+    # cc.sel(model="SW_2").plot.scatter(binsize=0.5, backend="plotly")
     assert True
     plt.close("all")
 
@@ -324,7 +322,7 @@ def test_mm_kde(cc):
     with pytest.warns(FutureWarning):
         cc.kde()
 
-    ax = cc.plot.kde()
+    ax = cc.sel(model="SW_2").plot.kde()
     assert ax is not None
     # TODO more informative test
 
@@ -334,7 +332,7 @@ def test_mm_hist(cc):
     with pytest.warns(FutureWarning):
         cc.hist()
 
-    ax = cc.plot.hist()
+    ax = cc.sel(model="SW_2").plot.hist()
     assert ax is not None
 
 
@@ -344,8 +342,8 @@ def test_mm_taylor(cc):
         cc.taylor()
 
     cc.sel(model="SW_1", observation=[0, 1]).plot.taylor()
-    cc.plot.taylor(normalize_std=True)
-    cc.plot.taylor(figsize=(4, 4))
+    cc.sel(model="SW_2").plot.taylor(normalize_std=True)
+    cc.sel(model="SW_2").plot.taylor(figsize=(4, 4))
     cc.sel(model="SW_2", start="2017-10-28").plot.taylor()
     cc[0].sel(model=0, end="2017-10-29").plot.taylor()
     assert True
