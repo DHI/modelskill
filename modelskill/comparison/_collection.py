@@ -69,7 +69,7 @@ def _all_df_template(n_variables: int = 1):
 
 class ComparerCollection(Mapping, Sequence):
     """
-    Collection of comparers, constructed by calling the `ModelResult.extract` method.
+    Collection of comparers, constructed by calling the `modelskill.compare` method.
 
     Examples
     --------
