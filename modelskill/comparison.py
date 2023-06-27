@@ -779,7 +779,7 @@ class Comparer:
                 cmp.data = cmp.data.isel(time=index)
 
             else:
-                cols = ["x", "y"] if isinstance(self, TrackComparer) else []
+                cols = ["x", "y"] 
                 mod_data = [self.data[cols + [m]] for m in self.mod_names]
                 for m in other.mod_names:
                     mod_data.append(other.data[cols + [m]])
