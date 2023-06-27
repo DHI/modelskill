@@ -59,14 +59,14 @@ scatter plots, skill assessment, time series plots etc.
 
 .. code-block:: python
 
-    >>> c.plot_timeseries()
+    >>> c.plot.timeseries()
 
 .. image:: images/ts_plot.png
 
 
 .. code-block:: python
 
-    >>> c.scatter()
+    >>> c.plot.scatter()
 
 .. image:: images/scatter_plot.png
 
