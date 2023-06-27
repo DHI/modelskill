@@ -45,7 +45,7 @@ def _get_deprecated_args(kwargs):
         model = kwargs.pop("model")
         if model is not None:
             warnings.warn(
-                f"The 'model' argument is deprecated, use 'sel(model='{model})' instead",
+                f"The 'model' argument is deprecated, use 'sel(model='{model}')' instead",
                 FutureWarning,
             )
 
@@ -54,7 +54,7 @@ def _get_deprecated_args(kwargs):
 
         if start is not None:
             warnings.warn(
-                f"The 'start' argument is deprecated, use 'sel(start='{start})' instead",
+                f"The 'start' argument is deprecated, use 'sel(start={start})' instead",
                 FutureWarning,
             )
 
@@ -63,7 +63,7 @@ def _get_deprecated_args(kwargs):
 
         if end is not None:
             warnings.warn(
-                f"The 'end' argument is deprecated, use 'sel(end='{end})' instead",
+                f"The 'end' argument is deprecated, use 'sel(end={end})' instead",
                 FutureWarning,
             )
 
@@ -78,6 +78,28 @@ def _get_deprecated_args(kwargs):
 
     return model, start, end, area
 
+def _get_deprecated_obs_var_args(kwargs):
+    observation, variable = None, None
+
+    # Don't bother refactoring this, it will be removed in v1.1
+    if "observation" in kwargs:
+        observation = kwargs.pop("observation")
+        if observation is not None:
+            warnings.warn(
+                f"The 'observation' argument is deprecated, use 'sel(observation='{observation}') instead",
+                FutureWarning,
+            )
+
+    if "variable" in kwargs:
+        variable = kwargs.pop("variable")
+
+        if variable is not None:
+            warnings.warn(
+                f"The 'variable' argument is deprecated, use 'sel(variable='{variable}') instead",
+                FutureWarning,
+            )
+
+    return observation, variable
 
 def _validate_metrics(metrics) -> None:
     for m in metrics:
@@ -657,14 +679,13 @@ class Comparer:
     def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
 
-        df = self.data[[mod_name]].to_dataframe().copy()
-        df.columns = ["mod_val"]
+        df = self.data.to_dataframe().copy()
+        other_models = [m for m in self.mod_names if m is not mod_name]
+        df = df.drop(columns=other_models)
+        df = df.rename(columns={mod_name: "mod_val", self._obs_name: "obs_val"})
         df["model"] = mod_name
         df["observation"] = self.name
-        df["x"] = self.data.x
-        df["y"] = self.data.y
-        df["obs_val"] = self.obs
-
+        
         return df
 
     def to_dataframe(self) -> pd.DataFrame:
@@ -673,7 +694,10 @@ class Comparer:
         # TODO is this needed?, comment out for now
         # df = df.sort_index()
 
-        return pd.concat([self._model_to_frame(name) for name in self.mod_names])
+        df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
+        df["model"] = df["model"].astype("category")
+        df["observation"] = df["observation"].astype("category")
+        return df
 
     def __copy__(self):
         return deepcopy(self)
@@ -755,7 +779,7 @@ class Comparer:
                 cmp.data = cmp.data.isel(time=index)
 
             else:
-                cols = ["x", "y"] if isinstance(self, TrackComparer) else []
+                cols = ["x", "y"] 
                 mod_data = [self.data[cols + [m]] for m in self.mod_names]
                 for m in other.mod_names:
                     mod_data.append(other.data[cols + [m]])
@@ -1915,26 +1939,12 @@ class ComparerCollection(Mapping, Sequence):
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
         """
+        
+        metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
-        variable, observation = None, None
-
-        if "observation" in kwargs:
-            observation = kwargs.pop("observation")
-            warnings.warn(
-                f"The 'observation' argument is deprecated, use 'sel(observation='{observation})' instead",
-                FutureWarning,
-            )
-
-        if "variable" in kwargs:
-            variable = kwargs.pop("variable")
-            warnings.warn(
-                f"The 'variable' argument is deprecated, use 'sel(variable='{variable})' instead",
-                FutureWarning,
-            )
-
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
 
         cmp = self.sel(
             model=model,
@@ -1984,12 +1994,7 @@ class ComparerCollection(Mapping, Sequence):
         by: Union[str, List[str]] = None,
         metrics: list = None,
         n_min: int = None,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
@@ -2012,20 +2017,6 @@ class ComparerCollection(Mapping, Sequence):
         n_min : int, optional
             minimum number of observations in a grid cell;
             cells with fewer observations get a score of `np.nan`
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
 
         Returns
         -------
@@ -2060,6 +2051,10 @@ class ComparerCollection(Mapping, Sequence):
         """
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
+
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
 
         cmp = self.sel(
             model=model,
@@ -2175,19 +2170,7 @@ class ComparerCollection(Mapping, Sequence):
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
-        variable, observation = None, None
-
-        if "observation" in kwargs:
-            observation = kwargs.pop("observation")
-            warnings.warn(
-                "observation is deprecated, use sel(observation=...) instead",
-                FutureWarning,
-            )
-        if "variable" in kwargs:
-            variable = kwargs.pop("variable")
-            warnings.warn(
-                "variable is deprecated, use sel(variable=...) instead", FutureWarning
-            )
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
 
         # select model
         mod_id = _get_id(model, self.mod_names)
@@ -2311,12 +2294,6 @@ class ComparerCollection(Mapping, Sequence):
     def hist(
         self,
         bins=100,
-        model: Union[str, int] = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
         title: str = None,
         density=True,
         alpha: float = 0.5,
@@ -2330,20 +2307,6 @@ class ComparerCollection(Mapping, Sequence):
         ----------
         bins : int, optional
             number of bins, by default 100
-        model : (str, int), optional
-            name or id of specific model to be plotted, by default 0
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
         title : str, optional
             plot title, default: observation name
         density: bool, optional
@@ -2361,12 +2324,12 @@ class ComparerCollection(Mapping, Sequence):
         pandas.Series.hist
         matplotlib.axes.Axes.hist
         """
-        mod_id = _get_id(model, self.mod_names)
-        mod_name = self.mod_names[mod_id]
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
 
-        # filter data
         cmp = self.sel(
-            model=mod_name,
+            model=model,
             observation=observation,
             variable=variable,
             start=start,
@@ -2375,7 +2338,9 @@ class ComparerCollection(Mapping, Sequence):
         )
         if cmp.n_points == 0:
             warnings.warn("No data!")
-            return
+            return        
+        mod_id = _get_id(model, self.mod_names)
+        mod_name = self.mod_names[mod_id]
 
         title = f"{mod_name} vs Observations" if title is None else title
 
@@ -2405,12 +2370,7 @@ class ComparerCollection(Mapping, Sequence):
         *,
         weights: Union[str, List[float], Dict[str, float]] = None,
         metrics: list = None,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        **kwargs,
     ) -> AggregatedSkill:
         """Weighted mean of skills
 
@@ -2431,20 +2391,6 @@ class ComparerCollection(Mapping, Sequence):
             by default None (i.e. observations weight attribute if assigned else "equal")
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
 
         Returns
         -------
@@ -2468,8 +2414,11 @@ class ComparerCollection(Mapping, Sequence):
         >>> s = cc.mean_skill(weights="points")
         >>> s = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
+        
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
 
-        # filter data
         cmp = self.sel(
             model=model,
             observation=observation,
@@ -2480,7 +2429,7 @@ class ComparerCollection(Mapping, Sequence):
         )
         if cmp.n_points == 0:
             warnings.warn("No data!")
-            return
+            return        
 
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
@@ -2519,12 +2468,7 @@ class ComparerCollection(Mapping, Sequence):
         self,
         *,
         metrics: list = None,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        **kwargs,
     ) -> AggregatedSkill:
         """Mean skill of all observational points
 
@@ -2542,20 +2486,6 @@ class ComparerCollection(Mapping, Sequence):
         ----------
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
 
         Returns
         -------
@@ -2575,7 +2505,10 @@ class ComparerCollection(Mapping, Sequence):
         >>> cc.mean_skill_points()
         """
 
-        # filter data
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
+
         cmp = self.sel(
             model=model,
             observation=observation,
@@ -2586,7 +2519,7 @@ class ComparerCollection(Mapping, Sequence):
         )
         if cmp.n_points == 0:
             warnings.warn("No data!")
-            return
+            return        
 
         dfall = cmp.to_dataframe()
         dfall["observation"] = "all"
@@ -2658,12 +2591,7 @@ class ComparerCollection(Mapping, Sequence):
         *,
         weights: Union[str, List[float], Dict[str, float]] = None,
         metric=mtr.rmse,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
+        **kwargs,
     ) -> float:
         """Weighted mean score of model(s) over all observations
 
@@ -2682,20 +2610,6 @@ class ComparerCollection(Mapping, Sequence):
             by default None (i.e. observations weight attribute if assigned else "equal")
         metric : list, optional
             a single metric from modelskill.metrics, by default rmse
-        model : (str, int, List[str], List[int]), optional
-            name or ids of models to be compared, by default all
-        observation : (str, int, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int, List[str], List[int])), optional
-            name or ids of variables to be compared, by default all
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates [x0, y0, x1, y1, ..., xn, yn],
-            by default None
 
         Returns
         -------
@@ -2726,6 +2640,10 @@ class ComparerCollection(Mapping, Sequence):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
+
         if model is None:
             models = self.mod_names
         else:
@@ -2733,15 +2651,21 @@ class ComparerCollection(Mapping, Sequence):
             models = [_get_name(m, self.mod_names) for m in models]
         n_models = len(models)
 
-        skill = self.mean_skill(
-            weights=weights,
-            metrics=[metric],
+        cmp = self.sel(
             model=models,
             observation=observation,
             variable=variable,
             start=start,
             end=end,
             area=area,
+        )
+        if cmp.n_points == 0:
+            warnings.warn("No data!")
+            return        
+
+        skill = cmp.mean_skill(
+            weights=weights,
+            metrics=[metric],
         )
         if skill is None:
             return
@@ -2763,38 +2687,19 @@ class ComparerCollection(Mapping, Sequence):
 
     def taylor(
         self,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        area: List[float] = None,
         normalize_std: bool = False,
         aggregate_observations: bool = True,
         figsize: List[float] = (7, 7),
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
+        **kwargs,
     ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
         ----------
-        model : (int, str), optional
-            name or id of model to be compared, by default all
-        observation : (int, str, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int), optional
-            name or id of variable to be compared, by default first
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         aggregate_observations : bool, optional
@@ -2819,6 +2724,21 @@ class ComparerCollection(Mapping, Sequence):
         ----------
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
+
+        cmp = self.sel(
+            model=model,
+            observation=observation,
+            variable=variable,
+            start=start,
+            end=end,
+            area=area,
+        )
+        if cmp.n_points == 0:
+            warnings.warn("No data!")
+            return 
 
         if (not aggregate_observations) and (not normalize_std):
             raise ValueError(
@@ -2826,18 +2746,8 @@ class ComparerCollection(Mapping, Sequence):
             )
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        skill_func = self.mean_skill if aggregate_observations else self.skill
-        s = skill_func(
-            model=model,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
-            metrics=metrics,
-        )
-        if s is None:
-            return
+        skill_func = cmp.mean_skill if aggregate_observations else cmp.skill
+        s = skill_func(metrics=metrics)
 
         df = s.df
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
