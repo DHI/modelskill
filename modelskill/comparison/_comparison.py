@@ -612,7 +612,7 @@ class Comparer:
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
-   def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
+    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
 
         df = self.data.to_dataframe().copy()
@@ -621,7 +621,7 @@ class Comparer:
         df = df.rename(columns={mod_name: "mod_val", self._obs_name: "obs_val"})
         df["model"] = mod_name
         df["observation"] = self.name
-        
+
         return df
 
     def to_dataframe(self) -> pd.DataFrame:
