@@ -1134,8 +1134,6 @@ class Comparer:
         title=None,
         xlabel=None,
         ylabel=None,
-        binsize=None,
-        nbins=None,
         skill_table=None,
         **kwargs,
     ):
@@ -1187,7 +1185,7 @@ class Comparer:
         self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
     ):
         warnings.warn("hist is deprecated. Use plot.hist instead.", FutureWarning)
-        return self.plot.hist(model=model, bins=bins, title=title, **kwargs)
+        return self.plot.hist(model=model, bins=bins, title=title, density=density, alpha=alpha, **kwargs)
 
     def kde(self, ax=None, **kwargs) -> Axes:
         warnings.warn("kde is deprecated. Use plot.kde instead.", FutureWarning)
