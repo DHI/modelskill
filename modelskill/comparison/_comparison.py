@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Iterable, Sequence, Tuple
+from typing import Dict, List, Optional, Union, Iterable, Sequence
 import warnings
 from inspect import getmembers, isfunction
 from matplotlib.axes import Axes  # type: ignore
@@ -13,7 +13,6 @@ from .. import metrics as mtr
 from .. import Quantity
 from .. import __version__
 from ..observation import Observation, PointObservation, TrackObservation
-from ..plot import colors
 
 from ._comparer_plotter import ComparerPlotter
 from ..skill import AggregatedSkill
@@ -37,7 +36,7 @@ def _get_deprecated_args(kwargs):
         model = kwargs.pop("model")
         if model is not None:
             warnings.warn(
-                f"The 'model' argument is deprecated, use 'sel(model='{model})' instead",
+                f"The 'model' argument is deprecated, use 'sel(model='{model}')' instead",
                 FutureWarning,
             )
 
@@ -46,7 +45,7 @@ def _get_deprecated_args(kwargs):
 
         if start is not None:
             warnings.warn(
-                f"The 'start' argument is deprecated, use 'sel(start='{start})' instead",
+                f"The 'start' argument is deprecated, use 'sel(start={start})' instead",
                 FutureWarning,
             )
 
@@ -55,7 +54,7 @@ def _get_deprecated_args(kwargs):
 
         if end is not None:
             warnings.warn(
-                f"The 'end' argument is deprecated, use 'sel(end='{end})' instead",
+                f"The 'end' argument is deprecated, use 'sel(end={end})' instead",
                 FutureWarning,
             )
 
@@ -69,6 +68,30 @@ def _get_deprecated_args(kwargs):
             )
 
     return model, start, end, area
+
+
+def _get_deprecated_obs_var_args(kwargs):
+    observation, variable = None, None
+
+    # Don't bother refactoring this, it will be removed in v1.1
+    if "observation" in kwargs:
+        observation = kwargs.pop("observation")
+        if observation is not None:
+            warnings.warn(
+                f"The 'observation' argument is deprecated, use 'sel(observation='{observation}') instead",
+                FutureWarning,
+            )
+
+    if "variable" in kwargs:
+        variable = kwargs.pop("variable")
+
+        if variable is not None:
+            warnings.warn(
+                f"The 'variable' argument is deprecated, use 'sel(variable='{variable}') instead",
+                FutureWarning,
+            )
+
+    return observation, variable
 
 
 def _validate_metrics(metrics) -> None:

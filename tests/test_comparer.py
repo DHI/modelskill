@@ -399,6 +399,18 @@ def test_pc_query_empty(pc):
     assert pc2.n_points == 0
 
 
+def test_add_pc_tc(pc, tc):
+    cc = pc + tc
+    assert cc.n_points == 10
+    assert cc.n_comparers == 2
+
+
+def test_add_tc_pc(pc, tc):
+    cc = tc + pc
+    assert cc.n_points == 10
+    assert cc.n_comparers == 2
+
+    
 def test_pc_to_dataframe(pc):
     df = pc.to_dataframe()
     assert isinstance(df, pd.DataFrame)
