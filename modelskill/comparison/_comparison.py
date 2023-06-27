@@ -612,17 +612,16 @@ class Comparer:
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
-    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
+   def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
 
-        df = self.data[[mod_name]].to_dataframe().copy()
-        df.columns = ["mod_val"]
+        df = self.data.to_dataframe().copy()
+        other_models = [m for m in self.mod_names if m is not mod_name]
+        df = df.drop(columns=other_models)
+        df = df.rename(columns={mod_name: "mod_val", self._obs_name: "obs_val"})
         df["model"] = mod_name
         df["observation"] = self.name
-        df["x"] = self.data.x
-        df["y"] = self.data.y
-        df["obs_val"] = self.obs
-
+        
         return df
 
     def to_dataframe(self) -> pd.DataFrame:
@@ -630,8 +629,10 @@ class Comparer:
 
         # TODO is this needed?, comment out for now
         # df = df.sort_index()
-
-        return pd.concat([self._model_to_frame(name) for name in self.mod_names])
+        df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
+        df["model"] = df["model"].astype("category")
+        df["observation"] = df["observation"].astype("category")
+        return df
 
     def __copy__(self):
         return deepcopy(self)
