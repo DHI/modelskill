@@ -6,7 +6,6 @@ from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 import xarray as xr
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from copy import deepcopy
 
@@ -14,7 +13,7 @@ from .. import metrics as mtr
 from .. import Quantity
 from .. import __version__
 from ..observation import Observation, PointObservation, TrackObservation
-from ..plot import taylor_diagram, TaylorPoint, colors
+from ..plot import colors
 
 from ._comparer_plotter import ComparerPlotter
 from ..skill import AggregatedSkill
@@ -1163,13 +1162,6 @@ class Comparer:
         **kwargs,
     ):
         warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
-
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        ss = self.sel(model=model, start=start, end=end, area=area)
-
-        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        s = ss.skill(metrics=metrics)
 
         self.plot.taylor(
             df=df,

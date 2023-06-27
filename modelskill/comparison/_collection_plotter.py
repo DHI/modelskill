@@ -6,7 +6,7 @@ import pandas as pd
 
 from .. import metrics as mtr
 from ._utils import _get_id
-from ..plot import colors, scatter, taylor_diagram, TaylorPoint
+from ..plot import scatter, taylor_diagram, TaylorPoint
 
 
 class ComparerCollectionPlotter:
