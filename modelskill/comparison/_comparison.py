@@ -428,7 +428,7 @@ class Comparer:
         tol_xy = self._minimal_accepted_distance(obs_xy)
         mask = d_xy > tol_xy
         df_mod.loc[mask, name] = np.nan
-        if any(mask):
+        if all(mask):
             warnings.warn("no (spatial) overlap between model and observation points")
 
     def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
