@@ -1,7 +1,7 @@
-from typing import Any, List, Union
-from matplotlib.axes import Axes
+from typing import Any, List, Union, Optional, Tuple
+from matplotlib.axes import Axes  # type: ignore
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import pandas as pd
 
 from .. import metrics as mtr
@@ -21,20 +21,20 @@ class ComparerCollectionPlotter:
         *,
         model=None,
         bins: Union[int, float, List[int], List[float]] = 20,
-        quantiles: Union[int, List[float]] = None,
+        quantiles: Optional[Union[int, List[float]]] = None,
         fit_to_quantiles: bool = False,
-        show_points: Union[bool, int, float] = None,
-        show_hist: bool = None,
-        show_density: bool = None,
+        show_points: Optional[Union[bool, int, float]] = None,
+        show_hist: Optional[bool] = None,
+        show_density: Optional[bool] = None,
         backend: str = "matplotlib",
-        figsize: List[float] = (8, 8),
-        xlim: List[float] = None,
-        ylim: List[float] = None,
+        figsize: Tuple[float, float] = (8, 8),
+        xlim: Optional[Tuple[float, float]] = None,
+        ylim: Optional[Tuple[float, float]] = None,
         reg_method: str = "ols",
-        title: str = None,
-        xlabel: str = None,
-        ylabel: str = None,
-        skill_table: Union[str, List[str], bool] = None,
+        title: Optional[str] = None,
+        xlabel: Optional[str] = None,
+        ylabel: Optional[str] = None,
+        skill_table: Optional[Union[str, List[str], bool]] = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -113,7 +113,7 @@ class ComparerCollectionPlotter:
         x = df.obs_val
         y = df.mod_val
 
-        unit_text = self.cc[df.observation[0]]._unit_text
+        unit_text = self.cc[df.observation[0]].unit_text
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
@@ -191,7 +191,7 @@ class ComparerCollectionPlotter:
             df_model = df[df.model == model]
             df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
 
-        plt.xlabel(f"{self.cc[df.observation[0]]._unit_text}")
+        plt.xlabel(f"{self.cc[df.observation[0]].unit_text}")
 
         # TODO title?
         ax.legend()
@@ -214,7 +214,7 @@ class ComparerCollectionPlotter:
         self,
         model=None,
         bins=100,
-        title: str = None,
+        title: Optional[str] = None,
         density=True,
         alpha: float = 0.5,
         **kwargs,
@@ -266,7 +266,7 @@ class ComparerCollectionPlotter:
         )
         ax.legend([mod_name, "observations"])
         plt.title(title)
-        plt.xlabel(f"{self.cc[df.observation[0]]._unit_text}")
+        plt.xlabel(f"{self.cc[df.observation[0]].unit_text}")
 
         if density:
             plt.ylabel("density")
@@ -279,7 +279,7 @@ class ComparerCollectionPlotter:
         self,
         normalize_std: bool = False,
         aggregate_observations: bool = True,
-        figsize: List[float] = (7, 7),
+        figsize: Tuple[float, float] = (7, 7),
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",

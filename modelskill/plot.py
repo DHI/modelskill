@@ -422,7 +422,7 @@ def scatter(
     show_points: Optional[Union[bool, int, float]] = None,
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
-    norm: colors.Normalize = None,
+    norm: Optional[colors.Normalize] = None,
     backend: str = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
@@ -432,7 +432,7 @@ def scatter(
     xlabel: str = "",
     ylabel: str = "",
     skill_df: Optional[pd.DataFrame] = None,
-    units: str = "",
+    units: Optional[str] = "",
     **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled

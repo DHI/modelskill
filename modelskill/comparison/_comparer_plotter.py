@@ -1,7 +1,6 @@
-from typing import Union, List
+from typing import Union, List, Optional, Tuple
 
-import matplotlib.pyplot as plt
-import pandas as pd
+import matplotlib.pyplot as plt  # type: ignore
 
 from .. import metrics as mtr
 from ._utils import _get_id
@@ -53,18 +52,18 @@ class ComparerPlotter:
 
             ax.scatter(
                 cmp.time,
-                cmp.data[cmp._obs_name].values,
+                cmp.data[cmp.obs_name].values,
                 marker=".",
-                color=cmp.data[cmp._obs_name].attrs["color"],
+                color=cmp.data[cmp.obs_name].attrs["color"],
             )
-            ax.set_ylabel(cmp._unit_text)
-            ax.legend([*cmp.mod_names, cmp._obs_name])
+            ax.set_ylabel(cmp.unit_text)
+            ax.legend([*cmp.mod_names, cmp.obs_name])
             ax.set_ylim(ylim)
             plt.title(title)
             return ax
 
         elif backend == "plotly":  # pragma: no cover
-            import plotly.graph_objects as go
+            import plotly.graph_objects as go  # type: ignore
 
             mod_scatter_list = []
             for j in range(cmp.n_models):
@@ -84,15 +83,15 @@ class ComparerPlotter:
                     *mod_scatter_list,
                     go.Scatter(
                         x=cmp.time,
-                        y=cmp.data[cmp._obs_name].values,
-                        name=cmp._obs_name,
+                        y=cmp.data[cmp.obs_name].values,
+                        name=cmp.obs_name,
                         mode="markers",
-                        marker=dict(color=cmp.data[cmp._obs_name].attrs["color"]),
+                        marker=dict(color=cmp.data[cmp.obs_name].attrs["color"]),
                     ),
                 ]
             )
 
-            fig.update_layout(title=title, yaxis_title=cmp._unit_text, **kwargs)
+            fig.update_layout(title=title, yaxis_title=cmp.unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
 
             fig.show()
@@ -147,12 +146,12 @@ class ComparerPlotter:
             .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
 
-        cmp.data[cmp._obs_name].to_series().hist(
-            bins=bins, color=cmp.data[cmp._obs_name].attrs["color"], ax=ax, **kwargs
+        cmp.data[cmp.obs_name].to_series().hist(
+            bins=bins, color=cmp.data[cmp.obs_name].attrs["color"], ax=ax, **kwargs
         )
-        ax.legend([mod_name, cmp._obs_name])
+        ax.legend([mod_name, cmp.obs_name])
         plt.title(title)
-        plt.xlabel(f"{cmp._unit_text}")
+        plt.xlabel(f"{cmp.unit_text}")
         if density:
             plt.ylabel("density")
         else:
@@ -174,7 +173,7 @@ class ComparerPlotter:
         for model in cmp.mod_names:
             cmp.data[model].to_series().plot.kde(ax=ax, label=model, **kwargs)
 
-        ax.set_xlabel(cmp._unit_text)  # TODO
+        ax.set_xlabel(cmp.unit_text)  # TODO
 
         ax.legend()
 
@@ -197,21 +196,21 @@ class ComparerPlotter:
         *,
         model=None,
         bins: Union[int, float, List[int], List[float]] = 20,
-        quantiles: Union[int, List[float]] = None,
+        quantiles: Optional[Union[int, List[float]]] = None,
         fit_to_quantiles: bool = False,
-        show_points: Union[bool, int, float] = None,
-        show_hist: bool = None,
-        show_density: bool = None,
-        norm: colors = None,
+        show_points: Optional[Union[bool, int, float]] = None,
+        show_hist: Optional[bool] = None,
+        show_density: Optional[bool] = None,
+        norm: Optional[colors.Normalize] = None,
         backend: str = "matplotlib",
-        figsize: List[float] = (8, 8),
-        xlim: List[float] = None,
-        ylim: List[float] = None,
+        figsize: Tuple[float, float] = (8, 8),
+        xlim: Optional[Tuple[float, float]] = None,
+        ylim: Optional[Tuple[float, float]] = None,
         reg_method: str = "ols",
-        title: str = None,
-        xlabel: str = None,
-        ylabel: str = None,
-        skill_table: Union[str, List[str], bool] = None,
+        title: Optional[str] = None,
+        xlabel: Optional[str] = None,
+        ylabel: Optional[str] = None,
+        skill_table: Optional[Union[str, List[str], bool]] = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -296,7 +295,7 @@ class ComparerPlotter:
         assert x.ndim == y.ndim == 1, "x and y must be 1D arrays"
         assert x.shape == y.shape, "x and y must have the same shape"
 
-        unit_text = cmp._unit_text
+        unit_text = cmp.unit_text
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
         title = title or f"{mod_name} vs {cmp.name}"
@@ -338,13 +337,11 @@ class ComparerPlotter:
 
     def taylor(
         self,
-        df: pd.DataFrame = None,
         normalize_std: bool = False,
-        figsize: List[float] = (7, 7),
+        figsize: Tuple[float, float] = (7, 7),
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-        **kwargs,
     ) -> None:
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
@@ -425,4 +422,4 @@ class ComparerPlotter:
         title = f"Residuals, {self.comparer.name}" if title is None else title
         plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
-        plt.xlabel(f"Residuals of {self.comparer._unit_text}")
+        plt.xlabel(f"Residuals of {self.comparer.unit_text}")

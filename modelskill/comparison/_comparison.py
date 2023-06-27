@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Iterable, Sequence
+from typing import Dict, List, Optional, Union, Iterable, Sequence, Tuple
 import warnings
 from inspect import getmembers, isfunction
-from matplotlib.axes import Axes
+from matplotlib.axes import Axes  # type: ignore
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -130,7 +130,8 @@ def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
         time_delta = pd.Timedelta(time_delta)
     elif np.isscalar(time_delta):
         # assume seconds
-        time_delta = pd.Timedelta(time_delta, "s")
+        time_delta = pd.Timedelta(time_delta, "s")  # type: ignore
+    assert isinstance(time_delta, pd.Timedelta)
     return time_delta
 
 
@@ -230,7 +231,7 @@ def _area_is_polygon(area) -> bool:
 
 
 def _inside_polygon(polygon, xy) -> bool:
-    import matplotlib.path as mp
+    import matplotlib.path as mp  # type: ignore
 
     if polygon.ndim == 1:
         polygon = np.column_stack((polygon[0::2], polygon[1::2]))
@@ -271,7 +272,7 @@ def _add_spatial_grid_to_df(
     return df
 
 
-def _groupby_df(df, by, metrics, n_min: int = None):
+def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
     def calc_metrics(x):
         row = {}
         row["n"] = len(x)
@@ -337,7 +338,7 @@ class Comparer:
         observation=None,
         modeldata=None,
         max_model_gap: Optional[TimeDeltaTypes] = None,
-        matched_data: xr.Dataset = None,
+        matched_data: Optional[xr.Dataset] = None,
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
 
@@ -383,14 +384,13 @@ class Comparer:
             )
             # TODO get quantity from matched_data object
             self.quantity: Quantity = Quantity.undefined()
-            return
+        else:
+            self.raw_mod_data = (
+                self._parse_modeldata_list(modeldata) if modeldata is not None else {}
+            )
 
-        self.raw_mod_data = (
-            self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-        )
-
-        self.data = self._initialise_comparer(observation, max_model_gap)
-        self.quantity: Quantity = observation.quantity
+            self.data = self._initialise_comparer(observation, max_model_gap)
+            self.quantity: Quantity = observation.quantity
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
         if len(df_mod) == 0:
@@ -593,11 +593,22 @@ class Comparer:
         return list(self.raw_mod_data.keys())
 
     @property
+    def obs_name(self) -> str:
+        """Name of observation (e.g. station name)"""
+        return self._obs_name
+
+    @property
     def weight(self) -> str:
         return self.data[self._obs_name].attrs["weight"]
 
     @property
-    def _unit_text(self) -> str:
+    def _unit_text(self):
+        warnings.warn("Use unit_text instead of _unit_text", FutureWarning)
+        return self.unit_text
+
+    @property
+    def unit_text(self) -> str:
+        """Variable name and unit as text suitable for plot labels"""
         return f"{self.data.attrs['variable_name']} [{self.data[self._obs_name].attrs['unit']}]"
 
     @property
@@ -1107,24 +1118,24 @@ class Comparer:
     def scatter(
         self,
         *,
-        bins: Union[int, float, List[int], List[float]] = 20,
-        quantiles: Union[int, List[float]] = None,
-        fit_to_quantiles: bool = False,
-        show_points: Union[bool, int, float] = None,
-        show_hist: bool = None,
-        show_density: bool = None,
-        norm: colors = None,
-        backend: str = "matplotlib",
-        figsize: List[float] = (8, 8),
-        xlim: List[float] = None,
-        ylim: List[float] = None,
-        reg_method: str = "ols",
-        title: str = None,
-        xlabel: str = None,
-        ylabel: str = None,
-        binsize: float = None,
-        nbins: int = None,
-        skill_table: Union[str, List[str], bool] = None,
+        bins=20,
+        quantiles=None,
+        fit_to_quantiles=False,
+        show_points=None,
+        show_hist=None,
+        show_density=None,
+        norm=None,
+        backend="matplotlib",
+        figsize=(8, 8),
+        xlim=None,
+        ylim=None,
+        reg_method="ols",
+        title=None,
+        xlabel=None,
+        ylabel=None,
+        binsize=None,
+        nbins=None,
+        skill_table=None,
         **kwargs,
     ):
 
@@ -1153,18 +1164,16 @@ class Comparer:
 
     def taylor(
         self,
-        df: pd.DataFrame = None,
-        normalize_std: bool = False,
-        figsize: List[float] = (7, 7),
-        marker: str = "o",
-        marker_size: float = 6.0,
-        title: str = "Taylor diagram",
+        normalize_std=False,
+        figsize=(7, 7),
+        marker="o",
+        marker_size=6.0,
+        title="Taylor diagram",
         **kwargs,
     ):
         warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
 
         self.plot.taylor(
-            df=df,
             normalize_std=normalize_std,
             figsize=figsize,
             marker=marker,
