@@ -2364,6 +2364,29 @@ difference between a model and an observation.</p>
 </pre></div>
 </div>
 <dl class="py function">
+<dt class="sig sig-object py" id="modelskill.metrics.add_metric">
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">add_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_units</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#modelskill.metrics.add_metric" title="Permalink to this definition">#</a></dt>
+<dd><p>Adds a metric to the metric list. Useful for custom metrics.</p>
+<p>Some metrics are dimensionless, others have the same dimension as the observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metric</strong> (<em>str</em><em> or </em><em>callable</em>) – Metric name or function</p></li>
+<li><p><strong>has_units</strong> (<em>bool</em>) – True if metric has a dimension, False otherwise. Default:False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">add_metric</span><span class="p">(</span><span class="n">hit_ratio</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">add_metric</span><span class="p">(</span><span class="n">rmse</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="modelskill.metrics.bias">
 <span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">bias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#modelskill.metrics.bias" title="Permalink to this definition">#</a></dt>
 <dd><p>Bias (mean error)</p>
@@ -2394,6 +2417,12 @@ difference between a model and an observation.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="modelskill.metrics.get_metric">
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">get_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span></span></span><a class="headerlink" href="#modelskill.metrics.get_metric" title="Permalink to this definition">#</a></dt>
+<dd><p>Get a metric function from its name.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="modelskill.metrics.hit_ratio">
 <span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">hit_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#modelskill.metrics.hit_ratio" title="Permalink to this definition">#</a></dt>
 <dd><p>Fraction within obs ± acceptable deviation</p>
@@ -2409,6 +2438,27 @@ difference between a model and an observation.</p>
 <span class="go">0.8571428571428571</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">hit_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">0.15</span><span class="p">)</span>
 <span class="go">1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modelskill.metrics.is_valid_metric">
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">is_valid_metric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#modelskill.metrics.is_valid_metric" title="Permalink to this definition">#</a></dt>
+<dd><p>“Check if a metric is defined.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>metric</strong> (<em>str</em><em> or </em><em>callable</em>) – Metric name or function</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">is_valid_metric</span><span class="p">(</span><span class="s2">&quot;rmse&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">is_valid_metric</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+<span class="go">False</span>
 </pre></div>
 </div>
 </dd></dl>
