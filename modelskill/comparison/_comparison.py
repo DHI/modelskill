@@ -1,7 +1,15 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Iterable, Sequence
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Union,
+    Iterable,
+    Sequence,
+    Callable,
+    TYPE_CHECKING,
+)
 import warnings
-from inspect import getmembers, isfunction
 from matplotlib.axes import Axes  # type: ignore
 import numpy as np
 import pandas as pd
@@ -20,8 +28,6 @@ from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
 
 from ._utils import _get_name
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
@@ -170,7 +176,7 @@ def _parse_metric(metric, default_metrics, return_list=False):
     if metric is None:
         metric = default_metrics
 
-    if isinstance(metric, str):
+    if isinstance(metric, (str, Callable)):
         metric = mtr.get_metric(metric)
     elif isinstance(metric, Iterable):
         metrics = [_parse_metric(m, default_metrics) for m in metric]

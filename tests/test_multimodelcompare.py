@@ -355,9 +355,14 @@ def test_custom_metric_skill(cc):
     cc.skill(metrics=["cm_1"])
     assert s["cm_1"] is not None
 
-    # using a non-registred metric raises an error, even though it is a function
+    # using a non-registred metric raises an error, even though it is a defined function, but not registered
     with pytest.raises(ValueError) as e_info:
         cc.skill(metrics=["cm_2"])
+
+    assert "add_metric" in str(e_info.value)
+
+    with pytest.raises(ValueError) as e_info:
+        cc.skill(metrics=[cm_2])
 
     assert "add_metric" in str(e_info.value)
 

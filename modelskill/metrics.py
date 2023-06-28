@@ -598,14 +598,12 @@ def metric_has_units(metric: typing.Union[str, typing.Callable]) -> bool:
     return name in METRICS_WITH_DIMENSION
 
 
-defined_metrics: typing.Set[str] = set(
-    [
-        func
-        for func in dir()
-        if callable(getattr(sys.modules[__name__], func))
-        and not func.startswith("_")
-        and not func.startswith("add_metric")
-    ]
+NON_METRICS = set(["metric_has_units", "get_metric", "is_valid_metric", "add_metric"])
+
+
+defined_metrics: typing.Set[str] = (
+    set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
+    - NON_METRICS
 )
 
 
@@ -637,6 +635,20 @@ def is_valid_metric(metric: typing.Union[str, typing.Callable]) -> bool:
     return name in defined_metrics
 
 
+def get_metric(metric: typing.Union[str, typing.Callable]) -> typing.Callable:
+    """Get a metric function from its name."""
+
+    if is_valid_metric(metric):
+        if isinstance(metric, typing.Callable):
+            return metric
+        else:
+            return getattr(sys.modules[__name__], metric)
+    else:
+        raise ValueError(
+            f"Metric {metric} not defined. Choose from {defined_metrics} or use `add_metric` to add a custom metric."
+        )
+
+
 def add_metric(
     metric: typing.Union[str, typing.Callable], has_units: bool = False
 ) -> None:
@@ -666,14 +678,3 @@ def add_metric(
 
     # add the function to the module
     setattr(sys.modules[__name__], metric.__name__, metric)
-
-
-def get_metric(name: str) -> typing.Callable:
-    """Get a metric by name."""
-
-    if is_valid_metric(name):
-        return getattr(sys.modules[__name__], name)
-    else:
-        raise ValueError(
-            f"Metric {name} not defined. Choose from {defined_metrics} or use `add_metric` to add a custom metric."
-        )
