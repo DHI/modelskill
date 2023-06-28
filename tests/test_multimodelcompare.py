@@ -334,6 +334,11 @@ def cm_2(obs, model):
     return np.mean(obs.ravel() * 1.5 / model.ravel())
 
 
+def cm_3(obs, model):
+    """Custom metric #3"""
+    return 42
+
+
 def test_custom_metric_skilltable_mm_scatter(cc):
     mtr.add_metric(cm_1)
     mtr.add_metric(cm_2, has_units=True)
@@ -341,11 +346,9 @@ def test_custom_metric_skilltable_mm_scatter(cc):
     assert True
     plt.close("all")
 
-
-def test_custom_metric_skill(cc):
     mtr.add_metric(cm_1)
 
-    assert "cm_1" in mtr.defined_metrics
+    assert mtr.is_valid_metric("cm_1")
 
     # use custom metric as function
     s = cc.skill(metrics=[cm_1])
@@ -357,12 +360,12 @@ def test_custom_metric_skill(cc):
 
     # using a non-registred metric raises an error, even though it is a defined function, but not registered
     with pytest.raises(ValueError) as e_info:
-        cc.skill(metrics=["cm_2"])
+        cc.skill(metrics=["cm_3"])
 
     assert "add_metric" in str(e_info.value)
 
     with pytest.raises(ValueError) as e_info:
-        cc.skill(metrics=[cm_2])
+        cc.skill(metrics=[cm_3])
 
     assert "add_metric" in str(e_info.value)
 
