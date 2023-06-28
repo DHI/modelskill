@@ -1,3 +1,4 @@
+from typing import Callable
 import pytest
 import numpy as np
 
@@ -193,3 +194,13 @@ def test_metric_has_dimension():
 
     with pytest.raises(ValueError):
         mtr.metric_has_units("unknown")
+
+
+def test_add_metric_is_not_a_valid_metric():
+    assert not mtr.is_valid_metric("add_metric")
+    assert mtr.is_valid_metric("nse")
+
+
+def test_get_metric():
+    rmse = mtr.get_metric("rmse")
+    assert isinstance(rmse, Callable)

@@ -308,20 +308,44 @@ def test_mm_scatter(cc):
     assert True
     plt.close("all")
 
+
 def cm_1(obs, model):
-    '''Custom metric #1'''
+    """Custom metric #1"""
     return np.mean(obs.ravel() / model.ravel())
 
+
 def cm_2(obs, model):
-    '''Custom metric #2'''
-    return np.mean(obs.ravel()*1.5 / model.ravel())
+    """Custom metric #2"""
+    return np.mean(obs.ravel() * 1.5 / model.ravel())
+
 
 def test_custom_metric_skilltable_mm_scatter(cc):
     mtr.add_metric(cm_1)
-    mtr.add_metric(cm_2,has_units =True)
-    cc.scatter(model="SW_2", observation="HKNA", skill_table=['bias',cm_1,'si',cm_2])
+    mtr.add_metric(cm_2, has_units=True)
+    cc.scatter(model="SW_2", observation="HKNA", skill_table=["bias", cm_1, "si", cm_2])
     assert True
     plt.close("all")
+
+
+def test_custom_metric_skill(cc):
+    mtr.add_metric(cm_1)
+
+    assert "cm_1" in mtr.defined_metrics
+
+    # use custom metric as function
+    s = cc.skill(metrics=[cm_1])
+    assert s["cm_1"] is not None
+
+    # use custom metric as string
+    cc.skill(metrics=["cm_1"])
+    assert s["cm_1"] is not None
+
+    # using a non-registred metric raises an error, even though it is a function
+    with pytest.raises(ValueError) as e_info:
+        cc.skill(metrics=["cm_2"])
+
+    assert "add_metric" in str(e_info.value)
+
 
 def test_mm_taylor(cc):
     cc.taylor(model="SW_1", observation=[0, 1])

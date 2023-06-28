@@ -55,7 +55,7 @@ Examples
 0.6666666666666666
 """
 import sys
-from typing import Callable, Set, Tuple, Union
+import typing
 import warnings
 import numpy as np
 
@@ -526,7 +526,7 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
 
 def _linear_regression(
     obs: np.ndarray, model: np.ndarray, reg_method="ols"
-) -> Tuple[float, float]:
+) -> typing.Tuple[float, float]:
 
     if len(obs) == 0:
         return np.nan
@@ -565,7 +565,7 @@ def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
 METRICS_WITH_DIMENSION = set(["urmse", "rmse", "bias", "mae"])  # TODO is this complete?
 
 
-def metric_has_units(metric: Union[str, Callable]) -> bool:
+def metric_has_units(metric: typing.Union[str, typing.Callable]) -> bool:
     """Check if a metric has units (dimension).
 
     Some metrics are dimensionless, others have the same dimension as the observations.
@@ -587,27 +587,59 @@ def metric_has_units(metric: Union[str, Callable]) -> bool:
     >>> metric_has_units("kge")
     False
     """
-    if isinstance(metric, Callable):
+    if isinstance(metric, typing.Callable):
         name = metric.__name__
     else:
         name = metric
 
-    if name not in DEFINED_METRICS:
-        raise ValueError(f"Metric {name} not defined. Choose from {DEFINED_METRICS}")
+    if name not in defined_metrics:
+        raise ValueError(f"Metric {name} not defined. Choose from {defined_metrics}")
 
     return name in METRICS_WITH_DIMENSION
 
 
-DEFINED_METRICS: Set[str] = set(
+defined_metrics: typing.Set[str] = set(
     [
         func
         for func in dir()
-        if callable(getattr(sys.modules[__name__], func)) and not func.startswith("_") and not func.startswith("add_metric")
+        if callable(getattr(sys.modules[__name__], func))
+        and not func.startswith("_")
+        and not func.startswith("add_metric")
     ]
 )
 
 
-def add_metric(metric: Union[str, Callable],has_units:bool=False) -> None:
+def is_valid_metric(metric: typing.Union[str, typing.Callable]) -> bool:
+    """ "Check if a metric is defined.
+
+    Parameters
+    ----------
+    metric : str or callable
+        Metric name or function
+
+    Returns
+    -------
+    bool
+
+    Examples
+    --------
+    >>> is_valid_metric("rmse")
+    True
+    >>> is_valid_metric("foo")
+    False
+    """
+
+    if isinstance(metric, typing.Callable):
+        name = metric.__name__
+    else:
+        name = metric
+
+    return name in defined_metrics
+
+
+def add_metric(
+    metric: typing.Union[str, typing.Callable], has_units: bool = False
+) -> None:
     """Adds a metric to the metric list. Useful for custom metrics.
 
     Some metrics are dimensionless, others have the same dimension as the observations.
@@ -628,6 +660,20 @@ def add_metric(metric: Union[str, Callable],has_units:bool=False) -> None:
     >>> add_metric(hit_ratio)
     >>> add_metric(rmse,True)
     """
-    DEFINED_METRICS.add(metric.__name__)
+    defined_metrics.add(metric.__name__)
     if has_units:
         METRICS_WITH_DIMENSION.add(metric.__name__)
+
+    # add the function to the module
+    setattr(sys.modules[__name__], metric.__name__, metric)
+
+
+def get_metric(name: str) -> typing.Callable:
+    """Get a metric by name."""
+
+    if is_valid_metric(name):
+        return getattr(sys.modules[__name__], name)
+    else:
+        raise ValueError(
+            f"Metric {name} not defined. Choose from {defined_metrics} or use `add_metric` to add a custom metric."
+        )
