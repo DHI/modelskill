@@ -1,6 +1,6 @@
 import pytest
 import matplotlib.pyplot as plt
-
+import numpy as np
 from modelskill import ModelResult
 from modelskill import PointObservation, TrackObservation
 from modelskill import Connector
@@ -141,11 +141,11 @@ def test_mv_mm_scatter(cc):
 
 def cm_1(obs, model):
     '''Custom metric #1'''
-    return obs / model
+    return np.mean(obs.ravel() / model.ravel())
 
 def cm_2(obs, model):
     '''Custom metric #2'''
-    return obs*1.5 / model
+    return np.mean(obs.ravel()*1.5 / model.ravel())
 
 def test_custom_metric_skilltable_mv_mm_scatter(cc):
     mtr.add_metric(cm_1)

@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
 from modelskill import ModelResult
 from modelskill import PointObservation, TrackObservation
 from modelskill import Connector
@@ -308,6 +308,20 @@ def test_mm_scatter(cc):
     assert True
     plt.close("all")
 
+def cm_1(obs, model):
+    '''Custom metric #1'''
+    return np.mean(obs.ravel() / model.ravel())
+
+def cm_2(obs, model):
+    '''Custom metric #2'''
+    return np.mean(obs.ravel()*1.5 / model.ravel())
+
+def test_custom_metric_skilltable_mm_scatter(cc):
+    mtr.add_metric(cm_1)
+    mtr.add_metric(cm_2,has_units =True)
+    cc.scatter(model="SW_2", observation="HKNA", skill_table=['bias',cm_1,'si',cm_2])
+    assert True
+    plt.close("all")
 
 def test_mm_taylor(cc):
     cc.taylor(model="SW_1", observation=[0, 1])
