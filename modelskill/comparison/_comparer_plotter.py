@@ -226,7 +226,7 @@ class ComparerPlotter:
             axes to plot on, by default None
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to df.plot.kde()
+        kwargs : other keyword arguments to plt.plot()
 
         Returns
         -------
@@ -262,6 +262,7 @@ class ComparerPlotter:
         xymin = min([xmin, ymin])
         xymax = max([xmax, ymax])
         
+        # 1:1 line
         plt.plot(
             [xymin, xymax],
             [xymin, xymax],
