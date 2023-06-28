@@ -622,7 +622,6 @@ def add_metric(metric: Union[str, Callable],has_units:bool=False) -> None:
     Returns
     -------
     None
-        True if metric has a dimension, False otherwise
 
     Examples
     --------
