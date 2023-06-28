@@ -11,8 +11,6 @@ from matplotlib import patches
 import matplotlib.colors as colors
 from matplotlib.ticker import MaxNLocator
 
-import mikeio
-
 from .model.point import PointModelResult
 from .model.track import TrackModelResult
 from .observation import Observation, PointObservation, TrackObservation
@@ -213,7 +211,8 @@ def _scatter_matplotlib(
         c=options.plot.scatter.oneone_line.color,
         zorder=3,
     )
-    if show_points:
+
+    if show_points is None or show_points:
         if show_density:
             c = z
         else:
@@ -270,7 +269,7 @@ def _scatter_matplotlib(
         cbar.set_label("# points")
         cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
-        plt.title(title)
+    plt.title(title)
     # Add skill table
     if skill_df is not None:
         df = skill_df.df
@@ -339,8 +338,7 @@ def _scatter_plotly(
             )
         )
 
-    if show_points:
-
+    if show_points is None or show_points:
         if show_density:
             c = z
             cbar = dict(thickness=20, title="# of points")
@@ -424,7 +422,7 @@ def scatter(
     show_points: Optional[Union[bool, int, float]] = None,
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
-    norm: colors.Normalize = None,
+    norm: Optional[colors.Normalize] = None,
     backend: str = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
@@ -434,7 +432,7 @@ def scatter(
     xlabel: str = "",
     ylabel: str = "",
     skill_df: Optional[pd.DataFrame] = None,
-    units: str = "",
+    units: Optional[str] = "",
     **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled
@@ -959,7 +957,7 @@ def _plot_summary_border(
         **bbox_kwargs,
     )
 
-    px = plt.gca().add_patch(bbox)
+    plt.gca().add_patch(bbox)
 
 
 def _plot_summary_table(

@@ -129,13 +129,13 @@ def test_mv_mm_mean_skill(cc):
 
 
 def test_mv_mm_scatter(cc):
-    cc.scatter(model="SW_1", variable="Wind speed")
-    cc.scatter(model="SW_1", variable="Wind speed", show_density=True)
-    cc.scatter(
-        model="SW_1", variable="Wind speed", observation="F16_wind", skill_table=True
+    cc.sel(model="SW_1", variable="Wind speed").plot.scatter()
+    cc.sel(model="SW_1", variable="Wind speed").plot.scatter(show_density=True)
+    cc.sel(model="SW_1", variable="Wind speed", observation="F16_wind").plot.scatter(
+        skill_table=True
     )
-    cc.scatter(model="SW_1", variable="Wind speed", show_density=True, bins=19)
-    cc.scatter(model="SW_1", variable="Wind speed", show_density=True, bins=21)
+    cc.sel(model="SW_1", variable="Wind speed").plot.scatter(show_density=True, bins=19)
+    cc.sel(model="SW_1", variable="Wind speed").plot.scatter(show_density=True, bins=21)
     assert True
     plt.close("all")
 
@@ -157,8 +157,8 @@ def test_custom_metric_skilltable_mv_mm_scatter(cc):
     plt.close("all")
 
 def test_mv_mm_taylor(cc):
-    cc.taylor(variable="Wind speed")
-    cc.taylor(figsize=(4, 4))
-    cc.taylor(model="SW_2", start="2017-10-28")
+    cc.sel(variable="Wind speed").plot.taylor()
+    cc.plot.taylor(figsize=(4, 4))
+    cc.sel(model="SW_2", start="2017-10-28").plot.taylor()
     assert True
     plt.close("all")
