@@ -1,11 +1,12 @@
 from typing import Union, List, Optional, Tuple
 
-import matplotlib.pyplot as plt  # type: ignore
+import matplotlib.pyplot as plt
+import numpy as np  # type: ignore
 
 from .. import metrics as mtr
 from ._utils import _get_id
-from ..plot import colors, scatter, taylor_diagram, TaylorPoint
-
+from ..plot import _get_fig_ax, colors, quantiles_xy, scatter, taylor_diagram, TaylorPoint
+from ..settings import options
 
 class ComparerPlotter:
     """Plotter class for Comparer"""
@@ -206,6 +207,80 @@ class ComparerPlotter:
         ax.spines["left"].set_visible(False)
 
         return ax
+
+
+    def qq(self, quantiles: Optional[Union[int, List[float]]] = None, title=None, ax=None, figsize=None, **kwargs):
+        """Make quantile-quantile (q-q) plot of model data and observations.
+
+        Primarily used to compare multiple models. 
+
+        Parameters
+        ----------
+        quantiles: (int, sequence), optional
+            number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
+            if int, this is the number of points
+            if sequence (list of floats), represents the desired quantiles (from 0 to 1)
+        title : str, optional
+            plot title, default: "Q-Q plot for [observation name]"
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
+        figsize : tuple, optional
+            figure size, by default None
+        kwargs : other keyword arguments to df.plot.kde()
+
+        Returns
+        -------
+        matplotlib axes
+
+        Examples
+        --------
+        >>> cmp.plot.qq()
+
+        """
+        cmp = self.comparer
+
+        _, ax = _get_fig_ax(ax, figsize)
+
+        x = cmp.data.Observation.values
+        xmin, xmax = x.min(), x.max()
+        ymin, ymax = np.inf, -np.inf
+
+        for mod_name in cmp.mod_names:
+            y = cmp.data[mod_name].values
+            ymin= min([y.min(), ymin]) 
+            ymax= max([y.max(), ymax])           
+            xq, yq = quantiles_xy(x, y, quantiles)
+            plt.plot(
+                xq,
+                yq,
+                '.-',                
+                label=mod_name,
+                zorder=4,
+                **kwargs,
+            )
+    
+        xymin = min([xmin, ymin])
+        xymax = max([xmax, ymax])
+        
+        plt.plot(
+            [xymin, xymax],
+            [xymin, xymax],
+            label=options.plot.scatter.oneone_line.label,
+            c=options.plot.scatter.oneone_line.color,
+            zorder=3,
+        )    
+        plt.axis("square")
+        plt.xlim([xymin, xymax])
+        plt.ylim([xymin, xymax])
+        plt.minorticks_on()
+        plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
+
+        ax.legend()
+        ax.set_xlabel("Observation, " + cmp.unit_text)
+        ax.set_ylabel("Model, " + cmp.unit_text)
+        ax.set_title(title or f"Q-Q plot for {cmp.name}")        
+        return ax
+
 
     def scatter(
         self,
