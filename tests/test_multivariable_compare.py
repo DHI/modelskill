@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from modelskill import ModelResult
 from modelskill import PointObservation, TrackObservation
 from modelskill import Connector
-
+import modelskill.metrics as mtr
 
 @pytest.fixture
 def mr1Hm0():
@@ -139,6 +139,22 @@ def test_mv_mm_scatter(cc):
     assert True
     plt.close("all")
 
+def cm_1(obs, model):
+    '''Custom metric #1'''
+    return obs / model
+
+def cm_2(obs, model):
+    '''Custom metric #2'''
+    return obs*1.5 / model
+
+def test_custom_metric_skilltable_mv_mm_scatter(cc):
+    mtr.add_metric(cm_1)
+    mtr.add_metric(cm_2,has_units =True)
+    cc.scatter(
+        model="SW_1", variable="Wind speed", observation="F16_wind", skill_table=['bias',cm_1,'si',cm_2],
+    )
+    assert True
+    plt.close("all")
 
 def test_mv_mm_taylor(cc):
     cc.taylor(variable="Wind speed")
