@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
 from modelskill import ModelResult
 from modelskill import PointObservation, TrackObservation
 from modelskill import Connector
@@ -322,6 +322,52 @@ def test_mm_scatter(cc):
     # cc.sel(model="SW_2").plot.scatter(binsize=0.5, backend="plotly")
     assert True
     plt.close("all")
+
+
+def cm_1(obs, model):
+    """Custom metric #1"""
+    return np.mean(obs.ravel() / model.ravel())
+
+
+def cm_2(obs, model):
+    """Custom metric #2"""
+    return np.mean(obs.ravel() * 1.5 / model.ravel())
+
+
+def cm_3(obs, model):
+    """Custom metric #3"""
+    return 42
+
+
+def test_custom_metric_skilltable_mm_scatter(cc):
+    mtr.add_metric(cm_1)
+    mtr.add_metric(cm_2, has_units=True)
+    cc.scatter(model="SW_2", observation="HKNA", skill_table=["bias", cm_1, "si", cm_2])
+    assert True
+    plt.close("all")
+
+    mtr.add_metric(cm_1)
+
+    assert mtr.is_valid_metric("cm_1")
+
+    # use custom metric as function
+    s = cc.skill(metrics=[cm_1])
+    assert s["cm_1"] is not None
+
+    # use custom metric as string
+    cc.skill(metrics=["cm_1"])
+    assert s["cm_1"] is not None
+
+    # using a non-registred metric raises an error, even though it is a defined function, but not registered
+    with pytest.raises(ValueError) as e_info:
+        cc.skill(metrics=["cm_3"])
+
+    assert "add_metric" in str(e_info.value)
+
+    with pytest.raises(ValueError) as e_info:
+        cc.skill(metrics=[cm_3])
+
+    assert "add_metric" in str(e_info.value)
 
 
 def test_mm_kde(cc):
