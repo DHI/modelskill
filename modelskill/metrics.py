@@ -626,8 +626,8 @@ def add_metric(metric: Union[str, Callable],has_units:bool=False) -> None:
 
     Examples
     --------
-    >>> add_metric(peak_ratio)
-    >>> add_metric(absolute_mean_error,True)
+    >>> add_metric(hit_ratio)
+    >>> add_metric(rmse,True)
     """
     DEFINED_METRICS.add(metric.__name__)
     if has_units:
