@@ -215,8 +215,10 @@ def _scatter_matplotlib(
     if show_points is None or show_points:
         if show_density:
             c = z
+            norm_ = norm
         else:
             c = "0.25"
+            norm_ = None
         plt.scatter(
             x_sample,
             y_sample,
@@ -226,7 +228,7 @@ def _scatter_matplotlib(
             marker=".",
             label=options.plot.scatter.points.label,
             zorder=1,
-            norm=norm,
+            norm=norm_,
             **kwargs,
         )
     plt.plot(
@@ -251,7 +253,7 @@ def _scatter_matplotlib(
     )
 
     if show_hist:
-        plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
+        plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
 
     plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
     plt.xlabel(xlabel)
