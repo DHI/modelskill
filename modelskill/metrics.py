@@ -602,6 +602,33 @@ DEFINED_METRICS: Set[str] = set(
     [
         func
         for func in dir()
-        if callable(getattr(sys.modules[__name__], func)) and not func.startswith("_")
+        if callable(getattr(sys.modules[__name__], func)) and not func.startswith("_") and not func.startswith("add_metric")
     ]
 )
+
+
+def add_metric(metric: Union[str, Callable],has_units:bool=False) -> None:
+    """Adds a metric to the metric list. Useful for custom metrics.
+
+    Some metrics are dimensionless, others have the same dimension as the observations.
+
+    Parameters
+    ----------
+    metric : str or callable
+        Metric name or function
+    has_units : bool
+        True if metric has a dimension, False otherwise. Default:False
+
+    Returns
+    -------
+    None
+        True if metric has a dimension, False otherwise
+
+    Examples
+    --------
+    >>> add_metric(peak_ratio)
+    >>> add_metric(absolute_mean_error,True)
+    """
+    DEFINED_METRICS.add(metric.__name__)
+    if has_units:
+        METRICS_WITH_DIMENSION.add(metric.__name__)
