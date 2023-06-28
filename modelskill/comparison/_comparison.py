@@ -73,10 +73,8 @@ def _get_deprecated_args(kwargs):
 def _validate_metrics(metrics) -> None:
     for m in metrics:
         if isinstance(m, str):
-            if m not in mtr.DEFINED_METRICS:
-                raise ValueError(
-                    f"Metric '{m}' is not defined. Valid metrics are {mtr.DEFINED_METRICS}"
-                )
+            if not mtr.is_valid_metric(m):
+                raise ValueError(f"Unknown metric '{m}'")
 
 
 register_option(
@@ -173,14 +171,7 @@ def _parse_metric(metric, default_metrics, return_list=False):
         metric = default_metrics
 
     if isinstance(metric, str):
-        valid_metrics = [x[0] for x in getmembers(mtr, isfunction) if x[0][0] != "_"]
-
-        if metric.lower() in valid_metrics:
-            metric = getattr(mtr, metric.lower())
-        else:
-            raise ValueError(
-                f"Invalid metric: {metric}. Valid metrics are {valid_metrics}."
-            )
+        metric = mtr.get_metric(metric)
     elif isinstance(metric, Iterable):
         metrics = [_parse_metric(m, default_metrics) for m in metric]
         return metrics
@@ -971,7 +962,7 @@ class Comparer:
         >>> cmp = ms.compare(c2, mod)
         >>> cmp.score()
         0.3517964910888918
-        
+
         >>> cmp.score(metric=ms.metrics.mape)
         11.567399646108198
         """
@@ -1185,7 +1176,9 @@ class Comparer:
         self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
     ):
         warnings.warn("hist is deprecated. Use plot.hist instead.", FutureWarning)
-        return self.plot.hist(model=model, bins=bins, title=title, density=density, alpha=alpha, **kwargs)
+        return self.plot.hist(
+            model=model, bins=bins, title=title, density=density, alpha=alpha, **kwargs
+        )
 
     def kde(self, ax=None, **kwargs) -> Axes:
         warnings.warn("kde is deprecated. Use plot.kde instead.", FutureWarning)
