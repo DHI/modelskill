@@ -164,6 +164,9 @@ def test_minimal_plots():
 
     ax = cmp.plot.qq()
     assert ax is not None
+    
+    ax = cmp.plot.box()
+    assert ax is not None
 
     ax = cmp.plot.hist()
     assert ax is not None
