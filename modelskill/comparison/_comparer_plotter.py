@@ -173,6 +173,13 @@ class ComparerPlotter:
         -------
         matplotlib axes
 
+        Examples
+        --------
+        >>> cmp.plot.kde()
+        >>> cmp.plot.kde(bw_method=0.3)
+        >>> cmp.plot.kde(ax=ax, bw_method='silverman')
+        >>> cmp.plot.kde(xlim=[0,None], title="Density plot");   
+
         See also
         --------
         pandas.Series.plot.kde
@@ -207,6 +214,46 @@ class ComparerPlotter:
 
         return ax
 
+    def box(self, ax=None, title=None, **kwargs):
+        """Make a box plot of model data and observations.
+
+        Wraps pandas.DataFrame boxplot() method.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
+        title : str, optional
+            plot title, default: [observation name]        
+        kwargs : other keyword arguments to df.boxplot()
+
+        Returns
+        -------
+        matplotlib axes
+
+        Examples
+        --------
+        >>> cmp.plot.box()
+        >>> cmp.plot.box(showmeans=True)
+        >>> cmp.plot.box(ax=ax, title="Box plot")
+
+        See also
+        --------
+        pandas.DataFrame.boxplot
+        matplotlib.pyplot.boxplot
+        """
+        cmp = self.comparer
+
+        if ax is None:
+            ax = plt.gca()
+
+        cols = ["Observation"] + cmp.mod_names
+        df = cmp.data[cols].to_dataframe()
+        df.boxplot(ax=ax, **kwargs)
+        ax.set_ylabel(cmp.unit_text)
+        ax.set_title(title or cmp.name)
+        return ax
+    
     def scatter(
         self,
         *,
@@ -292,7 +339,7 @@ class ComparerPlotter:
         >>> cmp.plot.scatter()
         >>> cmp.plot.scatter(bins=0.2, backend='plotly')
         >>> cmp.plot.scatter(show_points=False, title='no points')
-        >>> cm.plot.scatter(xlabel='all observations', ylabel='my model')
+        >>> cmp.plot.scatter(xlabel='all observations', ylabel='my model')
         >>> cmp.sel(model='HKZN_v2').plot.scatter(figsize=(10, 10))
         """
 
