@@ -44,9 +44,8 @@ Or the development version:
 
 1. Define **ModelResults**
 2. Define **Observations**
-3. **Connect** Observations and ModelResults
-4. **Extract** ModelResults at Observation positions
-5. Do plotting, statistics, reporting using a **Comparer**
+3. **Compare** Observations and ModelResults
+4. Do plotting, statistics, reporting using the **Comparer**
 
 Read more about the workflow in the [getting started guide](https://dhi.github.io/modelskill/getting_started.html).
 
