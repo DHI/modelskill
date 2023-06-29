@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 import modelskill.metrics as mtr
 
@@ -15,9 +16,9 @@ def test_max_error_circular():
     assert mtr.max_error(obs, mod, circular=True) == 1.0
 
 def test_mean_circular():
-    obs = np.arange(100)
+    obs = np.arange(101)
     
-    assert mtr._mean(obs, circular=True) == 0.5
+    assert mtr._mean(obs, circular=True) == pytest.approx(50.0)
 
 def test_mae_circular():
     obs = np.arange(100)
@@ -35,4 +36,4 @@ def test_urmse_circular():
     obs = np.arange(100)
     mod = obs + 1.0
 
-    assert mtr.urmse(obs, mod, circular=True) == 1.0
+    assert mtr.urmse(obs, mod, circular=True) == 0.0
