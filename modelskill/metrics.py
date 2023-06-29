@@ -60,7 +60,42 @@ import warnings
 import numpy as np
 
 
-def bias(obs, model) -> float:
+def _residual(obs: np.ndarray, model: np.ndarray, circular=False) -> np.ndarray:
+    """Residuals
+
+    .. math:: res_i = model_i - obs_i
+
+    Range: :math:`(-\\infty, \\infty)`
+    """
+    assert obs.size == model.size
+    resi = model.ravel() - obs.ravel()
+    if circular:
+        # alternative:
+        # np.rad2deg(np.arctan2(np.sin(np.deg2rad(model - obs)), 
+        #                          np.cos(np.deg2rad(model - obs))))
+        resi[resi > 180] -= 360
+        resi[resi < -180] += 360
+    return resi
+
+def _mean(vec: np.ndarray, circular: bool=False) -> float:
+    """ mean of array"""
+    if circular:
+        return np.rad2deg(np.arctan2(np.mean(np.sin(np.deg2rad(vec))),
+                                 np.mean(np.cos(np.deg2rad(vec)))))
+    else:
+        return np.mean(vec)
+
+def _std(vec: np.ndarray, circular: bool=False) -> float:
+    """ std of array"""
+    if circular:
+        angles_rad = np.deg2rad(vec)
+        R = np.hypot(np.mean(np.cos(angles_rad)), np.mean(np.sin(angles_rad)))
+        circular_std = np.sqrt(-2 * np.log(R))
+        return np.rad2deg(circular_std)
+    else:
+        return np.std(vec)
+
+def bias(obs, model, circular=False) -> float:
     """Bias (mean error)
 
     .. math::
@@ -69,11 +104,10 @@ def bias(obs, model) -> float:
     Range: :math:`(-\\infty, \\infty)`; Best: 0
     """
 
-    assert obs.size == model.size
-    return np.mean(model.ravel() - obs.ravel())
+    return np.mean(_residual(obs, model, circular=circular))
 
 
-def max_error(obs, model) -> float:
+def max_error(obs, model, circular=False) -> float:
     """Max (absolute) error
 
     .. math::
@@ -82,18 +116,16 @@ def max_error(obs, model) -> float:
     Range: :math:`[0, \\infty)`; Best: 0
     """
 
-    assert obs.size == model.size
-    return np.max(np.abs(model.ravel() - obs.ravel()))
+    return np.max(np.abs(_residual(obs, model, circular=circular)))
 
 
-def mae(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
+def mae(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None, circular: bool = False) -> float:
     """alias for mean_absolute_error"""
-    assert obs.size == model.size
-    return mean_absolute_error(obs, model, weights)
+    return mean_absolute_error(obs, model, weights, circular=circular)
 
 
 def mean_absolute_error(
-    obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None
+    obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None, circular:bool=False
 ) -> float:
     """Mean Absolute Error (MAE)
 
@@ -102,19 +134,16 @@ def mean_absolute_error(
 
     Range: :math:`[0, \\infty)`; Best: 0
     """
-    assert obs.size == model.size
-
-    error = np.average(np.abs(model.ravel() - obs.ravel()), weights=weights)
-
-    return error
+    resi = _residual(obs, model, circular=circular)
+    return np.average(np.abs(resi), weights=weights)
 
 
-def mape(obs: np.ndarray, model: np.ndarray) -> float:
+def mape(obs: np.ndarray, model: np.ndarray, circular:bool = False) -> float:
     """alias for mean_absolute_percentage_error"""
-    return mean_absolute_percentage_error(obs, model)
+    return mean_absolute_percentage_error(obs, model, circular=circular)
 
 
-def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
+def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray, circular:bool = False) -> float:
     """Mean Absolute Percentage Error (MAPE)
 
     .. math::
@@ -131,10 +160,11 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
         warnings.warn("Observation is zero, consider to use another metric than MAPE")
         return np.nan  # TODO is it better to return a large value +inf than NaN?
 
-    return np.mean(np.abs((obs.ravel() - model.ravel()) / obs.ravel())) * 100
+    resi = _residual(obs, model, circular=circular)  
+    return np.mean(np.abs((resi) / obs.ravel())) * 100
 
 
-def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
+def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None, circular: bool = False) -> float:
     """Unbiased Root Mean Squared Error (uRMSE)
 
     .. math::
@@ -151,7 +181,7 @@ def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> flo
     --------
     root_mean_squared_error
     """
-    return root_mean_squared_error(obs, model, weights, unbiased=True)
+    return root_mean_squared_error(obs, model, weights, unbiased=True, circular=circular)
 
 
 def rmse(
@@ -159,9 +189,10 @@ def rmse(
     model: np.ndarray,
     weights: np.ndarray = None,
     unbiased: bool = False,
+    circular: bool = False,
 ) -> float:
     """alias for root_mean_squared_error"""
-    return root_mean_squared_error(obs, model, weights, unbiased)
+    return root_mean_squared_error(obs, model, weights, unbiased, circular=circular)
 
 
 def root_mean_squared_error(
@@ -169,6 +200,7 @@ def root_mean_squared_error(
     model: np.ndarray,
     weights: np.ndarray = None,
     unbiased: bool = False,
+    circular: bool = False,
 ) -> float:
     """Root Mean Squared Error (RMSE)
 
@@ -188,9 +220,7 @@ def root_mean_squared_error(
     Range: :math:`[0, \\infty)`; Best: 0
 
     """
-    assert obs.size == model.size
-
-    residual = obs.ravel() - model.ravel()
+    residual = _residual(obs, model, circular=circular)
     if unbiased:
         residual = residual - residual.mean()
     error = np.sqrt(np.average(residual**2, weights=weights))
@@ -345,7 +375,7 @@ def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
     return corrcoef(obs, model, weights)
 
 
-def corrcoef(obs, model, weights=None) -> float:
+def corrcoef(obs, model, weights=None, circular: bool = False) -> float:
     """Pearson’s Correlation coefficient (CC)
 
     .. math::
@@ -364,7 +394,10 @@ def corrcoef(obs, model, weights=None) -> float:
         return np.nan
 
     if weights is None:
-        return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
+        if circular:
+            pass
+        else:
+            return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
     else:
         C = np.cov(obs.ravel(), model.ravel(), fweights=weights)
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
@@ -678,3 +711,42 @@ def add_metric(
 
     # add the function to the module
     setattr(sys.modules[__name__], metric.__name__, metric)
+
+
+
+
+def test_bias_circular():
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    assert bias(obs, mod, circular=True) == 1.0
+
+def test_max_error_circular():
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    assert max_error(obs, mod, circular=True) == 1.0
+
+def test_mean_circular():
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    assert _mean(obs, mod, circular=True) == 0.5
+
+def test_mae_circular():
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    assert mae(obs, mod, circular=True) == 1.0
+
+def test_rmse_circular():
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    assert rmse(obs, mod, circular=True) == 1.0
+
+def test_urmse_circular():
+    obs = np.arange(100)
+    mod = obs + 1.0
+
+    assert urmse(obs, mod, circular=True) == 1.0
