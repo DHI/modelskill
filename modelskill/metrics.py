@@ -80,6 +80,7 @@ def _residual(obs: np.ndarray, model: np.ndarray, circular=False) -> np.ndarray:
 def _mean(vec: np.ndarray, circular: bool=False) -> float:
     """ mean of array"""
     if circular:
+        # alternative: scipy.stats.circmean
         return np.rad2deg(np.arctan2(np.mean(np.sin(np.deg2rad(vec))),
                                  np.mean(np.cos(np.deg2rad(vec)))))
     else:
@@ -88,6 +89,7 @@ def _mean(vec: np.ndarray, circular: bool=False) -> float:
 def _std(vec: np.ndarray, circular: bool=False) -> float:
     """ std of array"""
     if circular:
+        # alternative: scipy.stats.circstd (radians)
         angles_rad = np.deg2rad(vec)
         R = np.hypot(np.mean(np.cos(angles_rad)), np.mean(np.sin(angles_rad)))
         circular_std = np.sqrt(-2 * np.log(R))
