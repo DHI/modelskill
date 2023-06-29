@@ -22,7 +22,13 @@ def test_std_circular_same():
 def test_std_circular_close():
     # For all angles close to each other, the standard deviation should be low
     obs = np.array([40, 45, 50, 45])
-    assert mtr._std(obs, circular=True) == pytest.approx(3.5, 0.1)
+    assert mtr._std(obs, circular=True) == pytest.approx(3.54, 0.1)
+
+def test_std_circular_half_circle():
+    # For angles distributed evenly over half a circle, 
+    # the standard deviation should be close to 51.96 degrees
+    obs = np.array([0, 45, 90, 135, 180])
+    assert mtr._std(obs, circular=True) == pytest.approx(69.14, 0.01)
 
 def test_bias_circular():
     obs = np.arange(100)
