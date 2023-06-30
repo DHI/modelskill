@@ -10,6 +10,7 @@ import os
 from typing import Optional, Union
 import numpy as np
 import pandas as pd
+import pandera as pa
 import mikeio
 from copy import deepcopy
 
@@ -322,10 +323,10 @@ class TrackObservation(Observation):
         self,
         data,
         *,
-        item: int = None,
-        name: str = None,
-        x_item=0,
-        y_item=1,
+        item: Optional[int] = None,
+        name: Optional[str] = None,
+        x_item: Union[int, str] = 0,
+        y_item: Union[int, str] = 1,
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
     ):
@@ -338,6 +339,7 @@ class TrackObservation(Observation):
             df_items = df.columns.to_list()
             items = self._parse_track_items(df_items, x_item, y_item, item)
             df = df.iloc[:, items].copy()
+
         elif isinstance(data, str):
             assert os.path.exists(data)
             self._filename = data
@@ -365,19 +367,20 @@ class TrackObservation(Observation):
         if not df.index.is_unique:
             df.index = make_unique_index(df.index, offset_duplicates=offset_duplicates)
 
-        # TODO is this needed elsewhere?
-        # make sure location columns are named x and y
-        if isinstance(x_item, str):
-            old_x_name = x_item
-        else:
-            old_x_name = df.columns[x_item]
+        # columns are reorded above, so we only need to rename them here
+        df.columns = ["x", "y", "value"]
 
-        if isinstance(y_item, str):
-            old_y_name = y_item
-        else:
-            old_y_name = df.columns[y_item]
+        # validate the dataframe using pandera, should this be done earlier?
+        schema = pa.DataFrameSchema(
+            {
+                "x": pa.Column(pa.Float, nullable=False, coerce=True),
+                "y": pa.Column(pa.Float, nullable=False, coerce=True),
+                "value": pa.Column(pa.Float, nullable=True, coerce=True),
+            },
+            index=pa.Index(pa.DateTime),
+        )
 
-        df = df.rename(columns={old_x_name: "x", old_y_name: "y"})
+        df = schema.validate(df)
 
         super().__init__(
             name=name,

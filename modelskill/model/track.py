@@ -15,7 +15,7 @@ class TrackModelResult(ModelResultBase):
 
     Parameters
     ----------
-    data : types.UnstructuredType
+    data : types.TrackType
         the input data or file path
     name : Optional[str], optional
         The name of the model result,
@@ -24,9 +24,9 @@ class TrackModelResult(ModelResultBase):
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
     x_item : Optional[Union[str, int]], optional
-        Item of the first coordinate of positions, by default None
+        Item of the first coordinate of positions, by default 0
     y_item : Optional[Union[str, int]], optional
-        Item of the second coordinate of positions, by default None
+        Item of the second coordinate of positions, by default 1
     quantity : Optional[str], optional
         A string to identify the quantity, by default None
     """
@@ -59,7 +59,7 @@ class TrackModelResult(ModelResultBase):
             raise ValueError("Could not construct TrackModelResult from provided data")
         items = utils._parse_track_items(item_names, x_item, y_item, item)
         item = items[-1]
-        item, idx = utils.get_item_name_and_idx(item_names, item)
+        item, _ = utils.get_item_name_and_idx(item_names, item)
         name = name or item
 
         # select relevant items and convert to dataframe

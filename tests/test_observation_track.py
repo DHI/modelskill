@@ -88,7 +88,7 @@ def test_trackobservation_item_csv():
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o1 = TrackObservation(df, item=-1)
     assert o1.n_points == 1115
-    assert o1.data.columns[-1] == "wind_speed"
+    assert o1.data.columns[-1] == "value"
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o2 = TrackObservation(df, item="significant_wave_height")
@@ -114,7 +114,10 @@ def test_trackobservation_x_y_item(c2):
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o1 = TrackObservation(df, item=-1, x_item="lon", y_item="lat")
     assert o1.n_points == 1115
-    assert o1.data.columns[-1] == "wind_speed"
+    assert o1.data.columns[-1] == "value"
+    assert o1.data.value.values[0] == pytest.approx(6.0999999046)
+    assert o1.data.x.values[0] == pytest.approx(8.757272)
+    assert o1.data.y.values[0] == pytest.approx(53.926136)
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         o2 = TrackObservation(df, item="surface_elevation", x_item=2, y_item=0)
