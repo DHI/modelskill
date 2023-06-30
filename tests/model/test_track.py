@@ -81,8 +81,13 @@ def test_track_df_default_items(track_df):
     # Which columns are used for position, lon and lat?
     # will default to 0,1,2 (bad idea in this case)
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        mr0 = ModelResult(df, gtype="track")
+        mr0 = TrackModelResult(df, x_item="lon", y_item="lat", item="surface_elevation")
     assert mr0.data.columns[0] == "x"  # has been renamed
+
+    assert mr0.data.x.values[0] == pytest.approx(8.757272)
+    assert mr0.data.y.values[0] == pytest.approx(53.926136)
+    assert mr0.data.surface_elevation.values[0] == pytest.approx(1.6449)
+
     # assert np.all(mr0.data.values == df.dropna().values)
     # assert np.all(mr0.data["x"].values == df["surface_elevation"].values)
     # assert np.all(mr0.data["lat"].values == df["lat"].values)
