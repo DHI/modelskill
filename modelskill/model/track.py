@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Union, get_args, Optional
 import pandas as pd
+import pandera as pa
 
 import mikeio
 
@@ -67,6 +68,19 @@ class TrackModelResult(ModelResultBase):
             data = data.to_dataframe()
 
         data = data.rename(columns={items[0]: "x", items[1]: "y"})
+
+        # validate the dataframe using pandera
+        schema = pa.DataFrameSchema(
+            {
+                "x": pa.Column(pa.Float, nullable=False, coerce=True),
+                "y": pa.Column(pa.Float, nullable=False, coerce=True),
+                item: pa.Column(pa.Float, nullable=True, coerce=True),
+            },
+            index=pa.Index(pa.DateTime),
+        )
+
+        data = schema.validate(data)
+
         data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
 
         super().__init__(data=data, name=name, quantity=quantity)
