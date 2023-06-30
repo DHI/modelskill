@@ -11,6 +11,7 @@ version="1.0.dev2"
 dependencies = [
     "numpy",
     "pandas",
+    "pandera",
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",
