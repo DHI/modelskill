@@ -76,14 +76,20 @@ skill assessment.
 
 The primary comparer methods are:
 
--   [skill()](api.html#modelskill.comparison.ComparerCollection.skill)
-    which returns a pandas dataframe with the skill scores
--   [scatter()](api.html#modelskill.comparison.ComparerCollection.scatter)
-    which shows a scatter density plot of the data
+- [skill()](api.html#modelskill.comparison.ComparerCollection.skill)
+  which returns a pandas dataframe with the skill scores
+- various plot methods of the comparer objects
+    * `plot.scatter()`
+    * `plot.timeseries()`
+    * `plot.kde()`
+    * `plot.qq()`
+    * `plot.hist()`
 
 #### Filtering
 
-Both methods allow filtering of the data in several ways:
+In order to select only a subset of the data for analysis, the comparer has a `sel()` method which returns a new comparer with the selected data. 
+
+This method allow filtering of the data in several ways:
 
 -   on `observation` by specifying name or id of one or more
     observations
