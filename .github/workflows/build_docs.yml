@@ -1,9 +1,9 @@
-name: Publish documentation
+name: Build documentation (don't publish)
 
 on:
   push:
-    branches:    
-      - main
+    pull_request:
+      branches: [ main ]
 
 jobs:
   build:
@@ -25,9 +25,3 @@ jobs:
       run: |
         cd docs
         make html
-    
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs/_build/html
