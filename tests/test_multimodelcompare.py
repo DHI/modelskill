@@ -301,6 +301,12 @@ def test_mm_mean_skill_weights_dict(cc):
 def test_mm_scatter(cc):
 
     with pytest.warns(FutureWarning):
+        cc.scatter(start="2017-10-28")
+
+    with pytest.warns(FutureWarning):
+        cc[0].scatter(start="2017-10-28")
+
+    with pytest.warns(FutureWarning):
         cc.scatter()
 
     # scatter is the default plot
