@@ -19,7 +19,7 @@ The simplified modelskill workflow consists of these four steps:
 
 The model result can be either a dfs0 or a DataFrame.
 
-``` {.python}
+``` python
 import mikeio
 fn_mod = '../tests/testdata/SW/ts_storm_4.dfs0'
 ```
@@ -29,7 +29,7 @@ fn_mod = '../tests/testdata/SW/ts_storm_4.dfs0'
 The observation can be either a dfs0, a DataFrame or a PointObservation
 object.
 
-``` {.python}
+``` python
 fn_obs = '../tests/testdata/SW/eur_Hm0.dfs0'
 ```
 
@@ -39,7 +39,7 @@ The [compare()](api.html#modelskill.connection.compare) method will
 interpolate the modelresult to the time of the observation and return an
 object that can be used for analysis and plotting
 
-``` {.python}
+``` python
 import modelskill
 c = modelskill.compare(fn_obs, fn_mod, mod_item=0)
 ```
@@ -50,19 +50,19 @@ The returned
 [PointComparer](api.html#modelskill.comparison.PointComparer) can make
 scatter plots, skill assessment, time series plots etc.
 
-``` {.python}
+``` python
 >>> c.plot.timeseries()
 ```
 
 ![image](images/ts_plot.png)
 
-``` {.python}
+``` python
 >>> c.plot.scatter()
 ```
 
 ![image](images/scatter_plot.png)
 
-``` {.python}
+``` python
 >>> c.skill()
             n     bias      rmse     urmse       mae        cc        si        r2
 observation

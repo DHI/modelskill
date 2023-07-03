@@ -25,7 +25,7 @@ time series point data. A ModelSkill
 [ModelResult](api.html#modelskill.model.ModelResult) is defined by the
 result file path and a name:
 
-``` {.python}
+``` python
 import modelskill as ms
 mr = ms.ModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", name='HKZN_local', item="Sign. Wave Height")
 ```
@@ -45,7 +45,7 @@ assessment. Two types of observation are available:
 Let\'s assume that we have one PointObservation and one
 TrackObservation:
 
-``` {.python}
+``` python
 hkna = ms.PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
 ```
@@ -60,7 +60,7 @@ further needs to be initialized with it\'s x-, y-position.
 
 ### 3. Connect observations and ModelResults
 
-``` {.python}
+``` python
 cc = ms.compare([hkna, c2], mr)
 ```
 
