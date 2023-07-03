@@ -1,10 +1,10 @@
-Getting started {#getting_started}
+Getting started
 ===============
 
 This page describes the typical ModelSkill workflow for comparing model
 results and observations. If you just need a simple one-to-one time
 series comparison, see the [simple time series
-comparison](simple_compare.html).
+comparison](simple-compare).
 
 Workflow
 --------
@@ -22,10 +22,10 @@ The typical ModelSkill workflow consists of these five steps:
 The result of a MIKE 21/3 simulation is stored in one or more dfs files.
 The most common formats are .dfsu for distributed data and .dfs0 for
 time series point data. A ModelSkill
-[ModelResult](api.html#modelskill.model.ModelResult) is defined by the
+[ModelResult](modelskill.model.PointModelResult) is defined by the
 result file path and a name:
 
-``` {.python}
+```python
 import modelskill as ms
 mr = ms.ModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", name='HKZN_local', item="Sign. Wave Height")
 ```
@@ -39,13 +39,13 @@ created. The data will be read later.
 The next step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
 
--   [PointObservation](api.html#modelskill.observation.PointObservation)
--   [TrackObservation](api.html#modelskill.observation.TrackObservation)
+-   [PointObservation](PointObservation)
+-   [TrackObservation](TrackObservation)
 
 Let\'s assume that we have one PointObservation and one
 TrackObservation:
 
-``` {.python}
+```python
 hkna = ms.PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
 ```
@@ -60,12 +60,12 @@ further needs to be initialized with it\'s x-, y-position.
 
 ### 3. Connect observations and ModelResults
 
-``` {.python}
+```python
 cc = ms.compare([hkna, c2], mr)
 ```
 
 This method returns a
-[ComparerCollection](api.html#modelskill.comparison.ComparerCollection)
+[ComparerCollection](modelskill.comparison.ComparerCollection)
 for further analysis and plotting.
 
 ### 4. Do analysis, plotting, etc with a Comparer
@@ -76,7 +76,7 @@ skill assessment.
 
 The primary comparer methods are:
 
-- [skill()](api.html#modelskill.comparison.ComparerCollection.skill)
+- [skill()](ComparerCollection.skill)
   which returns a pandas dataframe with the skill scores
 - various plot methods of the comparer objects
     * `plot.scatter()`
