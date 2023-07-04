@@ -61,12 +61,7 @@ import numpy as np
 
 
 def _residual(obs: np.ndarray, model: np.ndarray, circular=False) -> np.ndarray:
-    """Residuals
-
-    .. math:: res_i = model_i - obs_i
-
-    Range: :math:`(-\\infty, \\infty)`
-    """
+    """Residuals: model minus obs"""
     assert obs.size == model.size
     resi = model.ravel() - obs.ravel()
     if circular:
@@ -78,7 +73,7 @@ def _residual(obs: np.ndarray, model: np.ndarray, circular=False) -> np.ndarray:
     return resi
 
 def _mean(vec: np.ndarray, circular: bool=False) -> float:
-    """ mean of array"""
+    """Mean of array"""
     if circular:
         # alternative: scipy.stats.circmean
         return np.rad2deg(np.arctan2(np.mean(np.sin(np.deg2rad(vec))),
@@ -87,7 +82,7 @@ def _mean(vec: np.ndarray, circular: bool=False) -> float:
         return np.mean(vec)
 
 def _std(vec: np.ndarray, circular: bool=False) -> float:
-    """ std of array"""
+    """Std of array"""
     if circular:
         # alternative: scipy.stats.circstd (radians)
         angles_rad = np.deg2rad(vec)
