@@ -92,6 +92,7 @@ def _std(vec: np.ndarray, circular: bool=False) -> float:
         # alternative: scipy.stats.circstd (radians)
         angles_rad = np.deg2rad(vec)
         R = np.hypot(np.mean(np.cos(angles_rad)), np.mean(np.sin(angles_rad)))
+        R = min(R, 1)  # ensure R is not slightly more than 1
         circular_std = np.sqrt(-2 * np.log(R))
         return np.rad2deg(circular_std)
     else:
