@@ -59,3 +59,51 @@ def test_urmse_circular():
     mod = obs + 1.0
 
     assert mtr.urmse(obs, mod, circular=True) == 0.0
+
+
+def test_bias_circular_wraparound():
+    obs = np.array([0, 90, 180, 270])
+    mod = np.array([360, 450, 540, 630])  # Same as obs, but wrapped around
+    assert mtr.bias(obs, mod, circular=True) == 0.0
+
+def test_max_error_circular_opposite():
+    obs = np.array([0, 90, 180, 270])
+    mod = np.array([180, 270, 0, 90])  # Opposite directions
+    assert mtr.max_error(obs, mod, circular=True) == 180.0
+
+def test_mae_circular_perpendicular():
+    obs = np.array([0, 0, 0, 0])
+    mod = np.array([90, 90, 90, 90])  # Perpendicular to obs
+    assert mtr.mae(obs, mod, circular=True) == 90.0
+
+def test_rmse_circular_halfway():
+    obs = np.array([0, 0, 0, 0])
+    mod = np.array([45, 45, 45, 45])  # Halfway between obs and perpendicular
+    assert mtr.rmse(obs, mod, circular=True) == 45.0
+
+def test_urmse_circular_scattered():
+    obs = np.array([0, 90, 180, 270])
+    mod = np.array([0, 180, 0, 180])  # Errors are both 0 and 180
+    # URMS error should be less than RMSE because it ignores bias
+    assert mtr.urmse(obs, mod, circular=True) < mtr.rmse(obs, mod, circular=True)
+
+
+def test_max_error_circular_zero():
+    obs = np.array([0, 45, 90, 135, 180])
+    mod = np.array([0, 45, 90, 135, 180])  # Same as obs
+    assert mtr.max_error(obs, mod, circular=True) == 0.0
+
+def test_mae_circular_mirror():
+    obs = np.array([0, 90, 180, 270])
+    mod = np.array([0, -90, 180, -270])  # mirrored across x-axis
+    assert mtr.mae(obs, mod, circular=True) == 90.0
+
+def test_rmse_circular_quadrant():
+    obs = np.array([0, 0, 0, 0])
+    mod = np.array([0, 90, 180, 270])  # Covering each quadrant
+    assert mtr.rmse(obs, mod, circular=True) > 0.0
+
+def test_urmse_circular_constant():
+    obs = np.array([0, 0, 0, 0])
+    mod = np.array([45, 45, 45, 45])  # constant offset
+    assert mtr.urmse(obs, mod, circular=True) == 0.0
