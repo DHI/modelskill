@@ -58,7 +58,7 @@ import sys
 import typing
 import warnings
 import numpy as np
-
+from scipy import stats
 
 def bias(obs, model) -> float:
     """Bias (mean error)
@@ -450,6 +450,27 @@ def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
     )
 
 
+def ev(obs: np.ndarray, model: np.ndarray) -> float:
+    """EV: Explained variation
+
+    EV is the explained variation and measures the proportion [0 - 1] to which the model accounts for the variation (dispersion) of the observations
+
+   .. math::
+        \\frac{ \\sum_{i=1}^n (obs_i - \\overline{obs})^2 - \\sum_{i=1}^n \\left( (obs_i - \\overline{obs}) - (model_i - \\overline{model}) \\right)^2}{\\sum_{i=1}^n (obs_i - \\overline{obs})^2}
+    
+    Range: [0, 1]; Best: 1
+
+    """
+
+    assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
+
+    nominator = np.sum( (obs.ravel()-obs.mean())**2 )-np.sum( ( (obs.ravel()-obs.mean()) - (model.ravel()-model.mean()) )**2 )
+    denominator = np.sum( (obs.ravel()-obs.mean())**2 )
+
+    return nominator / denominator
+
 def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     """Willmott's Index of Agreement
 
@@ -678,3 +699,162 @@ def add_metric(
 
     # add the function to the module
     setattr(sys.modules[__name__], metric.__name__, metric)
+
+
+def pr(obs: np.ndarray, model: np.ndarray) -> float:
+    """PR: Peak Ratio
+
+    PR is the ratio of the mean of the identified peaks in the model / identified peaks in the measurements
+
+    .. math::
+            \\frac{\\sum_{i=1}^{N_{peak}} (model_i)}{\\sum_{i=1}^{N_{peak}} (obs_i)}
+
+    Range: [0, inf]; Best: 1.0
+
+    """
+
+    assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
+    time=obs.index
+    #Calculate number of years
+    dt_int=time[1:].values-time[0:-1].values
+    dt_int_mode=float(stats.mode(dt_int,keepdims=False)[0])/1e9  #in seconds
+    N_years=dt_int_mode/24/3600/365.25*len(time)
+    found_peaks=[]
+    for data in [obs,model]:
+        peak_index,AAP= _partial_duration_series(time,data)
+        peaks=data[peak_index]
+        peaks_sorted=peaks.sort_values(ascending=False)
+        found_peaks.append( peaks_sorted[0 : max(1, min(round(AAP*N_years),np.sum(peaks)))])
+    found_peaks_obs=found_peaks[0]  
+    found_peaks_mod=found_peaks[1]  
+
+    return np.mean(found_peaks_mod) / np.mean(found_peaks_obs) 
+
+def _partial_duration_series(time, value, inter_event_time=36, use_inter_event_level=True, inter_event_level=0.7,AAP=2):
+    """
+    Calculate the partial duration series based on the given time and value arrays.
+
+    Parameters:
+        time (array-like)
+            Array of time values.
+        value (array-like) 
+            Array of corresponding values.
+        inter_event_time (float, optional) 
+            Maximum time interval between peaks (default: 36 hours).
+        use_inter_event_level (bool, optional)
+            Flag indicating whether to consider inter-event level (default: True).
+        inter_event_level (float, optional)
+            Inter-event level threshold (default: 0.7).
+        AAP (float, optional) 
+            Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)   
+
+    Returns:
+        tuple: (numpy.ndarray,int) 
+            - Array of booleans indicating the identified peaks in the partial duration series.
+            - Average Annual Peaks per year
+
+    Raises:
+        None
+
+    Notes:
+        - The time values are expected to be a datetime index
+        - The returned array contains True at indices corresponding to peaks in the series.
+    """
+    peak_list = np.zeros(len(time))
+
+    old_peak = -1
+    n = len(time)
+    inter_time = inter_event_time
+    inter_level = 1.0
+    time=np.asarray(time)
+    time = (time-time[0]).astype(float)/1e9/3600 #time index in hours from t0=0
+    
+    for time_step in range(n):
+        if old_peak < 0:
+            old_peak = time_step
+            continue
+
+        distance = time[time_step] - time[old_peak]
+        if distance > inter_time:
+            peak_list[old_peak] = 1
+            old_peak = time_step
+            continue
+
+        peak_val = value[old_peak]
+        step_val = value[time_step]
+        if peak_val < step_val:
+            if time_step != n - 1:
+                distance = time[time_step + 1] - time[time_step]
+                if time_step != n - 1 and distance < inter_time:
+                    if step_val > value[time_step + 1]:
+                        old_peak = time_step
+                else:
+                    old_peak = time_step
+            else:
+                old_peak = time_step
+
+    if peak_list[old_peak] == 0:
+        peak_list[old_peak] = 1
+
+    old_peak = -1
+    for time_step in range(n - 1, -1, -1):
+        if old_peak < 0:
+            old_peak = time_step
+            continue
+
+        distance = time[old_peak] - time[time_step]
+        if distance > inter_time:
+            old_peak = time_step
+            continue
+
+        peak_val = value[old_peak]
+        step_val = value[time_step]
+        if peak_val < step_val:
+            if time_step != 0:
+                distance = time[time_step] - time[time_step - 1]
+                if distance < inter_time:
+                    if step_val > value[time_step]:
+                        peak_list[old_peak] = 0
+                        old_peak = time_step
+                else:
+                    peak_list[old_peak] = 0
+                    old_peak = time_step
+            else:
+                peak_list[old_peak] = 0
+                old_peak = time_step
+        elif peak_val == step_val and peak_list[time_step] == 1:
+            peak_list[old_peak] = 0
+            old_peak = time_step
+        else:
+            peak_list[time_step] = 0
+
+    peak_list[old_peak] = 1
+
+    if use_inter_event_level:
+        inter_level = inter_event_level
+
+    i = 0
+    while i < n:
+        minimum = 1.0e99
+        while i < n and peak_list[i] == 0:
+            if value[i] < minimum:
+                minimum = value[i]
+            i += 1
+
+        if i < n and peak_list[i] == 1:
+            x1 = value[old_peak]
+            x2 = value[i]
+            distance = time[i] - time[old_peak]
+
+            if distance > inter_time and (not use_inter_event_level or minimum < inter_level * min(x1, x2)):
+                old_peak = i
+            else:
+                if x1 > x2:
+                    peak_list[i] = 0
+                else:
+                    peak_list[old_peak] = 0
+                    old_peak = i
+        i += 1
+    return peak_list.astype(bool),AAP
