@@ -240,6 +240,10 @@ def _extract_from_models(obs, mod: List[protocols.ModelResult]) -> List[pd.DataF
             mr = mr.extract(obs)
 
         df = mr.data
+
+        # TODO is this robust enough?
+        old_item = df.columns.values[-1]
+        df = df.rename(columns={old_item: mr.name})
         if (df is not None) and (len(df) > 0):
             df_model.append(df)
         else:
