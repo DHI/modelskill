@@ -16,6 +16,7 @@ dependencies = [
     "xarray",
     "markdown",
     "jinja2",
+    "scipy",
 ]
 
 authors = [
