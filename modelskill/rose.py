@@ -8,13 +8,8 @@ from matplotlib.offsetbox import AnchoredText
 
 
 def wind_rose(
-    df1,
-    mag1,
-    dir1,
+    data,
     mag_step=None,
-    df2=None,
-    mag2=None,
-    dir2=None,
     ax=None,
     dir_step=30,
     calm_threshold=None,
@@ -34,12 +29,8 @@ def wind_rose(
 
     """Function for plotting Wave, Wind or Current roses with Calms.
     Parameters:
-        df1: dataframe
-            pandas DataFrame with the data
-        mag: str
-            name of the magnitude vector in data
-        dir1: str
-            name of the dir1 vector in data (in degrees)
+        data: array-like
+            array with 2 or 4 columns
         mag_step: float, (optional) Default= None
             discretization for magnitude (delta_r, in radial direction )
         ax: Matplotlib axis Default= None
@@ -75,15 +66,15 @@ def wind_rose(
     Returns
         ax: Matplotlib axes
     """
-    data_1 = df1.copy()
-    if df2 is None:
-        data_2 = data_1.copy()
-        mag2 = mag1
-        dir2 = dir1
-        second_rose = False
-    else:
-        data_2 = df2.copy()
+    cols = data.columns.values
+    data_1 = data.iloc[:, 0:2].copy()
+    if data.shape[1] == 4:
         second_rose = True
+        data_2 = data.iloc[:, 2:4].copy()
+        mag1, dir1, mag2, dir2 = cols
+    else:
+        second_rose = False
+        mag1, dir1 = cols
 
     # Magnitude bins
     ## Check if there's double counting in inputs
@@ -116,7 +107,7 @@ def wind_rose(
             mag_step = np.round(data_1[mag1].max() / 16, 1)
             if mag_step == 0:
                 mag_step = np.round(data_1[mag1].max() / 16, 2)
-            if df2 is not None:
+            if second_rose:
                 mag_step2 = np.round(data_2[mag2].max() / 16, 1)
                 if mag_step2 == 0:
                     mag_step2 = np.round(data_2[mag2].max() / 16, 2)
@@ -129,7 +120,7 @@ def wind_rose(
 
         # Auto find max
         magmax = data_1[mag1].max()
-        if df2 is not None:
+        if second_rose:
             magmax2 = data_2[mag2].max()
             magmax = max(magmax, magmax2)
         # Bins
