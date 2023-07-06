@@ -1,0 +1,986 @@
+
+
+<!DOCTYPE html>
+
+
+<html >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>modelskill.metrics &#8212; ModelSkill  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/modelskill/metrics';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="None"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/modelskill.svg" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/modelskill.svg" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simple-compare.html">Simple time series comparison</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vision.html">Vision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Documentation</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for modelskill.metrics</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;The `metrics` module contains different skill metrics for evaluating the </span>
+<span class="sd">difference between a model and an observation. </span>
+
+<span class="sd">* bias</span>
+<span class="sd">* max_error</span>
+<span class="sd">* root_mean_squared_error (rmse)    </span>
+<span class="sd">* urmse</span>
+<span class="sd">* mean_absolute_error (mae)</span>
+<span class="sd">* mean_absolute_percentage_error (mape)</span>
+<span class="sd">* nash_sutcliffe_efficiency (nse)</span>
+<span class="sd">* kling_gupta_efficiency (kge)</span>
+<span class="sd">* r2 (r2=nse)</span>
+<span class="sd">* model_efficiency_factor (mef)</span>
+<span class="sd">* scatter_index (si)</span>
+<span class="sd">* corrcoef (cc)</span>
+<span class="sd">* spearmanr (rho)</span>
+<span class="sd">* lin_slope</span>
+<span class="sd">* hit_ratio</span>
+
+<span class="sd">The names in parentheses are shorthand aliases for the different metrics.</span>
+
+<span class="sd">Examples</span>
+<span class="sd">--------</span>
+<span class="sd">&gt;&gt;&gt; obs = np.array([0.3, 2.1, -1.0])</span>
+<span class="sd">&gt;&gt;&gt; mod = np.array([0.0, 2.3, 1.0])</span>
+<span class="sd">&gt;&gt;&gt; bias(obs, mod)</span>
+<span class="sd">0.6333333333333332</span>
+<span class="sd">&gt;&gt;&gt; max_error(obs, mod)</span>
+<span class="sd">2.0</span>
+<span class="sd">&gt;&gt;&gt; rmse(obs, mod)</span>
+<span class="sd">1.173314393786536</span>
+<span class="sd">&gt;&gt;&gt; urmse(obs, mod)</span>
+<span class="sd">0.9877021593352702</span>
+<span class="sd">&gt;&gt;&gt; mae(obs, mod)</span>
+<span class="sd">0.8333333333333331</span>
+<span class="sd">&gt;&gt;&gt; mape(obs, mod)</span>
+<span class="sd">103.17460317460316</span>
+<span class="sd">&gt;&gt;&gt; nse(obs, mod)</span>
+<span class="sd">0.14786795048143053</span>
+<span class="sd">&gt;&gt;&gt; r2(obs, mod)</span>
+<span class="sd">0.14786795048143053</span>
+<span class="sd">&gt;&gt;&gt; mef(obs, mod)</span>
+<span class="sd">0.9231099877688299</span>
+<span class="sd">&gt;&gt;&gt; si(obs, mod)</span>
+<span class="sd">0.8715019052958266</span>
+<span class="sd">&gt;&gt;&gt; spearmanr(obs, mod)</span>
+<span class="sd">0.5</span>
+<span class="sd">&gt;&gt;&gt; cc(obs, mod)</span>
+<span class="sd">0.637783218973691</span>
+<span class="sd">&gt;&gt;&gt; lin_slope(obs, mod)</span>
+<span class="sd">0.4724896836313617</span>
+<span class="sd">&gt;&gt;&gt; willmott(obs, mod)</span>
+<span class="sd">0.7484604452865941</span>
+<span class="sd">&gt;&gt;&gt; hit_ratio(obs, mod, a=0.5)</span>
+<span class="sd">0.6666666666666666</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="bias"><a class="viewcode-back" href="../../api.html#modelskill.metrics.bias">[docs]</a><span class="k">def</span> <span class="nf">bias</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bias (mean error)</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        bias=\\frac{1}{n}\\sum_{i=1}^n (model_i - obs_i)</span>
+
+<span class="sd">    Range: :math:`(-\\infty, \\infty)`; Best: 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="max_error"><a class="viewcode-back" href="../../api.html#modelskill.metrics.max_error">[docs]</a><span class="k">def</span> <span class="nf">max_error</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Max (absolute) error</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        max_{error} = max(|model_i - obs_i|)</span>
+
+<span class="sd">    Range: :math:`[0, \\infty)`; Best: 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span></div>
+
+
+<div class="viewcode-block" id="mae"><a class="viewcode-back" href="../../api.html#modelskill.metrics.mae">[docs]</a><span class="k">def</span> <span class="nf">mae</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for mean_absolute_error&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">return</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mean_absolute_error"><a class="viewcode-back" href="../../api.html#modelskill.metrics.mean_absolute_error">[docs]</a><span class="k">def</span> <span class="nf">mean_absolute_error</span><span class="p">(</span>
+    <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mean Absolute Error (MAE)</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        MAE=\\frac{1}{n}\\sum_{i=1}^n|model_i - obs_i|</span>
+
+<span class="sd">    Range: :math:`[0, \\infty)`; Best: 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()),</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">error</span></div>
+
+
+<div class="viewcode-block" id="mape"><a class="viewcode-back" href="../../api.html#modelskill.metrics.mape">[docs]</a><span class="k">def</span> <span class="nf">mape</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for mean_absolute_percentage_error&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mean_absolute_percentage_error</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mean_absolute_percentage_error"><a class="viewcode-back" href="../../api.html#modelskill.metrics.mean_absolute_percentage_error">[docs]</a><span class="k">def</span> <span class="nf">mean_absolute_percentage_error</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mean Absolute Percentage Error (MAPE)</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        MAPE=\\frac{1}{n}\\sum_{i=1}^n\\frac{|model_i - obs_i|}{obs_i}*100</span>
+
+<span class="sd">    Range: :math:`[0, \\infty)`; Best: 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">obs</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Observation is zero, consider to use another metric than MAPE&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>  <span class="c1"># TODO is it better to return a large value +inf than NaN?</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span> <span class="o">*</span> <span class="mi">100</span></div>
+
+
+<div class="viewcode-block" id="urmse"><a class="viewcode-back" href="../../api.html#modelskill.metrics.urmse">[docs]</a><span class="k">def</span> <span class="nf">urmse</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unbiased Root Mean Squared Error (uRMSE)</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        res_i = model_i - obs_i</span>
+
+<span class="sd">        res_{u,i} = res_i - \\overline {res}</span>
+
+<span class="sd">        uRMSE = \\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}</span>
+
+<span class="sd">    Range: :math:`[0, \\infty)`; Best: 0</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    root_mean_squared_error</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">unbiased</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="rmse"><a class="viewcode-back" href="../../api.html#modelskill.metrics.rmse">[docs]</a><span class="k">def</span> <span class="nf">rmse</span><span class="p">(</span>
+    <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">unbiased</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for root_mean_squared_error&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">unbiased</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="root_mean_squared_error"><a class="viewcode-back" href="../../api.html#modelskill.metrics.root_mean_squared_error">[docs]</a><span class="k">def</span> <span class="nf">root_mean_squared_error</span><span class="p">(</span>
+    <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">unbiased</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Root Mean Squared Error (RMSE)</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        res_i = model_i - obs_i</span>
+
+<span class="sd">        RMSE=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_i^2}</span>
+
+<span class="sd">    Unbiased version:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        res_{u,i} = res_i - \\overline {res}</span>
+
+<span class="sd">        uRMSE=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}</span>
+
+<span class="sd">    Range: :math:`[0, \\infty)`; Best: 0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">unbiased</span><span class="p">:</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">-</span> <span class="n">residual</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">residual</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">error</span></div>
+
+
+<div class="viewcode-block" id="nse"><a class="viewcode-back" href="../../api.html#modelskill.metrics.nse">[docs]</a><span class="k">def</span> <span class="nf">nse</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for nash_sutcliffe_efficiency&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">nash_sutcliffe_efficiency</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="nash_sutcliffe_efficiency"><a class="viewcode-back" href="../../api.html#modelskill.metrics.nash_sutcliffe_efficiency">[docs]</a><span class="k">def</span> <span class="nf">nash_sutcliffe_efficiency</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Nash-Sutcliffe Efficiency (NSE)</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        NSE = 1 - \\frac {\\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}</span>
+<span class="sd">                       {\\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}</span>
+
+<span class="sd">    Range: :math:`(-\\infty, 1]`; Best: 1</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    r2 = nash_sutcliffe_efficiency</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Nash, J. E.; Sutcliffe, J. V. (1970). &quot;River flow forecasting through conceptual models part I — A discussion of principles&quot;. Journal of Hydrology. 10 (3): 282–290.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">error</span></div>
+
+
+<div class="viewcode-block" id="kling_gupta_efficiency"><a class="viewcode-back" href="../../api.html#modelskill.metrics.kling_gupta_efficiency">[docs]</a><span class="k">def</span> <span class="nf">kling_gupta_efficiency</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Kling-Gupta Efficiency (KGE)</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        KGE = 1 - \\sqrt{(r-1)^2 + \\left(\\frac{\\sigma_{mod}}{\\sigma_{obs}} - 1\\right)^2 +</span>
+<span class="sd">                                   \\left(\\frac{\\mu_{mod}}{\\mu_{obs}} - 1\\right)^2 }</span>
+
+<span class="sd">    where :math:`r` is the pearson correlation coefficient, :math:`\\mu_{obs},\\mu_{mod}` and :math:`\\sigma_{obs},\\sigma_{mod}` is the mean and standard deviation of observations and model.</span>
+
+<span class="sd">    Range: :math:`(-\\infty, 1]`; Best: 1</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Gupta, H. V., Kling, H., Yilmaz, K. K. and Martinez, G. F., (2009), Decomposition of the mean squared error and NSE performance criteria: Implications for improving hydrological modelling, J. Hydrol., 377(1-2), 80-91</span>
+
+<span class="sd">    Knoben, W. J. M., Freer, J. E., and Woods, R. A. (2019) Technical note: Inherent benchmark or not? Comparing Nash–Sutcliffe and Kling–Gupta efficiency scores, Hydrol. Earth Syst. Sci., 23, 4323-4331</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">obs</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">1e-12</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">corrcoef</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="kge"><a class="viewcode-back" href="../../api.html#modelskill.metrics.kge">[docs]</a><span class="k">def</span> <span class="nf">kge</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for kling_gupta_efficiency&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">kling_gupta_efficiency</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="r2"><a class="viewcode-back" href="../../api.html#modelskill.metrics.r2">[docs]</a><span class="k">def</span> <span class="nf">r2</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coefficient of determination (R2)</span>
+
+<span class="sd">    Pronounced &#39;R-squared&#39;; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        R^2 = 1 - \\frac{\\sum_{i=1}^n (model_i - obs_i)^2}</span>
+<span class="sd">                    {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}</span>
+
+<span class="sd">    Range: :math:`(-\\infty, 1]`; Best: 1</span>
+
+<span class="sd">    Note</span>
+<span class="sd">    ----</span>
+<span class="sd">    r2 = nash_sutcliffe_efficiency</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; obs = np.array([1.0,1.1,1.2,1.3,1.4])</span>
+<span class="sd">    &gt;&gt;&gt; model = np.array([1.09, 1.16, 1.3 , 1.38, 1.49])</span>
+<span class="sd">    &gt;&gt;&gt; r2(obs,model)</span>
+<span class="sd">    0.6379999999999998</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">SSr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">residual</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">SSt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">obs</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">SSr</span> <span class="o">/</span> <span class="n">SSt</span></div>
+
+
+<div class="viewcode-block" id="mef"><a class="viewcode-back" href="../../api.html#modelskill.metrics.mef">[docs]</a><span class="k">def</span> <span class="nf">mef</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for model_efficiency_factor&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">model_efficiency_factor</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="model_efficiency_factor"><a class="viewcode-back" href="../../api.html#modelskill.metrics.model_efficiency_factor">[docs]</a><span class="k">def</span> <span class="nf">model_efficiency_factor</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Model Efficiency Factor (MEF)</span>
+
+<span class="sd">    Scale independent RMSE, standardized by Stdev of observations</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}}</span>
+<span class="sd">                                        {\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(obs_i - \\overline{obs})^2}}=\\sqrt{1-NSE}</span>
+
+<span class="sd">    Range: :math:`[0, \\infty)`; Best: 0</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    nash_sutcliffe_efficiency</span>
+<span class="sd">    root_mean_squared_error</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="k">return</span> <span class="n">rmse</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">std</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="cc"><a class="viewcode-back" href="../../api.html#modelskill.metrics.cc">[docs]</a><span class="k">def</span> <span class="nf">cc</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for corrcoef&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">corrcoef</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="corrcoef"><a class="viewcode-back" href="../../api.html#modelskill.metrics.corrcoef">[docs]</a><span class="k">def</span> <span class="nf">corrcoef</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pearson’s Correlation coefficient (CC)</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        CC = \\frac{\\sum_{i=1}^n (model_i - \\overline{model})(obs_i - \\overline{obs}) }</span>
+<span class="sd">                   {\\sqrt{\\sum_{i=1}^n (model_i - \\overline{model})^2}</span>
+<span class="sd">                    \\sqrt{\\sum_{i=1}^n (obs_i - \\overline{obs})^2} }</span>
+
+<span class="sd">    Range: [-1, 1]; Best: 1</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    np.corrcoef</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">())[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">fweights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">C</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">C</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">C</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="rho"><a class="viewcode-back" href="../../api.html#modelskill.metrics.rho">[docs]</a><span class="k">def</span> <span class="nf">rho</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for spearmanr&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">spearmanr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="spearmanr"><a class="viewcode-back" href="../../api.html#modelskill.metrics.spearmanr">[docs]</a><span class="k">def</span> <span class="nf">spearmanr</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Spearman rank correlation coefficient</span>
+
+<span class="sd">    The rank correlation coefficient is similar to the Pearson correlation coefficient but</span>
+<span class="sd">    applied to ranked quantities and is useful to quantify a monotonous relationship</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        \\rho = \\frac{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})(robs_i - \\overline{robs}) }</span>
+<span class="sd">                      {\\sqrt{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})^2}</span>
+<span class="sd">                       \\sqrt{\\sum_{i=1}^n (robs_i - \\overline{robs})^2} }</span>
+
+<span class="sd">    Range: [-1, 1]; Best: 1</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; obs = np.linspace(-20, 20, 100)</span>
+<span class="sd">    &gt;&gt;&gt; mod = np.tanh(obs)</span>
+<span class="sd">    &gt;&gt;&gt; rho(obs, mod)</span>
+<span class="sd">    0.9999759973116955</span>
+<span class="sd">    &gt;&gt;&gt; spearmanr(obs, mod)</span>
+<span class="sd">    0.9999759973116955</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    corrcoef</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">scipy.stats</span>
+
+    <span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">spearmanr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="si"><a class="viewcode-back" href="../../api.html#modelskill.metrics.si">[docs]</a><span class="k">def</span> <span class="nf">si</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for scatter_index&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">scatter_index</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="scatter_index"><a class="viewcode-back" href="../../api.html#modelskill.metrics.scatter_index">[docs]</a><span class="k">def</span> <span class="nf">scatter_index</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scatter index (SI)</span>
+
+<span class="sd">    Which is the same as the unbiased-RMSE normalized by the absolute mean of the observations.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        \\frac{ \\sqrt{ \\frac{1}{n} \\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2} }</span>
+<span class="sd">        {\\frac{1}{n} \\sum_{i=1}^n | obs_i | }</span>
+
+<span class="sd">    Range: [0, \\infty); Best: 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">-</span> <span class="n">residual</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>  <span class="c1"># unbiased</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">residual</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span></div>
+
+
+<div class="viewcode-block" id="scatter_index2"><a class="viewcode-back" href="../../api.html#modelskill.metrics.scatter_index2">[docs]</a><span class="k">def</span> <span class="nf">scatter_index2</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Alternative formulation of the scatter index (SI)</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        \\sqrt {\\frac{\\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2}</span>
+<span class="sd">        {\\sum_{i=1}^n obs_i^2}}</span>
+
+<span class="sd">    Range: [0, 100]; Best: 0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(((</span><span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">model</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">-</span> <span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="willmott"><a class="viewcode-back" href="../../api.html#modelskill.metrics.willmott">[docs]</a><span class="k">def</span> <span class="nf">willmott</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Willmott&#39;s Index of Agreement</span>
+
+<span class="sd">    A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        willmott = 1 - \\frac{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}</span>
+<span class="sd">                           {\\frac{1}{n} \\sum_{i=1}^n(|model_i - \\overline{obs}| + |obs_i - \\overline{obs}|)^2}</span>
+
+<span class="sd">    Range: [0, 1]; Best: 1</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])</span>
+<span class="sd">    &gt;&gt;&gt; model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])</span>
+<span class="sd">    &gt;&gt;&gt; willmott(obs, model)</span>
+<span class="sd">    0.9501403174479723</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Willmott, C. J. 1981. &quot;On the validation of models&quot;. Physical Geography, 2, 184–194.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="n">nominator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">residual</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">model</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">obs</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">nominator</span> <span class="o">/</span> <span class="n">denominator</span></div>
+
+
+<div class="viewcode-block" id="hit_ratio"><a class="viewcode-back" href="../../api.html#modelskill.metrics.hit_ratio">[docs]</a><span class="k">def</span> <span class="nf">hit_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fraction within obs ± acceptable deviation</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        HR = \\frac{1}{n}\\sum_{i=1}^n I_{|(model_i - obs_i)|} &lt; a</span>
+
+<span class="sd">    Range: [0, 1]; Best: 1</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])</span>
+<span class="sd">    &gt;&gt;&gt; model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])</span>
+<span class="sd">    &gt;&gt;&gt; hit_ratio(obs, model, a=0.05)</span>
+<span class="sd">    0.2857142857142857</span>
+<span class="sd">    &gt;&gt;&gt; hit_ratio(obs, model, a=0.1)</span>
+<span class="sd">    0.8571428571428571</span>
+<span class="sd">    &gt;&gt;&gt; hit_ratio(obs, model, a=0.15)</span>
+<span class="sd">    1.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span> <span class="o">&lt;</span> <span class="n">a</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lin_slope"><a class="viewcode-back" href="../../api.html#modelskill.metrics.lin_slope">[docs]</a><span class="k">def</span> <span class="nf">lin_slope</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="s2">&quot;ols&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slope of the regression line.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        slope = \\frac{\\sum_{i=1}^n (model_i - \\overline {model})(obs_i - \\overline {obs})}</span>
+<span class="sd">                      {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}</span>
+
+<span class="sd">    Range: :math:`(-\\infty, \\infty )`; Best: 1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">return</span> <span class="n">_linear_regression</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">reg_method</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<span class="k">def</span> <span class="nf">_linear_regression</span><span class="p">(</span>
+    <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="s2">&quot;ols&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="k">if</span> <span class="n">reg_method</span> <span class="o">==</span> <span class="s2">&quot;ols&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">linregress</span> <span class="k">as</span> <span class="n">_linregress</span>
+
+        <span class="n">reg</span> <span class="o">=</span> <span class="n">_linregress</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="n">intercept</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">intercept</span>
+        <span class="n">slope</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">slope</span>
+    <span class="k">elif</span> <span class="n">reg_method</span> <span class="o">==</span> <span class="s2">&quot;odr&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">odr</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">odr</span><span class="o">.</span><span class="n">Data</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="n">odr_obj</span> <span class="o">=</span> <span class="n">odr</span><span class="o">.</span><span class="n">ODR</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">odr</span><span class="o">.</span><span class="n">unilinear</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">odr_obj</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+        <span class="n">intercept</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">slope</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Regression method: </span><span class="si">{</span><span class="n">reg_method</span><span class="si">}</span><span class="s2"> not implemented, select &#39;ols&#39; or &#39;odr&#39;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span>
+
+
+<span class="k">def</span> <span class="nf">_std_obs</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">obs</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_std_mod</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+
+<span class="n">METRICS_WITH_DIMENSION</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s2">&quot;urmse&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;bias&quot;</span><span class="p">,</span> <span class="s2">&quot;mae&quot;</span><span class="p">])</span>  <span class="c1"># TODO is this complete?</span>
+
+
+<div class="viewcode-block" id="metric_has_units"><a class="viewcode-back" href="../../api.html#modelskill.metrics.metric_has_units">[docs]</a><span class="k">def</span> <span class="nf">metric_has_units</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a metric has units (dimension).</span>
+
+<span class="sd">    Some metrics are dimensionless, others have the same dimension as the observations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    metric : str or callable</span>
+<span class="sd">        Metric name or function</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+<span class="sd">        True if metric has a dimension, False otherwise</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; metric_has_units(&quot;rmse&quot;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; metric_has_units(&quot;kge&quot;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">metric</span>
+
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">defined_metrics</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Metric </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> not defined. Choose from </span><span class="si">{</span><span class="n">defined_metrics</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">METRICS_WITH_DIMENSION</span></div>
+
+
+<span class="n">NON_METRICS</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s2">&quot;metric_has_units&quot;</span><span class="p">,</span> <span class="s2">&quot;get_metric&quot;</span><span class="p">,</span> <span class="s2">&quot;is_valid_metric&quot;</span><span class="p">,</span> <span class="s2">&quot;add_metric&quot;</span><span class="p">])</span>
+
+
+<span class="n">defined_metrics</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="nb">set</span><span class="p">([</span><span class="n">func</span> <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">()</span> <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">],</span> <span class="n">func</span><span class="p">))])</span>
+    <span class="o">-</span> <span class="n">NON_METRICS</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="is_valid_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.is_valid_metric">[docs]</a><span class="k">def</span> <span class="nf">is_valid_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;Check if a metric is defined.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    metric : str or callable</span>
+<span class="sd">        Metric name or function</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    bool</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; is_valid_metric(&quot;rmse&quot;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; is_valid_metric(&quot;foo&quot;)</span>
+<span class="sd">    False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">metric</span>
+
+    <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">defined_metrics</span></div>
+
+
+<div class="viewcode-block" id="get_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.get_metric">[docs]</a><span class="k">def</span> <span class="nf">get_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a metric function from its name.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">is_valid_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">metric</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">],</span> <span class="n">metric</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Metric </span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2"> not defined. Choose from </span><span class="si">{</span><span class="n">defined_metrics</span><span class="si">}</span><span class="s2"> or use `add_metric` to add a custom metric.&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="add_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.add_metric">[docs]</a><span class="k">def</span> <span class="nf">add_metric</span><span class="p">(</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">],</span> <span class="n">has_units</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds a metric to the metric list. Useful for custom metrics.</span>
+
+<span class="sd">    Some metrics are dimensionless, others have the same dimension as the observations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    metric : str or callable</span>
+<span class="sd">        Metric name or function</span>
+<span class="sd">    has_units : bool</span>
+<span class="sd">        True if metric has a dimension, False otherwise. Default:False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; add_metric(hit_ratio)</span>
+<span class="sd">    &gt;&gt;&gt; add_metric(rmse,True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">defined_metrics</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">has_units</span><span class="p">:</span>
+        <span class="n">METRICS_WITH_DIMENSION</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+
+    <span class="c1"># add the function to the module</span>
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">],</span> <span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span></div>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2021, Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

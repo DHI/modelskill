@@ -1,0 +1,748 @@
+
+
+<!DOCTYPE html>
+
+
+<html >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>modelskill.observation &#8212; ModelSkill  documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/modelskill/observation';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="None"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../_static/modelskill.svg" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="../../_static/modelskill.svg" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../simple-compare.html">Simple time series comparison</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../vision.html">Vision</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Documentation</a></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for modelskill.observation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The `observation` module contains different types of Observation classes for</span>
+<span class="sd">fixed locations (PointObservation), or locations moving in space (TrackObservation).</span>
+
+<span class="sd">Examples</span>
+<span class="sd">--------</span>
+<span class="sd">&gt;&gt;&gt; o1 = PointObservation(&quot;klagshamn.dfs0&quot;, item=0, x=366844, y=6154291, name=&quot;Klagshamn&quot;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">mikeio</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">make_unique_index</span>
+<span class="kn">from</span> <span class="nn">.types</span> <span class="kn">import</span> <span class="n">Quantity</span>
+<span class="kn">from</span> <span class="nn">.timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_item</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">item_str</span><span class="o">=</span><span class="s2">&quot;item&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">+</span> <span class="n">item</span> <span class="k">if</span> <span class="p">(</span><span class="n">item</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="n">item</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">item</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">item</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item_str</span><span class="si">}</span><span class="s2"> is out of range (0, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">items</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">item_str</span><span class="si">}</span><span class="s2"> must be int or string&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">item</span>
+
+
+<span class="k">class</span> <span class="nc">Observation</span><span class="p">(</span><span class="n">TimeSeries</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for observations</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : pd.DataFrame</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        user-defined name, e.g. &quot;Station A&quot;, by default &quot;Observation&quot;</span>
+<span class="sd">    quantity : Optional[Quantity], optional</span>
+<span class="sd">        The quantity of the observation, for validation with model results</span>
+<span class="sd">    weight : float, optional</span>
+<span class="sd">        weighting factor, to be used in weighted skill scores, by default 1.0</span>
+<span class="sd">    color : str, optional</span>
+<span class="sd">        color of the observation in plots, by default &quot;#d62728&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Observation&quot;</span><span class="p">,</span>
+        <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#d62728&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Observation&quot;</span>
+
+        <span class="c1"># TODO move this to TimeSeries?</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Input must have a datetime index! Provided index was </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s2">&quot;100us&quot;</span><span class="p">)</span>  <span class="c1"># 0.0001s accuracy</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s2">&quot;infer&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="s2">&quot;Observed values&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n_points</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of observations&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PointObservation"><a class="viewcode-back" href="../../api.html#modelskill.observation.PointObservation">[docs]</a><span class="k">class</span> <span class="nc">PointObservation</span><span class="p">(</span><span class="n">Observation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for observations of fixed locations</span>
+
+<span class="sd">    Create a PointObservation from a dfs0 file or a pd.DataFrame.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : (str, pd.DataFrame, pd.Series)</span>
+<span class="sd">        dfs0 filename or dataframe with the data</span>
+<span class="sd">    item : (int, str), optional</span>
+<span class="sd">        index or name of the wanted item, by default None</span>
+<span class="sd">    x : float, optional</span>
+<span class="sd">        x-coordinate of the observation point, by default None</span>
+<span class="sd">    y : float, optional</span>
+<span class="sd">        y-coordinate of the observation point, by default None</span>
+<span class="sd">    z : float, optional</span>
+<span class="sd">        z-coordinate of the observation point, by default None</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        user-defined name for easy identification in plots etc, by default file basename</span>
+<span class="sd">    quantity : Quantity, optional</span>
+<span class="sd">        The quantity of the observation, for validation with model results</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; o1 = PointObservation(&quot;klagshamn.dfs0&quot;, item=0, x=366844, y=6154291, name=&quot;Klagshamn&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; o1 = PointObservation(&quot;klagshamn.dfs0&quot;, item=&quot;Water Level&quot;, x=366844, y=6154291)</span>
+<span class="sd">    &gt;&gt;&gt; o1 = PointObservation(df, item=0, x=366844, y=6154291, name=&quot;Klagshamn&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; o1 = PointObservation(df[&quot;Water Level&quot;], x=366844, y=6154291)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Point</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">item</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">z</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_item</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># TODO move this to TimeSeries?</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Observation&quot;</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()[[</span><span class="n">item</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">item</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="n">default_name</span> <span class="o">=</span> <span class="s2">&quot;Observation&quot;</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">item</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;item must be specified (more than one column in dataframe). Available columns: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_item</span> <span class="o">=</span> <span class="n">item</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[[</span><span class="n">item</span><span class="p">]]</span>
+                <span class="n">default_name</span> <span class="o">=</span> <span class="n">item</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">item</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">item</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">+</span> <span class="n">item</span>
+                <span class="n">default_name</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">item</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;item must be int or string&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">default_name</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s2">&quot;.dfs0&quot;</span><span class="p">:</span>
+                <span class="n">df</span><span class="p">,</span> <span class="n">iteminfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_dfs0</span><span class="p">(</span><span class="n">mikeio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">iteminfo</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Only dfs0 files supported&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;input must be str, mikeio.DataArray/Dataset or pandas Series/DataFrame! Given input has type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_unique</span><span class="p">:</span>
+            <span class="c1"># TODO: duplicates_keep=&quot;mean&quot;,&quot;first&quot;,&quot;last&quot;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Time axis has duplicate entries. It must be monotonically increasing.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;PointObservation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, x=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="s2">, y=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="c1"># TODO does this belong here?</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_read_dfs0</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read data from dfs0 file&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfs</span><span class="o">.</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">item_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dfs</span><span class="o">.</span><span class="n">items</span><span class="p">]</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;item needs to be specified (more than one in file). Available items: </span><span class="si">{</span><span class="n">item_names</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">dfs</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">itemInfo</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span><span class="p">,</span> <span class="n">itemInfo</span></div>
+
+
+<div class="viewcode-block" id="TrackObservation"><a class="viewcode-back" href="../../api.html#modelskill.observation.TrackObservation">[docs]</a><span class="k">class</span> <span class="nc">TrackObservation</span><span class="p">(</span><span class="n">Observation</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for observation with locations moving in space, e.g. satellite altimetry</span>
+
+<span class="sd">    The data needs in addition to the datetime of each single observation point also, x and y coordinates.</span>
+
+<span class="sd">    Create TrackObservation from dfs0 or DataFrame</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : (str, pd.DataFrame)</span>
+<span class="sd">        path to dfs0 file or DataFrame with track data</span>
+<span class="sd">    item : (str, int), optional</span>
+<span class="sd">        item name or index of values, by default 2</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        user-defined name for easy identification in plots etc, by default file basename</span>
+<span class="sd">    x_item : (str, int), optional</span>
+<span class="sd">        item name or index of x-coordinate, by default 0</span>
+<span class="sd">    y_item : (str, int), optional</span>
+<span class="sd">        item name or index of y-coordinate, by default 1</span>
+<span class="sd">    offset_duplicates : float, optional</span>
+<span class="sd">        in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001</span>
+
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; o1 = TrackObservation(&quot;track.dfs0&quot;, item=2, name=&quot;c2&quot;)</span>
+
+<span class="sd">    &gt;&gt;&gt; o1 = TrackObservation(&quot;track.dfs0&quot;, item=&quot;wind_speed&quot;, name=&quot;c2&quot;)</span>
+
+<span class="sd">    &gt;&gt;&gt; o1 = TrackObservation(&quot;lon_after_lat.dfs0&quot;, item=&quot;wl&quot;, x_item=1, y_item=0)</span>
+
+<span class="sd">    &gt;&gt;&gt; o1 = TrackObservation(&quot;track_wl.dfs0&quot;, item=&quot;wl&quot;, x_item=&quot;lon&quot;, y_item=&quot;lat&quot;)</span>
+
+<span class="sd">    &gt;&gt;&gt; df = pd.DataFrame(</span>
+<span class="sd">    ...         {</span>
+<span class="sd">    ...             &quot;t&quot;: pd.date_range(&quot;2010-01-01&quot;, freq=&quot;10s&quot;, periods=n),</span>
+<span class="sd">    ...             &quot;x&quot;: np.linspace(0, 10, n),</span>
+<span class="sd">    ...             &quot;y&quot;: np.linspace(45000, 45100, n),</span>
+<span class="sd">    ...             &quot;swh&quot;: [0.1, 0.3, 0.4, 0.5, 0.3],</span>
+<span class="sd">    ...         }</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; df = df.set_index(&quot;t&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; df</span>
+<span class="sd">                        x        y  swh</span>
+<span class="sd">    t</span>
+<span class="sd">    2010-01-01 00:00:00   0.0  45000.0  0.1</span>
+<span class="sd">    2010-01-01 00:00:10   2.5  45025.0  0.3</span>
+<span class="sd">    2010-01-01 00:00:20   5.0  45050.0  0.4</span>
+<span class="sd">    2010-01-01 00:00:30   7.5  45075.0  0.5</span>
+<span class="sd">    2010-01-01 00:00:40  10.0  45100.0  0.3</span>
+<span class="sd">    &gt;&gt;&gt; t1 = TrackObservation(df, name=&quot;fake&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; t1.n_points</span>
+<span class="sd">    5</span>
+<span class="sd">    &gt;&gt;&gt; t1.values</span>
+<span class="sd">    array([0.1, 0.3, 0.4, 0.5, 0.3])</span>
+<span class="sd">    &gt;&gt;&gt; t1.time</span>
+<span class="sd">    DatetimeIndex([&#39;2010-01-01 00:00:00&#39;, &#39;2010-01-01 00:00:10&#39;,</span>
+<span class="sd">               &#39;2010-01-01 00:00:20&#39;, &#39;2010-01-01 00:00:30&#39;,</span>
+<span class="sd">               &#39;2010-01-01 00:00:40&#39;],</span>
+<span class="sd">              dtype=&#39;datetime64[ns]&#39;, name=&#39;t&#39;, freq=None)</span>
+<span class="sd">    &gt;&gt;&gt; t1.x</span>
+<span class="sd">    array([ 0. ,  2.5,  5. ,  7.5, 10. ])</span>
+<span class="sd">    &gt;&gt;&gt; t1.y</span>
+<span class="sd">    array([45000., 45025., 45050., 45075., 45100.])</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">MultiPoint</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Coordinates of observation&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MultiPoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">x</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">y</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">item</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">x_item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">y_item</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">offset_duplicates</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
+        <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_item</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="n">df_items</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+            <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_track_items</span><span class="p">(</span><span class="n">df_items</span><span class="p">,</span> <span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="n">items</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_filename</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s2">&quot;.dfs0&quot;</span><span class="p">:</span>
+                <span class="n">dfs</span> <span class="o">=</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">file_items</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dfs</span><span class="o">.</span><span class="n">items</span><span class="p">]</span>
+                <span class="n">items</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_track_items</span><span class="p">(</span><span class="n">file_items</span><span class="p">,</span> <span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+                <span class="n">df</span><span class="p">,</span> <span class="n">iteminfo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_dfs0</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">iteminfo</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="s2">&quot;Only dfs0 files and DataFrames are supported&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;input must be str or pandas DataFrame! Given input has type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># A unique index makes lookup much faster O(1)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_unique</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">make_unique_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">offset_duplicates</span><span class="o">=</span><span class="n">offset_duplicates</span><span class="p">)</span>
+
+        <span class="c1"># TODO is this needed elsewhere?</span>
+        <span class="c1"># make sure location columns are named x and y</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x_item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">old_x_name</span> <span class="o">=</span> <span class="n">x_item</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">old_x_name</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">x_item</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">y_item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">old_y_name</span> <span class="o">=</span> <span class="n">y_item</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">old_y_name</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">y_item</span><span class="p">]</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">old_x_name</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">old_y_name</span><span class="p">:</span> <span class="s2">&quot;y&quot;</span><span class="p">})</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_track_items</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;If input has exactly 3 items we accept item=None&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Input has only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items. It should have at least 3.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input has more than 3 items, but item was not given!&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">_parse_item</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+
+        <span class="n">x_item</span> <span class="o">=</span> <span class="n">_parse_item</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">x_item</span><span class="p">,</span> <span class="s2">&quot;x_item&quot;</span><span class="p">)</span>
+        <span class="n">y_item</span> <span class="o">=</span> <span class="n">_parse_item</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="s2">&quot;y_item&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">item</span> <span class="o">==</span> <span class="n">x_item</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">item</span> <span class="o">==</span> <span class="n">y_item</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">x_item</span> <span class="o">==</span> <span class="n">y_item</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;x-item (</span><span class="si">{</span><span class="n">x_item</span><span class="si">}</span><span class="s2">), y-item (</span><span class="si">{</span><span class="n">y_item</span><span class="si">}</span><span class="s2">) and value-item (</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">) must be different!&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;TrackObservation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, n=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_points</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_read_dfs0</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read track data from dfs0 file&quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">dfs</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">items</span><span class="o">=</span><span class="n">items</span><span class="p">)</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span><span class="p">,</span> <span class="n">dfs</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">items</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span></div>
+
+
+<span class="k">def</span> <span class="nf">unit_display_name</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Display name</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; unit_display_name(&quot;meter&quot;)</span>
+<span class="sd">    m</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">res</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;meter&quot;</span><span class="p">,</span> <span class="s2">&quot;m&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_per_&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; per &quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;second&quot;</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;sec&quot;</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;degree&quot;</span><span class="p">,</span> <span class="s2">&quot;°&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2021, Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
