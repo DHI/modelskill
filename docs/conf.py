@@ -63,3 +63,5 @@ html_theme = "sphinx_book_theme"
 # html_static_path = ['_static']
 
 html_logo = "../images/logo/modelskill.svg"
+
+autodoc_typehints = "none"
