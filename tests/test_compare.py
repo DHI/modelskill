@@ -272,3 +272,21 @@ def test_matched_data_multiple_models_additional_columns():
     cmp = ms.from_matched(df, obs_item="sensor_a", mod_items=["cal_42", "cal_43"])
     assert cmp.n_points == 4
     assert cmp.n_models == 2
+
+
+def test_trackmodelresult_and_trackobservation_uses_model_name():
+    mr = ms.TrackModelResult(
+        "tests/testdata/NorthSeaHD_extracted_track.dfs0",
+        name="MyModel",
+        item="Model_surface_elevation",
+    )
+    assert mr.name == "MyModel"
+
+    # reuse same data, we don't care about the data here, only the name
+    o1 = ms.TrackObservation(
+        "tests/testdata/NorthSeaHD_extracted_track.dfs0",
+        item="Model_surface_elevation",
+        name="MyObs",
+    )
+    cmp = ms.compare(o1, mr)
+    assert cmp.mod_names == ["MyModel"]
