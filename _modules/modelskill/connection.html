@@ -474,6 +474,10 @@ document.write(`
             <span class="n">mr</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">data</span>
+
+        <span class="c1"># TODO is this robust enough?</span>
+        <span class="n">old_item</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">old_item</span><span class="p">:</span> <span class="n">mr</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
             <span class="n">df_model</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
