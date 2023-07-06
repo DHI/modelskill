@@ -1,4 +1,5 @@
 import sys
+from typing import Union
 import warnings
 from collections.abc import Iterable
 import numpy as np
@@ -101,6 +102,230 @@ class SkillDataFrame:
         return self.__class__(self.df.swaplevel(*args, **kwargs))
 
 
+class AggregatedSkillPlotter:
+    def __init__(self, agg_skill):
+        self.agg_skill = agg_skill
+
+    def _field_as_title(self, field: str, kwargs):
+        if "title" not in kwargs:
+            if field is not None:
+                kwargs["title"] = field
+
+    def _get_plot_df(self, field: str, level: Union[int, str] = 0) -> pd.DataFrame:
+        s = self.agg_skill
+
+        # raise error if field is not a column in the dataframe
+        if field not in s.df.columns:
+            raise KeyError(
+                f"{field} is not a valid field. Choose from {list(s.df.columns)}"
+            )
+
+        if isinstance(s.index, pd.MultiIndex):
+            df = s.df[field].unstack(level=level)
+        else:
+            df = s.df[field]
+        return df
+
+    def line(
+        self,
+        field: str,
+        level: Union[int, str] = 0,
+        **kwargs,
+    ):
+        """plot statistic as a lines using pd.DataFrame.plot.line()
+
+        Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        level : int or str, optional
+            level to unstack, by default 0
+        kwargs : dict, optional
+            key word arguments to be pased to pd.DataFrame.plot.line()
+            e.g. marker, title, figsize, ...
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot.line("rmse")
+        >>> s.plot.line("mae", marker="o", linestyle=':')
+        >>> s.plot.line(field="bias", color=['0.2', '0.4', '0.6'])
+        """
+        df = self._get_plot_df(field, level=level)
+        self._field_as_title(field, kwargs)
+        axes = df.plot.line(**kwargs)
+
+        xlabels = list(df.index)
+        nx = len(xlabels)
+
+        if not isinstance(axes, Iterable):
+            axes = [axes]
+        for ax in axes:
+            if not isinstance(df.index, pd.DatetimeIndex):
+                ax.set_xticks(np.arange(nx))
+                ax.set_xticklabels(xlabels, rotation=90)
+        return axes
+
+    def bar(self, field: str, level: Union[int, str] = 0, **kwargs):
+        """plot statistic as bar chart using pd.DataFrame.plot.bar()
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        level : int or str, optional
+            level to unstack, by default 0
+        kwargs : dict, optional
+            key word arguments to be pased to pd.DataFrame.plot.bar()
+            e.g. color, title, figsize, ...
+
+        Returns
+        -------
+        AxesSubplot
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot.bar("rmse")
+        >>> s.plot.bar("mae", level="observation")
+        >>> s.plot.bar(field="si", title="scatter index")
+        >>> s.plot.bar("si", color=["red","blue"])
+        """
+        df = self._get_plot_df(field, level=level)
+        self._field_as_title(field, kwargs)
+        return df.plot.bar(**kwargs)
+
+    def barh(self, field: str, level: Union[int, str] = 0, **kwargs):
+        """plot statistic as horizontal bar chart using pd.DataFrame.plot.barh()
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        level : int or str, optional
+            level to unstack, by default 0
+        kwargs : dict, optional
+            key word arguments to be passed to pd.DataFrame.plot.barh()
+            e.g. color, title, figsize, ...
+
+        Returns
+        -------
+        AxesSubplot
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot.barh("rmse")
+        >>> s.plot.barh("mae", level="observation")
+        >>> s.plot.barh(field="si", title="scatter index")
+        """
+        df = self._get_plot_df(field, level)
+        self._field_as_title(field, kwargs)
+        return df.plot.barh(**kwargs)
+
+    def grid(
+        self,
+        field,
+        show_numbers=True,
+        precision=3,
+        fmt=None,
+        figsize=None,
+        title=None,
+        cmap=None,
+    ):
+        """plot statistic as a colored grid, optionally with values in the cells.
+
+        Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
+
+        Parameters
+        ----------
+        field : str
+            field (statistic) to plot e.g. "rmse"
+        show_numbers : bool, optional
+            should values of the static be shown in the cells?, by default True
+            if False, a colorbar will be displayed instead
+        precision : int, optional
+            number of decimals if show_numbers, by default 3
+        fmt : str, optional
+            format string, e.g. ".0%" to show value as percentage
+        figsize : Tuple(float, float), optional
+            figure size, by default None
+        title : str, optional
+            plot title, by default name of statistic
+        cmap : str, optional
+            colormap, by default "OrRd" ("coolwarm" if bias)
+
+        Examples
+        --------
+        >>> s = comparer.skill()
+        >>> s.plot.grid("rmse")
+        >>> s.plot.grid("n", show_numbers=False, cmap="magma")
+        >>> s.plot.grid(field="bias", precision=1)
+        >>> s.plot.grid('si', fmt=".0%", title="scatter index")
+        """
+
+        s = self.agg_skill
+
+        errors = s._validate_multi_index()
+        if len(errors) > 0:
+            warnings.warn("plot_grid: " + "\n".join(errors))
+            return None
+            # df = self.df[field]    TODO: at_least_2d...
+        df = s.df[field].unstack()
+
+        vmin = None
+        vmax = None
+        if cmap is None:
+            cmap = "OrRd"
+            if field == "bias":
+                cmap = "coolwarm"
+                mm = s.df.bias.abs().max()
+                vmin = -mm
+                vmax = mm
+        if title is None:
+            title = field
+        xlabels = list(df.keys())
+        nx = len(xlabels)
+        ylabels = list(df.index)
+        ny = len(ylabels)
+
+        if (fmt is not None) and fmt[0] != "{":
+            fmt = "{:" + fmt + "}"
+
+        if figsize is None:
+            figsize = (nx, ny)
+        plt.figure(figsize=figsize)
+        plt.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
+        plt.gca().set_xticks(np.arange(nx) + 0.5)
+        plt.gca().set_xticklabels(xlabels, rotation=90)
+        plt.gca().set_yticks(np.arange(ny) + 0.5)
+        plt.gca().set_yticklabels(ylabels)
+        if show_numbers:
+            mean_val = df.to_numpy().mean()
+            for ii in range(ny):
+                for jj in range(nx):
+                    val = df.iloc[ii, jj].round(precision)
+                    col = "w" if val > mean_val else "k"
+                    if field == "bias":
+                        col = "w" if np.abs(val) > (0.7 * mm) else "k"
+                    if fmt is not None:
+                        val = fmt.format(val)
+                    plt.text(
+                        jj + 0.5,
+                        ii + 0.5,
+                        val,
+                        ha="center",
+                        va="center",
+                        # size=15,
+                        color=col,
+                    )
+        else:
+            plt.colorbar()
+        plt.title(title, fontsize=14)
+
+
 class AggregatedSkill(SkillDataFrame):
     """
     AggregatedSkill object for visualization and analysis returned by
@@ -114,7 +339,7 @@ class AggregatedSkill(SkillDataFrame):
     ['SW_1', 'SW_2']
     >>> s.style()
     >>> s.sel(model='SW_1').style()
-    >>> s.plot_bar(field='rmse')
+    >>> s.plot.bar(field='rmse')
     """
 
     large_is_best_metrics = [
@@ -141,6 +366,10 @@ class AggregatedSkill(SkillDataFrame):
     ]
     one_is_best_metrics = ["lin_slope"]
     zero_is_best_metrics = ["bias"]
+
+    def __init__(self, df):
+        super().__init__(df)
+        self.plot = AggregatedSkillPlotter(self)
 
     @property
     def mod_names(self):
@@ -265,9 +494,6 @@ class AggregatedSkill(SkillDataFrame):
                 levels_to_reset.append(j)
         return df.reset_index(level=levels_to_reset)
 
-    def parallel_coordinates(self):
-        pass
-
     def _validate_multi_index(self, min_levels=2, max_levels=2):
         errors = []
         if isinstance(self.index, pd.MultiIndex):
@@ -283,113 +509,25 @@ class AggregatedSkill(SkillDataFrame):
             errors.append("only possible for MultiIndex skill objects")
         return errors
 
+    # TODO remove plot_* methods in v1.1
     def plot_line(self, field, level=0, **kwargs):
-        """plot statistic as a lines using pd.DataFrame.plot.line()
 
-        Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
-
-        Parameters
-        ----------
-        field : str
-            field (statistic) to plot e.g. "rmse"
-        level : int or str, optional
-            level to unstack, by default 0
-        kwargs : dict, optional
-            key word arguments to be pased to pd.DataFrame.plot.line()
-            e.g. marker, title, figsize, ...
-
-        Examples
-        --------
-        >>> s = comparer.skill()
-        >>> s.plot_line("rmse")
-        >>> s.plot_line("mae", marker="o", linestyle=':')
-        >>> s.plot_line(field="bias", color=['0.2', '0.4', '0.6'])
-        """
-        if isinstance(self.index, pd.MultiIndex):
-            df = self.df[field].unstack(level=level)
-        else:
-            df = self.df[field]
-        if "title" not in kwargs:
-            if isinstance(field, str):
-                kwargs["title"] = field
-        axes = df.plot.line(**kwargs)
-        xlabels = list(df.index)
-        nx = len(xlabels)
-
-        if not isinstance(axes, Iterable):
-            axes = [axes]
-        for ax in axes:
-            if not isinstance(df.index, pd.DatetimeIndex):
-                ax.set_xticks(np.arange(nx))
-                ax.set_xticklabels(xlabels, rotation=90)
-        return axes
+        warnings.warn(
+            "plot_line() is deprecated, use plot.line() instead", FutureWarning
+        )
+        return self.plot.line(field, level, **kwargs)
 
     def plot_bar(self, field, level=0, **kwargs):
-        """plot statistic as bar chart using pd.DataFrame.plot.bar()
 
-        Parameters
-        ----------
-        field : str
-            field (statistic) to plot e.g. "rmse"
-        level : int or str, optional
-            level to unstack, by default 0
-        kwargs : dict, optional
-            key word arguments to be pased to pd.DataFrame.plot.bar()
-            e.g. color, title, figsize, ...
-
-        Returns
-        -------
-        AxesSubplot
-
-        Examples
-        --------
-        >>> s = comparer.skill()
-        >>> s.plot_bar("rmse")
-        >>> s.plot_bar("mae", level="observation")
-        >>> s.plot_bar(field="si", title="scatter index")
-        >>> s.plot_bar("si", color=["red","blue"])
-        """
-        if isinstance(self.index, pd.MultiIndex):
-            df = self.df[field].unstack(level=level)
-        else:
-            df = self.df[field]
-        if "title" not in kwargs:
-            if isinstance(field, str):
-                kwargs["title"] = field
-        return df.plot.bar(**kwargs)
+        warnings.warn("plot_bar() is deprecated, use plot.bar() instead", FutureWarning)
+        return self.plot.bar(field, level, **kwargs)
 
     def plot_barh(self, field, level=0, **kwargs):
-        """plot statistic as horizontal bar chart using pd.DataFrame.plot.barh()
 
-        Parameters
-        ----------
-        field : str
-            field (statistic) to plot e.g. "rmse"
-        level : int or str, optional
-            level to unstack, by default 0
-        kwargs : dict, optional
-            key word arguments to be passed to pd.DataFrame.plot.barh()
-            e.g. color, title, figsize, ...
-
-        Returns
-        -------
-        AxesSubplot
-
-        Examples
-        --------
-        >>> s = comparer.skill()
-        >>> s.plot_barh("rmse")
-        >>> s.plot_barh("mae", level="observation")
-        >>> s.plot_barh(field="si", title="scatter index")
-        """
-        if isinstance(self.index, pd.MultiIndex):
-            df = self.df[field].unstack(level=level)
-        else:
-            df = self.df[field]
-        if "title" not in kwargs:
-            if isinstance(field, str):
-                kwargs["title"] = field
-        return df.plot.barh(**kwargs)
+        warnings.warn(
+            "plot_barh() is deprecated, use plot.barh() instead", FutureWarning
+        )
+        return self.plot.barh(field, level, **kwargs)
 
     def plot_grid(
         self,
@@ -401,92 +539,19 @@ class AggregatedSkill(SkillDataFrame):
         title=None,
         cmap=None,
     ):
-        """plot statistic as a colored grid, optionally with values in the cells.
 
-        Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
-
-        Parameters
-        ----------
-        field : str
-            field (statistic) to plot e.g. "rmse"
-        show_numbers : bool, optional
-            should values of the static be shown in the cells?, by default True
-            if False, a colorbar will be displayed instead
-        precision : int, optional
-            number of decimals if show_numbers, by default 3
-        fmt : str, optional
-            format string, e.g. ".0%" to show value as percentage
-        figsize : Tuple(float, float), optional
-            figure size, by default None
-        title : str, optional
-            plot title, by default name of statistic
-        cmap : str, optional
-            colormap, by default "OrRd" ("coolwarm" if bias)
-
-        Examples
-        --------
-        >>> s = comparer.skill()
-        >>> s.plot_grid("rmse")
-        >>> s.plot_grid("n", show_numbers=False, cmap="magma")
-        >>> s.plot_grid(field="bias", precision=1)
-        >>> s.plot_grid('si', fmt=".0%", title="scatter index")
-        """
-        errors = self._validate_multi_index()
-        if len(errors) > 0:
-            warnings.warn("plot_grid: " + "\n".join(errors))
-            return None
-            # df = self.df[field]    TODO: at_least_2d...
-        df = self.df[field].unstack()
-
-        vmin = None
-        vmax = None
-        if cmap is None:
-            cmap = "OrRd"
-            if field == "bias":
-                cmap = "coolwarm"
-                mm = self.df.bias.abs().max()
-                vmin = -mm
-                vmax = mm
-        if title is None:
-            title = field
-        xlabels = list(df.keys())
-        nx = len(xlabels)
-        ylabels = list(df.index)
-        ny = len(ylabels)
-
-        if (fmt is not None) and fmt[0] != "{":
-            fmt = "{:" + fmt + "}"
-
-        if figsize is None:
-            figsize = (nx, ny)
-        plt.figure(figsize=figsize)
-        plt.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
-        plt.gca().set_xticks(np.arange(nx) + 0.5)
-        plt.gca().set_xticklabels(xlabels, rotation=90)
-        plt.gca().set_yticks(np.arange(ny) + 0.5)
-        plt.gca().set_yticklabels(ylabels)
-        if show_numbers:
-            mean_val = df.to_numpy().mean()
-            for ii in range(ny):
-                for jj in range(nx):
-                    val = df.iloc[ii, jj].round(precision)
-                    col = "w" if val > mean_val else "k"
-                    if field == "bias":
-                        col = "w" if np.abs(val) > (0.7 * mm) else "k"
-                    if fmt is not None:
-                        val = fmt.format(val)
-                    plt.text(
-                        jj + 0.5,
-                        ii + 0.5,
-                        val,
-                        ha="center",
-                        va="center",
-                        # size=15,
-                        color=col,
-                    )
-        else:
-            plt.colorbar()
-        plt.title(title, fontsize=14)
+        warnings.warn(
+            "plot_grid() is deprecated, use plot.grid() instead", FutureWarning
+        )
+        return self.plot.grid(
+            field=field,
+            show_numbers=show_numbers,
+            precision=precision,
+            fmt=fmt,
+            figsize=figsize,
+            title=title,
+            cmap=cmap,
+        )
 
     def style(
         self,
