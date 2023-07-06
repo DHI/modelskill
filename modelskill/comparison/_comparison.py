@@ -1139,7 +1139,11 @@ class Comparer:
             "This method is deprecated, use plot.scatter instead", FutureWarning
         )
 
-        self.plot.scatter(
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+
+        # self.plot.scatter(
+        self.sel(model=model, start=start, end=end, area=area,).plot.scatter(
             bins=bins,
             quantiles=quantiles,
             fit_to_quantiles=fit_to_quantiles,

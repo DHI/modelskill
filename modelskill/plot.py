@@ -200,6 +200,7 @@ def _scatter_matplotlib(
     title,
     skill_df,
     units,
+    fit_to_quantiles,
     **kwargs,
 ) -> Axes:
     _, ax = plt.subplots(figsize=figsize)
@@ -215,8 +216,10 @@ def _scatter_matplotlib(
     if show_points is None or show_points:
         if show_density:
             c = z
+            norm_ = norm
         else:
             c = "0.25"
+            norm_ = None
         plt.scatter(
             x_sample,
             y_sample,
@@ -226,7 +229,7 @@ def _scatter_matplotlib(
             marker=".",
             label=options.plot.scatter.points.label,
             zorder=1,
-            norm=norm,
+            norm=norm_,
             **kwargs,
         )
     plt.plot(
@@ -246,12 +249,12 @@ def _scatter_matplotlib(
         x_trend,
         intercept + slope * x_trend,
         **settings.get_option("plot.scatter.reg_line.kwargs"),
-        label=_reglabel(slope=slope, intercept=intercept),
+        label=_reglabel(slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles),
         zorder=2,
     )
 
     if show_hist:
-        plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, **kwargs)
+        plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
 
     plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
     plt.xlabel(xlabel)
@@ -303,6 +306,7 @@ def _scatter_plotly(
     title,
     skill_df,  # TODO implement
     units,  # TODO implement
+    fit_to_quantiles, # TODO implement
     **kwargs,
 ):
 
@@ -315,7 +319,7 @@ def _scatter_plotly(
     regression_line = go.Scatter(
         x=x_trend,
         y=intercept + slope * x_trend,
-        name=_reglabel(slope=slope, intercept=intercept),
+        name=_reglabel(slope=slope, intercept=intercept,fit_to_quantiles=fit_to_quantiles),
         mode="lines",
         line=dict(color="red"),
     )
@@ -385,9 +389,13 @@ def _scatter_plotly(
     fig.show()  # Should this be here
 
 
-def _reglabel(slope: float, intercept: float) -> str:
+def _reglabel(slope: float, intercept: float, fit_to_quantiles:bool) -> str:
     sign = "" if intercept < 0 else "+"
-    return f"Fit: y={slope:.2f}x{sign}{intercept:.2f}"
+    if fit_to_quantiles:
+        fit='QQ fit'
+    else:
+        fit='Fit'
+    return f"{fit}: y={slope:.2f}x{sign}{intercept:.2f}"
 
 
 def _get_bins(
@@ -582,6 +590,7 @@ def scatter(
         title=title,
         skill_df=skill_df,
         units=units,
+        fit_to_quantiles=fit_to_quantiles, 
         **kwargs,
     )
 
