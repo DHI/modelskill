@@ -25,8 +25,9 @@ def test_compare(fn_obs, fn_mod):
 
 def test_compare_mod_item(fn_obs, fn_mod):
     c = modelskill.compare(fn_obs, fn_mod, mod_item=0)
-    dfs = mikeio.open(fn_mod)
-    assert c.mod_names[0] == dfs.items[0].name
+
+    # not very useful assert, but if you don't provide a model name, you'll get a default one
+    assert c.mod_names[0] == "ts_storm_4"
 
 
 def test_compare_mod_item_2(fn_obs, fn_mod):
