@@ -24,6 +24,7 @@ def wind_rose(
     cmap2="Greys",
     mag_bins: Optional[List[float]] = None,
     max_bin=None,  # TODO rename to vmax?
+    n_labels=4,
     **kwargs,
 ):
 
@@ -57,6 +58,8 @@ def wind_rose(
             colormap for main axis
         cmap2 : string. Default= 'Greys'
             colormap for secondary axis
+        n_labels : int. Default= 4
+            number of labels in the polar plot, choose between 4, 8 or 16
 
     ------------------------------------------------------------------------------------------------
     Returns
@@ -108,8 +111,18 @@ def wind_rose(
 
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
-    ax.set_thetagrids(np.linspace(0, 360, 5)[:-1], ["NORTH", "EAST", "SOUTH", "WEST"])
-    ax.tick_params(pad=-24)
+
+    # TODO extract to function
+    if n_labels == 4:
+        ax.set_thetagrids([0, 90, 180, 270], ["N", "E", "S", "W"]) # TODO allow NW, NE, SW, SE and NNW, NNE, SSW, SSE
+    elif n_labels == 8:
+        ax.set_thetagrids([0, 45, 90, 135, 180, 225, 270, 315], ["N", "NE", "E", "SE", "S", "SW", "W", "NW"])
+    elif n_labels == 16:
+        ax.set_thetagrids(np.linspace(0,360,n_labels +1 )[:-1], ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW","SW", "WSW", "W", "WNW", "NW", "NNW"])
+    else:
+        raise ValueError("n_labels must be 4, 8 or 16")
+
+    # ax.tick_params(pad=-24)
 
     ax.set_ylim(0, calm + rmax)
     ax.set_yticks(ri + calm)
