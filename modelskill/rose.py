@@ -1,3 +1,5 @@
+from typing import Optional, List, Tuple
+
 import numpy as np
 import matplotlib as mpl
 from matplotlib.patches import Rectangle, Polygon
@@ -12,7 +14,7 @@ def wind_rose(
     mag_step=None,
     ax=None,
     dir_step=30,
-    calm_threshold=None,
+    calm_threshold=None,  # TODO rename to vmin?
     resize_calm=0.05,
     calm_text="Calm",
     r_step=0.1,
@@ -21,9 +23,9 @@ def wind_rose(
     legend=True,
     cmap1="viridis",
     cmap2="Greys",
-    mag_bins=None,
+    mag_bins: Optional[List[float]] = None,
     invert_dir=False,
-    max_bin=None,
+    max_bin=None,  # TODO rename to vmax?
     **kwargs,
 ):
 
@@ -76,66 +78,15 @@ def wind_rose(
         second_rose = False
         mag1, dir1 = cols
 
-    # Magnitude bins
-    ## Check if there's double counting in inputs
-    if mag_bins != None:
-        if np.any([max_bin != None, mag_step != None, calm_threshold != None]):
-            flagged = [
-                j
-                for i, j in zip(
-                    [max_bin, mag_step, calm_threshold],
-                    ["max_bin", "mag_step", "calm_threshold"],
-                )
-                if i != None
-            ]
-            flagged = ", ".join(flagged)
-            print(
-                "Warning, both mag_bins and {} specified. Defaulting to mag_bins".format(
-                    flagged
-                )
-            )
-
-        # Set values
-        mag_bins_ = np.array(mag_bins)
-        ui = np.concatenate((mag_bins_, mag_bins_[[-1]] * 999))
-        calm_threshold = thresh = ui[0]
-        max_bin = ui[-2]
-        dbin = np.diff(ui)[-2]
-
-    else:
-        if mag_step == None:
-            mag_step = np.round(data_1[mag1].max() / 16, 1)
-            if mag_step == 0:
-                mag_step = np.round(data_1[mag1].max() / 16, 2)
-            if second_rose:
-                mag_step2 = np.round(data_2[mag2].max() / 16, 1)
-                if mag_step2 == 0:
-                    mag_step2 = np.round(data_2[mag2].max() / 16, 2)
-                mag_step = max(mag_step, mag_step2)
-
-        if calm_threshold is None:
-            calm_threshold = mag_step
-
-        thresh = calm_threshold
-
-        # Auto find max
-        magmax = data_1[mag1].max()
-        if second_rose:
-            magmax2 = data_2[mag2].max()
-            magmax = max(magmax, magmax2)
-        # Bins
-        ui = np.arange(thresh, magmax, mag_step)
-        ui = np.append(ui, np.max(data_1[mag1]))
-
-        if max_bin is None:
-            max_bin = magmax / 2
-        dbin = ui[1] - ui[0]
-        ui = np.arange(ui[0], max_bin + dbin * 2, dbin)
-        ui[-1] = (
-            ui[-1] * 2
-        )  # safety factor * 2 as sometimes max is not in the iterations
-        # Round bins to 3 decimal, this could be an input
-        ui = [np.round(x, 3) for x in ui]
+    # magnitude bins
+    ui, vmin, vmax = pretty_intervals(
+        data_1[mag1],
+        data_2[mag2],
+        mag_bins,
+        mag_step,
+        calm_threshold,
+        max_bin,
+    )
 
     ### create vectors to evaluate the histogram
     thetai = np.linspace(
@@ -147,21 +98,19 @@ def wind_rose(
 
     ### compute total calms
     N = len(data_1)
-    calm = len(data_1[data_1[mag1] < calm_threshold]) / N
+    calm = len(data_1[data_1[mag1] < vmin]) / N
     calm_value = calm
 
-    calm_2 = len(data_2[data_2[mag2] < calm_threshold]) / N
+    calm_2 = len(data_2[data_2[mag2] < vmin]) / N
     calm_value_2 = calm_2
 
     ### add 360 to all dir1s from 0 to dir_step/2
-    if invert_dir == True:
+    if invert_dir:
         d = [np.mod(x - 180, 360) for x in data_1[dir1].values]
         d2 = [np.mod(x - 180, 360) for x in data_2[dir2].values]
-    elif invert_dir == False:
+    else:
         d = data_1[dir1]  # dir1 as coming from
         d2 = data_2[dir2]
-    else:
-        return None
 
     data_1["dir_proxy"] = d
     data_1.loc[data_1[dir1] < dir_step / 2, "dir_proxy"] = (
@@ -175,21 +124,21 @@ def wind_rose(
 
     ### compute histograms
     counts, _, _ = np.histogram2d(
-        data_1[data_1[mag1] >= calm_threshold][mag1],
-        data_1[data_1[mag1] >= calm_threshold]["dir_proxy"],
+        data_1[data_1[mag1] >= vmin][mag1],
+        data_1[data_1[mag1] >= vmin]["dir_proxy"],
         bins=[ui, thetai],
     )
     counts = counts / N
 
     counts_2, _, _ = np.histogram2d(
-        data_2[data_2[mag2] >= calm_threshold][mag2],
-        data_2[data_2[mag2] >= calm_threshold]["dir_proxy"],
+        data_2[data_2[mag2] >= vmin][mag2],
+        data_2[data_2[mag2] >= vmin]["dir_proxy"],
         bins=[ui, thetai],
     )
     counts_2 = counts_2 / N
 
     ### compute radial ticks
-    if r_max == None:
+    if r_max is None:
         rmax = np.ceil((counts.sum(axis=0).max() + r_step) / r_step) * r_step
     else:
         rmax = r_max
@@ -204,13 +153,12 @@ def wind_rose(
     elif isinstance(cmap1, mpl.colors.ListedColormap):
         cmap = cmap1
     else:
-        raise Exception("Invalid cmap {}".format(cmap1))
-    norm = mpl.colors.Normalize(vmin=thresh, vmax=max_bin + dbin * 2)
-    # norm = mpl.colors.Normalize(vmin=thresh, vmax=np.mean(ui[-2:]))
+        raise ValueError(f"Invalid cmap {cmap1}")
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     colors_ = [cmap(norm(x)) for x in ui]
     ### setup figure
-    if ax == None:
-        fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection="polar"))
+    if ax is None:
+        _, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection="polar"))
 
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
@@ -219,10 +167,11 @@ def wind_rose(
 
     ax.set_ylim(0, calm + rmax)
     ax.set_yticks(ri + calm)
-    ax.set_yticklabels(["{:.0f}%".format(tick * 100) for tick in ri])
+    tick_labels = [f"{tick * 100 :.0f}%" for tick in ri]
+    ax.set_yticklabels(tick_labels)
     ax.set_rlabel_position(5)
     ### add calms
-    if calm_threshold > 0:
+    if vmin > 0:
         ax.bar(np.pi, calm, color="white", ec="k", zorder=0)
         ax.bar(
             np.pi, calm, width=2 * np.pi, label="_nolegend_", color="white", zorder=3
@@ -254,14 +203,6 @@ def wind_rose(
                 [np.full(arc_res, calm), np.full(arc_res, calm + cumcount[i, j])]
             )
 
-            shape_x = [
-                np.deg2rad(thetac[j] - dir_step / 2),
-                np.deg2rad(thetac[j] + dir_step / 2),
-                np.deg2rad(thetac[j] + dir_step / 2),
-                np.deg2rad(thetac[j] - dir_step / 2),
-            ]
-            shape_y = [calm, calm, calm + cumcount[i, j], calm + cumcount[i, j]]
-
             polygon = Polygon(
                 np.array((arc_xj, arc_yj)).T, True
             )  # Conflict with shapely
@@ -279,27 +220,20 @@ def wind_rose(
     percentages = np.sum(counts, axis=1) * 100
 
     # Labels
-    if cbar_label != None:
-        if cbar_label == "Hm0":
-            label = f"N= {N}\nHm0 > {thresh} [m] \nHm0 [m] \n "
-        elif cbar_label == "WS":
-            label = f"N= {N}\nWS > {thresh} [m/s] \nWS [m/s] \n "
-        elif cbar_label == "CS":
-            label = f"N= {N}\nCS > {thresh} [m/s] \nCS [m/s] \n "
-        else:
-            label = cbar_label
+    if cbar_label is not None:
+        label = cbar_label
     else:
         label = mag1
 
-    legen_items = []
+    legend_items = []
 
     for j in range(len(ui[1:-1])):
-        legen_items.append(f"{np.round(ui[j],2)} - {np.round(ui[j+1],2)}")
-    _items = [f"<{calm_threshold} ({np.round(calm_value*100,2)}%)"]
-    _items.extend(legen_items)
+        legend_items.append(f"{np.round(ui[j],2)} - {np.round(ui[j+1],2)}")
+    _items = [f"<{vmin} ({np.round(calm_value*100,2)}%)"]
+    _items.extend(legend_items)
     _items.append(f">= {ui[-2]} ({np.round( percentages[-1],2)}%)")
 
-    if legend == True:
+    if legend:
         handles = [Rectangle((0, 0), 1, 1, color=c, ec="k") for c in colors_[:]]
         handles[0].set_color("white")
         handles[0].set_ec("k")
@@ -330,8 +264,8 @@ def wind_rose(
         elif isinstance(cmap2, mpl.colors.ListedColormap):
             cmap = cmap2
         else:
-            raise Exception("Invalid cmap {}".format(cmap2))
-        norm = mpl.colors.Normalize(vmin=0, vmax=max_bin + dbin * 2)
+            raise ValueError(f"Invalid cmap {cmap2}")
+        norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
         percentages = np.sum(counts_2, axis=1) * 100
         colors_ = [cmap(norm(x)) for x in ui]
         if "left_label" in kwargs:
@@ -359,14 +293,6 @@ def wind_rose(
                     [np.full(arc_res, calm), np.full(arc_res, calm + cumcount[i, j])]
                 )
 
-                shape_x = [
-                    np.deg2rad(thetac[j] - dir_step2 / 2),
-                    np.deg2rad(thetac[j] + dir_step2 / 2),
-                    np.deg2rad(thetac[j] + dir_step2 / 2),
-                    np.deg2rad(thetac[j] - dir_step2 / 2),
-                ]
-                shape_y = [calm, calm, calm + cumcount[i, j], calm + cumcount[i, j]]
-
                 polygon = Polygon(
                     np.array((arc_xj, arc_yj)).T, True
                 )  # Conflict with shapely
@@ -381,7 +307,7 @@ def wind_rose(
         )
         ax.add_collection(p)
 
-        _items[0] = f"<{calm_threshold} ({np.round(calm_value_2*100,2)}%)"
+        _items[0] = f"<{vmin} ({np.round(calm_value_2*100,2)}%)"
         _items[-1] = f">= {ui[-2]} ({np.round(percentages[-1],2)}%)"
 
         handles = [Rectangle((0, 0), 1, 1, color=c, ec="k") for c in colors_[:]]
@@ -414,3 +340,67 @@ def wind_rose(
         )
         ax.add_artist(text)
     return ax
+
+
+def pretty_intervals(
+    data_1: np.typing.ArrayLike,
+    data_2: np.typing.ArrayLike,
+    mag_bins: Optional[List[float]] = None,
+    mag_step: Optional[float] = None,
+    vmin: Optional[float] = None,
+    max_bin: Optional[float] = None,
+) -> Tuple[np.ndarray, float, float]:
+    """Pretty intervals for the magnitude bins"""
+
+    data_1_max = data_1.max()
+    data_2_max = data_2.max()
+
+    FACTOR = 16  # TODO why 16?
+
+    # Magnitude bins
+    ## Check if there's double counting in inputs
+    if mag_bins is not None:
+
+        # Set values
+        mag_bins_ = np.array(mag_bins)
+        ui = np.concatenate((mag_bins_, mag_bins_[[-1]] * 999))
+        vmin = ui[0]
+        max_bin = ui[-2]
+        dbin = np.diff(ui)[-2]
+
+    else:
+        if mag_step is None:
+            mag_step = np.round(data_1_max / FACTOR, 1)
+            if mag_step == 0:  # TODO is using 0 an obvious choice?
+                mag_step = np.round(data_1_max / FACTOR, 2)
+
+            mag_step2 = np.round(data_2_max / FACTOR, 1)
+            if mag_step2 == 0:  # TODO is using 0 an obvious choice?
+                mag_step2 = np.round(data_2_max / FACTOR, 2)
+            mag_step = max(mag_step, mag_step2)
+
+        if vmin is None:
+            vmin = mag_step
+
+        # Auto find max
+        magmax = data_1_max
+
+        magmax2 = data_2_max
+        magmax = max(magmax, magmax2)
+        # Bins
+        ui = np.arange(vmin, magmax, mag_step)
+        ui = np.append(ui, data_1_max)
+
+        if max_bin is None:
+            max_bin = magmax / 2
+        dbin = ui[1] - ui[0]
+        vmax = max_bin + dbin * 2
+        ui = np.arange(ui[0], vmax, dbin)
+        ui[-1] = (
+            ui[-1] * 2
+        )  # safety factor * 2 as sometimes max is not in the iterations
+        # Round bins to 3 decimal, this could be an input
+        ui = [np.round(x, 3) for x in ui]
+
+        # TODO return a better object
+        return ui, vmin, vmax
