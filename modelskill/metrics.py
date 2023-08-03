@@ -56,7 +56,7 @@ Examples
 >>> hit_ratio(obs, mod, a=0.5)
 0.6666666666666666
 >>> ev(obs, mod)
-0.6666666666666666
+0.39614855570839064
 """
 import sys
 import typing
