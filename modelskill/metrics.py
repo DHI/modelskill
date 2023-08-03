@@ -345,15 +345,15 @@ def r2(obs: np.ndarray, model: np.ndarray, circular: bool=False) -> float:
     SSr = np.sum(_residual(obs, model, circular=circular)**2)
     obsn = obs - obs.mean()
     if circular:
-        obsn = (obsn+ 180) % 360 - 180
+        obsn = (obsn + 180) % 360 - 180
     SSt = np.sum(obsn ** 2)
 
     return 1 - SSr / SSt
 
 
-def mef(obs: np.ndarray, model: np.ndarray) -> float:
+def mef(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """alias for model_efficiency_factor"""
-    return model_efficiency_factor(obs, model)
+    return model_efficiency_factor(obs, model, circular=circular)
 
 
 def model_efficiency_factor(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
@@ -412,12 +412,12 @@ def corrcoef(obs, model, weights=None, circular: bool = False) -> float:
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
 
-def rho(obs: np.ndarray, model: np.ndarray) -> float:
+def rho(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """alias for spearmanr"""
-    return spearmanr(obs, model)
+    return spearmanr(obs, model, circular=circular)
 
 
-def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
+def spearmanr(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """Spearman rank correlation coefficient
 
     The rank correlation coefficient is similar to the Pearson correlation coefficient but
@@ -445,15 +445,18 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     """
     import scipy.stats
 
+    if circular:
+        raise NotImplementedError("circular spearmanr not implemented yet")
+
     return scipy.stats.spearmanr(obs, model)[0]
 
 
-def si(obs: np.ndarray, model: np.ndarray) -> float:
+def si(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """alias for scatter_index"""
-    return scatter_index(obs, model)
+    return scatter_index(obs, model, circular=circular)
 
 
-def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
+def scatter_index(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """Scatter index (SI)
 
     Which is the same as the unbiased-RMSE normalized by the absolute mean of the observations.
@@ -468,12 +471,15 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
+    if circular:
+        raise NotImplementedError("circular scatter_index not implemented yet")
+
     residual = obs.ravel() - model.ravel()
     residual = residual - residual.mean()  # unbiased
     return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs.ravel()))
 
 
-def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
+def scatter_index2(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """Alternative formulation of the scatter index (SI)
 
     .. math::
@@ -486,13 +492,16 @@ def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
+    if circular:
+        raise NotImplementedError("circular scatter_index2 not implemented yet")
+
     return np.sqrt(
         np.sum(((model.ravel() - model.mean()) - (obs.ravel() - obs.mean())) ** 2)
         / np.sum(obs.ravel() ** 2)
     )
 
 
-def willmott(obs: np.ndarray, model: np.ndarray) -> float:
+def willmott(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """Willmott's Index of Agreement
 
     A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.
@@ -515,10 +524,12 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     ----------
     Willmott, C. J. 1981. "On the validation of models". Physical Geography, 2, 184–194.
     """
-
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
+
+    if circular:
+        raise NotImplementedError("circular willmott not implemented yet")
 
     residual = model.ravel() - obs.ravel()
     nominator = np.sum(residual**2)
@@ -527,7 +538,7 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     return 1 - nominator / denominator
 
 
-def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
+def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1, circular: bool = False) -> float:
     """Fraction within obs ± acceptable deviation
 
     .. math::
@@ -549,10 +560,13 @@ def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
     """
     assert obs.size == model.size
 
+    if circular:
+        raise NotImplementedError("circular hit_ratio not implemented yet")
+
     return np.mean(np.abs(obs.ravel() - model.ravel()) < a)
 
 
-def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
+def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols", circular: bool = False) -> float:
     """Slope of the regression line.
 
     .. math::
@@ -562,16 +576,19 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
 
     Range: :math:`(-\\infty, \\infty )`; Best: 1
     """
-    assert obs.size == model.size
-    return _linear_regression(obs.ravel(), model.ravel(), reg_method)[0]
+    return _linear_regression(obs.ravel(), model.ravel(), reg_method, circular=circular)[0]
 
 
 def _linear_regression(
-    obs: np.ndarray, model: np.ndarray, reg_method="ols"
+    obs: np.ndarray, model: np.ndarray, reg_method="ols", circular: bool = False
 ) -> typing.Tuple[float, float]:
 
+    assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
+    
+    if circular:
+        raise NotImplementedError("circular linear_regression not implemented yet")
 
     if reg_method == "ols":
         from scipy.stats import linregress as _linregress
@@ -712,7 +729,7 @@ def add_metric(
     Examples
     --------
     >>> add_metric(hit_ratio)
-    >>> add_metric(rmse,True)
+    >>> add_metric(rmse, True)
     """
     defined_metrics.add(metric.__name__)
     if has_units:
