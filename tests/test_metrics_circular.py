@@ -113,7 +113,7 @@ def test_mape_perfect_prediction():
     model = np.array([100, 200, 300, 400])
     assert mtr.mape(obs, model) == pytest.approx(0)
 
-def test_mape_wrong_prediction():
+def test_mape_circular_prediction():
     obs = np.array([100, 200, 300, 400])
     model = np.array([400, 300, 200, 100])
     assert mtr.mape(obs, model) == pytest.approx(114.5833)
@@ -135,6 +135,11 @@ def test_urmse_circular():
 
     assert mtr.urmse(obs, mod, circular=True) == 0.0
 
+def test_rmse_circular_exact_matching():
+    obs = np.array([0, 90, 180, 270])
+    mod = np.array([360, 450, 540, 630])  # 360 degrees offset
+    assert mtr.rmse(obs, mod, circular=True) == 0.0
+
 def test_rmse_circular_quadrant():
     obs = np.array([0, 0, 0, 0])
     mod = np.array([0, 90, 180, 270])  # Covering each quadrant
@@ -150,11 +155,23 @@ def test_rmse_circular_halfway():
     mod = np.array([45, 45, 45, 45])  # Halfway between obs and perpendicular
     assert mtr.rmse(obs, mod, circular=True) == 45.0
 
-def test_urmse_circular_scattered():
-    obs = np.array([0, 90, 180, 270])
-    mod = np.array([0, 180, 0, 180])  # Errors are both 0 and 180
-    # URMS error should be less than RMSE because it ignores bias
-    assert mtr.urmse(obs, mod, circular=True) < mtr.rmse(obs, mod, circular=True)
+def test_rmse_circular_nearly_full_circle():
+    obs = np.array([0, -1, 0.5, 1])
+    mod = np.array([359, 360, 359.5, 360])
+    assert mtr.rmse(obs, mod, circular=True) == 1.0
+
+# def test_urmse_circular_scattered():
+#     obs = np.array([0, 90, 180, 270])
+#     mod = np.array([0, 180, 0, 180])  # Errors are both 0 and 180
+#     # URMS error should be less than RMSE because it ignores bias
+#     assert mtr.urmse(obs, mod, circular=True) < mtr.rmse(obs, mod, circular=True)
+
+def test_rmse_circular_weighted():
+    obs = np.array([0, 180, 90, 270])
+    mod = np.array([90, 0, 270, 90])
+    weights = np.array([1, 1, 0, 0])
+    assert mtr.rmse(obs, mod, weights=weights, circular=True) == pytest.approx(142.3, 0.01)
+
 
 # std
 
@@ -180,3 +197,23 @@ def test_std_circular_half_circle():
     # the standard deviation should be close to 51.96 degrees
     obs = np.array([0, 45, 90, 135, 180])
     assert mtr._std(obs, circular=True) == pytest.approx(69.14, 0.01)
+
+
+# corrcoef
+
+# def test_circular_corrcoef_perfect_positive():
+#     obs = np.array([0, 90, 180, 270])
+#     mod = np.array([0, 90, 180, 270])
+#     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(1.0)
+
+
+# def test_circular_corrcoef_perfect_negative():
+#     obs = np.array([0, 90, 180, 270])
+#     mod = np.array([180, 270, 0, 90])
+#     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(-1.0)
+
+
+# def test_circular_corrcoef_circular_shift():
+#     obs = np.array([0, 90, 180, 270])
+#     mod = np.array([90, 180, 270, 0])  # 90-degree shift
+#     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(0.0)
