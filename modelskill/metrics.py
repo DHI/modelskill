@@ -58,7 +58,7 @@ import sys
 import typing
 import warnings
 import numpy as np
-
+from scipy.stats import circmean
 
 def _residual(obs: np.ndarray, model: np.ndarray, circular=False) -> np.ndarray:
     """Residuals: model minus obs"""
@@ -66,18 +66,18 @@ def _residual(obs: np.ndarray, model: np.ndarray, circular=False) -> np.ndarray:
     resi = model.ravel() - obs.ravel()
     if circular:
         # alternative:
-        # np.rad2deg(np.arctan2(np.sin(np.deg2rad(model - obs)), 
+        # resi = np.rad2deg(np.arctan2(np.sin(np.deg2rad(model - obs)), 
         #                          np.cos(np.deg2rad(model - obs))))
-        resi[resi > 180] -= 360
-        resi[resi < -180] += 360
+        resi = (resi + 180) % 360 - 180
     return resi
 
 def _mean(vec: np.ndarray, circular: bool=False) -> float:
     """Mean of array"""
     if circular:
         # alternative: scipy.stats.circmean
-        return np.rad2deg(np.arctan2(np.mean(np.sin(np.deg2rad(vec))),
-                                 np.mean(np.cos(np.deg2rad(vec)))))
+        # return np.rad2deg(np.arctan2(np.mean(np.sin(np.deg2rad(vec))),
+        #                          np.mean(np.cos(np.deg2rad(vec)))))
+        return circmean(vec, low=0, high=360)
     else:
         return np.mean(vec)
 
@@ -102,7 +102,7 @@ def bias(obs, model, circular=False) -> float:
     Range: :math:`(-\\infty, \\infty)`; Best: 0
     """
 
-    return np.mean(_residual(obs, model, circular=circular))
+    return _mean(_residual(obs, model, circular=circular), circular=circular)
 
 
 def max_error(obs, model, circular=False) -> float:
@@ -114,7 +114,15 @@ def max_error(obs, model, circular=False) -> float:
     Range: :math:`[0, \\infty)`; Best: 0
     """
 
-    return np.max(np.abs(_residual(obs, model, circular=circular)))
+    resi = _residual(obs, model, circular=circular)
+    if circular:
+        # Compute the absolute differences and then 
+        # find the shortest distance between angles
+        abs_diffs = np.abs(resi)
+        circular_diffs = np.minimum(abs_diffs, 360 - abs_diffs)
+        return np.max(circular_diffs)
+    else:
+        return np.max(np.abs(resi))
 
 
 def mae(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None, circular: bool = False) -> float:
@@ -220,18 +228,16 @@ def root_mean_squared_error(
     """
     residual = _residual(obs, model, circular=circular)
     if unbiased:
-        residual = residual - residual.mean()
-    error = np.sqrt(np.average(residual**2, weights=weights))
-
-    return error
+        residual = residual - _mean(residual, circular=circular)
+    return np.sqrt(np.average(residual**2, weights=weights))
 
 
-def nse(obs: np.ndarray, model: np.ndarray) -> float:
+def nse(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """alias for nash_sutcliffe_efficiency"""
-    return nash_sutcliffe_efficiency(obs, model)
+    return nash_sutcliffe_efficiency(obs, model, circular=circular)
 
 
-def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
+def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """Nash-Sutcliffe Efficiency (NSE)
 
     .. math::
@@ -251,6 +257,9 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     """
     assert obs.size == model.size
 
+    if circular:
+        raise NotImplementedError("NSE is not implemented for circular data")
+
     if len(obs) == 0:
         return np.nan
     error = 1 - (
@@ -261,7 +270,7 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     return error
 
 
-def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
+def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """
     Kling-Gupta Efficiency (KGE)
 
@@ -282,11 +291,11 @@ def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     """
     assert obs.size == model.size
 
-    if len(obs) == 0 or obs.std() == 0.0:
+    if len(obs) == 0 or _std(obs, circular=circular) == 0.0:
         return np.nan
 
-    if model.std() > 1e-12:
-        r = corrcoef(obs, model)
+    if _std(model, circular=circular) > 1e-12:
+        r = corrcoef(obs, model, circular=circular)
         if np.isnan(r):
             r = 0.0
     else:
@@ -294,19 +303,19 @@ def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     res = 1 - np.sqrt(
         (r - 1) ** 2
-        + (model.std() / obs.std() - 1.0) ** 2
-        + (model.mean() / obs.mean() - 1.0) ** 2
+        + (_std(model, circular=circular) / _std(obs, circular=circular) - 1.0) ** 2
+        + (_mean(model, circular=circular) / _mean(obs, circular=circular) - 1.0) ** 2
     )
 
     return res
 
 
-def kge(obs: np.ndarray, model: np.ndarray) -> float:
+def kge(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """alias for kling_gupta_efficiency"""
-    return kling_gupta_efficiency(obs, model)
+    return kling_gupta_efficiency(obs, model, circular=circular)
 
 
-def r2(obs: np.ndarray, model: np.ndarray) -> float:
+def r2(obs: np.ndarray, model: np.ndarray, circular: bool=False) -> float:
     """Coefficient of determination (R2)
 
     Pronounced 'R-squared'; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.
@@ -326,16 +335,18 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     --------
     >>> obs = np.array([1.0,1.1,1.2,1.3,1.4])
     >>> model = np.array([1.09, 1.16, 1.3 , 1.38, 1.49])
-    >>> r2(obs,model)
+    >>> r2(obs, model)
     0.6379999999999998
     """
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
 
-    residual = model.ravel() - obs.ravel()
-    SSr = np.sum(residual**2)
-    SSt = np.sum((obs - obs.mean()) ** 2)
+    SSr = np.sum(_residual(obs, model, circular=circular)**2)
+    obsn = obs - obs.mean()
+    if circular:
+        obsn = (obsn+ 180) % 360 - 180
+    SSt = np.sum(obsn ** 2)
 
     return 1 - SSr / SSt
 
@@ -345,7 +356,7 @@ def mef(obs: np.ndarray, model: np.ndarray) -> float:
     return model_efficiency_factor(obs, model)
 
 
-def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
+def model_efficiency_factor(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """Model Efficiency Factor (MEF)
 
     Scale independent RMSE, standardized by Stdev of observations
@@ -365,12 +376,12 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
     """
     assert obs.size == model.size
 
-    return rmse(obs, model) / obs.std()
+    return rmse(obs, model, circular=circular) / _std(obs, circular=circular)
 
 
-def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
+def cc(obs: np.ndarray, model: np.ndarray, weights=None, circular: bool=False) -> float:
     """alias for corrcoef"""
-    return corrcoef(obs, model, weights)
+    return corrcoef(obs, model, weights, circular=circular)
 
 
 def corrcoef(obs, model, weights=None, circular: bool = False) -> float:
@@ -391,11 +402,11 @@ def corrcoef(obs, model, weights=None, circular: bool = False) -> float:
     if len(obs) <= 1:
         return np.nan
 
+    if circular:
+        raise NotImplementedError("circular corrcoef not implemented yet")
+
     if weights is None:
-        if circular:
-            pass
-        else:
-            return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
+        return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
     else:
         C = np.cov(obs.ravel(), model.ravel(), fweights=weights)
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
@@ -585,12 +596,12 @@ def _linear_regression(
     return slope, intercept
 
 
-def _std_obs(obs: np.ndarray, model: np.ndarray) -> float:
-    return obs.std()
+def _std_obs(obs: np.ndarray, model: np.ndarray, circular=False) -> float:
+    return _std(obs, circular=circular)
 
 
-def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
-    return model.std()
+def _std_mod(obs: np.ndarray, model: np.ndarray, circular=False) -> float:
+    return _std(model, circular=circular)
 
 
 METRICS_WITH_DIMENSION = set(["urmse", "rmse", "bias", "mae"])  # TODO is this complete?
