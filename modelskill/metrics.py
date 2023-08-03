@@ -16,6 +16,8 @@ difference between a model and an observation.
 * spearmanr (rho)
 * lin_slope
 * hit_ratio
+* explained_variance (ev)
+* peak_ratio (pr)
 
 The names in parentheses are shorthand aliases for the different metrics.
 
@@ -51,7 +53,9 @@ Examples
 0.4724896836313617
 >>> willmott(obs, mod)
 0.7484604452865941
->>> hit_ratio(obs, mod, a=0.5)
+>>> hit_ratio(obs, mod)
+0.6666666666666666
+>>> ev(obs, mod)
 0.6666666666666666
 """
 import sys
@@ -451,9 +455,14 @@ def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def ev(obs: np.ndarray, model: np.ndarray) -> float:
-    """EV: Explained variation
+    """alias for explained_variance"""
+    assert obs.size == model.size
+    return explained_variance(obs, model)
 
-    EV is the explained variation and measures the proportion [0 - 1] to which the model accounts for the variation (dispersion) of the observations
+def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
+    """EV: Explained variance
+
+    EV is the explained variance and measures the proportion [0 - 1] to which the model accounts for the variation (dispersion) of the observations
 
    .. math::
         \\frac{ \\sum_{i=1}^n (obs_i - \\overline{obs})^2 - \\sum_{i=1}^n \\left( (obs_i - \\overline{obs}) - (model_i - \\overline{model}) \\right)^2}{\\sum_{i=1}^n (obs_i - \\overline{obs})^2}
@@ -700,9 +709,14 @@ def add_metric(
     # add the function to the module
     setattr(sys.modules[__name__], metric.__name__, metric)
 
-
 def pr(obs: np.ndarray, model: np.ndarray) -> float:
-    """PR: Peak Ratio
+    """alias for peak_ratio"""
+    assert obs.size == model.size
+    return peak_ratio(obs, model)
+
+
+def peak_ratio(obs: np.ndarray, model: np.ndarray) -> float:
+    """Peak Ratio
 
     PR is the ratio of the mean of the identified peaks in the model / identified peaks in the measurements
 
