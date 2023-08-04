@@ -8,6 +8,51 @@ def test_mean_circular():
     
     assert mtr._mean(obs, circular=True) == pytest.approx(50.0)
 
+
+def test_mean_consistency():
+    func = mtr._mean
+    x = np.array([0, 5, 15, 30])
+    rot = [-4, 170, 340]
+
+    # Standard and circular versions should give same result (for small angles)
+    v = func(x)                 # 12.5   
+    vc = func(x, circular=True) # 12.461408982391507
+    assert v == pytest.approx(vc, 0.01)
+
+    # Should give same result when rotated
+    for r in rot:
+        # Rotate x and y by r degrees (0 to 360)
+        x2 = (x + r) % 360
+        vc2 = (func(x2, circular=True) - r) % 360
+        assert vc == pytest.approx(vc2, 1e-8)
+
+        # Rotate x and y by r degrees (-180 to 180)
+        x2 = (x + r + 180) % 360 - 180
+        vc2 = (func(x2, circular=True) - r) % 360
+        assert vc == pytest.approx(vc2, 1e-8)
+
+def test_std_consistency():
+    func = mtr._std
+    x = np.array([0, 5, 15, 30])
+    rot = [-4, 170, 340]
+
+    # Standard and circular versions should give same result (for small angles)
+    v = func(x)                  # 11.4564392373896 
+    vc = func(x, circular=True)  # 11.480163273747669
+    assert v == pytest.approx(vc, 0.01)
+
+    # Should give same result when rotated
+    for r in rot:
+        # Rotate x and y by r degrees (0 to 360)
+        x2 = (x + r) % 360
+        vc2 = func(x2, circular=True)
+        assert vc == pytest.approx(vc2, 1e-8)
+
+        # Rotate x and y by r degrees (-180 to 180)
+        x2 = (x + r + 180) % 360 - 180
+        vc2 = func(x2, circular=True)
+        assert vc == pytest.approx(vc2, 1e-8)
+
 # bias
 
 def test_bias_circular():
@@ -197,6 +242,59 @@ def test_std_circular_half_circle():
     # the standard deviation should be close to 51.96 degrees
     obs = np.array([0, 45, 90, 135, 180])
     assert mtr._std(obs, circular=True) == pytest.approx(69.14, 0.01)
+
+
+@pytest.mark.parametrize('func', [
+    mtr.bias,
+    mtr.max_error,
+    mtr.rmse,
+    # mtr.urmse,  # Failed test
+    mtr.mae,
+    # mtr.mape,   # Failed test
+    # mtr.kge,    # Not implemented yet
+    mtr.r2, 
+    mtr.mef, 
+])
+def test_metrics_consistency(func):
+    x = np.array([0, 5, 15, 30])
+    y = np.array([1, 2, 9, 21])
+    
+    # Standard and circular versions should give same result (for small angles)
+    v = func(x, y)
+    vc = (func(x, y, circular=True) + 180) % 360 - 180
+    assert v == pytest.approx(vc, 1e-2)
+
+
+@pytest.mark.parametrize('func', [
+    mtr.bias,
+    mtr.max_error,
+    mtr.rmse,
+    mtr.urmse,  
+    mtr.mae,
+    # mtr.mape,  # Failed test
+    # mtr.kge,   # Not implemented yet
+    # mtr.r2,    # Failed test
+    mtr.mef, 
+])
+def test_metrics_consistency_rotated(func):
+    x = np.array([0, 5, 15, 30])
+    y = np.array([1, 2, 9, 21])
+    rot = [-4, 170, 340]
+    vc = func(x, y, circular=True)
+
+    # Should give same result when rotated
+    for r in rot:
+        # Rotate x and y by r degrees (0 to 360)
+        x2 = (x + r) % 360
+        y2 = (y + r) % 360
+        vc2 = func(x2, y2, circular=True)
+        assert vc == pytest.approx(vc2, 1e-7)
+
+        # Rotate x and y by r degrees (-180 to 180)
+        x2 = (x + r + 180) % 360 - 180
+        y2 = (y + r + 180) % 360 - 180
+        vc2 = func(x2, y2, circular=True)
+        assert vc == pytest.approx(vc2, 1e-7)
 
 
 # corrcoef
