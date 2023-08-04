@@ -1,9 +1,17 @@
 from typing import Callable
 import pytest
 import numpy as np
+import pandas as pd
 
 import modelskill.metrics as mtr
 
+@pytest.fixture
+def obs_series():
+    return pd.Series(data=np.arange(24*365*4)/1000,index=pd.date_range(start='2100-01-01',periods=24*365*4,freq='H'))
+
+@pytest.fixture
+def mod_series():
+    return pd.Series(data=np.arange(24*365*4)/1000+5,index=pd.date_range(start='2100-01-01',periods=24*365*4,freq='H'))
 
 def test_nse_optimal():
 
@@ -176,6 +184,23 @@ def test_willmott():
 
     assert mtr.willmott(obs, mod) == pytest.approx(1 - 0.5 / 1.5)
 
+
+def test_ev():
+    obs = np.arange(100)
+    mod = obs + 1.0
+    ev = mtr.ev(obs, mod)
+
+    assert ev == 1.0
+
+def test_pr(obs_series,mod_series):
+    #Obs needs to be a series as the mode of the time index is used.
+    # Will use the same data for a real test of ev
+    obs = obs_series
+    mod = mod_series
+
+    pr = mtr.pr(obs, mod)
+
+    assert pr == pytest.approx(1.14269813636) 
 
 def test_metric_has_dimension():
 
