@@ -241,15 +241,18 @@ document.write(`
 <span class="sd">* urmse</span>
 <span class="sd">* mean_absolute_error (mae)</span>
 <span class="sd">* mean_absolute_percentage_error (mape)</span>
-<span class="sd">* nash_sutcliffe_efficiency (nse)</span>
 <span class="sd">* kling_gupta_efficiency (kge)</span>
+<span class="sd">* nash_sutcliffe_efficiency (nse)</span>
 <span class="sd">* r2 (r2=nse)</span>
 <span class="sd">* model_efficiency_factor (mef)</span>
+<span class="sd">* wilmott</span>
 <span class="sd">* scatter_index (si)</span>
 <span class="sd">* corrcoef (cc)</span>
 <span class="sd">* spearmanr (rho)</span>
 <span class="sd">* lin_slope</span>
 <span class="sd">* hit_ratio</span>
+<span class="sd">* explained_variance (ev)</span>
+<span class="sd">* peak_ratio (pr)</span>
 
 <span class="sd">The names in parentheses are shorthand aliases for the different metrics.</span>
 
@@ -287,11 +290,15 @@ document.write(`
 <span class="sd">0.7484604452865941</span>
 <span class="sd">&gt;&gt;&gt; hit_ratio(obs, mod, a=0.5)</span>
 <span class="sd">0.6666666666666666</span>
+<span class="sd">&gt;&gt;&gt; ev(obs, mod)</span>
+<span class="sd">0.39614855570839064</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">typing</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
+
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
 
 
 <div class="viewcode-block" id="bias"><a class="viewcode-back" href="../../api.html#modelskill.metrics.bias">[docs]</a><span class="k">def</span> <span class="nf">bias</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -449,7 +456,7 @@ document.write(`
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
-<span class="sd">    r2 = nash_sutcliffe_efficiency</span>
+<span class="sd">    r2 = nash_sutcliffe_efficiency(nse)</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -526,7 +533,7 @@ document.write(`
 
 <span class="sd">    Note</span>
 <span class="sd">    ----</span>
-<span class="sd">    r2 = nash_sutcliffe_efficiency</span>
+<span class="sd">    r2 = nash_sutcliffe_efficiency(nse)</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -591,6 +598,7 @@ document.write(`
 
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
+<span class="sd">    spearmanr</span>
 <span class="sd">    np.corrcoef</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
@@ -684,6 +692,46 @@ document.write(`
     <span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="ev"><a class="viewcode-back" href="../../api.html#modelskill.metrics.ev">[docs]</a><span class="k">def</span> <span class="nf">ev</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for explained_variance&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">return</span> <span class="n">explained_variance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="explained_variance"><a class="viewcode-back" href="../../api.html#modelskill.metrics.explained_variance">[docs]</a><span class="k">def</span> <span class="nf">explained_variance</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;EV: Explained variance</span>
+
+<span class="sd">     EV is the explained variance and measures the proportion</span>
+<span class="sd">     [0 - 1] to which the model accounts for the variation</span>
+<span class="sd">     (dispersion) of the observations.</span>
+
+<span class="sd">     In cases with no bias, EV is equal to r2</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">         \\frac{ \\sum_{i=1}^n (obs_i - \\overline{obs})^2 -</span>
+<span class="sd">         \\sum_{i=1}^n \\left( (obs_i - \\overline{obs}) -</span>
+<span class="sd">         (model_i - \\overline{model}) \\right)^2}{\\sum_{i=1}^n</span>
+<span class="sd">         (obs_i - \\overline{obs})^2}</span>
+
+<span class="sd">     Range: [0, 1]; Best: 1</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    r2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">nominator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+        <span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">-</span> <span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">model</span><span class="o">.</span><span class="n">mean</span><span class="p">()))</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="p">)</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">nominator</span> <span class="o">/</span> <span class="n">denominator</span></div>
+
+
 <div class="viewcode-block" id="willmott"><a class="viewcode-back" href="../../api.html#modelskill.metrics.willmott">[docs]</a><span class="k">def</span> <span class="nf">willmott</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Willmott&#39;s Index of Agreement</span>
 
@@ -761,7 +809,6 @@ document.write(`
 <span class="k">def</span> <span class="nf">_linear_regression</span><span class="p">(</span>
     <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="s2">&quot;ols&quot;</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
 
@@ -912,6 +959,184 @@ document.write(`
 
     <span class="c1"># add the function to the module</span>
     <span class="nb">setattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">],</span> <span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">metric</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pr"><a class="viewcode-back" href="../../api.html#modelskill.metrics.pr">[docs]</a><span class="k">def</span> <span class="nf">pr</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for peak_ratio&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">return</span> <span class="n">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="peak_ratio"><a class="viewcode-back" href="../../api.html#modelskill.metrics.peak_ratio">[docs]</a><span class="k">def</span> <span class="nf">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Peak Ratio</span>
+
+<span class="sd">    PR is the ratio of the mean of the identified peaks in the</span>
+<span class="sd">    model / identified peaks in the measurements</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">            \\frac{\\sum_{i=1}^{N_{peak}} (model_i)}{\\sum_{i=1}^{N_{peak}} (obs_i)}</span>
+
+<span class="sd">    Range: [0, inf]; Best: 1.0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">index</span>
+    <span class="c1"># Calculate number of years</span>
+    <span class="n">dt_int</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">dt_int_mode</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="n">dt_int</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mf">1e9</span>  <span class="c1"># in seconds</span>
+    <span class="n">N_years</span> <span class="o">=</span> <span class="n">dt_int_mode</span> <span class="o">/</span> <span class="mi">24</span> <span class="o">/</span> <span class="mi">3600</span> <span class="o">/</span> <span class="mf">365.25</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+    <span class="n">found_peaks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">[</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">]:</span>
+        <span class="n">peak_index</span><span class="p">,</span> <span class="n">AAP</span> <span class="o">=</span> <span class="n">_partial_duration_series</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">peaks</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">peak_index</span><span class="p">]</span>
+        <span class="n">peaks_sorted</span> <span class="o">=</span> <span class="n">peaks</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">found_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">peaks_sorted</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">AAP</span> <span class="o">*</span> <span class="n">N_years</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peaks</span><span class="p">)))]</span>
+        <span class="p">)</span>
+    <span class="n">found_peaks_obs</span> <span class="o">=</span> <span class="n">found_peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">found_peaks_mod</span> <span class="o">=</span> <span class="n">found_peaks</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">found_peaks_mod</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">found_peaks_obs</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_partial_duration_series</span><span class="p">(</span>
+    <span class="n">time</span><span class="p">,</span>
+    <span class="n">value</span><span class="p">,</span>
+    <span class="n">inter_event_time</span><span class="o">=</span><span class="mi">36</span><span class="p">,</span>
+    <span class="n">use_inter_event_level</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">inter_event_level</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+    <span class="n">AAP</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the partial duration series based on the given time and value arrays.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        time (array-like)</span>
+<span class="sd">            Array of time values.</span>
+<span class="sd">        value (array-like)</span>
+<span class="sd">            Array of corresponding values.</span>
+<span class="sd">        inter_event_time (float, optional)</span>
+<span class="sd">            Maximum time interval between peaks (default: 36 hours).</span>
+<span class="sd">        use_inter_event_level (bool, optional)</span>
+<span class="sd">            Flag indicating whether to consider inter-event level (default: True).</span>
+<span class="sd">        inter_event_level (float, optional)</span>
+<span class="sd">            Inter-event level threshold (default: 0.7).</span>
+<span class="sd">        AAP (float, optional)</span>
+<span class="sd">            Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: (numpy.ndarray,int)</span>
+<span class="sd">            - Array of booleans indicating the identified peaks in the partial duration series.</span>
+<span class="sd">            - Average Annual Peaks per year</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        None</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - The time values are expected to be a datetime index</span>
+<span class="sd">        - The returned array contains True at indices corresponding to peaks in the series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">peak_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">))</span>
+
+    <span class="n">old_peak</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+    <span class="n">inter_time</span> <span class="o">=</span> <span class="n">inter_event_time</span>
+    <span class="n">inter_level</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1e9</span> <span class="o">/</span> <span class="mi">3600</span>  <span class="c1"># time index in hours from t0=0</span>
+
+    <span class="k">for</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">old_peak</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+            <span class="k">continue</span>
+
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">distance</span> <span class="o">&gt;</span> <span class="n">inter_time</span><span class="p">:</span>
+            <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+            <span class="k">continue</span>
+
+        <span class="n">peak_val</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span>
+        <span class="n">step_val</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">peak_val</span> <span class="o">&lt;</span> <span class="n">step_val</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">time_step</span> <span class="o">!=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">distance</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">time_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">time_step</span> <span class="o">!=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="n">inter_time</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">step_val</span> <span class="o">&gt;</span> <span class="n">value</span><span class="p">[</span><span class="n">time_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                        <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+
+    <span class="k">if</span> <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">old_peak</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">for</span> <span class="n">time_step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">old_peak</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+            <span class="k">continue</span>
+
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">distance</span> <span class="o">&gt;</span> <span class="n">inter_time</span><span class="p">:</span>
+            <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+            <span class="k">continue</span>
+
+        <span class="n">peak_val</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span>
+        <span class="n">step_val</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">peak_val</span> <span class="o">&lt;</span> <span class="n">step_val</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">time_step</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">distance</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="n">time_step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="n">inter_time</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">step_val</span> <span class="o">&gt;</span> <span class="n">value</span><span class="p">[</span><span class="n">time_step</span><span class="p">]:</span>
+                        <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+        <span class="k">elif</span> <span class="n">peak_val</span> <span class="o">==</span> <span class="n">step_val</span> <span class="ow">and</span> <span class="n">peak_list</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">old_peak</span> <span class="o">=</span> <span class="n">time_step</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">peak_list</span><span class="p">[</span><span class="n">time_step</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">use_inter_event_level</span><span class="p">:</span>
+        <span class="n">inter_level</span> <span class="o">=</span> <span class="n">inter_event_level</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="n">minimum</span> <span class="o">=</span> <span class="mf">1.0e99</span>
+        <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="ow">and</span> <span class="n">peak_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">minimum</span><span class="p">:</span>
+                <span class="n">minimum</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="ow">and</span> <span class="n">peak_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">x1</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span>
+            <span class="n">x2</span> <span class="o">=</span> <span class="n">value</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">distance</span> <span class="o">&gt;</span> <span class="n">inter_time</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="n">use_inter_event_level</span> <span class="ow">or</span> <span class="n">minimum</span> <span class="o">&lt;</span> <span class="n">inter_level</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">old_peak</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">x1</span> <span class="o">&gt;</span> <span class="n">x2</span><span class="p">:</span>
+                    <span class="n">peak_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">peak_list</span><span class="p">[</span><span class="n">old_peak</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">old_peak</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">peak_list</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">),</span> <span class="n">AAP</span>
 </pre></div>
 
                 </article>

@@ -2210,15 +2210,18 @@ difference between a model and an observation.</p>
 <li><p>urmse</p></li>
 <li><p>mean_absolute_error (mae)</p></li>
 <li><p>mean_absolute_percentage_error (mape)</p></li>
-<li><p>nash_sutcliffe_efficiency (nse)</p></li>
 <li><p>kling_gupta_efficiency (kge)</p></li>
+<li><p>nash_sutcliffe_efficiency (nse)</p></li>
 <li><p>r2 (r2=nse)</p></li>
 <li><p>model_efficiency_factor (mef)</p></li>
+<li><p>wilmott</p></li>
 <li><p>scatter_index (si)</p></li>
 <li><p>corrcoef (cc)</p></li>
 <li><p>spearmanr (rho)</p></li>
 <li><p>lin_slope</p></li>
 <li><p>hit_ratio</p></li>
+<li><p>explained_variance (ev)</p></li>
+<li><p>peak_ratio (pr)</p></li>
 </ul>
 <p>The names in parentheses are shorthand aliases for the different metrics.</p>
 <p class="rubric">Examples</p>
@@ -2254,6 +2257,8 @@ difference between a model and an observation.</p>
 <span class="go">0.7484604452865941</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">hit_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="go">0.6666666666666666</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ev</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
+<span class="go">0.39614855570839064</span>
 </pre></div>
 </div>
 <dl class="py function">
@@ -2305,7 +2310,34 @@ difference between a model and an observation.</p>
 <p>Range: [-1, 1]; Best: 1</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
-<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">np.corrcoef</span></code></p>
+<p><a class="reference internal" href="#modelskill.metrics.spearmanr" title="modelskill.metrics.spearmanr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spearmanr</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">np.corrcoef</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modelskill.metrics.ev">
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">ev</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#ev"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.ev" title="Permalink to this definition">#</a></dt>
+<dd><p>alias for explained_variance</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modelskill.metrics.explained_variance">
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">explained_variance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#explained_variance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.explained_variance" title="Permalink to this definition">#</a></dt>
+<dd><p>EV: Explained variance</p>
+<blockquote>
+<div><p>EV is the explained variance and measures the proportion
+[0 - 1] to which the model accounts for the variation
+(dispersion) of the observations.</p>
+<p>In cases with no bias, EV is equal to r2</p>
+</div></blockquote>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\frac{ \sum_{i=1}^n (obs_i - \overline{obs})^2 -
+    \sum_{i=1}^n \left( (obs_i - \overline{obs}) -
+    (model_i - \overline{model}) \right)^2}{\sum_{i=1}^n
+    (obs_i - \overline{obs})^2}\\Range: [0, 1]; Best: 1\end{aligned}\end{align} \]</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#modelskill.metrics.r2" title="modelskill.metrics.r2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">r2</span></code></a></p>
 </div>
 </dd></dl>
 
@@ -2481,7 +2513,7 @@ difference between a model and an observation.</p>
 <p>Range: <span class="math notranslate nohighlight">\((-\infty, 1]\)</span>; Best: 1</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>r2 = nash_sutcliffe_efficiency</p>
+<p>r2 = nash_sutcliffe_efficiency(nse)</p>
 </div>
 <p class="rubric">References</p>
 <p>Nash, J. E.; Sutcliffe, J. V. (1970). “River flow forecasting through conceptual models part I — A discussion of principles”. Journal of Hydrology. 10 (3): 282–290.</p>
@@ -2491,6 +2523,23 @@ difference between a model and an observation.</p>
 <dt class="sig sig-object py" id="modelskill.metrics.nse">
 <span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">nse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#nse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.nse" title="Permalink to this definition">#</a></dt>
 <dd><p>alias for nash_sutcliffe_efficiency</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modelskill.metrics.peak_ratio">
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">peak_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#peak_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.peak_ratio" title="Permalink to this definition">#</a></dt>
+<dd><p>Peak Ratio</p>
+<p>PR is the ratio of the mean of the identified peaks in the
+model / identified peaks in the measurements</p>
+<div class="math notranslate nohighlight">
+\[\frac{\sum_{i=1}^{N_{peak}} (model_i)}{\sum_{i=1}^{N_{peak}} (obs_i)}\]</div>
+<p>Range: [0, inf]; Best: 1.0</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modelskill.metrics.pr">
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">pr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#pr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.pr" title="Permalink to this definition">#</a></dt>
+<dd><p>alias for peak_ratio</p>
 </dd></dl>
 
 <dl class="py function">
@@ -2504,7 +2553,7 @@ difference between a model and an observation.</p>
 <p>Range: <span class="math notranslate nohighlight">\((-\infty, 1]\)</span>; Best: 1</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>r2 = nash_sutcliffe_efficiency</p>
+<p>r2 = nash_sutcliffe_efficiency(nse)</p>
 </div>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1.1</span><span class="p">,</span><span class="mf">1.2</span><span class="p">,</span><span class="mf">1.3</span><span class="p">,</span><span class="mf">1.4</span><span class="p">])</span>
