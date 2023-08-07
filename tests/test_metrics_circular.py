@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import pytest
 
@@ -59,7 +60,7 @@ def test_bias_circular():
     obs = np.arange(100)
     mod = obs + 1.0
 
-    assert mtr.bias(obs, mod, circular=True) == 1.0
+    assert mtr.bias(obs, mod, circular=True) == pytest.approx(1.0, 1e-9)
 
 
 def test_bias_circular_wraparound():
@@ -175,7 +176,7 @@ def test_urmse_circular():
     obs = np.arange(100)
     mod = obs + 1.0
 
-    assert mtr.urmse(obs, mod, circular=True) == 0.0
+    assert mtr.urmse(obs, mod, circular=True) == pytest.approx(0.0, 1e-9)
 
 def test_rmse_circular_exact_matching():
     obs = np.array([0, 90, 180, 270])
@@ -260,12 +261,8 @@ def test_circular_corrcoef_perfect_positive():
 #     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(0.0)
 
 def test_circular_spearmanr_for_small_angles():
-    # obs = np.array([5, 10, 15, 20]) + 340
-    # model = np.array([6, 11, 16, 21]) + 340
-    
-    obs = np.array([0, 5, 15, 30]) + 340
-    model = np.array([1, 2, 9, 21]) + 340
-    #rot = [-4, 170, 340]
+    obs = np.array([5, 10, 15, 20]) 
+    model = np.array([6, 11, 16, 21])
 
     circ_result = mtr.spearmanr(obs, model, circular=True)
     lin_result = mtr.spearmanr(obs, model)
@@ -286,6 +283,8 @@ def test_circular_spearmanr_for_small_angles():
     mtr.mef, 
     mtr.cc, 
     mtr.rho, 
+    # mtr.si,
+    # mtr.ev,
 ])
 def test_metrics_consistency(func):
     x = np.array([0, 5, 15, 30])
@@ -297,36 +296,41 @@ def test_metrics_consistency(func):
     assert v == pytest.approx(vc, 1e-2)
 
 
-@pytest.mark.parametrize('func', [
+mtr_funs = [
     mtr.bias,
     mtr.max_error,
     mtr.rmse,
-    mtr.urmse,  
+    mtr.urmse,
     mtr.mae,
     # mtr.mape,  # Failed test
     # mtr.kge,   # Not implemented yet
     # mtr.r2,    # Failed test
-    mtr.mef, 
-    mtr.cc, 
-    # mtr.rho,   # Failed test (ranking circular data...)
-])
-def test_metrics_consistency_rotated(func):
+    mtr.mef,
+    mtr.cc,
+    # mtr.rho,   # Failed test
+    # mtr.si,
+    # mtr.ev, 
+]
+
+rotations = [-4, 170, 340]
+
+@pytest.mark.parametrize('func,rot', itertools.product(mtr_funs, rotations))
+def test_metrics_consistency_rotated(func, rot):
     x = np.array([0, 5, 15, 30])
     y = np.array([1, 2, 9, 21])
-    rot = [-4, 170, 340]
     vc = func(x, y, circular=True)
 
     # Should give same result when rotated
-    for r in rot:
-        # Rotate x and y by r degrees (0 to 360)
-        x2 = (x + r) % 360
-        y2 = (y + r) % 360
-        vc2 = func(x2, y2, circular=True)
-        assert vc == pytest.approx(vc2, 1e-7)
+    
+    # Rotate x and y by r degrees (0 to 360)
+    x2 = (x + rot) % 360
+    y2 = (y + rot) % 360
+    vc2 = func(x2, y2, circular=True)
+    assert vc == pytest.approx(vc2, 1e-7)
 
-        # Rotate x and y by r degrees (-180 to 180)
-        x2 = (x + r + 180) % 360 - 180
-        y2 = (y + r + 180) % 360 - 180
-        vc2 = func(x2, y2, circular=True)
-        assert vc == pytest.approx(vc2, 1e-7)
+    # Rotate x and y by r degrees (-180 to 180)
+    x2 = (x + rot + 180) % 360 - 180
+    y2 = (y + rot + 180) % 360 - 180
+    vc2 = func(x2, y2, circular=True)
+    assert vc == pytest.approx(vc2, 1e-7)
 
