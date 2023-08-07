@@ -410,15 +410,27 @@ def corrcoef(obs, model, weights=None, circular: bool = False) -> float:
     if len(obs) <= 1:
         return np.nan
 
-    if circular:
-        raise NotImplementedError("circular corrcoef not implemented yet")
-
     if weights is None:
-        return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
+        if circular:
+            return _circular_corrcoef(obs, model)
+        else:
+            return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
     else:
+        if circular:
+            raise NotImplementedError("circular corrcoef with weights not implemented yet")
+        
         C = np.cov(obs.ravel(), model.ravel(), fweights=weights)
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
+def _circular_corrcoef(x, y):
+    x = np.deg2rad(x)
+    y = np.deg2rad(y)
+    x_bar = circmean(x)
+    y_bar = circmean(y)
+
+    num = np.sum(np.sin(x - x_bar) * np.sin(y - y_bar))
+    den = np.sqrt(np.sum(np.sin(x - x_bar) ** 2) * np.sum(np.sin(y - y_bar) ** 2))
+    return num / den
 
 def rho(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
     """alias for spearmanr"""
@@ -482,9 +494,10 @@ def scatter_index(obs: np.ndarray, model: np.ndarray, circular: bool = False) ->
     if circular:
         raise NotImplementedError("circular scatter_index not implemented yet")
 
-    residual = obs.ravel() - model.ravel()
+    residual = _residual(obs, model, circular=circular)
     residual = residual - residual.mean()  # unbiased
-    return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs.ravel()))
+    mean_abs_obs = _mean(np.abs(obs.ravel()), circular=circular)
+    return np.sqrt(np.mean(residual**2)) / mean_abs_obs
 
 
 def scatter_index2(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:
@@ -542,12 +555,12 @@ def explained_variance(obs: np.ndarray, model: np.ndarray, circular: bool = Fals
 
     if circular:
         raise NotImplementedError("circular explained_variance not implemented yet")
+    else:
+        obsu = obs.ravel() - _mean(obs, circular=circular)
+        modu = model.ravel() - _mean(model, circular=circular)
 
-    nominator = np.sum((obs.ravel() - obs.mean()) ** 2) - np.sum(
-        ((obs.ravel() - obs.mean()) - (model.ravel() - model.mean())) ** 2
-    )
-    denominator = np.sum((obs.ravel() - obs.mean()) ** 2)
-
+    nominator = np.sum(obsu ** 2) - np.sum((obsu - modu) ** 2)
+    denominator = np.sum(obsu ** 2)
     return nominator / denominator
 
 

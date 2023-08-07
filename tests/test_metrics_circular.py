@@ -163,9 +163,6 @@ def test_mape_circular_prediction():
     model = np.array([400, 300, 200, 100])
     assert mtr.mape(obs, model) == pytest.approx(114.5833)
 
-
-
-
 # rmse
 
 def test_rmse_circular():
@@ -243,6 +240,25 @@ def test_std_circular_half_circle():
     obs = np.array([0, 45, 90, 135, 180])
     assert mtr._std(obs, circular=True) == pytest.approx(69.14, 0.01)
 
+# corrcoef
+
+def test_circular_corrcoef_perfect_positive():
+    obs = np.array([0, 90, 180, 270])
+    mod = np.array([0, 90, 180, 270])
+    assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(1.0)
+
+
+# def test_circular_corrcoef_perfect_negative():
+#     obs = np.array([0, 90, 180, 270])
+#     mod = np.array([180, 270, 0, 90])
+#     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(-1.0)
+
+
+# def test_circular_corrcoef_circular_shift():
+#     obs = np.array([0, 90, 180, 270])
+#     mod = np.array([90, 180, 270, 0])  # 90-degree shift
+#     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(0.0)
+
 
 @pytest.mark.parametrize('func', [
     mtr.bias,
@@ -254,6 +270,7 @@ def test_std_circular_half_circle():
     # mtr.kge,    # Not implemented yet
     mtr.r2, 
     mtr.mef, 
+    mtr.cc, 
 ])
 def test_metrics_consistency(func):
     x = np.array([0, 5, 15, 30])
@@ -275,6 +292,7 @@ def test_metrics_consistency(func):
     # mtr.kge,   # Not implemented yet
     # mtr.r2,    # Failed test
     mtr.mef, 
+    mtr.cc, 
 ])
 def test_metrics_consistency_rotated(func):
     x = np.array([0, 5, 15, 30])
@@ -296,22 +314,3 @@ def test_metrics_consistency_rotated(func):
         vc2 = func(x2, y2, circular=True)
         assert vc == pytest.approx(vc2, 1e-7)
 
-
-# corrcoef
-
-# def test_circular_corrcoef_perfect_positive():
-#     obs = np.array([0, 90, 180, 270])
-#     mod = np.array([0, 90, 180, 270])
-#     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(1.0)
-
-
-# def test_circular_corrcoef_perfect_negative():
-#     obs = np.array([0, 90, 180, 270])
-#     mod = np.array([180, 270, 0, 90])
-#     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(-1.0)
-
-
-# def test_circular_corrcoef_circular_shift():
-#     obs = np.array([0, 90, 180, 270])
-#     mod = np.array([90, 180, 270, 0])  # 90-degree shift
-#     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(0.0)
