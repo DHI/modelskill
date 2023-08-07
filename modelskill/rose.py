@@ -1,30 +1,30 @@
-from typing import Optional, List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
-import numpy as np
 import matplotlib as mpl
-from matplotlib.patches import Rectangle, Polygon
-from matplotlib.legend import Legend
-from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.collections import PatchCollection
+from matplotlib.legend import Legend
 from matplotlib.offsetbox import AnchoredText
+from matplotlib.patches import Polygon, Rectangle
 
 
 def wind_rose(
     data,
-    mag_step=None,
-    ax=None,
-    dir_step=30,
+    mag_step: Optional[float] = None,
+    n_sectors: int = 16,
     calm_threshold=None,  # TODO rename to vmin?
     resize_calm=0.05,
     calm_text="Calm",
-    r_step=0.1,
-    r_max=None,
+    r_step: float = 0.1,
+    r_max: Optional[float] = None,
     legend=True,
-    cmap1="viridis",
-    cmap2="Greys",
+    cmap1: str = "viridis",
+    cmap2: str = "Greys",
     mag_bins: Optional[List[float]] = None,
     max_bin=None,  # TODO rename to vmax?
-    n_labels=4,
+    n_labels: Optional[int] = None,
+    ax=None,
     **kwargs,
 ):
 
@@ -34,10 +34,7 @@ def wind_rose(
             array with 4 columns
         mag_step: float, (optional) Default= None
             discretization for magnitude (delta_r, in radial direction )
-        ax: Matplotlib axis Default= None
-            Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
-        dir_step: float (optional) Default= None
-            discretization for dir1s. Default= 30
+        n_sectors: int (optional) Default= 16
         calm_threshold: float (optional) Default= None (auto calculated)
             minimum value for data being counted as valid (i.e. below this is calm)
         resize_calm: bool or float (optional) Default: 0.05
@@ -59,7 +56,9 @@ def wind_rose(
         cmap2 : string. Default= 'Greys'
             colormap for secondary axis
         n_labels : int. Default= 4
-            number of labels in the polar plot, choose between 4, 8 or 16
+            number of labels in the polar plot, choose between 4, 8 or 16, default is to use the same as n_sectors
+        ax: Matplotlib axis Default= None
+            Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
 
     ------------------------------------------------------------------------------------------------
     Returns
@@ -70,13 +69,17 @@ def wind_rose(
 
     # magnitude bins
     ui, vmin, vmax = pretty_intervals(
-        data_1[:,0],
-        data_2[:,0],
+        data_1[:, 0],
+        data_2[:, 0],
         mag_bins,
         mag_step,
         calm_threshold,
         max_bin,
     )
+
+    dir_step = 360 // n_sectors
+
+    n_labels = n_sectors if n_labels is None else n_labels
 
     ### create vectors to evaluate the histogram
     thetai = np.linspace(
@@ -86,15 +89,17 @@ def wind_rose(
     )
     thetac = thetai[:-1] + dir_step / 2
 
-    mask_1 = data_1[:,0] >= vmin
-    mask_2 = data_2[:,0] >= vmin
+    mask_1 = data_1[:, 0] >= vmin
+    mask_2 = data_2[:, 0] >= vmin
 
     ### compute total calms
     N = len(data_1)
     calm = len(data_1[~mask_1]) / N
     calm2 = len(data_2[~mask_2]) / N
 
-    counts, counts_2 = _calc_histograms(data_1=data_1, mask_1=mask_1, data_2=data_2, mask_2=mask_2, ui=ui, thetai=thetai)
+    counts, counts_2 = _calc_histograms(
+        data_1=data_1, mask_1=mask_1, data_2=data_2, mask_2=mask_2, ui=ui, thetai=thetai
+    )
 
     ### compute radial ticks
     ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
@@ -105,22 +110,16 @@ def wind_rose(
     cmap = _get_cmap(cmap1)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     colors_ = [cmap(norm(x)) for x in ui]
-    
+
     if ax is None:
         _, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection="polar"))
 
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
 
-    # TODO extract to function
-    if n_labels == 4:
-        ax.set_thetagrids([0, 90, 180, 270], ["N", "E", "S", "W"]) # TODO allow NW, NE, SW, SE and NNW, NNE, SSW, SSE
-    elif n_labels == 8:
-        ax.set_thetagrids([0, 45, 90, 135, 180, 225, 270, 315], ["N", "NE", "E", "SE", "S", "SW", "W", "NW"])
-    elif n_labels == 16:
-        ax.set_thetagrids(np.linspace(0,360,n_labels +1 )[:-1], ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW","SW", "WSW", "W", "WNW", "NW", "NNW"])
-    else:
-        raise ValueError("n_labels must be 4, 8 or 16")
+    labels = directional_labels(n_labels)
+    grid = np.linspace(0, 360, n_labels + 1)[:-1]
+    ax.set_thetagrids(grid, labels)
 
     # ax.tick_params(pad=-24)
 
@@ -166,12 +165,21 @@ def wind_rose(
     ax.add_collection(p)
 
     if legend:
-        _add_legend_to_ax(ax, colors=colors_, vmin=vmin, ui=ui, calm=calm, counts=counts, label="Model", primary=True)
-        
+        _add_legend_to_ax(
+            ax,
+            colors=colors_,
+            vmin=vmin,
+            ui=ui,
+            calm=calm,
+            counts=counts,
+            label="Model",
+            primary=True,
+        )
+
     cmap = _get_cmap(cmap2)
     norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
     colors_ = [cmap(norm(x)) for x in ui]
-    
+
     ### plot each bar of the histogram
     patches = []
     colors = []
@@ -206,14 +214,67 @@ def wind_rose(
     ax.add_collection(p)
 
     if legend:
-        _add_legend_to_ax(ax, colors=colors_, vmin=vmin, ui=ui, calm=calm2, counts=counts_2, label="Observation", primary=False)
+        _add_legend_to_ax(
+            ax,
+            colors=colors_,
+            vmin=vmin,
+            ui=ui,
+            calm=calm2,
+            counts=counts_2,
+            label="Observation",
+            primary=False,
+        )
 
     if "watermark" in kwargs:
         _add_watermark_to_ax(ax, kwargs["watermark"])
     return ax
 
 
-# TODO not sure this belongs in the rose module
+def directional_labels(n: int) -> Tuple[str, ...]:
+    """Return labels for n directions.
+
+    Parameters
+    ----------
+    n : int
+        Number of directions. Must be 4, 8 or 16.
+
+    Returns
+    -------
+    Tuple[str, ...]
+        labels
+
+    Examples
+    --------
+    >>> directional_labels(4)
+    ('N', 'E', 'S', 'W')
+    """
+    if n == 4:
+        return ("N", "E", "S", "W")
+    elif n == 8:
+        return ("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+    elif n == 16:
+        return (
+            "N",
+            "NNE",
+            "NE",
+            "ENE",
+            "E",
+            "ESE",
+            "SE",
+            "SSE",
+            "S",
+            "SSW",
+            "SW",
+            "WSW",
+            "W",
+            "WNW",
+            "NW",
+            "NNW",
+        )
+    else:
+        raise ValueError("n must be 4, 8 or 16")
+
+
 def pretty_intervals(
     data_1: np.typing.ArrayLike,
     data_2: np.typing.ArrayLike,
@@ -221,13 +282,12 @@ def pretty_intervals(
     mag_step: Optional[float] = None,
     vmin: Optional[float] = None,
     max_bin: Optional[float] = None,
+    n_decimals: int = 3,
 ) -> Tuple[np.ndarray, float, float]:
     """Pretty intervals for the magnitude bins"""
 
     data_1_max = data_1.max()
     data_2_max = data_2.max()
-
-    FACTOR = 16  # TODO why 16?
 
     # Magnitude bins
     ## Check if there's double counting in inputs
@@ -245,14 +305,7 @@ def pretty_intervals(
 
     else:
         if mag_step is None:
-            mag_step = np.round(data_1_max / FACTOR, 1)
-            if mag_step == 0:  # TODO is using 0 an obvious choice?
-                mag_step = np.round(data_1_max / FACTOR, 2)
-
-            mag_step2 = np.round(data_2_max / FACTOR, 1)
-            if mag_step2 == 0:  # TODO is using 0 an obvious choice?
-                mag_step2 = np.round(data_2_max / FACTOR, 2)
-            mag_step = max(mag_step, mag_step2)
+            mag_step = _calc_mag_step(data_1_max, data_2_max)
 
         if vmin is None:
             vmin = mag_step
@@ -274,32 +327,66 @@ def pretty_intervals(
         ui[-1] = (
             ui[-1] * 2
         )  # safety factor * 2 as sometimes max is not in the iterations
-        # Round bins to 3 decimal, this could be an input
-        ui = [np.round(x, 3) for x in ui]
+        # Round bins to make them pretty
+        ui = ui.round(n_decimals)
 
-    # TODO return a better object
+    # TODO return a better object?
     return ui, vmin, vmax
 
-def _calc_histograms(*,data_1, mask_1, data_2, mask_2, ui, thetai) -> Tuple[np.ndarray, np.ndarray]:
+
+def _calc_mag_step(xmax: float, ymax: float, factor: float = 16.0):
+    """
+    Calculate the magnitude step size for a rose plot.
+
+    Parameters
+    ----------
+    x : float
+        The maximum value of the histogram.
+    y : float
+        The maximum value of the histogram.
+    factor : float, optional
+        The factor to use to calculate the magnitude step size, by default 16.0
+
+    Returns
+    -------
+    float
+    """
+    mag_step = np.round(xmax / factor, 1)
+    if mag_step == 0:
+        mag_step = np.round(xmax / factor, 2)
+
+    mag_step2 = np.round(ymax / factor, 1)
+    if mag_step2 == 0:
+        mag_step2 = np.round(ymax / factor, 2)
+    mag_step = max(mag_step, mag_step2)
+    return mag_step
+
+
+def _calc_histograms(
+    *, data_1, mask_1, data_2, mask_2, ui, thetai
+) -> Tuple[np.ndarray, np.ndarray]:
 
     N = len(data_1)
     counts, _, _ = np.histogram2d(
-        data_1[mask_1][:,0],
-        data_1[mask_1][:,1],
+        data_1[mask_1][:, 0],
+        data_1[mask_1][:, 1],
         bins=[ui, thetai],
     )
     counts = counts / N
 
     counts_2, _, _ = np.histogram2d(
-        data_2[mask_2][:,0],
-        data_2[mask_2][:,1],
+        data_2[mask_2][:, 0],
+        data_2[mask_2][:, 1],
         bins=[ui, thetai],
     )
     counts_2 = counts_2 / N
 
     return counts, counts_2
 
-def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: Optional[float]) -> np.ndarray:
+
+def _calc_radial_ticks(
+    *, counts: np.ndarray, step: float, stop: Optional[float]
+) -> np.ndarray:
     cmax = counts.sum(axis=0).max()
     if stop is None:
         rmax = np.ceil((cmax + step) / step) * step
@@ -311,7 +398,8 @@ def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: Optional[float]
 
     return ri, rmax
 
-def _add_calms_to_ax(ax,*, threshold: np.ndarray, text: str) -> None:
+
+def _add_calms_to_ax(ax, *, threshold: np.ndarray, text: str) -> None:
     ax.bar(np.pi, threshold, color="white", ec="k", zorder=0)
     ax.bar(
         np.pi, threshold, width=2 * np.pi, label="_nolegend_", color="white", zorder=3
@@ -325,7 +413,10 @@ def _add_calms_to_ax(ax,*, threshold: np.ndarray, text: str) -> None:
         transform=ax.transAxes,
     )
 
-def _add_legend_to_ax(ax,*,colors, vmin, ui, calm, counts, label, primary: bool) -> None:
+
+def _add_legend_to_ax(
+    ax, *, colors, vmin, ui, calm, counts, label, primary: bool
+) -> None:
 
     percentages = np.sum(counts, axis=1) * 100
 
@@ -335,7 +426,7 @@ def _add_legend_to_ax(ax,*,colors, vmin, ui, calm, counts, label, primary: bool)
         legend_items.append(f"{np.round(ui[j],2)} - {np.round(ui[j+1],2)}")
     items = [f"<{vmin} ({np.round(calm*100,2)}%)"]
     items.extend(legend_items)
-    items.append(f">= {ui[-2]} ({np.round( percentages[-1],2)}%)")
+    items.append(f">= {ui[-2]} ({np.round(percentages[-1], 2)}%)")
 
     handles = [Rectangle((0, 0), 1, 1, color=c, ec="k") for c in colors]
     handles[0].set_color("white")
@@ -346,10 +437,12 @@ def _add_legend_to_ax(ax,*,colors, vmin, ui, calm, counts, label, primary: bool)
         loc = "lower left"
     else:
         bbox_to_anchor = (-0.13, -0.06, 0.1, 0.8)
-        loc="lower right"
+        loc = "lower right"
+
+        # TODO why are these two lines here?
         items[0] = f"<{vmin} ({np.round(calm*100,2)}%)"
-        items[-1] = f">= {ui[-2]} ({np.round(percentages[-1],2)}%)"
-        
+        items[-1] = f">= {ui[-2]} ({np.round(percentages[-1], 2)}%)"
+
     leg = Legend(
         ax,
         handles[::-1],
@@ -369,15 +462,17 @@ def _add_legend_to_ax(ax,*,colors, vmin, ui, calm, counts, label, primary: bool)
         ax_right.axis("off")
     ax.add_artist(leg)
 
+
 def _add_watermark_to_ax(ax, watermark: str) -> None:
     text = AnchoredText(
-            watermark,
-            "center right",
-            frameon=False,
-            borderpad=-27.5,
-            prop=dict(fontsize="xx-small", alpha=0.15, rotation=90),
-        )
+        watermark,
+        "center right",
+        frameon=False,
+        borderpad=-27.5,
+        prop=dict(fontsize="xx-small", alpha=0.15, rotation=90),
+    )
     ax.add_artist(text)
+
 
 def _get_cmap(cmap: Union[str, mpl.colors.ListedColormap]) -> mpl.colors.ListedColormap:
     if isinstance(cmap, str):
