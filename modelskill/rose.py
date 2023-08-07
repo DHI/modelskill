@@ -24,48 +24,54 @@ def wind_rose(
     mag_bins: Optional[List[float]] = None,
     max_bin=None,  # TODO rename to vmax?
     n_labels: Optional[int] = None,
+    secondary_dir_step_factor: float = 2.0,
     ax=None,
     **kwargs,
 ):
 
-    """Function for plotting Wave, Wind or Current roses with Calms.
-    Parameters:
-        data: array-like
-            array with 4 columns
-        mag_step: float, (optional) Default= None
-            discretization for magnitude (delta_r, in radial direction )
-        n_sectors: int (optional) Default= 16
-        calm_threshold: float (optional) Default= None (auto calculated)
-            minimum value for data being counted as valid (i.e. below this is calm)
-        resize_calm: bool or float (optional) Default: 0.05
-            resize the size of calm in plot. Useful when the calms are very large or small.
-        calm_text: str (optional) Default: 'Calm'
-            text to display in calm. Set to None or '' for blank
-        r_step: float (optional) Default= 0.1
-            radial axis discretization. By default this is every 10%.
-        r_max: float (optional) Default= None
-            maximum radius (%) of plot, eg if 50% wanted then r_max=0.5 By default this is automatically calculated.
-        max_bin:  float (optional) Default= None
-            max value to truncate the data, eg,  max_bin=1.0 if hm0=1m is the desired final bin.
-        mag_bins : array of floats (optional) Default = None
-            force bins to array of values, e.g. when specifying non-equidistant bins.
-        legend: boolean. Default= True
-            if None the legend is not ploted
-        cmap1 : string. Default= 'viridis'
-            colormap for main axis
-        cmap2 : string. Default= 'Greys'
-            colormap for secondary axis
-        n_labels : int. Default= 4
-            number of labels in the polar plot, choose between 4, 8 or 16, default is to use the same as n_sectors
-        ax: Matplotlib axis Default= None
-            Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
+    """Plots a dual wind (wave or current) roses with calms.
 
-    ------------------------------------------------------------------------------------------------
+    Parameters
+    ----------
+    data: array-like
+        array with 4 columns
+    mag_step: float, (optional) Default= None
+        discretization for magnitude (delta_r, in radial direction )
+    n_sectors: int (optional) Default= 16
+    calm_threshold: float (optional) Default= None (auto calculated)
+        minimum value for data being counted as valid (i.e. below this is calm)
+    resize_calm: bool or float (optional) Default: 0.05
+        resize the size of calm in plot. Useful when the calms are very large or small.
+    calm_text: str (optional) Default: 'Calm'
+        text to display in calm. Set to None or '' for blank
+    r_step: float (optional) Default= 0.1
+        radial axis discretization. By default this is every 10%.
+    r_max: float (optional) Default= None
+        maximum radius (%) of plot, eg if 50% wanted then r_max=0.5 By default this is automatically calculated.
+    max_bin:  float (optional) Default= None
+        max value to truncate the data, eg,  max_bin=1.0 if hm0=1m is the desired final bin.
+    mag_bins : array of floats (optional) Default = None
+        force bins to array of values, e.g. when specifying non-equidistant bins.
+    legend: boolean. Default= True
+        if None the legend is not ploted
+    cmap1 : string. Default= 'viridis'
+        colormap for main axis
+    cmap2 : string. Default= 'Greys'
+        colormap for secondary axis
+    n_labels : int. Default= 4
+        number of labels in the polar plot, choose between 4, 8 or 16, default is to use the same as n_sectors
+    secondary_dir_step_factor : float. Default= 2.0
+        reduce width of secondary axis by this factor
+    ax: Matplotlib axis Default= None
+        Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
+
     Returns
-        ax: Matplotlib axes
+    -------
+    ax: Matplotlib axis
+        Matplotlib axis with the plot
     """
-    data_1 = data[:, 0:2]
-    data_2 = data[:, 2:4]
+    data_1 = data[:, 0:2] # primary magnitude and direction
+    data_2 = data[:, 2:4] # secondary magnitude and direction
 
     # magnitude bins
     ui, vmin, vmax = pretty_intervals(
@@ -108,8 +114,6 @@ def wind_rose(
     calm = resize_calm
 
     cmap = _get_cmap(cmap1)
-    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-    colors_ = [cmap(norm(x)) for x in ui]
 
     if ax is None:
         _, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection="polar"))
@@ -132,43 +136,16 @@ def wind_rose(
     if vmin > 0:
         _add_calms_to_ax(ax, threshold=calm, text=calm_text)
 
-    ### plot each bar of the histogram
-    patches = []
-    colors = []
-    cumcount = counts.cumsum(axis=0)  # Integrate histogram
-    arc_res = dir_step  # numnber of points along arc = 1 pt per degree.
-
-    arc_x = np.deg2rad(
-        np.linspace(thetac - dir_step / 2, thetac + dir_step / 2, arc_res)
-    )
-    # Loop through velocities
-    for i, vel in enumerate(ui[1:]):
-        # Loop through directions
-        for j, c in enumerate(counts[i]):
-            arc_xj = np.concatenate([arc_x[:, j], np.flip(arc_x[:, j])])
-            arc_yj = np.concatenate(
-                [np.full(arc_res, calm), np.full(arc_res, calm + cumcount[i, j])]
-            )
-
-            polygon = Polygon(
-                np.array((arc_xj, arc_yj)).T, True
-            )  # Conflict with shapely
-            patches.append(polygon)
-            colors.append(cmap(norm(vel)))
-
-    p = PatchCollection(
-        np.flip(patches),
-        facecolors=np.flip(colors, axis=0),
-        edgecolor="k",
-        linewidth=0.5,
-    )
+    # primary histogram (model)
+    p = _create_patch(thetac=thetac, dir_step=dir_step, calm=calm, ui=ui, counts=counts, cmap=cmap, vmax=vmax)
     ax.add_collection(p)
 
     if legend:
         _add_legend_to_ax(
             ax,
-            colors=colors_,
+            cmap=cmap,
             vmin=vmin,
+            vmax=vmax,
             ui=ui,
             calm=calm,
             counts=counts,
@@ -176,48 +153,18 @@ def wind_rose(
             primary=True,
         )
 
+    
+    # add second histogram (observation)
     cmap = _get_cmap(cmap2)
-    norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
-    colors_ = [cmap(norm(x)) for x in ui]
-
-    ### plot each bar of the histogram
-    patches = []
-    colors = []
-    cumcount = counts_2.cumsum(axis=0)
-
-    dir_step2 = dir_step / 2
-
-    arc_x = np.deg2rad(
-        np.linspace(thetac - dir_step2 / 2, thetac + dir_step2 / 2, arc_res)
-    )
-    # Loop through velocities
-    for i, vel in enumerate(ui[1:]):
-        # Loop through directions
-        for j, c in enumerate(counts[i]):
-            arc_xj = np.concatenate([arc_x[:, j], np.flip(arc_x[:, j])])
-            arc_yj = np.concatenate(
-                [np.full(arc_res, calm), np.full(arc_res, calm + cumcount[i, j])]
-            )
-
-            polygon = Polygon(
-                np.array((arc_xj, arc_yj)).T, True
-            )  # Conflict with shapely
-            patches.append(polygon)
-            colors.append(cmap(norm(vel)))
-
-    p = PatchCollection(
-        np.flip(patches),
-        facecolors=np.flip(colors, axis=0),
-        edgecolor="k",
-        linewidth=0.5,
-    )
+    p = _create_patch(thetac=thetac, dir_step=dir_step, calm=calm, ui=ui, counts=counts_2, cmap=cmap, vmax=vmax, dir_step_factor=secondary_dir_step_factor)
     ax.add_collection(p)
 
     if legend:
         _add_legend_to_ax(
             ax,
-            colors=colors_,
+            cmap=cmap,
             vmin=vmin,
+            vmax=vmax,
             ui=ui,
             calm=calm2,
             counts=counts_2,
@@ -334,6 +281,44 @@ def pretty_intervals(
     return ui, vmin, vmax
 
 
+def _create_patch(thetac, dir_step, calm, ui, counts, cmap, vmax, dir_step_factor=1.0) -> PatchCollection:
+
+    arc_res = dir_step
+    # reduced width of arcs for plot on top of each other
+    dir_step = dir_step / dir_step_factor
+
+    norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
+
+    patches = []
+    colors = []
+    cumcount = counts.cumsum(axis=0)
+
+    arc_x = np.deg2rad(
+        np.linspace(thetac - dir_step / 2, thetac + dir_step / 2, arc_res)
+    )
+    # Loop through velocities
+    for i, vel in enumerate(ui[1:]):
+        # Loop through directions
+        for j, _ in enumerate(counts[i]):
+            arc_xj = np.concatenate([arc_x[:, j], np.flip(arc_x[:, j])])
+            arc_yj = np.concatenate(
+                [np.full(arc_res, calm), np.full(arc_res, calm + cumcount[i, j])]
+            )
+
+            xy = np.array((arc_xj, arc_yj)).T
+            polygon = Polygon(xy=xy, closed=True)
+            patches.append(polygon)
+            colors.append(cmap(norm(vel)))
+
+    p = PatchCollection(
+        np.flip(patches),
+        facecolors=np.flip(colors, axis=0),
+        edgecolor="k",
+        linewidth=0.5,
+    )
+
+    return p
+
 def _calc_mag_step(xmax: float, ymax: float, factor: float = 16.0):
     """
     Calculate the magnitude step size for a rose plot.
@@ -415,8 +400,11 @@ def _add_calms_to_ax(ax, *, threshold: np.ndarray, text: str) -> None:
 
 
 def _add_legend_to_ax(
-    ax, *, colors, vmin, ui, calm, counts, label, primary: bool
+    ax, *, cmap,vmin,vmax, ui, calm, counts, label, primary: bool
 ) -> None:
+
+    norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
+    colors = [cmap(norm(x)) for x in ui]
 
     percentages = np.sum(counts, axis=1) * 100
 
