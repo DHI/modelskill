@@ -466,9 +466,39 @@ def spearmanr(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> flo
     import scipy.stats
 
     if circular:
-        raise NotImplementedError("circular spearmanr not implemented yet")
+        return _circular_spearmanr(obs, model)
+    else:
+        return scipy.stats.spearmanr(obs, model)[0]
 
-    return scipy.stats.spearmanr(obs, model)[0]
+
+
+def _circular_spearmanr(x, y):
+    from scipy.stats import rankdata
+
+    # how much sense does it make to rank circular data? 
+    
+    # Rank the data
+    rx = rankdata(x)   
+    ry = rankdata(y)
+
+    # Convert ranks to angles in degrees
+    n = len(x)
+    rx_angle = (rx - 1) * 360 / n
+    ry_angle = (ry - 1) * 360 / n
+
+    # Convert degrees to radians
+    rx_rad = np.deg2rad(rx_angle)
+    ry_rad = np.deg2rad(ry_angle)
+
+    # Compute the mean angles
+    mean_rx = np.arctan2(np.mean(np.sin(rx_rad)), np.mean(np.cos(rx_rad)))
+    mean_ry = np.arctan2(np.mean(np.sin(ry_rad)), np.mean(np.cos(ry_rad)))
+
+    # Calculate the circular correlation
+    numerator = np.sum(np.sin(rx_rad - mean_rx) * np.sin(ry_rad - mean_ry))
+    denominator = np.sqrt(np.sum(np.sin(rx_rad - mean_rx) ** 2) * np.sum(np.sin(ry_rad - mean_ry) ** 2))
+
+    return numerator / denominator
 
 
 def si(obs: np.ndarray, model: np.ndarray, circular: bool = False) -> float:

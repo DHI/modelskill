@@ -259,6 +259,20 @@ def test_circular_corrcoef_perfect_positive():
 #     mod = np.array([90, 180, 270, 0])  # 90-degree shift
 #     assert mtr.corrcoef(obs, mod, circular=True) == pytest.approx(0.0)
 
+def test_circular_spearmanr_for_small_angles():
+    # obs = np.array([5, 10, 15, 20]) + 340
+    # model = np.array([6, 11, 16, 21]) + 340
+    
+    obs = np.array([0, 5, 15, 30]) + 340
+    model = np.array([1, 2, 9, 21]) + 340
+    #rot = [-4, 170, 340]
+
+    circ_result = mtr.spearmanr(obs, model, circular=True)
+    lin_result = mtr.spearmanr(obs, model)
+    
+    # Check if both results are close enough, within a small tolerance
+    assert circ_result == pytest.approx(lin_result, abs=1e-5)
+
 
 @pytest.mark.parametrize('func', [
     mtr.bias,
@@ -271,6 +285,7 @@ def test_circular_corrcoef_perfect_positive():
     mtr.r2, 
     mtr.mef, 
     mtr.cc, 
+    mtr.rho, 
 ])
 def test_metrics_consistency(func):
     x = np.array([0, 5, 15, 30])
@@ -293,6 +308,7 @@ def test_metrics_consistency(func):
     # mtr.r2,    # Failed test
     mtr.mef, 
     mtr.cc, 
+    # mtr.rho,   # Failed test (ranking circular data...)
 ])
 def test_metrics_consistency_rotated(func):
     x = np.array([0, 5, 15, 30])
