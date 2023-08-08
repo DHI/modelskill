@@ -81,9 +81,9 @@ def wind_rose(
 
     ncols = data.shape[1]
     assert ncols in [2, 4], "data must have 2 or 4 columns"
-    secondary = ncols == 4
+    dual = ncols == 4
 
-    if secondary:
+    if dual:
         data_2 = data[:, 2:4] # secondary magnitude and direction
         data_2_max = data_2[:, 0].max()
         assert len(labels) == 2, "labels must have 2 elements"
@@ -122,7 +122,7 @@ def wind_rose(
 
     counts = _calc_masked_histogram2d(data=data_1, mask=mask_1, ui=ui, thetai=thetai)
 
-    if secondary:
+    if dual:
         mask_2 = data_2[:, 0] >= vmin
         calm2 = len(data_2[~mask_2]) / n
         counts_2 = _calc_masked_histogram2d(
@@ -174,9 +174,10 @@ def wind_rose(
             counts=counts,
             label=labels[0],
             primary=True,
+            dual=dual,
         )
 
-    if secondary:
+    if dual:
         # add second histogram (observation)
         cmap = _get_cmap(cmap2)
 
@@ -195,6 +196,7 @@ def wind_rose(
                 counts=counts_2,
                 label=labels[1],
                 primary=False,
+                dual=dual,
                 )
 
     if watermark is not None:
@@ -417,7 +419,7 @@ def _add_calms_to_ax(ax, *, threshold: np.ndarray, text: str) -> None:
 
 
 def _add_legend_to_ax(
-    ax, *, cmap,vmin,vmax, ui, calm, counts, label, primary: bool
+    ax, *, cmap,vmin,vmax, ui, calm, counts, label, primary: bool, dual=False
 ) -> None:
 
     norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
@@ -444,6 +446,11 @@ def _add_legend_to_ax(
         bbox_to_anchor = (-0.13, -0.06, 0.1, 0.8)
         loc = "lower right"
 
+    # TODO figure out how to make this work properly
+    if not dual:
+        bbox_to_anchor = (-0.05, 0.0)
+        loc = 'lower right'
+
     leg = Legend(
         ax,
         handles[::-1],
@@ -454,7 +461,7 @@ def _add_legend_to_ax(
         loc=loc,
     )
     box_width = 0.32
-
+    
     if primary:
         ax_left = ax.inset_axes([-box_width * 1.15, -0.05, box_width * 1.15, 0.5])
         ax_left.axis("off")
