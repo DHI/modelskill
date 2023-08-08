@@ -27,12 +27,22 @@ def test_rose(wave_data_model_obs):
     ax = wind_rose(data, mag_step=0.25, cmap1="jet")
     assert ax is not None
 
+def test_single_rose(wave_data_model_obs):
+    data = wave_data_model_obs.to_numpy()
+    obs_data = data[:,[2,3]]
+    ncol = obs_data.shape[1]
+    assert ncol == 2
+    ax = wind_rose(obs_data)
+    assert ax is not None
+
 
 def test_pretty_intervals_respects_defined_intervals():
     data1 = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
     data2 = np.array([0.01, 0.2, 0.3, 0.4, 0.5, 0.6])
+    xmax = data1.max()
+    ymax = data2.max()
     ui, vmin, vmax = pretty_intervals(
-        data_1=data1, data_2=data2, mag_bins=[0.1, 0.2, 0.45]
+        xmax=xmax, ymax=ymax, mag_bins=[0.1, 0.2, 0.45]
     )
     assert vmin == 0.1
     assert vmax == 0.95  # TODO why?
@@ -47,12 +57,23 @@ def test_pretty_intervals_respects_defined_intervals():
 def test_pretty_intervals():
     data1 = np.array([0.1, 0.2, 0.3, 0.4, 0.5])
     data2 = np.array([0.01, 0.2, 0.3, 0.4, 0.5, 0.6])
+    xmax = data1.max()
+    ymax = data2.max()
     ui, vmin, vmax = pretty_intervals(
-        data_1=data1, data_2=data2, vmin=0.2, mag_step=0.1
+        xmax=xmax, ymax=ymax, vmin=0.2, mag_step=0.1
     )
     # TODO WIP
     assert vmin == 0.2
     assert vmax == 0.5  # TODO is this correct?
+    assert len(ui) == 3
+
+def test_pretty_intervals_single_dataset():
+    data1 = np.array([0.5, 0.02, 0.3, 0.4,0.6, 0.5])
+    xmax = data1.max()
+    ui, vmin, vmax = pretty_intervals(
+        xmax=xmax, vmin=0.2, mag_step=0.1
+    )
+    assert vmin == 0.2
     assert len(ui) == 3
 
 def test_directional_labels():

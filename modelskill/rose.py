@@ -71,12 +71,23 @@ def wind_rose(
         Matplotlib axis with the plot
     """
     data_1 = data[:, 0:2] # primary magnitude and direction
-    data_2 = data[:, 2:4] # secondary magnitude and direction
+    data_1_max = data_1[:, 0].max()
+
+    ncols = data.shape[1]
+    assert ncols in [2, 4], "data must have 2 or 4 columns"
+    secondary = ncols == 4
+
+    if secondary:
+        data_2 = data[:, 2:4] # secondary magnitude and direction
+        data_2_max = data_2[:, 0].max()
+    else:
+        data_2 = None
+        data_2_max = None
 
     # magnitude bins
     ui, vmin, vmax = pretty_intervals(
-        data_1[:, 0],
-        data_2[:, 0],
+        data_1_max,
+        data_2_max,
         mag_bins,
         mag_step,
         calm_threshold,
@@ -96,16 +107,23 @@ def wind_rose(
     thetac = thetai[:-1] + dir_step / 2
 
     mask_1 = data_1[:, 0] >= vmin
-    mask_2 = data_2[:, 0] >= vmin
+
+    if secondary:
+        mask_2 = data_2[:, 0] >= vmin
 
     ### compute total calms
     N = len(data_1)
     calm = len(data_1[~mask_1]) / N
-    calm2 = len(data_2[~mask_2]) / N
 
-    counts, counts_2 = _calc_histograms(
-        data_1=data_1, mask_1=mask_1, data_2=data_2, mask_2=mask_2, ui=ui, thetai=thetai
-    )
+    if secondary:
+        calm2 = len(data_2[~mask_2]) / N
+
+    counts = _calc_masked_histogram2d(data=data_1, mask=mask_1, ui=ui, thetai=thetai)
+
+    if secondary:
+        counts_2 = _calc_masked_histogram2d(
+            data=data_2, mask=mask_2, ui=ui, thetai=thetai, n=len(data_1)
+        )
 
     ### compute radial ticks
     ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
@@ -153,24 +171,24 @@ def wind_rose(
             primary=True,
         )
 
-    
-    # add second histogram (observation)
-    cmap = _get_cmap(cmap2)
-    p = _create_patch(thetac=thetac, dir_step=dir_step, calm=calm, ui=ui, counts=counts_2, cmap=cmap, vmax=vmax, dir_step_factor=secondary_dir_step_factor)
-    ax.add_collection(p)
+    if secondary:
+        # add second histogram (observation)
+        cmap = _get_cmap(cmap2)
+        p = _create_patch(thetac=thetac, dir_step=dir_step, calm=calm, ui=ui, counts=counts_2, cmap=cmap, vmax=vmax, dir_step_factor=secondary_dir_step_factor)
+        ax.add_collection(p)
 
-    if legend:
-        _add_legend_to_ax(
-            ax,
-            cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
-            ui=ui,
-            calm=calm2,
-            counts=counts_2,
-            label="Observation",
-            primary=False,
-        )
+        if legend:
+            _add_legend_to_ax(
+                ax,
+                cmap=cmap,
+                vmin=vmin,
+                vmax=vmax,
+                ui=ui,
+                calm=calm2,
+                counts=counts_2,
+                label="Observation",
+                primary=False,
+                )
 
     if "watermark" in kwargs:
         _add_watermark_to_ax(ax, kwargs["watermark"])
@@ -223,8 +241,8 @@ def directional_labels(n: int) -> Tuple[str, ...]:
 
 
 def pretty_intervals(
-    data_1: np.typing.ArrayLike,
-    data_2: np.typing.ArrayLike,
+    xmax: float,
+    ymax: Optional[float] = None,
     mag_bins: Optional[List[float]] = None,
     mag_step: Optional[float] = None,
     vmin: Optional[float] = None,
@@ -232,9 +250,6 @@ def pretty_intervals(
     n_decimals: int = 3,
 ) -> Tuple[np.ndarray, float, float]:
     """Pretty intervals for the magnitude bins"""
-
-    data_1_max = data_1.max()
-    data_2_max = data_2.max()
 
     # Magnitude bins
     ## Check if there's double counting in inputs
@@ -252,19 +267,19 @@ def pretty_intervals(
 
     else:
         if mag_step is None:
-            mag_step = _calc_mag_step(data_1_max, data_2_max)
+            mag_step = _calc_mag_step(xmax, ymax)
 
         if vmin is None:
             vmin = mag_step
 
         # Auto find max
-        magmax = data_1_max
-
-        magmax2 = data_2_max
-        magmax = max(magmax, magmax2)
+        if ymax is None:
+            magmax = xmax
+        else:
+            magmax = max(xmax, ymax)
         # Bins
         ui = np.arange(vmin, magmax, mag_step)
-        ui = np.append(ui, data_1_max)
+        ui = np.append(ui, xmax)
 
         if max_bin is None:
             max_bin = magmax / 2
@@ -319,7 +334,7 @@ def _create_patch(thetac, dir_step, calm, ui, counts, cmap, vmax, dir_step_facto
 
     return p
 
-def _calc_mag_step(xmax: float, ymax: float, factor: float = 16.0):
+def _calc_mag_step(xmax: float, ymax: Optional[float] = None, factor: float = 16.0):
     """
     Calculate the magnitude step size for a rose plot.
 
@@ -327,7 +342,7 @@ def _calc_mag_step(xmax: float, ymax: float, factor: float = 16.0):
     ----------
     x : float
         The maximum value of the histogram.
-    y : float
+    y : float, optional
         The maximum value of the histogram.
     factor : float, optional
         The factor to use to calculate the magnitude step size, by default 16.0
@@ -340,6 +355,9 @@ def _calc_mag_step(xmax: float, ymax: float, factor: float = 16.0):
     if mag_step == 0:
         mag_step = np.round(xmax / factor, 2)
 
+    if ymax is None:
+        return mag_step
+    
     mag_step2 = np.round(ymax / factor, 1)
     if mag_step2 == 0:
         mag_step2 = np.round(ymax / factor, 2)
@@ -347,26 +365,18 @@ def _calc_mag_step(xmax: float, ymax: float, factor: float = 16.0):
     return mag_step
 
 
-def _calc_histograms(
-    *, data_1, mask_1, data_2, mask_2, ui, thetai
-) -> Tuple[np.ndarray, np.ndarray]:
-
-    N = len(data_1)
+def _calc_masked_histogram2d(*, data, mask, ui, thetai, n: Optional[int]=None) -> np.ndarray:
+    
+    if n is None:
+        n = len(data)
     counts, _, _ = np.histogram2d(
-        data_1[mask_1][:, 0],
-        data_1[mask_1][:, 1],
+        data[mask][:, 0],
+        data[mask][:, 1],
         bins=[ui, thetai],
     )
-    counts = counts / N
+    counts = counts / n
+    return counts
 
-    counts_2, _, _ = np.histogram2d(
-        data_2[mask_2][:, 0],
-        data_2[mask_2][:, 1],
-        bins=[ui, thetai],
-    )
-    counts_2 = counts_2 / N
-
-    return counts, counts_2
 
 
 def _calc_radial_ticks(
