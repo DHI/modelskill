@@ -11,6 +11,8 @@ from matplotlib.patches import Polygon, Rectangle
 
 def wind_rose(
     data,
+    *,
+    labels = ("Model", "Observation"),
     mag_step: Optional[float] = None,
     n_sectors: int = 16,
     calm_threshold=None,  # TODO rename to vmin?
@@ -23,18 +25,20 @@ def wind_rose(
     cmap2: str = "Greys",
     mag_bins: Optional[List[float]] = None,
     max_bin=None,  # TODO rename to vmax?
-    n_labels: Optional[int] = None,
+    n_dir_labels: Optional[int] = None,
     secondary_dir_step_factor: float = 2.0,
+    watermark: Optional[str] = None,
     ax=None,
-    **kwargs,
 ):
 
-    """Plots a dual wind (wave or current) roses with calms.
+    """Plots a (dual) wind (wave or current) roses with calms.
 
     Parameters
     ----------
     data: array-like
-        array with 4 columns
+        array with 2 or 4 columns
+    labels: tuple of strings. Default= ('Model', 'Observation')
+        labels for the legend(s)
     mag_step: float, (optional) Default= None
         discretization for magnitude (delta_r, in radial direction )
     n_sectors: int (optional) Default= 16
@@ -43,27 +47,29 @@ def wind_rose(
     resize_calm: bool or float (optional) Default: 0.05
         resize the size of calm in plot. Useful when the calms are very large or small.
     calm_text: str (optional) Default: 'Calm'
-        text to display in calm. Set to None or '' for blank
+        text to display in calm.
     r_step: float (optional) Default= 0.1
-        radial axis discretization. By default this is every 10%.
+        radial axis discretization. By default 0.1 i.e. every 10%.
     r_max: float (optional) Default= None
-        maximum radius (%) of plot, eg if 50% wanted then r_max=0.5 By default this is automatically calculated.
+        maximum radius (%) of plot, e.g. if 50% wanted then r_max=0.5
     max_bin:  float (optional) Default= None
-        max value to truncate the data, eg,  max_bin=1.0 if hm0=1m is the desired final bin.
+        max value to truncate the data, e.g.,  max_bin=1.0 if hm0=1m is the desired final bin.
     mag_bins : array of floats (optional) Default = None
         force bins to array of values, e.g. when specifying non-equidistant bins.
     legend: boolean. Default= True
-        if None the legend is not ploted
+        show legend
     cmap1 : string. Default= 'viridis'
         colormap for main axis
     cmap2 : string. Default= 'Greys'
         colormap for secondary axis
-    n_labels : int. Default= 4
+    n_dir_labels : int. Default= 4
         number of labels in the polar plot, choose between 4, 8 or 16, default is to use the same as n_sectors
     secondary_dir_step_factor : float. Default= 2.0
         reduce width of secondary axis by this factor
+    watermark: str (optional) Default= None
     ax: Matplotlib axis Default= None
         Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
+    
 
     Returns
     -------
@@ -80,6 +86,7 @@ def wind_rose(
     if secondary:
         data_2 = data[:, 2:4] # secondary magnitude and direction
         data_2_max = data_2[:, 0].max()
+        assert len(labels) == 2, "labels must have 2 elements"
     else:
         data_2 = None
         data_2_max = None
@@ -95,40 +102,38 @@ def wind_rose(
     )
 
     dir_step = 360 // n_sectors
+    half_dir_step = dir_step / 2
 
-    n_labels = n_sectors if n_labels is None else n_labels
+    n_dir_labels = n_sectors if n_dir_labels is None else n_dir_labels
 
     ### create vectors to evaluate the histogram
     thetai = np.linspace(
-        start=dir_step / 2,
-        stop=360 + dir_step / 2,
-        num=int(((360 + dir_step / 2) - dir_step / 2) / dir_step + 1),
+        start=half_dir_step,
+        stop=360 + half_dir_step,
+        num=int(((360 + half_dir_step) - half_dir_step) / dir_step + 1),
     )
-    thetac = thetai[:-1] + dir_step / 2
+    thetac = thetai[:-1] + half_dir_step
 
-    mask_1 = data_1[:, 0] >= vmin
-
-    if secondary:
-        mask_2 = data_2[:, 0] >= vmin
+    mask_1 = data_1[:, 0] >= vmin    
 
     ### compute total calms
-    N = len(data_1)
-    calm = len(data_1[~mask_1]) / N
-
-    if secondary:
-        calm2 = len(data_2[~mask_2]) / N
+    n = len(data_1)
+    calm = len(data_1[~mask_1]) / n    
 
     counts = _calc_masked_histogram2d(data=data_1, mask=mask_1, ui=ui, thetai=thetai)
 
     if secondary:
+        mask_2 = data_2[:, 0] >= vmin
+        calm2 = len(data_2[~mask_2]) / n
         counts_2 = _calc_masked_histogram2d(
             data=data_2, mask=mask_2, ui=ui, thetai=thetai, n=len(data_1)
         )
+        assert counts.shape == counts_2.shape
 
-    ### compute radial ticks
     ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
 
     # Resize calm
+    # TODO this overwrites the calm value calculated above
     calm = resize_calm
 
     cmap = _get_cmap(cmap1)
@@ -139,9 +144,9 @@ def wind_rose(
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
 
-    labels = directional_labels(n_labels)
-    grid = np.linspace(0, 360, n_labels + 1)[:-1]
-    ax.set_thetagrids(grid, labels)
+    dir_labels = directional_labels(n_dir_labels)
+    grid = np.linspace(0, 360, n_dir_labels + 1)[:-1]
+    ax.set_thetagrids(grid, dir_labels)
 
     # ax.tick_params(pad=-24)
 
@@ -150,7 +155,7 @@ def wind_rose(
     tick_labels = [f"{tick * 100 :.0f}%" for tick in ri]
     ax.set_yticklabels(tick_labels)
     ax.set_rlabel_position(5)
-    ### add calms
+    
     if vmin > 0:
         _add_calms_to_ax(ax, threshold=calm, text=calm_text)
 
@@ -167,13 +172,15 @@ def wind_rose(
             ui=ui,
             calm=calm,
             counts=counts,
-            label="Model",
+            label=labels[0],
             primary=True,
         )
 
     if secondary:
         # add second histogram (observation)
         cmap = _get_cmap(cmap2)
+
+        # TODO should this be calm2?
         p = _create_patch(thetac=thetac, dir_step=dir_step, calm=calm, ui=ui, counts=counts_2, cmap=cmap, vmax=vmax, dir_step_factor=secondary_dir_step_factor)
         ax.add_collection(p)
 
@@ -186,12 +193,12 @@ def wind_rose(
                 ui=ui,
                 calm=calm2,
                 counts=counts_2,
-                label="Observation",
+                label=labels[1],
                 primary=False,
                 )
 
-    if "watermark" in kwargs:
-        _add_watermark_to_ax(ax, kwargs["watermark"])
+    if watermark is not None:
+        _add_watermark_to_ax(ax, watermark)
     return ax
 
 
@@ -437,10 +444,6 @@ def _add_legend_to_ax(
         bbox_to_anchor = (-0.13, -0.06, 0.1, 0.8)
         loc = "lower right"
 
-        # TODO why are these two lines here?
-        items[0] = f"<{vmin} ({np.round(calm*100,2)}%)"
-        items[-1] = f">= {ui[-2]} ({np.round(percentages[-1], 2)}%)"
-
     leg = Legend(
         ax,
         handles[::-1],
@@ -474,9 +477,8 @@ def _add_watermark_to_ax(ax, watermark: str) -> None:
 
 def _get_cmap(cmap: Union[str, mpl.colors.ListedColormap]) -> mpl.colors.ListedColormap:
     if isinstance(cmap, str):
-        cmap = mpl.colormaps[cmap]
+        return mpl.colormaps[cmap]
     elif isinstance(cmap, mpl.colors.ListedColormap):
-        cmap = cmap
+        return cmap
     else:
         raise ValueError(f"Invalid cmap {cmap}")
-    return cmap
