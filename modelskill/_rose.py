@@ -106,7 +106,6 @@ def wind_rose(
 
     n_dir_labels = n_sectors if n_dir_labels is None else n_dir_labels
 
-    ### create vectors to evaluate the histogram
     thetai = np.linspace(
         start=half_dir_step,
         stop=360 + half_dir_step,
@@ -116,9 +115,9 @@ def wind_rose(
 
     mask_1 = data_1[:, 0] >= vmin    
 
-    ### compute total calms
+    # compute total calms
     n = len(data_1)
-    calm = len(data_1[~mask_1]) / n    
+    calm = len(data_1[~mask_1]) / n   
 
     counts = _calc_masked_histogram2d(data=data_1, mask=mask_1, ui=ui, thetai=thetai)
 
@@ -260,15 +259,10 @@ def pretty_intervals(
 ) -> Tuple[np.ndarray, float, float]:
     """Pretty intervals for the magnitude bins"""
 
-    # Magnitude bins
-    ## Check if there's double counting in inputs
     if mag_bins is not None:
-
-        # Set values
-
         assert len(mag_bins) >= 3, "Must have at least 3 bins"
         mag_bins_ = np.array(mag_bins)
-        ui = np.concatenate((mag_bins_, mag_bins_[[-1]] * 999))
+        ui = np.concatenate((mag_bins_, mag_bins_[[-1]] * 999)) # TODO 999?
         vmin = ui[0]
         max_bin = ui[-2]
         dbin = np.diff(ui)[-2]
@@ -281,7 +275,6 @@ def pretty_intervals(
         if vmin is None:
             vmin = mag_step
 
-        # Auto find max
         if ymax is None:
             magmax = xmax
         else:
@@ -320,8 +313,10 @@ def _create_patch(thetac, dir_step, calm, ui, counts, cmap, vmax, dir_step_facto
     arc_x = np.deg2rad(
         np.linspace(thetac - dir_step / 2, thetac + dir_step / 2, arc_res)
     )
-    # Loop through velocities
-    for i, vel in enumerate(ui[1:]):
+    
+    # TODO consider if this section can be written in a clearer way
+    # Loop through magnitudes
+    for i, mag in enumerate(ui[1:]):
         # Loop through directions
         for j, _ in enumerate(counts[i]):
             arc_xj = np.concatenate([arc_x[:, j], np.flip(arc_x[:, j])])
@@ -332,7 +327,7 @@ def _create_patch(thetac, dir_step, calm, ui, counts, cmap, vmax, dir_step_facto
             xy = np.array((arc_xj, arc_yj)).T
             polygon = Polygon(xy=xy, closed=True)
             patches.append(polygon)
-            colors.append(cmap(norm(vel)))
+            colors.append(cmap(norm(mag)))
 
     p = PatchCollection(
         np.flip(patches),
