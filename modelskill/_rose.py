@@ -12,32 +12,34 @@ from matplotlib.patches import Polygon, Rectangle
 def wind_rose(
     data,
     *,
-    labels = ("Model", "Observation"),
+    labels = ("Measurement", "Model"),
     mag_step: Optional[float] = None,
     n_sectors: int = 16,
-    calm_threshold=None,  # TODO rename to vmin?
-    resize_calm=0.05,
-    calm_text="Calm",
+    calm_threshold: Optional[float]=None,  # TODO rename to vmin?
+    calm_size : Optional[float] = None,
+    calm_text: str ="Calm",
     r_step: float = 0.1,
     r_max: Optional[float] = None,
-    legend=True,
+    legend: bool =True,
     cmap1: str = "viridis",
     cmap2: str = "Greys",
     mag_bins: Optional[List[float]] = None,
-    max_bin=None,  # TODO rename to vmax?
+    max_bin: Optional[float]=None,  # TODO rename to vmax?
     n_dir_labels: Optional[int] = None,
     secondary_dir_step_factor: float = 2.0,
-    watermark: Optional[str] = None,
+    figsize: Tuple[float,float] = (8,8),
     ax=None,
 ):
 
     """Plots a (dual) wind (wave or current) roses with calms.
 
+    The size of the calm is determined by the primary (measurement) data.
+
     Parameters
     ----------
     data: array-like
-        array with 2 or 4 columns
-    labels: tuple of strings. Default= ('Model', 'Observation')
+        array with 2 or 4 columns (magnitude, direction, magnitude2, direction2)
+    labels: tuple of strings. Default= ("Measurement", "Model")
         labels for the legend(s)
     mag_step: float, (optional) Default= None
         discretization for magnitude (delta_r, in radial direction )
@@ -66,7 +68,8 @@ def wind_rose(
         number of labels in the polar plot, choose between 4, 8 or 16, default is to use the same as n_sectors
     secondary_dir_step_factor : float. Default= 2.0
         reduce width of secondary axis by this factor
-    watermark: str (optional) Default= None
+    figsize: tuple(float,float)
+        figure size
     ax: Matplotlib axis Default= None
         Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
     
@@ -76,6 +79,12 @@ def wind_rose(
     ax: Matplotlib axis
         Matplotlib axis with the plot
     """
+    # convert data with to_numpy() if it is not already a numpy array
+    if not isinstance(data, np.ndarray):
+        data = np.array(data)
+    else:
+        raise ValueError("data must be a numpy array, or convertible to one with to_numpy()")
+
     data_1 = data[:, 0:2] # primary magnitude and direction
     data_1_max = data_1[:, 0].max()
 
@@ -133,12 +142,13 @@ def wind_rose(
 
     # Resize calm
     # TODO this overwrites the calm value calculated above
-    calm = resize_calm
+    if calm_size is not None:
+        calm = calm_size
 
     cmap = _get_cmap(cmap1)
 
     if ax is None:
-        _, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection="polar"))
+        _, ax = plt.subplots(figsize=figsize, subplot_kw=dict(projection="polar"))
 
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
@@ -198,8 +208,6 @@ def wind_rose(
                 dual=dual,
                 )
 
-    if watermark is not None:
-        _add_watermark_to_ax(ax, watermark)
     return ax
 
 
