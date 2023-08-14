@@ -28,11 +28,11 @@ def test_wind_rose_image_identical(wave_data_model_obs, tmp_path):
     
     baseline_path = "tests/regression/baseline/wind_rose_defaults.png"
     img_path = tmp_path / "temp.png"
-    # img_path = "temp.png"
+
     fig = plt.gcf()
     fig.set_size_inches(10, 6) # TODO without setting the size, the legends are outside the image
     plt.tight_layout()
-    # plt.savefig(baseline_path) # uncomment to generate new baseline
+    #plt.savefig(baseline_path) # uncomment to generate new baseline
     plt.savefig(img_path)
     
     # compare images to ensure that the plot is identical to the baseline pixel by pixel

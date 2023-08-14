@@ -79,11 +79,11 @@ def wind_rose(
     ax: Matplotlib axis
         Matplotlib axis with the plot
     """
-    # convert data with to_numpy() if it is not already a numpy array
-    if not isinstance(data, np.ndarray):
-        data = np.array(data)
-    else:
-        raise ValueError("data must be a numpy array, or convertible to one with to_numpy()")
+    if hasattr(data, "to_numpy"):
+        data = data.to_numpy()
+    
+    # check that data is array_like
+    assert hasattr(data, "__array__"), "data must be array_like"
 
     data_1 = data[:, 0:2] # primary magnitude and direction
     data_1_max = data_1[:, 0].max()
