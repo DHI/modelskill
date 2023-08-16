@@ -498,6 +498,48 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
     return nominator / denominator
 
 
+
+def pr(obs: np.ndarray, model: np.ndarray) -> float:
+    """alias for peak_ratio"""
+    assert obs.size == model.size
+    return peak_ratio(obs, model)
+
+
+def peak_ratio(obs: np.ndarray, model: np.ndarray) -> float:
+    """Peak Ratio
+
+    PR is the ratio of the mean of the identified peaks in the
+    model / identified peaks in the measurements
+
+    .. math::
+            \\frac{\\sum_{i=1}^{N_{peak}} (model_i)}{\\sum_{i=1}^{N_{peak}} (obs_i)}
+
+    Range: [0, inf]; Best: 1.0
+
+    """
+
+    assert obs.size == model.size
+    if len(obs) == 0:
+        return np.nan
+    time = obs.index
+    # Calculate number of years
+    dt_int = time[1:].values - time[0:-1].values
+    dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
+    N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
+    found_peaks = []
+    for data in [obs, model]:
+        peak_index, AAP = _partial_duration_series(time, data)
+        peaks = data[peak_index]
+        peaks_sorted = peaks.sort_values(ascending=False)
+        found_peaks.append(
+            peaks_sorted[0 : max(1, min(round(AAP * N_years), np.sum(peaks)))]
+        )
+    found_peaks_obs = found_peaks[0]
+    found_peaks_mod = found_peaks[1]
+
+    return np.mean(found_peaks_mod) / np.mean(found_peaks_obs)
+
+
 def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     """Willmott's Index of Agreement
 
@@ -725,47 +767,6 @@ def add_metric(
 
     # add the function to the module
     setattr(sys.modules[__name__], metric.__name__, metric)
-
-
-def pr(obs: np.ndarray, model: np.ndarray) -> float:
-    """alias for peak_ratio"""
-    assert obs.size == model.size
-    return peak_ratio(obs, model)
-
-
-def peak_ratio(obs: np.ndarray, model: np.ndarray) -> float:
-    """Peak Ratio
-
-    PR is the ratio of the mean of the identified peaks in the
-    model / identified peaks in the measurements
-
-    .. math::
-            \\frac{\\sum_{i=1}^{N_{peak}} (model_i)}{\\sum_{i=1}^{N_{peak}} (obs_i)}
-
-    Range: [0, inf]; Best: 1.0
-
-    """
-
-    assert obs.size == model.size
-    if len(obs) == 0:
-        return np.nan
-    time = obs.index
-    # Calculate number of years
-    dt_int = time[1:].values - time[0:-1].values
-    dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
-    N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
-    found_peaks = []
-    for data in [obs, model]:
-        peak_index, AAP = _partial_duration_series(time, data)
-        peaks = data[peak_index]
-        peaks_sorted = peaks.sort_values(ascending=False)
-        found_peaks.append(
-            peaks_sorted[0 : max(1, min(round(AAP * N_years), np.sum(peaks)))]
-        )
-    found_peaks_obs = found_peaks[0]
-    found_peaks_mod = found_peaks[1]
-
-    return np.mean(found_peaks_mod) / np.mean(found_peaks_obs)
 
 
 def _partial_duration_series(
