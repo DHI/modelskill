@@ -12,6 +12,7 @@ class ComparerPlotter:
     """Plotter class for Comparer"""
     def __init__(self, comparer):
         self.comparer = comparer
+        self.is_directional = False
 
     def __call__(self, *args, **kwargs):
         """Plot scatter plot of modelled vs observed data"""
@@ -60,6 +61,8 @@ class ComparerPlotter:
             ax.set_ylabel(cmp.unit_text)
             ax.legend([*cmp.mod_names, cmp.obs_name])
             ax.set_ylim(ylim)
+            if self.is_directional:
+                self._ytick_directional(ax, ylim)
             plt.title(title)
             return ax
 
@@ -157,6 +160,9 @@ class ComparerPlotter:
         else:
             plt.ylabel("count")
 
+        if self.is_directional:
+            self._xtick_directional(ax)
+
         return ax
 
     def kde(self, ax=None, **kwargs):
@@ -212,6 +218,9 @@ class ComparerPlotter:
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
+
+        if self.is_directional:
+            self._xtick_directional(ax)
 
         return ax
 
@@ -328,6 +337,10 @@ class ComparerPlotter:
         df.boxplot(ax=ax, **kwargs)
         ax.set_ylabel(cmp.unit_text)
         ax.set_title(title or cmp.name)
+
+        if self.is_directional:
+            self._ytick_directional(ax)
+
         return ax
     
     def scatter(
@@ -562,3 +575,28 @@ class ComparerPlotter:
         plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
         plt.xlabel(f"Residuals of {self.comparer.unit_text}")
+
+    def _xtick_directional(self, ax, xlim=None):
+        """Set x-ticks for directional data"""
+        ticks = ticks = self._xyticks(lim=xlim)
+        if(len(ticks) > 2):
+            ax.set_xticks(ticks)
+        if xlim is None:
+            ax.set_xlim(0, 360)
+
+    def _ytick_directional(self, ax, ylim=None):
+        """Set y-ticks for directional data"""
+        ticks = self._xyticks(lim=ylim)
+        if(len(ticks) > 2):
+            ax.set_yticks(ticks)
+        if ylim is None:
+            ax.set_ylim(0, 360)
+
+    @staticmethod
+    def _xyticks(n_sectors=8, lim=None):
+        """Set y-ticks for directional data"""
+        #labels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
+        ticks = np.linspace(0, 360, n_sectors+1)
+        if lim is not None:
+            ticks = ticks[(ticks >= lim[0]) & (ticks <= lim[1])]
+        return ticks         
