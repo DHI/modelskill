@@ -287,6 +287,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#skill">Skill</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#spatial-skill">Spatial Skill</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metrics">Metrics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plot">Plot</a></li>
 </ul>
             </nav>
         </div>
@@ -2675,6 +2676,46 @@ applied to ranked quantities and is useful to quantify a monotonous relationship
 </dd></dl>
 
 </section>
+<section id="plot">
+<h2>Plot<a class="headerlink" href="#plot" title="Permalink to this headline">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="modelskill.plot.wind_rose">
+<span class="sig-prename descclassname"><span class="pre">modelskill.plot.</span></span><span class="sig-name descname"><span class="pre">wind_rose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('Measurement',</span> <span class="pre">'Model')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mag_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_sectors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calm_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calm_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">calm_text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Calm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Greys'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mag_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_bin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dir_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secondary_dir_step_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(8,</span> <span class="pre">8)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/_rose.html#wind_rose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.plot.wind_rose" title="Permalink to this definition">#</a></dt>
+<dd><p>Plots a (dual) wind (wave or current) roses with calms.</p>
+<p>The size of the calm is determined by the primary (measurement) data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>array-like</em>) – array with 2 or 4 columns (magnitude, direction, magnitude2, direction2)</p></li>
+<li><p><strong>labels</strong> (<em>tuple of strings. Default=</em><em> (</em><em>&quot;Measurement&quot;</em><em>, </em><em>&quot;Model&quot;</em><em>)</em>) – labels for the legend(s)</p></li>
+<li><p><strong>mag_step</strong> (<em>float</em><em>, </em><em>(</em><em>optional</em><em>) </em><em>Default= None</em>) – discretization for magnitude (delta_r, in radial direction )</p></li>
+<li><p><strong>n_sectors</strong> (<em>int</em><em> (</em><em>optional</em><em>) </em><em>Default= 16</em>) – </p></li>
+<li><p><strong>calm_threshold</strong> (<em>float</em><em> (</em><em>optional</em><em>) </em><em>Default= None</em><em> (</em><em>auto calculated</em><em>)</em>) – minimum value for data being counted as valid (i.e. below this is calm)</p></li>
+<li><p><strong>resize_calm</strong> (<em>bool</em><em> or </em><em>float</em><em> (</em><em>optional</em><em>) </em><em>Default: 0.05</em>) – resize the size of calm in plot. Useful when the calms are very large or small.</p></li>
+<li><p><strong>calm_text</strong> (<em>str</em><em> (</em><em>optional</em><em>) </em><em>Default: 'Calm'</em>) – text to display in calm.</p></li>
+<li><p><strong>r_step</strong> (<em>float</em><em> (</em><em>optional</em><em>) </em><em>Default= 0.1</em>) – radial axis discretization. By default 0.1 i.e. every 10%.</p></li>
+<li><p><strong>r_max</strong> (<em>float</em><em> (</em><em>optional</em><em>) </em><em>Default= None</em>) – maximum radius (%) of plot, e.g. if 50% wanted then r_max=0.5</p></li>
+<li><p><strong>max_bin</strong> (<em>float</em><em> (</em><em>optional</em><em>) </em><em>Default= None</em>) – max value to truncate the data, e.g.,  max_bin=1.0 if hm0=1m is the desired final bin.</p></li>
+<li><p><strong>mag_bins</strong> (<em>array of floats</em><em> (</em><em>optional</em><em>) </em><em>Default = None</em>) – force bins to array of values, e.g. when specifying non-equidistant bins.</p></li>
+<li><p><strong>legend</strong> (<em>boolean. Default= True</em>) – show legend</p></li>
+<li><p><strong>cmap1</strong> (<em>string. Default= 'viridis'</em>) – colormap for main axis</p></li>
+<li><p><strong>cmap2</strong> (<em>string. Default= 'Greys'</em>) – colormap for secondary axis</p></li>
+<li><p><strong>n_dir_labels</strong> (<em>int. Default= 4</em>) – number of labels in the polar plot, choose between 4, 8 or 16, default is to use the same as n_sectors</p></li>
+<li><p><strong>secondary_dir_step_factor</strong> (<em>float. Default= 2.0</em>) – reduce width of secondary axis by this factor</p></li>
+<li><p><strong>figsize</strong> (<em>tuple</em><em>(</em><em>float</em><em>,</em><em>float</em><em>)</em>) – figure size</p></li>
+<li><p><strong>ax</strong> (<em>Matplotlib axis Default= None</em>) – Matplotlib axis to plot on defined as polar, it can be done using “subplot_kw = dict(projection = ‘polar’)”. Default = None, new axis created.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ax</strong> – Matplotlib axis with the plot</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Matplotlib axis</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 </section>
 
 
@@ -2723,6 +2764,7 @@ applied to ranked quantities and is useful to quantify a monotonous relationship
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#skill">Skill</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#spatial-skill">Spatial Skill</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metrics">Metrics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#plot">Plot</a></li>
 </ul>
   </nav></div>
 

@@ -110,3 +110,9 @@ Metrics
 	
 .. automodule:: modelskill.metrics
 	:members:
+
+Plot
+----
+
+.. autofunction:: modelskill.plot.wind_rose
+
