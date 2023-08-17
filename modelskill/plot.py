@@ -21,6 +21,7 @@ from .settings import options, register_option
 from .observation import unit_display_name
 from .metrics import metric_has_units
 
+from ._rose import wind_rose # nice alias
 
 register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
 register_option("plot.scatter.points.alpha", 0.5, validator=settings.is_between_0_and_1)
