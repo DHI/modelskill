@@ -1,11 +1,9 @@
-import pytest
-import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
-from modelskill import ModelResult
-from modelskill import PointObservation, TrackObservation
-from modelskill import Connector
+import pytest
+
 import modelskill.metrics as mtr
+from modelskill import Connector, ModelResult, PointObservation, TrackObservation
 
 plt.rcParams.update({"figure.max_open_warning": 0})
 
@@ -85,7 +83,6 @@ def test_add_same_comparer_twice(mr1, mr2, o1, o2):
 
 
 def test_mm_skill(cc):
-
     df = cc.sel(start="2017-10-27 00:01").skill().df
 
     assert df.iloc[4].name[0] == "SW_2"
@@ -152,7 +149,6 @@ def test_mm_skill_missing_obs(cc, o1):
 
 
 def test_mm_skill_start_end(cc):
-
     # TODO should we keep these tests?
     s = cc.sel(model="SW_1", start="2017").skill()
     assert s.loc["EPL"].n == 67
@@ -194,7 +190,6 @@ def test_mm_skill_area_polygon(cc):
 
 
 def test_mm_mean_skill_area_polygon(cc):
-
     # The OGC standard definition requires a polygon to be topologically closed.
     # It also states that if the exterior linear ring of a polygon is defined in a counterclockwise direction, then it will be seen from the "top".
     # Any interior linear rings should be defined in opposite fashion compared to the exterior ring, in this case, clockwise
@@ -299,7 +294,6 @@ def test_mm_mean_skill_weights_dict(cc):
 
 
 def test_mm_scatter(cc):
-
     with pytest.warns(FutureWarning):
         cc.scatter(start="2017-10-28")
 
@@ -377,7 +371,6 @@ def test_custom_metric_skilltable_mm_scatter(cc):
 
 
 def test_mm_kde(cc):
-
     with pytest.warns(FutureWarning):
         cc.kde()
 
@@ -387,7 +380,6 @@ def test_mm_kde(cc):
 
 
 def test_mm_hist(cc):
-
     with pytest.warns(FutureWarning):
         cc.hist()
 
@@ -396,7 +388,6 @@ def test_mm_hist(cc):
 
 
 def test_mm_taylor(cc):
-
     with pytest.warns(FutureWarning):
         cc.taylor()
 
