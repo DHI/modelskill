@@ -295,7 +295,12 @@ class ComparerPlotter:
         ax.legend()
         ax.set_xlabel("Observation, " + cmp.unit_text)
         ax.set_ylabel("Model, " + cmp.unit_text)
-        ax.set_title(title or f"Q-Q plot for {cmp.name}")        
+        ax.set_title(title or f"Q-Q plot for {cmp.name}")      
+
+        if self.is_directional:
+            self._xtick_directional(ax)
+            self._ytick_directional(ax)
+
         return ax
 
 
@@ -485,6 +490,11 @@ class ComparerPlotter:
             units=units,
             **kwargs,
         )
+
+        if self.is_directional:
+            self._xtick_directional(ax, xlim)
+            self._ytick_directional(ax, ylim)
+
         return ax
 
     def taylor(
@@ -575,6 +585,14 @@ class ComparerPlotter:
         plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
         plt.xlabel(f"Residuals of {self.comparer.unit_text}")
+        ax = plt.gca()        
+
+        if self.is_directional:
+            ticks = np.linspace(-180, 180, 9)
+            ax.set_xticks(ticks)
+            ax.set_xlim(-180, 180)
+        
+        return ax
 
     def _xtick_directional(self, ax, xlim=None):
         """Set x-ticks for directional data"""
