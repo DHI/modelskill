@@ -340,35 +340,8 @@ class Comparer:
 
         self.plot = Comparer.plotter(self)
 
-        # TODO extract method
         if matched_data is not None:
-            assert "Observation" in matched_data.data_vars
-
-            # no missing values allowed in Observation
-            if matched_data["Observation"].isnull().any():
-                raise ValueError("Observation data must not contain missing values.")
-
-            for key in matched_data.data_vars:
-                if "kind" not in matched_data[key].attrs:
-                    matched_data[key].attrs["kind"] = "auxiliary"
-            if "x" not in matched_data:
-                matched_data["x"] = np.nan
-                matched_data["x"].attrs["kind"] = "position"
-
-            if "y" not in matched_data:
-                matched_data["y"] = np.nan
-                matched_data["y"].attrs["kind"] = "position"
-
-            if "color" not in matched_data["Observation"].attrs:
-                matched_data["Observation"].attrs["color"] = "black"
-
-            if "variable_name" not in matched_data.attrs:
-                matched_data.attrs["variable_name"] = Quantity.undefined().name
-
-            if "unit" not in matched_data["Observation"].attrs:
-                matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
-
-            self.data = matched_data
+            self.data = self._parse_matched_data(matched_data)
             self.raw_mod_data = (
                 raw_mod_data
                 if raw_mod_data is not None
@@ -386,7 +359,37 @@ class Comparer:
             )
 
             self.data = self._initialise_comparer(observation, max_model_gap)
-            self.quantity: Quantity = observation.quantity
+            self.quantity: Quantity = observation.quantity   # TODO: make property
+
+    def _parse_matched_data(self, matched_data):
+        assert "Observation" in matched_data.data_vars
+
+        # no missing values allowed in Observation
+        if matched_data["Observation"].isnull().any():
+            raise ValueError("Observation data must not contain missing values.")
+
+        for key in matched_data.data_vars:
+            if "kind" not in matched_data[key].attrs:
+                matched_data[key].attrs["kind"] = "auxiliary"
+        if "x" not in matched_data:
+            matched_data["x"] = np.nan
+            matched_data["x"].attrs["kind"] = "position"
+
+        if "y" not in matched_data:
+            matched_data["y"] = np.nan
+            matched_data["y"].attrs["kind"] = "position"
+
+        if "color" not in matched_data["Observation"].attrs:
+            matched_data["Observation"].attrs["color"] = "black"
+
+        if "variable_name" not in matched_data.attrs:
+            matched_data.attrs["variable_name"] = Quantity.undefined().name
+
+        if "unit" not in matched_data["Observation"].attrs:
+            matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
+
+        return matched_data
+
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
         if len(df_mod) == 0:
