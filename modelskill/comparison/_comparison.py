@@ -324,6 +324,30 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 class Comparer:
+    """
+    Comparer class for comparing model and observation data.
+
+    Typically, the Comparer is initialized using the `compare` function.
+
+    Parameters
+    ----------
+    observation : Observation
+        Observation data
+    modeldata : list of pd.DataFrame or list of mikeio.Dataset or list of xr.DataArray or list of xr.Dataset
+        Model data
+    max_model_gap : float or int or np.timedelta64 or pd.Timedelta or timedelta, optional
+        Maximum time gap to interpolate model data to observation time. If None, no interpolation is done.
+    matched_data : xr.Dataset, optional
+        Matched data. If None, observation and modeldata must be provided.
+    raw_mod_data : dict of pd.DataFrame, optional
+        Raw model data. If None, observation and modeldata must be provided.
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> cmp1 = ms.compare(observation, modeldata)
+    >>> cmp2 = ms.from_matched(matched_data)
+    """
     data: xr.Dataset
     raw_mod_data: Dict[str, pd.DataFrame]
     _obs_name = "Observation"
@@ -362,6 +386,9 @@ class Comparer:
             self.quantity: Quantity = observation.quantity   # TODO: make property
 
     def _parse_matched_data(self, matched_data):
+        if not isinstance(matched_data, xr.Dataset):
+            raise ValueError("matched_data must be an xarray.Dataset")
+            #matched_data = self._matched_data_to_xarray(matched_data)
         assert "Observation" in matched_data.data_vars
 
         # no missing values allowed in Observation
@@ -389,6 +416,19 @@ class Comparer:
             matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
 
         return matched_data
+
+    # def _matched_data_to_xarray(self, data):
+    #     if isinstance(data, pd.DataFrame):
+    #         data = data.to_xarray()
+    #     elif isinstance(data, xr.DataArray):
+    #         data = data.to_dataset()
+    #     elif isinstance(data, dict):
+    #         data = xr.Dataset(data)
+    #     else:
+    #         raise ValueError(
+    #             f"Unknown data type '{type(data)}' (pd.DataFrame, xr.DataArray, xr.Dataset or dict)"
+    #         )
+    #     return data
 
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
