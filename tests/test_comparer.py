@@ -5,7 +5,19 @@ import xarray as xr
 import modelskill.comparison
 
 
-def _get_df() -> pd.DataFrame:
+@pytest.fixture
+def pt_df() -> pd.DataFrame:
+    df = pd.DataFrame(
+        {
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
+            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+    return df
+
+def _get_track_df() -> pd.DataFrame:
     df = pd.DataFrame(
         {
             "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
@@ -36,7 +48,7 @@ def _set_attrs(data: xr.Dataset) -> xr.Dataset:
 def pc() -> modelskill.comparison.Comparer:
     """A comparer with fake point data"""
     x, y = 10.0, 55.0
-    df = _get_df().drop(columns=["x", "y"])
+    df = _get_track_df().drop(columns=["x", "y"])
     raw_data = {"m1": df[["m1"]], "m2": df[["m2"]]}
 
     data = df.dropna().to_xarray()
@@ -51,7 +63,7 @@ def pc() -> modelskill.comparison.Comparer:
 @pytest.fixture
 def tc() -> modelskill.comparison.Comparer:
     """A comparer with fake track data"""
-    df = _get_df()
+    df = _get_track_df()
     raw_data = {"m1": df[["x", "y", "m1"]], "m2": df[["x", "y", "m2"]]}
 
     data = df.dropna().to_xarray()
@@ -62,18 +74,9 @@ def tc() -> modelskill.comparison.Comparer:
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
-def test_minimal_matched_data():
+def test_minimal_matched_data(pt_df):
 
-    df = pd.DataFrame(
-        {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
-            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
-            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
-        }
-    ).set_index("time")
-
-    data = xr.Dataset(df)
+    data = xr.Dataset(pt_df)
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
@@ -112,18 +115,9 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
         modelskill.comparison.Comparer.from_compared_data(data=data)
 
 
-def test_minimal_plots():
+def test_minimal_plots(pt_df):
 
-    df = pd.DataFrame(
-        {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
-            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
-            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
-        }
-    ).set_index("time")
-
-    data = xr.Dataset(df)
+    data = xr.Dataset(pt_df)
     data.attrs["variable_name"] = "Waterlevel"
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["color"] = "pink"
@@ -215,19 +209,9 @@ def test_multiple_forecasts_matched_data():
     assert a_s < f_s
 
 
-def test_matched_aux_variables():
-
-    df = pd.DataFrame(
-        {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
-            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
-            "wind": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
-        }
-    ).set_index("time")
-
-    data = xr.Dataset(df)
+def test_matched_aux_variables(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    data = xr.Dataset(pt_df)
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
