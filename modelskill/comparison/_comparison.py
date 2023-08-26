@@ -3,6 +3,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Tuple,
     Union,
     Iterable,
     Sequence,
@@ -328,13 +329,15 @@ def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None)
         cols = data.columns
         obs_item, mod_items, aux_items = _parse_items(cols, obs_item, mod_items, aux_items)
         data.index.name = 'time'
+        data.rename(columns={obs_item: "Observation"}, inplace=True)
         data = data.to_xarray()
     else:
         raise ValueError(
             f"Unknown data type '{type(data)}' (pd.DataFrame)"
         )
 
-    data[obs_item].attrs["kind"] = "observation"
+    data.attrs["name"] = obs_item
+    data["Observation"].attrs["kind"] = "observation"
     if mod_items is not None:
         for m in mod_items:
             data[m].attrs["kind"] = "model"
@@ -344,7 +347,12 @@ def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None)
     return data
 
 
-def _parse_items(items, obs_item=None, mod_items=None, aux_items=None):
+def _parse_items(
+    items: List[Union[str, int]], 
+    obs_item: Optional[Union[str, int]] = None, 
+    mod_items: Optional[List[Union[str, int]]] = None, 
+    aux_items: Optional[List[Union[str, int]]] = None
+) -> Tuple[str, List[str], List[str]]:
     """Parse items and return observation, model and auxiliary items
     Default behaviour:
     - obs_item is first item
@@ -353,17 +361,31 @@ def _parse_items(items, obs_item=None, mod_items=None, aux_items=None):
 
     Both integer and str are accepted as items. If str, it must be a key in data.
     """
+    items = list(items)
+    assert len(items) > 1, "data must contain at least two items"
     if obs_item is None:
         obs_item = items[0]
     else:
-        obs_item = _get_name(items, obs_item)
+        obs_item = _get_name(obs_item, items)
 
+    # Check existance of items and convert to names
     if mod_items is not None:
-        mod_items = [_get_name(items, m) for m in mod_items]
+        mod_items = [_get_name(m, items) for m in mod_items]
     if aux_items is not None:
-        aux_items = [_get_name(items, a) for a in aux_items]
-    
-    items = list(items).remove(obs_item)
+        aux_items = [_get_name(a, items) for a in aux_items]
+
+    # Check overlap and raise errors if there's any
+    if mod_items is not None and obs_item in mod_items:
+        raise ValueError(f"obs_item {obs_item} should not be in mod_items")
+    if aux_items is not None and obs_item in aux_items:
+        raise ValueError(f"obs_item {obs_item} should not be in aux_items")
+    if mod_items is not None and aux_items is not None:
+        overlapping_items = set(mod_items) & set(aux_items)
+        if overlapping_items:
+            raise ValueError(f"mod_items and aux_items should not have overlapping items. Overlapping items: {overlapping_items}")
+
+    items = list(items)
+    items.remove(obs_item)
 
     if mod_items is None:
         mod_items = items
@@ -371,6 +393,9 @@ def _parse_items(items, obs_item=None, mod_items=None, aux_items=None):
             mod_items = [m for m in mod_items if m not in aux_items]
     if aux_items is None:
         aux_items = [m for m in items if m not in mod_items]
+
+    assert len(mod_items) > 0, "no model items were found! Must be at least one"
+
     return obs_item, mod_items, aux_items
 
 
@@ -570,8 +595,11 @@ class Comparer:
         return mod_df
 
     @classmethod
-    def from_matched_data(cls, data, raw_mod_data=None):
+    def from_matched_data(cls, data, raw_mod_data=None, obs_item=None, mod_items=None, aux_items=None):
         """Initialize from compared data"""
+        if not isinstance(data, xr.Dataset):
+            # TODO: handle raw_mod_data by accessing data.attrs["kind"] and only remove nan after
+            data = _matched_data_to_xarray(data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items)
         return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
