@@ -26,7 +26,6 @@ from ._comparer_plotter import ComparerPlotter
 from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
-
 from ._utils import _get_name
 
 if TYPE_CHECKING:
@@ -323,6 +322,58 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
     return by
 
 
+def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None):
+    """Convert matched data to accepted xarray.Dataset format"""
+    if isinstance(data, pd.DataFrame):
+        cols = data.columns
+        obs_item, mod_items, aux_items = _parse_items(cols, obs_item, mod_items, aux_items)
+        data.index.name = 'time'
+        data = data.to_xarray()
+    else:
+        raise ValueError(
+            f"Unknown data type '{type(data)}' (pd.DataFrame)"
+        )
+
+    data[obs_item].attrs["kind"] = "observation"
+    if mod_items is not None:
+        for m in mod_items:
+            data[m].attrs["kind"] = "model"
+    if aux_items is not None:
+        for a in aux_items:
+            data[a].attrs["kind"] = "auxiliary"
+    return data
+
+
+def _parse_items(items, obs_item=None, mod_items=None, aux_items=None):
+    """Parse items and return observation, model and auxiliary items
+    Default behaviour:
+    - obs_item is first item
+    - mod_items are all but obs_item and aux_items
+    - aux_items are all but obs_item and mod_items
+
+    Both integer and str are accepted as items. If str, it must be a key in data.
+    """
+    if obs_item is None:
+        obs_item = items[0]
+    else:
+        obs_item = _get_name(items, obs_item)
+
+    if mod_items is not None:
+        mod_items = [_get_name(items, m) for m in mod_items]
+    if aux_items is not None:
+        aux_items = [_get_name(items, a) for a in aux_items]
+    
+    items = list(items).remove(obs_item)
+
+    if mod_items is None:
+        mod_items = items
+        if aux_items is not None:
+            mod_items = [m for m in mod_items if m not in aux_items]
+    if aux_items is None:
+        aux_items = [m for m in items if m not in mod_items]
+    return obs_item, mod_items, aux_items
+
+
 class Comparer:
     """
     Comparer class for comparing model and observation data.
@@ -399,8 +450,10 @@ class Comparer:
             if "kind" not in matched_data[key].attrs:
                 matched_data[key].attrs["kind"] = "auxiliary"
         if "x" not in matched_data:
+            # Could be problematic to have "x" and "y" as reserved names
             matched_data["x"] = np.nan
             matched_data["x"].attrs["kind"] = "position"
+            matched_data.attrs["gtype"] = "point"
 
         if "y" not in matched_data:
             matched_data["y"] = np.nan
@@ -416,19 +469,6 @@ class Comparer:
             matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
 
         return matched_data
-
-    # def _matched_data_to_xarray(self, data):
-    #     if isinstance(data, pd.DataFrame):
-    #         data = data.to_xarray()
-    #     elif isinstance(data, xr.DataArray):
-    #         data = data.to_dataset()
-    #     elif isinstance(data, dict):
-    #         data = xr.Dataset(data)
-    #     else:
-    #         raise ValueError(
-    #             f"Unknown data type '{type(data)}' (pd.DataFrame, xr.DataArray, xr.Dataset or dict)"
-    #         )
-    #     return data
 
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
