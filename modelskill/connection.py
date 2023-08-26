@@ -14,7 +14,6 @@ import mikeio
 
 from modelskill import ModelResult
 from modelskill.timeseries import TimeSeries
-from modelskill.model import PointModelResult
 from modelskill.types import GeometryType, Quantity
 from .model import protocols
 from .model._base import ModelResultBase
