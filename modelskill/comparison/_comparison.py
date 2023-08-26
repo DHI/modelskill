@@ -570,7 +570,7 @@ class Comparer:
         return mod_df
 
     @classmethod
-    def from_compared_data(cls, data, raw_mod_data=None):
+    def from_matched_data(cls, data, raw_mod_data=None):
         """Initialize from compared data"""
         return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
@@ -895,7 +895,7 @@ class Comparer:
                 d = d if mask else d.isel(time=slice(None, 0))
             else:
                 d = d.isel(time=mask)
-        return self.__class__.from_compared_data(d, raw_mod_data)
+        return self.__class__.from_matched_data(d, raw_mod_data)
 
     def where(
         self,
@@ -919,7 +919,7 @@ class Comparer:
         """
         d = self.data.where(cond, other=np.nan)
         d = d.dropna(dim="time", how="all")
-        return self.__class__.from_compared_data(d, self.raw_mod_data)
+        return self.__class__.from_matched_data(d, self.raw_mod_data)
 
     def query(self, query: str) -> "Comparer":
         """Return a new Comparer with values where query cond is True
@@ -940,7 +940,7 @@ class Comparer:
         """
         d = self.data.query({"time": query})
         d = d.dropna(dim="time", how="all")
-        return self.__class__.from_compared_data(d, self.raw_mod_data)
+        return self.__class__.from_matched_data(d, self.raw_mod_data)
 
     def skill(
         self,

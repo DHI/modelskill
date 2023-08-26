@@ -82,7 +82,7 @@ def test_minimal_matched_data(pt_df):
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
 
-    cmp = modelskill.comparison.Comparer.from_compared_data(
+    cmp = modelskill.comparison.Comparer.from_matched_data(
         data=data
     )  # no additional raw_mod_data
 
@@ -112,7 +112,7 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
     data.attrs["name"] = "mini"
 
     with pytest.raises(ValueError):
-        modelskill.comparison.Comparer.from_compared_data(data=data)
+        modelskill.comparison.Comparer.from_matched_data(data=data)
 
 
 def test_minimal_plots(pt_df):
@@ -125,7 +125,7 @@ def test_minimal_plots(pt_df):
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
-    cmp = modelskill.comparison.Comparer.from_compared_data(data=data)
+    cmp = modelskill.comparison.Comparer.from_matched_data(data=data)
 
     # Not very elaborate testing other than these two methods can be called without errors
     with pytest.warns(FutureWarning, match="plot.hist"):
@@ -192,7 +192,7 @@ def test_multiple_forecasts_matched_data():
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data.attrs["name"] = "a fcst"
-    cmp = modelskill.comparison.Comparer.from_compared_data(
+    cmp = modelskill.comparison.Comparer.from_matched_data(
         data=data
     )  # no additional raw_mod_data
     assert len(cmp.raw_mod_data["m1"]) == 5
@@ -215,7 +215,7 @@ def test_matched_aux_variables(pt_df):
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
-    cmp = modelskill.comparison.Comparer.from_compared_data(data=data)
+    cmp = modelskill.comparison.Comparer.from_matched_data(data=data)
     assert "wind" not in cmp.mod_names
     assert cmp.data["wind"].attrs["kind"] == "auxiliary"
 
