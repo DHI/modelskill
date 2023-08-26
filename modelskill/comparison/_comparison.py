@@ -452,14 +452,14 @@ class Comparer:
                 }
             )
             # TODO get quantity from matched_data object
-            self.quantity: Quantity = Quantity.undefined()
+            # self.quantity: Quantity = Quantity.undefined()
         else:
             self.raw_mod_data = (
                 self._parse_modeldata_list(modeldata) if modeldata is not None else {}
             )
 
             self.data = self._initialise_comparer(observation, max_model_gap)
-            self.quantity: Quantity = observation.quantity   # TODO: make property
+            # self.quantity: Quantity = observation.quantity   # TODO: make property
 
     def _parse_matched_data(self, matched_data):
         if not isinstance(matched_data, xr.Dataset):
@@ -487,8 +487,8 @@ class Comparer:
         if "color" not in matched_data["Observation"].attrs:
             matched_data["Observation"].attrs["color"] = "black"
 
-        if "variable_name" not in matched_data.attrs:
-            matched_data.attrs["variable_name"] = Quantity.undefined().name
+        if "quantity_name" not in matched_data.attrs:
+            matched_data.attrs["quantity_name"] = Quantity.undefined().name
 
         if "unit" not in matched_data["Observation"].attrs:
             matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
@@ -543,8 +543,7 @@ class Comparer:
             data["z"] = observation.z
 
         data.attrs["name"] = observation.name
-        # data.attrs["variable_name"] = observation.variable_name
-        data.attrs["variable_name"] = observation.quantity.name
+        data.attrs["quantity_name"] = observation.quantity.name
         data["x"].attrs["kind"] = "position"
         data["y"].attrs["kind"] = "position"
         data[self._obs_name].attrs["kind"] = "observation"
@@ -622,9 +621,16 @@ class Comparer:
         return self.data.attrs["gtype"]
 
     @property
-    def variable_name(self) -> str:
+    def quantity_name(self) -> str:
         """name of variable"""
-        return self.data.attrs["variable_name"]
+        return self.data.attrs["quantity_name"]
+
+    @property
+    def quantity(self) -> Quantity:
+        """Quantity object"""
+        name = self.data.attrs["quantity_name"]
+        unit = self.data.attrs["quantity_unit"]
+        return Quantity(name, unit)
 
     @property
     def n_points(self) -> int:
@@ -716,7 +722,7 @@ class Comparer:
     @property
     def unit_text(self) -> str:
         """Variable name and unit as text suitable for plot labels"""
-        return f"{self.data.attrs['variable_name']} [{self.data[self._obs_name].attrs['unit']}]"
+        return f"{self.data.attrs['quantity_name']} [{self.data[self._obs_name].attrs['unit']}]"
 
     @property
     def metrics(self):
@@ -794,8 +800,7 @@ class Comparer:
                 x=self.x,
                 y=self.y,
                 z=self.z,
-                # variable_name=self.variable_name,
-                # units=self._unit_text,
+                # quantity=self.quantity,
             )
         elif self.gtype == "track":
             df = self.data[["x", "y", self._obs_name]].to_dataframe()
@@ -805,8 +810,7 @@ class Comparer:
                 x_item=0,
                 y_item=1,
                 name=self.name,
-                # variable_name=self.variable_name,
-                # units=self._unit_text,
+                # quantity=self.quantity,
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
