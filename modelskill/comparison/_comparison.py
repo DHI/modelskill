@@ -629,8 +629,17 @@ class Comparer:
     def quantity(self) -> Quantity:
         """Quantity object"""
         name = self.data.attrs["quantity_name"]
-        unit = self.data.attrs["quantity_unit"]
+        #unit = self.data.attrs["quantity_unit"]
+        unit = self.data[self._obs_name].attrs["unit"]
         return Quantity(name, unit)
+
+    # set quantity
+    @quantity.setter
+    def quantity(self, value: Quantity) -> None:
+        assert isinstance(value, Quantity), "value must be a Quantity object"
+        self.data.attrs["quantity_name"] = value.name
+        self.data[self._obs_name].attrs["unit"] = value.unit
+        # self.data.attrs["quantity_unit"] = value.unit
 
     @property
     def n_points(self) -> int:
