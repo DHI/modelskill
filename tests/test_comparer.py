@@ -4,6 +4,7 @@ import pandas as pd
 import xarray as xr
 from modelskill.comparison import Comparer
 
+
 @pytest.fixture
 def pt_df() -> pd.DataFrame:
     df = pd.DataFrame(
@@ -15,6 +16,7 @@ def pt_df() -> pd.DataFrame:
         }
     ).set_index("time")
     return df
+
 
 def _get_track_df() -> pd.DataFrame:
     df = pd.DataFrame(
@@ -72,6 +74,7 @@ def tc() -> Comparer:
 
     return Comparer(matched_data=data, raw_mod_data=raw_data)
 
+
 def test_matched_df(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df)
     assert cmp.mod_names == ["m1", "m2"]
@@ -90,16 +93,17 @@ def test_matched_df_int_items(pt_df):
     assert cmp.mod_names == ["m2"]
 
     # will fall because two items will have the same name "Observation"
-    #cmp = Comparer.from_matched_data(data=pt_df, obs_item=1)
-    
+    # cmp = Comparer.from_matched_data(data=pt_df, obs_item=1)
+
     pt_df = pt_df.rename(columns={"Observation": "obs"})
     cmp = Comparer.from_matched_data(data=pt_df, obs_item=1)
     assert cmp.name == "m1"
     assert cmp.mod_names == ["obs", "m2"]
 
+
 def test_matched_df_with_aux(pt_df):
     pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-    
+
     # by default wind is not considered and aux variable
     cmp = Comparer.from_matched_data(data=pt_df)
     assert cmp.mod_names == ["m1", "m2", "wind"]
@@ -123,7 +127,6 @@ def test_matched_df_with_aux(pt_df):
 
 
 def test_matched_df_illegal_items(pt_df):
-
     with pytest.raises(AssertionError, match="data must contain at least two items"):
         # dataframe has only one column
         df = pt_df[["Observation"]]
@@ -136,24 +139,20 @@ def test_matched_df_illegal_items(pt_df):
     with pytest.raises(KeyError, match="could not be found"):
         # non existing item
         Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2", "m3"])
-    
+
     with pytest.raises(AssertionError, match="no model items were found"):
-        # no mod_items 
+        # no mod_items
         Comparer.from_matched_data(data=pt_df, aux_items=["m1", "m2"])
 
 
-
 def test_minimal_matched_data(pt_df):
-
     data = xr.Dataset(pt_df)
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
 
-    cmp = Comparer.from_matched_data(
-        data=data
-    )  # no additional raw_mod_data
+    cmp = Comparer.from_matched_data(data=data)  # no additional raw_mod_data
 
     assert cmp.data["Observation"].attrs["color"] == "black"
     assert cmp.data["Observation"].attrs["unit"] == "Undefined"
@@ -185,7 +184,6 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
 
 
 def test_minimal_plots(pt_df):
-
     data = xr.Dataset(pt_df)
     data.attrs["quantity_name"] = "Waterlevel"
     data["Observation"].attrs["kind"] = "observation"
@@ -227,7 +225,7 @@ def test_minimal_plots(pt_df):
 
     ax = cmp.plot.qq()
     assert ax is not None
-    
+
     ax = cmp.plot.box()
     assert ax is not None
 
@@ -245,7 +243,6 @@ def test_minimal_plots(pt_df):
 
 
 def test_multiple_forecasts_matched_data():
-
     # an example on how a forecast dataset could be constructed
     df = pd.DataFrame(
         {
@@ -261,9 +258,7 @@ def test_multiple_forecasts_matched_data():
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data.attrs["name"] = "a fcst"
-    cmp = Comparer.from_matched_data(
-        data=data
-    )  # no additional raw_mod_data
+    cmp = Comparer.from_matched_data(data=data)  # no additional raw_mod_data
     assert len(cmp.raw_mod_data["m1"]) == 5
     assert cmp.mod_names == ["m1"]
     assert cmp.data["leadtime"].attrs["kind"] == "auxiliary"
@@ -469,7 +464,7 @@ def test_add_tc_pc(pc, tc):
     assert cc.n_points == 10
     assert cc.n_comparers == 2
 
-    
+
 def test_pc_to_dataframe(pc):
     df = pc.to_dataframe()
     assert isinstance(df, pd.DataFrame)

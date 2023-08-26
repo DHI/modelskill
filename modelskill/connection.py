@@ -97,8 +97,10 @@ def from_matched(
         Model: local, rmse=0.100
         Model: global, rmse=0.200
     """
-    
-    cmp = Comparer.from_matched_data(data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items)
+
+    cmp = Comparer.from_matched_data(
+        data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items
+    )
     if quantity is not None:
         cmp.quantity = quantity
     return cmp
@@ -365,7 +367,6 @@ class _SingleObsConnector(_BaseConnector):
 
     @staticmethod
     def _validate_start_end(obs, mod):
-
         if obs.end_time < mod.start_time:
             warnings.warn(
                 f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"

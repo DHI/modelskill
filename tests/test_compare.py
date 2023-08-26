@@ -229,7 +229,6 @@ def test_matched_data_single_model():
 
 
 def test_matched_data_quantity():
-
     df = pd.DataFrame(
         {"ts_1": [1.1, 2.0, 3.0, 4.0], "sensor_a": [0.9, 2.0, 3.0, 4.1]},
         index=pd.date_range("2017-01-01", periods=4),

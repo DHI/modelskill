@@ -327,14 +327,14 @@ def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None)
     """Convert matched data to accepted xarray.Dataset format"""
     if isinstance(data, pd.DataFrame):
         cols = data.columns
-        obs_item, mod_items, aux_items = _parse_items(cols, obs_item, mod_items, aux_items)
-        data.index.name = 'time'
+        obs_item, mod_items, aux_items = _parse_items(
+            cols, obs_item, mod_items, aux_items
+        )
+        data.index.name = "time"
         data.rename(columns={obs_item: "Observation"}, inplace=True)
         data = data.to_xarray()
     else:
-        raise ValueError(
-            f"Unknown data type '{type(data)}' (pd.DataFrame)"
-        )
+        raise ValueError(f"Unknown data type '{type(data)}' (pd.DataFrame)")
 
     data.attrs["name"] = obs_item
     data["Observation"].attrs["kind"] = "observation"
@@ -348,10 +348,10 @@ def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None)
 
 
 def _parse_items(
-    items: List[Union[str, int]], 
-    obs_item: Optional[Union[str, int]] = None, 
-    mod_items: Optional[List[Union[str, int]]] = None, 
-    aux_items: Optional[List[Union[str, int]]] = None
+    items: List[Union[str, int]],
+    obs_item: Optional[Union[str, int]] = None,
+    mod_items: Optional[List[Union[str, int]]] = None,
+    aux_items: Optional[List[Union[str, int]]] = None,
 ) -> Tuple[str, List[str], List[str]]:
     """Parse items and return observation, model and auxiliary items
     Default behaviour:
@@ -382,7 +382,9 @@ def _parse_items(
     if mod_items is not None and aux_items is not None:
         overlapping_items = set(mod_items) & set(aux_items)
         if overlapping_items:
-            raise ValueError(f"mod_items and aux_items should not have overlapping items. Overlapping items: {overlapping_items}")
+            raise ValueError(
+                f"mod_items and aux_items should not have overlapping items. Overlapping items: {overlapping_items}"
+            )
 
     items = list(items)
     items.remove(obs_item)
@@ -424,6 +426,7 @@ class Comparer:
     >>> cmp1 = ms.compare(observation, modeldata)
     >>> cmp2 = ms.from_matched(matched_data)
     """
+
     data: xr.Dataset
     raw_mod_data: Dict[str, pd.DataFrame]
     _obs_name = "Observation"
@@ -437,7 +440,6 @@ class Comparer:
         matched_data: Optional[xr.Dataset] = None,
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
-
         self.plot = Comparer.plotter(self)
 
         if matched_data is not None:
@@ -464,7 +466,7 @@ class Comparer:
     def _parse_matched_data(self, matched_data):
         if not isinstance(matched_data, xr.Dataset):
             raise ValueError("matched_data must be an xarray.Dataset")
-            #matched_data = self._matched_data_to_xarray(matched_data)
+            # matched_data = self._matched_data_to_xarray(matched_data)
         assert "Observation" in matched_data.data_vars
 
         # no missing values allowed in Observation
@@ -494,7 +496,6 @@ class Comparer:
             matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
 
         return matched_data
-
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
         if len(df_mod) == 0:
@@ -594,11 +595,15 @@ class Comparer:
         return mod_df
 
     @classmethod
-    def from_matched_data(cls, data, raw_mod_data=None, obs_item=None, mod_items=None, aux_items=None):
+    def from_matched_data(
+        cls, data, raw_mod_data=None, obs_item=None, mod_items=None, aux_items=None
+    ):
         """Initialize from compared data"""
         if not isinstance(data, xr.Dataset):
             # TODO: handle raw_mod_data by accessing data.attrs["kind"] and only remove nan after
-            data = _matched_data_to_xarray(data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items)
+            data = _matched_data_to_xarray(
+                data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items
+            )
         return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
@@ -629,7 +634,7 @@ class Comparer:
     def quantity(self) -> Quantity:
         """Quantity object"""
         name = self.data.attrs["quantity_name"]
-        #unit = self.data.attrs["quantity_unit"]
+        # unit = self.data.attrs["quantity_unit"]
         unit = self.data[self._obs_name].attrs["unit"]
         return Quantity(name, unit)
 
@@ -827,7 +832,6 @@ class Comparer:
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
-
         from ._collection import ComparerCollection
 
         if not isinstance(other, (Comparer, ComparerCollection)):
@@ -1258,7 +1262,6 @@ class Comparer:
         skill_table=None,
         **kwargs,
     ):
-
         warnings.warn(
             "This method is deprecated, use plot.scatter instead", FutureWarning
         )
@@ -1267,7 +1270,12 @@ class Comparer:
         model, start, end, area = _get_deprecated_args(kwargs)
 
         # self.plot.scatter(
-        self.sel(model=model, start=start, end=end, area=area,).plot.scatter(
+        self.sel(
+            model=model,
+            start=start,
+            end=end,
+            area=area,
+        ).plot.scatter(
             bins=bins,
             quantiles=quantiles,
             fit_to_quantiles=fit_to_quantiles,
@@ -1331,7 +1339,6 @@ class Comparer:
         )
 
     def residual_hist(self, bins=100, title=None, color=None, **kwargs):
-
         warnings.warn(
             "residual_hist is deprecated. Use plot.residual_hist instead.",
             FutureWarning,
