@@ -105,9 +105,9 @@ def from_matched(
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
     if isinstance(data, mikeio.Dataset):
-        assert data.geometry.ndim == 0, "Only 0-dimensional data are supported"
+        assert len(data.shape) == 1, "Only 0-dimensional data are supported"
         if quantity is None:
-            quantity = Quantity.from_eum(data.items[obs_item].eumQuantity)
+            quantity = Quantity.from_mikeio_iteminfo(data.items[obs_item])
         data = data.to_dataframe()
 
     cmp = Comparer.from_matched_data(
