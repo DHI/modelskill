@@ -55,7 +55,7 @@ ObsInputType = Union[
 
 
 def from_matched(
-    data: pd.DataFrame,
+    data: Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset],
     *,
     obs_item: Optional[Union[str, int]] = 0,
     mod_items: Optional[Iterable[Union[str, int]]] = None,
@@ -66,10 +66,11 @@ def from_matched(
 
     Parameters
     ----------
-    data : pd.DataFrame
-        DataFrame with columns [obs_item, mod_item]
+    data : [pd.DataFrame,str,Path,mikeio.Dfs0, mikeio.Dataset]
+        DataFrame (or object that can be converted to a DataFrame e.g. dfs0)
+        with columns obs_item, mod_items, aux_items
     obs_item : [str,int], optional
-        Name or index of observation item, by default 0
+        Name or index of observation item, by default first item
     mod_items : Iterable[str,int], optional
         Names or indicies of model items, if None all remaining columns are model items, by default None
     aux_items : Iterable[str,int], optional
@@ -97,6 +98,17 @@ def from_matched(
         Model: local, rmse=0.100
         Model: global, rmse=0.200
     """
+    # pre-process if dfs0, or mikeio.Dataset
+    if isinstance(data, (str, Path)):
+        assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
+        data = mikeio.read(data)  # now mikeio.Dataset
+    elif isinstance(data, mikeio.Dfs0):
+        data = data.read()  # now mikeio.Dataset
+    if isinstance(data, mikeio.Dataset):
+        assert data.geometry.ndim == 0, "Only 0-dimensional data are supported"
+        if quantity is None:
+            quantity = Quantity.from_eum(data.items[obs_item].eumQuantity)
+        data = data.to_dataframe()
 
     cmp = Comparer.from_matched_data(
         data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items
