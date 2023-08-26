@@ -56,22 +56,25 @@ ObsInputType = Union[
 
 
 def from_matched(
-    df: pd.DataFrame,
+    data: pd.DataFrame,
     *,
-    obs_item: str,
-    mod_items: Optional[Iterable[str]] = None,
+    obs_item: Optional[Union[str, int]] = 0,
+    mod_items: Optional[Iterable[Union[str, int]]] = None,
+    aux_items: Optional[Iterable[Union[str, int]]] = None,
     quantity: Optional[Quantity] = None,
 ) -> Comparer:
     """Create a Comparer from observation and model results that are already matched (aligned)
 
     Parameters
     ----------
-    df : pd.DataFrame
+    data : pd.DataFrame
         DataFrame with columns [obs_item, mod_item]
-    obs_item : str
-        Name of observation item
-    mod_items : Optional[Iterable[str]], optional
-        Names of model items, if None all remaining columns are model items, by default None
+    obs_item : [str,int], optional
+        Name or index of observation item, by default 0
+    mod_items : Iterable[str,int], optional
+        Names or indicies of model items, if None all remaining columns are model items, by default None
+    aux_items : Iterable[str,int], optional
+        Names or indicies of auxiliary items, by default None
     quantity : Quantity, optional
         Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
 
@@ -95,20 +98,11 @@ def from_matched(
         Model: local, rmse=0.100
         Model: global, rmse=0.200
     """
-    obs = df[obs_item]
-
-    if mod_items is None:
-        # all remaining columns are model results
-        pmods = [
-            PointModelResult(df[c], item=c, quantity=quantity)
-            for c in df.columns
-            if c != obs_item
-        ]
-    else:
-        pmods = [PointModelResult(df[c], item=c, quantity=quantity) for c in mod_items]
-    pobs = PointObservation(obs, item=obs_item, name=obs_item, quantity=quantity)
-
-    return _single_obs_compare(pobs, pmods)
+    
+    cmp = Comparer.from_matched_data(data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items)
+    if quantity is not None:
+        cmp.quantity = quantity
+    return cmp
 
 
 def compare(
@@ -867,7 +861,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         if isinstance(obs, PointObservation):
             d["x"] = obs.x
             d["y"] = obs.y
-        # d["variable_name"] = obs.variable_name
+        # d["quantity_name"] = obs.quantity.name
         return d
 
     @staticmethod
