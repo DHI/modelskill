@@ -908,6 +908,9 @@ class Comparer:
         Comparer
             New Comparer with selected data.
         """
+        if (time is not None) and ((start is not None) or (end is not None)):
+            raise ValueError("Cannot use both time and start/end")
+
         d = self.data
         raw_mod_data = self.raw_mod_data
         if model is not None:
@@ -917,14 +920,18 @@ class Comparer:
             d = d.drop_vars(dropped_models)
             raw_mod_data = {m: raw_mod_data[m] for m in models}
         if (start is not None) or (end is not None):
-            if time is not None:
-                raise ValueError("Cannot use both time and start/end")
             # TODO: can this be done without to_index? (simplify)
             d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)
+
+            # Note: if user asks for a specific time, we also filter raw
+            raw_mod_data = {
+                m: raw_mod_data[m].loc[start:end] for m in raw_mod_data.keys()
+            }
         if time is not None:
-            if (start is not None) or (end is not None):
-                raise ValueError("Cannot use both time and start/end")
             d = d.sel(time=time)
+
+            # Note: if user asks for a specific time, we also filter raw
+            raw_mod_data = {m: raw_mod_data[m].loc[time] for m in raw_mod_data.keys()}
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
