@@ -85,6 +85,31 @@ def _get_fig_ax(ax=None, figsize=None):
     return fig, ax
 
 
+def _xtick_directional(ax, xlim=None):
+    """Set x-ticks for directional data"""
+    ticks = ticks = _xyticks(lim=xlim)
+    if(len(ticks) > 2):
+        ax.set_xticks(ticks)
+    if xlim is None:
+        ax.set_xlim(0, 360)
+
+def _ytick_directional(ax, ylim=None):
+    """Set y-ticks for directional data"""
+    ticks = _xyticks(lim=ylim)
+    if(len(ticks) > 2):
+        ax.set_yticks(ticks)
+    if ylim is None:
+        ax.set_ylim(0, 360)
+
+def _xyticks(n_sectors=8, lim=None):
+    """Set y-ticks for directional data"""
+    #labels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
+    ticks = np.linspace(0, 360, n_sectors+1)
+    if lim is not None:
+        ticks = ticks[(ticks >= lim[0]) & (ticks <= lim[1])]
+    return ticks         
+
+
 def sample_points(
     x: np.ndarray, y: np.ndarray, include: Optional[Union[bool, int, float]] = None
 ) -> Tuple[np.ndarray, np.ndarray]:

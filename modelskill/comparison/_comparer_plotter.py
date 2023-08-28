@@ -5,11 +5,22 @@ import numpy as np  # type: ignore
 
 from .. import metrics as mtr
 from ._utils import _get_id
-from ..plot import _get_fig_ax, colors, quantiles_xy, scatter, taylor_diagram, TaylorPoint
+from ..plot import (
+    _get_fig_ax,
+    _xtick_directional,
+    _ytick_directional,
+    colors,
+    quantiles_xy,
+    scatter,
+    taylor_diagram,
+    TaylorPoint,
+)
 from ..settings import options
+
 
 class ComparerPlotter:
     """Plotter class for Comparer"""
+
     def __init__(self, comparer):
         self.comparer = comparer
         self.is_directional = False
@@ -62,7 +73,7 @@ class ComparerPlotter:
             ax.legend([*cmp.mod_names, cmp.obs_name])
             ax.set_ylim(ylim)
             if self.is_directional:
-                self._ytick_directional(ax, ylim)
+                _ytick_directional(ax, ylim)
             plt.title(title)
             return ax
 
@@ -161,7 +172,7 @@ class ComparerPlotter:
             plt.ylabel("count")
 
         if self.is_directional:
-            self._xtick_directional(ax)
+            _xtick_directional(ax)
 
         return ax
 
@@ -185,7 +196,7 @@ class ComparerPlotter:
         >>> cmp.plot.kde()
         >>> cmp.plot.kde(bw_method=0.3)
         >>> cmp.plot.kde(ax=ax, bw_method='silverman')
-        >>> cmp.plot.kde(xlim=[0,None], title="Density plot");   
+        >>> cmp.plot.kde(xlim=[0,None], title="Density plot");
 
         See also
         --------
@@ -207,11 +218,9 @@ class ComparerPlotter:
 
         ax.legend()
 
-        # remove y-axis
+        # remove y-axis, ticks and label
         ax.yaxis.set_visible(False)
-        # remove y-ticks
         ax.tick_params(axis="y", which="both", length=0)
-        # remove y-label
         ax.set_ylabel("")
 
         # remove box around plot
@@ -220,15 +229,21 @@ class ComparerPlotter:
         ax.spines["left"].set_visible(False)
 
         if self.is_directional:
-            self._xtick_directional(ax)
+            _xtick_directional(ax)
 
         return ax
 
-
-    def qq(self, quantiles: Optional[Union[int, List[float]]] = None, title=None, ax=None, figsize=None, **kwargs):
+    def qq(
+        self,
+        quantiles: Optional[Union[int, List[float]]] = None,
+        title=None,
+        ax=None,
+        figsize=None,
+        **kwargs,
+    ):
         """Make quantile-quantile (q-q) plot of model data and observations.
 
-        Primarily used to compare multiple models. 
+        Primarily used to compare multiple models.
 
         Parameters
         ----------
@@ -263,21 +278,21 @@ class ComparerPlotter:
 
         for mod_name in cmp.mod_names:
             y = cmp.data[mod_name].values
-            ymin= min([y.min(), ymin]) 
-            ymax= max([y.max(), ymax])           
+            ymin = min([y.min(), ymin])
+            ymax = max([y.max(), ymax])
             xq, yq = quantiles_xy(x, y, quantiles)
             plt.plot(
                 xq,
                 yq,
-                '.-',                
+                ".-",
                 label=mod_name,
                 zorder=4,
                 **kwargs,
             )
-    
+
         xymin = min([xmin, ymin])
         xymax = max([xmax, ymax])
-        
+
         # 1:1 line
         plt.plot(
             [xymin, xymax],
@@ -285,7 +300,7 @@ class ComparerPlotter:
             label=options.plot.scatter.oneone_line.label,
             c=options.plot.scatter.oneone_line.color,
             zorder=3,
-        )    
+        )
         plt.axis("square")
         plt.xlim([xymin, xymax])
         plt.ylim([xymin, xymax])
@@ -295,14 +310,13 @@ class ComparerPlotter:
         ax.legend()
         ax.set_xlabel("Observation, " + cmp.unit_text)
         ax.set_ylabel("Model, " + cmp.unit_text)
-        ax.set_title(title or f"Q-Q plot for {cmp.name}")      
+        ax.set_title(title or f"Q-Q plot for {cmp.name}")
 
         if self.is_directional:
-            self._xtick_directional(ax)
-            self._ytick_directional(ax)
+            _xtick_directional(ax)
+            _ytick_directional(ax)
 
         return ax
-
 
     def box(self, ax=None, title=None, **kwargs):
         """Make a box plot of model data and observations.
@@ -314,7 +328,7 @@ class ComparerPlotter:
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
         title : str, optional
-            plot title, default: [observation name]        
+            plot title, default: [observation name]
         kwargs : other keyword arguments to df.boxplot()
 
         Returns
@@ -344,10 +358,10 @@ class ComparerPlotter:
         ax.set_title(title or cmp.name)
 
         if self.is_directional:
-            self._ytick_directional(ax)
+            _ytick_directional(ax)
 
         return ax
-    
+
     def scatter(
         self,
         *,
@@ -492,8 +506,8 @@ class ComparerPlotter:
         )
 
         if self.is_directional:
-            self._xtick_directional(ax, xlim)
-            self._ytick_directional(ax, ylim)
+            _xtick_directional(ax, xlim)
+            _ytick_directional(ax, ylim)
 
         return ax
 
@@ -585,36 +599,11 @@ class ComparerPlotter:
         plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
         plt.xlabel(f"Residuals of {self.comparer.unit_text}")
-        ax = plt.gca()        
+        ax = plt.gca()
 
         if self.is_directional:
             ticks = np.linspace(-180, 180, 9)
             ax.set_xticks(ticks)
             ax.set_xlim(-180, 180)
-        
+
         return ax
-
-    def _xtick_directional(self, ax, xlim=None):
-        """Set x-ticks for directional data"""
-        ticks = ticks = self._xyticks(lim=xlim)
-        if(len(ticks) > 2):
-            ax.set_xticks(ticks)
-        if xlim is None:
-            ax.set_xlim(0, 360)
-
-    def _ytick_directional(self, ax, ylim=None):
-        """Set y-ticks for directional data"""
-        ticks = self._xyticks(lim=ylim)
-        if(len(ticks) > 2):
-            ax.set_yticks(ticks)
-        if ylim is None:
-            ax.set_ylim(0, 360)
-
-    @staticmethod
-    def _xyticks(n_sectors=8, lim=None):
-        """Set y-ticks for directional data"""
-        #labels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
-        ticks = np.linspace(0, 360, n_sectors+1)
-        if lim is not None:
-            ticks = ticks[(ticks >= lim[0]) & (ticks <= lim[1])]
-        return ticks         
