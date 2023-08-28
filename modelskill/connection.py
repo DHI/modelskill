@@ -61,6 +61,10 @@ def from_matched(
     mod_items: Optional[Iterable[Union[str, int]]] = None,
     aux_items: Optional[Iterable[Union[str, int]]] = None,
     quantity: Optional[Quantity] = None,
+    name: Optional[str] = None,
+    x: Optional[float] = None,
+    y: Optional[float] = None,
+    z: Optional[float] = None,
 ) -> Comparer:
     """Create a Comparer from observation and model results that are already matched (aligned)
 
@@ -77,6 +81,14 @@ def from_matched(
         Names or indicies of auxiliary items, by default None
     quantity : Quantity, optional
         Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
+    name : str, optional
+        Name of the comparer, by default None (will be set to obs_item)
+    x : float, optional
+        x-coordinate of observation, by default None
+    y : float, optional
+        y-coordinate of observation, by default None
+    z : float, optional
+        z-coordinate of observation, by default None
 
     Examples
     --------
@@ -111,7 +123,14 @@ def from_matched(
         data = data.to_dataframe()
 
     cmp = Comparer.from_matched_data(
-        data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items
+        data,
+        obs_item=obs_item,
+        mod_items=mod_items,
+        aux_items=aux_items,
+        name=name,
+        x=x,
+        y=y,
+        z=z,
     )
     if quantity is not None:
         cmp.quantity = quantity

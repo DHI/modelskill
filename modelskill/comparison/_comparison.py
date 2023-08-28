@@ -342,7 +342,14 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 def _matched_data_to_xarray(
-    data: pd.DataFrame, obs_item=None, mod_items=None, aux_items=None
+    data: pd.DataFrame,
+    obs_item=None,
+    mod_items=None,
+    aux_items=None,
+    name=None,
+    x=None,
+    y=None,
+    z=None,
 ):
     """Convert matched data to accepted xarray.Dataset format"""
     if isinstance(data, pd.DataFrame):
@@ -355,12 +362,23 @@ def _matched_data_to_xarray(
     else:
         raise ValueError(f"Unknown data type '{type(data)}' (pd.DataFrame)")
 
-    data.attrs["name"] = items.obs
+    data.attrs["name"] = name if name is not None else items.obs
     data["Observation"].attrs["kind"] = "observation"
     for m in items.model:
         data[m].attrs["kind"] = "model"
     for a in items.aux:
         data[a].attrs["kind"] = "auxiliary"
+
+    if x is not None:
+        data["x"] = x
+        data["x"].attrs["kind"] = "position"
+    if y is not None:
+        data["y"] = y
+        data["y"].attrs["kind"] = "position"
+    if z is not None:
+        data["z"] = z
+        data["z"].attrs["kind"] = "position"
+
     return data
 
 
@@ -613,13 +631,29 @@ class Comparer:
 
     @classmethod
     def from_matched_data(
-        cls, data, raw_mod_data=None, obs_item=None, mod_items=None, aux_items=None
+        cls,
+        data,
+        raw_mod_data=None,
+        obs_item=None,
+        mod_items=None,
+        aux_items=None,
+        name=None,
+        x=None,
+        y=None,
+        z=None,
     ):
         """Initialize from compared data"""
         if not isinstance(data, xr.Dataset):
             # TODO: handle raw_mod_data by accessing data.attrs["kind"] and only remove nan after
             data = _matched_data_to_xarray(
-                data, obs_item=obs_item, mod_items=mod_items, aux_items=aux_items
+                data,
+                obs_item=obs_item,
+                mod_items=mod_items,
+                aux_items=aux_items,
+                name=name,
+                x=x,
+                y=y,
+                z=z,
             )
         return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
