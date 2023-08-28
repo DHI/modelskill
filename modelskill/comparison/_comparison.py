@@ -330,6 +330,8 @@ def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None)
         obs_item, mod_items, aux_items = _parse_items(
             cols, obs_item, mod_items, aux_items
         )
+        all_items = [obs_item] + mod_items + aux_items
+        data = data[all_items]
         data.index.name = "time"
         data.rename(columns={obs_item: "Observation"}, inplace=True)
         data = data.to_xarray()
