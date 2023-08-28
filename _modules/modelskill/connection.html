@@ -248,7 +248,6 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">modelskill</span> <span class="kn">import</span> <span class="n">ModelResult</span>
 <span class="kn">from</span> <span class="nn">modelskill.timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>
-<span class="kn">from</span> <span class="nn">modelskill.model</span> <span class="kn">import</span> <span class="n">PointModelResult</span>
 <span class="kn">from</span> <span class="nn">modelskill.types</span> <span class="kn">import</span> <span class="n">GeometryType</span><span class="p">,</span> <span class="n">Quantity</span>
 <span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">protocols</span>
 <span class="kn">from</span> <span class="nn">.model._base</span> <span class="kn">import</span> <span class="n">ModelResultBase</span>
@@ -290,24 +289,40 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">from_matched</span><span class="p">(</span>
-    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dfs0</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">obs_item</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">mod_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">obs_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">mod_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">aux_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">z</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Comparer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Comparer from observation and model results that are already matched (aligned)</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    df : pd.DataFrame</span>
-<span class="sd">        DataFrame with columns [obs_item, mod_item]</span>
-<span class="sd">    obs_item : str</span>
-<span class="sd">        Name of observation item</span>
-<span class="sd">    mod_items : Optional[Iterable[str]], optional</span>
-<span class="sd">        Names of model items, if None all remaining columns are model items, by default None</span>
+<span class="sd">    data : [pd.DataFrame,str,Path,mikeio.Dfs0, mikeio.Dataset]</span>
+<span class="sd">        DataFrame (or object that can be converted to a DataFrame e.g. dfs0)</span>
+<span class="sd">        with columns obs_item, mod_items, aux_items</span>
+<span class="sd">    obs_item : [str,int], optional</span>
+<span class="sd">        Name or index of observation item, by default first item</span>
+<span class="sd">    mod_items : Iterable[str,int], optional</span>
+<span class="sd">        Names or indicies of model items, if None all remaining columns are model items, by default None</span>
+<span class="sd">    aux_items : Iterable[str,int], optional</span>
+<span class="sd">        Names or indicies of auxiliary items, by default None</span>
 <span class="sd">    quantity : Quantity, optional</span>
 <span class="sd">        Quantity of the observation and model results, by default Quantity(name=&quot;Undefined&quot;, unit=&quot;Undefined&quot;)</span>
+<span class="sd">    name : str, optional</span>
+<span class="sd">        Name of the comparer, by default None (will be set to obs_item)</span>
+<span class="sd">    x : float, optional</span>
+<span class="sd">        x-coordinate of observation, by default None</span>
+<span class="sd">    y : float, optional</span>
+<span class="sd">        y-coordinate of observation, by default None</span>
+<span class="sd">    z : float, optional</span>
+<span class="sd">        z-coordinate of observation, by default None</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -329,20 +344,31 @@ document.write(`
 <span class="sd">        Model: local, rmse=0.100</span>
 <span class="sd">        Model: global, rmse=0.200</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">obs</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">obs_item</span><span class="p">]</span>
+    <span class="c1"># pre-process if dfs0, or mikeio.Dataset</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
+        <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.dfs0&quot;</span><span class="p">,</span> <span class="s2">&quot;File must be a dfs0 file&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># now mikeio.Dataset</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dfs0</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>  <span class="c1"># now mikeio.Dataset</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only 0-dimensional data are supported&quot;</span>
+        <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="n">obs_item</span><span class="p">])</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">mod_items</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># all remaining columns are model results</span>
-        <span class="n">pmods</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">PointModelResult</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">item</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span>
-            <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">obs_item</span>
-        <span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">pmods</span> <span class="o">=</span> <span class="p">[</span><span class="n">PointModelResult</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">item</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">mod_items</span><span class="p">]</span>
-    <span class="n">pobs</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">obs_item</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">obs_item</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">_single_obs_compare</span><span class="p">(</span><span class="n">pobs</span><span class="p">,</span> <span class="n">pmods</span><span class="p">)</span>
+    <span class="n">cmp</span> <span class="o">=</span> <span class="n">Comparer</span><span class="o">.</span><span class="n">from_matched_data</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">obs_item</span><span class="o">=</span><span class="n">obs_item</span><span class="p">,</span>
+        <span class="n">mod_items</span><span class="o">=</span><span class="n">mod_items</span><span class="p">,</span>
+        <span class="n">aux_items</span><span class="o">=</span><span class="n">aux_items</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+        <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cmp</span><span class="o">.</span><span class="n">quantity</span> <span class="o">=</span> <span class="n">quantity</span>
+    <span class="k">return</span> <span class="n">cmp</span>
 
 
 <div class="viewcode-block" id="compare"><a class="viewcode-back" href="../../api.html#modelskill.connection.compare">[docs]</a><span class="k">def</span> <span class="nf">compare</span><span class="p">(</span>
@@ -606,7 +632,6 @@ document.write(`
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_validate_start_end</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">):</span>
-
         <span class="k">if</span> <span class="n">obs</span><span class="o">.</span><span class="n">end_time</span> <span class="o">&lt;</span> <span class="n">mod</span><span class="o">.</span><span class="n">start_time</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;No time overlap! Obs &#39;</span><span class="si">{</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; end is before model &#39;</span><span class="si">{</span><span class="n">mod</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; start&quot;</span>
@@ -1101,7 +1126,7 @@ document.write(`
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">PointObservation</span><span class="p">):</span>
             <span class="n">d</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">x</span>
             <span class="n">d</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">y</span>
-        <span class="c1"># d[&quot;variable_name&quot;] = obs.variable_name</span>
+        <span class="c1"># d[&quot;quantity_name&quot;] = obs.quantity.name</span>
         <span class="k">return</span> <span class="n">d</span>
 
     <span class="nd">@staticmethod</span>

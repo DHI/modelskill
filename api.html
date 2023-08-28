@@ -901,8 +901,8 @@ by the model, by default True</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="modelskill.comparison.PointComparer.from_compared_data">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_compared_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.comparison.PointComparer.from_compared_data" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py" id="modelskill.comparison.PointComparer.from_matched_data">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_matched_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.comparison.PointComparer.from_matched_data" title="Permalink to this definition">#</a></dt>
 <dd><p>Initialize from compared data</p>
 </dd></dl>
 
@@ -954,6 +954,18 @@ by the model, by default True</p></li>
 <dt class="sig sig-object py" id="modelskill.comparison.PointComparer.plotter">
 <span class="sig-name descname"><span class="pre">plotter</span></span><a class="headerlink" href="#modelskill.comparison.PointComparer.plotter" title="Permalink to this definition">#</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">modelskill.comparison._comparer_plotter.ComparerPlotter</span></code></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.comparison.PointComparer.quantity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantity</span></span><a class="headerlink" href="#modelskill.comparison.PointComparer.quantity" title="Permalink to this definition">#</a></dt>
+<dd><p>Quantity object</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.comparison.PointComparer.quantity_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantity_name</span></span><a class="headerlink" href="#modelskill.comparison.PointComparer.quantity_name" title="Permalink to this definition">#</a></dt>
+<dd><p>name of variable</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1179,12 +1191,6 @@ cells with fewer observations get a score of <cite>np.nan</cite></p></li>
 <dd><p>Variable name and unit as text suitable for plot labels</p>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="modelskill.comparison.PointComparer.variable_name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variable_name</span></span><a class="headerlink" href="#modelskill.comparison.PointComparer.variable_name" title="Permalink to this definition">#</a></dt>
-<dd><p>name of variable</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="modelskill.comparison.PointComparer.where">
 <span class="sig-name descname"><span class="pre">where</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cond</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.comparison.PointComparer.where" title="Permalink to this definition">#</a></dt>
@@ -1218,8 +1224,8 @@ cells with fewer observations get a score of <cite>np.nan</cite></p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="modelskill.comparison.TrackComparer.from_compared_data">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_compared_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.comparison.TrackComparer.from_compared_data" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py" id="modelskill.comparison.TrackComparer.from_matched_data">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_matched_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.comparison.TrackComparer.from_matched_data" title="Permalink to this definition">#</a></dt>
 <dd><p>Initialize from compared data</p>
 </dd></dl>
 
@@ -1271,6 +1277,18 @@ cells with fewer observations get a score of <cite>np.nan</cite></p></li>
 <dt class="sig sig-object py" id="modelskill.comparison.TrackComparer.plotter">
 <span class="sig-name descname"><span class="pre">plotter</span></span><a class="headerlink" href="#modelskill.comparison.TrackComparer.plotter" title="Permalink to this definition">#</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">modelskill.comparison._comparer_plotter.ComparerPlotter</span></code></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.comparison.TrackComparer.quantity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantity</span></span><a class="headerlink" href="#modelskill.comparison.TrackComparer.quantity" title="Permalink to this definition">#</a></dt>
+<dd><p>Quantity object</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.comparison.TrackComparer.quantity_name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantity_name</span></span><a class="headerlink" href="#modelskill.comparison.TrackComparer.quantity_name" title="Permalink to this definition">#</a></dt>
+<dd><p>name of variable</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1494,12 +1512,6 @@ cells with fewer observations get a score of <cite>np.nan</cite></p></li>
 <dt class="sig sig-object py" id="modelskill.comparison.TrackComparer.unit_text">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">unit_text</span></span><a class="headerlink" href="#modelskill.comparison.TrackComparer.unit_text" title="Permalink to this definition">#</a></dt>
 <dd><p>Variable name and unit as text suitable for plot labels</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="modelskill.comparison.TrackComparer.variable_name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">variable_name</span></span><a class="headerlink" href="#modelskill.comparison.TrackComparer.variable_name" title="Permalink to this definition">#</a></dt>
-<dd><p>name of variable</p>
 </dd></dl>
 
 <dl class="py method">
