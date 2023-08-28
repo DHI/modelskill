@@ -264,15 +264,15 @@ document.write(`
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.connection.Connector.add">add() (modelskill.connection.Connector method)</a>
-</li>
       <li><a href="api.html#modelskill.comparison.ComparerCollection.add_comparer">add_comparer() (modelskill.comparison.ComparerCollection method)</a>
+</li>
+      <li><a href="api.html#modelskill.metrics.add_metric">add_metric() (in module modelskill.metrics)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.metrics.add_metric">add_metric() (in module modelskill.metrics)</a>
-</li>
       <li><a href="api.html#modelskill.skill.AggregatedSkill">AggregatedSkill (class in modelskill.skill)</a>
+</li>
+      <li><a href="api.html#modelskill.skill.AggregatedSkillPlotter">AggregatedSkillPlotter (class in modelskill.skill)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -280,7 +280,15 @@ document.write(`
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#modelskill.skill.AggregatedSkillPlotter.bar">bar() (modelskill.skill.AggregatedSkillPlotter method)</a>
+</li>
+      <li><a href="api.html#modelskill.skill.AggregatedSkillPlotter.barh">barh() (modelskill.skill.AggregatedSkillPlotter method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.bias">bias() (in module modelskill.metrics)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter.box">box() (modelskill.comparison._comparer_plotter.ComparerPlotter method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -290,13 +298,17 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.cc">cc() (in module modelskill.metrics)</a>
 </li>
-      <li><a href="api.html#modelskill.connection.compare">compare() (in module modelskill.connection)</a>
+      <li><a href="api.html#modelskill.compare">compare() (in module modelskill)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison.Comparer">Comparer (class in modelskill.comparison)</a>
 </li>
       <li><a href="api.html#modelskill.comparison.ComparerCollection">ComparerCollection (class in modelskill.comparison)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.connection.Connector">Connector (class in modelskill.connection)</a>
+      <li><a href="api.html#modelskill.comparison._collection_plotter.ComparerCollectionPlotter">ComparerCollectionPlotter (class in modelskill.comparison._collection_plotter)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter">ComparerPlotter (class in modelskill.comparison._comparer_plotter)</a>
 </li>
       <li><a href="api.html#modelskill.spatial.SpatialSkill.coords">coords (modelskill.spatial.SpatialSkill property)</a>
 </li>
@@ -316,29 +328,21 @@ document.write(`
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.end">end (modelskill.comparison.ComparerCollection property)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.end">end (modelskill.comparison.Comparer property)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.end">(modelskill.comparison.PointComparer property)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.end">(modelskill.comparison.TrackComparer property)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.end">(modelskill.comparison.ComparerCollection property)</a>
 </li>
       </ul></li>
       <li><a href="api.html#modelskill.metrics.ev">ev() (in module modelskill.metrics)</a>
 </li>
-      <li><a href="api.html#modelskill.metrics.explained_variance">explained_variance() (in module modelskill.metrics)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.connection.Connector.extract">extract() (modelskill.connection.Connector method)</a>
+      <li><a href="api.html#modelskill.metrics.explained_variance">explained_variance() (in module modelskill.metrics)</a>
+</li>
+      <li><a href="api.html#modelskill.model.DfsuModelResult.extract">extract() (modelskill.model.DfsuModelResult method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.connection.PointConnector.extract">(modelskill.connection.PointConnector method)</a>
-</li>
-        <li><a href="api.html#modelskill.connection.TrackConnector.extract">(modelskill.connection.TrackConnector method)</a>
-</li>
-        <li><a href="api.html#modelskill.model.DfsuModelResult.extract">(modelskill.model.DfsuModelResult method)</a>
-</li>
         <li><a href="api.html#modelskill.model.GridModelResult.extract">(modelskill.model.GridModelResult method)</a>
 </li>
       </ul></li>
@@ -356,14 +360,12 @@ document.write(`
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.connection.Connector.from_config">from_config() (modelskill.connection.Connector static method)</a>
+      <li><a href="api.html#modelskill.from_matched">from_matched() (in module modelskill)</a>
 </li>
-      <li><a href="api.html#modelskill.comparison.PointComparer.from_matched_data">from_matched_data() (modelskill.comparison.PointComparer class method)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.from_matched_data">(modelskill.comparison.TrackComparer class method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.from_matched_data">from_matched_data() (modelskill.comparison.Comparer class method)</a>
 </li>
-      </ul></li>
+      <li><a href="api.html#modelskill.types.Quantity.from_mikeio_eum_name">from_mikeio_eum_name() (modelskill.types.Quantity static method)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -372,8 +374,12 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.get_metric">get_metric() (in module modelskill.metrics)</a>
 </li>
+      <li><a href="api.html#modelskill.get_option">get_option() (in module modelskill)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#modelskill.skill.AggregatedSkillPlotter.grid">grid() (modelskill.skill.AggregatedSkillPlotter method)</a>
+</li>
       <li><a href="api.html#modelskill.model.GridModelResult">GridModelResult (class in modelskill.model)</a>
 </li>
   </ul></td>
@@ -381,6 +387,14 @@ document.write(`
 
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#modelskill.comparison._collection_plotter.ComparerCollectionPlotter.hist">hist() (modelskill.comparison._collection_plotter.ComparerCollectionPlotter method)</a>
+
+      <ul>
+        <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter.hist">(modelskill.comparison._comparer_plotter.ComparerPlotter method)</a>
+</li>
+      </ul></li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.hit_ratio">hit_ratio() (in module modelskill.metrics)</a>
 </li>
@@ -390,6 +404,10 @@ document.write(`
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#modelskill.types.Quantity.is_compatible">is_compatible() (modelskill.types.Quantity method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.is_valid_metric">is_valid_metric() (in module modelskill.metrics)</a>
 </li>
   </ul></td>
@@ -398,10 +416,16 @@ document.write(`
 <h2 id="K">K</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.metrics.kge">kge() (in module modelskill.metrics)</a>
+      <li><a href="api.html#modelskill.comparison._collection_plotter.ComparerCollectionPlotter.kde">kde() (modelskill.comparison._collection_plotter.ComparerCollectionPlotter method)</a>
+
+      <ul>
+        <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter.kde">(modelskill.comparison._comparer_plotter.ComparerPlotter method)</a>
 </li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#modelskill.metrics.kge">kge() (in module modelskill.metrics)</a>
+</li>
       <li><a href="api.html#modelskill.metrics.kling_gupta_efficiency">kling_gupta_efficiency() (in module modelskill.metrics)</a>
 </li>
   </ul></td>
@@ -412,14 +436,14 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.lin_slope">lin_slope() (in module modelskill.metrics)</a>
 </li>
+      <li><a href="api.html#modelskill.skill.AggregatedSkillPlotter.line">line() (modelskill.skill.AggregatedSkillPlotter method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer.load">load() (modelskill.comparison.PointComparer static method)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.load">(modelskill.comparison.TrackComparer static method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.load">load() (modelskill.comparison.Comparer static method)</a>
 </li>
-      </ul></li>
+      <li><a href="api.html#modelskill.load_style">load_style() (in module modelskill)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -444,37 +468,20 @@ document.write(`
 </li>
       <li><a href="api.html#modelskill.metrics.metric_has_units">metric_has_units() (in module modelskill.metrics)</a>
 </li>
-      <li><a href="api.html#modelskill.comparison.PointComparer.mod">mod (modelskill.comparison.PointComparer property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.mod">(modelskill.comparison.TrackComparer property)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#modelskill.comparison.Comparer.mod">mod (modelskill.comparison.Comparer property)</a>
 </li>
-      </ul></li>
       <li><a href="api.html#modelskill.comparison.ComparerCollection.mod_names">mod_names (modelskill.comparison.ComparerCollection property)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.connection.Connector.mod_names">(modelskill.connection.Connector property)</a>
-</li>
-        <li><a href="api.html#modelskill.connection.PointConnector.mod_names">(modelskill.connection.PointConnector property)</a>
-</li>
-        <li><a href="api.html#modelskill.connection.TrackConnector.mod_names">(modelskill.connection.TrackConnector property)</a>
-</li>
         <li><a href="api.html#modelskill.skill.AggregatedSkill.mod_names">(modelskill.skill.AggregatedSkill property)</a>
 </li>
         <li><a href="api.html#modelskill.spatial.SpatialSkill.mod_names">(modelskill.spatial.SpatialSkill property)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.model_efficiency_factor">model_efficiency_factor() (in module modelskill.metrics)</a>
 </li>
-      <li>
-    modelskill.connection
-
-      <ul>
-        <li><a href="api.html#module-modelskill.connection">module</a>
-</li>
-      </ul></li>
       <li>
     modelskill.metrics
 
@@ -486,8 +493,6 @@ document.write(`
     module
 
       <ul>
-        <li><a href="api.html#module-modelskill.connection">modelskill.connection</a>
-</li>
         <li><a href="api.html#module-modelskill.metrics">modelskill.metrics</a>
 </li>
       </ul></li>
@@ -501,26 +506,12 @@ document.write(`
 </li>
       <li><a href="api.html#modelskill.comparison.ComparerCollection.n_comparers">n_comparers (modelskill.comparison.ComparerCollection property)</a>
 </li>
-      <li><a href="api.html#modelskill.connection.Connector.n_models">n_models (modelskill.connection.Connector property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.connection.PointConnector.n_models">(modelskill.connection.PointConnector property)</a>
-</li>
-        <li><a href="api.html#modelskill.connection.TrackConnector.n_models">(modelskill.connection.TrackConnector property)</a>
-</li>
-      </ul></li>
       <li><a href="api.html#modelskill.comparison.ComparerCollection.n_observations">n_observations (modelskill.comparison.ComparerCollection property)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison.Comparer.n_points">n_points (modelskill.comparison.Comparer property)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.connection.Connector.n_observations">(modelskill.connection.Connector property)</a>
-</li>
-      </ul></li>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.n_points">n_points (modelskill.comparison.ComparerCollection property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.n_points">(modelskill.comparison.PointComparer property)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.n_points">(modelskill.comparison.TrackComparer property)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.n_points">(modelskill.comparison.ComparerCollection property)</a>
 </li>
         <li><a href="api.html#modelskill.observation.PointObservation.n_points">(modelskill.observation.PointObservation property)</a>
 </li>
@@ -529,12 +520,8 @@ document.write(`
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer.name">name (modelskill.comparison.PointComparer property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.name">(modelskill.comparison.TrackComparer property)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.name">name (modelskill.comparison.Comparer property)</a>
 </li>
-      </ul></li>
       <li><a href="api.html#modelskill.metrics.nash_sutcliffe_efficiency">nash_sutcliffe_efficiency() (in module modelskill.metrics)</a>
 </li>
       <li><a href="api.html#modelskill.metrics.nse">nse() (in module modelskill.metrics)</a>
@@ -545,25 +532,15 @@ document.write(`
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer.obs">obs (modelskill.comparison.PointComparer property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.obs">(modelskill.comparison.TrackComparer property)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.obs">obs (modelskill.comparison.Comparer property)</a>
 </li>
-      </ul></li>
-      <li><a href="api.html#modelskill.comparison.PointComparer.obs_name">obs_name (modelskill.comparison.PointComparer property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.obs_name">(modelskill.comparison.TrackComparer property)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.obs_name">obs_name (modelskill.comparison.Comparer property)</a>
 </li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.comparison.ComparerCollection.obs_names">obs_names (modelskill.comparison.ComparerCollection property)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.connection.Connector.obs_names">(modelskill.connection.Connector property)</a>
-</li>
         <li><a href="api.html#modelskill.skill.AggregatedSkill.obs_names">(modelskill.skill.AggregatedSkill property)</a>
 </li>
         <li><a href="api.html#modelskill.spatial.SpatialSkill.obs_names">(modelskill.spatial.SpatialSkill property)</a>
@@ -579,22 +556,14 @@ document.write(`
 </li>
       <li><a href="api.html#modelskill.spatial.SpatialSkill.plot">plot() (modelskill.spatial.SpatialSkill method)</a>
 </li>
-      <li><a href="api.html#modelskill.connection.Connector.plot_observation_positions">plot_observation_positions() (modelskill.connection.Connector method)</a>
+      <li><a href="api.html#modelskill.plot_spatial_overview">plot_spatial_overview() (in module modelskill)</a>
+</li>
+      <li><a href="api.html#modelskill.plot_temporal_coverage">plot_temporal_coverage() (in module modelskill)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison.Comparer.plotter">plotter (modelskill.comparison.Comparer attribute)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.connection.PointConnector.plot_observation_positions">(modelskill.connection.PointConnector method)</a>
-</li>
-        <li><a href="api.html#modelskill.connection.TrackConnector.plot_observation_positions">(modelskill.connection.TrackConnector method)</a>
-</li>
-      </ul></li>
-      <li><a href="api.html#modelskill.connection.Connector.plot_temporal_coverage">plot_temporal_coverage() (modelskill.connection.Connector method)</a>
-</li>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.plotter">plotter (modelskill.comparison.ComparerCollection attribute)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.plotter">(modelskill.comparison.PointComparer attribute)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.plotter">(modelskill.comparison.TrackComparer attribute)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.plotter">(modelskill.comparison.ComparerCollection attribute)</a>
 </li>
         <li><a href="api.html#modelskill.observation.PointObservation.plotter">(modelskill.observation.PointObservation attribute)</a>
 </li>
@@ -603,10 +572,6 @@ document.write(`
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer">PointComparer (class in modelskill.comparison)</a>
-</li>
-      <li><a href="api.html#modelskill.connection.PointConnector">PointConnector (class in modelskill.connection)</a>
-</li>
       <li><a href="api.html#modelskill.model.PointModelResult">PointModelResult (class in modelskill.model)</a>
 </li>
       <li><a href="api.html#modelskill.observation.PointObservation">PointObservation (class in modelskill.observation)</a>
@@ -619,26 +584,20 @@ document.write(`
 <h2 id="Q">Q</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer.quantity">quantity (modelskill.comparison.PointComparer property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.quantity">(modelskill.comparison.TrackComparer property)</a>
+      <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter.qq">qq() (modelskill.comparison._comparer_plotter.ComparerPlotter method)</a>
 </li>
-      </ul></li>
-      <li><a href="api.html#modelskill.comparison.PointComparer.quantity_name">quantity_name (modelskill.comparison.PointComparer property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.quantity_name">(modelskill.comparison.TrackComparer property)</a>
+      <li><a href="api.html#modelskill.types.Quantity">Quantity (class in modelskill.types)</a>
 </li>
-      </ul></li>
+      <li><a href="api.html#modelskill.comparison.Comparer.quantity">quantity (modelskill.comparison.Comparer property)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.query">query() (modelskill.comparison.ComparerCollection method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.quantity_name">quantity_name (modelskill.comparison.Comparer property)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison.Comparer.query">query() (modelskill.comparison.Comparer method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.query">(modelskill.comparison.PointComparer method)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.query">(modelskill.comparison.TrackComparer method)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.query">(modelskill.comparison.ComparerCollection method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -649,10 +608,14 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.r2">r2() (in module modelskill.metrics)</a>
 </li>
-      <li><a href="api.html#modelskill.metrics.rho">rho() (in module modelskill.metrics)</a>
+      <li><a href="api.html#modelskill.reset_option">reset_option() (in module modelskill)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter.residual_hist">residual_hist() (modelskill.comparison._comparer_plotter.ComparerPlotter method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#modelskill.metrics.rho">rho() (in module modelskill.metrics)</a>
+</li>
       <li><a href="api.html#modelskill.metrics.rmse">rmse() (in module modelskill.metrics)</a>
 </li>
       <li><a href="api.html#modelskill.metrics.root_mean_squared_error">root_mean_squared_error() (in module modelskill.metrics)</a>
@@ -663,64 +626,58 @@ document.write(`
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer.save">save() (modelskill.comparison.PointComparer method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.save">save() (modelskill.comparison.Comparer method)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison._collection_plotter.ComparerCollectionPlotter.scatter">scatter() (modelskill.comparison._collection_plotter.ComparerCollectionPlotter method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.save">(modelskill.comparison.TrackComparer method)</a>
+        <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter.scatter">(modelskill.comparison._comparer_plotter.ComparerPlotter method)</a>
 </li>
       </ul></li>
       <li><a href="api.html#modelskill.metrics.scatter_index">scatter_index() (in module modelskill.metrics)</a>
 </li>
       <li><a href="api.html#modelskill.metrics.scatter_index2">scatter_index2() (in module modelskill.metrics)</a>
 </li>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.score">score() (modelskill.comparison.ComparerCollection method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.score">score() (modelskill.comparison.Comparer method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.score">(modelskill.comparison.PointComparer method)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.score">(modelskill.comparison.TrackComparer method)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.score">(modelskill.comparison.ComparerCollection method)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.sel">sel() (modelskill.comparison.ComparerCollection method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.sel">sel() (modelskill.comparison.Comparer method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.sel">(modelskill.comparison.PointComparer method)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.sel">(modelskill.comparison.TrackComparer method)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.sel">(modelskill.comparison.ComparerCollection method)</a>
 </li>
         <li><a href="api.html#modelskill.skill.AggregatedSkill.sel">(modelskill.skill.AggregatedSkill method)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#modelskill.metrics.si">si() (in module modelskill.metrics)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.skill">skill() (modelskill.comparison.ComparerCollection method)</a>
+      <li><a href="api.html#modelskill.set_option">set_option() (in module modelskill)</a>
+</li>
+      <li><a href="api.html#modelskill.metrics.si">si() (in module modelskill.metrics)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison.Comparer.skill">skill() (modelskill.comparison.Comparer method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.skill">(modelskill.comparison.PointComparer method)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.skill">(modelskill.comparison.TrackComparer method)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.skill">(modelskill.comparison.ComparerCollection method)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.spatial_skill">spatial_skill() (modelskill.comparison.ComparerCollection method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.spatial_skill">spatial_skill() (modelskill.comparison.Comparer method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.spatial_skill">(modelskill.comparison.PointComparer method)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.spatial_skill">(modelskill.comparison.TrackComparer method)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.spatial_skill">(modelskill.comparison.ComparerCollection method)</a>
 </li>
       </ul></li>
       <li><a href="api.html#modelskill.spatial.SpatialSkill">SpatialSkill (class in modelskill.spatial)</a>
 </li>
       <li><a href="api.html#modelskill.metrics.spearmanr">spearmanr() (in module modelskill.metrics)</a>
 </li>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.start">start (modelskill.comparison.ComparerCollection property)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.start">start (modelskill.comparison.Comparer property)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.start">(modelskill.comparison.PointComparer property)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.start">(modelskill.comparison.TrackComparer property)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.start">(modelskill.comparison.ComparerCollection property)</a>
 </li>
       </ul></li>
       <li><a href="api.html#modelskill.skill.AggregatedSkill.style">style() (modelskill.skill.AggregatedSkill method)</a>
@@ -731,30 +688,26 @@ document.write(`
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer.time">time (modelskill.comparison.PointComparer property)</a>
+      <li><a href="api.html#modelskill.comparison._collection_plotter.ComparerCollectionPlotter.taylor">taylor() (modelskill.comparison._collection_plotter.ComparerCollectionPlotter method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.time">(modelskill.comparison.TrackComparer property)</a>
+        <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter.taylor">(modelskill.comparison._comparer_plotter.ComparerPlotter method)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#modelskill.connection.Connector.to_config">to_config() (modelskill.connection.Connector method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.time">time (modelskill.comparison.Comparer property)</a>
 </li>
-      <li><a href="api.html#modelskill.comparison.ComparerCollection.to_dataframe">to_dataframe() (modelskill.comparison.ComparerCollection method)</a>
+      <li><a href="api.html#modelskill.comparison._comparer_plotter.ComparerPlotter.timeseries">timeseries() (modelskill.comparison._comparer_plotter.ComparerPlotter method)</a>
+</li>
+      <li><a href="api.html#modelskill.comparison.Comparer.to_dataframe">to_dataframe() (modelskill.comparison.Comparer method)</a>
 
       <ul>
-        <li><a href="api.html#modelskill.comparison.PointComparer.to_dataframe">(modelskill.comparison.PointComparer method)</a>
-</li>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.to_dataframe">(modelskill.comparison.TrackComparer method)</a>
+        <li><a href="api.html#modelskill.comparison.ComparerCollection.to_dataframe">(modelskill.comparison.ComparerCollection method)</a>
 </li>
         <li><a href="api.html#modelskill.spatial.SpatialSkill.to_dataframe">(modelskill.spatial.SpatialSkill method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.TrackComparer">TrackComparer (class in modelskill.comparison)</a>
-</li>
-      <li><a href="api.html#modelskill.connection.TrackConnector">TrackConnector (class in modelskill.connection)</a>
-</li>
       <li><a href="api.html#modelskill.model.TrackModelResult">TrackModelResult (class in modelskill.model)</a>
 </li>
       <li><a href="api.html#modelskill.observation.TrackObservation">TrackObservation (class in modelskill.observation)</a>
@@ -771,12 +724,8 @@ document.write(`
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer.unit_text">unit_text (modelskill.comparison.PointComparer property)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.unit_text">(modelskill.comparison.TrackComparer property)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.unit_text">unit_text (modelskill.comparison.Comparer property)</a>
 </li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.urmse">urmse() (in module modelskill.metrics)</a>
@@ -807,12 +756,8 @@ document.write(`
 <h2 id="W">W</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#modelskill.comparison.PointComparer.where">where() (modelskill.comparison.PointComparer method)</a>
-
-      <ul>
-        <li><a href="api.html#modelskill.comparison.TrackComparer.where">(modelskill.comparison.TrackComparer method)</a>
+      <li><a href="api.html#modelskill.comparison.Comparer.where">where() (modelskill.comparison.Comparer method)</a>
 </li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#modelskill.metrics.willmott">willmott() (in module modelskill.metrics)</a>

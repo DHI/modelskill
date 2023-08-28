@@ -330,18 +330,18 @@ object.</p>
 </section>
 <section id="compare">
 <h3>3. compare()<a class="headerlink" href="#compare" title="Permalink to this headline">#</a></h3>
-<p>The <a class="reference internal" href="api.html#modelskill.connection.compare" title="modelskill.connection.compare"><span class="xref myst py py-func">compare()</span></a> method will
+<p>The <span class="xref myst">compare()</span> method will
 interpolate the modelresult to the time of the observation and return an
 object that can be used for analysis and plotting</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">modelskill</span>
-<span class="n">c</span> <span class="o">=</span> <span class="n">modelskill</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">fn_obs</span><span class="p">,</span> <span class="n">fn_mod</span><span class="p">,</span> <span class="n">mod_item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">modelskill</span> <span class="k">as</span> <span class="nn">ms</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">fn_obs</span><span class="p">,</span> <span class="n">fn_mod</span><span class="p">,</span> <span class="n">mod_item</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="analysis-and-plotting">
 <h3>4. Analysis and plotting<a class="headerlink" href="#analysis-and-plotting" title="Permalink to this headline">#</a></h3>
 <p>The returned
-<a class="reference internal" href="api.html#modelskill.comparison.PointComparer" title="modelskill.comparison.PointComparer"><span class="xref myst py py-class">PointComparer</span></a> can make
+<span class="xref myst">PointComparer</span> can make
 scatter plots, skill assessment, time series plots etc.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">timeseries</span><span class="p">()</span>
 </pre></div>
