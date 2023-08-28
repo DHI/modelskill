@@ -88,6 +88,28 @@ ItemType = Optional[Union[str, int]]
 
 @dataclass(frozen=True)
 class Quantity:
+    """Quantity of data
+
+    Parameters
+    ----------
+    name : str
+        Name of the quantity
+    unit : str
+        Unit of the quantity
+
+    Examples
+    --------
+    >>> wl = Quantity(name="Water Level", unit="meter")
+    >>> wl
+    Quantity(name='Water Level', unit='meter')
+    >>> wl.name
+    'Water Level'
+    >>> wl.unit
+    'meter'
+    >>> wl.is_compatible(wl)
+    True
+    """
+
     name: str
     unit: str
 
