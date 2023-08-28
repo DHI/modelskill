@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import (
     Dict,
@@ -116,6 +117,18 @@ MOD_COLORS = (
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
 IdOrNameTypes = Union[int, str, List[int], List[str]]
+
+
+@dataclass
+class ItemSelection:
+    "Utility class to keep track of observation, model and auxiliary items"
+    obs: str
+    model: List[str]
+    aux: List[str]
+
+    @property
+    def all(self) -> List[str]:
+        return [self.obs] + self.model + self.aux
 
 
 def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
@@ -327,25 +340,20 @@ def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None)
     """Convert matched data to accepted xarray.Dataset format"""
     if isinstance(data, pd.DataFrame):
         cols = data.columns
-        obs_item, mod_items, aux_items = _parse_items(
-            cols, obs_item, mod_items, aux_items
-        )
-        all_items = [obs_item] + mod_items + aux_items
-        data = data[all_items]
+        items = _parse_items(cols, obs_item, mod_items, aux_items)
+        data = data[items.all]
         data.index.name = "time"
         data.rename(columns={obs_item: "Observation"}, inplace=True)
         data = data.to_xarray()
     else:
         raise ValueError(f"Unknown data type '{type(data)}' (pd.DataFrame)")
 
-    data.attrs["name"] = obs_item
+    data.attrs["name"] = items.obs
     data["Observation"].attrs["kind"] = "observation"
-    if mod_items is not None:
-        for m in mod_items:
-            data[m].attrs["kind"] = "model"
-    if aux_items is not None:
-        for a in aux_items:
-            data[a].attrs["kind"] = "auxiliary"
+    for m in items.model:
+        data[m].attrs["kind"] = "model"
+    for a in items.aux:
+        data[a].attrs["kind"] = "auxiliary"
     return data
 
 
@@ -354,7 +362,7 @@ def _parse_items(
     obs_item: Optional[Union[str, int]] = None,
     mod_items: Optional[List[Union[str, int]]] = None,
     aux_items: Optional[List[Union[str, int]]] = None,
-) -> Tuple[str, List[str], List[str]]:
+) -> ItemSelection:
     """Parse items and return observation, model and auxiliary items
     Default behaviour:
     - obs_item is first item
@@ -400,7 +408,7 @@ def _parse_items(
 
     assert len(mod_items) > 0, "no model items were found! Must be at least one"
 
-    return obs_item, mod_items, aux_items
+    return ItemSelection(obs=obs_item, model=mod_items, aux=aux_items)
 
 
 class Comparer:
