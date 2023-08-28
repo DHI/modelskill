@@ -103,10 +103,11 @@ def test_matched_df_int_items(pt_df):
 
 def test_matched_df_with_aux(pt_df):
     pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    pt_df["not_relevant"] = [0.0, 0.0, 0.0, 0.0, -1.0, 0.0]
 
     # by default wind is not considered and aux variable
     cmp = Comparer.from_matched_data(data=pt_df)
-    assert cmp.mod_names == ["m1", "m2", "wind"]
+    assert cmp.mod_names == ["m1", "m2", "wind", "not_relevant"]
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
     assert cmp.quantity.name == "Undefined"
@@ -114,10 +115,13 @@ def test_matched_df_with_aux(pt_df):
     assert cmp.data["wind"].attrs["kind"] == "model"
 
     # but it can be specified
-    cmp = Comparer.from_matched_data(data=pt_df, aux_items=["wind"])
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_points == 6
     assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+    assert "not_relevant" not in cmp.data.data_vars
 
     # or if models are specified, it is automatically considered an aux variable
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
