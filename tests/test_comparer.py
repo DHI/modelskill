@@ -2,10 +2,23 @@ import numpy as np
 import pytest
 import pandas as pd
 import xarray as xr
-import modelskill.comparison
+from modelskill.comparison import Comparer
 
 
-def _get_df() -> pd.DataFrame:
+@pytest.fixture
+def pt_df() -> pd.DataFrame:
+    df = pd.DataFrame(
+        {
+            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
+            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+    return df
+
+
+def _get_track_df() -> pd.DataFrame:
     df = pd.DataFrame(
         {
             "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, np.nan],
@@ -21,7 +34,7 @@ def _get_df() -> pd.DataFrame:
 
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
-    data.attrs["variable_name"] = "fake var"
+    data.attrs["quantity_name"] = "fake var"
     data["x"].attrs["kind"] = "position"
     data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"
@@ -33,10 +46,10 @@ def _set_attrs(data: xr.Dataset) -> xr.Dataset:
 
 
 @pytest.fixture
-def pc() -> modelskill.comparison.Comparer:
+def pc() -> Comparer:
     """A comparer with fake point data"""
     x, y = 10.0, 55.0
-    df = _get_df().drop(columns=["x", "y"])
+    df = _get_track_df().drop(columns=["x", "y"])
     raw_data = {"m1": df[["m1"]], "m2": df[["m2"]]}
 
     data = df.dropna().to_xarray()
@@ -45,13 +58,13 @@ def pc() -> modelskill.comparison.Comparer:
     data["x"] = x
     data["y"] = y
     data = _set_attrs(data)
-    return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
+    return Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
 @pytest.fixture
-def tc() -> modelskill.comparison.Comparer:
+def tc() -> Comparer:
     """A comparer with fake track data"""
-    df = _get_df()
+    df = _get_track_df()
     raw_data = {"m1": df[["x", "y", "m1"]], "m2": df[["x", "y", "m2"]]}
 
     data = df.dropna().to_xarray()
@@ -59,33 +72,95 @@ def tc() -> modelskill.comparison.Comparer:
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
 
-    return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
+    return Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
-def test_minimal_matched_data():
+def test_matched_df(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df)
+    assert cmp.mod_names == ["m1", "m2"]
+    assert cmp.n_points == 6
+    assert cmp.name == "Observation"
+    assert cmp.quantity.name == "Undefined"
+    assert cmp.quantity.unit == "Undefined"
 
-    df = pd.DataFrame(
-        {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
-            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
-            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
-        }
-    ).set_index("time")
 
-    data = xr.Dataset(df)
+def test_matched_df_int_items(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=[1, 2])
+    assert cmp.mod_names == ["m1", "m2"]
+    assert cmp.n_points == 6
+
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=[-1])
+    assert cmp.mod_names == ["m2"]
+
+    # will fall because two items will have the same name "Observation"
+    # cmp = Comparer.from_matched_data(data=pt_df, obs_item=1)
+
+    pt_df = pt_df.rename(columns={"Observation": "obs"})
+    cmp = Comparer.from_matched_data(data=pt_df, obs_item=1)
+    assert cmp.name == "m1"
+    assert cmp.mod_names == ["obs", "m2"]
+
+
+def test_matched_df_with_aux(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    pt_df["not_relevant"] = [0.0, 0.0, 0.0, 0.0, -1.0, 0.0]
+
+    # by default wind is not considered and aux variable
+    cmp = Comparer.from_matched_data(data=pt_df)
+    assert cmp.mod_names == ["m1", "m2", "wind", "not_relevant"]
+    assert cmp.n_points == 6
+    assert cmp.name == "Observation"
+    assert cmp.quantity.name == "Undefined"
+    assert cmp.quantity.unit == "Undefined"
+    assert cmp.data["wind"].attrs["kind"] == "model"
+
+    # but it can be specified
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    assert cmp.mod_names == ["m1", "m2"]
+    assert cmp.n_points == 6
+    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+    assert "not_relevant" not in cmp.data.data_vars
+
+    # or if models are specified, it is automatically considered an aux variable
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert cmp.mod_names == ["m1", "m2"]
+    assert cmp.n_points == 6
+    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+
+
+def test_matched_df_illegal_items(pt_df):
+    with pytest.raises(AssertionError, match="data must contain at least two items"):
+        # dataframe has only one column
+        df = pt_df[["Observation"]]
+        Comparer.from_matched_data(data=df)
+
+    with pytest.raises(IndexError, match="out of range"):
+        # non existing item
+        Comparer.from_matched_data(data=pt_df, mod_items=[4])
+
+    with pytest.raises(KeyError, match="could not be found"):
+        # non existing item
+        Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2", "m3"])
+
+    with pytest.raises(AssertionError, match="no model items were found"):
+        # no mod_items
+        Comparer.from_matched_data(data=pt_df, aux_items=["m1", "m2"])
+
+
+def test_minimal_matched_data(pt_df):
+    data = xr.Dataset(pt_df)
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
 
-    cmp = modelskill.comparison.Comparer.from_compared_data(
-        data=data
-    )  # no additional raw_mod_data
+    cmp = Comparer.from_matched_data(data=data)  # no additional raw_mod_data
 
     assert cmp.data["Observation"].attrs["color"] == "black"
     assert cmp.data["Observation"].attrs["unit"] == "Undefined"
-    assert cmp.data.attrs["variable_name"] == "Undefined"
+    assert cmp.data.attrs["quantity_name"] == "Undefined"
     assert len(cmp.raw_mod_data["m1"]) == 6
 
     assert cmp.mod_names == ["m1", "m2"]
@@ -109,29 +184,19 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
     data.attrs["name"] = "mini"
 
     with pytest.raises(ValueError):
-        modelskill.comparison.Comparer.from_compared_data(data=data)
+        Comparer.from_matched_data(data=data)
 
 
-def test_minimal_plots():
-
-    df = pd.DataFrame(
-        {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
-            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
-            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
-        }
-    ).set_index("time")
-
-    data = xr.Dataset(df)
-    data.attrs["variable_name"] = "Waterlevel"
+def test_minimal_plots(pt_df):
+    data = xr.Dataset(pt_df)
+    data.attrs["quantity_name"] = "Waterlevel"
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["color"] = "pink"
     data["Observation"].attrs["unit"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
-    cmp = modelskill.comparison.Comparer.from_compared_data(data=data)
+    cmp = Comparer.from_matched_data(data=data)
 
     # Not very elaborate testing other than these two methods can be called without errors
     with pytest.warns(FutureWarning, match="plot.hist"):
@@ -164,7 +229,7 @@ def test_minimal_plots():
 
     ax = cmp.plot.qq()
     assert ax is not None
-    
+
     ax = cmp.plot.box()
     assert ax is not None
 
@@ -182,7 +247,6 @@ def test_minimal_plots():
 
 
 def test_multiple_forecasts_matched_data():
-
     # an example on how a forecast dataset could be constructed
     df = pd.DataFrame(
         {
@@ -198,9 +262,7 @@ def test_multiple_forecasts_matched_data():
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data.attrs["name"] = "a fcst"
-    cmp = modelskill.comparison.Comparer.from_compared_data(
-        data=data
-    )  # no additional raw_mod_data
+    cmp = Comparer.from_matched_data(data=data)  # no additional raw_mod_data
     assert len(cmp.raw_mod_data["m1"]) == 5
     assert cmp.mod_names == ["m1"]
     assert cmp.data["leadtime"].attrs["kind"] == "auxiliary"
@@ -215,23 +277,13 @@ def test_multiple_forecasts_matched_data():
     assert a_s < f_s
 
 
-def test_matched_aux_variables():
-
-    df = pd.DataFrame(
-        {
-            "Observation": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "m1": [1.5, 2.4, 3.6, 4.9, 5.6, 6.4],
-            "m2": [1.1, 2.2, 3.1, 4.2, 4.9, 6.2],
-            "wind": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
-            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
-        }
-    ).set_index("time")
-
-    data = xr.Dataset(df)
+def test_matched_aux_variables(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    data = xr.Dataset(pt_df)
     data["Observation"].attrs["kind"] = "observation"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
-    cmp = modelskill.comparison.Comparer.from_compared_data(data=data)
+    cmp = Comparer.from_matched_data(data=data)
     assert "wind" not in cmp.mod_names
     assert cmp.data["wind"].attrs["kind"] == "auxiliary"
 
@@ -243,7 +295,7 @@ def test_pc_properties(pc):
     assert pc.x == 10.0
     assert pc.y == 55.0
     assert pc.name == "fake point obs"
-    assert pc.variable_name == "fake var"
+    assert pc.quantity_name == "fake var"
     assert pc.start == pd.Timestamp("2019-01-01")
     assert pc.end == pd.Timestamp("2019-01-05")
     assert pc.mod_names == ["m1", "m2"]
@@ -261,7 +313,7 @@ def test_tc_properties(tc):
     assert np.all(tc.x == [10.1, 10.2, 10.3, 10.4, 10.5])
     assert np.all(tc.y == [55.1, 55.2, 55.3, 55.4, 55.5])
     assert tc.name == "fake track obs"
-    assert tc.variable_name == "fake var"
+    assert tc.quantity_name == "fake var"
     assert tc.start == pd.Timestamp("2019-01-01")
     assert tc.end == pd.Timestamp("2019-01-05")
     assert tc.mod_names == ["m1", "m2"]
@@ -416,7 +468,7 @@ def test_add_tc_pc(pc, tc):
     assert cc.n_points == 10
     assert cc.n_comparers == 2
 
-    
+
 def test_pc_to_dataframe(pc):
     df = pc.to_dataframe()
     assert isinstance(df, pd.DataFrame)

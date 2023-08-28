@@ -1,6 +1,6 @@
 import pytest
 
-import modelskill
+import modelskill as ms
 from modelskill import ModelResult
 from modelskill import PointObservation, TrackObservation
 from modelskill import Connector
@@ -92,14 +92,14 @@ def conf_xlsx():
 
 
 def test_from_excel_include(conf_xlsx):
-    con = modelskill.from_config(conf_xlsx, relative_path=True)
+    con = ms.from_config(conf_xlsx, relative_path=True)
     assert con.n_models == 1
     assert con.n_observations == 3
     assert len(con) == 3
 
 
 # def test_from_excel_save_new_relative(conf_xlsx):
-#     con = modelskill.from_config(conf_xlsx, relative_path=True)
+#     con = ms.from_config(conf_xlsx, relative_path=True)
 #     assert con.n_models == 1
 #     assert con.n_observations == 3
 #     assert len(con) == 3
@@ -108,8 +108,8 @@ def test_from_excel_include(conf_xlsx):
 #     os.makedirs("tests/testdata/tmp/", exist_ok=True)
 #     fn = "tests/testdata/tmp/conf_SW.xlsx"
 #     con.to_config(fn)
-#     modelskill.from_config(fn)
+#     ms.from_config(fn)
 #     fn = "tests/testdata/tmp/conf_SW.yml"
 #     con.to_config(fn)
-#     con3 = modelskill.from_config(fn)
+#     con3 = ms.from_config(fn)
 #     assert os.path.exists(con3.observations["HKNA"].filename)

@@ -5,8 +5,8 @@ import pytest
 import mikeio
 import modelskill as ms
 from modelskill import ModelResult
-import modelskill
 from modelskill.observation import PointObservation, TrackObservation
+from modelskill.comparison._comparison import ItemSelection
 
 
 @pytest.fixture
@@ -229,16 +229,28 @@ def test_matched_data_single_model():
 
 
 def test_matched_data_quantity():
-
     df = pd.DataFrame(
         {"ts_1": [1.1, 2.0, 3.0, 4.0], "sensor_a": [0.9, 2.0, 3.0, 4.1]},
         index=pd.date_range("2017-01-01", periods=4),
     )
-    quantity = modelskill.Quantity(name="Water level", unit="m")
+    quantity = ms.Quantity(name="Water level", unit="m")
     cmp = ms.from_matched(df, obs_item="sensor_a", quantity=quantity)
 
     # Model and observation have the same quantity by definition
     assert cmp.quantity == quantity
+
+
+def test_matched_data_name_xyz():
+    df = pd.DataFrame(
+        {"ts_1": [1.1, 2.0, 3.0, 4.0], "sensor_a": [0.9, 2.0, 3.0, 4.1]},
+        index=pd.date_range("2017-01-01", periods=4),
+    )
+    cmp = ms.from_matched(df, obs_item="sensor_a", name="MyName", x=1, y=2, z=3)
+
+    assert cmp.name == "MyName"
+    assert cmp.x == 1
+    assert cmp.y == 2
+    assert cmp.z == 3
 
 
 def test_matched_data_multiple_models():
@@ -251,7 +263,6 @@ def test_matched_data_multiple_models():
         index=pd.date_range("2017-01-01", periods=4),
     )
 
-    # TODO not sure about the _item suffix
     cmp = ms.from_matched(df, obs_item="sensor_a")
     assert cmp.n_points == 4
     assert cmp.n_models == 2
@@ -268,10 +279,28 @@ def test_matched_data_multiple_models_additional_columns():
         index=pd.date_range("2017-01-01", periods=4),
     )
 
-    # TODO not sure about the _item suffix
     cmp = ms.from_matched(df, obs_item="sensor_a", mod_items=["cal_42", "cal_43"])
     assert cmp.n_points == 4
     assert cmp.n_models == 2
+
+
+def test_from_matched_dfs0():
+    fn = "tests/testdata/SW/ts_storm_4.dfs0"
+    cmp = ms.from_matched(fn, obs_item=0, mod_items=[1, 2, 3, 4, 5])
+    assert cmp.n_points == 397
+    assert cmp.n_models == 5
+    assert cmp.quantity.name == "Significant wave height"
+    assert cmp.quantity.unit == "meter"
+
+
+def test_from_matched_mikeio_dataset():
+    fn = "tests/testdata/SW/ts_storm_4.dfs0"
+    ds = mikeio.read(fn, time=slice("2017-10-28 00:00", "2017-10-29 00:00"))
+    cmp = ms.from_matched(ds, obs_item=0, mod_items=[1, 2, 3, 4, 5])
+    assert cmp.n_points == 145
+    assert cmp.n_models == 5
+    assert cmp.quantity.name == "Significant wave height"
+    assert cmp.quantity.unit == "meter"
 
 
 def test_trackmodelresult_and_trackobservation_uses_model_name():
@@ -290,3 +319,8 @@ def test_trackmodelresult_and_trackobservation_uses_model_name():
     )
     cmp = ms.compare(o1, mr)
     assert cmp.mod_names == ["MyModel"]
+
+
+def test_item_selection_items_are_unique():
+    with pytest.raises(ValueError):
+        ItemSelection(obs="foo", model=["foo", "bar"], aux=["baz"])

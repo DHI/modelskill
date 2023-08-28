@@ -40,8 +40,8 @@ interpolate the modelresult to the time of the observation and return an
 object that can be used for analysis and plotting
 
 ```python
-import modelskill
-c = modelskill.compare(fn_obs, fn_mod, mod_item=0)
+import modelskill as ms
+c = ms.compare(fn_obs, fn_mod, mod_item=0)
 ```
 
 ### 4. Analysis and plotting

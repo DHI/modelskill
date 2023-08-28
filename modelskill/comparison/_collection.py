@@ -177,7 +177,7 @@ class ComparerCollection(Mapping, Sequence):
         """List of unique variable names"""
         unique_names = []
         for cmp in self.comparers.values():
-            n = cmp.variable_name
+            n = cmp.quantity_name
             if n not in unique_names:
                 unique_names.append(n)
         return unique_names
@@ -212,7 +212,7 @@ class ComparerCollection(Mapping, Sequence):
                 df["model"] = mod_name
                 df["observation"] = cmp.name
                 if self.n_variables > 1:
-                    df["variable"] = cmp.variable_name
+                    df["variable"] = cmp.quantity_name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
@@ -323,7 +323,7 @@ class ComparerCollection(Mapping, Sequence):
         cc = ComparerCollection()
         for cmp in self.comparers.values():
             cmp: Comparer
-            if cmp.name in observation and cmp.variable_name in variable:
+            if cmp.name in observation and cmp.quantity_name in variable:
                 thismodel = [m for m in model if m in cmp.mod_names] if model else None
                 if (thismodel is not None) and (len(thismodel) == 0):
                     continue
