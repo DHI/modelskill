@@ -429,6 +429,7 @@ class ComparerPlotter:
             method for determining the regression line
             "ols" : ordinary least squares regression
             "odr" : orthogonal distance regression,
+            None : no regression line
             by default "ols"
         title : str, optional
             plot title, by default None
@@ -482,6 +483,11 @@ class ComparerPlotter:
             except IndexError:
                 units = ""  # Dimensionless
 
+        if self.is_directional:
+            # hide quantiles
+            quantiles = 0
+            reg_method = None
+
         ax = scatter(
             x=x,
             y=y,
@@ -505,7 +511,7 @@ class ComparerPlotter:
             **kwargs,
         )
 
-        if self.is_directional:
+        if ax is not None and self.is_directional:
             _xtick_directional(ax, xlim)
             _ytick_directional(ax, ylim)
 

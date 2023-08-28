@@ -21,7 +21,7 @@ from .settings import options, register_option
 from .observation import unit_display_name
 from .metrics import metric_has_units
 
-from ._rose import wind_rose # nice alias
+from ._rose import wind_rose  # nice alias
 
 register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
 register_option("plot.scatter.points.alpha", 0.5, validator=settings.is_between_0_and_1)
@@ -88,26 +88,28 @@ def _get_fig_ax(ax=None, figsize=None):
 def _xtick_directional(ax, xlim=None):
     """Set x-ticks for directional data"""
     ticks = ticks = _xyticks(lim=xlim)
-    if(len(ticks) > 2):
+    if len(ticks) > 2:
         ax.set_xticks(ticks)
     if xlim is None:
         ax.set_xlim(0, 360)
 
+
 def _ytick_directional(ax, ylim=None):
     """Set y-ticks for directional data"""
     ticks = _xyticks(lim=ylim)
-    if(len(ticks) > 2):
+    if len(ticks) > 2:
         ax.set_yticks(ticks)
     if ylim is None:
         ax.set_ylim(0, 360)
 
+
 def _xyticks(n_sectors=8, lim=None):
     """Set y-ticks for directional data"""
-    #labels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
-    ticks = np.linspace(0, 360, n_sectors+1)
+    # labels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
+    ticks = np.linspace(0, 360, n_sectors + 1)
     if lim is not None:
         ticks = ticks[(ticks >= lim[0]) & (ticks <= lim[1])]
-    return ticks         
+    return ticks
 
 
 def sample_points(
@@ -258,26 +260,30 @@ def _scatter_matplotlib(
             norm=norm_,
             **kwargs,
         )
-    plt.plot(
-        xq,
-        yq,
-        options.plot.scatter.quantiles.marker,
-        label=options.plot.scatter.quantiles.label,
-        c=options.plot.scatter.quantiles.color,
-        zorder=4,
-        markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
-        markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
-        markersize=options.plot.scatter.quantiles.markersize,
-        **settings.get_option("plot.scatter.quantiles.kwargs"),
-    )
+    if len(xq) > 0:
+        plt.plot(
+            xq,
+            yq,
+            options.plot.scatter.quantiles.marker,
+            label=options.plot.scatter.quantiles.label,
+            c=options.plot.scatter.quantiles.color,
+            zorder=4,
+            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
+            markersize=options.plot.scatter.quantiles.markersize,
+            **settings.get_option("plot.scatter.quantiles.kwargs"),
+        )
 
-    plt.plot(
-        x_trend,
-        intercept + slope * x_trend,
-        **settings.get_option("plot.scatter.reg_line.kwargs"),
-        label=_reglabel(slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles),
-        zorder=2,
-    )
+    if slope is not None:
+        plt.plot(
+            x_trend,
+            intercept + slope * x_trend,
+            **settings.get_option("plot.scatter.reg_line.kwargs"),
+            label=_reglabel(
+                slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
+            ),
+            zorder=2,
+        )
 
     if show_hist:
         plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
@@ -332,24 +338,26 @@ def _scatter_plotly(
     title,
     skill_df,  # TODO implement
     units,  # TODO implement
-    fit_to_quantiles, # TODO implement
+    fit_to_quantiles,  # TODO implement
     **kwargs,
 ):
-
     import plotly.graph_objects as go
 
     data = [
         go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
     ]
 
-    regression_line = go.Scatter(
-        x=x_trend,
-        y=intercept + slope * x_trend,
-        name=_reglabel(slope=slope, intercept=intercept,fit_to_quantiles=fit_to_quantiles),
-        mode="lines",
-        line=dict(color="red"),
-    )
-    data.append(regression_line)
+    if slope is not None:
+        regression_line = go.Scatter(
+            x=x_trend,
+            y=intercept + slope * x_trend,
+            name=_reglabel(
+                slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
+            ),
+            mode="lines",
+            line=dict(color="red"),
+        )
+        data.append(regression_line)
 
     if show_hist:
         data.append(
@@ -384,18 +392,19 @@ def _scatter_plotly(
                 marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
             )
         )
-    data.append(
-        go.Scatter(
-            x=xq,
-            y=yq,
-            name=options.plot.scatter.quantiles.label,
-            mode="markers",
-            marker_symbol="x",
-            marker_color=options.plot.scatter.quantiles.color,
-            marker_line_color="midnightblue",
-            marker_line_width=0.6,
+    if len(xq) > 0:
+        data.append(
+            go.Scatter(
+                x=xq,
+                y=yq,
+                name=options.plot.scatter.quantiles.label,
+                mode="markers",
+                marker_symbol="x",
+                marker_color=options.plot.scatter.quantiles.color,
+                marker_line_color="midnightblue",
+                marker_line_width=0.6,
+            )
         )
-    )
 
     defaults = {"width": 600, "height": 600}
     defaults = {**defaults, **kwargs}
@@ -415,19 +424,18 @@ def _scatter_plotly(
     fig.show()  # Should this be here
 
 
-def _reglabel(slope: float, intercept: float, fit_to_quantiles:bool) -> str:
+def _reglabel(slope: float, intercept: float, fit_to_quantiles: bool) -> str:
     sign = "" if intercept < 0 else "+"
     if fit_to_quantiles:
-        fit='QQ fit'
+        fit = "QQ fit"
     else:
-        fit='Fit'
+        fit = "Fit"
     return f"{fit}: y={slope:.2f}x{sign}{intercept:.2f}"
 
 
 def _get_bins(
     bins: Union[int, float, Sequence[float]], xymin, xymax
 ):  # TODO return type
-
     assert xymax >= xymin
     xyspan = xymax - xymin
 
@@ -516,6 +524,7 @@ def scatter(
         method for determining the regression line
         "ols" : ordinary least squares regression
         "odr" : orthogonal distance regression,
+        None : no regression line
         by default "ols"
     title : str, optional
         plot title, by default None
@@ -616,7 +625,7 @@ def scatter(
         title=title,
         skill_df=skill_df,
         units=units,
-        fit_to_quantiles=fit_to_quantiles, 
+        fit_to_quantiles=fit_to_quantiles,
         **kwargs,
     )
 
@@ -928,7 +937,6 @@ def _format_skill_line(
     units: str,
     precision: int,
 ) -> str:
-
     name = series.name
 
     item_unit = " "
@@ -950,7 +958,6 @@ def _format_skill_line(
 
 
 def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
-
     # remove model and variable columns if present, i.e. keep all other columns
     df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
 
@@ -968,7 +975,6 @@ def _plot_summary_border(
     dy,
     borderpad=0.01,
 ) -> None:
-
     ## Load settings
     bbox_kwargs = {}
     bbox_kwargs.update(settings.get_option("plot.scatter.legend.bbox"))
@@ -998,7 +1004,6 @@ def _plot_summary_border(
 def _plot_summary_table(
     df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
 ) -> None:
-
     lines = format_skill_df(df, units)
     text_ = ["\n".join(lines[:, i]) for i in range(lines.shape[1])]
 
