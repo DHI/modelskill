@@ -241,6 +241,19 @@ def test_matched_data_quantity():
     assert cmp.quantity == quantity
 
 
+def test_matched_data_name_xyz():
+    df = pd.DataFrame(
+        {"ts_1": [1.1, 2.0, 3.0, 4.0], "sensor_a": [0.9, 2.0, 3.0, 4.1]},
+        index=pd.date_range("2017-01-01", periods=4),
+    )
+    cmp = ms.from_matched(df, obs_item="sensor_a", name="MyName", x=1, y=2, z=3)
+
+    assert cmp.name == "MyName"
+    assert cmp.x == 1
+    assert cmp.y == 2
+    assert cmp.z == 3
+
+
 def test_matched_data_multiple_models():
     df = pd.DataFrame(
         {
