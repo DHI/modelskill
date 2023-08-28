@@ -7,6 +7,7 @@ import modelskill as ms
 from modelskill import ModelResult
 import modelskill
 from modelskill.observation import PointObservation, TrackObservation
+from modelskill.comparison._comparison import ItemSelection
 
 
 @pytest.fixture
@@ -306,3 +307,8 @@ def test_trackmodelresult_and_trackobservation_uses_model_name():
     )
     cmp = ms.compare(o1, mr)
     assert cmp.mod_names == ["MyModel"]
+
+
+def test_item_selection_items_are_unique():
+    with pytest.raises(ValueError):
+        ItemSelection(obs="foo", model=["foo", "bar"], aux=["baz"])

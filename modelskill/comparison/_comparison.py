@@ -122,11 +122,17 @@ IdOrNameTypes = Union[int, str, List[int], List[str]]
 class ItemSelection:
     "Utility class to keep track of observation, model and auxiliary items"
     obs: str
-    model: List[str]
-    aux: List[str]
+    model: Sequence[str]
+    aux: Sequence[str]
+
+    def __post_init__(self):
+        # check that obs, model and aux are unique, and that they are not overlapping
+        all_items = self.all
+        if len(all_items) != len(set(all_items)):
+            raise ValueError("Items must be unique")
 
     @property
-    def all(self) -> List[str]:
+    def all(self) -> Sequence[str]:
         return [self.obs] + self.model + self.aux
 
 
@@ -335,7 +341,9 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
     return by
 
 
-def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None):
+def _matched_data_to_xarray(
+    data: pd.DataFrame, obs_item=None, mod_items=None, aux_items=None
+):
     """Convert matched data to accepted xarray.Dataset format"""
     if isinstance(data, pd.DataFrame):
         cols = data.columns
