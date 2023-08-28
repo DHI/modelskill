@@ -5,7 +5,6 @@ import pytest
 import mikeio
 import modelskill as ms
 from modelskill import ModelResult
-import modelskill
 from modelskill.observation import PointObservation, TrackObservation
 
 
@@ -229,12 +228,11 @@ def test_matched_data_single_model():
 
 
 def test_matched_data_quantity():
-
     df = pd.DataFrame(
         {"ts_1": [1.1, 2.0, 3.0, 4.0], "sensor_a": [0.9, 2.0, 3.0, 4.1]},
         index=pd.date_range("2017-01-01", periods=4),
     )
-    quantity = modelskill.Quantity(name="Water level", unit="m")
+    quantity = ms.Quantity(name="Water level", unit="m")
     cmp = ms.from_matched(df, obs_item="sensor_a", quantity=quantity)
 
     # Model and observation have the same quantity by definition
