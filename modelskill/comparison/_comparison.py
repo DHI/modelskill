@@ -342,7 +342,7 @@ def _matched_data_to_xarray(data, obs_item=None, mod_items=None, aux_items=None)
         items = _parse_items(cols, obs_item, mod_items, aux_items)
         data = data[items.all]
         data.index.name = "time"
-        data.rename(columns={obs_item: "Observation"}, inplace=True)
+        data.rename(columns={items.obs: "Observation"}, inplace=True)
         data = data.to_xarray()
     else:
         raise ValueError(f"Unknown data type '{type(data)}' (pd.DataFrame)")
