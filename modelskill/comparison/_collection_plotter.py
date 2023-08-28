@@ -6,12 +6,19 @@ import pandas as pd
 
 from .. import metrics as mtr
 from ._utils import _get_id
-from ..plot import scatter, taylor_diagram, TaylorPoint
+from ..plot import (
+    scatter,
+    taylor_diagram,
+    TaylorPoint,
+    _xtick_directional,
+    _ytick_directional,
+)
 
 
 class ComparerCollectionPlotter:
     def __init__(self, cc) -> None:
         self.cc = cc
+        self.is_directional = False
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.scatter(*args, **kwds)
@@ -156,6 +163,11 @@ class ComparerCollectionPlotter:
             units=units,
             **kwargs,
         )
+
+        if self.is_directional:
+            _xtick_directional(ax, xlim)
+            _ytick_directional(ax, ylim)
+
         return ax
 
     def kde(self, ax=None, **kwargs) -> Axes:
@@ -197,17 +209,18 @@ class ComparerCollectionPlotter:
         # TODO title?
         ax.legend()
 
-        # remove y-axis
+        # remove y-axis, ticks and label
         ax.yaxis.set_visible(False)
-        # remove y-ticks
         ax.tick_params(axis="y", which="both", length=0)
-        # remove y-label
         ax.set_ylabel("")
 
         # remove box around plot
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
+
+        if self.is_directional:
+            _xtick_directional(ax)
 
         return ax
 
@@ -246,7 +259,7 @@ class ComparerCollectionPlotter:
         --------
         >>> cc.plot.hist()
         >>> cc.plot.hist(bins=100)
-        
+
         See also
         --------
         pandas.Series.hist
@@ -278,6 +291,9 @@ class ComparerCollectionPlotter:
             plt.ylabel("density")
         else:
             plt.ylabel("count")
+
+        if self.is_directional:
+            _xtick_directional(ax)
 
         return ax
 
