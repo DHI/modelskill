@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import (
     Dict,
@@ -26,7 +27,6 @@ from ._comparer_plotter import ComparerPlotter
 from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
-
 from ._utils import _get_name
 
 if TYPE_CHECKING:
@@ -116,6 +116,24 @@ MOD_COLORS = (
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
 IdOrNameTypes = Union[int, str, List[int], List[str]]
+
+
+@dataclass
+class ItemSelection:
+    "Utility class to keep track of observation, model and auxiliary items"
+    obs: str
+    model: Sequence[str]
+    aux: Sequence[str]
+
+    def __post_init__(self):
+        # check that obs, model and aux are unique, and that they are not overlapping
+        all_items = self.all
+        if len(all_items) != len(set(all_items)):
+            raise ValueError("Items must be unique")
+
+    @property
+    def all(self) -> Sequence[str]:
+        return [self.obs] + self.model + self.aux
 
 
 def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
@@ -323,7 +341,127 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
     return by
 
 
+def _matched_data_to_xarray(
+    data: pd.DataFrame,
+    obs_item=None,
+    mod_items=None,
+    aux_items=None,
+    name=None,
+    x=None,
+    y=None,
+    z=None,
+):
+    """Convert matched data to accepted xarray.Dataset format"""
+    if isinstance(data, pd.DataFrame):
+        cols = data.columns
+        items = _parse_items(cols, obs_item, mod_items, aux_items)
+        data = data[items.all]
+        data.index.name = "time"
+        data.rename(columns={items.obs: "Observation"}, inplace=True)
+        data = data.to_xarray()
+    else:
+        raise ValueError(f"Unknown data type '{type(data)}' (pd.DataFrame)")
+
+    data.attrs["name"] = name if name is not None else items.obs
+    data["Observation"].attrs["kind"] = "observation"
+    for m in items.model:
+        data[m].attrs["kind"] = "model"
+    for a in items.aux:
+        data[a].attrs["kind"] = "auxiliary"
+
+    if x is not None:
+        data["x"] = x
+        data["x"].attrs["kind"] = "position"
+    if y is not None:
+        data["y"] = y
+        data["y"].attrs["kind"] = "position"
+    if z is not None:
+        data["z"] = z
+        data["z"].attrs["kind"] = "position"
+
+    return data
+
+
+def _parse_items(
+    items: List[Union[str, int]],
+    obs_item: Optional[Union[str, int]] = None,
+    mod_items: Optional[List[Union[str, int]]] = None,
+    aux_items: Optional[List[Union[str, int]]] = None,
+) -> ItemSelection:
+    """Parse items and return observation, model and auxiliary items
+    Default behaviour:
+    - obs_item is first item
+    - mod_items are all but obs_item and aux_items
+    - aux_items are all but obs_item and mod_items
+
+    Both integer and str are accepted as items. If str, it must be a key in data.
+    """
+    items = list(items)
+    assert len(items) > 1, "data must contain at least two items"
+    if obs_item is None:
+        obs_item = items[0]
+    else:
+        obs_item = _get_name(obs_item, items)
+
+    # Check existance of items and convert to names
+    if mod_items is not None:
+        mod_items = [_get_name(m, items) for m in mod_items]
+    if aux_items is not None:
+        aux_items = [_get_name(a, items) for a in aux_items]
+
+    # Check overlap and raise errors if there's any
+    if mod_items is not None and obs_item in mod_items:
+        raise ValueError(f"obs_item {obs_item} should not be in mod_items")
+    if aux_items is not None and obs_item in aux_items:
+        raise ValueError(f"obs_item {obs_item} should not be in aux_items")
+    if mod_items is not None and aux_items is not None:
+        overlapping_items = set(mod_items) & set(aux_items)
+        if overlapping_items:
+            raise ValueError(
+                f"mod_items and aux_items should not have overlapping items. Overlapping items: {overlapping_items}"
+            )
+
+    items = list(items)
+    items.remove(obs_item)
+
+    if mod_items is None:
+        mod_items = items
+        if aux_items is not None:
+            mod_items = [m for m in mod_items if m not in aux_items]
+    if aux_items is None:
+        aux_items = [m for m in items if m not in mod_items]
+
+    assert len(mod_items) > 0, "no model items were found! Must be at least one"
+
+    return ItemSelection(obs=obs_item, model=mod_items, aux=aux_items)
+
+
 class Comparer:
+    """
+    Comparer class for comparing model and observation data.
+
+    Typically, the Comparer is initialized using the `compare` function.
+
+    Parameters
+    ----------
+    observation : Observation
+        Observation data
+    modeldata : list of pd.DataFrame or list of mikeio.Dataset or list of xr.DataArray or list of xr.Dataset
+        Model data
+    max_model_gap : float or int or np.timedelta64 or pd.Timedelta or timedelta, optional
+        Maximum time gap to interpolate model data to observation time. If None, no interpolation is done.
+    matched_data : xr.Dataset, optional
+        Matched data. If None, observation and modeldata must be provided.
+    raw_mod_data : dict of pd.DataFrame, optional
+        Raw model data. If None, observation and modeldata must be provided.
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> cmp1 = ms.compare(observation, modeldata)
+    >>> cmp2 = ms.from_matched(matched_data)
+    """
+
     data: xr.Dataset
     raw_mod_data: Dict[str, pd.DataFrame]
     _obs_name = "Observation"
@@ -337,38 +475,10 @@ class Comparer:
         matched_data: Optional[xr.Dataset] = None,
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
-
         self.plot = Comparer.plotter(self)
 
-        # TODO extract method
         if matched_data is not None:
-            assert "Observation" in matched_data.data_vars
-
-            # no missing values allowed in Observation
-            if matched_data["Observation"].isnull().any():
-                raise ValueError("Observation data must not contain missing values.")
-
-            for key in matched_data.data_vars:
-                if "kind" not in matched_data[key].attrs:
-                    matched_data[key].attrs["kind"] = "auxiliary"
-            if "x" not in matched_data:
-                matched_data["x"] = np.nan
-                matched_data["x"].attrs["kind"] = "position"
-
-            if "y" not in matched_data:
-                matched_data["y"] = np.nan
-                matched_data["y"].attrs["kind"] = "position"
-
-            if "color" not in matched_data["Observation"].attrs:
-                matched_data["Observation"].attrs["color"] = "black"
-
-            if "variable_name" not in matched_data.attrs:
-                matched_data.attrs["variable_name"] = Quantity.undefined().name
-
-            if "unit" not in matched_data["Observation"].attrs:
-                matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
-
-            self.data = matched_data
+            self.data = self._parse_matched_data(matched_data)
             self.raw_mod_data = (
                 raw_mod_data
                 if raw_mod_data is not None
@@ -379,14 +489,48 @@ class Comparer:
                 }
             )
             # TODO get quantity from matched_data object
-            self.quantity: Quantity = Quantity.undefined()
+            # self.quantity: Quantity = Quantity.undefined()
         else:
             self.raw_mod_data = (
                 self._parse_modeldata_list(modeldata) if modeldata is not None else {}
             )
 
             self.data = self._initialise_comparer(observation, max_model_gap)
-            self.quantity: Quantity = observation.quantity
+            # self.quantity: Quantity = observation.quantity   # TODO: make property
+
+    def _parse_matched_data(self, matched_data):
+        if not isinstance(matched_data, xr.Dataset):
+            raise ValueError("matched_data must be an xarray.Dataset")
+            # matched_data = self._matched_data_to_xarray(matched_data)
+        assert "Observation" in matched_data.data_vars
+
+        # no missing values allowed in Observation
+        if matched_data["Observation"].isnull().any():
+            raise ValueError("Observation data must not contain missing values.")
+
+        for key in matched_data.data_vars:
+            if "kind" not in matched_data[key].attrs:
+                matched_data[key].attrs["kind"] = "auxiliary"
+        if "x" not in matched_data:
+            # Could be problematic to have "x" and "y" as reserved names
+            matched_data["x"] = np.nan
+            matched_data["x"].attrs["kind"] = "position"
+            matched_data.attrs["gtype"] = "point"
+
+        if "y" not in matched_data:
+            matched_data["y"] = np.nan
+            matched_data["y"].attrs["kind"] = "position"
+
+        if "color" not in matched_data["Observation"].attrs:
+            matched_data["Observation"].attrs["color"] = "black"
+
+        if "quantity_name" not in matched_data.attrs:
+            matched_data.attrs["quantity_name"] = Quantity.undefined().name
+
+        if "unit" not in matched_data["Observation"].attrs:
+            matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
+
+        return matched_data
 
     def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
         if len(df_mod) == 0:
@@ -435,8 +579,7 @@ class Comparer:
             data["z"] = observation.z
 
         data.attrs["name"] = observation.name
-        # data.attrs["variable_name"] = observation.variable_name
-        data.attrs["variable_name"] = observation.quantity.name
+        data.attrs["quantity_name"] = observation.quantity.name
         data["x"].attrs["kind"] = "position"
         data["y"].attrs["kind"] = "position"
         data[self._obs_name].attrs["kind"] = "observation"
@@ -487,8 +630,31 @@ class Comparer:
         return mod_df
 
     @classmethod
-    def from_compared_data(cls, data, raw_mod_data=None):
+    def from_matched_data(
+        cls,
+        data,
+        raw_mod_data=None,
+        obs_item=None,
+        mod_items=None,
+        aux_items=None,
+        name=None,
+        x=None,
+        y=None,
+        z=None,
+    ):
         """Initialize from compared data"""
+        if not isinstance(data, xr.Dataset):
+            # TODO: handle raw_mod_data by accessing data.attrs["kind"] and only remove nan after
+            data = _matched_data_to_xarray(
+                data,
+                obs_item=obs_item,
+                mod_items=mod_items,
+                aux_items=aux_items,
+                name=name,
+                x=x,
+                y=y,
+                z=z,
+            )
         return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
@@ -511,9 +677,25 @@ class Comparer:
         return self.data.attrs["gtype"]
 
     @property
-    def variable_name(self) -> str:
+    def quantity_name(self) -> str:
         """name of variable"""
-        return self.data.attrs["variable_name"]
+        return self.data.attrs["quantity_name"]
+
+    @property
+    def quantity(self) -> Quantity:
+        """Quantity object"""
+        name = self.data.attrs["quantity_name"]
+        # unit = self.data.attrs["quantity_unit"]
+        unit = self.data[self._obs_name].attrs["unit"]
+        return Quantity(name, unit)
+
+    # set quantity
+    @quantity.setter
+    def quantity(self, value: Quantity) -> None:
+        assert isinstance(value, Quantity), "value must be a Quantity object"
+        self.data.attrs["quantity_name"] = value.name
+        self.data[self._obs_name].attrs["unit"] = value.unit
+        # self.data.attrs["quantity_unit"] = value.unit
 
     @property
     def n_points(self) -> int:
@@ -605,7 +787,7 @@ class Comparer:
     @property
     def unit_text(self) -> str:
         """Variable name and unit as text suitable for plot labels"""
-        return f"{self.data.attrs['variable_name']} [{self.data[self._obs_name].attrs['unit']}]"
+        return f"{self.data.attrs['quantity_name']} [{self.data[self._obs_name].attrs['unit']}]"
 
     @property
     def metrics(self):
@@ -683,8 +865,7 @@ class Comparer:
                 x=self.x,
                 y=self.y,
                 z=self.z,
-                # variable_name=self.variable_name,
-                # units=self._unit_text,
+                # quantity=self.quantity,
             )
         elif self.gtype == "track":
             df = self.data[["x", "y", self._obs_name]].to_dataframe()
@@ -694,8 +875,7 @@ class Comparer:
                 x_item=0,
                 y_item=1,
                 name=self.name,
-                # variable_name=self.variable_name,
-                # units=self._unit_text,
+                # quantity=self.quantity,
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
@@ -703,7 +883,6 @@ class Comparer:
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
-
         from ._collection import ComparerCollection
 
         if not isinstance(other, (Comparer, ComparerCollection)):
@@ -780,6 +959,9 @@ class Comparer:
         Comparer
             New Comparer with selected data.
         """
+        if (time is not None) and ((start is not None) or (end is not None)):
+            raise ValueError("Cannot use both time and start/end")
+
         d = self.data
         raw_mod_data = self.raw_mod_data
         if model is not None:
@@ -789,14 +971,18 @@ class Comparer:
             d = d.drop_vars(dropped_models)
             raw_mod_data = {m: raw_mod_data[m] for m in models}
         if (start is not None) or (end is not None):
-            if time is not None:
-                raise ValueError("Cannot use both time and start/end")
             # TODO: can this be done without to_index? (simplify)
             d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)
+
+            # Note: if user asks for a specific time, we also filter raw
+            raw_mod_data = {
+                m: raw_mod_data[m].loc[start:end] for m in raw_mod_data.keys()
+            }
         if time is not None:
-            if (start is not None) or (end is not None):
-                raise ValueError("Cannot use both time and start/end")
             d = d.sel(time=time)
+
+            # Note: if user asks for a specific time, we also filter raw
+            raw_mod_data = {m: raw_mod_data[m].loc[time] for m in raw_mod_data.keys()}
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
@@ -812,7 +998,7 @@ class Comparer:
                 d = d if mask else d.isel(time=slice(None, 0))
             else:
                 d = d.isel(time=mask)
-        return self.__class__.from_compared_data(d, raw_mod_data)
+        return self.__class__.from_matched_data(d, raw_mod_data)
 
     def where(
         self,
@@ -836,7 +1022,7 @@ class Comparer:
         """
         d = self.data.where(cond, other=np.nan)
         d = d.dropna(dim="time", how="all")
-        return self.__class__.from_compared_data(d, self.raw_mod_data)
+        return self.__class__.from_matched_data(d, self.raw_mod_data)
 
     def query(self, query: str) -> "Comparer":
         """Return a new Comparer with values where query cond is True
@@ -857,7 +1043,7 @@ class Comparer:
         """
         d = self.data.query({"time": query})
         d = d.dropna(dim="time", how="all")
-        return self.__class__.from_compared_data(d, self.raw_mod_data)
+        return self.__class__.from_matched_data(d, self.raw_mod_data)
 
     def skill(
         self,
@@ -1134,7 +1320,6 @@ class Comparer:
         skill_table=None,
         **kwargs,
     ):
-
         warnings.warn(
             "This method is deprecated, use plot.scatter instead", FutureWarning
         )
@@ -1143,7 +1328,12 @@ class Comparer:
         model, start, end, area = _get_deprecated_args(kwargs)
 
         # self.plot.scatter(
-        self.sel(model=model, start=start, end=end, area=area,).plot.scatter(
+        self.sel(
+            model=model,
+            start=start,
+            end=end,
+            area=area,
+        ).plot.scatter(
             bins=bins,
             quantiles=quantiles,
             fit_to_quantiles=fit_to_quantiles,
@@ -1207,7 +1397,6 @@ class Comparer:
         )
 
     def residual_hist(self, bins=100, title=None, color=None, **kwargs):
-
         warnings.warn(
             "residual_hist is deprecated. Use plot.residual_hist instead.",
             FutureWarning,

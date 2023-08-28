@@ -23,6 +23,14 @@ from .metrics import metric_has_units
 
 from ._rose import wind_rose  # nice alias
 
+__all__ = [
+    "wind_rose",
+    "scatter",
+    "plot_temporal_coverage",
+    "plot_spatial_overview",
+    "taylor_diagram",
+]
+
 register_option("plot.scatter.points.size", 20, validator=settings.is_positive)
 register_option("plot.scatter.points.alpha", 0.5, validator=settings.is_between_0_and_1)
 register_option("plot.scatter.points.label", "", validator=settings.is_str)

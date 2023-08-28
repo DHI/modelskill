@@ -6,7 +6,7 @@ import modelskill.comparison
 
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
-    data.attrs["variable_name"] = "fake var"
+    data.attrs["quantity_name"] = "fake var"
     data["x"].attrs["kind"] = "position"
     data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"

@@ -157,7 +157,6 @@ def _option_to_dict(pat: str = "") -> Dict:
 
 
 def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[str]:
-
     keys = _select_options(pat)
     if len(keys) == 0:
         raise OptionError("No such keys(s)")
@@ -171,7 +170,6 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[
 
 
 def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
-
     keys = _select_options(pat)
     if len(keys) == 0:
         raise OptionError("No such keys(s)")
@@ -503,8 +501,8 @@ def load_style(name: str) -> None:
 
     Examples
     --------
-    >>> import modelskill
-    >>> modelskill.load_style('MOOD')
+    >>> import modelskill as ms
+    >>> ms.load_style('MOOD')
     """
 
     lname = name.lower()

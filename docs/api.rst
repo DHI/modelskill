@@ -18,6 +18,7 @@ Model
 .. autoclass:: modelskill.model.GridModelResult
 	:members:
 
+
 Observation
 -----------
 .. autoclass:: modelskill.observation.PointObservation
@@ -29,39 +30,32 @@ Observation
 	:inherited-members:
 
 
-Connector
----------
-.. automodule:: modelskill.connection
-	:members: compare
-
-.. autoclass:: modelskill.connection.Connector
+Quantity
+--------
+.. autoclass:: modelskill.types.Quantity
 	:members:
-	:inherited-members:
-	:exclude-members: keys, values, get, items, count, index
-
-.. autoclass:: modelskill.connection.PointConnector
-	:members:
-	:inherited-members:
-
-.. autoclass:: modelskill.connection.TrackConnector
-	:members:
-	:inherited-members:
 
 
 Compare
 -------
-.. autoclass:: modelskill.comparison.PointComparer
-	:members:
-	:inherited-members:
 
-.. autoclass:: modelskill.comparison.TrackComparer
+.. autofunction:: modelskill.compare
+
+.. autofunction:: modelskill.from_matched
+
+.. autoclass:: modelskill.comparison.Comparer
 	:members:
-	:inherited-members:
+
+.. autoclass:: modelskill.comparison._comparer_plotter.ComparerPlotter
+	:members:
 
 .. autoclass:: modelskill.comparison.ComparerCollection
 	:members:
 	:inherited-members:
 	:exclude-members: keys, values, get, items, count, index
+
+.. autoclass:: modelskill.comparison._collection_plotter.ComparerCollectionPlotter
+	:members:
 
 
 Skill
@@ -70,6 +64,9 @@ Skill
 	:members:
 	:inherited-members:
 
+.. autoclass:: modelskill.skill.AggregatedSkillPlotter
+	:members:
+	
 
 Spatial Skill
 -------------
@@ -114,5 +111,21 @@ Metrics
 Plot
 ----
 
+.. autofunction:: modelskill.plot_temporal_coverage
+
+.. autofunction:: modelskill.plot_spatial_overview
+
 .. autofunction:: modelskill.plot.wind_rose
 
+
+Settings
+--------
+
+.. autofunction:: modelskill.get_option
+
+.. autofunction:: modelskill.set_option
+
+.. autofunction:: modelskill.reset_option
+
+.. autofunction:: modelskill.load_style
+	

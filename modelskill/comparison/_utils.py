@@ -10,7 +10,7 @@ def _get_id(x: Optional[Union[str, int]], valid_names: List[str]):
     """Parse name/id from list of valid names (e.g. obs from obs_names), return id"""
     n = len(valid_names)
     if n == 0:
-        raise ValueError("Cannot select {x} from empty list!")
+        raise ValueError(f"Cannot select {x} from empty list!")
     if x is None:
         return 0  # default to first
     elif isinstance(x, str):

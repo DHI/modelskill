@@ -14,7 +14,6 @@ import mikeio
 
 from modelskill import ModelResult
 from modelskill.timeseries import TimeSeries
-from modelskill.model import PointModelResult
 from modelskill.types import GeometryType, Quantity
 from .model import protocols
 from .model._base import ModelResultBase
@@ -56,24 +55,40 @@ ObsInputType = Union[
 
 
 def from_matched(
-    df: pd.DataFrame,
+    data: Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset],
     *,
-    obs_item: str,
-    mod_items: Optional[Iterable[str]] = None,
+    obs_item: Optional[Union[str, int]] = 0,
+    mod_items: Optional[Iterable[Union[str, int]]] = None,
+    aux_items: Optional[Iterable[Union[str, int]]] = None,
     quantity: Optional[Quantity] = None,
+    name: Optional[str] = None,
+    x: Optional[float] = None,
+    y: Optional[float] = None,
+    z: Optional[float] = None,
 ) -> Comparer:
     """Create a Comparer from observation and model results that are already matched (aligned)
 
     Parameters
     ----------
-    df : pd.DataFrame
-        DataFrame with columns [obs_item, mod_item]
-    obs_item : str
-        Name of observation item
-    mod_items : Optional[Iterable[str]], optional
-        Names of model items, if None all remaining columns are model items, by default None
+    data : [pd.DataFrame,str,Path,mikeio.Dfs0, mikeio.Dataset]
+        DataFrame (or object that can be converted to a DataFrame e.g. dfs0)
+        with columns obs_item, mod_items, aux_items
+    obs_item : [str,int], optional
+        Name or index of observation item, by default first item
+    mod_items : Iterable[str,int], optional
+        Names or indicies of model items, if None all remaining columns are model items, by default None
+    aux_items : Iterable[str,int], optional
+        Names or indicies of auxiliary items, by default None
     quantity : Quantity, optional
         Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
+    name : str, optional
+        Name of the comparer, by default None (will be set to obs_item)
+    x : float, optional
+        x-coordinate of observation, by default None
+    y : float, optional
+        y-coordinate of observation, by default None
+    z : float, optional
+        z-coordinate of observation, by default None
 
     Examples
     --------
@@ -95,20 +110,31 @@ def from_matched(
         Model: local, rmse=0.100
         Model: global, rmse=0.200
     """
-    obs = df[obs_item]
+    # pre-process if dfs0, or mikeio.Dataset
+    if isinstance(data, (str, Path)):
+        assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
+        data = mikeio.read(data)  # now mikeio.Dataset
+    elif isinstance(data, mikeio.Dfs0):
+        data = data.read()  # now mikeio.Dataset
+    if isinstance(data, mikeio.Dataset):
+        assert len(data.shape) == 1, "Only 0-dimensional data are supported"
+        if quantity is None:
+            quantity = Quantity.from_mikeio_iteminfo(data.items[obs_item])
+        data = data.to_dataframe()
 
-    if mod_items is None:
-        # all remaining columns are model results
-        pmods = [
-            PointModelResult(df[c], item=c, quantity=quantity)
-            for c in df.columns
-            if c != obs_item
-        ]
-    else:
-        pmods = [PointModelResult(df[c], item=c, quantity=quantity) for c in mod_items]
-    pobs = PointObservation(obs, item=obs_item, name=obs_item, quantity=quantity)
-
-    return _single_obs_compare(pobs, pmods)
+    cmp = Comparer.from_matched_data(
+        data,
+        obs_item=obs_item,
+        mod_items=mod_items,
+        aux_items=aux_items,
+        name=name,
+        x=x,
+        y=y,
+        z=z,
+    )
+    if quantity is not None:
+        cmp.quantity = quantity
+    return cmp
 
 
 def compare(
@@ -372,7 +398,6 @@ class _SingleObsConnector(_BaseConnector):
 
     @staticmethod
     def _validate_start_end(obs, mod):
-
         if obs.end_time < mod.start_time:
             warnings.warn(
                 f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
@@ -867,7 +892,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         if isinstance(obs, PointObservation):
             d["x"] = obs.x
             d["y"] = obs.y
-        # d["variable_name"] = obs.variable_name
+        # d["quantity_name"] = obs.quantity.name
         return d
 
     @staticmethod
