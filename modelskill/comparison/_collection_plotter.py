@@ -142,6 +142,11 @@ class ComparerCollectionPlotter:
             except IndexError:
                 units = ""  # Dimensionless
 
+        if self.is_directional:
+            # hide quantiles and regression line
+            quantiles = 0
+            reg_method = None
+
         ax = scatter(
             x=x,
             y=y,
@@ -164,7 +169,7 @@ class ComparerCollectionPlotter:
             **kwargs,
         )
 
-        if self.is_directional:
+        if backend == "matplotlib" and self.is_directional:
             _xtick_directional(ax, xlim)
             _ytick_directional(ax, ylim)
 

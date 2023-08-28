@@ -484,7 +484,7 @@ class ComparerPlotter:
                 units = ""  # Dimensionless
 
         if self.is_directional:
-            # hide quantiles
+            # hide quantiles and regression line
             quantiles = 0
             reg_method = None
 
@@ -511,7 +511,7 @@ class ComparerPlotter:
             **kwargs,
         )
 
-        if ax is not None and self.is_directional:
+        if backend == "matplotlib" and self.is_directional:
             _xtick_directional(ax, xlim)
             _ytick_directional(ax, ylim)
 
