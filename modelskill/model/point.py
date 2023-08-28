@@ -54,14 +54,14 @@ class PointModelResult(TimeSeries):
         # parse item and convert to dataframe
         if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
-            item, idx = utils.get_item_name_and_idx(item_names, item)
+            item, _ = utils.get_item_name_and_idx(item_names, item)
             data = data[[item]].to_dataframe()
         elif isinstance(data, mikeio.DataArray):
             item = item or data.name
             data = mikeio.Dataset({data.name: data}).to_dataframe()
         elif isinstance(data, pd.DataFrame):
             item_names = list(data.columns)
-            item, idx = utils.get_item_name_and_idx(item_names, item)
+            item, _ = utils.get_item_name_and_idx(item_names, item)
             data = data[[item]]
         elif isinstance(data, pd.Series):
             data = pd.DataFrame(data)  # to_frame?
