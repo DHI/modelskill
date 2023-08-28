@@ -1,5 +1,5 @@
 import click
-import modelskill
+import modelskill as ms
 from modelskill.report import Reporter
 
 
@@ -17,7 +17,7 @@ def report(configuration: str, output_folder=None, output_format="html") -> None
     modelskill: Automatic model skill assessment
     """
 
-    con = modelskill.from_config(configuration)
+    con = ms.from_config(configuration)
     reporter = Reporter(con, output_folder)
 
     if output_format == "md":
