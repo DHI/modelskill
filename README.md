@@ -106,17 +106,3 @@ cc["HKNA"].plot.timeseries(width=1000, backend="plotly")
 ```
 
 ![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
-
-
-## Automated reporting
-
-With a few lines of code, it will be possible to generate an automated report.
-
-```python
-from modelskill.report import Reporter
-
-rep = Reporter(mr)
-rep.to_markdown()
-```
-
-[Very basic first example report](https://github.com/DHI/modelskill/blob/main/notebooks/HKZN_local/HKZN_local.md)
