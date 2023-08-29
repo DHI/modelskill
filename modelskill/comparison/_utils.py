@@ -1,12 +1,12 @@
 from typing import List, Optional, Union
 
 
-def _get_name(x: Optional[Union[str, int]], valid_names: List[str]):
+def _get_name(x: Optional[Union[str, int]], valid_names: List[str]) -> str:
     """Parse name/id from list of valid names (e.g. obs from obs_names), return name"""
     return valid_names[_get_id(x, valid_names)]
 
 
-def _get_id(x: Optional[Union[str, int]], valid_names: List[str]):
+def _get_id(x: Optional[Union[str, int]], valid_names: List[str]) -> id:
     """Parse name/id from list of valid names (e.g. obs from obs_names), return id"""
     n = len(valid_names)
     if n == 0:

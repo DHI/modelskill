@@ -76,3 +76,21 @@ notebooks = [
 [tool.ruff]
 # ignore line too long
 ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = false
+allow_redefinition = true
+warn_unreachable = true
+ignore_missing_imports = true
+no_implicit_optional = false # TODO change this
+
+[[tool.mypy.overrides]]
+module = [
+    "pandas.*",
+    "matplotlib.*",
+    "shapely.*",
+    "mpl_toolkits.*",
+    "scipy.*",
+]
+

@@ -77,7 +77,9 @@ def tc() -> Comparer:
 
 def test_matched_df(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df)
-    assert cmp.mod_names == ["m1", "m2"]
+    assert "m2" in cmp.mod_names
+    assert "m1" in cmp.mod_names
+    assert len(cmp.mod_names) == 2
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
     assert cmp.quantity.name == "Undefined"
@@ -98,7 +100,8 @@ def test_matched_df_int_items(pt_df):
     pt_df = pt_df.rename(columns={"Observation": "obs"})
     cmp = Comparer.from_matched_data(data=pt_df, obs_item=1)
     assert cmp.name == "m1"
-    assert cmp.mod_names == ["obs", "m2"]
+    assert "obs" in cmp.mod_names
+    assert "m2" in cmp.mod_names
 
 
 def test_matched_df_with_aux(pt_df):
@@ -107,7 +110,7 @@ def test_matched_df_with_aux(pt_df):
 
     # by default wind is not considered and aux variable
     cmp = Comparer.from_matched_data(data=pt_df)
-    assert cmp.mod_names == ["m1", "m2", "wind", "not_relevant"]
+    assert set(cmp.mod_names) == set(["m1", "m2", "wind", "not_relevant"])
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
     assert cmp.quantity.name == "Undefined"
