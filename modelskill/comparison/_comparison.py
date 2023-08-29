@@ -353,7 +353,7 @@ def _matched_data_to_xarray(
 ):
     """Convert matched data to accepted xarray.Dataset format"""
     if isinstance(data, pd.DataFrame):
-        cols = data.columns
+        cols = list(data.columns)
         items = _parse_items(cols, obs_item, mod_items, aux_items)
         data = data[items.all]
         data.index.name = "time"
@@ -383,7 +383,7 @@ def _matched_data_to_xarray(
 
 
 def _parse_items(
-    items: List[Union[str, int]],
+    items: List[str],
     obs_item: Optional[Union[str, int]] = None,
     mod_items: Optional[List[Union[str, int]]] = None,
     aux_items: Optional[List[Union[str, int]]] = None,
@@ -396,44 +396,46 @@ def _parse_items(
 
     Both integer and str are accepted as items. If str, it must be a key in data.
     """
-    items = list(items)
     assert len(items) > 1, "data must contain at least two items"
     if obs_item is None:
-        obs_item = items[0]
+        obs_name: str = items[0]
     else:
-        obs_item = _get_name(obs_item, items)
+        obs_name = _get_name(obs_item, items)
 
     # Check existance of items and convert to names
     if mod_items is not None:
-        mod_items = [_get_name(m, items) for m in mod_items]
+        mod_names = [_get_name(m, items) for m in mod_items]
     if aux_items is not None:
-        aux_items = [_get_name(a, items) for a in aux_items]
+        aux_names = [_get_name(a, items) for a in aux_items]
+    else:
+        aux_names = []
 
-    # Check overlap and raise errors if there's any
-    if mod_items is not None and obs_item in mod_items:
-        raise ValueError(f"obs_item {obs_item} should not be in mod_items")
-    if aux_items is not None and obs_item in aux_items:
-        raise ValueError(f"obs_item {obs_item} should not be in aux_items")
-    if mod_items is not None and aux_items is not None:
-        overlapping_items = set(mod_items) & set(aux_items)
-        if overlapping_items:
-            raise ValueError(
-                f"mod_items and aux_items should not have overlapping items. Overlapping items: {overlapping_items}"
-            )
+    # TODO move to ItemSelection
+    # # Check overlap and raise errors if there's any
+    # if obs_name in mod_names:
+    #     raise ValueError(f"obs_item {obs_name} should not be in mod_items")
+    # if obs_name in aux_names:
+    #     raise ValueError(f"obs_item {obs_name} should not be in aux_items")
+    # if mod_items is not None and aux_items is not None:
+    #     overlapping_items = set(mod_items) & set(aux_items)
+    #     if overlapping_items:
+    #         raise ValueError(
+    #             f"mod_items and aux_items should not have overlapping items. Overlapping items: {overlapping_items}"
+    #         )
 
-    items = list(items)
-    items.remove(obs_item)
+    # items = list(items)
+    items.remove(obs_name)
 
     if mod_items is None:
-        mod_items = items
-        if aux_items is not None:
-            mod_items = [m for m in mod_items if m not in aux_items]
+        mod_names = items
+        if aux_names is not None:
+            mod_names = [m for m in mod_names if m not in aux_names]
     if aux_items is None:
-        aux_items = [m for m in items if m not in mod_items]
+        aux_names = [m for m in items if m not in mod_names]
 
-    assert len(mod_items) > 0, "no model items were found! Must be at least one"
+    assert len(mod_names) > 0, "no model items were found! Must be at least one"
 
-    return ItemSelection(obs=obs_item, model=mod_items, aux=aux_items)
+    return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
 
 
 class Comparer:
