@@ -3,14 +3,12 @@ from pathlib import Path
 from typing import (
     Dict,
     List,
-    Tuple,
     Optional,
     Union,
     Iterable,
     Sequence,
     Callable,
     TYPE_CHECKING,
-    Any,
 )
 import warnings
 from matplotlib.axes import Axes  # type: ignore
