@@ -953,9 +953,9 @@ class Comparer:
         raw_mod_data = self.raw_mod_data
         if model is not None:
             if isinstance(model, (str, int)):
-                models = set([model])
+                models = [model]
             else:
-                models = set(model)
+                models = list(model)
             mod_names: List[str] = [_get_name(m, self.mod_names) for m in models]
             dropped_models = [m for m in self.mod_names if m not in mod_names]
             d = d.drop_vars(dropped_models)
