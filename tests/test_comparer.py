@@ -77,7 +77,8 @@ def tc() -> Comparer:
 
 def test_matched_df(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df)
-    assert cmp.mod_names == ["m1", "m2"]
+    assert "m1" in cmp.mod_names
+    assert "m2" in cmp.mod_names
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
     assert cmp.quantity.name == "Undefined"
@@ -128,6 +129,50 @@ def test_matched_df_with_aux(pt_df):
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_points == 6
     assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+
+
+def test_rename_model(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert "m1" in cmp.mod_names
+    assert "m2" in cmp.mod_names
+    cmp2 = cmp.rename({"m1": "model_1", "m2": "model_2"})
+    assert "model_1" in cmp2.mod_names
+    assert "model_2" in cmp2.mod_names
+    assert "m1" not in cmp2.mod_names
+    assert "m2" not in cmp2.mod_names
+    assert "model_1" in cmp2.raw_mod_data
+    assert "model_2" in cmp2.raw_mod_data
+
+
+def test_partial_rename_model(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert "m1" in cmp.mod_names
+    assert "m2" in cmp.mod_names
+    cmp2 = cmp.rename({"m1": "model_1"})
+    assert "model_1" in cmp2.mod_names
+    assert "m2" in cmp2.mod_names
+    assert "m1" not in cmp2.mod_names
+
+
+def test_rename_aux(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    assert cmp.aux_names == ("wind",)
+    cmp2 = cmp.rename({"wind": "wind_speed"})
+    assert cmp.aux_names == ("wind",)
+    assert cmp2.aux_names == ("wind_speed",)
+
+
+def test_rename_model_and_aux(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    cmp2 = cmp.rename({"m1": "model_1", "wind": "wind_speed"})
+    assert "model_1" in cmp2.mod_names
+    assert "wind_speed" in cmp2.aux_names
 
 
 def test_matched_df_illegal_items(pt_df):

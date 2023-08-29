@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import (
     Dict,
     List,
+    Mapping,
     Optional,
     Union,
     Iterable,
@@ -665,6 +666,8 @@ class Comparer:
         ]
         for model in self.mod_names:
             out.append(f" Model: {model}, rmse={self.sel(model=model).score():.3f}")
+        for var in self.aux_names:
+            out.append(f" Auxiliary: {var}")
         return str.join("\n", out)
 
     @property
@@ -767,8 +770,18 @@ class Comparer:
         return len(self.mod_names)
 
     @property
-    def mod_names(self) -> List[str]:
-        return list(self.raw_mod_data.keys())
+    def mod_names(self) -> Sequence[str]:
+        return list(self.raw_mod_data.keys())  # TODO replace with tuple
+
+    @property
+    def aux_names(self) -> Sequence[str]:
+        return tuple(
+            [
+                k
+                for k, v in self.data.data_vars.items()
+                if v.attrs["kind"] == "auxiliary"
+            ]
+        )
 
     @property
     def obs_name(self) -> str:
@@ -827,6 +840,32 @@ class Comparer:
 
     def copy(self):
         return self.__copy__()
+
+    def rename(self, mapping: Mapping[str, str]) -> "Comparer":
+        """Rename model or auxiliary data
+
+        Parameters
+        ----------
+        mapping : dict
+            mapping of old names to new names
+
+        Returns
+        -------
+        Comparer
+
+        Examples
+        --------
+        >>> cmp = ms.compare(observation, modeldata)
+        >>> cmp.mod_names
+        ['model1']
+        >>> cmp2 = cmp.rename({'model1': 'model2'})
+        >>> cmp2.mod_names
+        ['model2']
+        """
+        data = self.data.rename(mapping)
+        raw_mod_data = {mapping.get(k, k): v for k, v in self.raw_mod_data.items()}
+
+        return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
     def save(self, fn: Union[str, Path]) -> None:
         """Save to netcdf file
