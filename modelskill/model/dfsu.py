@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Union, get_args
+from typing import Optional, Union, get_args
 
 import mikeio
 import numpy as np
 
 from ._base import Quantity
 from .. import types, utils
-from . import protocols
 from ._base import ModelResultBase
 from .point import PointModelResult
 from .track import TrackModelResult
@@ -24,7 +23,6 @@ class DfsuModelResult(ModelResultBase):
         item: Optional[Union[str, int]] = None,
         quantity: Optional[Quantity] = None,
     ) -> None:
-
         assert isinstance(
             data, get_args(types.UnstructuredType)
         ), "Could not construct DfsuModelResult from provided data"
@@ -62,9 +60,11 @@ class DfsuModelResult(ModelResultBase):
         self.filename = filename  # TODO: remove? backward compatibility
 
     def _in_domain(self, x, y) -> bool:
-        return self.data.geometry.contains([x, y])
+        return self.data.geometry.contains([x, y])  # type: ignore
 
-    def extract(self, observation: Observation) -> protocols.Comparable:
+    def extract(
+        self, observation: Observation
+    ) -> Union[PointModelResult, TrackModelResult]:
         """Extract ModelResult at observation positions
 
         Parameters
@@ -77,16 +77,14 @@ class DfsuModelResult(ModelResultBase):
         <modelskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
-        extractor_lookup: Mapping[Observation, Callable] = {
-            PointObservation: self._extract_point,
-            TrackObservation: self._extract_track,
-        }
-        extraction_func = extractor_lookup.get(type(observation))
-        if extraction_func is None:
+        if isinstance(observation, PointObservation):
+            return self._extract_point(observation)
+        elif isinstance(observation, TrackObservation):
+            return self._extract_track(observation)
+        else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
-        return extraction_func(observation)
 
     def _extract_point(self, observation: PointObservation) -> PointModelResult:
         """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
