@@ -7,7 +7,7 @@ Examples
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
 import os
-from typing import Optional, Union
+from typing import Optional
 import numpy as np
 import pandas as pd
 import mikeio
