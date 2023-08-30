@@ -60,10 +60,11 @@ Examples
 0.39614855570839064
 """
 import sys
-import typing
+from typing import Callable, Union, Tuple, Set
 import warnings
 
 import numpy as np
+import pandas as pd
 from scipy import stats
 
 
@@ -498,14 +499,13 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
     return nominator / denominator
 
 
-
 def pr(obs: np.ndarray, model: np.ndarray) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
     return peak_ratio(obs, model)
 
 
-def peak_ratio(obs: np.ndarray, model: np.ndarray) -> float:
+def peak_ratio(obs: pd.Series, model: pd.Series) -> float:
     """Peak Ratio
 
     PR is the ratio of the mean of the identified peaks in the
@@ -521,6 +521,7 @@ def peak_ratio(obs: np.ndarray, model: np.ndarray) -> float:
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
+    assert isinstance(obs.index, pd.DatetimeIndex)
     time = obs.index
     # Calculate number of years
     dt_int = time[1:].values - time[0:-1].values
@@ -616,9 +617,9 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
 
 def _linear_regression(
     obs: np.ndarray, model: np.ndarray, reg_method="ols"
-) -> typing.Tuple[float, float]:
+) -> Tuple[float, float]:
     if len(obs) == 0:
-        return np.nan
+        return np.nan, np.nan  # TODO raise error?
 
     if reg_method == "ols":
         from scipy.stats import linregress as _linregress
@@ -654,7 +655,7 @@ def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
 METRICS_WITH_DIMENSION = set(["urmse", "rmse", "bias", "mae"])  # TODO is this complete?
 
 
-def metric_has_units(metric: typing.Union[str, typing.Callable]) -> bool:
+def metric_has_units(metric: Union[str, Callable]) -> bool:
     """Check if a metric has units (dimension).
 
     Some metrics are dimensionless, others have the same dimension as the observations.
@@ -676,7 +677,7 @@ def metric_has_units(metric: typing.Union[str, typing.Callable]) -> bool:
     >>> metric_has_units("kge")
     False
     """
-    if isinstance(metric, typing.Callable):
+    if hasattr(metric, "__name__"):
         name = metric.__name__
     else:
         name = metric
@@ -690,13 +691,13 @@ def metric_has_units(metric: typing.Union[str, typing.Callable]) -> bool:
 NON_METRICS = set(["metric_has_units", "get_metric", "is_valid_metric", "add_metric"])
 
 
-defined_metrics: typing.Set[str] = (
+defined_metrics: Set[str] = (
     set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
     - NON_METRICS
 )
 
 
-def is_valid_metric(metric: typing.Union[str, typing.Callable]) -> bool:
+def is_valid_metric(metric: Union[str, Callable]) -> bool:
     """ "Check if a metric is defined.
 
     Parameters
@@ -716,7 +717,7 @@ def is_valid_metric(metric: typing.Union[str, typing.Callable]) -> bool:
     False
     """
 
-    if isinstance(metric, typing.Callable):
+    if hasattr(metric, "__name__"):
         name = metric.__name__
     else:
         name = metric
@@ -724,23 +725,21 @@ def is_valid_metric(metric: typing.Union[str, typing.Callable]) -> bool:
     return name in defined_metrics
 
 
-def get_metric(metric: typing.Union[str, typing.Callable]) -> typing.Callable:
+def get_metric(metric: Union[str, Callable]) -> Callable:
     """Get a metric function from its name."""
 
     if is_valid_metric(metric):
-        if isinstance(metric, typing.Callable):
-            return metric
-        else:
+        if isinstance(metric, str):
             return getattr(sys.modules[__name__], metric)
+        else:
+            return metric
     else:
         raise ValueError(
             f"Metric {metric} not defined. Choose from {defined_metrics} or use `add_metric` to add a custom metric."
         )
 
 
-def add_metric(
-    metric: typing.Union[str, typing.Callable], has_units: bool = False
-) -> None:
+def add_metric(metric: Callable, has_units: bool = False) -> None:
     """Adds a metric to the metric list. Useful for custom metrics.
 
     Some metrics are dimensionless, others have the same dimension as the observations.
