@@ -49,15 +49,11 @@ class Observation(TimeSeries):
     def __init__(
         self,
         data: pd.DataFrame,
-        name: str = "Observation",
+        name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
         weight: float = 1.0,
         color: str = "#d62728",
     ):
-
-        if name is None:
-            name = "Observation"
-
         # TODO move this to TimeSeries?
         if not isinstance(data.index, pd.DatetimeIndex):
             raise TypeError(
@@ -65,6 +61,12 @@ class Observation(TimeSeries):
             )
         time = data.index.round(freq="100us")  # 0.0001s accuracy
         data.index = pd.DatetimeIndex(time, freq="infer")
+
+        if quantity is None:
+            quantity = Quantity.undefined()
+
+        if name is None:
+            name = "Observation"
 
         self.weight = weight
 
@@ -128,13 +130,12 @@ class PointObservation(Observation):
         data,
         *,
         item=None,
-        x: float = None,
-        y: float = None,
-        z: float = None,
-        name: str = None,
-        quantity: Optional[Union[str, Quantity]] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        z: Optional[float] = None,
+        name: Optional[str] = None,
+        quantity: Optional[Quantity] = None,
     ):
-
         self.x = x
         self.y = y
         self.z = z
@@ -183,6 +184,7 @@ class PointObservation(Observation):
             assert os.path.exists(data)
             self._filename = data
             if name is None:
+                # TODO is this a sensible default?
                 name = os.path.basename(data).split(".")[0]
 
             ext = os.path.splitext(data)[-1]
@@ -322,14 +324,13 @@ class TrackObservation(Observation):
         self,
         data,
         *,
-        item: int = None,
-        name: str = None,
+        item: Optional[int] = None,
+        name: Optional[str] = None,
         x_item=0,
         y_item=1,
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
     ):
-
         self._filename = None
         self._item = None
 
