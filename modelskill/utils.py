@@ -23,18 +23,20 @@ TIME_COORDINATE_NAME_MAPPING = {
 
 def rename_coords_xr(ds: xr.Dataset) -> xr.Dataset:
     """Rename coordinates to standard names"""
+    var_names = [str(name).lower() for name in ds.variables]
+
     ds = ds.rename(
         {
-            c: TIME_COORDINATE_NAME_MAPPING[c.lower()]
-            for c in list(ds.coords) + list(ds.data_vars)
-            if c.lower() in TIME_COORDINATE_NAME_MAPPING.keys()
+            c: TIME_COORDINATE_NAME_MAPPING[c]
+            for c in var_names
+            if c in TIME_COORDINATE_NAME_MAPPING
         }
     )
     ds = ds.rename(
         {
-            c: POS_COORDINATE_NAME_MAPPING[c.lower()]
-            for c in list(ds.coords) + list(ds.data_vars)
-            if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
+            c: POS_COORDINATE_NAME_MAPPING[c]
+            for c in var_names
+            if c in POS_COORDINATE_NAME_MAPPING
         }
     )
     return ds
@@ -42,19 +44,22 @@ def rename_coords_xr(ds: xr.Dataset) -> xr.Dataset:
 
 def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
     """Rename coordinates to standard names"""
-    _mapping = {
-        c: TIME_COORDINATE_NAME_MAPPING[c.lower()]
-        for c in df.columns
-        if c.lower() in TIME_COORDINATE_NAME_MAPPING.keys()
+
+    col_names = [str(name).lower() for name in df.columns]
+
+    mapping = {
+        c: TIME_COORDINATE_NAME_MAPPING[c]
+        for c in col_names
+        if c in TIME_COORDINATE_NAME_MAPPING.keys()
     }
-    _mapping.update(
+    mapping.update(
         {
-            c: POS_COORDINATE_NAME_MAPPING[c.lower()]
-            for c in df.columns
-            if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
+            c: POS_COORDINATE_NAME_MAPPING[c]
+            for c in col_names
+            if c in POS_COORDINATE_NAME_MAPPING.keys()
         }
     )
-    return df.rename(columns=_mapping)
+    return df.rename(columns=mapping)
 
 
 def get_item_name_and_idx(item_names: List[str], item) -> Tuple[str, int]:
