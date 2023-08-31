@@ -276,13 +276,13 @@ class ComparerCollection(Mapping):
 
     def sel(
         self,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        time: TimeTypes = None,
-        area: List[float] = None,
+        model: Optional[IdOrNameTypes] = None,
+        observation: Optional[IdOrNameTypes] = None,
+        variable: Optional[IdOrNameTypes] = None,
+        start: Optional[TimeTypes] = None,
+        end: Optional[TimeTypes] = None,
+        time: Optional[TimeTypes] = None,
+        area: Optional[List[float]] = None,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
 
@@ -466,10 +466,10 @@ class ComparerCollection(Mapping):
     def spatial_skill(
         self,
         bins=5,
-        binsize: float = None,
-        by: Union[str, List[str]] = None,
-        metrics: list = None,
-        n_min: int = None,
+        binsize: Optional[float] = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
+        n_min: Optional[int] = None,
         **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
@@ -625,8 +625,8 @@ class ComparerCollection(Mapping):
     def mean_skill(
         self,
         *,
-        weights: Union[str, List[float], Dict[str, float]] = None,
-        metrics: list = None,
+        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
+        metrics: Optional[list] = None,
         **kwargs,
     ) -> Optional[AggregatedSkill]:  # TODO raise error if no data?
         """Weighted mean of skills
@@ -726,7 +726,7 @@ class ComparerCollection(Mapping):
     def mean_skill_points(
         self,
         *,
-        metrics: list = None,
+        metrics: Optional[list] = None,
         **kwargs,
     ) -> Optional[AggregatedSkill]:  # TODO raise error if no data?
         """Mean skill of all observational points

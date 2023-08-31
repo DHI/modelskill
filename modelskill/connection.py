@@ -154,9 +154,9 @@ def compare(
     obs: Union[ObsInputType, Sequence[ObsInputType]],
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: IdOrNameTypes = None,
-    mod_item: IdOrNameTypes = None,
-    gtype: GeometryTypes = None,
+    obs_item: Optional[IdOrNameTypes] = None,
+    mod_item: Optional[IdOrNameTypes] = None,
+    gtype: Optional[GeometryTypes] = None,
     max_model_gap=None,
 ) -> Union[Comparer, ComparerCollection]:
     """Compare observations and model results
@@ -213,7 +213,7 @@ def _single_obs_compare(
     *,
     obs_item=None,
     mod_item=None,
-    gtype: GeometryTypes = None,
+    gtype: Optional[GeometryTypes] = None,
     max_model_gap=None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
@@ -225,7 +225,7 @@ def _single_obs_compare(
 
 
 def _parse_single_obs(
-    obs, item=None, gtype: GeometryTypes = None
+    obs, item=None, gtype: Optional[GeometryTypes] = None
 ) -> protocols.Observation:
     if isinstance(obs, Observation):
         if item is not None:
@@ -242,7 +242,7 @@ def _parse_single_obs(
             return PointObservation(obs, item=item)
 
 
-def _parse_models(mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None):
+def _parse_models(mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None):
     """Return a list of ModelResult objects"""
     if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
@@ -252,7 +252,7 @@ def _parse_models(mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None):
         raise ValueError(f"Unknown mod type {type(mod)}")
 
 
-def _parse_single_model(mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None):
+def _parse_single_model(mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None):
     if isinstance(mod, protocols.ModelResult):
         if item is not None:
             raise ValueError(
@@ -465,7 +465,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float = None) -> Optional[PointComparer]:
+    def extract(self, max_model_gap: Optional[float] = None) -> Optional[PointComparer]:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -517,7 +517,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float = None) -> Optional[TrackComparer]:
+    def extract(self, max_model_gap: Optional[float] = None) -> Optional[TrackComparer]:
         """Extract model results at times and positions of track observation.
 
         Returns
@@ -821,7 +821,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             ax.set_title(title)
         return ax
 
-    def to_config(self, filename: str = None, relative_path=True):
+    def to_config(self, filename: Optional[str] = None, relative_path=True):
         """Save Connector to a config file.
 
         Parameters

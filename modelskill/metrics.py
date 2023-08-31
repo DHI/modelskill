@@ -60,7 +60,7 @@ Examples
 0.39614855570839064
 """
 import sys
-from typing import Callable, Union, Tuple, Set
+from typing import Optional, Callable, Union, Tuple, Set
 import warnings
 
 import numpy as np
@@ -94,14 +94,14 @@ def max_error(obs, model) -> float:
     return np.max(np.abs(model.ravel() - obs.ravel()))
 
 
-def mae(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
+def mae(obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None) -> float:
     """alias for mean_absolute_error"""
     assert obs.size == model.size
     return mean_absolute_error(obs, model, weights)
 
 
 def mean_absolute_error(
-    obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None
+    obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None
 ) -> float:
     """Mean Absolute Error (MAE)
 
@@ -142,7 +142,7 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
     return np.mean(np.abs((obs.ravel() - model.ravel()) / obs.ravel())) * 100
 
 
-def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> float:
+def urmse(obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None) -> float:
     """Unbiased Root Mean Squared Error (uRMSE)
 
     .. math::
@@ -165,7 +165,7 @@ def urmse(obs: np.ndarray, model: np.ndarray, weights: np.ndarray = None) -> flo
 def rmse(
     obs: np.ndarray,
     model: np.ndarray,
-    weights: np.ndarray = None,
+    weights: Optional[np.ndarray] = None,
     unbiased: bool = False,
 ) -> float:
     """alias for root_mean_squared_error"""
@@ -175,7 +175,7 @@ def rmse(
 def root_mean_squared_error(
     obs: np.ndarray,
     model: np.ndarray,
-    weights: np.ndarray = None,
+    weights: Optional[np.ndarray] = None,
     unbiased: bool = False,
 ) -> float:
     """Root Mean Squared Error (RMSE)

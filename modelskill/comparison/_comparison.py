@@ -920,11 +920,11 @@ class Comparer:
 
     def sel(
         self,
-        model: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        time: TimeTypes = None,
-        area: List[float] = None,
+        model: Optional[IdOrNameTypes] = None,
+        start: Optional[TimeTypes] = None,
+        end: Optional[TimeTypes] = None,
+        time: Optional[TimeTypes] = None,
+        area: Optional[List[float]] = None,
     ) -> "Comparer":
         """Select data based on model, time and/or area.
 
@@ -1035,8 +1035,8 @@ class Comparer:
 
     def skill(
         self,
-        by: Union[str, List[str]] = None,
-        metrics: list = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
         **kwargs,
     ) -> AggregatedSkill:
         """Skill assessment of model(s)
@@ -1171,10 +1171,10 @@ class Comparer:
     def spatial_skill(
         self,
         bins=5,
-        binsize: float = None,
-        by: Union[str, List[str]] = None,
-        metrics: list = None,
-        n_min: int = None,
+        binsize: Optional[float] = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
+        n_min: Optional[int] = None,
         **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.

@@ -707,8 +707,8 @@ def plot_spatial_overview(
     obs: List[Observation],
     mod=None,
     ax=None,
-    figsize: Tuple = None,
-    title: str = None,
+    figsize: Optional[Tuple] = None,
+    title: Optional[str] = None,
 ):
     """Plot observation points on a map showing the model domain
 
