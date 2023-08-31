@@ -16,7 +16,8 @@ from modelskill import ModelResult
 from modelskill.timeseries import TimeSeries
 from modelskill.types import GeometryType, Quantity
 from .model import protocols
-from .model._base import ModelResultBase
+from .model.grid import GridModelResult
+from .model.dfsu import DfsuModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -37,9 +38,9 @@ MRInputType = Union[
     pd.Series,
     xr.Dataset,
     xr.DataArray,
-    ModelResultBase,
-    TimeSeries
-    # protocols.ModelResult,
+    TimeSeries,
+    GridModelResult,
+    DfsuModelResult,
 ]
 ObsInputType = Union[
     str,
@@ -357,7 +358,7 @@ class _SingleObsConnector(_BaseConnector):
             self.obs = obs
             self.obs.weight = weight
 
-    def _parse_model(self, mod) -> List[protocols.ModelResult]:
+    def _parse_model(self, mod):
         if is_iterable_not_str(mod):
             mr = []
             for m in mod:
@@ -366,13 +367,11 @@ class _SingleObsConnector(_BaseConnector):
             mr = [self._parse_single_model(mod)]
         return mr
 
-    def _parse_single_model(self, mod) -> protocols.ModelResult:
-        if isinstance(mod, protocols.ModelResult):
-            return mod
-        elif isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
+    def _parse_single_model(self, mod):
+        if isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
             return ModelResult(mod)
         else:
-            raise ValueError(f"Unknown model result type {type(mod)}")
+            return mod
 
     def _validate(self, obs, modelresults):
         # TODO: add validation errors to list
