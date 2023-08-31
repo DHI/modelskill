@@ -111,11 +111,12 @@ def _set_option(*args, **kwargs) -> None:
     # must at least 1 arg deal with constraints later
 
     if len(args) == 1 and isinstance(args[0], dict):
-        # accept a dictonary of options
-        d = args[0]
-        args = []
-        for k, v in d.items():
-            args = args + [k, v]
+        #     # accept a dictonary of options
+        #     d = args[0]
+        #     args = []
+        #     for k, v in d.items():
+        #         args = args + [k, v]
+        kwargs.update(args[0])
 
     nargs = len(args)
     if not nargs or nargs % 2 != 0:
@@ -243,7 +244,7 @@ class OptionsContainer:
     #     return list(keys)
 
     def __repr__(self) -> str:
-        return _describe_option_short(self.prefix, False)
+        return _describe_option_short(self.prefix, False) or ""
 
     def __dir__(self) -> Iterable[str]:
         return list(self.d.keys())
@@ -456,28 +457,24 @@ def is_callable(obj) -> bool:
     return True
 
 
-def is_positive(value: object) -> None:
-    if np.isreal(value) and value > 0:
-        return
-    raise ValueError("Value must be a number greater than 0")
+def is_positive(value) -> None:
+    if not (np.isreal(value) and value > 0):
+        raise ValueError("Value must be a number greater than 0")
 
 
-def is_nonnegative(value: object) -> None:
-    if np.isreal(value) and value >= 0:
-        return
-    raise ValueError("Value must be a non-negative number")
+def is_nonnegative(value) -> None:
+    if not (np.isreal(value) and value >= 0):
+        raise ValueError("Value must be a non-negative number")
 
 
-def is_between_0_and_1(value: object) -> None:
-    if np.isreal(value) and value >= 0 and value <= 1:
-        return
-    raise ValueError("Value must be a number between 0 and 1")
+def is_between_0_and_1(value) -> None:
+    if not (np.isreal(value) and value >= 0 and value <= 1):
+        raise ValueError("Value must be a number between 0 and 1")
 
 
-def is_dict(value: object) -> None:
-    if isinstance(value, dict):
-        return
-    raise ValueError("Value must be a dictionary")
+def is_dict(value) -> None:
+    if not isinstance(value, dict):
+        raise ValueError("Value must be a dictionary")
 
 
 def load_style(name: str) -> None:
