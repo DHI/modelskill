@@ -3,7 +3,17 @@ import os
 from pathlib import Path
 
 import yaml
-from typing import Iterable, List, Literal, Optional, Union, Mapping, Sequence, get_args
+from typing import (
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Union,
+    Mapping,
+    Sequence,
+    get_args,
+    Any,
+)
 import warnings
 import numpy as np
 import pandas as pd
@@ -209,7 +219,7 @@ def _single_obs_compare(
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
     mod = _parse_models(mod, mod_item, gtype=gtype)
-    df_mod = _extract_from_models(obs, mod)
+    df_mod = _extract_from_models(obs, mod)  # type: ignore
 
     return Comparer(obs, df_mod, max_model_gap=max_model_gap)
 
@@ -298,9 +308,9 @@ def _extract_from_models(obs, mod: List[protocols.ModelResult]) -> List[pd.DataF
 
 class _BaseConnector(ABC):
     def __init__(self) -> None:
-        self.modelresults = {}
+        self.modelresults: {}  # type: ignore
         self.name = None
-        self.obs = None
+        self.obs: Any = None
 
     @property
     def n_models(self):
@@ -445,7 +455,7 @@ class PointConnector(_SingleObsConnector):
     >>> con = Connector(o1, mr)    # con[0] = con1
     """
 
-    def _parse_observation(self, obs) -> PointObservation:
+    def _parse_observation(self, obs):
         if isinstance(obs, (pd.Series, pd.DataFrame)):
             return PointObservation(obs)
         elif isinstance(obs, str):
@@ -455,7 +465,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float = None) -> PointComparer:
+    def extract(self, max_model_gap: float = None) -> Optional[PointComparer]:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -507,7 +517,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float = None) -> TrackComparer:
+    def extract(self, max_model_gap: float = None) -> Optional[TrackComparer]:
         """Extract model results at times and positions of track observation.
 
         Returns
@@ -533,7 +543,6 @@ class TrackConnector(_SingleObsConnector):
             warnings.warn(
                 f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
             )
-            # TODO returning None is not consistent with type hint
             return None
 
         comparer = TrackComparer(self.obs, df_model, max_model_gap=max_model_gap)
@@ -949,6 +958,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             dirname = ""
 
         modelresults = {}
+
+        assert isinstance(conf, dict)
         for name, mr_dict in conf["modelresults"].items():
             if not mr_dict.get("include", True):
                 continue
@@ -975,10 +986,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
             otype = obs_dict.get("type")
             if (otype is not None) and ("track" in otype.lower()):
-                obs = TrackObservation(filename, item=item, name=name)
+                obs = TrackObservation(filename, item=item, name=name)  # type: ignore
             else:
                 x, y = obs_dict.get("x"), obs_dict.get("y")
-                obs = PointObservation(filename, item=item, x=x, y=y, name=name)
+                obs = PointObservation(filename, item=item, x=x, y=y, name=name)  # type: ignore
             observations[name] = obs
         obs_list = list(observations.values())
 
