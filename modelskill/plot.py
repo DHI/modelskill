@@ -76,7 +76,11 @@ register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positi
 
 # TODO: Auto-implement
 # still requires plt.rcParams.update(modelskill.settings.get_option('plot.rcParams'))
-register_option("plot.rcParams", {}, settings.is_dict)  # still have to
+
+# TODO does this work as intended? Mutable default values, e.g. dict, list, are usually not recommended
+register_option(
+    key="plot.rcParams", defval={}, validator=settings.is_dict
+)  # still have to
 
 
 def _get_ax(ax=None, figsize=None):
@@ -152,8 +156,10 @@ def sample_points(
 
 
 def quantiles_xy(
-    x: np.ndarray, y: np.ndarray, quantiles: Union[int, Sequence[float]] = None
-) -> Tuple[np.ndarray, np.ndarray]:
+    x: np.ndarray,
+    y: np.ndarray,
+    quantiles: Optional[Union[int, Sequence[float]]] = None,
+):
     """Calculate quantiles of x and y
 
     Parameters
@@ -169,18 +175,22 @@ def quantiles_xy(
         x and y arrays with quantiles
     """
 
-    if quantiles is None:
-        if len(x) >= 3000:
-            quantiles = 1000
-        elif len(x) >= 300:
-            quantiles = 100
-        else:
-            quantiles = 10
+    if isinstance(quantiles, Sequence):
+        q = np.array(quantiles)
+    else:
+        if quantiles is None:
+            if len(x) >= 3000:
+                n_quantiles = 1000
+            elif len(x) >= 300:
+                n_quantiles = 100
+            else:
+                n_quantiles = 10
 
-    if not isinstance(quantiles, (int, Sequence)):
-        raise TypeError("quantiles must be an int or sequence of floats")
+        if isinstance(quantiles, int):
+            n_quantiles = quantiles
 
-    q = np.linspace(0, 1, num=quantiles) if isinstance(quantiles, int) else quantiles
+        q = np.linspace(0, 1, num=n_quantiles)
+
     return np.quantile(x, q=q), np.quantile(y, q=q)
 
 
@@ -410,23 +420,20 @@ def _reglabel(slope: float, intercept: float, fit_to_quantiles: bool) -> str:
     return f"{fit}: y={slope:.2f}x{sign}{intercept:.2f}"
 
 
-def _get_bins(
-    bins: Union[int, float, Sequence[float]], xymin, xymax
-):  # TODO return type
+def _get_bins(bins: Union[int, float], xymin, xymax) -> Tuple[int, float]:
     assert xymax >= xymin
     xyspan = xymax - xymin
 
     if isinstance(bins, int):
-        nbins_hist = bins
-        binsize = xyspan / nbins_hist
+        nbins_hist: int = bins
+        binsize: float = xyspan / nbins_hist
     elif isinstance(bins, float):
         binsize = bins
-        nbins_hist = int(xyspan / binsize)
-    elif isinstance(bins, Sequence):
-        binsize = bins
-        nbins_hist = bins
+        nbins_hist = xyspan // binsize
     else:
-        raise TypeError("bins must be an int, float or sequence")
+        raise TypeError("bins must be a number")
+
+    assert nbins_hist > 0
 
     return nbins_hist, binsize
 
@@ -435,7 +442,7 @@ def scatter(
     x: np.ndarray,
     y: np.ndarray,
     *,
-    bins: Union[int, float, List[int], List[float]] = 20,
+    bins: Union[int, float] = 20,
     quantiles: Optional[Union[int, List[float]]] = None,
     fit_to_quantiles: bool = False,
     show_points: Optional[Union[bool, int, float]] = None,
@@ -735,8 +742,8 @@ def plot_spatial_overview(
     >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
     >>> ms.plot_spatial_overview([o1, o2], [mr1, mr2])
     """
-    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
-    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
+    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]  # type: ignore
+    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]  # type: ignore
 
     ax = _get_ax(ax=ax, figsize=figsize)
     offset_x = 1  # TODO: better default
@@ -758,7 +765,7 @@ def plot_spatial_overview(
     for o in obs:
         if isinstance(o, PointObservation):
             ax.scatter(x=o.x, y=o.y, marker="x")
-            ax.annotate(o.name, (o.x + offset_x, o.y))
+            ax.annotate(o.name, (o.x + offset_x, o.y))  # type: ignore
         elif isinstance(o, TrackObservation):
             if o.n_points < 10000:
                 ax.scatter(x=o.x, y=o.y, c=o.values, marker=".", cmap="Reds")
@@ -912,7 +919,7 @@ def _format_skill_line(
     series: pd.Series,
     units: str,
     precision: int,
-) -> str:
+) -> Tuple[str, str, str]:
     name = series.name
 
     item_unit = " "
@@ -933,7 +940,7 @@ def _format_skill_line(
     return f"{name}", " =  ", f"{fvalue} {item_unit}"
 
 
-def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
+def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2):
     # remove model and variable columns if present, i.e. keep all other columns
     df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
 
