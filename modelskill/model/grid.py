@@ -1,13 +1,16 @@
+from __future__ import annotations
 from pathlib import Path
-from typing import Optional, Sequence, Union, get_args
+from typing import Optional, Sequence, get_args
 import warnings
 
 import pandas as pd
 import xarray as xr
 
-from modelskill import types, utils
-from modelskill.model import PointModelResult, TrackModelResult
-from modelskill.observation import Observation, PointObservation, TrackObservation
+from ..utils import get_item_name_and_idx, rename_coords_xr, rename_coords_pd
+from ..types import GridType, Quantity
+from .point import PointModelResult
+from .track import TrackModelResult
+from ..observation import Observation, PointObservation, TrackObservation
 
 
 class GridModelResult:
@@ -17,10 +20,10 @@ class GridModelResult:
     ----------
     data : types.GridType
         the input data or file path
-    name : Optional[str], optional
+    name : str, optional
         The name of the model result,
         by default None (will be set to file name or item name)
-    item : Optional[Union[str, int]], optional
+    item : str or int, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
@@ -29,14 +32,14 @@ class GridModelResult:
 
     def __init__(
         self,
-        data: types.GridType,
+        data: GridType,
         *,
         name: Optional[str] = None,
-        item: Optional[Union[str, int]] = None,
-        quantity: Optional[types.Quantity] = None,
+        item: str | int | None = None,
+        quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
-            data, get_args(types.GridType)
+            data, get_args(GridType)
         ), "Could not construct GridModelResult from provided data."
 
         if isinstance(data, (str, Path)):
@@ -62,9 +65,9 @@ class GridModelResult:
                 f"Could not construct GridModelResult from {type(data)}"
             )
 
-        item, _ = utils.get_item_name_and_idx(list(data.data_vars), item)
-        name = name or item
-        data = utils.rename_coords_xr(data)
+        item_name, _ = get_item_name_and_idx(list(data.data_vars), item)
+        name = name or item_name
+        data = rename_coords_xr(data)
 
         assert isinstance(data, xr.Dataset)
 
@@ -72,7 +75,7 @@ class GridModelResult:
         self.item = item  # TODO remove this
         self.data = data  # or data[item] ?
         self.name = name
-        self.quantity = quantity or types.Quantity.undefined()
+        self.quantity = quantity or Quantity.undefined()
 
     # TODO reconsider this function (signature copied from _base)
     def _validate_any_obs_in_model_time(
@@ -102,9 +105,7 @@ class GridModelResult:
         ymax = self.data.y.values.max()
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
-    def extract(
-        self, observation: Observation
-    ) -> Union[PointModelResult, TrackModelResult]:
+    def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
         Parameters
@@ -176,7 +177,7 @@ class GridModelResult:
             observation.name, observation.data.index, self.time
         )
 
-        renamed_obs_data = utils.rename_coords_pd(observation.data)
+        renamed_obs_data = rename_coords_pd(observation.data)
         t = xr.DataArray(renamed_obs_data.index, dims="track")
         x = xr.DataArray(renamed_obs_data.x, dims="track")
         y = xr.DataArray(renamed_obs_data.y, dims="track")

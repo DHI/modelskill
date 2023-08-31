@@ -1,4 +1,5 @@
-from typing import List, Tuple, Union
+from __future__ import annotations
+from typing import List, Tuple
 import warnings
 import numpy as np
 import pandas as pd
@@ -63,7 +64,7 @@ def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_item_name_and_idx(
-    item_names: List[str], item: Union[int, str]
+    item_names: List[str], item: int | str | None = None
 ) -> Tuple[str, int]:
     """Returns the name and index of the requested variable, provided
     either as either a str or int.

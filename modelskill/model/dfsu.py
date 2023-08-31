@@ -1,5 +1,6 @@
+from __future__ import annotations
 from pathlib import Path
-from typing import Optional, Union, get_args
+from typing import Optional, get_args
 
 import mikeio
 import numpy as np
@@ -20,7 +21,7 @@ class DfsuModelResult(ModelResultBase):
         data: types.UnstructuredType,
         *,
         name: str = "Undefined",
-        item: Optional[Union[str, int]] = None,
+        item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
@@ -62,9 +63,7 @@ class DfsuModelResult(ModelResultBase):
     def _in_domain(self, x, y) -> bool:
         return self.data.geometry.contains([x, y])  # type: ignore
 
-    def extract(
-        self, observation: Observation
-    ) -> Union[PointModelResult, TrackModelResult]:
+    def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
         Parameters
