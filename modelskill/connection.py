@@ -18,6 +18,7 @@ from modelskill.types import GeometryType, Quantity
 from .model import protocols
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
+from .model.track import TrackModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -41,6 +42,7 @@ MRInputType = Union[
     TimeSeries,
     GridModelResult,
     DfsuModelResult,
+    TrackModelResult,
 ]
 ObsInputType = Union[
     str,
