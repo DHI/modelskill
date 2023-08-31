@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Union, get_args, Optional
+from typing import Union, get_args, Optional, Tuple
 import pandas as pd
 
 import mikeio
 
 from ._base import Quantity, ModelResultBase
-from .. import types, utils
+from .. import types
+
+from ..utils import make_unique_index, get_item_name_and_idx
 
 
 class TrackModelResult(ModelResultBase):
@@ -14,7 +16,7 @@ class TrackModelResult(ModelResultBase):
 
     Parameters
     ----------
-    data : types.UnstructuredType
+    data : types.TrackType
         the input data or file path
     name : Optional[str], optional
         The name of the model result,
@@ -56,17 +58,45 @@ class TrackModelResult(ModelResultBase):
             item_names = list(data.columns)
         else:
             raise ValueError("Could not construct TrackModelResult from provided data")
-        items = utils._parse_track_items(item_names, x_item, y_item, item)
-        item = items[-1]
-        item, idx = utils.get_item_name_and_idx(item_names, item)
-        name = name or item
+
+        x_name, y_name, item_name = self._parse_track_items(
+            item_names, x_item, y_item, item
+        )
+        sel_item_names = [x_name, y_name, item_name]
+        name = name or item_name
 
         # select relevant items and convert to dataframe
-        data = data[items]
+        assert isinstance(data, (mikeio.Dataset, pd.DataFrame))
+        data = data[sel_item_names]
         if isinstance(data, mikeio.Dataset):
-            data = data.to_dataframe()
+            df = data.to_dataframe()
+        else:
+            df = data
 
-        data = data.rename(columns={items[0]: "x", items[1]: "y"})
-        data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
+        df = df.rename(columns={x_name: "x", y_name: "y"})
+        df.index = make_unique_index(df.index, offset_duplicates=0.001)
 
-        super().__init__(data=data, name=name, quantity=quantity)
+        super().__init__(data=df, name=name, quantity=quantity)
+
+    @staticmethod
+    def _parse_track_items(items, x_item, y_item, item) -> Tuple[str, str, str]:
+        """If input has exactly 3 items we accept item=None"""
+        if len(items) < 3:
+            raise ValueError(
+                f"Input has only {len(items)} items. It should have at least 3."
+            )
+        if item is None:
+            if len(items) == 3:
+                item = 2
+            elif len(items) > 3:
+                raise ValueError("Input has more than 3 items, but item was not given!")
+
+        item, _ = get_item_name_and_idx(items, item)
+        x_item, _ = get_item_name_and_idx(items, x_item)
+        y_item, _ = get_item_name_and_idx(items, y_item)
+
+        if (item == x_item) or (item == y_item) or (x_item == y_item):
+            raise ValueError(
+                f"x-item ({x_item}), y-item ({y_item}) and value-item ({item}) must be different!"
+            )
+        return x_item, y_item, item
