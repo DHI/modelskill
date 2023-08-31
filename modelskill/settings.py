@@ -111,24 +111,16 @@ def _set_option(*args, **kwargs) -> None:
     # must at least 1 arg deal with constraints later
 
     if len(args) == 1 and isinstance(args[0], dict):
-        #     # accept a dictonary of options
-        #     d = args[0]
-        #     args = []
-        #     for k, v in d.items():
-        #         args = args + [k, v]
         kwargs.update(args[0])
-
-    nargs = len(args)
-    if not nargs or nargs % 2 != 0:
-        print(f"Input was args={args}, kwargs={kwargs}")
-        raise ValueError("Must provide an even number of non-keyword arguments")
+    else:
+        nargs = len(args)
+        if not nargs or nargs % 2 != 0:
+            raise ValueError(
+                f"Must provide an even number of non-keyword arguments, Input was args={args}, kwargs={kwargs}"
+            )
 
     # default to false
     kwargs.pop("silent", False)
-
-    if kwargs:
-        kwarg = list(kwargs.keys())[0]
-        raise TypeError(f'_set_option() got an unexpected keyword argument "{kwarg}"')
 
     for k, v in zip(args[::2], args[1::2]):
         key = _get_single_key(k)  # , silent)
@@ -140,13 +132,6 @@ def _set_option(*args, **kwargs) -> None:
         # walk the nested dict
         root, k = _get_root(key)
         root[k] = v
-
-        # if o.cb:
-        #     if silent:
-        #         with warnings.catch_warnings(record=True):
-        #             o.cb(key)
-        #     else:
-        #         o.cb(key)
 
 
 def _option_to_dict(pat: str = "") -> Dict:
