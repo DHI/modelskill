@@ -71,9 +71,11 @@ class GridModelResult:
 
         assert isinstance(data, xr.Dataset)
 
-        # super().__init__(data=data, name=name, quantity=quantity)
-        self.item = item  # TODO remove this
-        self.data = data  # or data[item] ?
+        if isinstance(data, xr.Dataset):
+            da = data[item_name]
+        else:
+            da = data
+        self.data: xr.DataArray = da
         self.name = name
         self.quantity = quantity or Quantity.undefined()
 
@@ -155,8 +157,10 @@ class GridModelResult:
             observation.name, observation.data.index, self.time
         )
         # TODO add correct type hint to self.data
-        assert isinstance(self.data, xr.Dataset)
-        da = self.data[self.item].interp(coords=dict(x=x, y=y), method="nearest")  # type: ignore
+        assert isinstance(self.data, xr.DataArray)
+
+        # TODO self.item is None, ☹️
+        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")  # type: ignore
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
 
@@ -182,10 +186,9 @@ class GridModelResult:
         x = xr.DataArray(renamed_obs_data.x, dims="track")
         y = xr.DataArray(renamed_obs_data.y, dims="track")
 
-        assert isinstance(self.data, xr.Dataset)
-        da = self.data[self.item].interp(coords=dict(time=t, x=x, y=y), method="linear")
+        assert isinstance(self.data, xr.DataArray)
+        da = self.data.interp(coords=dict(time=t, x=x, y=y), method="linear")
         df = da.to_dataframe().drop(columns=["time"])
-        # df.index.name = "time"
         df = df.rename(columns={df.columns[-1]: self.name})
 
         return TrackModelResult(
