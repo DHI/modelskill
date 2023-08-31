@@ -58,6 +58,7 @@ test =  [
             "netCDF4",
             "openpyxl",
             "dask",
+            "mypy",
         ]
 
 notebooks = [
