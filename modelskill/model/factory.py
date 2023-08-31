@@ -4,15 +4,19 @@ from typing import Literal, Optional
 import pandas as pd
 import xarray as xr
 
-from modelskill import model
-from modelskill.model import protocols
-from modelskill.types import GeometryType, DataInputType
+from .point import PointModelResult
+from .track import TrackModelResult
+from .dfsu import DfsuModelResult
+from .grid import GridModelResult
+
+
+from ..types import GeometryType, DataInputType
 
 _modelresult_lookup = {
-    GeometryType.POINT: model.PointModelResult,
-    GeometryType.TRACK: model.TrackModelResult,
-    GeometryType.UNSTRUCTURED: model.DfsuModelResult,
-    GeometryType.GRID: model.GridModelResult,
+    GeometryType.POINT: PointModelResult,
+    GeometryType.TRACK: TrackModelResult,
+    GeometryType.UNSTRUCTURED: DfsuModelResult,
+    GeometryType.GRID: GridModelResult,
 }
 
 

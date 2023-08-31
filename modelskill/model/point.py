@@ -3,8 +3,8 @@ from typing import Optional, Union, get_args
 import mikeio
 import pandas as pd
 
-from .. import types, utils
-from ..types import Quantity
+from ..utils import get_item_name_and_idx, make_unique_index
+from ..types import Quantity, PointType
 from ..timeseries import TimeSeries  # TODO move to main module
 
 
@@ -32,7 +32,7 @@ class PointModelResult(TimeSeries):
 
     def __init__(
         self,
-        data: types.PointType,
+        data: PointType,
         *,
         name: Optional[str] = None,  # TODO should maybe be required?
         x: Optional[float] = None,
@@ -41,7 +41,7 @@ class PointModelResult(TimeSeries):
         quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
-            data, get_args(types.PointType)
+            data, get_args(PointType)
         ), "Could not construct PointModelResult from provided data"
 
         if isinstance(data, (str, Path)):
@@ -54,20 +54,20 @@ class PointModelResult(TimeSeries):
         # parse item and convert to dataframe
         if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
-            item_name, _ = utils.get_item_name_and_idx(item_names, item)
-            data = data[[item]].to_dataframe()
+            item_name, _ = get_item_name_and_idx(item_names, item)
+            df = data[item_name].to_dataframe()
         elif isinstance(data, mikeio.DataArray):
             if item is None:
                 item_name = data.name
-            data = mikeio.Dataset({data.name: data}).to_dataframe()
+            df = data.to_dataframe()
         elif isinstance(data, pd.DataFrame):
             item_names = list(data.columns)
-            item_name, _ = utils.get_item_name_and_idx(item_names, item)
-            data = data[[item_name]]
+            item_name, _ = get_item_name_and_idx(item_names, item)
+            df = data[[item_name]]
         elif isinstance(data, pd.Series):
-            data = pd.DataFrame(data)  # to_frame?
+            df = pd.DataFrame(data)  # to_frame?
             if item is None:
-                item_name = data.columns[0]
+                item_name = df.columns[0]
         else:
             raise ValueError("Could not construct PointModelResult from provided data")
 
@@ -75,17 +75,17 @@ class PointModelResult(TimeSeries):
         assert isinstance(name, str)
 
         # basic processing
-        data = data.dropna()
-        if data.empty or len(data.columns) == 0:
+        df = df.dropna()
+        if df.empty or len(df.columns) == 0:
             raise ValueError("No data.")
-        data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
+        df.index = make_unique_index(df.index, offset_duplicates=0.001)
 
         if quantity is None:
             model_quantity = Quantity.undefined()
         else:
             model_quantity = quantity
 
-        super().__init__(data=data, name=name, quantity=model_quantity)
+        super().__init__(data=df, name=name, quantity=model_quantity)
         self.x = x
         self.y = y
 
