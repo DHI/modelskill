@@ -10,8 +10,7 @@ test:
 	pytest --disable-warnings
 
 typecheck:
-	# TODO remove excludes when done
-	mypy $(LIB)/ --exclude $(LIB)/report.py --exclude $(LIB)/settings.py --exclude $(LIB)/connection.py
+	mypy $(LIB)/
 
 coverage: 
 	pytest --cov-report html --cov=$(LIB) tests/

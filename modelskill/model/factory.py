@@ -47,7 +47,7 @@ class ModelResult:
         *,
         gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
         **kwargs,
-    ) -> protocols.ModelResult:
+    ):
         if gtype is None:
             geometry = cls._guess_gtype(data)
         else:
@@ -60,7 +60,6 @@ class ModelResult:
 
     @staticmethod
     def _guess_gtype(data) -> GeometryType:
-
         if hasattr(data, "geometry"):
             geom_str = repr(data.geometry).lower()
             if "flex" in geom_str:

@@ -54,22 +54,25 @@ class PointModelResult(TimeSeries):
         # parse item and convert to dataframe
         if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
-            item, _ = utils.get_item_name_and_idx(item_names, item)
+            item_name, _ = utils.get_item_name_and_idx(item_names, item)
             data = data[[item]].to_dataframe()
         elif isinstance(data, mikeio.DataArray):
-            item = item or data.name
+            if item is None:
+                item_name = data.name
             data = mikeio.Dataset({data.name: data}).to_dataframe()
         elif isinstance(data, pd.DataFrame):
             item_names = list(data.columns)
-            item, _ = utils.get_item_name_and_idx(item_names, item)
-            data = data[[item]]
+            item_name, _ = utils.get_item_name_and_idx(item_names, item)
+            data = data[[item_name]]
         elif isinstance(data, pd.Series):
             data = pd.DataFrame(data)  # to_frame?
-            item = item or data.columns[0]
+            if item is None:
+                item_name = data.columns[0]
         else:
             raise ValueError("Could not construct PointModelResult from provided data")
 
-        name = name or item
+        name = name or item_name
+        assert isinstance(name, str)
 
         # basic processing
         data = data.dropna()
@@ -77,7 +80,12 @@ class PointModelResult(TimeSeries):
             raise ValueError("No data.")
         data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
 
-        super().__init__(data=data, name=name, quantity=quantity)
+        if quantity is None:
+            model_quantity = Quantity.undefined()
+        else:
+            model_quantity = quantity
+
+        super().__init__(data=data, name=name, quantity=model_quantity)
         self.x = x
         self.y = y
 

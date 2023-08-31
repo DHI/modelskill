@@ -79,19 +79,11 @@ notebooks = [
 ignore = ["E501"]
 
 [tool.mypy]
-python_version = "3.10"
-warn_return_any = false
-allow_redefinition = true
-warn_unreachable = true
+python_version = "3.9"
 ignore_missing_imports = true
+warn_unreachable = true
 no_implicit_optional = false # TODO change this
-
-[[tool.mypy.overrides]]
-module = [
-    "pandas.*",
-    "matplotlib.*",
-    "shapely.*",
-    "mpl_toolkits.*",
-    "scipy.*",
+exclude = [
+    "connection.py", # most of this will be removed
+    "report.py",     # this will be removed
 ]
-

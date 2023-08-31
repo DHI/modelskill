@@ -5,11 +5,20 @@ import numpy as np  # type: ignore
 
 from .. import metrics as mtr
 from ._utils import _get_id
-from ..plot import _get_fig_ax, colors, quantiles_xy, scatter, taylor_diagram, TaylorPoint
+from ..plot import (
+    _get_fig_ax,
+    colors,
+    quantiles_xy,
+    scatter,
+    taylor_diagram,
+    TaylorPoint,
+)
 from ..settings import options
+
 
 class ComparerPlotter:
     """Plotter class for Comparer"""
+
     def __init__(self, comparer):
         self.comparer = comparer
 
@@ -179,7 +188,7 @@ class ComparerPlotter:
         >>> cmp.plot.kde()
         >>> cmp.plot.kde(bw_method=0.3)
         >>> cmp.plot.kde(ax=ax, bw_method='silverman')
-        >>> cmp.plot.kde(xlim=[0,None], title="Density plot");   
+        >>> cmp.plot.kde(xlim=[0,None], title="Density plot");
 
         See also
         --------
@@ -215,11 +224,17 @@ class ComparerPlotter:
 
         return ax
 
-
-    def qq(self, quantiles: Optional[Union[int, List[float]]] = None, title=None, ax=None, figsize=None, **kwargs):
+    def qq(
+        self,
+        quantiles: Optional[Union[int, List[float]]] = None,
+        title=None,
+        ax=None,
+        figsize=None,
+        **kwargs,
+    ):
         """Make quantile-quantile (q-q) plot of model data and observations.
 
-        Primarily used to compare multiple models. 
+        Primarily used to compare multiple models.
 
         Parameters
         ----------
@@ -254,21 +269,21 @@ class ComparerPlotter:
 
         for mod_name in cmp.mod_names:
             y = cmp.data[mod_name].values
-            ymin= min([y.min(), ymin]) 
-            ymax= max([y.max(), ymax])           
+            ymin = min([y.min(), ymin])
+            ymax = max([y.max(), ymax])
             xq, yq = quantiles_xy(x, y, quantiles)
             plt.plot(
                 xq,
                 yq,
-                '.-',                
+                ".-",
                 label=mod_name,
                 zorder=4,
                 **kwargs,
             )
-    
+
         xymin = min([xmin, ymin])
         xymax = max([xmax, ymax])
-        
+
         # 1:1 line
         plt.plot(
             [xymin, xymax],
@@ -276,7 +291,7 @@ class ComparerPlotter:
             label=options.plot.scatter.oneone_line.label,
             c=options.plot.scatter.oneone_line.color,
             zorder=3,
-        )    
+        )
         plt.axis("square")
         plt.xlim([xymin, xymax])
         plt.ylim([xymin, xymax])
@@ -286,9 +301,8 @@ class ComparerPlotter:
         ax.legend()
         ax.set_xlabel("Observation, " + cmp.unit_text)
         ax.set_ylabel("Model, " + cmp.unit_text)
-        ax.set_title(title or f"Q-Q plot for {cmp.name}")        
+        ax.set_title(title or f"Q-Q plot for {cmp.name}")
         return ax
-
 
     def box(self, ax=None, title=None, **kwargs):
         """Make a box plot of model data and observations.
@@ -300,7 +314,7 @@ class ComparerPlotter:
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
         title : str, optional
-            plot title, default: [observation name]        
+            plot title, default: [observation name]
         kwargs : other keyword arguments to df.boxplot()
 
         Returns
@@ -329,12 +343,12 @@ class ComparerPlotter:
         ax.set_ylabel(cmp.unit_text)
         ax.set_title(title or cmp.name)
         return ax
-    
+
     def scatter(
         self,
         *,
         model=None,
-        bins: Union[int, float, List[int], List[float]] = 20,
+        bins: Union[int, float] = 20,
         quantiles: Optional[Union[int, List[float]]] = None,
         fit_to_quantiles: bool = False,
         show_points: Optional[Union[bool, int, float]] = None,

@@ -1255,11 +1255,11 @@ class Comparer:
         # n_obs=1 because we only have one observation (**SingleObsComparer**)
         by = _parse_groupby(by=by, n_models=cmp.n_models, n_obs=1)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
-            by = [by]
-        if "x" not in by:
-            by.insert(0, "x")
-        if "y" not in by:
-            by.insert(0, "y")
+            by = [by]  # type: ignore
+        if "x" not in by:  # type: ignore
+            by.insert(0, "x")  # type: ignore
+        if "y" not in by:  # type: ignore
+            by.insert(0, "y")  # type: ignore
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)

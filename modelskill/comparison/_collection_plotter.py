@@ -20,7 +20,7 @@ class ComparerCollectionPlotter:
         self,
         *,
         model=None,
-        bins: Union[int, float, List[int], List[float]] = 20,
+        bins: Union[int, float] = 20,
         quantiles: Optional[Union[int, List[float]]] = None,
         fit_to_quantiles: bool = False,
         show_points: Optional[Union[bool, int, float]] = None,
@@ -246,7 +246,7 @@ class ComparerCollectionPlotter:
         --------
         >>> cc.plot.hist()
         >>> cc.plot.hist(bins=100)
-        
+
         See also
         --------
         pandas.Series.hist

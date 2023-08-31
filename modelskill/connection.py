@@ -215,7 +215,7 @@ def _single_obs_compare(
 
 
 def _parse_single_obs(
-    obs, item: IdOrNameTypes = None, gtype: GeometryTypes = None
+    obs, item=None, gtype: GeometryTypes = None
 ) -> protocols.Observation:
     if isinstance(obs, Observation):
         if item is not None:
@@ -232,9 +232,7 @@ def _parse_single_obs(
             return PointObservation(obs, item=item)
 
 
-def _parse_models(
-    mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None
-) -> List[protocols.ModelResult]:
+def _parse_models(mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None):
     """Return a list of ModelResult objects"""
     if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
@@ -244,9 +242,7 @@ def _parse_models(
         raise ValueError(f"Unknown mod type {type(mod)}")
 
 
-def _parse_single_model(
-    mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None
-) -> protocols.ModelResult:
+def _parse_single_model(mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None):
     if isinstance(mod, protocols.ModelResult):
         if item is not None:
             raise ValueError(

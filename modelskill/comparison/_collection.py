@@ -549,11 +549,11 @@ class ComparerCollection(Mapping):
 
         by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
-            by = [by]
-        if "x" not in by:
-            by.insert(0, "x")
-        if "y" not in by:
-            by.insert(0, "y")
+            by = [by]  # type: ignore
+        if "x" not in by:  # type: ignore
+            by.insert(0, "x")  # type: ignore
+        if "y" not in by:  # type: ignore
+            by.insert(0, "y")  # type: ignore
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
@@ -706,7 +706,7 @@ class ComparerCollection(Mapping):
         # weights
         weights = cmp._parse_weights(weights, s.obs_names)
         skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, len(mod_names))
+            skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
         )
 
         def weighted_mean(x):
@@ -715,7 +715,7 @@ class ComparerCollection(Mapping):
         # group by
         by = cmp._mean_skill_by(skilldf, mod_names, var_names)
         agg = {"n": np.sum}
-        for metric in metrics:
+        for metric in metrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
         res = skilldf.groupby(by).agg(agg)
 
