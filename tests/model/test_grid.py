@@ -128,13 +128,6 @@ def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     assert pytest.approx(df.iloc[0, 0]) == 0.875528
 
 
-def test_grid_validate_point(mf_modelresult, pointobs_epl_hm0):
-    mr = mf_modelresult
-
-    ok = mr._validate_start_end(pointobs_epl_hm0)
-    assert ok
-
-
 def test_grid_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
     mri = mr_ERA5_pp1d
     pointobs_epl_hm0.x = -50
@@ -146,7 +139,7 @@ def test_grid_extract_point_toutside(ERA5_DutchCoast_nc, pointobs_epl_hm0):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     da = ds["swh"].isel(time=slice(10, 15))
     da["time"] = pd.Timedelta("365D") + da.time
-    mr = ModelResult(da)
+    mr = GridModelResult(da)
     with pytest.warns(UserWarning, match="outside"):
         mr.extract(pointobs_epl_hm0)
 
