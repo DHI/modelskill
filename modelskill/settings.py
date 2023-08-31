@@ -201,11 +201,6 @@ def _reset_option(pat: str = "", silent: bool = False) -> None:
         _set_option(k, _registered_options[k].defval, silent=silent)
 
 
-def _get_default_val(pat: str):
-    key = _get_single_key(pat, silent=True)
-    return _get_registered_option(key).defval
-
-
 class OptionsContainer:
     """provide attribute-style access to a nested dict"""
 
