@@ -4,7 +4,6 @@ import xarray as xr
 import pandas as pd
 
 
-import modelskill
 from modelskill import ModelResult
 from modelskill.model import (
     GridModelResult,
