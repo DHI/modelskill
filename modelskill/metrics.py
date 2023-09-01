@@ -498,7 +498,6 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
     return nominator / denominator
 
 
-
 def pr(obs: np.ndarray, model: np.ndarray) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
@@ -620,7 +619,9 @@ def _linear_regression(
     if len(obs) == 0:
         return np.nan
 
-    if reg_method == "ols":
+    if reg_method is None:
+        slope, intercept = None, None
+    elif reg_method == "ols":
         from scipy.stats import linregress as _linregress
 
         reg = _linregress(obs, model)

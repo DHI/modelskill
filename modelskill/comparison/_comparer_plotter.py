@@ -5,13 +5,25 @@ import numpy as np  # type: ignore
 
 from .. import metrics as mtr
 from ._utils import _get_id
-from ..plot import _get_fig_ax, colors, quantiles_xy, scatter, taylor_diagram, TaylorPoint
+from ..plot import (
+    _get_fig_ax,
+    _xtick_directional,
+    _ytick_directional,
+    colors,
+    quantiles_xy,
+    scatter,
+    taylor_diagram,
+    TaylorPoint,
+)
 from ..settings import options
+
 
 class ComparerPlotter:
     """Plotter class for Comparer"""
+
     def __init__(self, comparer):
         self.comparer = comparer
+        self.is_directional = False
 
     def __call__(self, *args, **kwargs):
         """Plot scatter plot of modelled vs observed data"""
@@ -60,6 +72,8 @@ class ComparerPlotter:
             ax.set_ylabel(cmp.unit_text)
             ax.legend([*cmp.mod_names, cmp.obs_name])
             ax.set_ylim(ylim)
+            if self.is_directional:
+                _ytick_directional(ax, ylim)
             plt.title(title)
             return ax
 
@@ -157,6 +171,9 @@ class ComparerPlotter:
         else:
             plt.ylabel("count")
 
+        if self.is_directional:
+            _xtick_directional(ax)
+
         return ax
 
     def kde(self, ax=None, **kwargs):
@@ -179,7 +196,7 @@ class ComparerPlotter:
         >>> cmp.plot.kde()
         >>> cmp.plot.kde(bw_method=0.3)
         >>> cmp.plot.kde(ax=ax, bw_method='silverman')
-        >>> cmp.plot.kde(xlim=[0,None], title="Density plot");   
+        >>> cmp.plot.kde(xlim=[0,None], title="Density plot");
 
         See also
         --------
@@ -201,11 +218,9 @@ class ComparerPlotter:
 
         ax.legend()
 
-        # remove y-axis
+        # remove y-axis, ticks and label
         ax.yaxis.set_visible(False)
-        # remove y-ticks
         ax.tick_params(axis="y", which="both", length=0)
-        # remove y-label
         ax.set_ylabel("")
 
         # remove box around plot
@@ -213,13 +228,22 @@ class ComparerPlotter:
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
 
+        if self.is_directional:
+            _xtick_directional(ax)
+
         return ax
 
-
-    def qq(self, quantiles: Optional[Union[int, List[float]]] = None, title=None, ax=None, figsize=None, **kwargs):
+    def qq(
+        self,
+        quantiles: Optional[Union[int, List[float]]] = None,
+        title=None,
+        ax=None,
+        figsize=None,
+        **kwargs,
+    ):
         """Make quantile-quantile (q-q) plot of model data and observations.
 
-        Primarily used to compare multiple models. 
+        Primarily used to compare multiple models.
 
         Parameters
         ----------
@@ -254,21 +278,21 @@ class ComparerPlotter:
 
         for mod_name in cmp.mod_names:
             y = cmp.data[mod_name].values
-            ymin= min([y.min(), ymin]) 
-            ymax= max([y.max(), ymax])           
+            ymin = min([y.min(), ymin])
+            ymax = max([y.max(), ymax])
             xq, yq = quantiles_xy(x, y, quantiles)
             plt.plot(
                 xq,
                 yq,
-                '.-',                
+                ".-",
                 label=mod_name,
                 zorder=4,
                 **kwargs,
             )
-    
+
         xymin = min([xmin, ymin])
         xymax = max([xmax, ymax])
-        
+
         # 1:1 line
         plt.plot(
             [xymin, xymax],
@@ -276,7 +300,7 @@ class ComparerPlotter:
             label=options.plot.scatter.oneone_line.label,
             c=options.plot.scatter.oneone_line.color,
             zorder=3,
-        )    
+        )
         plt.axis("square")
         plt.xlim([xymin, xymax])
         plt.ylim([xymin, xymax])
@@ -286,9 +310,13 @@ class ComparerPlotter:
         ax.legend()
         ax.set_xlabel("Observation, " + cmp.unit_text)
         ax.set_ylabel("Model, " + cmp.unit_text)
-        ax.set_title(title or f"Q-Q plot for {cmp.name}")        
-        return ax
+        ax.set_title(title or f"Q-Q plot for {cmp.name}")
 
+        if self.is_directional:
+            _xtick_directional(ax)
+            _ytick_directional(ax)
+
+        return ax
 
     def box(self, ax=None, title=None, **kwargs):
         """Make a box plot of model data and observations.
@@ -300,7 +328,7 @@ class ComparerPlotter:
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
         title : str, optional
-            plot title, default: [observation name]        
+            plot title, default: [observation name]
         kwargs : other keyword arguments to df.boxplot()
 
         Returns
@@ -328,8 +356,12 @@ class ComparerPlotter:
         df.boxplot(ax=ax, **kwargs)
         ax.set_ylabel(cmp.unit_text)
         ax.set_title(title or cmp.name)
+
+        if self.is_directional:
+            _ytick_directional(ax)
+
         return ax
-    
+
     def scatter(
         self,
         *,
@@ -397,6 +429,7 @@ class ComparerPlotter:
             method for determining the regression line
             "ols" : ordinary least squares regression
             "odr" : orthogonal distance regression,
+            None : no regression line
             by default "ols"
         title : str, optional
             plot title, by default None
@@ -450,6 +483,11 @@ class ComparerPlotter:
             except IndexError:
                 units = ""  # Dimensionless
 
+        if self.is_directional:
+            # hide quantiles and regression line
+            quantiles = 0
+            reg_method = None
+
         ax = scatter(
             x=x,
             y=y,
@@ -472,6 +510,11 @@ class ComparerPlotter:
             units=units,
             **kwargs,
         )
+
+        if backend == "matplotlib" and self.is_directional:
+            _xtick_directional(ax, xlim)
+            _ytick_directional(ax, ylim)
+
         return ax
 
     def taylor(
@@ -562,3 +605,11 @@ class ComparerPlotter:
         plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
         plt.xlabel(f"Residuals of {self.comparer.unit_text}")
+        ax = plt.gca()
+
+        if self.is_directional:
+            ticks = np.linspace(-180, 180, 9)
+            ax.set_xticks(ticks)
+            ax.set_xlim(-180, 180)
+
+        return ax
