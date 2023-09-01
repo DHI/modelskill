@@ -240,12 +240,19 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">metrics</span> <span class="k">as</span> <span class="n">mtr</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_get_id</span>
-<span class="kn">from</span> <span class="nn">..plot</span> <span class="kn">import</span> <span class="n">scatter</span><span class="p">,</span> <span class="n">taylor_diagram</span><span class="p">,</span> <span class="n">TaylorPoint</span>
+<span class="kn">from</span> <span class="nn">..plot</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">scatter</span><span class="p">,</span>
+    <span class="n">taylor_diagram</span><span class="p">,</span>
+    <span class="n">TaylorPoint</span><span class="p">,</span>
+    <span class="n">_xtick_directional</span><span class="p">,</span>
+    <span class="n">_ytick_directional</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="ComparerCollectionPlotter"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerCollectionPlotter">[docs]</a><span class="k">class</span> <span class="nc">ComparerCollectionPlotter</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cc</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cc</span> <span class="o">=</span> <span class="n">cc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
@@ -369,6 +376,11 @@ document.write(`
             <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
                 <span class="n">units</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># Dimensionless</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="c1"># hide quantiles and regression line</span>
+            <span class="n">quantiles</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">reg_method</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="n">ax</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span>
             <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
             <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
@@ -390,6 +402,11 @@ document.write(`
             <span class="n">units</span><span class="o">=</span><span class="n">units</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;matplotlib&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">_xtick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">xlim</span><span class="p">)</span>
+            <span class="n">_ytick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">ylim</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">ax</span></div>
 
 <div class="viewcode-block" id="ComparerCollectionPlotter.kde"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerCollectionPlotter.kde">[docs]</a>    <span class="k">def</span> <span class="nf">kde</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Axes</span><span class="p">:</span>
@@ -431,17 +448,18 @@ document.write(`
         <span class="c1"># TODO title?</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 
-        <span class="c1"># remove y-axis</span>
+        <span class="c1"># remove y-axis, ticks and label</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-        <span class="c1"># remove y-ticks</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="c1"># remove y-label</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
 
         <span class="c1"># remove box around plot</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">_xtick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">ax</span></div>
 
@@ -480,7 +498,7 @@ document.write(`
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; cc.plot.hist()</span>
 <span class="sd">        &gt;&gt;&gt; cc.plot.hist(bins=100)</span>
-<span class="sd">        </span>
+
 <span class="sd">        See also</span>
 <span class="sd">        --------</span>
 <span class="sd">        pandas.Series.hist</span>
@@ -512,6 +530,9 @@ document.write(`
             <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;density&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">_xtick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">ax</span></div>
 

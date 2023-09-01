@@ -239,13 +239,25 @@ document.write(`
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">metrics</span> <span class="k">as</span> <span class="n">mtr</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_get_id</span>
-<span class="kn">from</span> <span class="nn">..plot</span> <span class="kn">import</span> <span class="n">_get_fig_ax</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">quantiles_xy</span><span class="p">,</span> <span class="n">scatter</span><span class="p">,</span> <span class="n">taylor_diagram</span><span class="p">,</span> <span class="n">TaylorPoint</span>
+<span class="kn">from</span> <span class="nn">..plot</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_get_fig_ax</span><span class="p">,</span>
+    <span class="n">_xtick_directional</span><span class="p">,</span>
+    <span class="n">_ytick_directional</span><span class="p">,</span>
+    <span class="n">colors</span><span class="p">,</span>
+    <span class="n">quantiles_xy</span><span class="p">,</span>
+    <span class="n">scatter</span><span class="p">,</span>
+    <span class="n">taylor_diagram</span><span class="p">,</span>
+    <span class="n">TaylorPoint</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">..settings</span> <span class="kn">import</span> <span class="n">options</span>
+
 
 <div class="viewcode-block" id="ComparerPlotter"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter">[docs]</a><span class="k">class</span> <span class="nc">ComparerPlotter</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plotter class for Comparer&quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comparer</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comparer</span> <span class="o">=</span> <span class="n">comparer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot scatter plot of modelled vs observed data&quot;&quot;&quot;</span>
@@ -294,6 +306,8 @@ document.write(`
             <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">cmp</span><span class="o">.</span><span class="n">unit_text</span><span class="p">)</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="o">*</span><span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">,</span> <span class="n">cmp</span><span class="o">.</span><span class="n">obs_name</span><span class="p">])</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylim</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+                <span class="n">_ytick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">ylim</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">ax</span>
 
@@ -391,6 +405,9 @@ document.write(`
         <span class="k">else</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">_xtick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">ax</span></div>
 
 <div class="viewcode-block" id="ComparerPlotter.kde"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.kde">[docs]</a>    <span class="k">def</span> <span class="nf">kde</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -413,7 +430,7 @@ document.write(`
 <span class="sd">        &gt;&gt;&gt; cmp.plot.kde()</span>
 <span class="sd">        &gt;&gt;&gt; cmp.plot.kde(bw_method=0.3)</span>
 <span class="sd">        &gt;&gt;&gt; cmp.plot.kde(ax=ax, bw_method=&#39;silverman&#39;)</span>
-<span class="sd">        &gt;&gt;&gt; cmp.plot.kde(xlim=[0,None], title=&quot;Density plot&quot;);   </span>
+<span class="sd">        &gt;&gt;&gt; cmp.plot.kde(xlim=[0,None], title=&quot;Density plot&quot;);</span>
 
 <span class="sd">        See also</span>
 <span class="sd">        --------</span>
@@ -435,11 +452,9 @@ document.write(`
 
         <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 
-        <span class="c1"># remove y-axis</span>
+        <span class="c1"># remove y-axis, ticks and label</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-        <span class="c1"># remove y-ticks</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="c1"># remove y-label</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
 
         <span class="c1"># remove box around plot</span>
@@ -447,13 +462,22 @@ document.write(`
         <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">_xtick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">ax</span></div>
 
-
-<div class="viewcode-block" id="ComparerPlotter.qq"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.qq">[docs]</a>    <span class="k">def</span> <span class="nf">qq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quantiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ComparerPlotter.qq"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.qq">[docs]</a>    <span class="k">def</span> <span class="nf">qq</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">quantiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make quantile-quantile (q-q) plot of model data and observations.</span>
 
-<span class="sd">        Primarily used to compare multiple models. </span>
+<span class="sd">        Primarily used to compare multiple models.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -488,21 +512,21 @@ document.write(`
 
         <span class="k">for</span> <span class="n">mod_name</span> <span class="ow">in</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">:</span>
             <span class="n">y</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
-            <span class="n">ymin</span><span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ymin</span><span class="p">])</span> 
-            <span class="n">ymax</span><span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">ymax</span><span class="p">])</span>           
+            <span class="n">ymin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ymin</span><span class="p">])</span>
+            <span class="n">ymax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">ymax</span><span class="p">])</span>
             <span class="n">xq</span><span class="p">,</span> <span class="n">yq</span> <span class="o">=</span> <span class="n">quantiles_xy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">quantiles</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
                 <span class="n">xq</span><span class="p">,</span>
                 <span class="n">yq</span><span class="p">,</span>
-                <span class="s1">&#39;.-&#39;</span><span class="p">,</span>                
+                <span class="s2">&quot;.-&quot;</span><span class="p">,</span>
                 <span class="n">label</span><span class="o">=</span><span class="n">mod_name</span><span class="p">,</span>
                 <span class="n">zorder</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
             <span class="p">)</span>
-    
+
         <span class="n">xymin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">])</span>
         <span class="n">xymax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">])</span>
-        
+
         <span class="c1"># 1:1 line</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
             <span class="p">[</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">],</span>
@@ -510,7 +534,7 @@ document.write(`
             <span class="n">label</span><span class="o">=</span><span class="n">options</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="o">.</span><span class="n">oneone_line</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
             <span class="n">c</span><span class="o">=</span><span class="n">options</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="o">.</span><span class="n">oneone_line</span><span class="o">.</span><span class="n">color</span><span class="p">,</span>
             <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-        <span class="p">)</span>    
+        <span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">])</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">])</span>
@@ -520,9 +544,13 @@ document.write(`
         <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Observation, &quot;</span> <span class="o">+</span> <span class="n">cmp</span><span class="o">.</span><span class="n">unit_text</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Model, &quot;</span> <span class="o">+</span> <span class="n">cmp</span><span class="o">.</span><span class="n">unit_text</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Q-Q plot for </span><span class="si">{</span><span class="n">cmp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>        
-        <span class="k">return</span> <span class="n">ax</span></div>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Q-Q plot for </span><span class="si">{</span><span class="n">cmp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">_xtick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+            <span class="n">_ytick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ax</span></div>
 
 <div class="viewcode-block" id="ComparerPlotter.box"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.box">[docs]</a>    <span class="k">def</span> <span class="nf">box</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a box plot of model data and observations.</span>
@@ -534,7 +562,7 @@ document.write(`
 <span class="sd">        ax : matplotlib.axes.Axes, optional</span>
 <span class="sd">            axes to plot on, by default None</span>
 <span class="sd">        title : str, optional</span>
-<span class="sd">            plot title, default: [observation name]        </span>
+<span class="sd">            plot title, default: [observation name]</span>
 <span class="sd">        kwargs : other keyword arguments to df.boxplot()</span>
 
 <span class="sd">        Returns</span>
@@ -562,8 +590,12 @@ document.write(`
         <span class="n">df</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">cmp</span><span class="o">.</span><span class="n">unit_text</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span> <span class="ow">or</span> <span class="n">cmp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">_ytick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">ax</span></div>
-    
+
 <div class="viewcode-block" id="ComparerPlotter.scatter"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.scatter">[docs]</a>    <span class="k">def</span> <span class="nf">scatter</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
@@ -631,6 +663,7 @@ document.write(`
 <span class="sd">            method for determining the regression line</span>
 <span class="sd">            &quot;ols&quot; : ordinary least squares regression</span>
 <span class="sd">            &quot;odr&quot; : orthogonal distance regression,</span>
+<span class="sd">            None : no regression line</span>
 <span class="sd">            by default &quot;ols&quot;</span>
 <span class="sd">        title : str, optional</span>
 <span class="sd">            plot title, by default None</span>
@@ -684,6 +717,11 @@ document.write(`
             <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
                 <span class="n">units</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># Dimensionless</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="c1"># hide quantiles and regression line</span>
+            <span class="n">quantiles</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">reg_method</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="n">ax</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span>
             <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
             <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
@@ -706,6 +744,11 @@ document.write(`
             <span class="n">units</span><span class="o">=</span><span class="n">units</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;matplotlib&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">_xtick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">xlim</span><span class="p">)</span>
+            <span class="n">_ytick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">ylim</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">ax</span></div>
 
 <div class="viewcode-block" id="ComparerPlotter.taylor"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.taylor">[docs]</a>    <span class="k">def</span> <span class="nf">taylor</span><span class="p">(</span>
@@ -795,7 +838,15 @@ document.write(`
         <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Residuals, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">title</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Residuals of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div></div>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Residuals of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
+            <span class="n">ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">ticks</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ax</span></div></div>
 </pre></div>
 
                 </article>
