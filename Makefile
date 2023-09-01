@@ -1,5 +1,7 @@
 LIB = modelskill
 
+check: lint typecheck test
+
 build: typecheck test
 	python -m build
 

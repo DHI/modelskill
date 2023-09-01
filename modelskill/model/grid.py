@@ -69,13 +69,7 @@ class GridModelResult:
         name = name or item_name
         data = rename_coords_xr(data)
 
-        assert isinstance(data, xr.Dataset)
-
-        if isinstance(data, xr.Dataset):
-            da = data[item_name]
-        else:
-            da = data
-        self.data: xr.DataArray = da
+        self.data = data[item_name]
         self.name = name
         self.quantity = quantity or Quantity.undefined()
 
