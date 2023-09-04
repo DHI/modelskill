@@ -27,7 +27,7 @@ from ._comparer_plotter import ComparerPlotter
 from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
-from ._utils import _get_name
+from ..utils import _get_name
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection

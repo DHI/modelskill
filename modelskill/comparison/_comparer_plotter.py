@@ -1,10 +1,11 @@
+from __future__ import annotations
 from typing import Union, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np  # type: ignore
 
 from .. import metrics as mtr
-from ._utils import _get_id
+from ..utils import _get_idx
 from ..plot import (
     _get_fig_ax,
     _xtick_directional,
@@ -146,7 +147,7 @@ class ComparerPlotter:
         from ._comparison import MOD_COLORS  # TODO move to here
 
         cmp = self.comparer
-        mod_id = _get_id(model, cmp.mod_names)
+        mod_id = _get_idx(model, cmp.mod_names)
         mod_name = cmp.mod_names[mod_id]
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
@@ -377,7 +378,7 @@ class ComparerPlotter:
         figsize: Tuple[float, float] = (8, 8),
         xlim: Optional[Tuple[float, float]] = None,
         ylim: Optional[Tuple[float, float]] = None,
-        reg_method: str = "ols",
+        reg_method: str | bool = "ols",
         title: Optional[str] = None,
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
@@ -425,11 +426,11 @@ class ComparerPlotter:
             plot range for the observation (xmin, xmax), by default None
         ylim : tuple, optional
             plot range for the model (ymin, ymax), by default None
-        reg_method : str, optional
+        reg_method : str or bool, optional
             method for determining the regression line
             "ols" : ordinary least squares regression
             "odr" : orthogonal distance regression,
-            None : no regression line
+            False : no regression line
             by default "ols"
         title : str, optional
             plot title, by default None
@@ -455,7 +456,7 @@ class ComparerPlotter:
         cmp = self.comparer
 
         cmp = self.comparer
-        mod_id = _get_id(model, cmp.mod_names)
+        mod_id = _get_idx(model, cmp.mod_names)
         mod_name = cmp.mod_names[mod_id]
 
         if cmp.n_points == 0:
@@ -486,7 +487,7 @@ class ComparerPlotter:
         if self.is_directional:
             # hide quantiles and regression line
             quantiles = 0
-            reg_method = None
+            reg_method = False
 
         ax = scatter(
             x=x,

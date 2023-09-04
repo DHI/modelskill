@@ -6,7 +6,7 @@ import warnings
 import pandas as pd
 import xarray as xr
 
-from ..utils import get_item_name_and_idx, rename_coords_xr, rename_coords_pd
+from ..utils import _get_name, rename_coords_xr, rename_coords_pd
 from ..types import GridType, Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
@@ -65,7 +65,7 @@ class GridModelResult:
                 f"Could not construct GridModelResult from {type(data)}"
             )
 
-        item_name, _ = get_item_name_and_idx(list(data.data_vars), item)
+        item_name = _get_name(x=item, valid_names=list(data.data_vars))
         name = name or item_name
         data = rename_coords_xr(data)
 

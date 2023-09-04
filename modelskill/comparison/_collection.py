@@ -16,7 +16,7 @@ from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, reset_option
 
-from ._utils import _get_id, _get_name
+from ..utils import _get_idx, _get_name
 from ._comparison import (
     Comparer,
     IdOrNameTypes,
@@ -586,11 +586,11 @@ class ComparerCollection(Mapping):
         observation, variable = _get_deprecated_obs_var_args(kwargs)
 
         # select model
-        mod_id = _get_id(model, self.mod_names)
+        mod_id = _get_idx(model, self.mod_names)
         mod_name = self.mod_names[mod_id]
 
         # select variable
-        var_id = _get_id(variable, self.var_names)
+        var_id = _get_idx(variable, self.var_names)
         var_name = self.var_names[var_id]
 
         # filter data

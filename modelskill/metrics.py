@@ -94,7 +94,9 @@ def max_error(obs, model) -> float:
     return np.max(np.abs(model.ravel() - obs.ravel()))
 
 
-def mae(obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None) -> float:
+def mae(
+    obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None
+) -> float:
     """alias for mean_absolute_error"""
     assert obs.size == model.size
     return mean_absolute_error(obs, model, weights)
@@ -142,7 +144,9 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
     return np.mean(np.abs((obs.ravel() - model.ravel()) / obs.ravel())) * 100
 
 
-def urmse(obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None) -> float:
+def urmse(
+    obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None
+) -> float:
     """Unbiased Root Mean Squared Error (uRMSE)
 
     .. math::
@@ -621,9 +625,7 @@ def _linear_regression(
     if len(obs) == 0:
         return np.nan, np.nan  # TODO raise error?
 
-    if reg_method is None:
-        slope, intercept = None, None
-    elif reg_method == "ols":
+    if reg_method == "ols":
         from scipy.stats import linregress as _linregress
 
         reg = _linregress(obs, model)

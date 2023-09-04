@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Tuple, Union, Optional, Sequence
 import warnings
 from matplotlib.axes import Axes
@@ -236,8 +237,7 @@ def _scatter_matplotlib(
     show_hist,
     norm,
     nbins_hist,
-    intercept,
-    slope,
+    reg_method,
     xlabel,
     ylabel,
     figsize,
@@ -292,7 +292,14 @@ def _scatter_matplotlib(
             **settings.get_option("plot.scatter.quantiles.kwargs"),
         )
 
-    if slope is not None:
+    if reg_method:
+        if fit_to_quantiles:
+            slope, intercept = _linear_regression(
+                obs=xq, model=yq, reg_method=reg_method
+            )
+        else:
+            slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+
         plt.plot(
             x_trend,
             intercept + slope * x_trend,
@@ -346,8 +353,7 @@ def _scatter_plotly(
     norm,  # TODO not used by plotly, remove or keep for consistency?
     show_hist,
     nbins_hist,
-    intercept,
-    slope,
+    reg_method,
     xlabel,
     ylabel,
     figsize,  # TODO not used by plotly, remove or keep for consistency?
@@ -365,7 +371,14 @@ def _scatter_plotly(
         go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
     ]
 
-    if slope is not None:
+    if reg_method:
+        if fit_to_quantiles:
+            slope, intercept = _linear_regression(
+                obs=xq, model=yq, reg_method=reg_method
+            )
+        else:
+            slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+
         regression_line = go.Scatter(
             x=x_trend,
             y=intercept + slope * x_trend,
@@ -484,7 +497,7 @@ def scatter(
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
     ylim: Optional[Tuple[float, float]] = None,
-    reg_method: str = "ols",
+    reg_method: str | bool = "ols",
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
@@ -535,11 +548,11 @@ def scatter(
         plot range for the observation (xmin, xmax), by default None
     ylim : tuple, optional
         plot range for the model (ymin, ymax), by default None
-    reg_method : str, optional
+    reg_method : str or bool, optional
         method for determining the regression line
         "ols" : ordinary least squares regression
         "odr" : orthogonal distance regression,
-        None : no regression line
+        False : no regression line
         by default "ols"
     title : str, optional
         plot title, by default None
@@ -602,12 +615,6 @@ def scatter(
         # scale Z by sample size
         z = z * len(x) / len(x_sample)
 
-    # linear fit
-    if fit_to_quantiles:
-        slope, intercept = _linear_regression(obs=xq, model=yq, reg_method=reg_method)
-    else:
-        slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
-
     PLOTTING_BACKENDS = {
         "matplotlib": _scatter_matplotlib,
         "plotly": _scatter_plotly,
@@ -630,8 +637,7 @@ def scatter(
         show_points=show_points,
         show_hist=show_hist,
         nbins_hist=nbins_hist,
-        intercept=intercept,
-        slope=slope,
+        reg_method=reg_method,
         xlabel=xlabel,
         ylabel=ylabel,
         figsize=figsize,
