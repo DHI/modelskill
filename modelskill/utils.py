@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Tuple, Optional, Union, Sequence
+from typing import List, Tuple, Sequence
 import warnings
 import numpy as np
 import pandas as pd
@@ -154,13 +154,20 @@ def _get_name(x: int | str | None, valid_names: Sequence[str]) -> str:
     return valid_names[_get_idx(x, valid_names)]
 
 
-def _get_idx(x: Optional[Union[str, int]], valid_names: Sequence[str]) -> int:
+def _get_idx(x: int | str | None, valid_names: Sequence[str]) -> int:
     """Parse name/id from list of valid names (e.g. obs from obs_names), return id"""
+
+    if x is None:
+        if len(valid_names) == 1:
+            return 0
+        else:
+            raise ValueError(
+                f"Multiple items available. Must specify name or index. Available items: {valid_names}"
+            )
+
     n = len(valid_names)
     if n == 0:
         raise ValueError(f"Cannot select {x} from empty list!")
-    if x is None:
-        return 0  # default to first
     elif isinstance(x, str):
         if x in valid_names:
             idx = valid_names.index(x)

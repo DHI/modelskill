@@ -3,7 +3,7 @@ from typing import Optional, Union, get_args
 import mikeio
 import pandas as pd
 
-from ..utils import get_item_name_and_idx, make_unique_index
+from ..utils import make_unique_index, _get_name
 from ..types import Quantity, PointType
 from ..timeseries import TimeSeries  # TODO move to main module
 
@@ -54,15 +54,14 @@ class PointModelResult(TimeSeries):
         # parse item and convert to dataframe
         if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
-            item_name, _ = get_item_name_and_idx(item_names, item)
+            item_name = _get_name(x=item, valid_names=item_names)
             df = data[item_name].to_dataframe()
         elif isinstance(data, mikeio.DataArray):
             if item is None:
                 item_name = data.name
             df = data.to_dataframe()
         elif isinstance(data, pd.DataFrame):
-            item_names = list(data.columns)
-            item_name, _ = get_item_name_and_idx(item_names, item)
+            item_name = _get_name(x=item, valid_names=list(data.columns))
             df = data[[item_name]]
         elif isinstance(data, pd.Series):
             df = pd.DataFrame(data)  # to_frame?
@@ -80,10 +79,7 @@ class PointModelResult(TimeSeries):
             raise ValueError("No data.")
         df.index = make_unique_index(df.index, offset_duplicates=0.001)
 
-        if quantity is None:
-            model_quantity = Quantity.undefined()
-        else:
-            model_quantity = quantity
+        model_quantity = Quantity.undefined() if quantity is None else quantity
 
         super().__init__(data=df, name=name, quantity=model_quantity)
         self.x = x

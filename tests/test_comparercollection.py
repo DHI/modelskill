@@ -162,7 +162,7 @@ def test_save(cc: modelskill.comparison.ComparerCollection, tmp_path):
 
 
 def test_hist(cc):
-    ax = cc.hist()
+    ax = cc.sel(model="m1").hist()
     assert ax is not None
 
 
@@ -201,6 +201,8 @@ def test_add_cc_cc(cc, pc, tc):
 
 
 def test_plots_directional(cc):
+    cc = cc.sel(model="m1")
+
     cc.plot.is_directional = True
 
     ax = cc.plot.scatter()
