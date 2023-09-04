@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, List, Optional, Tuple
+from typing import Union, List, Optional, Tuple, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np  # type: ignore
@@ -236,7 +236,7 @@ class ComparerPlotter:
 
     def qq(
         self,
-        quantiles: Optional[Union[int, List[float]]] = None,
+        quantiles: int | Sequence[float] | None = None,
         title=None,
         ax=None,
         figsize=None,
@@ -367,10 +367,10 @@ class ComparerPlotter:
         self,
         *,
         model=None,
-        bins: Union[int, float] = 20,
-        quantiles: Optional[Union[int, List[float]]] = None,
+        bins: int | float = 20,
+        quantiles: int | Sequence[float] | None = None,
         fit_to_quantiles: bool = False,
-        show_points: Optional[Union[bool, int, float]] = None,
+        show_points: bool | int | float | None = None,
         show_hist: Optional[bool] = None,
         show_density: Optional[bool] = None,
         norm: Optional[colors.Normalize] = None,

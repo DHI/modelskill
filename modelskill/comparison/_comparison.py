@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -382,9 +383,9 @@ def _matched_data_to_xarray(
 
 def _parse_items(
     items: List[str],
-    obs_item: Optional[Union[str, int]] = None,
-    mod_items: Optional[List[Union[str, int]]] = None,
-    aux_items: Optional[List[Union[str, int]]] = None,
+    obs_item: str | int | None = None,
+    mod_items: Optional[List[str | int]] = None,
+    aux_items: Optional[List[str | int]] = None,
 ) -> ItemSelection:
     """Parse items and return observation, model and auxiliary items
     Default behaviour:

@@ -1,6 +1,7 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union, get_args, Optional, List
+from typing import get_args, Optional, List
 import pandas as pd
 
 import mikeio
@@ -33,12 +34,12 @@ class TrackModelResult(ModelResultBase):
     name : Optional[str], optional
         The name of the model result,
         by default None (will be set to file name or item name)
-    item : Optional[Union[str, int]], optional
+    item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
-    x_item : Optional[Union[str, int]], optional
+    x_item : str | int | None, optional
         Item of the first coordinate of positions, by default None
-    y_item : Optional[Union[str, int]], optional
+    y_item : str | int | None, optional
         Item of the second coordinate of positions, by default None
     quantity : Optional[str], optional
         A string to identify the quantity, by default None
@@ -49,10 +50,10 @@ class TrackModelResult(ModelResultBase):
         data: TrackType,
         *,
         name: Optional[str] = None,
-        item: Optional[Union[str, int]] = None,
+        item: str | int | None = None,
         quantity: Optional[Quantity] = None,
-        x_item: Union[str, int] = 0,
-        y_item: Union[str, int] = 1,
+        x_item: str | int = 0,
+        y_item: str | int = 1,
     ) -> None:
         assert isinstance(
             data, get_args(TrackType)

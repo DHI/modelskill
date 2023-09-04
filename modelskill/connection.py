@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 import os
 from pathlib import Path
@@ -70,9 +71,9 @@ ObsInputType = Union[
 def from_matched(
     data: Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset],
     *,
-    obs_item: Optional[Union[str, int]] = 0,
-    mod_items: Optional[Iterable[Union[str, int]]] = None,
-    aux_items: Optional[Iterable[Union[str, int]]] = None,
+    obs_item: str | int | None = 0,
+    mod_items: Optional[Iterable[str | int]] = None,
+    aux_items: Optional[Iterable[str | int]] = None,
     quantity: Optional[Quantity] = None,
     name: Optional[str] = None,
     x: Optional[float] = None,
@@ -242,7 +243,9 @@ def _parse_single_obs(
             return PointObservation(obs, item=item)
 
 
-def _parse_models(mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None):
+def _parse_models(
+    mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None
+):
     """Return a list of ModelResult objects"""
     if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
@@ -252,7 +255,9 @@ def _parse_models(mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[Geo
         raise ValueError(f"Unknown mod type {type(mod)}")
 
 
-def _parse_single_model(mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None):
+def _parse_single_model(
+    mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None
+):
     if isinstance(mod, protocols.ModelResult):
         if item is not None:
             raise ValueError(

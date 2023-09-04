@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, List, Union, Optional, Tuple
+from typing import Any, List, Union, Optional, Tuple, Sequence
 from matplotlib.axes import Axes  # type: ignore
 
 import matplotlib.pyplot as plt  # type: ignore
@@ -28,10 +28,10 @@ class ComparerCollectionPlotter:
         self,
         *,
         model=None,
-        bins: Union[int, float] = 20,
-        quantiles: Optional[Union[int, List[float]]] = None,
+        bins: int | float = 20,
+        quantiles: int | Sequence[float] | None = None,
         fit_to_quantiles: bool = False,
-        show_points: Optional[Union[bool, int, float]] = None,
+        show_points: bool | int | float | None = None,
         show_hist: Optional[bool] = None,
         show_density: Optional[bool] = None,
         backend: str = "matplotlib",

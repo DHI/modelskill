@@ -126,7 +126,7 @@ def _xyticks(n_sectors=8, lim=None):
 
 
 def sample_points(
-    x: np.ndarray, y: np.ndarray, include: Optional[Union[bool, int, float]] = None
+    x: np.ndarray, y: np.ndarray, include: bool | int | float | None = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Sample points to be plotted
 
@@ -464,7 +464,7 @@ def _reglabel(slope: float, intercept: float, fit_to_quantiles: bool) -> str:
     return f"{fit}: y={slope:.2f}x{sign}{intercept:.2f}"
 
 
-def _get_bins(bins: Union[int, float], xymin, xymax) -> Tuple[int, float]:
+def _get_bins(bins: int | float, xymin, xymax) -> Tuple[int, float]:
     assert xymax >= xymin
     xyspan = xymax - xymin
 
@@ -486,10 +486,10 @@ def scatter(
     x: np.ndarray,
     y: np.ndarray,
     *,
-    bins: Union[int, float] = 20,
-    quantiles: Optional[Union[int, List[float]]] = None,
+    bins: int | float = 20,
+    quantiles: int | Sequence[float] | None = None,
     fit_to_quantiles: bool = False,
-    show_points: Optional[Union[bool, int, float]] = None,
+    show_points: bool | int | float | None = None,
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
     norm: Optional[colors.Normalize] = None,

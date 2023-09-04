@@ -1,5 +1,6 @@
+from __future__ import annotations
 from pathlib import Path
-from typing import Optional, Union, get_args
+from typing import Optional, get_args
 import mikeio
 import pandas as pd
 
@@ -23,7 +24,7 @@ class PointModelResult(TimeSeries):
         first coordinate of point position, by default None
     y : float, optional
         second coordinate of point position, by default None
-    item : Optional[Union[str, int]], optional
+    item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
@@ -37,7 +38,7 @@ class PointModelResult(TimeSeries):
         name: Optional[str] = None,  # TODO should maybe be required?
         x: Optional[float] = None,
         y: Optional[float] = None,
-        item: Optional[Union[str, int]] = None,
+        item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
