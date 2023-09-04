@@ -7,6 +7,8 @@ from .. import metrics as mtr
 from ._utils import _get_id
 from ..plot import (
     _get_fig_ax,
+    _xtick_directional,
+    _ytick_directional,
     colors,
     quantiles_xy,
     scatter,
@@ -21,6 +23,7 @@ class ComparerPlotter:
 
     def __init__(self, comparer):
         self.comparer = comparer
+        self.is_directional = False
 
     def __call__(self, *args, **kwargs):
         """Plot scatter plot of modelled vs observed data"""
@@ -69,6 +72,8 @@ class ComparerPlotter:
             ax.set_ylabel(cmp.unit_text)
             ax.legend([*cmp.mod_names, cmp.obs_name])
             ax.set_ylim(ylim)
+            if self.is_directional:
+                _ytick_directional(ax, ylim)
             plt.title(title)
             return ax
 
@@ -166,6 +171,9 @@ class ComparerPlotter:
         else:
             plt.ylabel("count")
 
+        if self.is_directional:
+            _xtick_directional(ax)
+
         return ax
 
     def kde(self, ax=None, **kwargs):
@@ -210,17 +218,18 @@ class ComparerPlotter:
 
         ax.legend()
 
-        # remove y-axis
+        # remove y-axis, ticks and label
         ax.yaxis.set_visible(False)
-        # remove y-ticks
         ax.tick_params(axis="y", which="both", length=0)
-        # remove y-label
         ax.set_ylabel("")
 
         # remove box around plot
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["left"].set_visible(False)
+
+        if self.is_directional:
+            _xtick_directional(ax)
 
         return ax
 
@@ -302,6 +311,11 @@ class ComparerPlotter:
         ax.set_xlabel("Observation, " + cmp.unit_text)
         ax.set_ylabel("Model, " + cmp.unit_text)
         ax.set_title(title or f"Q-Q plot for {cmp.name}")
+
+        if self.is_directional:
+            _xtick_directional(ax)
+            _ytick_directional(ax)
+
         return ax
 
     def box(self, ax=None, title=None, **kwargs):
@@ -342,6 +356,10 @@ class ComparerPlotter:
         df.boxplot(ax=ax, **kwargs)
         ax.set_ylabel(cmp.unit_text)
         ax.set_title(title or cmp.name)
+
+        if self.is_directional:
+            _ytick_directional(ax)
+
         return ax
 
     def scatter(
@@ -411,6 +429,7 @@ class ComparerPlotter:
             method for determining the regression line
             "ols" : ordinary least squares regression
             "odr" : orthogonal distance regression,
+            None : no regression line
             by default "ols"
         title : str, optional
             plot title, by default None
@@ -464,6 +483,11 @@ class ComparerPlotter:
             except IndexError:
                 units = ""  # Dimensionless
 
+        if self.is_directional:
+            # hide quantiles and regression line
+            quantiles = 0
+            reg_method = None
+
         ax = scatter(
             x=x,
             y=y,
@@ -486,6 +510,11 @@ class ComparerPlotter:
             units=units,
             **kwargs,
         )
+
+        if backend == "matplotlib" and self.is_directional:
+            _xtick_directional(ax, xlim)
+            _ytick_directional(ax, ylim)
+
         return ax
 
     def taylor(
@@ -576,3 +605,11 @@ class ComparerPlotter:
         plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
         plt.title(title)
         plt.xlabel(f"Residuals of {self.comparer.unit_text}")
+        ax = plt.gca()
+
+        if self.is_directional:
+            ticks = np.linspace(-180, 180, 9)
+            ax.set_xticks(ticks)
+            ax.set_xlim(-180, 180)
+
+        return ax

@@ -249,6 +249,41 @@ def test_minimal_plots(pt_df):
     assert "m2" in ax.get_title()
 
 
+def test_plots_directional(pt_df):
+    data = xr.Dataset(pt_df)
+    data.attrs["quantity_name"] = "Waterlevel"
+    data["Observation"].attrs["kind"] = "observation"
+    data["Observation"].attrs["unit"] = "m"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "mini"
+    cmp = Comparer.from_matched_data(data=data)
+
+    cmp.plot.is_directional = True
+
+    ax = cmp.plot.scatter()
+    assert "m1" in ax.get_title()
+    assert ax.get_xlim() == (0.0, 360.0)
+    assert ax.get_ylim() == (0.0, 360.0)
+    assert len(ax.get_legend().get_texts()) == 1  # no reg line or qq
+
+    ax = cmp.plot.kde()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    ax = cmp.plot.box()
+    assert ax is not None
+    assert ax.get_ylim() == (0.0, 360.0)
+
+    ax = cmp.plot.hist()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    ax = cmp.plot.timeseries()
+    assert ax is not None
+    assert ax.get_ylim() == (0.0, 360.0)
+
+
 def test_multiple_forecasts_matched_data():
     # an example on how a forecast dataset could be constructed
     df = pd.DataFrame(

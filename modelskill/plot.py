@@ -97,6 +97,33 @@ def _get_fig_ax(ax=None, figsize=None):
     return fig, ax
 
 
+def _xtick_directional(ax, xlim=None):
+    """Set x-ticks for directional data"""
+    ticks = ticks = _xyticks(lim=xlim)
+    if len(ticks) > 2:
+        ax.set_xticks(ticks)
+    if xlim is None:
+        ax.set_xlim(0, 360)
+
+
+def _ytick_directional(ax, ylim=None):
+    """Set y-ticks for directional data"""
+    ticks = _xyticks(lim=ylim)
+    if len(ticks) > 2:
+        ax.set_yticks(ticks)
+    if ylim is None:
+        ax.set_ylim(0, 360)
+
+
+def _xyticks(n_sectors=8, lim=None):
+    """Set y-ticks for directional data"""
+    # labels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
+    ticks = np.linspace(0, 360, n_sectors + 1)
+    if lim is not None:
+        ticks = ticks[(ticks >= lim[0]) & (ticks <= lim[1])]
+    return ticks
+
+
 def sample_points(
     x: np.ndarray, y: np.ndarray, include: Optional[Union[bool, int, float]] = None
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -251,28 +278,30 @@ def _scatter_matplotlib(
             norm=norm_,
             **kwargs,
         )
-    plt.plot(
-        xq,
-        yq,
-        options.plot.scatter.quantiles.marker,
-        label=options.plot.scatter.quantiles.label,
-        c=options.plot.scatter.quantiles.color,
-        zorder=4,
-        markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
-        markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
-        markersize=options.plot.scatter.quantiles.markersize,
-        **settings.get_option("plot.scatter.quantiles.kwargs"),
-    )
+    if len(xq) > 0:
+        plt.plot(
+            xq,
+            yq,
+            options.plot.scatter.quantiles.marker,
+            label=options.plot.scatter.quantiles.label,
+            c=options.plot.scatter.quantiles.color,
+            zorder=4,
+            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
+            markersize=options.plot.scatter.quantiles.markersize,
+            **settings.get_option("plot.scatter.quantiles.kwargs"),
+        )
 
-    plt.plot(
-        x_trend,
-        intercept + slope * x_trend,
-        **settings.get_option("plot.scatter.reg_line.kwargs"),
-        label=_reglabel(
-            slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
-        ),
-        zorder=2,
-    )
+    if slope is not None:
+        plt.plot(
+            x_trend,
+            intercept + slope * x_trend,
+            **settings.get_option("plot.scatter.reg_line.kwargs"),
+            label=_reglabel(
+                slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
+            ),
+            zorder=2,
+        )
 
     if show_hist:
         plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
@@ -336,16 +365,17 @@ def _scatter_plotly(
         go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
     ]
 
-    regression_line = go.Scatter(
-        x=x_trend,
-        y=intercept + slope * x_trend,
-        name=_reglabel(
-            slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
-        ),
-        mode="lines",
-        line=dict(color="red"),
-    )
-    data.append(regression_line)
+    if slope is not None:
+        regression_line = go.Scatter(
+            x=x_trend,
+            y=intercept + slope * x_trend,
+            name=_reglabel(
+                slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
+            ),
+            mode="lines",
+            line=dict(color="red"),
+        )
+        data.append(regression_line)
 
     if show_hist:
         data.append(
@@ -380,18 +410,19 @@ def _scatter_plotly(
                 marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
             )
         )
-    data.append(
-        go.Scatter(
-            x=xq,
-            y=yq,
-            name=options.plot.scatter.quantiles.label,
-            mode="markers",
-            marker_symbol="x",
-            marker_color=options.plot.scatter.quantiles.color,
-            marker_line_color="midnightblue",
-            marker_line_width=0.6,
+    if len(xq) > 0:
+        data.append(
+            go.Scatter(
+                x=xq,
+                y=yq,
+                name=options.plot.scatter.quantiles.label,
+                mode="markers",
+                marker_symbol="x",
+                marker_color=options.plot.scatter.quantiles.color,
+                marker_line_color="midnightblue",
+                marker_line_width=0.6,
+            )
         )
-    )
 
     defaults = {"width": 600, "height": 600}
     defaults = {**defaults, **kwargs}
@@ -508,6 +539,7 @@ def scatter(
         method for determining the regression line
         "ols" : ordinary least squares regression
         "odr" : orthogonal distance regression,
+        None : no regression line
         by default "ols"
     title : str, optional
         plot title, by default None

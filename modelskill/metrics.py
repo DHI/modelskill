@@ -621,7 +621,9 @@ def _linear_regression(
     if len(obs) == 0:
         return np.nan, np.nan  # TODO raise error?
 
-    if reg_method == "ols":
+    if reg_method is None:
+        slope, intercept = None, None
+    elif reg_method == "ols":
         from scipy.stats import linregress as _linregress
 
         reg = _linregress(obs, model)
