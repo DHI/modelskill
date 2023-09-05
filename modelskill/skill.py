@@ -1,15 +1,11 @@
+from __future__ import annotations
 import sys
-from typing import Union
 import warnings
 from collections.abc import Iterable
 import numpy as np
 import pandas as pd
 
-# import matplotlib as mpl
 from matplotlib import pyplot as plt
-
-# from pandas.plotting import parallel_coordinates
-# from typing import List, Union
 
 
 class SkillDataFrame:
@@ -111,7 +107,7 @@ class AggregatedSkillPlotter:
             if field is not None:
                 kwargs["title"] = field
 
-    def _get_plot_df(self, field: str, level: Union[int, str] = 0) -> pd.DataFrame:
+    def _get_plot_df(self, field: str, level: int | str = 0) -> pd.DataFrame:
         s = self.agg_skill
 
         # raise error if field is not a column in the dataframe
@@ -129,7 +125,7 @@ class AggregatedSkillPlotter:
     def line(
         self,
         field: str,
-        level: Union[int, str] = 0,
+        level: int | str = 0,
         **kwargs,
     ):
         """plot statistic as a lines using pd.DataFrame.plot.line()
@@ -168,7 +164,7 @@ class AggregatedSkillPlotter:
                 ax.set_xticklabels(xlabels, rotation=90)
         return axes
 
-    def bar(self, field: str, level: Union[int, str] = 0, **kwargs):
+    def bar(self, field: str, level: int | str = 0, **kwargs):
         """plot statistic as bar chart using pd.DataFrame.plot.bar()
 
         Parameters
@@ -197,7 +193,7 @@ class AggregatedSkillPlotter:
         self._field_as_title(field, kwargs)
         return df.plot.bar(**kwargs)
 
-    def barh(self, field: str, level: Union[int, str] = 0, **kwargs):
+    def barh(self, field: str, level: int | str = 0, **kwargs):
         """plot statistic as horizontal bar chart using pd.DataFrame.plot.barh()
 
         Parameters
@@ -511,19 +507,16 @@ class AggregatedSkill(SkillDataFrame):
 
     # TODO remove plot_* methods in v1.1
     def plot_line(self, field, level=0, **kwargs):
-
         warnings.warn(
             "plot_line() is deprecated, use plot.line() instead", FutureWarning
         )
         return self.plot.line(field, level, **kwargs)
 
     def plot_bar(self, field, level=0, **kwargs):
-
         warnings.warn("plot_bar() is deprecated, use plot.bar() instead", FutureWarning)
         return self.plot.bar(field, level, **kwargs)
 
     def plot_barh(self, field, level=0, **kwargs):
-
         warnings.warn(
             "plot_barh() is deprecated, use plot.barh() instead", FutureWarning
         )
@@ -539,7 +532,6 @@ class AggregatedSkill(SkillDataFrame):
         title=None,
         cmap=None,
     ):
-
         warnings.warn(
             "plot_grid() is deprecated, use plot.grid() instead", FutureWarning
         )

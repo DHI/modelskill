@@ -1,5 +1,7 @@
 
 
+from typing import Optional
+
 class SpatialSkill:
     """
     Spatial skill object for analysis and visualization of spatially
@@ -64,7 +66,7 @@ class SpatialSkill:
         if "n" in self.ds:
             return self.ds.n
 
-    def __init__(self, ds, name: str = None):
+    def __init__(self, ds, name: Optional[str] = None):
         # TODO: add type and unit info; add domain to plot outline on map
         self.ds = ds
         self.name = name

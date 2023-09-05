@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -27,7 +28,7 @@ from ._comparer_plotter import ComparerPlotter
 from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
-from ._utils import _get_name
+from ..utils import _get_name
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
@@ -133,7 +134,7 @@ class ItemSelection:
 
     @property
     def all(self) -> Sequence[str]:
-        return [self.obs] + self.model + self.aux
+        return [self.obs] + list(self.model) + list(self.aux)
 
 
 def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
@@ -265,8 +266,8 @@ def _add_spatial_grid_to_df(
             bins_y = bins
     else:
         # bins from binsize
-        x_ptp = df.x.values.ptp()
-        y_ptp = df.y.values.ptp()
+        x_ptp = df.x.values.ptp()  # type: ignore
+        y_ptp = df.y.values.ptp()  # type: ignore
         nx = int(np.ceil(x_ptp / binsize))
         ny = int(np.ceil(y_ptp / binsize))
         x_mean = np.round(df.x.mean())
@@ -342,7 +343,7 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
 
 
 def _matched_data_to_xarray(
-    data: pd.DataFrame,
+    df: pd.DataFrame,
     obs_item=None,
     mod_items=None,
     aux_items=None,
@@ -352,41 +353,39 @@ def _matched_data_to_xarray(
     z=None,
 ):
     """Convert matched data to accepted xarray.Dataset format"""
-    if isinstance(data, pd.DataFrame):
-        cols = data.columns
-        items = _parse_items(cols, obs_item, mod_items, aux_items)
-        data = data[items.all]
-        data.index.name = "time"
-        data.rename(columns={items.obs: "Observation"}, inplace=True)
-        data = data.to_xarray()
-    else:
-        raise ValueError(f"Unknown data type '{type(data)}' (pd.DataFrame)")
+    assert isinstance(df, pd.DataFrame)
+    cols = list(df.columns)
+    items = _parse_items(cols, obs_item, mod_items, aux_items)
+    df = df[items.all]
+    df.index.name = "time"
+    df.rename(columns={items.obs: "Observation"}, inplace=True)
+    ds = df.to_xarray()
 
-    data.attrs["name"] = name if name is not None else items.obs
-    data["Observation"].attrs["kind"] = "observation"
+    ds.attrs["name"] = name if name is not None else items.obs
+    ds["Observation"].attrs["kind"] = "observation"
     for m in items.model:
-        data[m].attrs["kind"] = "model"
+        ds[m].attrs["kind"] = "model"
     for a in items.aux:
-        data[a].attrs["kind"] = "auxiliary"
+        ds[a].attrs["kind"] = "auxiliary"
 
     if x is not None:
-        data["x"] = x
-        data["x"].attrs["kind"] = "position"
+        ds["x"] = x
+        ds["x"].attrs["kind"] = "position"
     if y is not None:
-        data["y"] = y
-        data["y"].attrs["kind"] = "position"
+        ds["y"] = y
+        ds["y"].attrs["kind"] = "position"
     if z is not None:
-        data["z"] = z
-        data["z"].attrs["kind"] = "position"
+        ds["z"] = z
+        ds["z"].attrs["kind"] = "position"
 
-    return data
+    return ds
 
 
 def _parse_items(
-    items: List[Union[str, int]],
-    obs_item: Optional[Union[str, int]] = None,
-    mod_items: Optional[List[Union[str, int]]] = None,
-    aux_items: Optional[List[Union[str, int]]] = None,
+    items: List[str],
+    obs_item: str | int | None = None,
+    mod_items: Optional[List[str | int]] = None,
+    aux_items: Optional[List[str | int]] = None,
 ) -> ItemSelection:
     """Parse items and return observation, model and auxiliary items
     Default behaviour:
@@ -396,44 +395,33 @@ def _parse_items(
 
     Both integer and str are accepted as items. If str, it must be a key in data.
     """
-    items = list(items)
     assert len(items) > 1, "data must contain at least two items"
     if obs_item is None:
-        obs_item = items[0]
+        obs_name: str = items[0]
     else:
-        obs_item = _get_name(obs_item, items)
+        obs_name = _get_name(obs_item, items)
 
     # Check existance of items and convert to names
     if mod_items is not None:
-        mod_items = [_get_name(m, items) for m in mod_items]
+        mod_names = [_get_name(m, items) for m in mod_items]
     if aux_items is not None:
-        aux_items = [_get_name(a, items) for a in aux_items]
+        aux_names = [_get_name(a, items) for a in aux_items]
+    else:
+        aux_names = []
 
-    # Check overlap and raise errors if there's any
-    if mod_items is not None and obs_item in mod_items:
-        raise ValueError(f"obs_item {obs_item} should not be in mod_items")
-    if aux_items is not None and obs_item in aux_items:
-        raise ValueError(f"obs_item {obs_item} should not be in aux_items")
-    if mod_items is not None and aux_items is not None:
-        overlapping_items = set(mod_items) & set(aux_items)
-        if overlapping_items:
-            raise ValueError(
-                f"mod_items and aux_items should not have overlapping items. Overlapping items: {overlapping_items}"
-            )
-
-    items = list(items)
-    items.remove(obs_item)
+    items.remove(obs_name)
 
     if mod_items is None:
-        mod_items = items
-        if aux_items is not None:
-            mod_items = [m for m in mod_items if m not in aux_items]
+        mod_names = list(set(items) - set(aux_names))
     if aux_items is None:
-        aux_items = [m for m in items if m not in mod_items]
+        aux_names = list(set(items) - set(mod_names))
 
-    assert len(mod_items) > 0, "no model items were found! Must be at least one"
+    assert len(mod_names) > 0, "no model items were found! Must be at least one"
+    assert obs_name not in mod_names, "observation item must not be a model item"
+    assert obs_name not in aux_names, "observation item must not be an auxiliary item"
+    assert isinstance(obs_name, str), "observation item must be a string"
 
-    return ItemSelection(obs=obs_item, model=mod_items, aux=aux_items)
+    return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
 
 
 class Comparer:
@@ -576,7 +564,7 @@ class Comparer:
         if gtype == "point":
             data["x"] = observation.x
             data["y"] = observation.y
-            data["z"] = observation.z
+            data["z"] = observation.z  # type: ignore
 
         data.attrs["name"] = observation.name
         data.attrs["quantity_name"] = observation.quantity.name
@@ -933,11 +921,11 @@ class Comparer:
 
     def sel(
         self,
-        model: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        time: TimeTypes = None,
-        area: List[float] = None,
+        model: Optional[IdOrNameTypes] = None,
+        start: Optional[TimeTypes] = None,
+        end: Optional[TimeTypes] = None,
+        time: Optional[TimeTypes] = None,
+        area: Optional[List[float]] = None,
     ) -> "Comparer":
         """Select data based on model, time and/or area.
 
@@ -965,24 +953,25 @@ class Comparer:
         d = self.data
         raw_mod_data = self.raw_mod_data
         if model is not None:
-            models = [model] if np.isscalar(model) else model
-            models = [_get_name(m, self.mod_names) for m in models]
-            dropped_models = [m for m in self.mod_names if m not in models]
+            if isinstance(model, (str, int)):
+                models = [model]
+            else:
+                models = list(model)
+            mod_names: List[str] = [_get_name(m, self.mod_names) for m in models]
+            dropped_models = [m for m in self.mod_names if m not in mod_names]
             d = d.drop_vars(dropped_models)
-            raw_mod_data = {m: raw_mod_data[m] for m in models}
+            raw_mod_data = {m: raw_mod_data[m] for m in mod_names}
         if (start is not None) or (end is not None):
             # TODO: can this be done without to_index? (simplify)
-            d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)
+            d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)  # type: ignore
 
             # Note: if user asks for a specific time, we also filter raw
-            raw_mod_data = {
-                m: raw_mod_data[m].loc[start:end] for m in raw_mod_data.keys()
-            }
+            raw_mod_data = {k: v.loc[start:end] for k, v in raw_mod_data.items()}  # type: ignore
         if time is not None:
             d = d.sel(time=time)
 
             # Note: if user asks for a specific time, we also filter raw
-            raw_mod_data = {m: raw_mod_data[m].loc[time] for m in raw_mod_data.keys()}
+            raw_mod_data = {k: v.loc[time] for k, v in raw_mod_data.items()}
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area
@@ -998,7 +987,7 @@ class Comparer:
                 d = d if mask else d.isel(time=slice(None, 0))
             else:
                 d = d.isel(time=mask)
-        return self.__class__.from_matched_data(d, raw_mod_data)
+        return self.__class__.from_matched_data(data=d, raw_mod_data=raw_mod_data)
 
     def where(
         self,
@@ -1047,8 +1036,8 @@ class Comparer:
 
     def skill(
         self,
-        by: Union[str, List[str]] = None,
-        metrics: list = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
         **kwargs,
     ) -> AggregatedSkill:
         """Skill assessment of model(s)
@@ -1172,8 +1161,8 @@ class Comparer:
             end=end,
             area=area,
         )
-        if s is None:
-            return
+        # if s is None:
+        #    return
         df = s.df
         values = df[metric.__name__].values
         if len(values) == 1:
@@ -1183,10 +1172,10 @@ class Comparer:
     def spatial_skill(
         self,
         bins=5,
-        binsize: float = None,
-        by: Union[str, List[str]] = None,
-        metrics: list = None,
-        n_min: int = None,
+        binsize: Optional[float] = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
+        n_min: Optional[int] = None,
         **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
@@ -1267,11 +1256,11 @@ class Comparer:
         # n_obs=1 because we only have one observation (**SingleObsComparer**)
         by = _parse_groupby(by=by, n_models=cmp.n_models, n_obs=1)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
-            by = [by]
-        if "x" not in by:
-            by.insert(0, "x")
-        if "y" not in by:
-            by.insert(0, "y")
+            by = [by]  # type: ignore
+        if "x" not in by:  # type: ignore
+            by.insert(0, "x")  # type: ignore
+        if "y" not in by:  # type: ignore
+            by.insert(0, "y")  # type: ignore
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)

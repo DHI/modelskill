@@ -16,7 +16,7 @@ from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, reset_option
 
-from ._utils import _get_id, _get_name
+from ..utils import _get_idx, _get_name
 from ._comparison import (
     Comparer,
     IdOrNameTypes,
@@ -27,6 +27,7 @@ from ._comparison import (
     _add_spatial_grid_to_df,
 )
 from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
+
 
 def _get_deprecated_obs_var_args(kwargs):
     observation, variable = None, None
@@ -51,6 +52,7 @@ def _get_deprecated_obs_var_args(kwargs):
 
     return observation, variable
 
+
 def _all_df_template(n_variables: int = 1):
     template = {
         "model": pd.Series([], dtype="category"),
@@ -67,7 +69,7 @@ def _all_df_template(n_variables: int = 1):
     return res
 
 
-class ComparerCollection(Mapping, Sequence):
+class ComparerCollection(Mapping):
     """
     Collection of comparers, constructed by calling the `modelskill.compare` method.
 
@@ -101,20 +103,22 @@ class ComparerCollection(Mapping, Sequence):
         if isinstance(comparer, (ComparerCollection, Sequence)):
             for c in comparer:
                 self._add_comparer(c)
-        else:
+        elif isinstance(comparer, Comparer):
             self._add_comparer(comparer)
+        else:
+            pass
 
-    def _add_comparer(self, comparer: Comparer) -> None:
-        if comparer is None:
+    def _add_comparer(self, comparer: Union[Comparer, None]) -> None:
+        if comparer is None:  # TODO please don't pass None
             return
         assert isinstance(
             comparer, Comparer
-        ), f"comparer must be a SingleObsComparer, not {type(comparer)}"
+        ), f"comparer must be a Comparer, not {type(comparer)}"
         if comparer.name in self.comparers:
             # comparer with this name already exists!
             # maybe the user is trying to add a new model
             # or a new time period
-            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer
+            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer  # type: ignore
         else:
             self.comparers[comparer.name] = comparer
 
@@ -272,13 +276,13 @@ class ComparerCollection(Mapping, Sequence):
 
     def sel(
         self,
-        model: IdOrNameTypes = None,
-        observation: IdOrNameTypes = None,
-        variable: IdOrNameTypes = None,
-        start: TimeTypes = None,
-        end: TimeTypes = None,
-        time: TimeTypes = None,
-        area: List[float] = None,
+        model: Optional[IdOrNameTypes] = None,
+        observation: Optional[IdOrNameTypes] = None,
+        variable: Optional[IdOrNameTypes] = None,
+        start: Optional[TimeTypes] = None,
+        end: Optional[TimeTypes] = None,
+        time: Optional[TimeTypes] = None,
+        area: Optional[List[float]] = None,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
 
@@ -304,27 +308,31 @@ class ComparerCollection(Mapping, Sequence):
         ComparerCollection
             New ComparerCollection with selected data.
         """
-
+        # TODO is this really necessary to do both in ComparerCollection and Comparer?
         if model is not None:
-            model = [model] if np.isscalar(model) else model
-            model = [_get_name(m, self.mod_names) for m in model]
+            if isinstance(model, (str, int)):
+                models = [model]
+            else:
+                models = list(model)
+            mod_names: List[str] = [_get_name(m, self.mod_names) for m in models]
         if observation is None:
             observation = self.obs_names
         else:
-            observation = [observation] if np.isscalar(observation) else observation
-            observation = [_get_name(o, self.obs_names) for o in observation]
+            observation = [observation] if np.isscalar(observation) else observation  # type: ignore
+            observation = [_get_name(o, self.obs_names) for o in observation]  # type: ignore
 
         if (variable is not None) and (self.n_variables > 1):
-            variable = [variable] if np.isscalar(variable) else variable
-            variable = [_get_name(v, self.var_names) for v in variable]
+            variable = [variable] if np.isscalar(variable) else variable  # type: ignore
+            variable = [_get_name(v, self.var_names) for v in variable]  # type: ignore
         else:
             variable = self.var_names
 
         cc = ComparerCollection()
         for cmp in self.comparers.values():
-            cmp: Comparer
             if cmp.name in observation and cmp.quantity_name in variable:
-                thismodel = [m for m in model if m in cmp.mod_names] if model else None
+                thismodel = (
+                    [m for m in mod_names if m in cmp.mod_names] if model else None
+                )
                 if (thismodel is not None) and (len(thismodel) == 0):
                     continue
                 cmpsel = cmp.sel(
@@ -363,7 +371,7 @@ class ComparerCollection(Mapping, Sequence):
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
         **kwargs,
-    ) -> AggregatedSkill:
+    ) -> Optional[AggregatedSkill]:
         """Aggregated skill assessment of model(s)
 
         Parameters
@@ -424,7 +432,7 @@ class ComparerCollection(Mapping, Sequence):
         )
         if cmp.n_points == 0:
             warnings.warn("No data!")
-            return
+            return None
 
         df = cmp.to_dataframe()
         n_models = cmp.n_models  # len(df.model.unique())
@@ -458,10 +466,10 @@ class ComparerCollection(Mapping, Sequence):
     def spatial_skill(
         self,
         bins=5,
-        binsize: float = None,
-        by: Union[str, List[str]] = None,
-        metrics: list = None,
-        n_min: int = None,
+        binsize: Optional[float] = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
+        n_min: Optional[int] = None,
         **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
@@ -541,11 +549,11 @@ class ComparerCollection(Mapping, Sequence):
 
         by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
-            by = [by]
-        if "x" not in by:
-            by.insert(0, "x")
-        if "y" not in by:
-            by.insert(0, "y")
+            by = [by]  # type: ignore
+        if "x" not in by:  # type: ignore
+            by.insert(0, "x")  # type: ignore
+        if "y" not in by:  # type: ignore
+            by.insert(0, "y")  # type: ignore
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
@@ -571,7 +579,6 @@ class ComparerCollection(Mapping, Sequence):
         skill_table=None,
         **kwargs,
     ):
-
         warnings.warn("scatter is deprecated, use plot.scatter instead", FutureWarning)
 
         # TODO remove in v1.1
@@ -579,11 +586,11 @@ class ComparerCollection(Mapping, Sequence):
         observation, variable = _get_deprecated_obs_var_args(kwargs)
 
         # select model
-        mod_id = _get_id(model, self.mod_names)
+        mod_id = _get_idx(model, self.mod_names)
         mod_name = self.mod_names[mod_id]
 
         # select variable
-        var_id = _get_id(variable, self.var_names)
+        var_id = _get_idx(variable, self.var_names)
         var_name = self.var_names[var_id]
 
         # filter data
@@ -618,10 +625,10 @@ class ComparerCollection(Mapping, Sequence):
     def mean_skill(
         self,
         *,
-        weights: Union[str, List[float], Dict[str, float]] = None,
-        metrics: list = None,
+        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
+        metrics: Optional[list] = None,
         **kwargs,
-    ) -> AggregatedSkill:
+    ) -> Optional[AggregatedSkill]:  # TODO raise error if no data?
         """Weighted mean of skills
 
         First, the skill is calculated per observation,
@@ -681,7 +688,7 @@ class ComparerCollection(Mapping, Sequence):
         )
         if cmp.n_points == 0:
             warnings.warn("No data!")
-            return
+            return None
 
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
@@ -693,13 +700,13 @@ class ComparerCollection(Mapping, Sequence):
         # s = self.skill(df=df, metrics=metrics)
         s = cmp.skill(metrics=metrics)
         if s is None:
-            return
+            return None
         skilldf = s.df
 
         # weights
         weights = cmp._parse_weights(weights, s.obs_names)
         skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, len(mod_names))
+            skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
         )
 
         def weighted_mean(x):
@@ -708,8 +715,8 @@ class ComparerCollection(Mapping, Sequence):
         # group by
         by = cmp._mean_skill_by(skilldf, mod_names, var_names)
         agg = {"n": np.sum}
-        for metric in metrics:
-            agg[metric.__name__] = weighted_mean
+        for metric in metrics:  # type: ignore
+            agg[metric.__name__] = weighted_mean  # type: ignore
         res = skilldf.groupby(by).agg(agg)
 
         # output
@@ -719,9 +726,9 @@ class ComparerCollection(Mapping, Sequence):
     def mean_skill_points(
         self,
         *,
-        metrics: list = None,
+        metrics: Optional[list] = None,
         **kwargs,
-    ) -> AggregatedSkill:
+    ) -> Optional[AggregatedSkill]:  # TODO raise error if no data?
         """Mean skill of all observational points
 
         All data points are pooled (disregarding which observation they belong to),
@@ -773,7 +780,7 @@ class ComparerCollection(Mapping, Sequence):
         )
         if cmp.n_points == 0:
             warnings.warn("No data!")
-            return
+            return None
 
         dfall = cmp.to_dataframe()
         dfall["observation"] = "all"
@@ -846,7 +853,7 @@ class ComparerCollection(Mapping, Sequence):
         weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         metric=mtr.rmse,
         **kwargs,
-    ) -> float:
+    ) -> Optional[float]:  # TODO raise error if no data?
         """Weighted mean score of model(s) over all observations
 
         Wrapping mean_skill() with a single metric.
@@ -901,8 +908,9 @@ class ComparerCollection(Mapping, Sequence):
         if model is None:
             models = self.mod_names
         else:
-            models = [model] if np.isscalar(model) else model
-            models = [_get_name(m, self.mod_names) for m in models]
+            # TODO: these two lines looks familiar, extract to function
+            models = [model] if np.isscalar(model) else model  # type: ignore
+            models = [_get_name(m, self.mod_names) for m in models]  # type: ignore
         n_models = len(models)
 
         cmp = self.sel(
@@ -916,11 +924,11 @@ class ComparerCollection(Mapping, Sequence):
 
         if cmp.n_points == 0:
             warnings.warn("No data!")
-            return
+            return None
 
         skill = cmp.mean_skill(weights=weights, metrics=[metric])
         if skill is None:
-            return
+            return None
 
         df = skill.df
 
@@ -947,7 +955,6 @@ class ComparerCollection(Mapping, Sequence):
         title="Taylor diagram",
         **kwargs,
     ):
-
         warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
 
         model, start, end, area = _get_deprecated_args(kwargs)
@@ -1031,7 +1038,6 @@ class ComparerCollection(Mapping, Sequence):
         return ComparerCollection(comparers)
 
     def kde(self, ax=None, **kwargs):
-
         warnings.warn("kde is deprecated, use plot.kde instead", FutureWarning)
 
         return self.plot.kde(ax=ax, **kwargs)
@@ -1045,7 +1051,6 @@ class ComparerCollection(Mapping, Sequence):
         alpha=0.5,
         **kwargs,
     ):
-
         warnings.warn("hist is deprecated, use plot.hist instead", FutureWarning)
 
         return self.plot.hist(

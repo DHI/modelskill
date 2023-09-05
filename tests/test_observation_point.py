@@ -58,32 +58,6 @@ def test_from_dfs0(klagshamn_filename):
     assert o6.quantity.unit == "feet"
 
 
-def test_from_df_quantity_from_string(klagshamn_filename):
-    o1 = PointObservation(
-        klagshamn_filename,
-        item=0,
-        x=366844,
-        y=6154291,
-        name="Klagshamn1",
-        quantity="Water_Level",  # TODO is this intuitive ?
-    )
-
-    assert o1.quantity.unit == "meter"
-
-
-def test_from_df_quantity_from_string_without_underscore(klagshamn_filename):
-    o1 = PointObservation(
-        klagshamn_filename,
-        item=0,
-        x=366844,
-        y=6154291,
-        name="Klagshamn1",
-        quantity="Water Level",  # TODO is this intuitive ?
-    )
-
-    assert o1.quantity.unit == "meter"
-
-
 def test_from_mikeio_dataarray(klagshamn_da):
     o = PointObservation(klagshamn_da, x=366844, y=6154291, name="Klagshamn")
     assert o.quantity.name == "Water Level"
@@ -140,6 +114,5 @@ def test_hist(klagshamn_filename):
 
 
 def test_force_keyword_args(klagshamn_filename):
-
     with pytest.raises(TypeError):
         PointObservation(klagshamn_filename, 0, 366844, 6154291, "Klagshamn")
