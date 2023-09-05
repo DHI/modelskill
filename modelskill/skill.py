@@ -9,8 +9,16 @@ from matplotlib import pyplot as plt
 
 
 class SkillDataFrame:
-    def __init__(self, df):
-        self.df = df
+    def __init__(self, df, include_spatial_cols=False):
+        self._df = df
+        self.include_spatial_cols = include_spatial_cols
+
+    @property
+    def df(self):
+        if self.include_spatial_cols:
+            return self._df
+        else:
+            return self._df.copy().drop(columns=["x", "y"], errors="ignore")
 
     def __repr__(self):
         return repr(self.df)
@@ -73,14 +81,15 @@ class SkillDataFrame:
     def to_geo_dataframe(self, crs="EPSG:4326"):
         import geopandas as gpd
 
+        # TODO seems like a hack 🤔
+        self.include_spatial_cols = True
+
         assert "x" in self.df.columns
         assert "y" in self.df.columns
 
         gdf = gpd.GeoDataFrame(
             self.df, geometry=gpd.points_from_xy(self.df.x, self.df.y), crs=crs
         )
-        # add geometry column based on x and y
-        # gdf["geometry"] = gpd.points_from_xy(gdf.x, gdf.y)
 
         return gdf
 
