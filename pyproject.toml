@@ -17,6 +17,7 @@ dependencies = [
     "markdown",
     "jinja2",
     "scipy",
+    "geopandas", # TODO Not sure if this should be a mandatory dependency
 ]
 
 authors = [
