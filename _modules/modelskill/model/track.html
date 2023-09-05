@@ -232,14 +232,29 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <h1>Source code for modelskill.model.track</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">get_args</span><span class="p">,</span> <span class="n">Optional</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">get_args</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">import</span> <span class="nn">mikeio</span>
 
 <span class="kn">from</span> <span class="nn">._base</span> <span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">ModelResultBase</span>
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">types</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">..types</span> <span class="kn">import</span> <span class="n">TrackType</span>
+
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">make_unique_index</span><span class="p">,</span> <span class="n">get_item_name_and_idx</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">TrackItem</span><span class="p">:</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">values</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="TrackModelResult"><a class="viewcode-back" href="../../../api.html#modelskill.model.TrackModelResult">[docs]</a><span class="k">class</span> <span class="nc">TrackModelResult</span><span class="p">(</span><span class="n">ModelResultBase</span><span class="p">):</span>
@@ -248,17 +263,17 @@ document.write(`
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    data : types.UnstructuredType</span>
+<span class="sd">    data : types.TrackType</span>
 <span class="sd">        the input data or file path</span>
 <span class="sd">    name : Optional[str], optional</span>
 <span class="sd">        The name of the model result,</span>
 <span class="sd">        by default None (will be set to file name or item name)</span>
-<span class="sd">    item : Optional[Union[str, int]], optional</span>
+<span class="sd">    item : str | int | None, optional</span>
 <span class="sd">        If multiple items/arrays are present in the input an item</span>
 <span class="sd">        must be given (as either an index or a string), by default None</span>
-<span class="sd">    x_item : Optional[Union[str, int]], optional</span>
+<span class="sd">    x_item : str | int | None, optional</span>
 <span class="sd">        Item of the first coordinate of positions, by default None</span>
-<span class="sd">    y_item : Optional[Union[str, int]], optional</span>
+<span class="sd">    y_item : str | int | None, optional</span>
 <span class="sd">        Item of the second coordinate of positions, by default None</span>
 <span class="sd">    quantity : Optional[str], optional</span>
 <span class="sd">        A string to identify the quantity, by default None</span>
@@ -266,16 +281,16 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">types</span><span class="o">.</span><span class="n">TrackType</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">TrackType</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">item</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">item</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">x_item</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="n">y_item</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">x_item</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">y_item</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">types</span><span class="o">.</span><span class="n">TrackType</span><span class="p">)</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">TrackType</span><span class="p">)</span>
         <span class="p">),</span> <span class="s2">&quot;Could not construct TrackModelResult from provided data.&quot;</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
@@ -290,20 +305,46 @@ document.write(`
             <span class="n">item_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Could not construct TrackModelResult from provided data&quot;</span><span class="p">)</span>
-        <span class="n">items</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">_parse_track_items</span><span class="p">(</span><span class="n">item_names</span><span class="p">,</span> <span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-        <span class="n">item</span> <span class="o">=</span> <span class="n">items</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">item</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_item_name_and_idx</span><span class="p">(</span><span class="n">item_names</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">item</span>
+
+        <span class="n">ti</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_track_items</span><span class="p">(</span><span class="n">item_names</span><span class="p">,</span> <span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">ti</span><span class="o">.</span><span class="n">values</span>
 
         <span class="c1"># select relevant items and convert to dataframe</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">items</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">ti</span><span class="o">.</span><span class="n">all</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">data</span>
 
-        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">items</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="s2">&quot;y&quot;</span><span class="p">})</span>
-        <span class="n">data</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">make_unique_index</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">offset_duplicates</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">ti</span><span class="o">.</span><span class="n">x</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">ti</span><span class="o">.</span><span class="n">y</span><span class="p">:</span> <span class="s2">&quot;y&quot;</span><span class="p">})</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">make_unique_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">offset_duplicates</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_parse_track_items</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrackItem</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;If input has exactly 3 items we accept item=None&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Input has only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items. It should have at least 3.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input has more than 3 items, but item was not given!&quot;</span><span class="p">)</span>
+
+        <span class="n">item</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_item_name_and_idx</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        <span class="n">x_item</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_item_name_and_idx</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">x_item</span><span class="p">)</span>
+        <span class="n">y_item</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_item_name_and_idx</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">y_item</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">item</span> <span class="o">==</span> <span class="n">x_item</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">item</span> <span class="o">==</span> <span class="n">y_item</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">x_item</span> <span class="o">==</span> <span class="n">y_item</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;x-item (</span><span class="si">{</span><span class="n">x_item</span><span class="si">}</span><span class="s2">), y-item (</span><span class="si">{</span><span class="n">y_item</span><span class="si">}</span><span class="s2">) and value-item (</span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">) must be different!&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># return x_item, y_item, item</span>
+        <span class="k">return</span> <span class="n">TrackItem</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_item</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y_item</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">item</span><span class="p">)</span></div>
 </pre></div>
 
                 </article>

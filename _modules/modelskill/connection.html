@@ -232,12 +232,23 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <h1>Source code for modelskill.connection</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span> <span class="nn">yaml</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">get_args</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">get_args</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -250,7 +261,9 @@ document.write(`
 <span class="kn">from</span> <span class="nn">modelskill.timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>
 <span class="kn">from</span> <span class="nn">modelskill.types</span> <span class="kn">import</span> <span class="n">GeometryType</span><span class="p">,</span> <span class="n">Quantity</span>
 <span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">protocols</span>
-<span class="kn">from</span> <span class="nn">.model._base</span> <span class="kn">import</span> <span class="n">ModelResultBase</span>
+<span class="kn">from</span> <span class="nn">.model.grid</span> <span class="kn">import</span> <span class="n">GridModelResult</span>
+<span class="kn">from</span> <span class="nn">.model.dfsu</span> <span class="kn">import</span> <span class="n">DfsuModelResult</span>
+<span class="kn">from</span> <span class="nn">.model.track</span> <span class="kn">import</span> <span class="n">TrackModelResult</span>
 <span class="kn">from</span> <span class="nn">.observation</span> <span class="kn">import</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span>
 <span class="kn">from</span> <span class="nn">.comparison</span> <span class="kn">import</span> <span class="n">Comparer</span><span class="p">,</span> <span class="n">PointComparer</span><span class="p">,</span> <span class="n">ComparerCollection</span><span class="p">,</span> <span class="n">TrackComparer</span>
 <span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">is_iterable_not_str</span>
@@ -271,9 +284,10 @@ document.write(`
     <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
     <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">,</span>
-    <span class="n">ModelResultBase</span><span class="p">,</span>
-    <span class="n">TimeSeries</span>
-    <span class="c1"># protocols.ModelResult,</span>
+    <span class="n">TimeSeries</span><span class="p">,</span>
+    <span class="n">GridModelResult</span><span class="p">,</span>
+    <span class="n">DfsuModelResult</span><span class="p">,</span>
+    <span class="n">TrackModelResult</span><span class="p">,</span>
 <span class="p">]</span>
 <span class="n">ObsInputType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
     <span class="nb">str</span><span class="p">,</span>
@@ -291,9 +305,9 @@ document.write(`
 <div class="viewcode-block" id="from_matched"><a class="viewcode-back" href="../../api.html#modelskill.from_matched">[docs]</a><span class="k">def</span> <span class="nf">from_matched</span><span class="p">(</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dfs0</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">obs_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="n">mod_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">aux_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">obs_item</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">mod_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">aux_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -375,9 +389,9 @@ document.write(`
     <span class="n">obs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ObsInputType</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ObsInputType</span><span class="p">]],</span>
     <span class="n">mod</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">MRInputType</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">MRInputType</span><span class="p">]],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">obs_item</span><span class="p">:</span> <span class="n">IdOrNameTypes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">mod_item</span><span class="p">:</span> <span class="n">IdOrNameTypes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">gtype</span><span class="p">:</span> <span class="n">GeometryTypes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">obs_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mod_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_model_gap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Comparer</span><span class="p">,</span> <span class="n">ComparerCollection</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare observations and model results</span>
@@ -434,19 +448,19 @@ document.write(`
     <span class="o">*</span><span class="p">,</span>
     <span class="n">obs_item</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">mod_item</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">gtype</span><span class="p">:</span> <span class="n">GeometryTypes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_model_gap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Comparer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare a single observation with multiple models&quot;&quot;&quot;</span>
     <span class="n">obs</span> <span class="o">=</span> <span class="n">_parse_single_obs</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">obs_item</span><span class="p">,</span> <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">)</span>
     <span class="n">mod</span> <span class="o">=</span> <span class="n">_parse_models</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">mod_item</span><span class="p">,</span> <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">)</span>
-    <span class="n">df_mod</span> <span class="o">=</span> <span class="n">_extract_from_models</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
+    <span class="n">df_mod</span> <span class="o">=</span> <span class="n">_extract_from_models</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
     <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">df_mod</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="o">=</span><span class="n">max_model_gap</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_parse_single_obs</span><span class="p">(</span>
-    <span class="n">obs</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">IdOrNameTypes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">GeometryTypes</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">obs</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">protocols</span><span class="o">.</span><span class="n">Observation</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Observation</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -464,8 +478,8 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">_parse_models</span><span class="p">(</span>
-    <span class="n">mod</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">IdOrNameTypes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">GeometryTypes</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">protocols</span><span class="o">.</span><span class="n">ModelResult</span><span class="p">]:</span>
+    <span class="n">mod</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a list of ModelResult objects&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">MRInputType</span><span class="p">)):</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">_parse_single_model</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">)]</span>
@@ -476,8 +490,8 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">_parse_single_model</span><span class="p">(</span>
-    <span class="n">mod</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">IdOrNameTypes</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">GeometryTypes</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">protocols</span><span class="o">.</span><span class="n">ModelResult</span><span class="p">:</span>
+    <span class="n">mod</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">protocols</span><span class="o">.</span><span class="n">ModelResult</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -533,9 +547,9 @@ document.write(`
 
 <span class="k">class</span> <span class="nc">_BaseConnector</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">modelresults</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modelresults</span><span class="p">:</span> <span class="p">{}</span>  <span class="c1"># type: ignore</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">n_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -591,7 +605,7 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
 
-    <span class="k">def</span> <span class="nf">_parse_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">protocols</span><span class="o">.</span><span class="n">ModelResult</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">_parse_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mod</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">is_iterable_not_str</span><span class="p">(</span><span class="n">mod</span><span class="p">):</span>
             <span class="n">mr</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mod</span><span class="p">:</span>
@@ -600,13 +614,11 @@ document.write(`
             <span class="n">mr</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_parse_single_model</span><span class="p">(</span><span class="n">mod</span><span class="p">)]</span>
         <span class="k">return</span> <span class="n">mr</span>
 
-    <span class="k">def</span> <span class="nf">_parse_single_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">protocols</span><span class="o">.</span><span class="n">ModelResult</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">protocols</span><span class="o">.</span><span class="n">ModelResult</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">mod</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)):</span>
+    <span class="k">def</span> <span class="nf">_parse_single_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mod</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)):</span>
             <span class="k">return</span> <span class="n">ModelResult</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown model result type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">mod</span>
 
     <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">modelresults</span><span class="p">):</span>
         <span class="c1"># TODO: add validation errors to list</span>
@@ -682,7 +694,7 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; con = Connector(o1, mr)    # con[0] = con1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">_parse_observation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PointObservation</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_parse_observation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)):</span>
             <span class="k">return</span> <span class="n">PointObservation</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -692,7 +704,7 @@ document.write(`
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown observation type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PointComparer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PointComparer</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract model results at times and positions of observation.</span>
 
 <span class="sd">        Returns</span>
@@ -744,7 +756,7 @@ document.write(`
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown track observation type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrackComparer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TrackComparer</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract model results at times and positions of track observation.</span>
 
 <span class="sd">        Returns</span>
@@ -770,7 +782,6 @@ document.write(`
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;No overlapping data was found for TrackObservation &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;!&quot;</span>
             <span class="p">)</span>
-            <span class="c1"># TODO returning None is not consistent with type hint</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="n">comparer</span> <span class="o">=</span> <span class="n">TrackComparer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span> <span class="n">df_model</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="o">=</span><span class="n">max_model_gap</span><span class="p">)</span>
@@ -1049,7 +1060,7 @@ document.write(`
             <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ax</span>
 
-    <span class="k">def</span> <span class="nf">to_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relative_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relative_path</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save Connector to a config file.</span>
 
 <span class="sd">        Parameters</span>
@@ -1186,6 +1197,8 @@ document.write(`
             <span class="n">dirname</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
 
         <span class="n">modelresults</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">conf</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">mr_dict</span> <span class="ow">in</span> <span class="n">conf</span><span class="p">[</span><span class="s2">&quot;modelresults&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">mr_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;include&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
                 <span class="k">continue</span>
@@ -1212,10 +1225,10 @@ document.write(`
 
             <span class="n">otype</span> <span class="o">=</span> <span class="n">obs_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">otype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot;track&quot;</span> <span class="ow">in</span> <span class="n">otype</span><span class="o">.</span><span class="n">lower</span><span class="p">()):</span>
-                <span class="n">obs</span> <span class="o">=</span> <span class="n">TrackObservation</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">obs</span> <span class="o">=</span> <span class="n">TrackObservation</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">obs_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">),</span> <span class="n">obs_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
-                <span class="n">obs</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">obs</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
             <span class="n">observations</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span>
         <span class="n">obs_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">observations</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 

@@ -232,13 +232,14 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <h1>Source code for modelskill.comparison._comparer_plotter</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>  <span class="c1"># type: ignore</span>
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">metrics</span> <span class="k">as</span> <span class="n">mtr</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_get_id</span>
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_get_idx</span>
 <span class="kn">from</span> <span class="nn">..plot</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">_get_fig_ax</span><span class="p">,</span>
     <span class="n">_xtick_directional</span><span class="p">,</span>
@@ -380,7 +381,7 @@ document.write(`
         <span class="kn">from</span> <span class="nn">._comparison</span> <span class="kn">import</span> <span class="n">MOD_COLORS</span>  <span class="c1"># TODO move to here</span>
 
         <span class="n">cmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparer</span>
-        <span class="n">mod_id</span> <span class="o">=</span> <span class="n">_get_id</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">)</span>
+        <span class="n">mod_id</span> <span class="o">=</span> <span class="n">_get_idx</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">)</span>
         <span class="n">mod_name</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">[</span><span class="n">mod_id</span><span class="p">]</span>
 
         <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mod_name</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">cmp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">title</span>
@@ -469,7 +470,7 @@ document.write(`
 
 <div class="viewcode-block" id="ComparerPlotter.qq"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.qq">[docs]</a>    <span class="k">def</span> <span class="nf">qq</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">quantiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">quantiles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -600,10 +601,10 @@ document.write(`
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">bins</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-        <span class="n">quantiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="n">quantiles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">fit_to_quantiles</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">show_points</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">show_points</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">show_hist</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">show_density</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">norm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -611,7 +612,7 @@ document.write(`
         <span class="n">figsize</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
         <span class="n">xlim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ylim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">reg_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ols&quot;</span><span class="p">,</span>
+        <span class="n">reg_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">=</span> <span class="s2">&quot;ols&quot;</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">xlabel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ylabel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -659,11 +660,11 @@ document.write(`
 <span class="sd">            plot range for the observation (xmin, xmax), by default None</span>
 <span class="sd">        ylim : tuple, optional</span>
 <span class="sd">            plot range for the model (ymin, ymax), by default None</span>
-<span class="sd">        reg_method : str, optional</span>
+<span class="sd">        reg_method : str or bool, optional</span>
 <span class="sd">            method for determining the regression line</span>
 <span class="sd">            &quot;ols&quot; : ordinary least squares regression</span>
 <span class="sd">            &quot;odr&quot; : orthogonal distance regression,</span>
-<span class="sd">            None : no regression line</span>
+<span class="sd">            False : no regression line</span>
 <span class="sd">            by default &quot;ols&quot;</span>
 <span class="sd">        title : str, optional</span>
 <span class="sd">            plot title, by default None</span>
@@ -689,7 +690,7 @@ document.write(`
         <span class="n">cmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparer</span>
 
         <span class="n">cmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparer</span>
-        <span class="n">mod_id</span> <span class="o">=</span> <span class="n">_get_id</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">)</span>
+        <span class="n">mod_id</span> <span class="o">=</span> <span class="n">_get_idx</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">)</span>
         <span class="n">mod_name</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">[</span><span class="n">mod_id</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">cmp</span><span class="o">.</span><span class="n">n_points</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -720,7 +721,7 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
             <span class="c1"># hide quantiles and regression line</span>
             <span class="n">quantiles</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">reg_method</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">reg_method</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="n">ax</span> <span class="o">=</span> <span class="n">scatter</span><span class="p">(</span>
             <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>

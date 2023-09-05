@@ -294,10 +294,11 @@ document.write(`
 <span class="sd">0.39614855570839064</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">typing</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Set</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
 
 
@@ -327,14 +328,16 @@ document.write(`
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span></div>
 
 
-<div class="viewcode-block" id="mae"><a class="viewcode-back" href="../../api.html#modelskill.metrics.mae">[docs]</a><span class="k">def</span> <span class="nf">mae</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="mae"><a class="viewcode-back" href="../../api.html#modelskill.metrics.mae">[docs]</a><span class="k">def</span> <span class="nf">mae</span><span class="p">(</span>
+    <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for mean_absolute_error&quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
     <span class="k">return</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="mean_absolute_error"><a class="viewcode-back" href="../../api.html#modelskill.metrics.mean_absolute_error">[docs]</a><span class="k">def</span> <span class="nf">mean_absolute_error</span><span class="p">(</span>
-    <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mean Absolute Error (MAE)</span>
 
@@ -375,7 +378,9 @@ document.write(`
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="o">-</span> <span class="n">model</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span> <span class="o">*</span> <span class="mi">100</span></div>
 
 
-<div class="viewcode-block" id="urmse"><a class="viewcode-back" href="../../api.html#modelskill.metrics.urmse">[docs]</a><span class="k">def</span> <span class="nf">urmse</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="urmse"><a class="viewcode-back" href="../../api.html#modelskill.metrics.urmse">[docs]</a><span class="k">def</span> <span class="nf">urmse</span><span class="p">(</span>
+    <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Unbiased Root Mean Squared Error (uRMSE)</span>
 
 <span class="sd">    .. math::</span>
@@ -398,7 +403,7 @@ document.write(`
 <div class="viewcode-block" id="rmse"><a class="viewcode-back" href="../../api.html#modelskill.metrics.rmse">[docs]</a><span class="k">def</span> <span class="nf">rmse</span><span class="p">(</span>
     <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">unbiased</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for root_mean_squared_error&quot;&quot;&quot;</span>
@@ -408,7 +413,7 @@ document.write(`
 <div class="viewcode-block" id="root_mean_squared_error"><a class="viewcode-back" href="../../api.html#modelskill.metrics.root_mean_squared_error">[docs]</a><span class="k">def</span> <span class="nf">root_mean_squared_error</span><span class="p">(</span>
     <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">unbiased</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Root Mean Squared Error (RMSE)</span>
@@ -738,7 +743,7 @@ document.write(`
     <span class="k">return</span> <span class="n">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="peak_ratio"><a class="viewcode-back" href="../../api.html#modelskill.metrics.peak_ratio">[docs]</a><span class="k">def</span> <span class="nf">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="peak_ratio"><a class="viewcode-back" href="../../api.html#modelskill.metrics.peak_ratio">[docs]</a><span class="k">def</span> <span class="nf">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Peak Ratio</span>
 
 <span class="sd">    PR is the ratio of the mean of the identified peaks in the</span>
@@ -754,6 +759,7 @@ document.write(`
     <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">)</span>
     <span class="n">time</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">index</span>
     <span class="c1"># Calculate number of years</span>
     <span class="n">dt_int</span> <span class="o">=</span> <span class="n">time</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
@@ -849,13 +855,11 @@ document.write(`
 
 <span class="k">def</span> <span class="nf">_linear_regression</span><span class="p">(</span>
     <span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="s2">&quot;ols&quot;</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>  <span class="c1"># TODO raise error?</span>
 
-    <span class="k">if</span> <span class="n">reg_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
-    <span class="k">elif</span> <span class="n">reg_method</span> <span class="o">==</span> <span class="s2">&quot;ols&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">reg_method</span> <span class="o">==</span> <span class="s2">&quot;ols&quot;</span><span class="p">:</span>
         <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">linregress</span> <span class="k">as</span> <span class="n">_linregress</span>
 
         <span class="n">reg</span> <span class="o">=</span> <span class="n">_linregress</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
@@ -889,7 +893,7 @@ document.write(`
 <span class="n">METRICS_WITH_DIMENSION</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s2">&quot;urmse&quot;</span><span class="p">,</span> <span class="s2">&quot;rmse&quot;</span><span class="p">,</span> <span class="s2">&quot;bias&quot;</span><span class="p">,</span> <span class="s2">&quot;mae&quot;</span><span class="p">])</span>  <span class="c1"># TODO is this complete?</span>
 
 
-<div class="viewcode-block" id="metric_has_units"><a class="viewcode-back" href="../../api.html#modelskill.metrics.metric_has_units">[docs]</a><span class="k">def</span> <span class="nf">metric_has_units</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="metric_has_units"><a class="viewcode-back" href="../../api.html#modelskill.metrics.metric_has_units">[docs]</a><span class="k">def</span> <span class="nf">metric_has_units</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if a metric has units (dimension).</span>
 
 <span class="sd">    Some metrics are dimensionless, others have the same dimension as the observations.</span>
@@ -911,7 +915,7 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; metric_has_units(&quot;kge&quot;)</span>
 <span class="sd">    False</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">):</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">metric</span>
@@ -925,13 +929,13 @@ document.write(`
 <span class="n">NON_METRICS</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="s2">&quot;metric_has_units&quot;</span><span class="p">,</span> <span class="s2">&quot;get_metric&quot;</span><span class="p">,</span> <span class="s2">&quot;is_valid_metric&quot;</span><span class="p">,</span> <span class="s2">&quot;add_metric&quot;</span><span class="p">])</span>
 
 
-<span class="n">defined_metrics</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<span class="n">defined_metrics</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
     <span class="nb">set</span><span class="p">([</span><span class="n">func</span> <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">()</span> <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">],</span> <span class="n">func</span><span class="p">))])</span>
     <span class="o">-</span> <span class="n">NON_METRICS</span>
 <span class="p">)</span>
 
 
-<div class="viewcode-block" id="is_valid_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.is_valid_metric">[docs]</a><span class="k">def</span> <span class="nf">is_valid_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="is_valid_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.is_valid_metric">[docs]</a><span class="k">def</span> <span class="nf">is_valid_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;Check if a metric is defined.</span>
 
 <span class="sd">    Parameters</span>
@@ -951,7 +955,7 @@ document.write(`
 <span class="sd">    False</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">):</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">metric</span>
@@ -959,23 +963,21 @@ document.write(`
     <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">defined_metrics</span></div>
 
 
-<div class="viewcode-block" id="get_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.get_metric">[docs]</a><span class="k">def</span> <span class="nf">get_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">:</span>
+<div class="viewcode-block" id="get_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.get_metric">[docs]</a><span class="k">def</span> <span class="nf">get_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a metric function from its name.&quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">is_valid_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">metric</span>
-        <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">],</span> <span class="n">metric</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">metric</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Metric </span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2"> not defined. Choose from </span><span class="si">{</span><span class="n">defined_metrics</span><span class="si">}</span><span class="s2"> or use `add_metric` to add a custom metric.&quot;</span>
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="add_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.add_metric">[docs]</a><span class="k">def</span> <span class="nf">add_metric</span><span class="p">(</span>
-    <span class="n">metric</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">],</span> <span class="n">has_units</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="add_metric"><a class="viewcode-back" href="../../api.html#modelskill.metrics.add_metric">[docs]</a><span class="k">def</span> <span class="nf">add_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">has_units</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds a metric to the metric list. Useful for custom metrics.</span>
 
 <span class="sd">    Some metrics are dimensionless, others have the same dimension as the observations.</span>

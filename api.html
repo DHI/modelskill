@@ -317,7 +317,7 @@ mikeio.Dataset/DataArray or pandas.DataFrame/Series</p>
 by default None (will be set to file name or item name)</p></li>
 <li><p><strong>x</strong> (<em>float</em><em>, </em><em>optional</em>) – first coordinate of point position, by default None</p></li>
 <li><p><strong>y</strong> (<em>float</em><em>, </em><em>optional</em>) – second coordinate of point position, by default None</p></li>
-<li><p><strong>item</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – If multiple items/arrays are present in the input an item
+<li><p><strong>item</strong> (<em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – If multiple items/arrays are present in the input an item
 must be given (as either an index or a string), by default None</p></li>
 <li><p><strong>quantity</strong> (<a class="reference internal" href="#modelskill.types.Quantity" title="modelskill.types.Quantity"><em>Quantity</em></a><em>, </em><em>optional</em>) – Model quantity, for MIKE files this is inferred from the EUM information</p></li>
 </ul>
@@ -333,13 +333,13 @@ mikeio.Dataset or pandas.DataFrame</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>types.UnstructuredType</em>) – the input data or file path</p></li>
+<li><p><strong>data</strong> (<em>types.TrackType</em>) – the input data or file path</p></li>
 <li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the model result,
 by default None (will be set to file name or item name)</p></li>
-<li><p><strong>item</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – If multiple items/arrays are present in the input an item
+<li><p><strong>item</strong> (<em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – If multiple items/arrays are present in the input an item
 must be given (as either an index or a string), by default None</p></li>
-<li><p><strong>x_item</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – Item of the first coordinate of positions, by default None</p></li>
-<li><p><strong>y_item</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – Item of the second coordinate of positions, by default None</p></li>
+<li><p><strong>x_item</strong> (<em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Item of the first coordinate of positions, by default None</p></li>
+<li><p><strong>y_item</strong> (<em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Item of the second coordinate of positions, by default None</p></li>
 <li><p><strong>quantity</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A string to identify the quantity, by default None</p></li>
 </ul>
 </dd>
@@ -377,9 +377,9 @@ must be given (as either an index or a string), by default None</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<em>types.GridType</em>) – the input data or file path</p></li>
-<li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the model result,
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – The name of the model result,
 by default None (will be set to file name or item name)</p></li>
-<li><p><strong>item</strong> (<em>Optional</em><em>[</em><em>Union</em><em>[</em><em>str</em><em>, </em><em>int</em><em>]</em><em>]</em><em>, </em><em>optional</em>) – If multiple items/arrays are present in the input an item
+<li><p><strong>item</strong> (<em>str</em><em> or </em><em>int</em><em>, </em><em>optional</em>) – If multiple items/arrays are present in the input an item
 must be given (as either an index or a string), by default None</p></li>
 <li><p><strong>quantity</strong> (<a class="reference internal" href="#modelskill.types.Quantity" title="modelskill.types.Quantity"><em>Quantity</em></a><em>, </em><em>optional</em>) – Model quantity, for MIKE files this is inferred from the EUM information</p></li>
 </ul>
@@ -1201,10 +1201,10 @@ If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)</p></li>
 <li><p><strong>figsize</strong> (<em>tuple</em><em>, </em><em>optional</em>) – width and height of the figure, by default (8, 8)</p></li>
 <li><p><strong>xlim</strong> (<em>tuple</em><em>, </em><em>optional</em>) – plot range for the observation (xmin, xmax), by default None</p></li>
 <li><p><strong>ylim</strong> (<em>tuple</em><em>, </em><em>optional</em>) – plot range for the model (ymin, ymax), by default None</p></li>
-<li><p><strong>reg_method</strong> (<em>str</em><em>, </em><em>optional</em>) – method for determining the regression line
+<li><p><strong>reg_method</strong> (<em>str</em><em> or </em><em>bool</em><em>, </em><em>optional</em>) – method for determining the regression line
 “ols” : ordinary least squares regression
 “odr” : orthogonal distance regression,
-None : no regression line
+False : no regression line
 by default “ols”</p></li>
 <li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – plot title, by default None</p></li>
 <li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x-label text on plot, by default None</p></li>
@@ -1747,9 +1747,10 @@ int: if ‘n’ (int) given, then ‘n’ points will be displayed, randomly sel
 <li><p><strong>figsize</strong> (<em>tuple</em><em>, </em><em>optional</em>) – width and height of the figure, by default (8, 8)</p></li>
 <li><p><strong>xlim</strong> (<em>tuple</em><em>, </em><em>optional</em>) – plot range for the observation (xmin, xmax), by default None</p></li>
 <li><p><strong>ylim</strong> (<em>tuple</em><em>, </em><em>optional</em>) – plot range for the model (ymin, ymax), by default None</p></li>
-<li><p><strong>reg_method</strong> (<em>str</em><em>, </em><em>optional</em>) – method for determining the regression line
+<li><p><strong>reg_method</strong> (<em>str</em><em> or </em><em>bool</em><em>, </em><em>optional</em>) – method for determining the regression line
 “ols” : ordinary least squares regression
 “odr” : orthogonal distance regression,
+False : no regression line,
 by default “ols”</p></li>
 <li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – plot title, by default None</p></li>
 <li><p><strong>xlabel</strong> (<em>str</em><em>, </em><em>optional</em>) – x-label text on plot, by default None</p></li>

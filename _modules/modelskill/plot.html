@@ -232,7 +232,8 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <h1>Source code for modelskill.plot</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">matplotlib.axes</span> <span class="kn">import</span> <span class="n">Axes</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -310,7 +311,11 @@ document.write(`
 
 <span class="c1"># TODO: Auto-implement</span>
 <span class="c1"># still requires plt.rcParams.update(modelskill.settings.get_option(&#39;plot.rcParams&#39;))</span>
-<span class="n">register_option</span><span class="p">(</span><span class="s2">&quot;plot.rcParams&quot;</span><span class="p">,</span> <span class="p">{},</span> <span class="n">settings</span><span class="o">.</span><span class="n">is_dict</span><span class="p">)</span>  <span class="c1"># still have to</span>
+
+<span class="c1"># TODO does this work as intended? Mutable default values, e.g. dict, list, are usually not recommended</span>
+<span class="n">register_option</span><span class="p">(</span>
+    <span class="n">key</span><span class="o">=</span><span class="s2">&quot;plot.rcParams&quot;</span><span class="p">,</span> <span class="n">defval</span><span class="o">=</span><span class="p">{},</span> <span class="n">validator</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">is_dict</span>
+<span class="p">)</span>  <span class="c1"># still have to</span>
 
 
 <span class="k">def</span> <span class="nf">_get_ax</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -355,7 +360,7 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">sample_points</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">include</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">include</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sample points to be plotted</span>
 
@@ -413,8 +418,10 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">quantiles_xy</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">quantiles</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">quantiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate quantiles of x and y</span>
 
 <span class="sd">    Parameters</span>
@@ -430,18 +437,22 @@ document.write(`
 <span class="sd">        x and y arrays with quantiles</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="n">quantiles</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3000</span><span class="p">:</span>
-            <span class="n">quantiles</span> <span class="o">=</span> <span class="mi">1000</span>
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">300</span><span class="p">:</span>
-            <span class="n">quantiles</span> <span class="o">=</span> <span class="mi">100</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">quantiles</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quantiles</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">quantiles</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">quantiles</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">3000</span><span class="p">:</span>
+                <span class="n">n_quantiles</span> <span class="o">=</span> <span class="mi">1000</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">300</span><span class="p">:</span>
+                <span class="n">n_quantiles</span> <span class="o">=</span> <span class="mi">100</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">n_quantiles</span> <span class="o">=</span> <span class="mi">10</span>
 
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quantiles</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;quantiles must be an int or sequence of floats&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quantiles</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">n_quantiles</span> <span class="o">=</span> <span class="n">quantiles</span>
 
-    <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">quantiles</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quantiles</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">quantiles</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">n_quantiles</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">)</span>
 
 
@@ -460,8 +471,7 @@ document.write(`
     <span class="n">show_hist</span><span class="p">,</span>
     <span class="n">norm</span><span class="p">,</span>
     <span class="n">nbins_hist</span><span class="p">,</span>
-    <span class="n">intercept</span><span class="p">,</span>
-    <span class="n">slope</span><span class="p">,</span>
+    <span class="n">reg_method</span><span class="p">,</span>
     <span class="n">xlabel</span><span class="p">,</span>
     <span class="n">ylabel</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">,</span>
@@ -516,7 +526,14 @@ document.write(`
             <span class="o">**</span><span class="n">settings</span><span class="o">.</span><span class="n">get_option</span><span class="p">(</span><span class="s2">&quot;plot.scatter.quantiles.kwargs&quot;</span><span class="p">),</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">slope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">reg_method</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fit_to_quantiles</span><span class="p">:</span>
+            <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span> <span class="o">=</span> <span class="n">_linear_regression</span><span class="p">(</span>
+                <span class="n">obs</span><span class="o">=</span><span class="n">xq</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">yq</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="n">reg_method</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span> <span class="o">=</span> <span class="n">_linear_regression</span><span class="p">(</span><span class="n">obs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="n">reg_method</span><span class="p">)</span>
+
         <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
             <span class="n">x_trend</span><span class="p">,</span>
             <span class="n">intercept</span> <span class="o">+</span> <span class="n">slope</span> <span class="o">*</span> <span class="n">x_trend</span><span class="p">,</span>
@@ -570,8 +587,7 @@ document.write(`
     <span class="n">norm</span><span class="p">,</span>  <span class="c1"># TODO not used by plotly, remove or keep for consistency?</span>
     <span class="n">show_hist</span><span class="p">,</span>
     <span class="n">nbins_hist</span><span class="p">,</span>
-    <span class="n">intercept</span><span class="p">,</span>
-    <span class="n">slope</span><span class="p">,</span>
+    <span class="n">reg_method</span><span class="p">,</span>
     <span class="n">xlabel</span><span class="p">,</span>
     <span class="n">ylabel</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">,</span>  <span class="c1"># TODO not used by plotly, remove or keep for consistency?</span>
@@ -589,7 +605,14 @@ document.write(`
         <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">xlim</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">xlim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;1:1&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">)),</span>
     <span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">slope</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">reg_method</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fit_to_quantiles</span><span class="p">:</span>
+            <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span> <span class="o">=</span> <span class="n">_linear_regression</span><span class="p">(</span>
+                <span class="n">obs</span><span class="o">=</span><span class="n">xq</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">yq</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="n">reg_method</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span> <span class="o">=</span> <span class="n">_linear_regression</span><span class="p">(</span><span class="n">obs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="n">reg_method</span><span class="p">)</span>
+
         <span class="n">regression_line</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
             <span class="n">x</span><span class="o">=</span><span class="n">x_trend</span><span class="p">,</span>
             <span class="n">y</span><span class="o">=</span><span class="n">intercept</span> <span class="o">+</span> <span class="n">slope</span> <span class="o">*</span> <span class="n">x_trend</span><span class="p">,</span>
@@ -675,23 +698,20 @@ document.write(`
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fit</span><span class="si">}</span><span class="s2">: y=</span><span class="si">{</span><span class="n">slope</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">x</span><span class="si">{</span><span class="n">sign</span><span class="si">}{</span><span class="n">intercept</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span>
 
 
-<span class="k">def</span> <span class="nf">_get_bins</span><span class="p">(</span>
-    <span class="n">bins</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span> <span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span>
-<span class="p">):</span>  <span class="c1"># TODO return type</span>
+<span class="k">def</span> <span class="nf">_get_bins</span><span class="p">(</span><span class="n">bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
     <span class="k">assert</span> <span class="n">xymax</span> <span class="o">&gt;=</span> <span class="n">xymin</span>
     <span class="n">xyspan</span> <span class="o">=</span> <span class="n">xymax</span> <span class="o">-</span> <span class="n">xymin</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-        <span class="n">nbins_hist</span> <span class="o">=</span> <span class="n">bins</span>
-        <span class="n">binsize</span> <span class="o">=</span> <span class="n">xyspan</span> <span class="o">/</span> <span class="n">nbins_hist</span>
+        <span class="n">nbins_hist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">bins</span>
+        <span class="n">binsize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">xyspan</span> <span class="o">/</span> <span class="n">nbins_hist</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
         <span class="n">binsize</span> <span class="o">=</span> <span class="n">bins</span>
-        <span class="n">nbins_hist</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">xyspan</span> <span class="o">/</span> <span class="n">binsize</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
-        <span class="n">binsize</span> <span class="o">=</span> <span class="n">bins</span>
-        <span class="n">nbins_hist</span> <span class="o">=</span> <span class="n">bins</span>
+        <span class="n">nbins_hist</span> <span class="o">=</span> <span class="n">xyspan</span> <span class="o">//</span> <span class="n">binsize</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;bins must be an int, float or sequence&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;bins must be a number&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">nbins_hist</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
     <span class="k">return</span> <span class="n">nbins_hist</span><span class="p">,</span> <span class="n">binsize</span>
 
@@ -700,10 +720,10 @@ document.write(`
     <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">bins</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-    <span class="n">quantiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">quantiles</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">fit_to_quantiles</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">show_points</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">show_points</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">show_hist</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">show_density</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">norm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -711,7 +731,7 @@ document.write(`
     <span class="n">figsize</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
     <span class="n">xlim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ylim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">reg_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ols&quot;</span><span class="p">,</span>
+    <span class="n">reg_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">=</span> <span class="s2">&quot;ols&quot;</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
     <span class="n">xlabel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
     <span class="n">ylabel</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
@@ -762,11 +782,11 @@ document.write(`
 <span class="sd">        plot range for the observation (xmin, xmax), by default None</span>
 <span class="sd">    ylim : tuple, optional</span>
 <span class="sd">        plot range for the model (ymin, ymax), by default None</span>
-<span class="sd">    reg_method : str, optional</span>
+<span class="sd">    reg_method : str or bool, optional</span>
 <span class="sd">        method for determining the regression line</span>
 <span class="sd">        &quot;ols&quot; : ordinary least squares regression</span>
 <span class="sd">        &quot;odr&quot; : orthogonal distance regression,</span>
-<span class="sd">        None : no regression line</span>
+<span class="sd">        False : no regression line</span>
 <span class="sd">        by default &quot;ols&quot;</span>
 <span class="sd">    title : str, optional</span>
 <span class="sd">        plot title, by default None</span>
@@ -829,12 +849,6 @@ document.write(`
         <span class="c1"># scale Z by sample size</span>
         <span class="n">z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_sample</span><span class="p">)</span>
 
-    <span class="c1"># linear fit</span>
-    <span class="k">if</span> <span class="n">fit_to_quantiles</span><span class="p">:</span>
-        <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span> <span class="o">=</span> <span class="n">_linear_regression</span><span class="p">(</span><span class="n">obs</span><span class="o">=</span><span class="n">xq</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">yq</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="n">reg_method</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span> <span class="o">=</span> <span class="n">_linear_regression</span><span class="p">(</span><span class="n">obs</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">reg_method</span><span class="o">=</span><span class="n">reg_method</span><span class="p">)</span>
-
     <span class="n">PLOTTING_BACKENDS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;matplotlib&quot;</span><span class="p">:</span> <span class="n">_scatter_matplotlib</span><span class="p">,</span>
         <span class="s2">&quot;plotly&quot;</span><span class="p">:</span> <span class="n">_scatter_plotly</span><span class="p">,</span>
@@ -857,8 +871,7 @@ document.write(`
         <span class="n">show_points</span><span class="o">=</span><span class="n">show_points</span><span class="p">,</span>
         <span class="n">show_hist</span><span class="o">=</span><span class="n">show_hist</span><span class="p">,</span>
         <span class="n">nbins_hist</span><span class="o">=</span><span class="n">nbins_hist</span><span class="p">,</span>
-        <span class="n">intercept</span><span class="o">=</span><span class="n">intercept</span><span class="p">,</span>
-        <span class="n">slope</span><span class="o">=</span><span class="n">slope</span><span class="p">,</span>
+        <span class="n">reg_method</span><span class="o">=</span><span class="n">reg_method</span><span class="p">,</span>
         <span class="n">xlabel</span><span class="o">=</span><span class="n">xlabel</span><span class="p">,</span>
         <span class="n">ylabel</span><span class="o">=</span><span class="n">ylabel</span><span class="p">,</span>
         <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span>
@@ -966,8 +979,8 @@ document.write(`
     <span class="n">obs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Observation</span><span class="p">],</span>
     <span class="n">mod</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">figsize</span><span class="p">:</span> <span class="n">Tuple</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot observation points on a map showing the model domain</span>
 
@@ -1001,8 +1014,8 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; mr2 = ModelResult(&#39;HKZN_local_2017_DutchCoast_v2.dfsu&#39;, name=&#39;SW_2&#39;, item=0)</span>
 <span class="sd">    &gt;&gt;&gt; ms.plot_spatial_overview([o1, o2], [mr1, mr2])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">obs</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">obs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">obs</span><span class="p">]</span>
-    <span class="n">mod</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">mod</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">mod</span><span class="p">]</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">obs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">obs</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
+    <span class="n">mod</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">mod</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">mod</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
 
     <span class="n">ax</span> <span class="o">=</span> <span class="n">_get_ax</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
     <span class="n">offset_x</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># TODO: better default</span>
@@ -1024,7 +1037,7 @@ document.write(`
     <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">PointObservation</span><span class="p">):</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">o</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">o</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
-            <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset_x</span><span class="p">,</span> <span class="n">o</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset_x</span><span class="p">,</span> <span class="n">o</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">TrackObservation</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">o</span><span class="o">.</span><span class="n">n_points</span> <span class="o">&lt;</span> <span class="mi">10000</span><span class="p">:</span>
                 <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">o</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">o</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">o</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Reds&quot;</span><span class="p">)</span>
@@ -1178,7 +1191,7 @@ document.write(`
     <span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
     <span class="n">units</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">name</span>
 
     <span class="n">item_unit</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span>
@@ -1199,7 +1212,7 @@ document.write(`
     <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot; =  &quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fvalue</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item_unit</span><span class="si">}</span><span class="s2">&quot;</span>
 
 
-<span class="k">def</span> <span class="nf">format_skill_df</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">units</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="k">def</span> <span class="nf">format_skill_df</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">units</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">):</span>
     <span class="c1"># remove model and variable columns if present, i.e. keep all other columns</span>
     <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;variable&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
