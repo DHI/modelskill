@@ -6,8 +6,9 @@ import pandas as pd
 
 import mikeio
 
-from ._base import Quantity, ModelResultBase
+from ._base import Quantity
 from ..types import TrackType
+from ..timeseries import TimeSeries
 
 from ..utils import make_unique_index, get_item_name_and_idx
 
@@ -23,7 +24,7 @@ class TrackItem:
         return [self.x, self.y, self.values]
 
 
-class TrackModelResult(ModelResultBase):
+class TrackModelResult(TimeSeries):
     """Construct a TrackModelResult from a dfs0 file,
     mikeio.Dataset or pandas.DataFrame
 
@@ -86,7 +87,9 @@ class TrackModelResult(ModelResultBase):
         df = df.rename(columns={ti.x: "x", ti.y: "y"})
         df.index = make_unique_index(df.index, offset_duplicates=0.001)
 
-        super().__init__(data=df, name=name, quantity=quantity)
+        # TODO move default quantity to TimeSeries?
+        model_quantity = Quantity.undefined() if quantity is None else quantity
+        super().__init__(data=df, name=name, quantity=model_quantity)
 
     @staticmethod
     def _parse_track_items(items, x_item, y_item, item) -> TrackItem:
