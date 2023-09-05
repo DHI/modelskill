@@ -6,6 +6,7 @@ import warnings
 import pandas as pd
 import xarray as xr
 
+from ._base import SpatialField
 from ..utils import _get_name, rename_coords_xr, rename_coords_pd
 from ..types import GridType, Quantity
 from .point import PointModelResult
@@ -13,7 +14,7 @@ from .track import TrackModelResult
 from ..observation import Observation, PointObservation, TrackObservation
 
 
-class GridModelResult:
+class GridModelResult(SpatialField):
     """Construct a GridModelResult from a file or xarray.Dataset.
 
     Parameters
@@ -67,17 +68,11 @@ class GridModelResult:
 
         item_name = _get_name(x=item, valid_names=list(data.data_vars))
         name = name or item_name
-        data = rename_coords_xr(data)
+        ds: xr.Dataset = rename_coords_xr(data)
 
-        self.data = data[item_name]
+        self.data: xr.DataArray = ds[item_name]
         self.name = name
         self.quantity = quantity or Quantity.undefined()
-
-    # TODO reconsider this function (signature copied from _base)
-    def _validate_any_obs_in_model_time(
-        self, obs_name: str, time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
-    ) -> None:
-        pass
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -123,15 +118,15 @@ class GridModelResult:
                 f"No time overlap. Observation '{observation.name}' outside model time range! "
             )
         if isinstance(observation, PointObservation):
-            return self._extract_point(observation)
+            return self.extract_point(observation)
         elif isinstance(observation, TrackObservation):
-            return self._extract_track(observation)
+            return self.extract_track(observation)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
-    def _extract_point(self, observation: PointObservation) -> PointModelResult:
+    def extract_point(self, observation: PointObservation) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a PointObservation. No time interpolation is done!"""
 
@@ -147,9 +142,6 @@ class GridModelResult:
                 f"PointObservation '{observation.name}' ({x}, {y}) is outside model domain!"
             )
 
-        self._validate_any_obs_in_model_time(
-            observation.name, observation.data.index, self.time
-        )
         # TODO add correct type hint to self.data
         assert isinstance(self.data, xr.DataArray)
 
@@ -167,13 +159,9 @@ class GridModelResult:
             quantity=self.quantity,
         )
 
-    def _extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
-
-        self._validate_any_obs_in_model_time(
-            observation.name, observation.data.index, self.time
-        )
 
         renamed_obs_data = rename_coords_pd(observation.data)
         t = xr.DataArray(renamed_obs_data.index, dims="track")

@@ -6,8 +6,7 @@ import pandas as pd
 
 import mikeio
 
-from ._base import Quantity
-from ..types import TrackType
+from ..types import TrackType, Quantity
 from ..timeseries import TimeSeries
 
 from ..utils import make_unique_index, get_item_name_and_idx
