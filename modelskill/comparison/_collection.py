@@ -444,7 +444,8 @@ class ComparerCollection(Mapping):
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
 
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        # res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = _groupby_df(df, by, metrics)
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
 
         # calculate mean x, y group by observation

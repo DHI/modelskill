@@ -60,6 +60,9 @@ class DfsuModelResult(ModelResultBase):
 
         self.filename = filename  # TODO: remove? backward compatibility
 
+    def __repr__(self):
+        return f"<DfsuModelResult>: {self.name} ({self.quantity})>"
+
     def _in_domain(self, x, y) -> bool:
         return self.data.geometry.contains([x, y])  # type: ignore
 
