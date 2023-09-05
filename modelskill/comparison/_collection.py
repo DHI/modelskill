@@ -446,6 +446,13 @@ class ComparerCollection(Mapping):
 
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
+
+        # calculate mean x, y group by observation
+        obs_coords = df[["observation", "x", "y"]].groupby("observation").mean()
+        # coords = {cmp.name: (cmp.x, cmp.y) for cmp in self}
+        res["x"] = obs_coords["x"]
+        res["y"] = obs_coords["y"]
+
         return AggregatedSkill(res)
 
     def _add_as_col_if_not_in_index(

@@ -70,6 +70,20 @@ class SkillDataFrame:
         else:
             return self.df
 
+    def to_geo_dataframe(self, crs="EPSG:4326"):
+        import geopandas as gpd
+
+        assert "x" in self.df.columns
+        assert "y" in self.df.columns
+
+        gdf = gpd.GeoDataFrame(
+            self.df, geometry=gpd.points_from_xy(self.df.x, self.df.y), crs=crs
+        )
+        # add geometry column based on x and y
+        # gdf["geometry"] = gpd.points_from_xy(gdf.x, gdf.y)
+
+        return gdf
+
     def head(self, *args, **kwargs):
         return self.__class__(self.df.head(*args, **kwargs))
 

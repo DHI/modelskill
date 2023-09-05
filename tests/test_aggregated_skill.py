@@ -2,11 +2,14 @@ import pytest
 import numpy as np
 import pandas as pd
 from modelskill import (
+    DfsuModelResult,
     ModelResult,
     PointObservation,
     TrackObservation,
     Connector,
 )
+
+import modelskill as ms
 
 
 @pytest.fixture
@@ -76,6 +79,18 @@ def test_skill(cc1):
 
     s2 = s.sort_values("rmse", ascending=False)
     assert s2.iloc[0]["rmse"] == s["rmse"].min()
+
+
+def test_skill_to_geo_dataframe(o1, o2, o3):
+    mr1 = DfsuModelResult(
+        "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu", item=0, name="SW_1"
+    )
+    cmp = ms.compare([o1, o2, o3], mr1)
+    s = cmp.skill()
+    gdf = s.to_geo_dataframe()
+
+    # assert that the geometry is a point
+    assert gdf.geometry.geom_type[0] == "Point"
 
 
 def test_skill_multi_model(cc2):
