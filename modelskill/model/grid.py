@@ -45,30 +45,30 @@ class GridModelResult(SpatialField):
 
         if isinstance(data, (str, Path)):
             if "*" in str(data):
-                data = xr.open_mfdataset(data)
+                ds = xr.open_mfdataset(data)
             else:
                 assert Path(data).exists(), f"{data}: File does not exist."
-                data = xr.open_dataset(data)
+                ds = xr.open_dataset(data)
 
         elif isinstance(data, Sequence) and all(
             isinstance(file, (str, Path)) for file in data
         ):
-            data = xr.open_mfdataset(data)
+            ds = xr.open_mfdataset(data)
 
         elif isinstance(data, xr.DataArray):
             assert data.ndim >= 2, "DataArray must at least 2D."
-            data = data.to_dataset(name=name, promote_attrs=True)
+            ds = data.to_dataset(name=name, promote_attrs=True)
         elif isinstance(data, xr.Dataset):
             assert len(data.coords) >= 2, "Dataset must have at least 2 dimensions."
-
+            ds = data
         else:
             raise NotImplementedError(
                 f"Could not construct GridModelResult from {type(data)}"
             )
 
-        item_name = _get_name(x=item, valid_names=list(data.data_vars))
+        item_name = _get_name(x=item, valid_names=list(ds.data_vars))
         name = name or item_name
-        ds: xr.Dataset = rename_coords_xr(data)
+        ds = rename_coords_xr(ds)
 
         self.data: xr.DataArray = ds[item_name]
         self.name = name
