@@ -1,6 +1,10 @@
+import importlib
+
 import pytest
 import numpy as np
 import pandas as pd
+
+
 from modelskill import (
     DfsuModelResult,
     ModelResult,
@@ -10,6 +14,9 @@ from modelskill import (
 )
 
 import modelskill as ms
+
+
+geopandas_installed = importlib.util.find_spec("geopandas") is not None
 
 
 @pytest.fixture
@@ -81,6 +88,7 @@ def test_skill(cc1):
     assert s2.iloc[0]["rmse"] == s["rmse"].min()
 
 
+@pytest.mark.skipif(not geopandas_installed, reason="geopandas not installed")
 def test_skill_to_geo_dataframe(o1, o2, o3):
     mr1 = DfsuModelResult(
         "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu", item=0, name="SW_1"
