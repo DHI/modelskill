@@ -451,6 +451,8 @@ class ComparerCollection(Mapping):
         # calculate mean x, y group by observation
         obs_coords = df[["observation", "x", "y"]].groupby("observation").mean()
         # coords = {cmp.name: (cmp.x, cmp.y) for cmp in self}
+
+        # TODO this doesn't work when res has MultiIndex, since indices doesn't align, and no error is raised, and I have no idea how to fix it
         res["x"] = obs_coords["x"]
         res["y"] = obs_coords["y"]
 
