@@ -111,23 +111,16 @@ def _set_option(*args, **kwargs) -> None:
     # must at least 1 arg deal with constraints later
 
     if len(args) == 1 and isinstance(args[0], dict):
-        # accept a dictonary of options
-        d = args[0]
-        args = []
-        for k, v in d.items():
-            args = args + [k, v]
-
-    nargs = len(args)
-    if not nargs or nargs % 2 != 0:
-        print(f"Input was args={args}, kwargs={kwargs}")
-        raise ValueError("Must provide an even number of non-keyword arguments")
+        kwargs.update(args[0])
+    else:
+        nargs = len(args)
+        if not nargs or nargs % 2 != 0:
+            raise ValueError(
+                f"Must provide an even number of non-keyword arguments, Input was args={args}, kwargs={kwargs}"
+            )
 
     # default to false
     kwargs.pop("silent", False)
-
-    if kwargs:
-        kwarg = list(kwargs.keys())[0]
-        raise TypeError(f'_set_option() got an unexpected keyword argument "{kwarg}"')
 
     for k, v in zip(args[::2], args[1::2]):
         key = _get_single_key(k)  # , silent)
@@ -139,13 +132,6 @@ def _set_option(*args, **kwargs) -> None:
         # walk the nested dict
         root, k = _get_root(key)
         root[k] = v
-
-        # if o.cb:
-        #     if silent:
-        #         with warnings.catch_warnings(record=True):
-        #             o.cb(key)
-        #     else:
-        #         o.cb(key)
 
 
 def _option_to_dict(pat: str = "") -> Dict:
@@ -201,11 +187,6 @@ def _reset_option(pat: str = "", silent: bool = False) -> None:
         _set_option(k, _registered_options[k].defval, silent=silent)
 
 
-def _get_default_val(pat: str):
-    key = _get_single_key(pat, silent=True)
-    return _get_registered_option(key).defval
-
-
 class OptionsContainer:
     """provide attribute-style access to a nested dict"""
 
@@ -248,7 +229,7 @@ class OptionsContainer:
     #     return list(keys)
 
     def __repr__(self) -> str:
-        return _describe_option_short(self.prefix, False)
+        return _describe_option_short(self.prefix, False) or ""
 
     def __dir__(self) -> Iterable[str]:
         return list(self.d.keys())
@@ -461,28 +442,24 @@ def is_callable(obj) -> bool:
     return True
 
 
-def is_positive(value: object) -> None:
-    if np.isreal(value) and value > 0:
-        return
-    raise ValueError("Value must be a number greater than 0")
+def is_positive(value) -> None:
+    if not (np.isreal(value) and value > 0):
+        raise ValueError("Value must be a number greater than 0")
 
 
-def is_nonnegative(value: object) -> None:
-    if np.isreal(value) and value >= 0:
-        return
-    raise ValueError("Value must be a non-negative number")
+def is_nonnegative(value) -> None:
+    if not (np.isreal(value) and value >= 0):
+        raise ValueError("Value must be a non-negative number")
 
 
-def is_between_0_and_1(value: object) -> None:
-    if np.isreal(value) and value >= 0 and value <= 1:
-        return
-    raise ValueError("Value must be a number between 0 and 1")
+def is_between_0_and_1(value) -> None:
+    if not (np.isreal(value) and value >= 0 and value <= 1):
+        raise ValueError("Value must be a number between 0 and 1")
 
 
-def is_dict(value: object) -> None:
-    if isinstance(value, dict):
-        return
-    raise ValueError("Value must be a dictionary")
+def is_dict(value) -> None:
+    if not isinstance(value, dict):
+        raise ValueError("Value must be a dictionary")
 
 
 def load_style(name: str) -> None:

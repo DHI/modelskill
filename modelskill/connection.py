@@ -1,9 +1,20 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 import os
 from pathlib import Path
 
 import yaml
-from typing import Iterable, List, Literal, Optional, Union, Mapping, Sequence, get_args
+from typing import (
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Union,
+    Mapping,
+    Sequence,
+    get_args,
+    Any,
+)
 import warnings
 import numpy as np
 import pandas as pd
@@ -16,7 +27,9 @@ from modelskill import ModelResult
 from modelskill.timeseries import TimeSeries
 from modelskill.types import GeometryType, Quantity
 from .model import protocols
-from .model._base import ModelResultBase
+from .model.grid import GridModelResult
+from .model.dfsu import DfsuModelResult
+from .model.track import TrackModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
@@ -37,9 +50,10 @@ MRInputType = Union[
     pd.Series,
     xr.Dataset,
     xr.DataArray,
-    ModelResultBase,
-    TimeSeries
-    # protocols.ModelResult,
+    TimeSeries,
+    GridModelResult,
+    DfsuModelResult,
+    TrackModelResult,
 ]
 ObsInputType = Union[
     str,
@@ -57,9 +71,9 @@ ObsInputType = Union[
 def from_matched(
     data: Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset],
     *,
-    obs_item: Optional[Union[str, int]] = 0,
-    mod_items: Optional[Iterable[Union[str, int]]] = None,
-    aux_items: Optional[Iterable[Union[str, int]]] = None,
+    obs_item: str | int | None = 0,
+    mod_items: Optional[Iterable[str | int]] = None,
+    aux_items: Optional[Iterable[str | int]] = None,
     quantity: Optional[Quantity] = None,
     name: Optional[str] = None,
     x: Optional[float] = None,
@@ -141,9 +155,9 @@ def compare(
     obs: Union[ObsInputType, Sequence[ObsInputType]],
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: IdOrNameTypes = None,
-    mod_item: IdOrNameTypes = None,
-    gtype: GeometryTypes = None,
+    obs_item: Optional[IdOrNameTypes] = None,
+    mod_item: Optional[IdOrNameTypes] = None,
+    gtype: Optional[GeometryTypes] = None,
     max_model_gap=None,
 ) -> Union[Comparer, ComparerCollection]:
     """Compare observations and model results
@@ -200,19 +214,19 @@ def _single_obs_compare(
     *,
     obs_item=None,
     mod_item=None,
-    gtype: GeometryTypes = None,
+    gtype: Optional[GeometryTypes] = None,
     max_model_gap=None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
     mod = _parse_models(mod, mod_item, gtype=gtype)
-    df_mod = _extract_from_models(obs, mod)
+    df_mod = _extract_from_models(obs, mod)  # type: ignore
 
     return Comparer(obs, df_mod, max_model_gap=max_model_gap)
 
 
 def _parse_single_obs(
-    obs, item: IdOrNameTypes = None, gtype: GeometryTypes = None
+    obs, item=None, gtype: Optional[GeometryTypes] = None
 ) -> protocols.Observation:
     if isinstance(obs, Observation):
         if item is not None:
@@ -230,8 +244,8 @@ def _parse_single_obs(
 
 
 def _parse_models(
-    mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None
-) -> List[protocols.ModelResult]:
+    mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None
+):
     """Return a list of ModelResult objects"""
     if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
@@ -242,8 +256,8 @@ def _parse_models(
 
 
 def _parse_single_model(
-    mod, item: IdOrNameTypes = None, gtype: GeometryTypes = None
-) -> protocols.ModelResult:
+    mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None
+):
     if isinstance(mod, protocols.ModelResult):
         if item is not None:
             raise ValueError(
@@ -299,9 +313,9 @@ def _extract_from_models(obs, mod: List[protocols.ModelResult]) -> List[pd.DataF
 
 class _BaseConnector(ABC):
     def __init__(self) -> None:
-        self.modelresults = {}
+        self.modelresults: {}  # type: ignore
         self.name = None
-        self.obs = None
+        self.obs: Any = None
 
     @property
     def n_models(self):
@@ -357,7 +371,7 @@ class _SingleObsConnector(_BaseConnector):
             self.obs = obs
             self.obs.weight = weight
 
-    def _parse_model(self, mod) -> List[protocols.ModelResult]:
+    def _parse_model(self, mod):
         if is_iterable_not_str(mod):
             mr = []
             for m in mod:
@@ -366,13 +380,11 @@ class _SingleObsConnector(_BaseConnector):
             mr = [self._parse_single_model(mod)]
         return mr
 
-    def _parse_single_model(self, mod) -> protocols.ModelResult:
-        if isinstance(mod, protocols.ModelResult):
-            return mod
-        elif isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
+    def _parse_single_model(self, mod):
+        if isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
             return ModelResult(mod)
         else:
-            raise ValueError(f"Unknown model result type {type(mod)}")
+            return mod
 
     def _validate(self, obs, modelresults):
         # TODO: add validation errors to list
@@ -448,7 +460,7 @@ class PointConnector(_SingleObsConnector):
     >>> con = Connector(o1, mr)    # con[0] = con1
     """
 
-    def _parse_observation(self, obs) -> PointObservation:
+    def _parse_observation(self, obs):
         if isinstance(obs, (pd.Series, pd.DataFrame)):
             return PointObservation(obs)
         elif isinstance(obs, str):
@@ -458,7 +470,7 @@ class PointConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float = None) -> PointComparer:
+    def extract(self, max_model_gap: Optional[float] = None) -> Optional[PointComparer]:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -510,7 +522,7 @@ class TrackConnector(_SingleObsConnector):
         else:
             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-    def extract(self, max_model_gap: float = None) -> TrackComparer:
+    def extract(self, max_model_gap: Optional[float] = None) -> Optional[TrackComparer]:
         """Extract model results at times and positions of track observation.
 
         Returns
@@ -536,7 +548,6 @@ class TrackConnector(_SingleObsConnector):
             warnings.warn(
                 f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
             )
-            # TODO returning None is not consistent with type hint
             return None
 
         comparer = TrackComparer(self.obs, df_model, max_model_gap=max_model_gap)
@@ -815,7 +826,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
             ax.set_title(title)
         return ax
 
-    def to_config(self, filename: str = None, relative_path=True):
+    def to_config(self, filename: Optional[str] = None, relative_path=True):
         """Save Connector to a config file.
 
         Parameters
@@ -952,6 +963,8 @@ class Connector(_BaseConnector, Mapping, Sequence):
             dirname = ""
 
         modelresults = {}
+
+        assert isinstance(conf, dict)
         for name, mr_dict in conf["modelresults"].items():
             if not mr_dict.get("include", True):
                 continue
@@ -978,10 +991,10 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
             otype = obs_dict.get("type")
             if (otype is not None) and ("track" in otype.lower()):
-                obs = TrackObservation(filename, item=item, name=name)
+                obs = TrackObservation(filename, item=item, name=name)  # type: ignore
             else:
                 x, y = obs_dict.get("x"), obs_dict.get("y")
-                obs = PointObservation(filename, item=item, x=x, y=y, name=name)
+                obs = PointObservation(filename, item=item, x=x, y=y, name=name)  # type: ignore
             observations[name] = obs
         obs_list = list(observations.values())
 

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
 import re
-import markdown
+import markdown  # type: ignore
 import modelskill
 
 

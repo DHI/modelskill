@@ -103,3 +103,18 @@ def test_options_register_option():
     assert modelskill.get_option("plot.scatter.points.size2") == 300
     modelskill.reset_option("plot.scatter.points.size2")
     assert modelskill.get_option("plot.scatter.points.size2") == 200
+
+
+def test_load_style_mood():
+    settings.load_style(name="MOOD")
+    assert True
+
+
+def test_load_style_is_case_insensitive():
+    settings.load_style(name="mOoD")
+    assert True
+
+
+def test_unknown_style_raises_error():
+    with pytest.raises(KeyError, match="food"):
+        settings.load_style(name="food")

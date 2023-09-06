@@ -1,24 +1,29 @@
+from __future__ import annotations
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Sequence, Union, get_args
+from typing import Optional, Sequence, get_args
+import warnings
+
+import pandas as pd
 import xarray as xr
 
-from modelskill import types, utils
-from modelskill.model import protocols, PointModelResult, TrackModelResult
-from modelskill.model._base import ModelResultBase
-from modelskill.observation import Observation, PointObservation, TrackObservation
+from ..utils import _get_name, rename_coords_xr, rename_coords_pd
+from ..types import GridType, Quantity
+from .point import PointModelResult
+from .track import TrackModelResult
+from ..observation import Observation, PointObservation, TrackObservation
 
 
-class GridModelResult(ModelResultBase):
+class GridModelResult:
     """Construct a GridModelResult from a file or xarray.Dataset.
 
     Parameters
     ----------
     data : types.GridType
         the input data or file path
-    name : Optional[str], optional
+    name : str, optional
         The name of the model result,
         by default None (will be set to file name or item name)
-    item : Optional[Union[str, int]], optional
+    item : str or int, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
@@ -27,14 +32,14 @@ class GridModelResult(ModelResultBase):
 
     def __init__(
         self,
-        data: types.GridType,
+        data: GridType,
         *,
         name: Optional[str] = None,
-        item: Optional[Union[str, int]] = None,
-        quantity: Optional[types.Quantity] = None,
+        item: str | int | None = None,
+        quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
-            data, get_args(types.GridType)
+            data, get_args(GridType)
         ), "Could not construct GridModelResult from provided data."
 
         if isinstance(data, (str, Path)):
@@ -60,14 +65,31 @@ class GridModelResult(ModelResultBase):
                 f"Could not construct GridModelResult from {type(data)}"
             )
 
-        item, _ = utils.get_item_name_and_idx(list(data.data_vars), item)
-        name = name or item
-        data = utils.rename_coords_xr(data)
+        item_name = _get_name(x=item, valid_names=list(data.data_vars))
+        name = name or item_name
+        data = rename_coords_xr(data)
 
-        assert isinstance(data, xr.Dataset)
+        self.data = data[item_name]
+        self.name = name
+        self.quantity = quantity or Quantity.undefined()
 
-        super().__init__(data=data, name=name, quantity=quantity)
-        self.item = item  # TODO remove this
+    # TODO reconsider this function (signature copied from _base)
+    def _validate_any_obs_in_model_time(
+        self, obs_name: str, time_obs: pd.DatetimeIndex, time_model: pd.DatetimeIndex
+    ) -> None:
+        pass
+
+    @property
+    def time(self) -> pd.DatetimeIndex:
+        return pd.DatetimeIndex(self.data.time)
+
+    @property
+    def start_time(self) -> pd.Timestamp:
+        return self.time[0]
+
+    @property
+    def end_time(self) -> pd.Timestamp:
+        return self.time[-1]
 
     def _in_domain(self, x: float, y: float) -> bool:
         assert hasattr(self.data, "x") and hasattr(
@@ -79,7 +101,7 @@ class GridModelResult(ModelResultBase):
         ymax = self.data.y.values.max()
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
-    def extract(self, observation: Observation) -> protocols.Comparable:
+    def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
         Parameters
@@ -92,16 +114,22 @@ class GridModelResult(ModelResultBase):
         <modelskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
-        extractor_lookup: Mapping[Observation, Callable] = {
-            PointObservation: self._extract_point,
-            TrackObservation: self._extract_track,
-        }
-        extraction_func = extractor_lookup.get(type(observation))
-        if extraction_func is None:
+        overlap_in_time = (
+            self.time[0] <= observation.time[-1]
+            and self.time[-1] >= observation.time[0]
+        )
+        if not overlap_in_time:
+            warnings.warn(
+                f"No time overlap. Observation '{observation.name}' outside model time range! "
+            )
+        if isinstance(observation, PointObservation):
+            return self._extract_point(observation)
+        elif isinstance(observation, TrackObservation):
+            return self._extract_track(observation)
+        else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
-        return extraction_func(observation)
 
     def _extract_point(self, observation: PointObservation) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
@@ -122,8 +150,11 @@ class GridModelResult(ModelResultBase):
         self._validate_any_obs_in_model_time(
             observation.name, observation.data.index, self.time
         )
+        # TODO add correct type hint to self.data
+        assert isinstance(self.data, xr.DataArray)
 
-        da = self.data[self.item].interp(coords=dict(x=x, y=y), method="nearest")
+        # TODO self.item is None, ☹️
+        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")  # type: ignore
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={df.columns[-1]: self.name})
 
@@ -144,13 +175,14 @@ class GridModelResult(ModelResultBase):
             observation.name, observation.data.index, self.time
         )
 
-        renamed_obs_data = utils.rename_coords_pd(observation.data)
+        renamed_obs_data = rename_coords_pd(observation.data)
         t = xr.DataArray(renamed_obs_data.index, dims="track")
         x = xr.DataArray(renamed_obs_data.x, dims="track")
         y = xr.DataArray(renamed_obs_data.y, dims="track")
-        da = self.data[self.item].interp(coords=dict(time=t, x=x, y=y), method="linear")
+
+        assert isinstance(self.data, xr.DataArray)
+        da = self.data.interp(coords=dict(time=t, x=x, y=y), method="linear")
         df = da.to_dataframe().drop(columns=["time"])
-        # df.index.name = "time"
         df = df.rename(columns={df.columns[-1]: self.name})
 
         return TrackModelResult(

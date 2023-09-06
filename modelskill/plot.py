@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Tuple, Union, Optional, Sequence
 import warnings
 from matplotlib.axes import Axes
@@ -76,7 +77,11 @@ register_option("plot.scatter.legend.fontsize", 12, validator=settings.is_positi
 
 # TODO: Auto-implement
 # still requires plt.rcParams.update(modelskill.settings.get_option('plot.rcParams'))
-register_option("plot.rcParams", {}, settings.is_dict)  # still have to
+
+# TODO does this work as intended? Mutable default values, e.g. dict, list, are usually not recommended
+register_option(
+    key="plot.rcParams", defval={}, validator=settings.is_dict
+)  # still have to
 
 
 def _get_ax(ax=None, figsize=None):
@@ -93,8 +98,35 @@ def _get_fig_ax(ax=None, figsize=None):
     return fig, ax
 
 
+def _xtick_directional(ax, xlim=None):
+    """Set x-ticks for directional data"""
+    ticks = ticks = _xyticks(lim=xlim)
+    if len(ticks) > 2:
+        ax.set_xticks(ticks)
+    if xlim is None:
+        ax.set_xlim(0, 360)
+
+
+def _ytick_directional(ax, ylim=None):
+    """Set y-ticks for directional data"""
+    ticks = _xyticks(lim=ylim)
+    if len(ticks) > 2:
+        ax.set_yticks(ticks)
+    if ylim is None:
+        ax.set_ylim(0, 360)
+
+
+def _xyticks(n_sectors=8, lim=None):
+    """Set y-ticks for directional data"""
+    # labels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
+    ticks = np.linspace(0, 360, n_sectors + 1)
+    if lim is not None:
+        ticks = ticks[(ticks >= lim[0]) & (ticks <= lim[1])]
+    return ticks
+
+
 def sample_points(
-    x: np.ndarray, y: np.ndarray, include: Optional[Union[bool, int, float]] = None
+    x: np.ndarray, y: np.ndarray, include: bool | int | float | None = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Sample points to be plotted
 
@@ -152,8 +184,10 @@ def sample_points(
 
 
 def quantiles_xy(
-    x: np.ndarray, y: np.ndarray, quantiles: Union[int, Sequence[float]] = None
-) -> Tuple[np.ndarray, np.ndarray]:
+    x: np.ndarray,
+    y: np.ndarray,
+    quantiles: Optional[Union[int, Sequence[float]]] = None,
+):
     """Calculate quantiles of x and y
 
     Parameters
@@ -169,18 +203,22 @@ def quantiles_xy(
         x and y arrays with quantiles
     """
 
-    if quantiles is None:
-        if len(x) >= 3000:
-            quantiles = 1000
-        elif len(x) >= 300:
-            quantiles = 100
-        else:
-            quantiles = 10
+    if isinstance(quantiles, Sequence):
+        q = np.array(quantiles)
+    else:
+        if quantiles is None:
+            if len(x) >= 3000:
+                n_quantiles = 1000
+            elif len(x) >= 300:
+                n_quantiles = 100
+            else:
+                n_quantiles = 10
 
-    if not isinstance(quantiles, (int, Sequence)):
-        raise TypeError("quantiles must be an int or sequence of floats")
+        if isinstance(quantiles, int):
+            n_quantiles = quantiles
 
-    q = np.linspace(0, 1, num=quantiles) if isinstance(quantiles, int) else quantiles
+        q = np.linspace(0, 1, num=n_quantiles)
+
     return np.quantile(x, q=q), np.quantile(y, q=q)
 
 
@@ -199,8 +237,7 @@ def _scatter_matplotlib(
     show_hist,
     norm,
     nbins_hist,
-    intercept,
-    slope,
+    reg_method,
     xlabel,
     ylabel,
     figsize,
@@ -241,28 +278,37 @@ def _scatter_matplotlib(
             norm=norm_,
             **kwargs,
         )
-    plt.plot(
-        xq,
-        yq,
-        options.plot.scatter.quantiles.marker,
-        label=options.plot.scatter.quantiles.label,
-        c=options.plot.scatter.quantiles.color,
-        zorder=4,
-        markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
-        markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
-        markersize=options.plot.scatter.quantiles.markersize,
-        **settings.get_option("plot.scatter.quantiles.kwargs"),
-    )
+    if len(xq) > 0:
+        plt.plot(
+            xq,
+            yq,
+            options.plot.scatter.quantiles.marker,
+            label=options.plot.scatter.quantiles.label,
+            c=options.plot.scatter.quantiles.color,
+            zorder=4,
+            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
+            markersize=options.plot.scatter.quantiles.markersize,
+            **settings.get_option("plot.scatter.quantiles.kwargs"),
+        )
 
-    plt.plot(
-        x_trend,
-        intercept + slope * x_trend,
-        **settings.get_option("plot.scatter.reg_line.kwargs"),
-        label=_reglabel(
-            slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
-        ),
-        zorder=2,
-    )
+    if reg_method:
+        if fit_to_quantiles:
+            slope, intercept = _linear_regression(
+                obs=xq, model=yq, reg_method=reg_method
+            )
+        else:
+            slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+
+        plt.plot(
+            x_trend,
+            intercept + slope * x_trend,
+            **settings.get_option("plot.scatter.reg_line.kwargs"),
+            label=_reglabel(
+                slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
+            ),
+            zorder=2,
+        )
 
     if show_hist:
         plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
@@ -307,8 +353,7 @@ def _scatter_plotly(
     norm,  # TODO not used by plotly, remove or keep for consistency?
     show_hist,
     nbins_hist,
-    intercept,
-    slope,
+    reg_method,
     xlabel,
     ylabel,
     figsize,  # TODO not used by plotly, remove or keep for consistency?
@@ -326,16 +371,24 @@ def _scatter_plotly(
         go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
     ]
 
-    regression_line = go.Scatter(
-        x=x_trend,
-        y=intercept + slope * x_trend,
-        name=_reglabel(
-            slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
-        ),
-        mode="lines",
-        line=dict(color="red"),
-    )
-    data.append(regression_line)
+    if reg_method:
+        if fit_to_quantiles:
+            slope, intercept = _linear_regression(
+                obs=xq, model=yq, reg_method=reg_method
+            )
+        else:
+            slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+
+        regression_line = go.Scatter(
+            x=x_trend,
+            y=intercept + slope * x_trend,
+            name=_reglabel(
+                slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
+            ),
+            mode="lines",
+            line=dict(color="red"),
+        )
+        data.append(regression_line)
 
     if show_hist:
         data.append(
@@ -370,18 +423,19 @@ def _scatter_plotly(
                 marker=dict(color=c, opacity=0.5, size=3.0, colorbar=cbar),
             )
         )
-    data.append(
-        go.Scatter(
-            x=xq,
-            y=yq,
-            name=options.plot.scatter.quantiles.label,
-            mode="markers",
-            marker_symbol="x",
-            marker_color=options.plot.scatter.quantiles.color,
-            marker_line_color="midnightblue",
-            marker_line_width=0.6,
+    if len(xq) > 0:
+        data.append(
+            go.Scatter(
+                x=xq,
+                y=yq,
+                name=options.plot.scatter.quantiles.label,
+                mode="markers",
+                marker_symbol="x",
+                marker_color=options.plot.scatter.quantiles.color,
+                marker_line_color="midnightblue",
+                marker_line_width=0.6,
+            )
         )
-    )
 
     defaults = {"width": 600, "height": 600}
     defaults = {**defaults, **kwargs}
@@ -410,23 +464,20 @@ def _reglabel(slope: float, intercept: float, fit_to_quantiles: bool) -> str:
     return f"{fit}: y={slope:.2f}x{sign}{intercept:.2f}"
 
 
-def _get_bins(
-    bins: Union[int, float, Sequence[float]], xymin, xymax
-):  # TODO return type
+def _get_bins(bins: int | float, xymin, xymax) -> Tuple[int, float]:
     assert xymax >= xymin
     xyspan = xymax - xymin
 
     if isinstance(bins, int):
-        nbins_hist = bins
-        binsize = xyspan / nbins_hist
+        nbins_hist: int = bins
+        binsize: float = xyspan / nbins_hist
     elif isinstance(bins, float):
         binsize = bins
-        nbins_hist = int(xyspan / binsize)
-    elif isinstance(bins, Sequence):
-        binsize = bins
-        nbins_hist = bins
+        nbins_hist = xyspan // binsize
     else:
-        raise TypeError("bins must be an int, float or sequence")
+        raise TypeError("bins must be a number")
+
+    assert nbins_hist > 0
 
     return nbins_hist, binsize
 
@@ -435,10 +486,10 @@ def scatter(
     x: np.ndarray,
     y: np.ndarray,
     *,
-    bins: Union[int, float, List[int], List[float]] = 20,
-    quantiles: Optional[Union[int, List[float]]] = None,
+    bins: int | float = 20,
+    quantiles: int | Sequence[float] | None = None,
     fit_to_quantiles: bool = False,
-    show_points: Optional[Union[bool, int, float]] = None,
+    show_points: bool | int | float | None = None,
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
     norm: Optional[colors.Normalize] = None,
@@ -446,7 +497,7 @@ def scatter(
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
     ylim: Optional[Tuple[float, float]] = None,
-    reg_method: str = "ols",
+    reg_method: str | bool = "ols",
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
@@ -497,10 +548,11 @@ def scatter(
         plot range for the observation (xmin, xmax), by default None
     ylim : tuple, optional
         plot range for the model (ymin, ymax), by default None
-    reg_method : str, optional
+    reg_method : str or bool, optional
         method for determining the regression line
         "ols" : ordinary least squares regression
         "odr" : orthogonal distance regression,
+        False : no regression line
         by default "ols"
     title : str, optional
         plot title, by default None
@@ -563,12 +615,6 @@ def scatter(
         # scale Z by sample size
         z = z * len(x) / len(x_sample)
 
-    # linear fit
-    if fit_to_quantiles:
-        slope, intercept = _linear_regression(obs=xq, model=yq, reg_method=reg_method)
-    else:
-        slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
-
     PLOTTING_BACKENDS = {
         "matplotlib": _scatter_matplotlib,
         "plotly": _scatter_plotly,
@@ -591,8 +637,7 @@ def scatter(
         show_points=show_points,
         show_hist=show_hist,
         nbins_hist=nbins_hist,
-        intercept=intercept,
-        slope=slope,
+        reg_method=reg_method,
         xlabel=xlabel,
         ylabel=ylabel,
         figsize=figsize,
@@ -700,8 +745,8 @@ def plot_spatial_overview(
     obs: List[Observation],
     mod=None,
     ax=None,
-    figsize: Tuple = None,
-    title: str = None,
+    figsize: Optional[Tuple] = None,
+    title: Optional[str] = None,
 ):
     """Plot observation points on a map showing the model domain
 
@@ -735,8 +780,8 @@ def plot_spatial_overview(
     >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
     >>> ms.plot_spatial_overview([o1, o2], [mr1, mr2])
     """
-    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
-    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
+    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]  # type: ignore
+    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]  # type: ignore
 
     ax = _get_ax(ax=ax, figsize=figsize)
     offset_x = 1  # TODO: better default
@@ -758,7 +803,7 @@ def plot_spatial_overview(
     for o in obs:
         if isinstance(o, PointObservation):
             ax.scatter(x=o.x, y=o.y, marker="x")
-            ax.annotate(o.name, (o.x + offset_x, o.y))
+            ax.annotate(o.name, (o.x + offset_x, o.y))  # type: ignore
         elif isinstance(o, TrackObservation):
             if o.n_points < 10000:
                 ax.scatter(x=o.x, y=o.y, c=o.values, marker=".", cmap="Reds")
@@ -912,7 +957,7 @@ def _format_skill_line(
     series: pd.Series,
     units: str,
     precision: int,
-) -> str:
+) -> Tuple[str, str, str]:
     name = series.name
 
     item_unit = " "
@@ -933,7 +978,7 @@ def _format_skill_line(
     return f"{name}", " =  ", f"{fvalue} {item_unit}"
 
 
-def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2) -> List[str]:
+def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2):
     # remove model and variable columns if present, i.e. keep all other columns
     df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
 
