@@ -842,6 +842,29 @@ with columns obs_item, mod_items, aux_items</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="modelskill.comparison.Comparer.rename">
+<span class="sig-name descname"><span class="pre">rename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mapping</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.rename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.rename" title="Permalink to this definition">#</a></dt>
+<dd><p>Rename model or auxiliary data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mapping</strong> (<em>dict</em>) – mapping of old names to new names</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#modelskill.comparison.Comparer" title="modelskill.comparison.Comparer">Comparer</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cmp</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">modeldata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span>
+<span class="go">[&#39;model1&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmp2</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s1">&#39;model1&#39;</span><span class="p">:</span> <span class="s1">&#39;model2&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cmp2</span><span class="o">.</span><span class="n">mod_names</span>
+<span class="go">[&#39;model2&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="modelskill.comparison.Comparer.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.save" title="Permalink to this definition">#</a></dt>
 <dd><p>Save to netcdf file</p>
