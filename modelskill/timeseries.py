@@ -166,7 +166,11 @@ class TimeSeries:
 
     @property
     def time(self) -> pd.DatetimeIndex:
-        return self.data.index  # type: ignore
+        if isinstance(self.data, pd.DataFrame):
+            return self.data.index  # type: ignore
+        else:
+            # xr.Dataset
+            return pd.DatetimeIndex(self.data.time)
 
     @property
     def start_time(self) -> datetime:
@@ -196,4 +200,9 @@ class TimeSeries:
         # Expand time interval with buffer
         start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
         end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
-        self.data = self.data.loc[start_time:end_time]  # type: ignore
+
+        if isinstance(self.data, pd.DataFrame):
+            self.data = self.data.loc[start_time:end_time]  # type: ignore
+        else:
+            # assume xr
+            self.data = self.data.sel(time=slice(start_time, end_time))
