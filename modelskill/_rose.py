@@ -12,25 +12,24 @@ from matplotlib.patches import Polygon, Rectangle
 def wind_rose(
     data,
     *,
-    labels = ("Measurement", "Model"),
+    labels=("Measurement", "Model"),
     mag_step: Optional[float] = None,
     n_sectors: int = 16,
-    calm_threshold: Optional[float]=None,  # TODO rename to vmin?
-    calm_size : Optional[float] = None,
-    calm_text: str ="Calm",
+    calm_threshold: Optional[float] = None,  # TODO rename to vmin?
+    calm_size: Optional[float] = None,
+    calm_text: str = "Calm",
     r_step: float = 0.1,
     r_max: Optional[float] = None,
-    legend: bool =True,
+    legend: bool = True,
     cmap1: str = "viridis",
     cmap2: str = "Greys",
     mag_bins: Optional[List[float]] = None,
-    max_bin: Optional[float]=None,  # TODO rename to vmax?
+    max_bin: Optional[float] = None,  # TODO rename to vmax?
     n_dir_labels: Optional[int] = None,
     secondary_dir_step_factor: float = 2.0,
-    figsize: Tuple[float,float] = (8,8),
+    figsize: Tuple[float, float] = (8, 8),
     ax=None,
 ):
-
     """Plots a (dual) wind (wave or current) roses with calms.
 
     The size of the calm is determined by the primary (measurement) data.
@@ -72,7 +71,7 @@ def wind_rose(
         figure size
     ax: Matplotlib axis Default= None
         Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
-    
+
 
     Returns
     -------
@@ -81,11 +80,11 @@ def wind_rose(
     """
     if hasattr(data, "to_numpy"):
         data = data.to_numpy()
-    
+
     # check that data is array_like
     assert hasattr(data, "__array__"), "data must be array_like"
 
-    data_1 = data[:, 0:2] # primary magnitude and direction
+    data_1 = data[:, 0:2]  # primary magnitude and direction
     data_1_max = data_1[:, 0].max()
 
     ncols = data.shape[1]
@@ -93,7 +92,7 @@ def wind_rose(
     dual = ncols == 4
 
     if dual:
-        data_2 = data[:, 2:4] # secondary magnitude and direction
+        data_2 = data[:, 2:4]  # secondary magnitude and direction
         data_2_max = data_2[:, 0].max()
         assert len(labels) == 2, "labels must have 2 elements"
     else:
@@ -122,11 +121,11 @@ def wind_rose(
     )
     thetac = thetai[:-1] + half_dir_step
 
-    mask_1 = data_1[:, 0] >= vmin    
+    mask_1 = data_1[:, 0] >= vmin
 
     # compute total calms
     n = len(data_1)
-    calm = len(data_1[~mask_1]) / n   
+    calm = len(data_1[~mask_1]) / n
 
     counts = _calc_masked_histogram2d(data=data_1, mask=mask_1, ui=ui, thetai=thetai)
 
@@ -164,12 +163,20 @@ def wind_rose(
     tick_labels = [f"{tick * 100 :.0f}%" for tick in ri]
     ax.set_yticklabels(tick_labels)
     ax.set_rlabel_position(5)
-    
+
     if vmin > 0:
         _add_calms_to_ax(ax, threshold=calm, text=calm_text)
 
     # primary histogram (model)
-    p = _create_patch(thetac=thetac, dir_step=dir_step, calm=calm, ui=ui, counts=counts, cmap=cmap, vmax=vmax)
+    p = _create_patch(
+        thetac=thetac,
+        dir_step=dir_step,
+        calm=calm,
+        ui=ui,
+        counts=counts,
+        cmap=cmap,
+        vmax=vmax,
+    )
     ax.add_collection(p)
 
     if legend:
@@ -191,7 +198,16 @@ def wind_rose(
         cmap = _get_cmap(cmap2)
 
         # TODO should this be calm2?
-        p = _create_patch(thetac=thetac, dir_step=dir_step, calm=calm, ui=ui, counts=counts_2, cmap=cmap, vmax=vmax, dir_step_factor=secondary_dir_step_factor)
+        p = _create_patch(
+            thetac=thetac,
+            dir_step=dir_step,
+            calm=calm,
+            ui=ui,
+            counts=counts_2,
+            cmap=cmap,
+            vmax=vmax,
+            dir_step_factor=secondary_dir_step_factor,
+        )
         ax.add_collection(p)
 
         if legend:
@@ -206,7 +222,7 @@ def wind_rose(
                 label=labels[1],
                 primary=False,
                 dual=dual,
-                )
+            )
 
     return ax
 
@@ -264,13 +280,13 @@ def pretty_intervals(
     vmin: Optional[float] = None,
     max_bin: Optional[float] = None,
     n_decimals: int = 3,
-) -> Tuple[np.ndarray, float, float]:
+):
     """Pretty intervals for the magnitude bins"""
 
     if mag_bins is not None:
         assert len(mag_bins) >= 3, "Must have at least 3 bins"
         mag_bins_ = np.array(mag_bins)
-        ui = np.concatenate((mag_bins_, mag_bins_[[-1]] * 999)) # TODO 999?
+        ui = np.concatenate((mag_bins_, mag_bins_[[-1]] * 999))  # TODO 999?
         vmin = ui[0]
         max_bin = ui[-2]
         dbin = np.diff(ui)[-2]
@@ -302,12 +318,16 @@ def pretty_intervals(
         # Round bins to make them pretty
         ui = ui.round(n_decimals)
 
+    assert isinstance(ui, np.ndarray)
+    assert ui.ndim == 1
+
     # TODO return a better object?
     return ui, vmin, vmax
 
 
-def _create_patch(thetac, dir_step, calm, ui, counts, cmap, vmax, dir_step_factor=1.0) -> PatchCollection:
-
+def _create_patch(
+    thetac, dir_step, calm, ui, counts, cmap, vmax, dir_step_factor=1.0
+) -> PatchCollection:
     arc_res = dir_step
     # reduced width of arcs for plot on top of each other
     dir_step = dir_step / dir_step_factor
@@ -321,7 +341,7 @@ def _create_patch(thetac, dir_step, calm, ui, counts, cmap, vmax, dir_step_facto
     arc_x = np.deg2rad(
         np.linspace(thetac - dir_step / 2, thetac + dir_step / 2, arc_res)
     )
-    
+
     # TODO consider if this section can be written in a clearer way
     # Loop through magnitudes
     for i, mag in enumerate(ui[1:]):
@@ -346,6 +366,7 @@ def _create_patch(thetac, dir_step, calm, ui, counts, cmap, vmax, dir_step_facto
 
     return p
 
+
 def _calc_mag_step(xmax: float, ymax: Optional[float] = None, factor: float = 16.0):
     """
     Calculate the magnitude step size for a rose plot.
@@ -369,7 +390,7 @@ def _calc_mag_step(xmax: float, ymax: Optional[float] = None, factor: float = 16
 
     if ymax is None:
         return mag_step
-    
+
     mag_step2 = np.round(ymax / factor, 1)
     if mag_step2 == 0:
         mag_step2 = np.round(ymax / factor, 2)
@@ -377,8 +398,9 @@ def _calc_mag_step(xmax: float, ymax: Optional[float] = None, factor: float = 16
     return mag_step
 
 
-def _calc_masked_histogram2d(*, data, mask, ui, thetai, n: Optional[int]=None) -> np.ndarray:
-    
+def _calc_masked_histogram2d(
+    *, data, mask, ui, thetai, n: Optional[int] = None
+) -> np.ndarray:
     if n is None:
         n = len(data)
     counts, _, _ = np.histogram2d(
@@ -390,10 +412,7 @@ def _calc_masked_histogram2d(*, data, mask, ui, thetai, n: Optional[int]=None) -
     return counts
 
 
-
-def _calc_radial_ticks(
-    *, counts: np.ndarray, step: float, stop: Optional[float]
-) -> np.ndarray:
+def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: Optional[float]):
     cmax = counts.sum(axis=0).max()
     if stop is None:
         rmax = np.ceil((cmax + step) / step) * step
@@ -406,7 +425,7 @@ def _calc_radial_ticks(
     return ri, rmax
 
 
-def _add_calms_to_ax(ax, *, threshold: np.ndarray, text: str) -> None:
+def _add_calms_to_ax(ax, *, threshold: float, text: str) -> None:
     ax.bar(np.pi, threshold, color="white", ec="k", zorder=0)
     ax.bar(
         np.pi, threshold, width=2 * np.pi, label="_nolegend_", color="white", zorder=3
@@ -422,9 +441,8 @@ def _add_calms_to_ax(ax, *, threshold: np.ndarray, text: str) -> None:
 
 
 def _add_legend_to_ax(
-    ax, *, cmap,vmin,vmax, ui, calm, counts, label, primary: bool, dual=False
+    ax, *, cmap, vmin, vmax, ui, calm, counts, label, primary: bool, dual=False
 ) -> None:
-
     norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
     colors = [cmap(norm(x)) for x in ui]
 
@@ -443,7 +461,7 @@ def _add_legend_to_ax(
     handles[0].set_ec("k")
 
     if primary:
-        bbox_to_anchor = (1.05, -0.06, 0.1, 0.8)
+        bbox_to_anchor: Tuple[float, ...] = (1.05, -0.06, 0.1, 0.8)
         loc = "lower left"
     else:
         bbox_to_anchor = (-0.13, -0.06, 0.1, 0.8)
@@ -452,7 +470,7 @@ def _add_legend_to_ax(
     # TODO figure out how to make this work properly
     if not dual:
         bbox_to_anchor = (-0.05, 0.0)
-        loc = 'lower right'
+        loc = "lower right"
 
     leg = Legend(
         ax,
@@ -464,7 +482,7 @@ def _add_legend_to_ax(
         loc=loc,
     )
     box_width = 0.32
-    
+
     if primary:
         ax_left = ax.inset_axes([-box_width * 1.15, -0.05, box_width * 1.15, 0.5])
         ax_left.axis("off")

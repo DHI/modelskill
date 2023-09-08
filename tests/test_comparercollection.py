@@ -150,7 +150,6 @@ def test_cc_query(cc):
 
 
 def test_save(cc: modelskill.comparison.ComparerCollection, tmp_path):
-
     fn = tmp_path / "test_cc.msk"
     assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__
     cc.save(fn)
@@ -163,14 +162,13 @@ def test_save(cc: modelskill.comparison.ComparerCollection, tmp_path):
 
 
 def test_hist(cc):
-    ax = cc.hist()
+    ax = cc.sel(model="m1").hist()
     assert ax is not None
 
 
 def test_kde(cc):
     ax = cc.kde()
     assert ax is not None
-
 
 
 def test_add_cc_pc(cc, pc):
@@ -194,9 +192,29 @@ def test_add_cc_cc(cc, pc, tc):
     pc2.data.attrs["name"] = "pc2"
     tc2 = tc.copy()
     tc2.data.attrs["name"] = "tc2"
-    tc3 = tc.copy() # keep name    
+    tc3 = tc.copy()  # keep name
     cc2 = pc2 + tc2 + tc3
 
     cc3 = cc + cc2
-    #assert cc3.n_points == 15
+    # assert cc3.n_points == 15
     assert cc3.n_comparers == 4
+
+
+def test_plots_directional(cc):
+    cc = cc.sel(model="m1")
+
+    cc.plot.is_directional = True
+
+    ax = cc.plot.scatter()
+    assert "m1" in ax.get_title()
+    assert ax.get_xlim() == (0.0, 360.0)
+    assert ax.get_ylim() == (0.0, 360.0)
+    assert len(ax.get_legend().get_texts()) == 1  # no reg line or qq
+
+    ax = cc.plot.kde()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    ax = cc.plot.hist()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)

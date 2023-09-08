@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Optional, Union, List
+from typing import Union, List
 
 from dataclasses import dataclass
 import warnings
@@ -80,10 +80,6 @@ PointType = Union[
     str, Path, pd.DataFrame, pd.Series, mikeio.Dfs0, mikeio.DataArray, mikeio.Dataset
 ]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset]
-
-# DfsType = Union[mikeio.Dfs0, mikeio.Dfsu]
-
-ItemType = Optional[Union[str, int]]
 
 
 @dataclass(frozen=True)
