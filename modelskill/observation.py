@@ -149,7 +149,7 @@ class PointObservation(Observation):
             if name is None:
                 name = "Observation"
         elif isinstance(data, mikeio.DataArray):
-            df = data.to_dataframe()
+            df = mikeio.Dataset([data]).to_dataframe()
             if quantity is None:
                 quantity = Quantity.from_mikeio_iteminfo(data.item)
         elif isinstance(data, mikeio.Dataset):

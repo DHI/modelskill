@@ -56,7 +56,7 @@ class PointModelResult(TimeSeries):
         if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
             item_name = _get_name(x=item, valid_names=item_names)
-            df = data[item_name].to_dataframe()
+            df = data[[item_name]].to_dataframe()
         elif isinstance(data, mikeio.DataArray):
             if item is None:
                 item_name = data.name
