@@ -240,6 +240,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
 
+<span class="kn">from</span> <span class="nn">._base</span> <span class="kn">import</span> <span class="n">SpatialField</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_get_name</span><span class="p">,</span> <span class="n">rename_coords_xr</span><span class="p">,</span> <span class="n">rename_coords_pd</span>
 <span class="kn">from</span> <span class="nn">..types</span> <span class="kn">import</span> <span class="n">GridType</span><span class="p">,</span> <span class="n">Quantity</span>
 <span class="kn">from</span> <span class="nn">.point</span> <span class="kn">import</span> <span class="n">PointModelResult</span>
@@ -247,7 +248,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">..observation</span> <span class="kn">import</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span>
 
 
-<div class="viewcode-block" id="GridModelResult"><a class="viewcode-back" href="../../../api.html#modelskill.model.GridModelResult">[docs]</a><span class="k">class</span> <span class="nc">GridModelResult</span><span class="p">:</span>
+<div class="viewcode-block" id="GridModelResult"><a class="viewcode-back" href="../../../api.html#modelskill.model.GridModelResult">[docs]</a><span class="k">class</span> <span class="nc">GridModelResult</span><span class="p">(</span><span class="n">SpatialField</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a GridModelResult from a file or xarray.Dataset.</span>
 
 <span class="sd">    Parameters</span>
@@ -278,40 +279,34 @@ document.write(`
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
             <span class="k">if</span> <span class="s2">&quot;*&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_mfdataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_mfdataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">: File does not exist.&quot;</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">))</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">data</span>
         <span class="p">):</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_mfdataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_mfdataset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
             <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;DataArray must at least 2D.&quot;</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">promote_attrs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">promote_attrs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
             <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">coords</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Dataset must have at least 2 dimensions.&quot;</span>
-
+            <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Could not construct GridModelResult from </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">item_name</span> <span class="o">=</span> <span class="n">_get_name</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="p">))</span>
+        <span class="n">item_name</span> <span class="o">=</span> <span class="n">_get_name</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">))</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">item_name</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">rename_coords_xr</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">rename_coords_xr</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">item_name</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">item_name</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">quantity</span> <span class="o">=</span> <span class="n">quantity</span> <span class="ow">or</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">undefined</span><span class="p">()</span>
-
-    <span class="c1"># TODO reconsider this function (signature copied from _base)</span>
-    <span class="k">def</span> <span class="nf">_validate_any_obs_in_model_time</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">obs_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">time_obs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">,</span> <span class="n">time_model</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">pass</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">:</span>
@@ -357,15 +352,15 @@ document.write(`
                 <span class="sa">f</span><span class="s2">&quot;No time overlap. Observation &#39;</span><span class="si">{</span><span class="n">observation</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; outside model time range! &quot;</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">PointObservation</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_point</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_point</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">TrackObservation</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_track</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_track</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Extraction from </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span><span class="si">}</span><span class="s2"> is not implemented.&quot;</span>
             <span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_extract_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">PointObservation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PointModelResult</span><span class="p">:</span>
+<div class="viewcode-block" id="GridModelResult.extract_point"><a class="viewcode-back" href="../../../api.html#modelskill.model.GridModelResult.extract_point">[docs]</a>    <span class="k">def</span> <span class="nf">extract_point</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">PointObservation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PointModelResult</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),</span>
 <span class="sd">        given a PointObservation. No time interpolation is done!&quot;&quot;&quot;</span>
 
@@ -381,9 +376,6 @@ document.write(`
                 <span class="sa">f</span><span class="s2">&quot;PointObservation &#39;</span><span class="si">{</span><span class="n">observation</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; (</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">) is outside model domain!&quot;</span>
             <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_any_obs_in_model_time</span><span class="p">(</span>
-            <span class="n">observation</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">observation</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span>
-        <span class="p">)</span>
         <span class="c1"># TODO add correct type hint to self.data</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span>
 
@@ -399,15 +391,11 @@ document.write(`
             <span class="n">item</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="n">quantity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_extract_track</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">TrackObservation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrackModelResult</span><span class="p">:</span>
+<div class="viewcode-block" id="GridModelResult.extract_track"><a class="viewcode-back" href="../../../api.html#modelskill.model.GridModelResult.extract_track">[docs]</a>    <span class="k">def</span> <span class="nf">extract_track</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">TrackObservation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrackModelResult</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),</span>
 <span class="sd">        given a TrackObservation.&quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_any_obs_in_model_time</span><span class="p">(</span>
-            <span class="n">observation</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">observation</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span>
-        <span class="p">)</span>
 
         <span class="n">renamed_obs_data</span> <span class="o">=</span> <span class="n">rename_coords_pd</span><span class="p">(</span><span class="n">observation</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">renamed_obs_data</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="s2">&quot;track&quot;</span><span class="p">)</span>
@@ -424,7 +412,7 @@ document.write(`
             <span class="n">item</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="n">quantity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">quantity</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span></div></div>
 </pre></div>
 
                 </article>

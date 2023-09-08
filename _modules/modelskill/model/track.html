@@ -240,8 +240,8 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">mikeio</span>
 
-<span class="kn">from</span> <span class="nn">._base</span> <span class="kn">import</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">ModelResultBase</span>
-<span class="kn">from</span> <span class="nn">..types</span> <span class="kn">import</span> <span class="n">TrackType</span>
+<span class="kn">from</span> <span class="nn">..types</span> <span class="kn">import</span> <span class="n">TrackType</span><span class="p">,</span> <span class="n">Quantity</span>
+<span class="kn">from</span> <span class="nn">..timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">make_unique_index</span><span class="p">,</span> <span class="n">get_item_name_and_idx</span>
 
@@ -257,7 +257,7 @@ document.write(`
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="TrackModelResult"><a class="viewcode-back" href="../../../api.html#modelskill.model.TrackModelResult">[docs]</a><span class="k">class</span> <span class="nc">TrackModelResult</span><span class="p">(</span><span class="n">ModelResultBase</span><span class="p">):</span>
+<div class="viewcode-block" id="TrackModelResult"><a class="viewcode-back" href="../../../api.html#modelskill.model.TrackModelResult">[docs]</a><span class="k">class</span> <span class="nc">TrackModelResult</span><span class="p">(</span><span class="n">TimeSeries</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct a TrackModelResult from a dfs0 file,</span>
 <span class="sd">    mikeio.Dataset or pandas.DataFrame</span>
 
@@ -320,7 +320,9 @@ document.write(`
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">ti</span><span class="o">.</span><span class="n">x</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">ti</span><span class="o">.</span><span class="n">y</span><span class="p">:</span> <span class="s2">&quot;y&quot;</span><span class="p">})</span>
         <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">make_unique_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">offset_duplicates</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span>
+        <span class="c1"># TODO move default quantity to TimeSeries?</span>
+        <span class="n">model_quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">undefined</span><span class="p">()</span> <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">quantity</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">model_quantity</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_parse_track_items</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrackItem</span><span class="p">:</span>

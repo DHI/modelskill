@@ -367,6 +367,20 @@ must be given (as either an index or a string), by default None</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.model.DfsuModelResult.extract_point">
+<span class="sig-name descname"><span class="pre">extract_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/dfsu.html#DfsuModelResult.extract_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.DfsuModelResult.extract_point" title="Permalink to this definition">#</a></dt>
+<dd><p>Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
+given a PointObservation. No time interpolation is done!</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.model.DfsuModelResult.extract_track">
+<span class="sig-name descname"><span class="pre">extract_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/dfsu.html#DfsuModelResult.extract_track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.DfsuModelResult.extract_track" title="Permalink to this definition">#</a></dt>
+<dd><p>Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
+given a TrackObservation.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -400,6 +414,20 @@ must be given (as either an index or a string), by default None</p></li>
 <dd class="field-odd"><p>&lt;modelskill.protocols.Comparable&gt;</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.model.GridModelResult.extract_point">
+<span class="sig-name descname"><span class="pre">extract_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/grid.html#GridModelResult.extract_point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.GridModelResult.extract_point" title="Permalink to this definition">#</a></dt>
+<dd><p>Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
+given a PointObservation. No time interpolation is done!</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.model.GridModelResult.extract_track">
+<span class="sig-name descname"><span class="pre">extract_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/grid.html#GridModelResult.extract_track"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.GridModelResult.extract_track" title="Permalink to this definition">#</a></dt>
+<dd><p>Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
+given a TrackObservation.</p>
 </dd></dl>
 
 </dd></dl>
