@@ -1,4 +1,5 @@
-from typing import List, Tuple
+from __future__ import annotations
+from typing import List, Tuple, Sequence
 import warnings
 import numpy as np
 import pandas as pd
@@ -23,18 +24,20 @@ TIME_COORDINATE_NAME_MAPPING = {
 
 def rename_coords_xr(ds: xr.Dataset) -> xr.Dataset:
     """Rename coordinates to standard names"""
+    var_names = [str(name).lower() for name in ds.variables]
+
     ds = ds.rename(
         {
-            c: TIME_COORDINATE_NAME_MAPPING[c.lower()]
-            for c in list(ds.coords) + list(ds.data_vars)
-            if c.lower() in TIME_COORDINATE_NAME_MAPPING.keys()
+            c: TIME_COORDINATE_NAME_MAPPING[c]
+            for c in var_names
+            if c in TIME_COORDINATE_NAME_MAPPING
         }
     )
     ds = ds.rename(
         {
-            c: POS_COORDINATE_NAME_MAPPING[c.lower()]
-            for c in list(ds.coords) + list(ds.data_vars)
-            if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
+            c: POS_COORDINATE_NAME_MAPPING[c]
+            for c in var_names
+            if c in POS_COORDINATE_NAME_MAPPING
         }
     )
     return ds
@@ -42,24 +45,39 @@ def rename_coords_xr(ds: xr.Dataset) -> xr.Dataset:
 
 def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
     """Rename coordinates to standard names"""
-    _mapping = {
-        c: TIME_COORDINATE_NAME_MAPPING[c.lower()]
-        for c in df.columns
-        if c.lower() in TIME_COORDINATE_NAME_MAPPING.keys()
+
+    col_names = [str(name).lower() for name in df.columns]
+
+    mapping = {
+        c: TIME_COORDINATE_NAME_MAPPING[c]
+        for c in col_names
+        if c in TIME_COORDINATE_NAME_MAPPING.keys()
     }
-    _mapping.update(
+    mapping.update(
         {
-            c: POS_COORDINATE_NAME_MAPPING[c.lower()]
-            for c in df.columns
-            if c.lower() in POS_COORDINATE_NAME_MAPPING.keys()
+            c: POS_COORDINATE_NAME_MAPPING[c]
+            for c in col_names
+            if c in POS_COORDINATE_NAME_MAPPING.keys()
         }
     )
-    return df.rename(columns=_mapping)
+    return df.rename(columns=mapping)
 
 
-def get_item_name_and_idx(item_names: List[str], item) -> Tuple[str, int]:
+def get_item_name_and_idx(
+    item_names: List[str], item: int | str | None = None
+) -> Tuple[str, int]:
     """Returns the name and index of the requested variable, provided
-    either as either a str or int."""
+    either as either a str or int.
+
+    Examples
+    --------
+    >>> get_item_name_and_idx(['a', 'b', 'c'], 1)
+    ('b', 1)
+    >>> get_item_name_and_idx(['a', 'b', 'c'], 'a')
+    ('a', 0)
+    >>> get_item_name_and_idx(['a', 'b', 'c'], -1)
+    ('c', 2)
+    """
     n_items = len(item_names)
     if item is None:
         if n_items == 1:
@@ -80,29 +98,6 @@ def get_item_name_and_idx(item_names: List[str], item) -> Tuple[str, int]:
         return item, item_names.index(item)
     else:
         raise TypeError("item must be int or string")
-
-
-def _parse_track_items(items, x_item, y_item, item):
-    """If input has exactly 3 items we accept item=None"""
-    if len(items) < 3:
-        raise ValueError(
-            f"Input has only {len(items)} items. It should have at least 3."
-        )
-    if item is None:
-        if len(items) == 3:
-            item = 2
-        elif len(items) > 3:
-            raise ValueError("Input has more than 3 items, but item was not given!")
-
-    item, _ = get_item_name_and_idx(items, item)
-    x_item, _ = get_item_name_and_idx(items, x_item)
-    y_item, _ = get_item_name_and_idx(items, y_item)
-
-    if (item == x_item) or (item == y_item) or (x_item == y_item):
-        raise ValueError(
-            f"x-item ({x_item}), y-item ({y_item}) and value-item ({item}) must be different!"
-        )
-    return [x_item, y_item, item]
 
 
 def is_iterable_not_str(obj):
@@ -152,3 +147,39 @@ def make_unique_index(df_index, offset_duplicates=0.001, warn=True):
     tmp = np.cumsum(values.astype(int)).astype("timedelta64[ns]")
     new_index = df_index + offset_in_ns * tmp
     return new_index
+
+
+def _get_name(x: int | str | None, valid_names: Sequence[str]) -> str:
+    """Parse name/id from list of valid names (e.g. obs from obs_names), return name"""
+    return valid_names[_get_idx(x, valid_names)]
+
+
+def _get_idx(x: int | str | None, valid_names: Sequence[str]) -> int:
+    """Parse name/id from list of valid names (e.g. obs from obs_names), return id"""
+
+    if x is None:
+        if len(valid_names) == 1:
+            return 0
+        else:
+            raise ValueError(
+                f"Multiple items available. Must specify name or index. Available items: {valid_names}"
+            )
+
+    n = len(valid_names)
+    if n == 0:
+        raise ValueError(f"Cannot select {x} from empty list!")
+    elif isinstance(x, str):
+        if x in valid_names:
+            idx = valid_names.index(x)
+        else:
+            raise KeyError(f"Name {x} could not be found in {valid_names}")
+    elif isinstance(x, int):
+        if x < 0:  # Handle negative indices
+            x += n
+        if x >= 0 and x < n:
+            idx = x
+        else:
+            raise IndexError(f"Id {x} is out of range for {valid_names}")
+    else:
+        raise TypeError(f"Input {x} invalid! Must be None, str or int, not {type(x)}")
+    return idx

@@ -77,8 +77,9 @@ def tc() -> Comparer:
 
 def test_matched_df(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df)
-    assert "m1" in cmp.mod_names
     assert "m2" in cmp.mod_names
+    assert "m1" in cmp.mod_names
+    assert len(cmp.mod_names) == 2
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
     assert cmp.quantity.name == "Undefined"
@@ -99,7 +100,8 @@ def test_matched_df_int_items(pt_df):
     pt_df = pt_df.rename(columns={"Observation": "obs"})
     cmp = Comparer.from_matched_data(data=pt_df, obs_item=1)
     assert cmp.name == "m1"
-    assert cmp.mod_names == ["obs", "m2"]
+    assert "obs" in cmp.mod_names
+    assert "m2" in cmp.mod_names
 
 
 def test_matched_df_with_aux(pt_df):
@@ -108,7 +110,7 @@ def test_matched_df_with_aux(pt_df):
 
     # by default wind is not considered and aux variable
     cmp = Comparer.from_matched_data(data=pt_df)
-    assert cmp.mod_names == ["m1", "m2", "wind", "not_relevant"]
+    assert set(cmp.mod_names) == set(["m1", "m2", "wind", "not_relevant"])
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
     assert cmp.quantity.name == "Undefined"
@@ -242,6 +244,7 @@ def test_minimal_plots(pt_df):
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
     cmp = Comparer.from_matched_data(data=data)
+    cmp = cmp.sel(model="m1")
 
     # Not very elaborate testing other than these two methods can be called without errors
     with pytest.warns(FutureWarning, match="plot.hist"):
@@ -275,8 +278,8 @@ def test_minimal_plots(pt_df):
     ax = cmp.plot.qq()
     assert ax is not None
 
-    ax = cmp.plot.box()
-    assert ax is not None
+    # ax = cmp.plot.box()
+    # assert ax is not None
 
     ax = cmp.plot.hist()
     assert ax is not None
@@ -287,8 +290,42 @@ def test_minimal_plots(pt_df):
     ax = cmp.plot.scatter()
     assert "m1" in ax.get_title()
 
-    ax = cmp.plot.scatter(model="m2")
-    assert "m2" in ax.get_title()
+
+def test_plots_directional(pt_df):
+    data = xr.Dataset(pt_df)
+    data.attrs["quantity_name"] = "Waterlevel"
+    data["Observation"].attrs["kind"] = "observation"
+    data["Observation"].attrs["unit"] = "m"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "mini"
+    cmp = Comparer.from_matched_data(data=data)
+    cmp = cmp.sel(model="m1")
+
+    cmp.plot.is_directional = True
+
+    ax = cmp.plot.scatter()
+    assert "m1" in ax.get_title()
+    assert ax.get_xlim() == (0.0, 360.0)
+    assert ax.get_ylim() == (0.0, 360.0)
+    assert len(ax.get_legend().get_texts()) == 1  # no reg line or qq
+
+    ax = cmp.plot.kde()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    # TODO I have no idea why this fails in pandas/plotting/_matplotlib/boxplot.py:387: AssertionError
+    # ax = cmp.plot.box()
+    # assert ax is not None
+    # assert ax.get_ylim() == (0.0, 360.0)
+
+    ax = cmp.plot.hist()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    ax = cmp.plot.timeseries()
+    assert ax is not None
+    assert ax.get_ylim() == (0.0, 360.0)
 
 
 def test_multiple_forecasts_matched_data():

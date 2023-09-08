@@ -1,10 +1,11 @@
+from __future__ import annotations
 from pathlib import Path
-from typing import Optional, Union, get_args
+from typing import Optional, get_args
 import mikeio
 import pandas as pd
 
-from .. import types, utils
-from ..types import Quantity
+from ..utils import make_unique_index, _get_name
+from ..types import Quantity, PointType
 from ..timeseries import TimeSeries  # TODO move to main module
 
 
@@ -23,7 +24,7 @@ class PointModelResult(TimeSeries):
         first coordinate of point position, by default None
     y : float, optional
         second coordinate of point position, by default None
-    item : Optional[Union[str, int]], optional
+    item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
@@ -32,16 +33,16 @@ class PointModelResult(TimeSeries):
 
     def __init__(
         self,
-        data: types.PointType,
+        data: PointType,
         *,
         name: Optional[str] = None,  # TODO should maybe be required?
         x: Optional[float] = None,
         y: Optional[float] = None,
-        item: Optional[Union[str, int]] = None,
+        item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
-            data, get_args(types.PointType)
+            data, get_args(PointType)
         ), "Could not construct PointModelResult from provided data"
 
         if isinstance(data, (str, Path)):
@@ -54,30 +55,34 @@ class PointModelResult(TimeSeries):
         # parse item and convert to dataframe
         if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
-            item, _ = utils.get_item_name_and_idx(item_names, item)
-            data = data[[item]].to_dataframe()
+            item_name = _get_name(x=item, valid_names=item_names)
+            df = data[[item_name]].to_dataframe()
         elif isinstance(data, mikeio.DataArray):
-            item = item or data.name
-            data = mikeio.Dataset({data.name: data}).to_dataframe()
+            if item is None:
+                item_name = data.name
+            df = data.to_dataframe()
         elif isinstance(data, pd.DataFrame):
-            item_names = list(data.columns)
-            item, _ = utils.get_item_name_and_idx(item_names, item)
-            data = data[[item]]
+            item_name = _get_name(x=item, valid_names=list(data.columns))
+            df = data[[item_name]]
         elif isinstance(data, pd.Series):
-            data = pd.DataFrame(data)  # to_frame?
-            item = item or data.columns[0]
+            df = pd.DataFrame(data)  # to_frame?
+            if item is None:
+                item_name = df.columns[0]
         else:
             raise ValueError("Could not construct PointModelResult from provided data")
 
-        name = name or item
+        name = name or item_name
+        assert isinstance(name, str)
 
         # basic processing
-        data = data.dropna()
-        if data.empty or len(data.columns) == 0:
+        df = df.dropna()
+        if df.empty or len(df.columns) == 0:
             raise ValueError("No data.")
-        data.index = utils.make_unique_index(data.index, offset_duplicates=0.001)
+        df.index = make_unique_index(df.index, offset_duplicates=0.001)
 
-        super().__init__(data=data, name=name, quantity=quantity)
+        model_quantity = Quantity.undefined() if quantity is None else quantity
+
+        super().__init__(data=df, name=name, quantity=model_quantity)
         self.x = x
         self.y = y
 

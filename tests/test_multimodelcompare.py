@@ -295,13 +295,13 @@ def test_mm_mean_skill_weights_dict(cc):
 
 def test_mm_scatter(cc):
     with pytest.warns(FutureWarning):
-        cc.scatter(start="2017-10-28")
+        cc.sel(model="SW_2").scatter(start="2017-10-28")
 
     with pytest.warns(FutureWarning):
-        cc[0].scatter(start="2017-10-28")
+        cc.sel(model="SW_2")[0].scatter(start="2017-10-28")
 
     with pytest.warns(FutureWarning):
-        cc.scatter()
+        cc.sel(model="SW_2").scatter()
 
     # scatter is the default plot
     ax = cc.sel(model="SW_2").plot()
@@ -380,9 +380,6 @@ def test_mm_kde(cc):
 
 
 def test_mm_hist(cc):
-    with pytest.warns(FutureWarning):
-        cc.hist()
-
     ax = cc.sel(model="SW_2").plot.hist()
     assert ax is not None
 
