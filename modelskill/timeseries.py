@@ -173,11 +173,11 @@ class TimeSeries:
             return pd.DatetimeIndex(self.data.time)
 
     @property
-    def start_time(self) -> datetime:
+    def start_time(self) -> pd.Timestamp:
         return self.time[0]  # type: ignore
 
     @property
-    def end_time(self) -> datetime:
+    def end_time(self) -> pd.Timestamp:
         return self.time[-1]  # type: ignore
 
     def __repr__(self) -> str:
