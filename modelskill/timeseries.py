@@ -166,7 +166,7 @@ class TimeSeries:
 
     @property
     def time(self) -> pd.DatetimeIndex:
-        if isinstance(self.data, pd.DataFrame):
+        if isinstance(self.data, (pd.DataFrame, pd.Series)):
             return self.data.index  # type: ignore
         else:
             # xr.Dataset
@@ -201,7 +201,7 @@ class TimeSeries:
         start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
         end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
 
-        if isinstance(self.data, pd.DataFrame):
+        if isinstance(self.data, (pd.DataFrame, pd.Series)):
             self.data = self.data.loc[start_time:end_time]  # type: ignore
         else:
             # assume xr
