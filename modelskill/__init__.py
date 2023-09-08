@@ -27,7 +27,8 @@ from .types import Quantity
 from .model.factory import ModelResult
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .observation import PointObservation, TrackObservation
-from .connection import compare, Connector, from_matched
+from .match import compare, from_matched
+from .connection import Connector
 from .settings import options, get_option, set_option, reset_option, load_style
 from .plot import plot_temporal_coverage, plot_spatial_overview
 
