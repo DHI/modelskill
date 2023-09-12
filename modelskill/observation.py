@@ -7,9 +7,11 @@ Examples
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
 import os
+from pathlib import Path
 from typing import Optional
 import numpy as np
 import pandas as pd
+import xarray as xr
 import mikeio
 from copy import deepcopy
 
@@ -48,19 +50,19 @@ class Observation(TimeSeries):
 
     def __init__(
         self,
-        data: pd.DataFrame,
+        data: xr.Dataset,
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
         weight: float = 1.0,
         color: str = "#d62728",
     ):
-        # TODO move this to TimeSeries?
-        if not isinstance(data.index, pd.DatetimeIndex):
-            raise TypeError(
-                f"Input must have a datetime index! Provided index was {type(data.index)}"
-            )
-        time = data.index.round(freq="100us")  # 0.0001s accuracy
-        data.index = pd.DatetimeIndex(time, freq="infer")
+        # TODO: now handles both xr and pandas
+        time = data.index if hasattr(data, "index") else data.time
+        time = self._parse_time(time)
+        if hasattr(data, "index"):
+            data.index = time
+        else:
+            data.time = time
 
         if quantity is None:
             quantity = Quantity.undefined()
@@ -72,14 +74,24 @@ class Observation(TimeSeries):
 
         super().__init__(name=name, data=data, quantity=quantity, color=color)
 
+    @staticmethod
+    def _parse_time(time):
+        # TODO move this to TimeSeries?
+        if not isinstance(time, pd.DatetimeIndex):
+            raise TypeError(
+                f"Input must have a datetime index! Provided index was {type(time)}"
+            )
+        time = time.round(freq="100us")  # 0.0001s accuracy
+        return pd.DatetimeIndex(time, freq="infer")
+
     @property
     def values(self) -> np.ndarray:
-        "Observed values"
+        """Observed values"""
         return self.data.values
 
     @property
     def n_points(self):
-        """Number of observations"""
+        """Number of observation points"""
         return len(self.data)
 
     def copy(self):
@@ -142,6 +154,11 @@ class PointObservation(Observation):
 
         self._filename = None
         self._item = None
+
+        if isinstance(data, (str, Path)):
+            assert Path(data).suffix == ".dfs0", "File must be a dfs0 file, other file types must be read with pandas or xarray"
+            name = name or Path(data).stem
+            data = mikeio.read(data)  # now mikeio.Dataset
 
         # TODO move this to TimeSeries?
         if isinstance(data, pd.Series):
@@ -210,6 +227,12 @@ class PointObservation(Observation):
             data=df,
             quantity=quantity,
         )
+
+    def _pandas_to_xarray() -> xr.Dataset:
+        pass
+
+    def _mikeio_to_xarrray() -> xr.Dataset:
+        pass
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
