@@ -15,7 +15,7 @@ import xarray as xr
 import mikeio
 from copy import deepcopy
 
-from .utils import make_unique_index
+from .utils import _get_name, make_unique_index
 from .types import Quantity
 from .timeseries import TimeSeries
 
@@ -156,9 +156,32 @@ class PointObservation(Observation):
         self._item = None
 
         if isinstance(data, (str, Path)):
-            assert Path(data).suffix == ".dfs0", "File must be a dfs0 file, other file types must be read with pandas or xarray"
+            assert (
+                Path(data).suffix == ".dfs0"
+            ), "File must be a dfs0 file, other file types must be read with pandas or xarray"
             name = name or Path(data).stem
             data = mikeio.read(data)  # now mikeio.Dataset
+        elif isinstance(data, mikeio.Dfs0):
+            data = data.read()  # now mikeio.Dataset
+
+        # parse item and convert to dataframe
+        if isinstance(data, mikeio.Dataset):
+            item_names = [i.name for i in data.items]
+            item_name = _get_name(x=item, valid_names=item_names)
+            ds = data[[item_name]].to_xarray()
+        elif isinstance(data, mikeio.DataArray):
+            if item is None:
+                item_name = data.name
+            ds = data._to_dataset().to_xarray()
+        elif isinstance(data, pd.DataFrame):
+            item_name = _get_name(x=item, valid_names=list(data.columns))
+            df = data[[item_name]]
+        elif isinstance(data, pd.Series):
+            df = pd.DataFrame(data)  # to_frame?
+            if item is None:
+                item_name = df.columns[0]
+        else:
+            raise ValueError("Could not construct PointModelResult from provided data")
 
         # TODO move this to TimeSeries?
         if isinstance(data, pd.Series):
