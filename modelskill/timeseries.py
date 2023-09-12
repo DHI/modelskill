@@ -1,8 +1,9 @@
-from datetime import datetime
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar, Protocol
 
 import pandas as pd
+import xarray as xr
 
 from .types import Quantity
 
@@ -141,7 +142,7 @@ class TimeSeries:
     plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
 
     name: str
-    data: pd.DataFrame
+    data: pd.DataFrame | pd.Series | xr.Dataset
     quantity: Quantity
     color: str = "#d62728"
 
