@@ -1,5 +1,4 @@
 from __future__ import annotations
-import sys
 import warnings
 from collections.abc import Iterable
 import numpy as np
@@ -291,61 +290,15 @@ class AggregatedSkill:
     def __repr__(self):
         return repr(self.df)
 
+    def _repr_html_(self):
+        return self.df._repr_html_()
+
     def __getitem__(self, x):
         return self.df[x]
-
-    # =====================
-    # TODO remove this
-    @property
-    def index(self):
-        return self.df.index
-
-    def xs(self, *args, **kwargs):
-        return self.__class__(self.df.xs(*args, **kwargs))
-
-    def sort_index(self, *args, **kwargs):
-        return self.__class__(self.df.sort_index(*args, **kwargs))
-
-    def sort_values(self, by, **kwargs):
-        return self.__class__(self.df.sort_values(by, **kwargs))
-
-    def reorder_levels(self, order, **kwargs):
-        return self.__class__(self.df.reorder_levels(order, **kwargs))
-
-    def swaplevel(self, *args, **kwargs):
-        return self.__class__(self.df.swaplevel(*args, **kwargs))
-
-    def head(self, *args, **kwargs):
-        return self.__class__(self.df.head(*args, **kwargs))
-
-    def tail(self, *args, **kwargs):
-        return self.__class__(self.df.tail(*args, **kwargs))
-
-    @property
-    def iloc(self, *args, **kwargs):
-        return self.df.iloc(*args, **kwargs)
 
     @property
     def loc(self, *args, **kwargs):
         return self.df.loc(*args, **kwargs)
-
-    @property
-    def shape(self):
-        return self.df.shape
-
-    @property
-    def size(self):
-        return self.df.size
-
-    @property
-    def ndim(self):
-        return self.df.ndim
-
-    @property
-    def to_html(self):
-        return self.df.to_html
-
-    # =====================
 
     @property
     def mod_names(self):
@@ -472,14 +425,16 @@ class AggregatedSkill:
                 levels_to_reset.append(j)
         return df.reset_index(level=levels_to_reset)
 
+    # TODO remove ?
     def _validate_multi_index(self, min_levels=2, max_levels=2):
         errors = []
-        if isinstance(self.index, pd.MultiIndex):
-            if len(self.index.levels) < min_levels:
+        index = self.df.index
+        if isinstance(index, pd.MultiIndex):
+            if len(index.levels) < min_levels:
                 errors.append(
                     f"not possible for MultiIndex with fewer than {min_levels} levels"
                 )
-            if len(self.index.levels) > max_levels:
+            if len(index.levels) > max_levels:
                 errors.append(
                     f"not possible for MultiIndex with more than {max_levels} levels"
                 )
@@ -527,19 +482,31 @@ class AggregatedSkill:
             cmap=cmap,
         )
 
+    def round(self, decimals=3):
+        """round all values in dataframe
+
+        Parameters
+        ----------
+        decimals : int, optional
+            Number of decimal places to round to (default: 3). If decimals is negative, it specifies the number of positions to the left of the decimal point.
+        """
+
+        return self.__class__(self.df.round(decimals=decimals))
+
     def style(
         self,
-        precision=3,
+        decimals=3,
         columns=None,
         cmap="OrRd",
         show_best=True,
+        **kwargs,
     ):
         """style dataframe with colors using pandas style
 
         Parameters
         ----------
-        precision : int, optional
-            number of decimals, by default 3
+        decimals : int, optional
+            Number of decimal places to round to (default: 3).
         columns : str or List[str], optional
             apply background gradient color to these columns, by default all;
             if columns is [] then no background gradient will be applied.
@@ -562,8 +529,15 @@ class AggregatedSkill:
         >>> s.style(cmap="Blues", show_best=False)
         """
         # identity metric columns
-        float_list = ["float16", "float32", "float64"]
-        float_cols = list(self.df.select_dtypes(include=float_list).columns.values)
+        float_cols = list(self.df.select_dtypes(include="number").columns)
+
+        if "precision" in kwargs:
+            warnings.warn(
+                FutureWarning(
+                    "precision is deprecated, it has been renamed to decimals"
+                )
+            )
+            decimals = kwargs["precision"]
 
         # selected columns
         if columns is None:
@@ -580,11 +554,7 @@ class AggregatedSkill:
                         f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        sdf = (
-            self.df.style.format(precision=precision)
-            if sys.version_info >= (3, 7)
-            else self.df.style.set_precision(precision)
-        )
+        sdf = self.df.style.format(precision=decimals)
 
         # apply background gradient
         bg_cols = list(set(columns) & set(float_cols))
