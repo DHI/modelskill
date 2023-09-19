@@ -358,8 +358,8 @@ def _create_patch(
             colors.append(cmap(norm(mag)))
 
     p = PatchCollection(
-        np.flip(patches),
-        facecolors=np.flip(colors, axis=0),
+        list(reversed(patches)),
+        facecolors=list(reversed(colors)),
         edgecolor="k",
         linewidth=0.5,
     )
@@ -458,10 +458,15 @@ def _add_legend_to_ax(
 
     handles = [Rectangle((0, 0), 1, 1, color=c, ec="k") for c in colors]
     handles[0].set_color("white")
-    handles[0].set_ec("k")
+    handles[0].set_ec("k")  # type: ignore
 
     if primary:
-        bbox_to_anchor: Tuple[float, ...] = (1.05, -0.06, 0.1, 0.8)
+        bbox_to_anchor = (
+            1.05,
+            -0.06,
+            0.1,
+            0.8,
+        )  # type: ignore
         loc = "lower left"
     else:
         bbox_to_anchor = (-0.13, -0.06, 0.1, 0.8)
@@ -469,7 +474,7 @@ def _add_legend_to_ax(
 
     # TODO figure out how to make this work properly
     if not dual:
-        bbox_to_anchor = (-0.05, 0.0)
+        bbox_to_anchor = (-0.05, 0.0)  # type: ignore
         loc = "lower right"
 
     leg = Legend(
@@ -503,7 +508,7 @@ def _add_watermark_to_ax(ax, watermark: str) -> None:
     ax.add_artist(text)
 
 
-def _get_cmap(cmap: Union[str, mpl.colors.ListedColormap]) -> mpl.colors.ListedColormap:
+def _get_cmap(cmap: Union[str, mpl.colors.ListedColormap]):
     if isinstance(cmap, str):
         return mpl.colormaps[cmap]
     elif isinstance(cmap, mpl.colors.ListedColormap):

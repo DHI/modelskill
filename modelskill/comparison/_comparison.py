@@ -246,7 +246,7 @@ def _area_is_polygon(area) -> bool:
     return True
 
 
-def _inside_polygon(polygon, xy) -> bool:
+def _inside_polygon(polygon, xy) -> np.ndarray:
     import matplotlib.path as mp  # type: ignore
 
     if polygon.ndim == 1:
