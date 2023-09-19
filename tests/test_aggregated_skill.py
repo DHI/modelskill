@@ -61,9 +61,12 @@ def test_skill(cc1):
 
 def test_skill_multi_model(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
+
+    # TODO decide if N is a metric or not🤔
+    assert len(s.metrics) == 3
+
     assert len(s.mod_names) == 2
     assert len(s.obs_names) == 3
-    assert len(s.field_names) == 3
 
     # TODO recreate functionality of xs more domain specific
     # s2 = s.xs("SW_1", level="model")
@@ -92,9 +95,12 @@ def test_skill_sel(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
     s2 = s.sel(observation="alti")
     assert len(s2) == 1
+    assert "rmse" in s.metrics
+    assert "bias" in s.metrics
 
-    s2 = s.sel(columns="rmse")
-    assert s2.columns[-1] == "rmse"
+    s2 = s.sel(metrics="rmse")
+    assert "rmse" in s2.metrics
+    assert "bias" not in s2.metrics
 
 
 def test_skill_sel_multi_model(cc2):
@@ -124,21 +130,21 @@ def test_skill_sel_query(cc2):
     assert len(s2.mod_names) == 0  # no longer in index
 
 
-def test_skill_sel_columns(cc2):
+def test_skill_sel_metrics(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
-    s2 = s.sel(columns=["rmse", "n"])
-    assert s2.columns[-1] == "n"
-    assert "bias" not in s2.columns
+    s2 = s.sel(metrics=["rmse", "n"])
+    assert "n" in s2.metrics
+    assert "bias" not in s2.metrics
 
-    s2 = s.sel(columns="rmse")
-    assert s2.columns[-1] == "rmse"
-    assert "bias" not in s2.columns
+    s2 = s.sel(metrics="rmse")
+    assert "rmse" in s2.metrics
+    assert "bias" not in s2.metrics
 
 
 def test_skill_sel_fail(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
     with pytest.raises(KeyError):
-        s.sel(columns=["cc"])
+        s.sel(metrics=["cc"])
 
     with pytest.raises(KeyError):
         s.sel(variable="Hm0")
@@ -195,9 +201,9 @@ def test_skill_style(cc2):
     s = cc2.skill(metrics=["bias", "rmse", "lin_slope", "si"])
     s.style()
     s.style(decimals=0)
-    s.style(columns="rmse")
-    s.style(columns=["bias", "rmse"])
-    s.style(columns=[])
+    s.style(metrics="rmse")
+    s.style(metrics=["bias", "rmse"])
+    s.style(metrics=[])
     s.style(cmap="viridis_r", show_best=False)
 
 

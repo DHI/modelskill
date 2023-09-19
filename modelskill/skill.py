@@ -1,6 +1,7 @@
 from __future__ import annotations
 import warnings
-from collections.abc import Iterable
+from typing import Iterable, Collection
+
 import numpy as np
 import pandas as pd
 
@@ -276,10 +277,15 @@ class AggregatedSkill:
         self.df = df
         self.plot = AggregatedSkillPlotter(self)
 
+    # @property
+    # def columns(self):
+    #    """Columns of the dataframe"""
+    #    return self.df.columns
+
     @property
-    def columns(self):
-        """Columns of the dataframe"""
-        return self.df.columns
+    def metrics(self) -> Collection[str]:
+        """List of metrics (columns) in the dataframe"""
+        return list(self.df.columns)
 
     def __len__(self):
         return len(self.df)
@@ -314,11 +320,6 @@ class AggregatedSkill:
     def var_names(self):
         """List of variable names (in index)"""
         return self._get_index_level_by_name("variable")
-
-    @property
-    def field_names(self):
-        """List of field names (=dataframe columns)"""
-        return list(self.df.columns)
 
     # TODO what does this method actually do?
     def _get_index_level_by_name(self, name):
@@ -375,9 +376,9 @@ class AggregatedSkill:
             Should unnecessary levels of the index be removed after subsetting?
             Removed levels will stay as columns. By default True
         **kwargs : dict, optional
-            "columns"=... to select specific columns,
-            "model"=... to select specific models,
-            "observation"=... to select specific observations, etc.
+            "metrics"=... to select specific metrics (=columns),
+            "model"=... to select specific models (=rows),
+            "observation"=... to select specific observations (=rows)
 
         Returns
         -------
@@ -390,8 +391,8 @@ class AggregatedSkill:
         >>> s.sel(query="rmse>0.3")
         >>> s.sel(model = "SW_1")
         >>> s.sel(observation = ["EPL", "HKNA"])
-        >>> s.sel(columns="rmse")
-        >>> s.sel("rmse>0.2", observation=[0, 2], columns=["n","rmse"])
+        >>> s.sel(metrics="rmse")
+        >>> s.sel("rmse>0.2", observation=[0, 2], metrics=["n","rmse"])
         """
         df = self.df
 
@@ -402,7 +403,7 @@ class AggregatedSkill:
         for key, value in kwargs.items():
             if key in df.index.names:
                 df = self._sel_from_index(df, key, value)
-            elif key == "columns":
+            elif key == "metrics" or key == "columns":
                 cols = [value] if isinstance(value, str) else value
                 df = df[cols]
             else:
@@ -496,7 +497,7 @@ class AggregatedSkill:
     def style(
         self,
         decimals=3,
-        columns=None,
+        metrics=None,
         cmap="OrRd",
         show_best=True,
         **kwargs,
@@ -507,7 +508,7 @@ class AggregatedSkill:
         ----------
         decimals : int, optional
             Number of decimal places to round to (default: 3).
-        columns : str or List[str], optional
+        metrics : str or List[str], optional
             apply background gradient color to these columns, by default all;
             if columns is [] then no background gradient will be applied.
         cmap : str, optional
@@ -525,7 +526,7 @@ class AggregatedSkill:
         --------
         >>> s = comparer.skill()
         >>> s.style()
-        >>> s.style(precision=1, columns="rmse")
+        >>> s.style(precision=1, metrics="rmse")
         >>> s.style(cmap="Blues", show_best=False)
         """
         # identity metric columns
@@ -540,15 +541,15 @@ class AggregatedSkill:
             decimals = kwargs["precision"]
 
         # selected columns
-        if columns is None:
-            columns = float_cols
+        if metrics is None:
+            metrics = float_cols
         else:
-            if isinstance(columns, str):
-                if not columns:
-                    columns = []
+            if isinstance(metrics, str):
+                if not metrics:
+                    metrics = []
                 else:
-                    columns = [columns]
-            for column in columns:
+                    metrics = [metrics]
+            for column in metrics:
                 if column not in float_cols:
                     raise ValueError(
                         f"Invalid column name {column} (must be one of {float_cols})"
@@ -557,7 +558,7 @@ class AggregatedSkill:
         sdf = self.df.style.format(precision=decimals)
 
         # apply background gradient
-        bg_cols = list(set(columns) & set(float_cols))
+        bg_cols = list(set(metrics) & set(float_cols))
         if "bias" in bg_cols:
             mm = self.df.bias.abs().max()
             sdf = sdf.background_gradient(
