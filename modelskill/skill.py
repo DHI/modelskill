@@ -8,96 +8,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 
-class SkillDataFrame:
-    def __init__(self, df):
-        self.df = df
-
-    def __repr__(self):
-        return repr(self.df)
-
-    def _repr_html_(self):
-        return self.df._repr_html_()
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, x):
-        return self.df[x]
-
-    @property
-    def loc(self, *args, **kwargs):
-        return self.df.loc(*args, **kwargs)
-
-    @property
-    def iloc(self, *args, **kwargs):
-        return self.df.iloc(*args, **kwargs)
-
-    @property
-    def index(self):
-        return self.df.index
-
-    @property
-    def columns(self):
-        return self.df.columns
-
-    @property
-    def shape(self):
-        return self.df.shape
-
-    @property
-    def size(self):
-        return self.df.size
-
-    @property
-    def ndim(self):
-        return self.df.ndim
-
-    def to_html(self, *args, **kwargs):
-        return self.df.to_html(*args, **kwargs)
-
-    def to_markdown(self, *args, **kwargs):
-        return self.df.to_markdown(*args, **kwargs)
-
-    def to_excel(self, *args, **kwargs):
-        return self.df.to_excel(*args, **kwargs)
-
-    def to_csv(self, *args, **kwargs):
-        return self.df.to_csv(*args, **kwargs)
-
-    def to_dataframe(self, copy=True):
-        if copy:
-            return self.df.copy()
-        else:
-            return self.df
-
-    def head(self, *args, **kwargs):
-        return self.__class__(self.df.head(*args, **kwargs))
-
-    def tail(self, *args, **kwargs):
-        return self.__class__(self.df.tail(*args, **kwargs))
-
-    def round(self, decimals, *args, **kwargs):
-        return self.__class__(self.df.round(decimals))
-
-    def sort_index(self, *args, **kwargs):
-        return self.__class__(self.df.sort_index(*args, **kwargs))
-
-    def sort_values(self, by, **kwargs):
-        return self.__class__(self.df.sort_values(by, **kwargs))
-
-    def query(self, expr, **kwargs):
-        return self.__class__(self.df.query(expr, **kwargs))
-
-    def xs(self, *args, **kwargs):
-        return self.__class__(self.df.xs(*args, **kwargs))
-
-    def reorder_levels(self, order, **kwargs):
-        return self.__class__(self.df.reorder_levels(order, **kwargs))
-
-    def swaplevel(self, *args, **kwargs):
-        return self.__class__(self.df.swaplevel(*args, **kwargs))
-
-
 class AggregatedSkillPlotter:
     def __init__(self, agg_skill):
         self.agg_skill = agg_skill
@@ -116,7 +26,7 @@ class AggregatedSkillPlotter:
                 f"{field} is not a valid field. Choose from {list(s.df.columns)}"
             )
 
-        if isinstance(s.index, pd.MultiIndex):
+        if isinstance(s.df.index, pd.MultiIndex):
             df = s.df[field].unstack(level=level)
         else:
             df = s.df[field]
@@ -322,7 +232,7 @@ class AggregatedSkillPlotter:
         plt.title(title, fontsize=14)
 
 
-class AggregatedSkill(SkillDataFrame):
+class AggregatedSkill:
     """
     AggregatedSkill object for visualization and analysis returned by
     the comparer's skill method. The object wraps the pd.DataFrame
@@ -364,8 +274,78 @@ class AggregatedSkill(SkillDataFrame):
     zero_is_best_metrics = ["bias"]
 
     def __init__(self, df):
-        super().__init__(df)
+        self.df = df
         self.plot = AggregatedSkillPlotter(self)
+
+    @property
+    def columns(self):
+        """Columns of the dataframe"""
+        return self.df.columns
+
+    def __len__(self):
+        return len(self.df)
+
+    def to_dataframe(self):
+        return self.df
+
+    def __repr__(self):
+        return repr(self.df)
+
+    def __getitem__(self, x):
+        return self.df[x]
+
+    # =====================
+    # TODO remove this
+    @property
+    def index(self):
+        return self.df.index
+
+    def xs(self, *args, **kwargs):
+        return self.__class__(self.df.xs(*args, **kwargs))
+
+    def sort_index(self, *args, **kwargs):
+        return self.__class__(self.df.sort_index(*args, **kwargs))
+
+    def sort_values(self, by, **kwargs):
+        return self.__class__(self.df.sort_values(by, **kwargs))
+
+    def reorder_levels(self, order, **kwargs):
+        return self.__class__(self.df.reorder_levels(order, **kwargs))
+
+    def swaplevel(self, *args, **kwargs):
+        return self.__class__(self.df.swaplevel(*args, **kwargs))
+
+    def head(self, *args, **kwargs):
+        return self.__class__(self.df.head(*args, **kwargs))
+
+    def tail(self, *args, **kwargs):
+        return self.__class__(self.df.tail(*args, **kwargs))
+
+    @property
+    def iloc(self, *args, **kwargs):
+        return self.df.iloc(*args, **kwargs)
+
+    @property
+    def loc(self, *args, **kwargs):
+        return self.df.loc(*args, **kwargs)
+
+    @property
+    def shape(self):
+        return self.df.shape
+
+    @property
+    def size(self):
+        return self.df.size
+
+    @property
+    def ndim(self):
+        return self.df.ndim
+
+    @property
+    def to_html(self):
+        return self.df.to_html
+
+    # =====================
 
     @property
     def mod_names(self):
@@ -387,10 +367,12 @@ class AggregatedSkill(SkillDataFrame):
         """List of field names (=dataframe columns)"""
         return list(self.df.columns)
 
+    # TODO what does this method actually do?
     def _get_index_level_by_name(self, name):
-        if name in self.index.names:
-            level = self.index.names.index(name)
-            return self.index.get_level_values(level).unique()
+        index = self.df.index
+        if name in index.names:
+            level = index.names.index(name)
+            return index.get_level_values(level).unique()
         else:
             return []
             # raise ValueError(f"name {name} not in index {list(self.index.names)}")
