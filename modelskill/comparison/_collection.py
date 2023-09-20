@@ -1005,12 +1005,12 @@ class ComparerCollection(Mapping):
             title=title,
         )
 
-    def save(self, fn: Union[str, Path]) -> None:
+    def save(self, filename: Union[str, Path]) -> None:
         """Save the ComparerCollection to a zip file.
 
         Parameters
         ----------
-        fn : str or Path
+        filename : str or Path
             Filename of the zip file.
 
         Examples
@@ -1029,7 +1029,7 @@ class ComparerCollection(Mapping):
             cmp.save(cmp_fn)
             files.append(cmp_fn)
 
-        with zipfile.ZipFile(fn, "w") as zip:
+        with zipfile.ZipFile(filename, "w") as zip:
             for f in files:
                 zip.write(f)
                 os.remove(f)
@@ -1040,7 +1040,7 @@ class ComparerCollection(Mapping):
 
         Parameters
         ----------
-        fn : str or Path
+        filename : str or Path
             Filename of the zip file.
 
         Returns

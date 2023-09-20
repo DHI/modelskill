@@ -39,7 +39,7 @@ def load(filename: Union[str, Path]) -> ComparerCollection:
 
     Parameters
     ----------
-    fn : str or Path
+    filename : str or Path
         Filename of the zip file.
 
     Returns

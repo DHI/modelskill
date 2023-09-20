@@ -855,12 +855,12 @@ class Comparer:
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
-    def save(self, fn: Union[str, Path]) -> None:
+    def save(self, filename: Union[str, Path]) -> None:
         """Save to netcdf file
 
         Parameters
         ----------
-        fn : str or Path
+        filename : str or Path
             filename
         """
         ds = self.data
@@ -878,7 +878,7 @@ class Comparer:
                 da = value.to_xarray()[key]
                 ds["raw_" + key] = da
 
-        ds.to_netcdf(fn)
+        ds.to_netcdf(filename)
 
     @staticmethod
     def load(filename: Union[str, Path]) -> "Comparer":
