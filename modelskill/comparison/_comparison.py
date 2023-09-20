@@ -872,9 +872,10 @@ class Comparer:
         # There is no need to save raw data for track data, since it is identical to the matched data
         if self.gtype == "point":
             for key, value in self.raw_mod_data.items():
-                da = value.to_xarray()[key]
+                value = value.copy()
                 #  rename time to unique name
-                da = da.rename({"time": "time_raw_" + key})
+                value.index.name = "time_raw_" + key
+                da = value.to_xarray()[key]
                 ds["raw_" + key] = da
 
         ds.to_netcdf(fn)
@@ -905,11 +906,15 @@ class Comparer:
                 var_name = str(var)
                 if "raw_" in var_name:
                     new_key = var_name[4:]  # remove prefix 'raw_'
-                    df = data[var_name].to_dataframe().rename(
-                        columns={"time_raw_" + new_key: "time", var_name: new_key}
+                    df = (
+                        data[var_name]
+                        .to_dataframe()
+                        .rename(
+                            columns={"time_raw_" + new_key: "time", var_name: new_key}
+                        )
                     )
                     raw_mod_data[new_key] = df
-                    
+
                     data = data.drop_vars(var_name)
 
             return Comparer(matched_data=data, raw_mod_data=raw_mod_data)

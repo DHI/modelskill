@@ -159,7 +159,7 @@ def compare(
     mod_item: Optional[IdOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap=None,
-) -> Union[Comparer, ComparerCollection]:
+) -> ComparerCollection:
     """Compare observations and model results
 
     Parameters
@@ -179,11 +179,11 @@ def compare(
 
     Returns
     -------
-    Comparer or ComparerCollection
+    ComparerCollection
         To be used for plotting and statistics
     """
     if isinstance(obs, get_args(ObsInputType)):
-        return _single_obs_compare(
+        cmp = _single_obs_compare(
             obs,
             mod,
             obs_item=obs_item,
@@ -191,9 +191,10 @@ def compare(
             gtype=gtype,
             max_model_gap=max_model_gap,
         )
+        clist = [cmp]
     elif isinstance(obs, Sequence):
         clist = [
-            compare(
+            _single_obs_compare(
                 o,
                 mod,
                 obs_item=obs_item,
@@ -203,9 +204,10 @@ def compare(
             )
             for o in obs
         ]
-        return ComparerCollection(clist)
     else:
         raise ValueError(f"Unknown obs type {type(obs)}")
+
+    return ComparerCollection(clist)
 
 
 def _single_obs_compare(

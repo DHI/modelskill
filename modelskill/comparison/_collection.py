@@ -1006,8 +1006,22 @@ class ComparerCollection(Mapping):
         )
 
     def save(self, fn: Union[str, Path]) -> None:
-        # save to file in netcdf format using xarray
-        # save each comparer to a netcdf and pack them into a zip file
+        """Save the ComparerCollection to a zip file.
+
+        Parameters
+        ----------
+        fn : str or Path
+            Filename of the zip file.
+
+        Examples
+        --------
+        >>> cc = ms.compare(obs, mod)
+        >>> cc.save("my_comparer_collection.msk")
+
+        Notes
+        -----
+        Each comparer is stored as a netcdf file in the zip file.
+        """
 
         files = []
         for name, cmp in self.comparers.items():
