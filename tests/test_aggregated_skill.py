@@ -4,16 +4,15 @@ import pandas as pd
 
 import matplotlib as mpl
 
-# use non-interactive backend for testing
-mpl.use("Agg")
-
-
 from modelskill import (
     ModelResult,
     PointObservation,
     TrackObservation,
     Connector,
 )
+
+# use non-interactive backend for testing
+mpl.use("Agg")
 
 
 @pytest.fixture
