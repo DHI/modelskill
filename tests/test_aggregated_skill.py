@@ -1,6 +1,13 @@
 import pytest
 import numpy as np
 import pandas as pd
+
+import matplotlib as mpl
+
+# use non-interactive backend for testing
+mpl.use("Agg")
+
+
 from modelskill import (
     ModelResult,
     PointObservation,

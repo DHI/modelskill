@@ -4,6 +4,11 @@ import pandas as pd
 import xarray as xr
 import modelskill.comparison
 
+import matplotlib as mpl
+
+# use non-interactive backend for testing
+mpl.use("Agg")
+
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data.attrs["quantity_name"] = "fake var"
