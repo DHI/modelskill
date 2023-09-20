@@ -1035,11 +1035,29 @@ class ComparerCollection(Mapping):
                 os.remove(f)
 
     @staticmethod
-    def load(fn: Union[str, Path]) -> "ComparerCollection":
-        # load each comparer stored as a netcdf in a zip file
+    def load(filename: Union[str, Path]) -> "ComparerCollection":
+        """Load a ComparerCollection from a zip file.
+
+        Parameters
+        ----------
+        fn : str or Path
+            Filename of the zip file.
+
+        Returns
+        -------
+        ComparerCollection
+            The loaded ComparerCollection.
+
+        Examples
+        --------
+        >>> cc = ms.compare(obs, mod)
+        >>> cc.save("my_comparer_collection.msk")
+        >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.msk")
+        """
+
         folder = tempfile.TemporaryDirectory().name
 
-        with zipfile.ZipFile(fn, "r") as zip:
+        with zipfile.ZipFile(filename, "r") as zip:
             for f in zip.namelist():
                 if f.endswith(".nc"):
                     zip.extract(f, path=folder)

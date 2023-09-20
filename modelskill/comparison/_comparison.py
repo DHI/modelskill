@@ -881,7 +881,7 @@ class Comparer:
         ds.to_netcdf(fn)
 
     @staticmethod
-    def load(fn: Union[str, Path]) -> "Comparer":
+    def load(filename: Union[str, Path]) -> "Comparer":
         """Load from netcdf file
 
         Parameters
@@ -893,7 +893,7 @@ class Comparer:
         -------
         Comparer
         """
-        with xr.open_dataset(fn) as ds:
+        with xr.open_dataset(filename) as ds:
             data = ds.load()
 
         if data.gtype == "track":
