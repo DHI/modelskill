@@ -905,7 +905,11 @@ class Comparer:
                 var_name = str(var)
                 if "raw_" in var_name:
                     new_key = var_name[4:]  # remove prefix 'raw_'
-                    raw_mod_data[new_key] = data[var_name].to_dataframe()
+                    df = data[var_name].to_dataframe().rename(
+                        columns={"time_raw_" + new_key: "time", var_name: new_key}
+                    )
+                    raw_mod_data[new_key] = df
+                    
                     data = data.drop_vars(var_name)
 
             return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
