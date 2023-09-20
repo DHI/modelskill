@@ -161,6 +161,20 @@ def test_save(cc: modelskill.comparison.ComparerCollection, tmp_path):
     assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__
 
 
+def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
+    fn = tmp_path / "test_cc.msk"
+    assert len(cc["fake point obs"].raw_mod_data["m1"]) == 6
+    cc.save(fn)
+
+    cc2 = modelskill.comparison.ComparerCollection.load(fn)
+
+    # we ideally would like to test is the original raw_mod_data is fully included in this plot
+    cc2[0].plot.timeseries()
+
+    # for now, we just test if the raw_mod_data is full length
+    assert len(cc2["fake point obs"].raw_mod_data["m1"]) == 6
+
+
 def test_hist(cc):
     ax = cc.sel(model="m1").hist()
     assert ax is not None

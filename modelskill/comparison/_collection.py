@@ -1026,16 +1026,21 @@ class ComparerCollection(Mapping):
         folder = tempfile.TemporaryDirectory().name
 
         with zipfile.ZipFile(fn, "r") as zip:
-            zip.extractall(path=folder)
+            for f in zip.namelist():
+                if f.endswith(".nc"):
+                    zip.extract(f, path=folder)
 
-        comparers = []
-        for f in zip.namelist():
-            f = os.path.join(folder, f)
-            if f.endswith(".nc"):
-                cmp = Comparer.load(f)
-                os.remove(f)
-                comparers.append(cmp)
+        comparers = [
+            ComparerCollection._load_comparer(folder, f) for f in os.listdir(folder)
+        ]
         return ComparerCollection(comparers)
+
+    @staticmethod
+    def _load_comparer(folder, f) -> Comparer:
+        f = os.path.join(folder, f)
+        cmp = Comparer.load(f)
+        os.remove(f)
+        return cmp
 
     def kde(self, ax=None, **kwargs):
         warnings.warn("kde is deprecated, use plot.kde instead", FutureWarning)

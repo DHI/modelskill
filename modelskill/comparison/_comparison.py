@@ -462,7 +462,7 @@ class Comparer:
         modeldata=None,
         max_model_gap: Optional[TimeDeltaTypes] = None,
         matched_data: Optional[xr.Dataset] = None,
-        raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
+        raw_mod_data: Optional[Dict[str, pd.Series]] = None,
     ):
         self.plot = Comparer.plotter(self)
 
@@ -863,7 +863,21 @@ class Comparer:
         fn : str or Path
             filename
         """
-        self.data.to_netcdf(fn)
+        ds = self.data
+
+        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
+        # an alternative strategy would be to use NetCDF groups
+        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
+
+        # There is no need to save raw data for track data, since it is identical to the matched data
+        if self.gtype == "point":
+            for key, value in self.raw_mod_data.items():
+                da = value.to_xarray()[key]
+                #  rename time to unique name
+                da = da.rename({"time": "time_raw_" + key})
+                ds["raw_" + key] = da
+
+        ds.to_netcdf(fn)
 
     @staticmethod
     def load(fn: Union[str, Path]) -> "Comparer":
@@ -880,7 +894,24 @@ class Comparer:
         """
         with xr.open_dataset(fn) as ds:
             data = ds.load()
-        return Comparer(matched_data=data)
+
+        if data.gtype == "track":
+            return Comparer(matched_data=data)
+
+        if data.gtype == "point":
+            raw_mod_data = {}
+
+            for var in data.data_vars:
+                var_name = str(var)
+                if "raw_" in var_name:
+                    new_key = var_name[4:]  # remove prefix 'raw_'
+                    raw_mod_data[new_key] = data[var_name].to_dataframe()
+                    data = data.drop_vars(var_name)
+
+            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+
+        else:
+            raise NotImplementedError(f"Unknown gtype: {data.gtype}")
 
     def _to_observation(self) -> Observation:
         """Convert to Observation"""
