@@ -429,7 +429,7 @@ class Comparer:
     """
     Comparer class for comparing model and observation data.
 
-    Typically, the Comparer is initialized using the `compare` function.
+    Typically, the Comparer is part of a ComparerCollection, initialized using the `compare` function.
 
     Parameters
     ----------
@@ -447,8 +447,12 @@ class Comparer:
     Examples
     --------
     >>> import modelskill as ms
-    >>> cmp1 = ms.compare(observation, modeldata)
+    >>> cc = ms.compare(observation, modeldata)
     >>> cmp2 = ms.from_matched(matched_data)
+
+    See Also
+    --------
+    modelskill.compare, modelskill.from_matched
     """
 
     data: xr.Dataset
@@ -462,7 +466,7 @@ class Comparer:
         modeldata=None,
         max_model_gap: Optional[TimeDeltaTypes] = None,
         matched_data: Optional[xr.Dataset] = None,
-        raw_mod_data: Optional[Dict[str, pd.Series]] = None,
+        raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
         self.plot = Comparer.plotter(self)
 
