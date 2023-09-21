@@ -878,9 +878,9 @@ class Comparer:
             for key, value in self.raw_mod_data.items():
                 value = value.copy()
                 #  rename time to unique name
-                value.index.name = "time_raw_" + key
+                value.index.name = "_time_raw_" + key
                 da = value.to_xarray()[key]
-                ds["raw_" + key] = da
+                ds["_raw_" + key] = da
 
         ds.to_netcdf(filename)
 
@@ -908,13 +908,13 @@ class Comparer:
 
             for var in data.data_vars:
                 var_name = str(var)
-                if "raw_" in var_name:
-                    new_key = var_name[4:]  # remove prefix 'raw_'
+                if var_name[:5] == "_raw_":
+                    new_key = var_name[5:]  # remove prefix '_raw_'
                     df = (
                         data[var_name]
                         .to_dataframe()
                         .rename(
-                            columns={"time_raw_" + new_key: "time", var_name: new_key}
+                            columns={"_time_raw_" + new_key: "time", var_name: new_key}
                         )
                     )
                     raw_mod_data[new_key] = df
