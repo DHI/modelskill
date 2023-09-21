@@ -48,8 +48,7 @@ __all__ = [
     "set_option",
     "reset_option",
     "load_style",
-    "plot_temporal_coverage",
-    "plot_spatial_overview",
+    "plotting",
     "from_config",
 ]
 
