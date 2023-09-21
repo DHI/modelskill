@@ -12,17 +12,17 @@ from matplotlib import patches
 import matplotlib.colors as colors
 from matplotlib.ticker import MaxNLocator
 
-from .model.point import PointModelResult
-from .model.track import TrackModelResult
-from .observation import Observation, PointObservation, TrackObservation
-from .metrics import _linear_regression
+from ..model.point import PointModelResult
+from ..model.track import TrackModelResult
+from ..observation import Observation, PointObservation, TrackObservation
+from ..metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
 import modelskill.settings as settings
-from .settings import options, register_option
-from .observation import unit_display_name
-from .metrics import metric_has_units
+from ..settings import options, register_option
+from ..observation import unit_display_name
+from ..metrics import metric_has_units
 
-from ._rose import wind_rose  # nice alias
+from .._rose import wind_rose  # nice alias
 
 __all__ = [
     "wind_rose",
@@ -651,7 +651,7 @@ def scatter(
     )
 
 
-def plot_temporal_coverage(
+def temporal_coverage(
     obs=None,
     mod=None,
     *,
@@ -741,7 +741,7 @@ def plot_temporal_coverage(
     return ax
 
 
-def plot_spatial_overview(
+def spatial_overview(
     obs: List[Observation],
     mod=None,
     ax=None,

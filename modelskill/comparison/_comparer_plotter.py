@@ -6,7 +6,7 @@ import numpy as np  # type: ignore
 
 from .. import metrics as mtr
 from ..utils import _get_idx
-from ..plot import (
+from ..plotting.plot import (
     _get_fig_ax,
     _xtick_directional,
     _ytick_directional,
