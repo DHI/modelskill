@@ -27,8 +27,8 @@ from .._rose import wind_rose  # nice alias
 __all__ = [
     "wind_rose",
     "scatter",
-    "plot_temporal_coverage",
-    "plot_spatial_overview",
+    "temporal_coverage",
+    "spatial_overview",
     "taylor_diagram",
 ]
 
@@ -683,7 +683,7 @@ def temporal_coverage(
 
     See Also
     --------
-    plot_spatial_overview
+    spatial_overview
 
     Returns
     -------
@@ -696,10 +696,10 @@ def temporal_coverage(
     >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
     >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
     >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
-    >>> ms.plot_temporal_coverage([o1, o2], [mr1, mr2])
-    >>> ms.plot_temporal_coverage([o1, o2], mr2, limit_to_model_period=False)
-    >>> ms.plot_temporal_coverage(o2, [mr1, mr2], marker=".")
-    >>> ms.plot_temporal_coverage(mod=[mr1, mr2], figsize=(5,3))
+    >>> ms.plotting.temporal_coverage([o1, o2], [mr1, mr2])
+    >>> ms.plotting.temporal_coverage([o1, o2], mr2, limit_to_model_period=False)
+    >>> ms.plotting.temporal_coverage(o2, [mr1, mr2], marker=".")
+    >>> ms.plotting.temporal_coverage(mod=[mr1, mr2], figsize=(5,3))
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
@@ -765,7 +765,7 @@ def spatial_overview(
 
     See Also
     --------
-    plot_temporal_coverage
+    temporal_coverage
 
     Returns
     -------
@@ -778,7 +778,7 @@ def spatial_overview(
     >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
     >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
     >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
-    >>> ms.plot_spatial_overview([o1, o2], [mr1, mr2])
+    >>> ms.plotting.spatial_overview([o1, o2], [mr1, mr2])
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]  # type: ignore
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]  # type: ignore

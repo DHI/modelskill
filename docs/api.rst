@@ -111,11 +111,11 @@ Metrics
 Plot
 ----
 
-.. autofunction:: modelskill.plot_temporal_coverage
+.. autofunction:: modelskill.plotting.temporal_coverage
 
-.. autofunction:: modelskill.plot_spatial_overview
+.. autofunction:: modelskill.plotting.spatial_overview
 
-.. autofunction:: modelskill.plot.wind_rose
+.. autofunction:: modelskill.plot.wind_rose # TODO: I guess this should also be brought into the plotting module
 
 
 Settings
