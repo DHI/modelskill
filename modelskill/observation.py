@@ -6,7 +6,6 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
-import os
 from pathlib import Path
 from typing import Optional
 import numpy as np
@@ -20,22 +19,28 @@ from .types import Quantity
 from .timeseries import TimeSeries
 
 
-def _parse_item(items, item, item_str="item"):
-    if isinstance(item, int):
-        item = len(items) + item if (item < 0) else item
-        if (item < 0) or (item >= len(items)):
-            raise IndexError(f"{item_str} is out of range (0, {len(items)})")
-    elif isinstance(item, str):
-        item = items.index(item)
-    else:
-        raise TypeError(f"{item_str} must be int or string")
-    return item
+# def _parse_item(items, item, item_str="item"):
+#     if isinstance(item, int):
+#         item = len(items) + item if (item < 0) else item
+#         if (item < 0) or (item >= len(items)):
+#             raise IndexError(f"{item_str} is out of range (0, {len(items)})")
+#     elif isinstance(item, str):
+#         item = items.index(item)
+#     else:
+#         raise TypeError(f"{item_str} must be int or string")
+#     return item
 
 
 def _get_item_names(items, valid_names):
     if len(valid_names) < len(items):
         raise ValueError(
             f"Input has only {len(valid_names)} items. {len(items)} items where requested: {items}"
+        )
+
+    # more valid_names than items and at least one item is None
+    if len(valid_names) > len(items) and any([i is None for i in items]):
+        raise ValueError(
+            f"Cannot infer item names from input. Please provide item names explicitly. Valid names: {valid_names}."
         )
     item_names = []
     for item in items:
@@ -77,8 +82,6 @@ class Observation(TimeSeries):
         # else:
         #     data["time"] = time
         data["time"] = self._parse_time(data.time)
-
-        data = data.dropna(dim="time")
 
         if quantity is None:
             quantity = Quantity.undefined()
@@ -129,6 +132,7 @@ class PointObservation(Observation):
         filename or object with the data
     item : (int, str), optional
         index or name of the wanted item/column, by default None
+        if data contains more than one item, item must be given
     x : float, optional
         x-coordinate of the observation point, by default None
     y : float, optional
@@ -161,7 +165,7 @@ class PointObservation(Observation):
         self,
         data,
         *,
-        item=None,
+        item: Optional[int | str] = None,
         x: Optional[float] = None,
         y: Optional[float] = None,
         z: Optional[float] = None,
@@ -206,6 +210,8 @@ class PointObservation(Observation):
             raise ValueError(
                 "Time axis has duplicate entries. It must be monotonically increasing."
             )
+
+        ds = ds.dropna(dim="time")
 
         super().__init__(
             name=name,
@@ -274,7 +280,8 @@ class TrackObservation(Observation):
     data : (str, Path, mikeio.Dataset, pd.DataFrame, xr.Dataset)
         path to dfs0 file or object with track data
     item : (str, int), optional
-        item name or index of values, by default 2
+        item name or index of values, by default None
+        if data contains more than one item, item must be given
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
     x_item : (str, int), optional
@@ -352,7 +359,7 @@ class TrackObservation(Observation):
         self,
         data,
         *,
-        item: Optional[int | str] = 2,
+        item: Optional[int | str] = None,
         name: Optional[str] = None,
         x_item: Optional[int | str] = 0,
         y_item: Optional[int | str] = 1,
@@ -399,6 +406,8 @@ class TrackObservation(Observation):
         # make sure that x and y are named x and y
         old_xy_names = list(ds.data_vars)[:2]
         ds = ds.rename(dict(zip(old_xy_names, ["x", "y"])))
+
+        ds = ds.dropna(dim="time", subset=["x", "y"])
 
         super().__init__(
             name=name,
