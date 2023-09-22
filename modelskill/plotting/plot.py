@@ -18,6 +18,7 @@ from ..observation import Observation, PointObservation, TrackObservation
 from ..metrics import _linear_regression
 from .plot_taylor import TaylorDiagram
 import modelskill.settings as settings
+from modelskill.settings import options
 from ..observation import unit_display_name
 from ..metrics import metric_has_units
 
