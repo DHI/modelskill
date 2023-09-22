@@ -1,3 +1,4 @@
+import modelskill.plotting._settings  # noqa: F401
 from .plot import spatial_overview, temporal_coverage
 from ._rose import wind_rose
 
