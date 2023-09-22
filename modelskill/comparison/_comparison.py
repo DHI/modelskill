@@ -246,8 +246,8 @@ def _area_is_polygon(area) -> bool:
     return True
 
 
-def _inside_polygon(polygon, xy) -> bool:
-    import matplotlib.path as mp  # type: ignore
+def _inside_polygon(polygon, xy):
+    import matplotlib.path as mp
 
     if polygon.ndim == 1:
         polygon = np.column_stack((polygon[0::2], polygon[1::2]))
@@ -429,7 +429,7 @@ class Comparer:
     """
     Comparer class for comparing model and observation data.
 
-    Typically, the Comparer is initialized using the `compare` function.
+    Typically, the Comparer is part of a ComparerCollection, initialized using the `compare` function.
 
     Parameters
     ----------
@@ -447,8 +447,12 @@ class Comparer:
     Examples
     --------
     >>> import modelskill as ms
-    >>> cmp1 = ms.compare(observation, modeldata)
+    >>> cc = ms.compare(observation, modeldata)
     >>> cmp2 = ms.from_matched(matched_data)
+
+    See Also
+    --------
+    modelskill.compare, modelskill.from_matched
     """
 
     data: xr.Dataset
@@ -855,18 +859,33 @@ class Comparer:
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
-    def save(self, fn: Union[str, Path]) -> None:
+    def save(self, filename: Union[str, Path]) -> None:
         """Save to netcdf file
 
         Parameters
         ----------
-        fn : str or Path
+        filename : str or Path
             filename
         """
-        self.data.to_netcdf(fn)
+        ds = self.data
+
+        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
+        # an alternative strategy would be to use NetCDF groups
+        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
+
+        # There is no need to save raw data for track data, since it is identical to the matched data
+        if self.gtype == "point":
+            for key, value in self.raw_mod_data.items():
+                value = value.copy()
+                #  rename time to unique name
+                value.index.name = "_time_raw_" + key
+                da = value.to_xarray()[key]
+                ds["_raw_" + key] = da
+
+        ds.to_netcdf(filename)
 
     @staticmethod
-    def load(fn: Union[str, Path]) -> "Comparer":
+    def load(filename: Union[str, Path]) -> "Comparer":
         """Load from netcdf file
 
         Parameters
@@ -878,9 +897,34 @@ class Comparer:
         -------
         Comparer
         """
-        with xr.open_dataset(fn) as ds:
+        with xr.open_dataset(filename) as ds:
             data = ds.load()
-        return Comparer(matched_data=data)
+
+        if data.gtype == "track":
+            return Comparer(matched_data=data)
+
+        if data.gtype == "point":
+            raw_mod_data = {}
+
+            for var in data.data_vars:
+                var_name = str(var)
+                if var_name[:5] == "_raw_":
+                    new_key = var_name[5:]  # remove prefix '_raw_'
+                    df = (
+                        data[var_name]
+                        .to_dataframe()
+                        .rename(
+                            columns={"_time_raw_" + new_key: "time", var_name: new_key}
+                        )
+                    )
+                    raw_mod_data[new_key] = df
+
+                    data = data.drop_vars(var_name)
+
+            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+
+        else:
+            raise NotImplementedError(f"Unknown gtype: {data.gtype}")
 
     def _to_observation(self) -> Observation:
         """Convert to Observation"""

@@ -19,28 +19,9 @@ import mikeio
 
 from modelskill import ModelResult
 from .observation import Observation, PointObservation, TrackObservation
-from .comparison import PointComparer, ComparerCollection, TrackComparer
 from .utils import is_iterable_not_str
 from .plot import plot_spatial_overview
-
-
-
-# def _parse_model(mod, item: IdOrNameTypes = None) -> protocols.ModelResult:
-#     if isinstance(mod, str):
-#         dfs = mikeio.open(mod)
-#         if (len(dfs.items) > 1) and (item is None):
-#             raise ValueError("Model ambiguous - please provide item")
-#         mod = dfs.read(items=item).to_dataframe()
-#     elif isinstance(mod, pd.DataFrame):
-#         mod = ModelResult(mod, item=item).data
-#     elif isinstance(mod, pd.Series):
-#         mod = mod.to_frame()
-
-#     assert mod.shape[1] == 1  # A single item
-
-#     mod.columns = ["Model"]
-
-#     return mod
+from .comparison import PointComparer, ComparerCollection, TrackComparer
 
 
 class _BaseConnector(ABC):
