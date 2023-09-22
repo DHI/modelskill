@@ -6,6 +6,7 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
+from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 import numpy as np
