@@ -72,7 +72,6 @@ def from_matched(
     z: Optional[float] = None,
 ) -> Comparer:
     """Create a Comparer from observation and model results that are already matched (aligned)
-
     Parameters
     ----------
     data : [pd.DataFrame,str,Path,mikeio.Dfs0, mikeio.Dataset]
@@ -94,7 +93,6 @@ def from_matched(
         y-coordinate of observation, by default None
     z : float, optional
         z-coordinate of observation, by default None
-
     Examples
     --------
     >>> import pandas as pd
@@ -150,9 +148,8 @@ def compare(
     mod_item: Optional[IdOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap=None,
-) -> Union[Comparer, ComparerCollection]:
+) -> ComparerCollection:
     """Compare observations and model results
-
     Parameters
     ----------
     obs : (str, pd.DataFrame, Observation)
@@ -167,14 +164,13 @@ def compare(
         Geometry type of the model result. If not specified, it will be guessed.
     max_model_gap : (float, optional)
         Maximum gap in the model result, by default None
-
     Returns
     -------
-    Comparer or ComparerCollection
+    ComparerCollection
         To be used for plotting and statistics
     """
     if isinstance(obs, get_args(ObsInputType)):
-        return _single_obs_compare(
+        cmp = _single_obs_compare(
             obs,
             mod,
             obs_item=obs_item,
@@ -182,9 +178,10 @@ def compare(
             gtype=gtype,
             max_model_gap=max_model_gap,
         )
+        clist = [cmp]
     elif isinstance(obs, Sequence):
         clist = [
-            compare(
+            _single_obs_compare(
                 o,
                 mod,
                 obs_item=obs_item,
@@ -194,9 +191,10 @@ def compare(
             )
             for o in obs
         ]
-        return ComparerCollection(clist)
     else:
         raise ValueError(f"Unknown obs type {type(obs)}")
+
+    return ComparerCollection(clist)
 
 
 def _single_obs_compare(
