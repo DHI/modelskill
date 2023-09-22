@@ -53,7 +53,9 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
             line style, by default None
         kwargs: other keyword arguments to df.plot()
         """
-        self.plot()
+        self.plot(
+            title=title, color=color, marker=marker, linestyle=linestyle, **kwargs
+        )
 
     def plot(self, title=None, color=None, marker=".", linestyle="None", **kwargs):
         """plot timeseries
@@ -73,7 +75,9 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
         kwargs: other keyword arguments to df.plot()
         """
         kwargs["color"] = self._ts.color if color is None else color
-        ax = self._ts.data.plot(marker=marker, linestyle=linestyle, **kwargs)
+        ax = self._ts._values_as_series.plot(
+            marker=marker, linestyle=linestyle, **kwargs
+        )
 
         title = self._ts.name if title is None else title
         ax.set_title(title)
@@ -104,7 +108,7 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
 
         kwargs["color"] = self._ts.color if color is None else color
 
-        ax = self._ts.data.iloc[:, -1].hist(bins=bins, **kwargs)
+        ax = self._ts._values_as_series.hist(bins=bins, **kwargs)
         ax.set_title(title)
         ax.set_xlabel(str(self._ts.quantity))
         return ax
@@ -172,6 +176,15 @@ class TimeSeries:
         else:
             # xr.Dataset
             return pd.DatetimeIndex(self.data.time)
+
+    @property
+    def _values_as_series(self) -> pd.Series:
+        if isinstance(self.data, (pd.DataFrame, pd.Series)):
+            return self.data.iloc[:, -1]  # type: ignore
+        else:
+            # xr.Dataset
+            var = list(self.data.data_vars)[-1]
+            return self.data[var].to_series()
 
     @property
     def start_time(self) -> pd.Timestamp:
