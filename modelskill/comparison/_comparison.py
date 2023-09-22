@@ -298,7 +298,7 @@ def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
 
     # .drop(columns=["x", "y"])
 
-    res = df.groupby(by=by).apply(calc_metrics)
+    res = df.groupby(by=by, observed=False).apply(calc_metrics)
 
     if n_min:
         # nan for all cols but n
