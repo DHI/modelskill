@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, Sequence, Tuple
 
 import matplotlib.colors as colors

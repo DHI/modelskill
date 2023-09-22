@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Sequence
 
 import matplotlib.pyplot as plt

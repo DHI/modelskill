@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Optional, Sequence, Tuple
 
 from ..model.point import PointModelResult
