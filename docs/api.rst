@@ -115,7 +115,7 @@ Plot
 
 .. autofunction:: modelskill.plotting.spatial_overview
 
-.. autofunction:: modelskill.plot.wind_rose # TODO: I guess this should also be brought into the plotting module
+.. autofunction:: modelskill.plotting.wind_rose
 
 
 Settings

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 import mikeio
-from modelskill.plotting.plot import wind_rose
+from modelskill.plotting import wind_rose
 
 
 @pytest.fixture

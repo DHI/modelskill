@@ -2,8 +2,8 @@ import mikeio
 import numpy as np
 import pytest
 
-from modelskill._rose import directional_labels, pretty_intervals
-from modelskill.plotting.plot import wind_rose
+from modelskill.plotting._rose import directional_labels, pretty_intervals
+from modelskill.plotting import wind_rose
 
 
 @pytest.fixture

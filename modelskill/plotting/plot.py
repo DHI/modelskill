@@ -22,7 +22,7 @@ from ..settings import options, register_option
 from ..observation import unit_display_name
 from ..metrics import metric_has_units
 
-from .._rose import wind_rose  # nice alias
+from ._rose import wind_rose  # nice alias
 
 __all__ = [
     "wind_rose",
