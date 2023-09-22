@@ -351,10 +351,11 @@ document.write(`
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No data found in selection&quot;</span><span class="p">)</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">obs_val</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">mod_val</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">obs_val</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">mod_val</span><span class="o">.</span><span class="n">values</span>
 
-        <span class="n">unit_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">observation</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">unit_text</span>
+        <span class="c1"># TODO why the first?</span>
+        <span class="n">unit_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">unit_text</span>
 
         <span class="n">xlabel</span> <span class="o">=</span> <span class="n">xlabel</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Observation, </span><span class="si">{</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">ylabel</span> <span class="o">=</span> <span class="n">ylabel</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;Model, </span><span class="si">{</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -443,7 +444,10 @@ document.write(`
             <span class="n">df_model</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="n">model</span><span class="p">]</span>
             <span class="n">df_model</span><span class="o">.</span><span class="n">mod_val</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">kde</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">observation</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># TODO use unit_text from the first comparer</span>
+        <span class="c1"># TODO make sure they are conistent</span>
+        <span class="c1"># then it should be a property of the collection, not only the comparer</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># TODO title?</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>

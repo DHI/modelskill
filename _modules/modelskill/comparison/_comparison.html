@@ -532,7 +532,7 @@ document.write(`
 
     <span class="c1"># .drop(columns=[&quot;x&quot;, &quot;y&quot;])</span>
 
-    <span class="n">res</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">by</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">calc_metrics</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">by</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">calc_metrics</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">n_min</span><span class="p">:</span>
         <span class="c1"># nan for all cols but n</span>
