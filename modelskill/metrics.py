@@ -816,6 +816,7 @@ def _partial_duration_series(
     inter_time = inter_event_time
     inter_level = 1.0
     time = np.asarray(time)
+    value = np.asarray(value)
     time = (time - time[0]).astype(float) / 1e9 / 3600  # time index in hours from t0=0
 
     for time_step in range(n):

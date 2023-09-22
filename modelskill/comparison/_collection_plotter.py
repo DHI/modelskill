@@ -117,10 +117,11 @@ class ComparerCollectionPlotter:
             raise ValueError("No data found in selection")
 
         df = cmp.to_dataframe()
-        x = df.obs_val
-        y = df.mod_val
+        x = df.obs_val.values
+        y = df.mod_val.values
 
-        unit_text = self.cc[df.observation[0]].unit_text
+        # TODO why the first?
+        unit_text = self.cc[0].unit_text
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
@@ -209,7 +210,10 @@ class ComparerCollectionPlotter:
             df_model = df[df.model == model]
             df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
 
-        plt.xlabel(f"{self.cc[df.observation[0]].unit_text}")
+        # TODO use unit_text from the first comparer
+        # TODO make sure they are conistent
+        # then it should be a property of the collection, not only the comparer
+        plt.xlabel(f"{self.cc[0].unit_text}")
 
         # TODO title?
         ax.legend()

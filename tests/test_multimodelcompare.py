@@ -134,7 +134,7 @@ def test_mm_skill_obs(cc):
 
 def test_mm_mean_skill_obs(cc):
     df = cc.sel(model=0, observation=[0, "c2"]).mean_skill().df
-    assert pytest.approx(df.si[0]) == 0.11113215
+    assert pytest.approx(df.iloc[0].si) == 0.11113215
 
 
 def test_mm_skill_missing_obs(cc, o1):
