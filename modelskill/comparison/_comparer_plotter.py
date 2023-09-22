@@ -13,8 +13,7 @@ from ..plotting._misc import (
     _ytick_directional,
     quantiles_xy,
 )
-from ..plotting._taylor_diagram import TaylorPoint
-from ..plotting import taylor_diagram, scatter
+from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
 
 
