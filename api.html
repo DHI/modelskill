@@ -677,7 +677,7 @@ given a TrackObservation.</p>
 <dd class="field-even"><p>To be used for plotting and statistics</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#modelskill.comparison.Comparer" title="modelskill.comparison.Comparer">Comparer</a> or <a class="reference internal" href="#modelskill.comparison.ComparerCollection" title="modelskill.comparison.ComparerCollection">ComparerCollection</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#modelskill.comparison.ComparerCollection" title="modelskill.comparison.ComparerCollection">ComparerCollection</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -728,7 +728,7 @@ with columns obs_item, mod_items, aux_items</p></li>
 <dt class="sig sig-object py" id="modelskill.comparison.Comparer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.comparison.</span></span><span class="sig-name descname"><span class="pre">Comparer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modeldata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_model_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matched_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer" title="Permalink to this definition">#</a></dt>
 <dd><p>Comparer class for comparing model and observation data.</p>
-<p>Typically, the Comparer is initialized using the <cite>compare</cite> function.</p>
+<p>Typically, the Comparer is part of a ComparerCollection, initialized using the <cite>compare</cite> function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -742,9 +742,13 @@ with columns obs_item, mod_items, aux_items</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">modelskill</span> <span class="k">as</span> <span class="nn">ms</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">cmp1</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">modeldata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">modeldata</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cmp2</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">from_matched</span><span class="p">(</span><span class="n">matched_data</span><span class="p">)</span>
 </pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#modelskill.compare" title="modelskill.compare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">modelskill.compare</span></code></a>, <a class="reference internal" href="#modelskill.from_matched" title="modelskill.from_matched"><code class="xref py py-obj docutils literal notranslate"><span class="pre">modelskill.from_matched</span></code></a></p>
 </div>
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.comparison.Comparer.end">
@@ -760,7 +764,7 @@ with columns obs_item, mod_items, aux_items</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="modelskill.comparison.Comparer.load">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.load" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.load" title="Permalink to this definition">#</a></dt>
 <dd><p>Load from netcdf file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -866,11 +870,11 @@ with columns obs_item, mod_items, aux_items</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="modelskill.comparison.Comparer.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fn</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.save" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.save" title="Permalink to this definition">#</a></dt>
 <dd><p>Save to netcdf file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>fn</strong> (<em>str</em><em> or </em><em>Path</em>) – filename</p>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em><em> or </em><em>Path</em>) – filename</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1353,6 +1357,29 @@ in a single-quadrant polar plot, with r=std and theta=arccos(cc).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="modelskill.comparison.ComparerCollection.load">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_collection.html#ComparerCollection.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.ComparerCollection.load" title="Permalink to this definition">#</a></dt>
+<dd><p>Load a ComparerCollection from a zip file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em><em> or </em><em>Path</em>) – Filename of the zip file.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The loaded ComparerCollection.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#modelskill.comparison.ComparerCollection" title="modelskill.comparison.ComparerCollection">ComparerCollection</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;my_comparer_collection.msk&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc2</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">ComparerCollection</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;my_comparer_collection.msk&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="modelskill.comparison.ComparerCollection.mean_skill">
 <span class="sig-name descname"><span class="pre">mean_skill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_collection.html#ComparerCollection.mean_skill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.ComparerCollection.mean_skill" title="Permalink to this definition">#</a></dt>
 <dd><p>Weighted mean of skills</p>
@@ -1497,6 +1524,24 @@ use mean_skill() if you need to apply weighting</p>
 <dd class="field-odd"><p><a class="reference internal" href="#modelskill.comparison.ComparerCollection" title="modelskill.comparison.ComparerCollection">ComparerCollection</a></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.comparison.ComparerCollection.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_collection.html#ComparerCollection.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.ComparerCollection.save" title="Permalink to this definition">#</a></dt>
+<dd><p>Save the ComparerCollection to a zip file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> (<em>str</em><em> or </em><em>Path</em>) – Filename of the zip file.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">compare</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cc</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;my_comparer_collection.msk&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Each comparer is stored as a netcdf file in the zip file.</p>
 </dd></dl>
 
 <dl class="py method">

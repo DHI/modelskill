@@ -393,7 +393,7 @@ document.write(`
     <span class="n">mod_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_model_gap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Comparer</span><span class="p">,</span> <span class="n">ComparerCollection</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ComparerCollection</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare observations and model results</span>
 
 <span class="sd">    Parameters</span>
@@ -413,11 +413,11 @@ document.write(`
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    Comparer or ComparerCollection</span>
+<span class="sd">    ComparerCollection</span>
 <span class="sd">        To be used for plotting and statistics</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">ObsInputType</span><span class="p">)):</span>
-        <span class="k">return</span> <span class="n">_single_obs_compare</span><span class="p">(</span>
+        <span class="n">cmp</span> <span class="o">=</span> <span class="n">_single_obs_compare</span><span class="p">(</span>
             <span class="n">obs</span><span class="p">,</span>
             <span class="n">mod</span><span class="p">,</span>
             <span class="n">obs_item</span><span class="o">=</span><span class="n">obs_item</span><span class="p">,</span>
@@ -425,9 +425,10 @@ document.write(`
             <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">,</span>
             <span class="n">max_model_gap</span><span class="o">=</span><span class="n">max_model_gap</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="n">clist</span> <span class="o">=</span> <span class="p">[</span><span class="n">cmp</span><span class="p">]</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
         <span class="n">clist</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">compare</span><span class="p">(</span>
+            <span class="n">_single_obs_compare</span><span class="p">(</span>
                 <span class="n">o</span><span class="p">,</span>
                 <span class="n">mod</span><span class="p">,</span>
                 <span class="n">obs_item</span><span class="o">=</span><span class="n">obs_item</span><span class="p">,</span>
@@ -437,9 +438,10 @@ document.write(`
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">obs</span>
         <span class="p">]</span>
-        <span class="k">return</span> <span class="n">ComparerCollection</span><span class="p">(</span><span class="n">clist</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown obs type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown obs type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ComparerCollection</span><span class="p">(</span><span class="n">clist</span><span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">_single_obs_compare</span><span class="p">(</span>

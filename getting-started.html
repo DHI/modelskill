@@ -284,7 +284,8 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-modelresults">1. Define ModelResults</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-observations">2. Define Observations</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#connect-observations-and-modelresults">3. Connect observations and ModelResults</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#do-analysis-plotting-etc-with-a-comparer">4. Do analysis, plotting, etc with a Comparer</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#do-analysis-plotting-etc-with-a-comparer">4. Do analysis, plotting, etc with a Comparer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#save-load-the-comparercollection">5. Save / load the ComparerCollection</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering">Filtering</a></li>
 </ul>
 </li>
@@ -364,13 +365,13 @@ for further analysis and plotting.</p>
 </section>
 <section id="do-analysis-plotting-etc-with-a-comparer">
 <h3>4. Do analysis, plotting, etc with a Comparer<a class="headerlink" href="#do-analysis-plotting-etc-with-a-comparer" title="Permalink to this headline">#</a></h3>
-<p>The object returned by the <code class="docutils literal notranslate"><span class="pre">compare()</span></code> method is a <em>comparer</em>. It holds
+<p>The object returned by the <code class="docutils literal notranslate"><span class="pre">compare()</span></code> method is a <em>ComparerCollection</em>. It holds
 the matched observation and model data and has methods for plotting and
 skill assessment.</p>
 <p>The primary comparer methods are:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="api.html#modelskill.comparison.ComparerCollection.skill" title="modelskill.comparison.ComparerCollection.skill"><span class="xref myst py py-meth">skill()</span></a>
-which returns a pandas dataframe with the skill scores</p></li>
+which returns a table with the skill scores</p></li>
 <li><p>various plot methods of the comparer objects</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">plot.scatter()</span></code></p></li>
@@ -381,6 +382,17 @@ which returns a pandas dataframe with the skill scores</p></li>
 </ul>
 </li>
 </ul>
+</section>
+<section id="save-load-the-comparercollection">
+<h3>5. Save / load the ComparerCollection<a class="headerlink" href="#save-load-the-comparercollection" title="Permalink to this headline">#</a></h3>
+<p>It can be useful to save the comparer collection for later use. This can be done using the <code class="docutils literal notranslate"><span class="pre">save()</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cc</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;my_comparer_collection.msk&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The comparer collection can be loaded again from disk, using the <code class="docutils literal notranslate"><span class="pre">load()</span></code> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cc</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;my_comparer_collection.msk&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 <section id="filtering">
 <h4>Filtering<a class="headerlink" href="#filtering" title="Permalink to this headline">#</a></h4>
 <p>In order to select only a subset of the data for analysis, the comparer has a <code class="docutils literal notranslate"><span class="pre">sel()</span></code> method which returns a new comparer with the selected data.</p>
@@ -450,7 +462,8 @@ polygon</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-modelresults">1. Define ModelResults</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#define-observations">2. Define Observations</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#connect-observations-and-modelresults">3. Connect observations and ModelResults</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#do-analysis-plotting-etc-with-a-comparer">4. Do analysis, plotting, etc with a Comparer</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#do-analysis-plotting-etc-with-a-comparer">4. Do analysis, plotting, etc with a Comparer</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#save-load-the-comparercollection">5. Save / load the ComparerCollection</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering">Filtering</a></li>
 </ul>
 </li>

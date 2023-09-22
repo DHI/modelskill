@@ -481,7 +481,7 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">_inside_polygon</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="n">xy</span><span class="p">):</span>
-    <span class="kn">import</span> <span class="nn">matplotlib.path</span> <span class="k">as</span> <span class="nn">mp</span>  <span class="c1"># type: ignore</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.path</span> <span class="k">as</span> <span class="nn">mp</span>
 
     <span class="k">if</span> <span class="n">polygon</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">polygon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">polygon</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span> <span class="n">polygon</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]))</span>
@@ -663,7 +663,7 @@ document.write(`
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Comparer class for comparing model and observation data.</span>
 
-<span class="sd">    Typically, the Comparer is initialized using the `compare` function.</span>
+<span class="sd">    Typically, the Comparer is part of a ComparerCollection, initialized using the `compare` function.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -681,8 +681,12 @@ document.write(`
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import modelskill as ms</span>
-<span class="sd">    &gt;&gt;&gt; cmp1 = ms.compare(observation, modeldata)</span>
+<span class="sd">    &gt;&gt;&gt; cc = ms.compare(observation, modeldata)</span>
 <span class="sd">    &gt;&gt;&gt; cmp2 = ms.from_matched(matched_data)</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    modelskill.compare, modelskill.from_matched</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">data</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span>
@@ -1089,18 +1093,33 @@ document.write(`
 
         <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Comparer.save"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.Comparer.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Comparer.save"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.Comparer.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save to netcdf file</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        fn : str or Path</span>
+<span class="sd">        filename : str or Path</span>
 <span class="sd">            filename</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span></div>
+        <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+
+        <span class="c1"># add self.raw_mod_data to ds with prefix &#39;raw_&#39; to avoid name conflicts</span>
+        <span class="c1"># an alternative strategy would be to use NetCDF groups</span>
+        <span class="c1"># https://docs.xarray.dev/en/stable/user-guide/io.html#groups</span>
+
+        <span class="c1"># There is no need to save raw data for track data, since it is identical to the matched data</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;point&quot;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="c1">#  rename time to unique name</span>
+                <span class="n">value</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;_time_raw_&quot;</span> <span class="o">+</span> <span class="n">key</span>
+                <span class="n">da</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">to_xarray</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span>
+                <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;_raw_&quot;</span> <span class="o">+</span> <span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
+
+        <span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Comparer.load"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.Comparer.load">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Comparer&quot;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Comparer&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load from netcdf file</span>
 
 <span class="sd">        Parameters</span>
@@ -1112,9 +1131,34 @@ document.write(`
 <span class="sd">        -------</span>
 <span class="sd">        Comparer</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">ds</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span></div>
+
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;track&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;point&quot;</span><span class="p">:</span>
+            <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
+                <span class="n">var_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">var_name</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;_raw_&quot;</span><span class="p">:</span>
+                    <span class="n">new_key</span> <span class="o">=</span> <span class="n">var_name</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>  <span class="c1"># remove prefix &#39;_raw_&#39;</span>
+                    <span class="n">df</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">data</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
+                        <span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+                        <span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+                            <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;_time_raw_&quot;</span> <span class="o">+</span> <span class="n">new_key</span><span class="p">:</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">var_name</span><span class="p">:</span> <span class="n">new_key</span><span class="p">}</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">raw_mod_data</span><span class="p">[</span><span class="n">new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span>
+
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown gtype: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">gtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_to_observation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observation</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to Observation&quot;&quot;&quot;</span>
