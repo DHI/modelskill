@@ -6,16 +6,14 @@ import numpy as np  # type: ignore
 
 from .. import metrics as mtr
 from ..utils import _get_idx
-from ..plot import (
+import matplotlib.colors as colors
+from ..plotting._misc import (
     _get_fig_ax,
     _xtick_directional,
     _ytick_directional,
-    colors,
     quantiles_xy,
-    scatter,
-    taylor_diagram,
-    TaylorPoint,
 )
+from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
 
 

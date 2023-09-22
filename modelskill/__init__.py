@@ -31,7 +31,7 @@ from .observation import PointObservation, TrackObservation
 from .matching import compare, from_matched
 from .connection import Connector
 from .settings import options, get_option, set_option, reset_option, load_style
-from .plot import plot_temporal_coverage, plot_spatial_overview
+from . import plotting
 from .comparison import ComparerCollection
 
 
@@ -74,8 +74,7 @@ __all__ = [
     "set_option",
     "reset_option",
     "load_style",
-    "plot_temporal_coverage",
-    "plot_spatial_overview",
+    "plotting",
     "from_config",
 ]
 
