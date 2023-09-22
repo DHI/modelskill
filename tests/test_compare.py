@@ -133,42 +133,42 @@ def test_extract_gaps2(o2_gaps, mr12_gaps):
     # con2 = Connector(o2_gaps, mr2)
     # con12 = Connector(o2_gaps, [mr1, mr2])
 
-    cmp = ms.compare(o2_gaps, [mr1, mr2])  # con12.extract()  # no max gap argument
+    cmp = ms.compare(o2_gaps, [mr1, mr2])[0]  # con12.extract()  # no max gap argument
     assert cmp.data["mr1"].count() == 66
     assert cmp.data["mr2"].count() == 66
 
     # no gap in mr1
-    cmp = ms.compare(o2_gaps, mr1, max_model_gap=7200)
+    cmp = ms.compare(o2_gaps, mr1, max_model_gap=7200)[0]
     assert cmp.data["mr1"].count() == 66
 
     # one day gap in mr2
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=7200)
+    cmp = ms.compare(o2_gaps, mr2, max_model_gap=7200)[0]
     assert cmp.data["mr2"].count() == 42  # 66 - 24
     assert cmp.data["mr2"].sel(time="2017-10-28").count() == 0
 
     # will syncronize the two models,
     # so gap in one will remove points from the other
-    cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=7200)
+    cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=7200)[0]
     assert cmp.data["mr1"].count() == 42
     assert cmp.data["mr2"].count() == 42
 
     # the 24 hour gap (86400 seconds) in the file cannot be filled
     # with the max_model_gap=27200
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=27200)
+    cmp = ms.compare(o2_gaps, mr2, max_model_gap=27200)[0]
     assert cmp.data["mr2"].count() == 42
     assert cmp.data["mr2"].sel(time="2017-10-28").count() == 0
 
 
 def test_extract_gaps_big(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=86401)  # 24 hours + 1 second
+    cmp = ms.compare(o2_gaps, mr2, max_model_gap=86401)[0]  # 24 hours + 1 second
     assert cmp.data["mr2"].count() == 66  # no data removed
 
 
 def test_extract_gaps_small(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
     # with pytest.warns(UserWarning, match="No overlapping data"):
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=10)  # no data with that small gap
+    cmp = ms.compare(o2_gaps, mr2, max_model_gap=10)[0]  # no data with that small gap
     assert cmp.n_points == 0
 
 
@@ -189,7 +189,7 @@ def test_compare_gaps_types(o2_gaps, mr12_gaps):
         timedelta(seconds=gap_seconds),
     ]
     for gap in gaps:
-        cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=gap)
+        cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=gap)[0]
         assert cmp.data["mr1"].count() == 42
 
 
@@ -324,3 +324,15 @@ def test_trackmodelresult_and_trackobservation_uses_model_name():
 def test_item_selection_items_are_unique():
     with pytest.raises(ValueError):
         ItemSelection(obs="foo", model=["foo", "bar"], aux=["baz"])
+
+
+def test_save_comparercollection(o1, o3, tmp_path):
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]
+
+    cc = ms.compare([o1, o3], da)
+
+    fn = tmp_path / "cc.msk"
+    cc.save(fn)
+
+    assert fn.exists()
