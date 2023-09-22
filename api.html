@@ -660,37 +660,41 @@ given a TrackObservation.</p>
 <h2>Compare<a class="headerlink" href="#compare" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="modelskill.compare">
-<span class="sig-prename descclassname"><span class="pre">modelskill.</span></span><span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_model_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/connection.html#compare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.compare" title="Permalink to this definition">#</a></dt>
-<dd><p>Compare observations and model results</p>
+<span class="sig-prename descclassname"><span class="pre">modelskill.</span></span><span class="sig-name descname"><span class="pre">compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_model_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/matching.html#compare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.compare" title="Permalink to this definition">#</a></dt>
+<dd><p>Compare observations and model results
+:param obs: Observation to be compared
+:type obs: (str, pd.DataFrame, Observation)
+:param mod: Model result to be compared
+:type mod: (str, pd.DataFrame, ModelResultInterface)
+:param obs_item: observation item, by default None
+:type obs_item: (int, str), optional
+:param mod_item: model item, by default None
+:type mod_item: (int, str), optional
+:param gtype: Geometry type of the model result. If not specified, it will be guessed.
+:type gtype: (str, optional)
+:param max_model_gap: Maximum gap in the model result, by default None
+:type max_model_gap: (float, optional)</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>Observation</em><em>)</em>) – Observation to be compared</p></li>
-<li><p><strong>mod</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>ModelResultInterface</em><em>)</em>) – Model result to be compared</p></li>
-<li><p><strong>obs_item</strong> (<em>(</em><em>int</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) – observation item, by default None</p></li>
-<li><p><strong>mod_item</strong> (<em>(</em><em>int</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) – model item, by default None</p></li>
-<li><p><strong>gtype</strong> (<em>(</em><em>str</em><em>, </em><em>optional</em><em>)</em>) – Geometry type of the model result. If not specified, it will be guessed.</p></li>
-<li><p><strong>max_model_gap</strong> (<em>(</em><em>float</em><em>, </em><em>optional</em><em>)</em>) – Maximum gap in the model result, by default None</p></li>
-</ul>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>To be used for plotting and statistics</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>To be used for plotting and statistics</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#modelskill.comparison.ComparerCollection" title="modelskill.comparison.ComparerCollection">ComparerCollection</a></p>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="#modelskill.comparison.ComparerCollection" title="modelskill.comparison.ComparerCollection">ComparerCollection</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="modelskill.from_matched">
-<span class="sig-prename descclassname"><span class="pre">modelskill.</span></span><span class="sig-name descname"><span class="pre">from_matched</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/connection.html#from_matched"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.from_matched" title="Permalink to this definition">#</a></dt>
-<dd><p>Create a Comparer from observation and model results that are already matched (aligned)</p>
+<span class="sig-prename descclassname"><span class="pre">modelskill.</span></span><span class="sig-name descname"><span class="pre">from_matched</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/matching.html#from_matched"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.from_matched" title="Permalink to this definition">#</a></dt>
+<dd><p>Create a Comparer from observation and model results that are already matched (aligned)
+:param data: DataFrame (or object that can be converted to a DataFrame e.g. dfs0)</p>
+<blockquote>
+<div><p>with columns obs_item, mod_items, aux_items</p>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>[</em><em>pd.DataFrame</em><em>,</em><em>str</em><em>,</em><em>Path</em><em>,</em><em>mikeio.Dfs0</em><em>, </em><em>mikeio.Dataset</em><em>]</em>) – DataFrame (or object that can be converted to a DataFrame e.g. dfs0)
-with columns obs_item, mod_items, aux_items</p></li>
 <li><p><strong>obs_item</strong> (<em>[</em><em>str</em><em>,</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Name or index of observation item, by default first item</p></li>
 <li><p><strong>mod_items</strong> (<em>Iterable</em><em>[</em><em>str</em><em>,</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Names or indicies of model items, if None all remaining columns are model items, by default None</p></li>
 <li><p><strong>aux_items</strong> (<em>Iterable</em><em>[</em><em>str</em><em>,</em><em>int</em><em>]</em><em>, </em><em>optional</em>) – Names or indicies of auxiliary items, by default None</p></li>
