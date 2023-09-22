@@ -2,7 +2,7 @@ import mikeio
 import numpy as np
 import pytest
 
-from modelskill.plotting._rose import directional_labels, pretty_intervals
+from modelskill.plotting._wind_rose import directional_labels, pretty_intervals
 from modelskill.plotting import wind_rose
 
 

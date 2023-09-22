@@ -9,7 +9,8 @@ import pandas as pd
 
 
 from .. import metrics as mtr
-from ..plotting.plot import taylor_diagram, TaylorPoint
+from ..plotting import taylor_diagram
+from ..plotting._taylor_diagram import TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import AggregatedSkill

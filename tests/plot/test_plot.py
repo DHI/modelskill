@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import pytest
 import modelskill as ms
-from modelskill.plotting.plot import format_skill_df
-from modelskill.plotting.plot import sample_points
+from modelskill.plotting._misc import format_skill_df
+from modelskill.plotting._misc import sample_points
 
 
 @pytest.fixture

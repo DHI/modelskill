@@ -7,10 +7,9 @@ import pandas as pd
 
 from .. import metrics as mtr
 from ..utils import _get_idx
-from ..plotting.plot import (
-    scatter,
-    taylor_diagram,
-    TaylorPoint,
+from ..plotting import taylor_diagram, scatter
+from ..plotting._taylor_diagram import TaylorPoint
+from ..plotting._misc import (
     _xtick_directional,
     _ytick_directional,
 )
