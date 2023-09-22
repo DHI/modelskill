@@ -20,7 +20,7 @@ import mikeio
 from modelskill import ModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .utils import is_iterable_not_str
-from .plot import plot_spatial_overview
+from . import plotting
 from .comparison import PointComparer, ComparerCollection, TrackComparer
 
 
@@ -145,7 +145,7 @@ class _SingleObsConnector(_BaseConnector):
         figsize : (float, float), optional
             figure size, by default None
         """
-        return plot_spatial_overview(
+        return plotting.spatial_overview(
             obs=[self.obs], mod=self.modelresults, figsize=figsize
         )
 
@@ -467,7 +467,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
         obs = list(self.observations.values())
         mod = list(self.modelresults.values())
-        return plot_spatial_overview(obs=obs, mod=mod, title=title, figsize=figsize)
+        return plotting.spatial_overview(obs=obs, mod=mod, title=title, figsize=figsize)
 
     def plot_temporal_coverage(
         self,
