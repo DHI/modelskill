@@ -70,20 +70,35 @@ for further analysis and plotting.
 
 ### 4. Do analysis, plotting, etc with a Comparer
 
-The object returned by the `compare()` method is a *comparer*. It holds
+The object returned by the `compare()` method is a *ComparerCollection*. It holds
 the matched observation and model data and has methods for plotting and
 skill assessment.
 
 The primary comparer methods are:
 
 - [skill()](ComparerCollection.skill)
-  which returns a pandas dataframe with the skill scores
+  which returns a table with the skill scores
 - various plot methods of the comparer objects
     * `plot.scatter()`
     * `plot.timeseries()`
     * `plot.kde()`
     * `plot.qq()`
     * `plot.hist()`
+
+### 5. Save / load the ComparerCollection
+
+It can be useful to save the comparer collection for later use. This can be done using the `save()` method:
+
+```python
+cc.save("my_comparer_collection.msk")
+```
+
+The comparer collection can be loaded again from disk, using the `load()` method:
+
+```python
+cc = ms.load("my_comparer_collection.msk")
+```
+
 
 #### Filtering
 
