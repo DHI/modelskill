@@ -1,9 +1,15 @@
 import modelskill.plotting._settings  # noqa: F401
-from .plot import spatial_overview, temporal_coverage
-from ._rose import wind_rose
+
+from ._scatter import scatter
+from ._spatial_overview import spatial_overview
+from ._taylor_diagram import taylor_diagram
+from ._temporal_coverage import temporal_coverage
+from ._wind_rose import wind_rose
 
 __all__ = [
+    "scatter",
     "spatial_overview",
+    "taylor_diagram",
     "temporal_coverage",
     "wind_rose",
 ]
