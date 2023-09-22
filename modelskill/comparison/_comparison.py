@@ -552,7 +552,8 @@ class Comparer:
             df = self._model2obs_interp(observation, mdata, max_model_gap)
             if gtype == "track":
                 # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
-                self._mask_model_outside_observation_track(name, df, observation.data)
+                df_obs = observation.data.to_pandas()  # TODO
+                self._mask_model_outside_observation_track(name, df, df_obs)
 
             if first:
                 data = df
