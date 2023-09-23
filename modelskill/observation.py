@@ -475,13 +475,6 @@ class TrackObservation(Observation):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
         return out
 
-    @staticmethod
-    def _read_dfs0(dfs, items):
-        """Read track data from dfs0 file"""
-        df = dfs.read(items=items).to_dataframe()
-        df.dropna(inplace=True)
-        return df, dfs.items[items[-1]]
-
 
 def unit_display_name(name: str) -> str:
     """Display name
