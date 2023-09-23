@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import get_args, Optional, List
 import pandas as pd
+import xarray as xr
 
 import mikeio
 
@@ -69,26 +70,38 @@ class TrackModelResult(TimeSeries):
             item_names = [i.name for i in data.items]
         elif isinstance(data, pd.DataFrame):
             item_names = list(data.columns)
+        elif isinstance(data, xr.Dataset):
+            item_names = list(data.data_vars)
         else:
             raise ValueError("Could not construct TrackModelResult from provided data")
 
         ti = self._parse_track_items(item_names, x_item, y_item, item)
         name = name or ti.values
 
-        # select relevant items and convert to dataframe
-        assert isinstance(data, (mikeio.Dataset, pd.DataFrame))
+        # parse quantity
+        if isinstance(data, mikeio.Dataset):
+            if quantity is None:
+                quantity = Quantity.from_mikeio_iteminfo(data[ti.values].item)
+        model_quantity = Quantity.undefined() if quantity is None else quantity
+
+        # select relevant items and convert to xr.Dataset
+        assert isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset))
         data = data[ti.all]
         if isinstance(data, mikeio.Dataset):
-            df = data.to_dataframe()
+            ds = data.to_xarray()
+        elif isinstance(data, pd.DataFrame):
+            data.index.name = "time"
+            ds = data.to_xarray()
         else:
-            df = data
+            assert len(data.dims) == 1, "Only 0-dimensional data are supported"
+            if data.coords[list(data.coords)[0]].name != "time":
+                data = data.rename({list(data.coords)[0]: "time"})
+            ds = data
 
-        df = df.rename(columns={ti.x: "x", ti.y: "y"})
-        df.index = make_unique_index(df.index, offset_duplicates=0.001)
+        ds = ds.rename({ti.x: "x", ti.y: "y"})
+        ds["time"] = make_unique_index(ds["time"].to_index(), offset_duplicates=0.001)
 
-        # TODO move default quantity to TimeSeries?
-        model_quantity = Quantity.undefined() if quantity is None else quantity
-        super().__init__(data=df, name=name, quantity=model_quantity)
+        super().__init__(data=ds, name=name, quantity=model_quantity)
 
     @staticmethod
     def _parse_track_items(items, x_item, y_item, item) -> TrackItem:
