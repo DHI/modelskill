@@ -8,7 +8,7 @@ Examples
 """
 from __future__ import annotations
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Sequence
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -20,19 +20,10 @@ from .types import Quantity
 from .timeseries import TimeSeries
 
 
-# def _parse_item(items, item, item_str="item"):
-#     if isinstance(item, int):
-#         item = len(items) + item if (item < 0) else item
-#         if (item < 0) or (item >= len(items)):
-#             raise IndexError(f"{item_str} is out of range (0, {len(items)})")
-#     elif isinstance(item, str):
-#         item = items.index(item)
-#     else:
-#         raise TypeError(f"{item_str} must be int or string")
-#     return item
-
-
-def _get_item_names(items, valid_names):
+def _get_item_names(
+    items: Sequence[str | int], valid_names: Sequence[str]
+) -> List[str]:
+    """Parse requested items from list of valid item names, return item names"""
     if len(valid_names) < len(items):
         raise ValueError(
             f"Input has only {len(valid_names)} items. {len(items)} items where requested: {items}"
@@ -43,6 +34,7 @@ def _get_item_names(items, valid_names):
         raise ValueError(
             f"Cannot infer item names from input. Please provide item names explicitly. Valid names: {valid_names}."
         )
+
     item_names = []
     for item in items:
         item_names.append(_get_name(x=item, valid_names=valid_names))
@@ -75,13 +67,6 @@ class Observation(TimeSeries):
         weight: float = 1.0,
         color: str = "#d62728",
     ):
-        # TODO: now handles both xr and pandas
-        # time = data.index if hasattr(data, "index") else data.time
-        # time = self._parse_time(time)
-        # if hasattr(data, "index"):
-        #     data.index = time
-        # else:
-        #     data["time"] = time
         data["time"] = self._parse_time(data.time)
 
         if quantity is None:
@@ -96,22 +81,11 @@ class Observation(TimeSeries):
 
     @staticmethod
     def _parse_time(time):
-        # TODO move this to TimeSeries?
-
-        if isinstance(time, pd.DatetimeIndex):
-            time = time.round(freq="100us")  # 0.0001s accuracy
-            return pd.DatetimeIndex(time, freq="infer")
-        else:
-            if not isinstance(time.to_index(), pd.DatetimeIndex):
-                raise TypeError(
-                    f"Input must have a datetime index! Provided index was {type(time)}"
-                )
-            return time.dt.round("100us")
-
-    @property
-    def values(self) -> np.ndarray:
-        """Observed values"""
-        return self.data.to_pandas().values
+        if not isinstance(time.to_index(), pd.DatetimeIndex):
+            raise TypeError(
+                f"Input must have a datetime index! Provided index was {type(time.to_index())}"
+            )
+        return time.dt.round("100us")
 
     @property
     def n_points(self):
@@ -155,12 +129,18 @@ class PointObservation(Observation):
 
     @property
     def geometry(self):
+        """Coordinates of observation (shapely.geometry.Point)"""
         from shapely.geometry import Point
 
         if self.z is None:
             return Point(self.x, self.y)
         else:
             return Point(self.x, self.y, self.z)
+
+    @property
+    def values(self) -> np.ndarray:
+        """Observed values"""
+        return self.data[list(self.data.data_vars)[0]].to_numpy()
 
     def __init__(
         self,
@@ -339,21 +319,24 @@ class TrackObservation(Observation):
 
     @property
     def geometry(self):
+        """Coordinates of observation (shapely.geometry.MultiPoint)"""
         from shapely.geometry import MultiPoint
 
-        """Coordinates of observation"""
-        return MultiPoint(np.stack(self.x, self.y).T)
+        return MultiPoint(np.stack([self.x, self.y]).T)
 
     @property
     def x(self):
+        """x-coordinates of observation points"""
         return self.data[list(self.data.data_vars)[0]].to_numpy()
 
     @property
     def y(self):
+        """y-coordinates of observation points"""
         return self.data[list(self.data.data_vars)[1]].to_numpy()
 
     @property
     def values(self):
+        """Observed values"""
         return self.data[list(self.data.data_vars)[2]].to_numpy()
 
     def __init__(
@@ -415,30 +398,6 @@ class TrackObservation(Observation):
             data=ds,
             quantity=quantity,
         )
-
-    # @staticmethod
-    # def _parse_track_items(items, x_item, y_item, item):
-    #     """If input has exactly 3 items we accept item=None"""
-    #     if len(items) < 3:
-    #         raise ValueError(
-    #             f"Input has only {len(items)} items. It should have at least 3."
-    #         )
-    #     if item is None:
-    #         if len(items) == 3:
-    #             item = 2
-    #         elif len(items) > 3:
-    #             raise ValueError("Input has more than 3 items, but item was not given!")
-    #     else:
-    #         item = _parse_item(items, item)
-
-    #     x_item = _parse_item(items, x_item, "x_item")
-    #     y_item = _parse_item(items, y_item, "y_item")
-
-    #     if (item == x_item) or (item == y_item) or (x_item == y_item):
-    #         raise ValueError(
-    #             f"x-item ({x_item}), y-item ({y_item}) and value-item ({item}) must be different!"
-    #         )
-    #     return [x_item, y_item, item]
 
     def _mikeio_to_xarray(self, data, items):
         assert isinstance(data, mikeio.Dataset)
