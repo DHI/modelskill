@@ -393,11 +393,9 @@ class TrackObservation(Observation):
         name = name or item_names[2]
 
         # A unique index makes lookup much faster O(1)
-        if not ds.time.to_index().is_unique:
-            time = make_unique_index(
-                ds.time.to_index(), offset_duplicates=offset_duplicates
-            )
-            ds["time"] = time
+        ds["time"] = make_unique_index(
+            ds.time.to_index(), offset_duplicates=offset_duplicates
+        )
 
         # make sure that x and y are named x and y
         old_xy_names = list(ds.data_vars)[:2]
