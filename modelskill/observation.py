@@ -220,7 +220,7 @@ class PointObservation(Observation):
             quantity=quantity,
         )
 
-    def _mikeio_dataset(self, data, item) -> mikeio.Dataset:
+    def _mikeio_dataset(self, data, item):
         assert len(data.shape) == 1, "Only 0-dimensional data are supported"
         if isinstance(data, mikeio.Dataset):
             item_names = [i.name for i in data.items]
@@ -234,7 +234,7 @@ class PointObservation(Observation):
 
         return ds, item_name
 
-    def _pandas_to_xarray(self, data, item) -> xr.Dataset:
+    def _pandas_to_xarray(self, data, item):
         if isinstance(data, pd.DataFrame):
             item_name = _get_name(x=item, valid_names=list(data.columns))
             df = data[[item_name]]
@@ -246,7 +246,7 @@ class PointObservation(Observation):
         df.index.name = "time"
         return df.to_xarray(), item_name
 
-    def _xarray_to_xarrray(self, data, item) -> xr.Dataset:
+    def _xarray_to_xarrray(self, data, item):
         if isinstance(data, xr.Dataset):
             item_name = _get_name(x=item, valid_names=list(data.data_vars))
             ds = data[[item_name]]
@@ -440,7 +440,7 @@ class TrackObservation(Observation):
     #         )
     #     return [x_item, y_item, item]
 
-    def _mikeio_to_xarray(self, data, items) -> xr.Dataset:
+    def _mikeio_to_xarray(self, data, items):
         assert isinstance(data, mikeio.Dataset)
         assert len(data.shape) == 1, "Only 0-dimensional data are supported"
         valid_names = [i.name for i in data.items]
@@ -449,7 +449,7 @@ class TrackObservation(Observation):
 
         return ds, item_names
 
-    def _pandas_to_xarray(self, data, items) -> xr.Dataset:
+    def _pandas_to_xarray(self, data, items):
         assert isinstance(data, pd.DataFrame)
 
         item_names = _get_item_names(items, valid_names=list(data.columns))
@@ -457,7 +457,7 @@ class TrackObservation(Observation):
         df.index.name = "time"
         return df.to_xarray(), item_names
 
-    def _xarray_to_xarrray(self, data, items) -> xr.Dataset:
+    def _xarray_to_xarrray(self, data, items):
         assert isinstance(data, xr.Dataset)
 
         item_names = _get_item_names(items, valid_names=list(data.data_vars))
