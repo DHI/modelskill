@@ -8,7 +8,7 @@ Examples
 """
 from __future__ import annotations
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, get_args
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -16,7 +16,7 @@ import mikeio
 from copy import deepcopy
 
 from .utils import _get_name, make_unique_index
-from .types import Quantity
+from .types import PointType, TrackType, Quantity
 from .timeseries import TimeSeries
 
 
@@ -48,7 +48,7 @@ class Observation(TimeSeries):
 
     Parameters
     ----------
-    data : pd.DataFrame
+    data : xr.Dataset
     name : str, optional
         user-defined name, e.g. "Station A", by default "Observation"
     quantity : Optional[Quantity], optional
@@ -118,6 +118,7 @@ class PointObservation(Observation):
         user-defined name for easy identification in plots etc, by default file basename
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
+        For MIKE dfs files this is inferred from the EUM information
 
     Examples
     --------
@@ -144,7 +145,7 @@ class PointObservation(Observation):
 
     def __init__(
         self,
-        data,
+        data: PointType,
         *,
         item: Optional[int | str] = None,
         x: Optional[float] = None,
@@ -153,6 +154,10 @@ class PointObservation(Observation):
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
     ):
+        assert isinstance(
+            data, get_args(PointType)
+        ), "Could not construct PointObservation from provided data type."
+
         self.x = x
         self.y = y
         self.z = z
@@ -271,6 +276,9 @@ class TrackObservation(Observation):
         item name or index of y-coordinate, by default 1
     offset_duplicates : float, optional
         in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
+        For MIKE dfs files this is inferred from the EUM information
 
 
     Examples
@@ -341,7 +349,7 @@ class TrackObservation(Observation):
 
     def __init__(
         self,
-        data,
+        data: TrackType,
         *,
         item: Optional[int | str] = None,
         name: Optional[str] = None,
@@ -350,6 +358,10 @@ class TrackObservation(Observation):
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
     ):
+        assert isinstance(
+            data, get_args(TrackType)
+        ), "Could not construct TrackObservation from provided data type."
+
         self._filename = None
         self._item = None
 
