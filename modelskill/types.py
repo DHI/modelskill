@@ -82,9 +82,10 @@ PointType = Union[
     pd.DataFrame,
     pd.Series,
     mikeio.Dfs0,
-    mikeio.DataArray,
     mikeio.Dataset,
+    mikeio.DataArray,
     xr.Dataset,
+    xr.DataArray,
 ]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
 
