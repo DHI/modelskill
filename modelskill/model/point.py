@@ -3,8 +3,9 @@ from pathlib import Path
 from typing import Optional, get_args
 import mikeio
 import pandas as pd
+import xarray as xr
 
-from ..utils import make_unique_index, _get_name
+from ..utils import _get_name
 from ..types import Quantity, PointType
 from ..timeseries import TimeSeries  # TODO move to main module
 
@@ -52,37 +53,65 @@ class PointModelResult(TimeSeries):
         elif isinstance(data, mikeio.Dfs0):
             data = data.read()  # now mikeio.Dataset
 
-        # parse item and convert to dataframe
-        if isinstance(data, mikeio.Dataset):
-            item_names = [i.name for i in data.items]
-            item_name = _get_name(x=item, valid_names=item_names)
-            df = data[[item_name]].to_dataframe()
-        elif isinstance(data, mikeio.DataArray):
-            if item is None:
-                item_name = data.name
-            df = data.to_dataframe()
-        elif isinstance(data, pd.DataFrame):
-            item_name = _get_name(x=item, valid_names=list(data.columns))
-            df = data[[item_name]]
-        elif isinstance(data, pd.Series):
-            df = pd.DataFrame(data)  # to_frame?
-            if item is None:
-                item_name = df.columns[0]
+        # parse items
+        if isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):
+            if isinstance(data, mikeio.Dataset):
+                valid_items = [i.name for i in data.items]
+            elif isinstance(data, pd.DataFrame):
+                valid_items = list(data.columns)
+            else:
+                valid_items = list(data.data_vars)
+            item_name = _get_name(x=item, valid_names=valid_items)
         else:
-            raise ValueError("Could not construct PointModelResult from provided data")
+            if item is not None:
+                raise ValueError(f"item must be None when data is a {type(data)}")
+            item_name = data.name if hasattr(data, "name") else "PointModelResult"
+
+        # select relevant items
+        if isinstance(data, mikeio.DataArray):
+            data = mikeio.Dataset(data)
+        elif isinstance(data, pd.Series):
+            data = data.to_frame()
+        elif isinstance(data, xr.DataArray):
+            data = data.to_dataset()
+        else:
+            data = data[[item_name]]
+        assert isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset))
+
+        # parse quantity
+        if isinstance(data, mikeio.Dataset):
+            if quantity is None:
+                quantity = Quantity.from_mikeio_iteminfo(data[0].item)
+        model_quantity = Quantity.undefined() if quantity is None else quantity
+
+        # convert to xr.Dataset
+        if isinstance(data, mikeio.Dataset):
+            ds = data.to_xarray()
+        elif isinstance(data, pd.DataFrame):
+            data.index.name = "time"
+            ds = data.to_xarray()
+        else:
+            assert len(data.dims) == 1, "Only 0-dimensional data are supported"
+            if data.coords[list(data.coords)[0]].name != "time":
+                data = data.rename({list(data.coords)[0]: "time"})
+            ds = data
 
         name = name or item_name
         assert isinstance(name, str)
 
         # basic processing
-        df = df.dropna()
-        if df.empty or len(df.columns) == 0:
+        ds = ds.dropna(dim="time")
+        if len(ds) == 0 or len(ds["time"]) == 0:
             raise ValueError("No data.")
-        df.index = make_unique_index(df.index, offset_duplicates=0.001)
 
-        model_quantity = Quantity.undefined() if quantity is None else quantity
+        # df.index = make_unique_index(df.index, offset_duplicates=0.001)
+        if not ds.time.to_index().is_monotonic_increasing:
+            # TODO: duplicates_keep="mean","first","last"
+            raise ValueError(
+                "Time axis has duplicate entries. It must be monotonically increasing."
+            )
 
-        super().__init__(data=df, name=name, quantity=model_quantity)
+        super().__init__(data=ds, name=name, quantity=model_quantity)
         self.x = x
         self.y = y
 
