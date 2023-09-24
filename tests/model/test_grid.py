@@ -154,9 +154,7 @@ def test_grid_extract_point_wrongitem(mr_ERA5_pp1d, pointobs_epl_hm0):
 def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     mri = mr_ERA5_pp1d
     tmr = mri.extract(trackobs_c2_hm0)
-    df = tmr.data
-
     assert isinstance(tmr, TrackModelResult)
     assert tmr.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
     assert tmr.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
-    assert len(df.dropna()) == 99
+    assert tmr.n_points == 99

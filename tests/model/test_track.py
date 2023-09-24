@@ -51,7 +51,7 @@ def test_track_df_modelresult(track_df):
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         mr1 = TrackModelResult(df, item=2)
     assert isinstance(mr1, protocols.ModelResult)
-    assert len(mr1.data.columns) == 3
+    assert len(mr1.data) == 3
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         mr3 = TrackModelResult(df, item=2)
@@ -64,7 +64,7 @@ def test_track_from_dfs0_df_modelresult(track_from_dfs0):
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         mr1 = TrackModelResult(df, item=-1)
     assert isinstance(mr1, protocols.ModelResult)
-    assert len(mr1.data.columns) == 3
+    assert len(mr1.data) == 3
 
 
 def test_track_df_default_items(track_df):
@@ -82,7 +82,7 @@ def test_track_df_default_items(track_df):
     # will default to 0,1,2 (bad idea in this case)
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
         mr0 = ModelResult(df, gtype="track")
-    assert mr0.data.columns[0] == "x"  # has been renamed
+    assert list(mr0.data.data_vars)[0] == "x"  # has been renamed
     # assert np.all(mr0.data.values == df.dropna().values)
     # assert np.all(mr0.data["x"].values == df["surface_elevation"].values)
     # assert np.all(mr0.data["lat"].values == df["lat"].values)
