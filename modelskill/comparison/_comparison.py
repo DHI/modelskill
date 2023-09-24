@@ -707,14 +707,22 @@ class Comparer:
     def _mod_start(self) -> pd.Timestamp:
         mod_starts = [pd.Timestamp.max]
         for m in self.raw_mod_data.values():
-            mod_starts.append(m.index[0])
+            time = (
+                m.index if isinstance(m, pd.DataFrame) else m.time
+            )  # TODO: xr.Dataset
+            if len(time) > 0:
+                mod_starts.append(time[0])
         return min(mod_starts)
 
     @property
     def _mod_end(self) -> pd.Timestamp:
         mod_ends = [pd.Timestamp.min]
         for m in self.raw_mod_data.values():
-            mod_ends.append(m.index[-1])
+            time = (
+                m.index if isinstance(m, pd.DataFrame) else m.time
+            )  # TODO: xr.Dataset
+            if len(time) > 0:
+                mod_ends.append(time[-1])
         return max(mod_ends)
 
     @property
