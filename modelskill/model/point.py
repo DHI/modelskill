@@ -16,7 +16,7 @@ class PointModelResult(TimeSeries):
 
     Parameters
     ----------
-    data : types.UnstructuredType
+    data : types.PointType
         the input data or file path
     name : Optional[str], optional
         The name of the model result,
@@ -54,7 +54,11 @@ class PointModelResult(TimeSeries):
             data = data.read()  # now mikeio.Dataset
 
         # parse items
-        if isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):
+        if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):  # type: ignore
+            item_name = data.name if hasattr(data, "name") else "PointModelResult"
+            if item is not None:
+                raise ValueError(f"item must be None when data is a {type(data)}")
+        elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):  # type: ignore
             if isinstance(data, mikeio.Dataset):
                 valid_items = [i.name for i in data.items]
             elif isinstance(data, pd.DataFrame):
@@ -62,10 +66,6 @@ class PointModelResult(TimeSeries):
             else:
                 valid_items = list(data.data_vars)
             item_name = _get_name(x=item, valid_names=valid_items)
-        else:
-            if item is not None:
-                raise ValueError(f"item must be None when data is a {type(data)}")
-            item_name = data.name if hasattr(data, "name") else "PointModelResult"
 
         # select relevant items
         if isinstance(data, mikeio.DataArray):
