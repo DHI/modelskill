@@ -17,12 +17,13 @@ from matplotlib.axes import Axes  # type: ignore
 import numpy as np
 import pandas as pd
 import xarray as xr
-from datetime import datetime, timedelta
+from datetime import datetime
 from copy import deepcopy
 
 from .. import metrics as mtr
 from .. import Quantity
-from .. import __version__
+
+# from .. import __version__
 from ..observation import Observation, PointObservation, TrackObservation
 
 from ._comparer_plotter import ComparerPlotter
@@ -115,7 +116,6 @@ MOD_COLORS = (
 )
 
 
-TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
 IdOrNameTypes = Union[int, str, List[int], List[str]]
 
@@ -136,60 +136,6 @@ class ItemSelection:
     @property
     def all(self) -> Sequence[str]:
         return [self.obs] + list(self.model) + list(self.aux)
-
-
-def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
-    """Interpolate time series to new time index"""
-    new_df = (
-        df.reindex(df.index.union(new_time))
-        .interpolate(method="time", limit_area="inside")
-        .reindex(new_time)
-    )
-    return new_df
-
-
-def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
-    if isinstance(time_delta, (timedelta, np.timedelta64)):
-        time_delta = pd.Timedelta(time_delta)
-    elif np.isscalar(time_delta):
-        # assume seconds
-        time_delta = pd.Timedelta(time_delta, "s")  # type: ignore
-    assert isinstance(time_delta, pd.Timedelta)
-    return time_delta
-
-
-def _remove_model_gaps(
-    df: pd.DataFrame,
-    mod_index: pd.DatetimeIndex,
-    max_gap: TimeDeltaTypes,
-) -> pd.DataFrame:
-    """Remove model gaps longer than max_gap from dataframe"""
-    max_gap = _time_delta_to_pd_timedelta(max_gap)
-    valid_time = _get_valid_query_time(mod_index, df.index, max_gap)
-    return df.loc[valid_time]
-
-
-def _get_valid_query_time(
-    mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
-):
-    """Used only by _remove_model_gaps"""
-    # init dataframe of available timesteps and their index
-    df = pd.DataFrame(index=mod_index)
-    df["idx"] = range(len(df))
-
-    # for query times get available left and right index of source times
-    df = _interp_time(df, obs_index).dropna()
-    df["idxa"] = np.floor(df.idx).astype(int)
-    df["idxb"] = np.ceil(df.idx).astype(int)
-
-    # time of left and right source times and time delta
-    df["ta"] = mod_index[df.idxa]
-    df["tb"] = mod_index[df.idxb]
-    df["dt"] = df.tb - df.ta
-
-    # valid query times where time delta is less than max_gap
-    valid_idx = df.dt <= max_gap
-    return valid_idx
 
 
 def _parse_metric(metric, default_metrics, return_list=False):
@@ -429,18 +375,13 @@ class Comparer:
     """
     Comparer class for comparing model and observation data.
 
-    Typically, the Comparer is part of a ComparerCollection, initialized using the `compare` function.
+    Typically, the Comparer is part of a ComparerCollection,
+    created with the `compare` function.
 
     Parameters
     ----------
-    observation : Observation
-        Observation data
-    modeldata : list of pd.DataFrame or list of mikeio.Dataset or list of xr.DataArray or list of xr.Dataset
-        Model data
-    max_model_gap : float or int or np.timedelta64 or pd.Timedelta or timedelta, optional
-        Maximum time gap to interpolate model data to observation time. If None, no interpolation is done.
-    matched_data : xr.Dataset, optional
-        Matched data. If None, observation and modeldata must be provided.
+    matched_data : xr.Dataset
+        Matched data
     raw_mod_data : dict of pd.DataFrame, optional
         Raw model data. If None, observation and modeldata must be provided.
 
@@ -462,34 +403,23 @@ class Comparer:
 
     def __init__(
         self,
-        observation=None,
-        modeldata=None,
-        max_model_gap: Optional[TimeDeltaTypes] = None,
-        matched_data: Optional[xr.Dataset] = None,
+        matched_data: Optional[xr.Dataset],
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
         self.plot = Comparer.plotter(self)
 
-        if matched_data is not None:
-            self.data = self._parse_matched_data(matched_data)
-            self.raw_mod_data = (
-                raw_mod_data
-                if raw_mod_data is not None
-                else {
-                    key: value.to_dataframe()
-                    for key, value in matched_data.data_vars.items()
-                    if value.attrs["kind"] == "model"
-                }
-            )
-            # TODO get quantity from matched_data object
-            # self.quantity: Quantity = Quantity.undefined()
-        else:
-            self.raw_mod_data = (
-                self._parse_modeldata_list(modeldata) if modeldata is not None else {}
-            )
-
-            self.data = self._initialise_comparer(observation, max_model_gap)
-            # self.quantity: Quantity = observation.quantity   # TODO: make property
+        self.data = self._parse_matched_data(matched_data)
+        self.raw_mod_data = (
+            raw_mod_data
+            if raw_mod_data is not None
+            else {
+                key: value.to_dataframe()
+                for key, value in matched_data.data_vars.items()
+                if value.attrs["kind"] == "model"
+            }
+        )
+        # TODO get quantity from matched_data object
+        # self.quantity: Quantity = Quantity.undefined()
 
     def _parse_matched_data(self, matched_data):
         if not isinstance(matched_data, xr.Dataset):
@@ -524,104 +454,6 @@ class Comparer:
             matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
 
         return matched_data
-
-    def _mask_model_outside_observation_track(self, name, df_mod, df_obs) -> None:
-        if len(df_mod) == 0:
-            return
-        if len(df_mod) != len(df_obs):
-            raise ValueError("model and observation data must have same length")
-
-        mod_xy = df_mod[["x", "y"]]
-        obs_xy = df_obs[["x", "y"]]
-        d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-        # TODO why not use a fixed tolerance?
-        tol_xy = self._minimal_accepted_distance(obs_xy)
-        mask = d_xy > tol_xy
-        df_mod.loc[mask, name] = np.nan
-        if all(mask):
-            warnings.warn("no (spatial) overlap between model and observation points")
-
-    def _initialise_comparer(self, observation, max_model_gap) -> xr.Dataset:
-        assert isinstance(observation, (PointObservation, TrackObservation))
-        gtype = "point" if isinstance(observation, PointObservation) else "track"
-        observation = deepcopy(observation)
-        observation.trim(self._mod_start, self._mod_end)
-
-        first = True
-        for name, mdata in self.raw_mod_data.items():
-            df = self._model2obs_interp(observation, mdata, max_model_gap)
-            if gtype == "track":
-                # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
-                df_obs = observation.data.to_pandas()  # TODO
-                self._mask_model_outside_observation_track(name, df, df_obs)
-
-            if first:
-                data = df
-            else:
-                data[name] = df[name]
-
-            first = False
-
-        data.index.name = "time"
-        data = data.dropna()
-        data = data.to_xarray()
-        data.attrs["gtype"] = gtype
-
-        if gtype == "point":
-            data["x"] = observation.x
-            data["y"] = observation.y
-            data["z"] = observation.z  # type: ignore
-
-        data.attrs["name"] = observation.name
-        data.attrs["quantity_name"] = observation.quantity.name
-        data["x"].attrs["kind"] = "position"
-        data["y"].attrs["kind"] = "position"
-        data[self._obs_name].attrs["kind"] = "observation"
-        data[self._obs_name].attrs["unit"] = observation.quantity.unit
-        data[self._obs_name].attrs["color"] = observation.color
-        data[self._obs_name].attrs["weight"] = observation.weight
-        for n in self.mod_names:
-            data[n].attrs["kind"] = "model"
-
-        data.attrs["modelskill_version"] = __version__
-
-        return data
-
-    @staticmethod
-    def _minimal_accepted_distance(obs_xy):
-        # all consequtive distances
-        vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
-        # fraction of small quantile
-        return 0.5 * np.quantile(vec, 0.1)
-
-    def _parse_modeldata_list(self, modeldata) -> Dict[str, pd.DataFrame]:
-        """Convert to dict of dataframes"""
-        if not isinstance(modeldata, Sequence):
-            modeldata = [modeldata]
-
-        mod_dfs = [self._parse_single_modeldata(m) for m in modeldata]
-        return {m.columns[-1]: m for m in mod_dfs if m is not None}
-
-    @staticmethod
-    def _parse_single_modeldata(modeldata) -> pd.DataFrame:
-        """Convert to dataframe and set index to pd.DatetimeIndex"""
-        if hasattr(modeldata, "to_dataframe"):
-            mod_df = modeldata.to_dataframe()
-        elif isinstance(modeldata, pd.DataFrame):
-            mod_df = modeldata
-        else:
-            raise ValueError(
-                f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
-            )
-
-        if not isinstance(mod_df.index, pd.DatetimeIndex):
-            raise ValueError(
-                "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
-            )
-
-        time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
-        mod_df.index = pd.DatetimeIndex(time, freq="infer")
-        return mod_df
 
     @classmethod
     def from_matched_data(
@@ -998,18 +830,6 @@ class Comparer:
             cc.add_comparer(self)
             cc.add_comparer(other)
             return cc
-
-    def _model2obs_interp(
-        self, obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]
-    ):
-        """interpolate model to measurement time"""
-        df = _interp_time(mod_df.dropna(), obs.time)
-        df[self._obs_name] = obs.values
-
-        if max_model_gap is not None:
-            df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
-
-        return df
 
     def sel(
         self,
