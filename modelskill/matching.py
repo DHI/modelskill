@@ -268,12 +268,13 @@ def _extract_from_models(obs, mod: List[protocols.ModelResult]) -> List[pd.DataF
         if hasattr(mr, "extract"):
             mr = mr.extract(obs)
 
-        df = mr.data
+        # TODO: temporary solution until complete swich to xr.Dataset
+        df = mr.data if isinstance(mr.data, pd.DataFrame) else mr.data.to_dataframe()
 
         # TODO is this robust enough?
-        old_item = df.columns.values[-1]
-        df = df.rename(columns={old_item: mr.name})
-        if (df is not None) and (len(df) > 0):
+        old_item = df.columns.values[-1]  # TODO: xr.Dataset
+        df = df.rename(columns={old_item: mr.name})  # TODO: xr.Dataset
+        if (df is not None) and (len(df) > 0):  # TODO: xr.Dataset
             df_model.append(df)
         else:
             warnings.warn(
