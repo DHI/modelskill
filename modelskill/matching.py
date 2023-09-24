@@ -213,11 +213,12 @@ def _single_obs_compare(
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
     mod = _parse_models(mod, mod_item, gtype=gtype)
-    df_mod = _extract_from_models(obs, mod)  # type: ignore
+    emods = _extract_from_models(obs, mod)  # type: ignore
 
-    matched, raw_mr = _match_obs_mod(obs, df_mod, max_model_gap=max_model_gap)
+    raw_mod_data = parse_modeldata_list(emods)
+    matched_data = match_data_in_time(obs, raw_mod_data, max_model_gap)
 
-    return Comparer(matched_data=matched, raw_mod_data=raw_mr)
+    return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
 
 def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
@@ -274,15 +275,13 @@ def _get_valid_query_time(
     return valid_idx
 
 
-def _match_obs_mod(observation, modeldata, max_model_gap=None):
-    """Match observation and model results in time"""
+# def _match_obs_mod(observation, modeldata, max_model_gap=None):
+#     """Match observation and model results in time"""
 
-    raw_mod_data = _parse_modeldata_list(modeldata) if modeldata is not None else {}
+#     raw_mod_data = _parse_modeldata_list(modeldata)
+#     matched_data = _match_data_in_time(observation, modeldata, max_model_gap)
 
-    matched_data = _initialise_comparer(observation, max_model_gap)
-    # self.quantity: Quantity = observation.quantity   # TODO: make property
-
-    return matched_data, raw_mod_data
+#     return matched_data, raw_mod_data
 
 
 def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
@@ -302,16 +301,28 @@ def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
         warnings.warn("no (spatial) overlap between model and observation points")
 
 
-def _initialise_comparer(observation, max_model_gap) -> xr.Dataset:
+def _get_model_start_end(raw_mod_data):
+    """Get first start and last end time of list of model data"""
+    _mod_start = [pd.Timestamp.max]
+    _mod_end = [pd.Timestamp.min]
+    for m in raw_mod_data.values():
+        _mod_start.append(m.index[0])  # TODO: xr.Dataset
+        _mod_end.append(m.index[-1])   # TODO: xr.Dataset
+    return min(_mod_start), max(_mod_end)
+
+
+def match_data_in_time(observation, raw_mod_data, max_model_gap) -> xr.Dataset:
     _obs_name = "Observation"
+    _mod_names = list(raw_mod_data.keys())
+    _mod_start, _mod_end = _get_model_start_end(raw_mod_data)
 
     assert isinstance(observation, (PointObservation, TrackObservation))
     gtype = "point" if isinstance(observation, PointObservation) else "track"
     observation = observation.copy()
-    observation.trim(self._mod_start, self._mod_end)
+    observation.trim(_mod_start, _mod_end)
 
     first = True
-    for name, mdata in self.raw_mod_data.items():
+    for name, mdata in raw_mod_data.items():
         df = _model2obs_interp(observation, mdata, max_model_gap)
         if gtype == "track":
             # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
@@ -343,7 +354,7 @@ def _initialise_comparer(observation, max_model_gap) -> xr.Dataset:
     data[_obs_name].attrs["unit"] = observation.quantity.unit
     data[_obs_name].attrs["color"] = observation.color
     data[_obs_name].attrs["weight"] = observation.weight
-    for n in self.mod_names:
+    for n in _mod_names:
         data[n].attrs["kind"] = "model"
 
     data.attrs["modelskill_version"] = __version__
@@ -372,7 +383,7 @@ def _minimal_accepted_distance(obs_xy):
     return 0.5 * np.quantile(vec, 0.1)
 
 
-def _parse_modeldata_list(modeldata) -> Dict[str, pd.DataFrame]:
+def parse_modeldata_list(modeldata) -> Dict[str, pd.DataFrame]:
     """Convert to dict of dataframes"""
     if not isinstance(modeldata, Sequence):
         modeldata = [modeldata]
