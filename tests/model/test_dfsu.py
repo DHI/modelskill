@@ -187,14 +187,14 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
     mr1 = ModelResult(sw_dutch_coast, item=0, name="SW1")
     mr_extr_1 = mr1.extract(Hm0_EPL.copy())
     # df1 = mr1._extract_point(Hm0_EPL)
-    assert mr_extr_1.data.columns == ["SW1"]
-    assert len(mr_extr_1.data) == 23
+    assert list(mr_extr_1.data.data_vars) == ["SW1"]
+    assert mr_extr_1.n_points == 23
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ModelResult(da, name="SW1")
     mr_extr_2 = mr2.extract(Hm0_EPL.copy())
 
-    assert mr_extr_1.data.columns == mr_extr_2.data.columns
+    assert list(mr_extr_1.data.data_vars) == list(mr_extr_2.data.data_vars)
     assert np.all(mr_extr_1.data == mr_extr_2.data)
 
     c1 = mr1.extract(Hm0_EPL.copy())

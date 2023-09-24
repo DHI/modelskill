@@ -46,7 +46,7 @@ def test_point_dfs0(fn_point_eq):
     assert isinstance(mr1, PointModelResult)
     assert mr1.start_time == datetime(2019, 4, 8, 0, 10, 0)  # first non-NaN
     assert mr1.end_time == datetime(2019, 4, 14, 23, 35, 0)  # last non-NaN
-    assert len(mr1.data) == 1875
+    assert mr1.n_points == 1875
 
     mr2 = PointModelResult(fn, item="Viken: Surface elevation")
     assert mr1.data.equals(mr2.data)
@@ -67,7 +67,7 @@ def test_point_dfs0_noneq(fn_point_noneq):
     assert mr1.name == "test"
     assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
     assert mr1.end_time == datetime(2015, 1, 9, 8, 0, 0)
-    assert len(mr1.data) == 198  # 200 - 2 NaNs
+    assert mr1.n_points == 198  # 200 - 2 NaNs
 
 
 def test_point_dfs0_multi_item(fn_point_eq2):
@@ -81,12 +81,13 @@ def test_point_dfs0_multi_item(fn_point_eq2):
     assert mr1.name == "test"
     assert mr1.start_time == datetime(2018, 3, 4, 0, 0, 0)
     assert mr1.end_time == datetime(2018, 3, 11, 0, 0, 0)
-    assert len(mr1.data) == 2017
+    assert mr1.n_points == 2017
 
-    mr2 = PointModelResult(fn, item="Drogden: Surface elevation")
+    item_name = "Drogden: Surface elevation"
+    mr2 = PointModelResult(fn, item=item_name)
     assert isinstance(mr2, PointModelResult)
     assert mr2.name == "TS"  # default to filename
-    assert np.all(mr2.data.values == mr1.data.values)
+    assert np.all(mr2.data[item_name].values == mr1.data[item_name].values)
 
     with pytest.raises(ValueError):
         PointModelResult(fn, name="test")
@@ -111,15 +112,15 @@ def test_point_df_item(point_df):
 
     # item as string
     mr2 = PointModelResult(df, item="Water Level")
-    assert len(mr2.data) == len(mr1.data)
+    assert mr2.n_points == mr1.n_points
 
     mr3 = PointModelResult(df[["Water Level"]])
-    assert len(mr3.data) == len(mr1.data)
+    assert mr3.n_points == mr1.n_points
 
     # Series
     mr4 = PointModelResult(df["Water Level"])
-    assert len(mr4.data) == len(mr1.data)
-    assert np.all(mr4.data.values == mr1.data.values)
+    assert mr4.n_points == mr1.n_points
+    assert np.all(mr4.data[mr4.name].values == mr1.data[mr1.name].values)
 
 
 def test_point_df_itemInfo(point_df):

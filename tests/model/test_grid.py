@@ -115,15 +115,14 @@ def test_grid_name(ERA5_DutchCoast_nc):
 
 def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     pmr = mr_ERA5_swh.extract(pointobs_epl_hm0)
-    df = pmr.data
+    ds = pmr.data
 
     assert isinstance(pmr, PointModelResult)
     assert pmr.start_time == datetime(2017, 10, 27, 0, 0, 0)
     assert pmr.end_time == datetime(2017, 10, 29, 18, 0, 0)
-    assert len(df.dropna()) == 67
-    assert isinstance(df, pd.DataFrame)
-    assert len(df.columns) == 1
-    assert pytest.approx(df.iloc[0, 0]) == 0.875528
+    assert pmr.n_points == 67
+    assert len(ds.data_vars) == 1
+    assert pytest.approx(ds.to_pandas().iloc[0, 0]) == 0.875528
 
 
 def test_grid_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
