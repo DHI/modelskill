@@ -64,18 +64,20 @@ class TrackModelResult(TimeSeries):
             assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
             name = name or Path(data).stem
             data = mikeio.read(data)  # now mikeio.Dataset
+        elif isinstance(data, mikeio.Dfs0):
+            data = data.read()  # now mikeio.Dataset
 
         # parse items
         if isinstance(data, mikeio.Dataset):
-            item_names = [i.name for i in data.items]
+            valid_items = [i.name for i in data.items]
         elif isinstance(data, pd.DataFrame):
-            item_names = list(data.columns)
+            valid_items = list(data.columns)
         elif isinstance(data, xr.Dataset):
-            item_names = list(data.data_vars)
+            valid_items = list(data.data_vars)
         else:
             raise ValueError("Could not construct TrackModelResult from provided data")
 
-        ti = self._parse_track_items(item_names, x_item, y_item, item)
+        ti = self._parse_track_items(valid_items, x_item, y_item, item)
         name = name or ti.values
 
         # parse quantity
