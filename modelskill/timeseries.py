@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar, Protocol
+import numpy as np
 
 import pandas as pd
 import xarray as xr
@@ -176,6 +177,15 @@ class TimeSeries:
         else:
             # xr.Dataset
             return pd.DatetimeIndex(self.data.time)
+
+    @property
+    def _val_item(self) -> str:
+        # TODO: better way to find the value item (when aux is introduced this will fail need fixing)
+        return list(self.data.data_vars)[-1]
+
+    @property
+    def values(self) -> np.ndarray:
+        return self.data[self._val_item].values
 
     @property
     def _values_as_series(self) -> pd.Series:
