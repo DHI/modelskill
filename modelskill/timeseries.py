@@ -172,36 +172,32 @@ class TimeSeries:
 
     @property
     def time(self) -> pd.DatetimeIndex:
-        if isinstance(self.data, (pd.DataFrame, pd.Series)):
-            return self.data.index  # type: ignore
-        else:
-            # xr.Dataset
-            return pd.DatetimeIndex(self.data.time)
+        return pd.DatetimeIndex(self.data.time)
 
     @property
     def _val_item(self) -> str:
-        # TODO: better way to find the value item (when aux is introduced this will fail need fixing)
+        # TODO: better way to find the value item
+        # (when aux is introduced this will fail need fixing)
         return list(self.data.data_vars)[-1]
 
     @property
     def values(self) -> np.ndarray:
+        """Values as numpy array"""
         return self.data[self._val_item].values
 
     @property
     def _values_as_series(self) -> pd.Series:
-        if isinstance(self.data, (pd.DataFrame, pd.Series)):
-            return self.data.iloc[:, -1]  # type: ignore
-        else:
-            # xr.Dataset
-            var = list(self.data.data_vars)[-1]
-            return self.data[var].to_series()
+        """Values to series (for plotting)"""
+        return self.data[self._val_item].to_series()
 
     @property
     def start_time(self) -> pd.Timestamp:
+        """Start time of time series data"""
         return self.time[0]  # type: ignore
 
     @property
     def end_time(self) -> pd.Timestamp:
+        """End time of time series data"""
         return self.time[-1]  # type: ignore
 
     def __repr__(self) -> str:
@@ -215,7 +211,7 @@ class TimeSeries:
 
     @property
     def n_points(self):
-        """Number of observation points"""
+        """Number of data points"""
         return len(self.data.time)
 
     def trim(
