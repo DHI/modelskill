@@ -87,11 +87,6 @@ class Observation(TimeSeries):
             )
         return time.dt.round("100us")
 
-    @property
-    def n_points(self):
-        """Number of observation points"""
-        return len(self.data.time)
-
     def copy(self):
         return deepcopy(self)
 

@@ -197,6 +197,17 @@ class TimeSeries:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}> '{self.name}'"
 
+    # len() of a DataFrame returns the number of rows,
+    # len() of xr.Dataset returns the number of variables
+    # what should len() of TimeSeries return?
+    # def __len__(self) -> int:
+    #     return len(self.data.time)
+
+    @property
+    def n_points(self):
+        """Number of observation points"""
+        return len(self.data.time)
+
     def trim(
         self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
     ) -> None:
