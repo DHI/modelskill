@@ -128,14 +128,18 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
     def plot(self):
         import plotly.express as px  # type: ignore
 
-        fig = px.line(self._ts.data, color_discrete_sequence=[self._ts.color])
+        fig = px.line(
+            self._ts._values_as_series, color_discrete_sequence=[self._ts.color]
+        )
         fig.show()
 
     def hist(self, bins=100, **kwargs):
         import plotly.express as px  # type: ignore
 
         fig = px.histogram(
-            self._ts.data, nbins=bins, color_discrete_sequence=[self._ts.color]
+            self._ts._values_as_series,
+            nbins=bins,
+            color_discrete_sequence=[self._ts.color],
         )
         fig.show()
 
