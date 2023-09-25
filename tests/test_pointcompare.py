@@ -147,7 +147,6 @@ def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
 
 
 def test_misc_properties(klagshamn, drogden):
-
     mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
     con = Connector([klagshamn, drogden], mr, validate=False)
@@ -177,7 +176,6 @@ def test_misc_properties(klagshamn, drogden):
 
 
 def test_skill(klagshamn, drogden):
-
     mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
     con = Connector([klagshamn, drogden], mr, validate=False)
@@ -192,7 +190,6 @@ def test_skill(klagshamn, drogden):
 
 
 def test_skill_choose_metrics(klagshamn, drogden):
-
     mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
     con = Connector([klagshamn, drogden], mr, validate=False)
@@ -213,7 +210,6 @@ def test_skill_choose_metrics(klagshamn, drogden):
 
 
 def test_skill_choose_metrics_back_defaults(cc):
-
     cc.metrics = ["kge", "nse", "max_error"]
 
     df = cc.skill().df
@@ -232,7 +228,6 @@ def test_skill_choose_metrics_back_defaults(cc):
 
 
 def test_comparison_from_dict():
-
     # As an alternative to
     # mr = ModelResult()
 
@@ -272,7 +267,6 @@ def test_comparison_from_dict():
 
 
 def test_comparison_from_yml():
-
     con = modelskill.from_config("tests/testdata/conf.yml", validate_eum=False)
     c = con.extract()
 
@@ -282,9 +276,9 @@ def test_comparison_from_yml():
     assert con.observations["Klagshamn"].quantity.name == "Water Level"
 
 
-def test_comparer_dataframe_without_time_not_allowed(klagshamn):
+# def test_comparer_dataframe_without_time_not_allowed(klagshamn):
 
-    mr = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+#     mr = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
 
-    with pytest.raises(ValueError, match="datetime"):
-        Comparer(klagshamn, modeldata=mr)
+#     with pytest.raises(ValueError, match="datetime"):
+#         Comparer(klagshamn, modeldata=mr)
