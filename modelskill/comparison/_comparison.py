@@ -821,7 +821,9 @@ class Comparer:
 
                 cls = self.__class__
                 cmp = cls.__new__(cls)
-                cmp.__init__(self._to_observation(), mod_data)
+                cmp.__init__(
+                    self._to_observation(), mod_data
+                )  # TODO: this is no longer allowed!
                 # TODO cmp = cls.clone()
 
             return cmp
