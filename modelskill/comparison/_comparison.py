@@ -403,7 +403,7 @@ class Comparer:
 
     def __init__(
         self,
-        matched_data: Optional[xr.Dataset],
+        matched_data: xr.Dataset,
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
         self.plot = Comparer.plotter(self)
