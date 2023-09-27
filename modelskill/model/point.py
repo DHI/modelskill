@@ -101,13 +101,14 @@ class PointModelResult(TimeSeries):
 
         # basic processing
         ds = ds.dropna(dim="time")
-        ds["x"] = x
-        ds["y"] = y
-        ds["z"] = None  # TODO: or np.nan?
         vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
         ds = ds.rename({vars[0]: name})
         ds[name].attrs["kind"] = "model"
         ds[name].attrs["quantity"] = model_quantity.to_dict()
+
         ds.attrs["gtype"] = GeometryType.POINT
+        ds.coords["x"] = x
+        ds.coords["y"] = y
+        ds.coords["z"] = None  # TODO: or np.nan?
 
         super().__init__(data=ds)

@@ -129,9 +129,13 @@ class PointObservation(Observation):
             return Point(self.x, self.y, self.z)
 
     @property
-    def values(self) -> np.ndarray:
-        """Observed values"""
-        return self.data[list(self.data.data_vars)[0]].to_numpy()
+    def z(self):
+        """z-coordinate of observation point"""
+        return self._coordinate_values("z")
+
+    @z.setter
+    def z(self, value):
+        self.data["z"] = value
 
     def __init__(
         self,
@@ -187,17 +191,18 @@ class PointObservation(Observation):
         name = self._validate_name(name)
 
         ds = ds.dropna(dim="time")
-        ds["x"] = x
-        ds["y"] = y
-        ds["z"] = z
-        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
+        vars = [v for v in ds.data_vars]  # if v != "x" and v != "y" and v != "z"]
         ds = ds.rename({vars[0]: name})
         ds[name].attrs["kind"] = "observation"
-        ds.attrs["gtype"] = GeometryType.POINT
 
         if quantity is None:
             quantity = Quantity.undefined()
         ds[name].attrs["quantity"] = quantity.to_dict()
+
+        ds.attrs["gtype"] = GeometryType.POINT
+        ds.coords["x"] = x
+        ds.coords["y"] = y
+        ds.coords["z"] = z
 
         super().__init__(data=ds)
 
@@ -331,17 +336,12 @@ class TrackObservation(Observation):
     @property
     def x(self):
         """x-coordinates of observation points"""
-        return self.data[list(self.data.data_vars)[0]].to_numpy()
+        return self.data["x"].to_numpy()
 
     @property
     def y(self):
         """y-coordinates of observation points"""
-        return self.data[list(self.data.data_vars)[1]].to_numpy()
-
-    @property
-    def values(self):
-        """Observed values"""
-        return self.data[list(self.data.data_vars)[2]].to_numpy()
+        return self.data["y"].to_numpy()
 
     def __init__(
         self,
