@@ -306,12 +306,14 @@ def _get_model_start_end(raw_mod_data):
     _mod_start = [pd.Timestamp.max]
     _mod_end = [pd.Timestamp.min]
     for m in raw_mod_data.values():
+        if len(m) == 0:
+            continue
         _mod_start.append(m.index[0])  # TODO: xr.Dataset
-        _mod_end.append(m.index[-1])   # TODO: xr.Dataset
+        _mod_end.append(m.index[-1])  # TODO: xr.Dataset
     return min(_mod_start), max(_mod_end)
 
 
-def match_data_in_time(observation, raw_mod_data, max_model_gap) -> xr.Dataset:
+def match_data_in_time(observation, raw_mod_data, max_model_gap=None) -> xr.Dataset:
     _obs_name = "Observation"
     _mod_names = list(raw_mod_data.keys())
     _mod_start, _mod_end = _get_model_start_end(raw_mod_data)
