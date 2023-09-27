@@ -8,6 +8,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Tuple,
     Union,
     Sequence,
     get_args,
@@ -275,15 +276,6 @@ def _get_valid_query_time(
     return valid_idx
 
 
-# def _match_obs_mod(observation, modeldata, max_model_gap=None):
-#     """Match observation and model results in time"""
-
-#     raw_mod_data = _parse_modeldata_list(modeldata)
-#     matched_data = _match_data_in_time(observation, modeldata, max_model_gap)
-
-#     return matched_data, raw_mod_data
-
-
 def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
     if len(df_mod) == 0:
         return
@@ -303,7 +295,7 @@ def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
         warnings.warn("no (spatial) overlap between model and observation points")
 
 
-def _get_model_start_end(raw_mod_data):
+def _get_model_start_end(raw_mod_data) -> Tuple[pd.Timestamp, pd.Timestamp]:
     """Find first start and last end time of all model data"""
     _mod_start = [pd.Timestamp.max]
     _mod_end = [pd.Timestamp.min]
@@ -394,7 +386,7 @@ def match_time(
 
 def _model2obs_interp(
     obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]
-):
+) -> pd.DataFrame:
     """interpolate model to measurement time"""
     _obs_name = "Observation"
     df = _interp_time(mod_df.dropna(), obs.time)
@@ -445,7 +437,7 @@ def _parse_single_modeldata(modeldata) -> pd.DataFrame:
 
 def _parse_single_obs(
     obs, item=None, gtype: Optional[GeometryTypes] = None
-) -> protocols.Observation:
+) -> Observation:
     if isinstance(obs, Observation):
         if item is not None:
             raise ValueError(
