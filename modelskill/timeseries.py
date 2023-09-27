@@ -199,7 +199,7 @@ class TimeSeries:
             ), f"All data arrays must have a time dimension; {v} has dimensions {ds[v].dims}"
 
         # Validate primary data array
-        name = vars[0]
+        name = str(vars[0])
         da = ds[name]  # By definition, first data variable is the value variable!
         assert (
             "kind" in da.attrs
@@ -315,7 +315,7 @@ class TimeSeries:
         # TODO: better way to find the value item
         # (when aux is introduced this will fail need fixing)
         vars = [v for v in self.data.data_vars if v != "x" and v != "y" and v != "z"]
-        return vars[0]
+        return str(vars[0])
 
     @property
     def values(self) -> np.ndarray:
