@@ -796,7 +796,7 @@ class Comparer:
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
         from ._collection import ComparerCollection
-        from ..matching import match_data_in_time
+        from ..matching import match_time
 
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
@@ -817,7 +817,7 @@ class Comparer:
             else:
                 raw_mod_data = self.raw_mod_data.copy()
                 raw_mod_data.update(other.raw_mod_data)
-                matched = match_data_in_time(
+                matched = match_time(
                     observation=self._to_observation(), raw_mod_data=raw_mod_data
                 )
                 cmp = self.__class__(matched_data=matched, raw_mod_data=raw_mod_data)

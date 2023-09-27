@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import mikeio
 
 from modelskill import ModelResult
-from .matching import match_data_in_time, parse_modeldata_list
+from .matching import match_time, parse_modeldata_list
 from .observation import Observation, PointObservation, TrackObservation
 from .utils import is_iterable_not_str
 from . import plotting
@@ -214,7 +214,7 @@ class PointConnector(_SingleObsConnector):
             return None
 
         raw_mod_data = parse_modeldata_list(df_model)
-        matched_data = match_data_in_time(self.obs, raw_mod_data, max_model_gap)
+        matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
 
         comparer = PointComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
         return self._comparer_or_None(comparer)
@@ -268,7 +268,7 @@ class TrackConnector(_SingleObsConnector):
             return None
 
         raw_mod_data = parse_modeldata_list(df_model)
-        matched_data = match_data_in_time(self.obs, raw_mod_data, max_model_gap)
+        matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
 
         comparer = TrackComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
         return self._comparer_or_None(comparer)

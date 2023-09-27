@@ -216,7 +216,7 @@ def _single_obs_compare(
     emods = _extract_from_models(obs, mod)  # type: ignore
 
     raw_mod_data = parse_modeldata_list(emods)
-    matched_data = match_data_in_time(obs, raw_mod_data, max_model_gap)
+    matched_data = match_time(obs, raw_mod_data, max_model_gap)
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
@@ -293,7 +293,9 @@ def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
     mod_xy = df_mod[["x", "y"]]
     obs_xy = df_obs[["x", "y"]]
     d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-    # TODO why not use a fixed tolerance?
+
+    # Find minimal accepted distance from data
+    # (could be long/lat or x/y, small or large domain)
     tol_xy = _minimal_accepted_distance(obs_xy)
     mask = d_xy > tol_xy
     df_mod.loc[mask, name] = np.nan
@@ -302,7 +304,7 @@ def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
 
 
 def _get_model_start_end(raw_mod_data):
-    """Get first start and last end time of list of model data"""
+    """Find first start and last end time of all model data"""
     _mod_start = [pd.Timestamp.max]
     _mod_end = [pd.Timestamp.min]
     for m in raw_mod_data.values():
@@ -313,11 +315,33 @@ def _get_model_start_end(raw_mod_data):
     return min(_mod_start), max(_mod_end)
 
 
-def match_data_in_time(
+def match_time(
     observation: Observation,
     raw_mod_data: Dict[str, pd.DataFrame],
     max_model_gap: Optional[TimeDeltaTypes] = None,
 ) -> xr.Dataset:
+    """Match observation with one or more model results in time domain
+    and return as xr.Dataset in the format used by modelskill.Comparer
+
+    Will interpolate model results to observation time.
+
+    Note: assumes that observation and model data are already matched in space.
+
+    Parameters
+    ----------
+    observation : Observation
+        Observation to be matched
+    raw_mod_data : Dict[str, pd.DataFrame]
+        Dictionary of model results ready for interpolation
+    max_model_gap : Optional[TimeDeltaTypes], optional
+        In case of non-equidistant model results (e.g. event data),
+        max_model_gap can be given e.g. as seconds, by default None
+
+    Returns
+    -------
+    xr.Dataset
+        Matched data in the format used by modelskill.Comparer
+    """
     _obs_name = "Observation"
     _mod_names = list(raw_mod_data.keys())
     _mod_start, _mod_end = _get_model_start_end(raw_mod_data)
@@ -332,7 +356,7 @@ def match_data_in_time(
         df = _model2obs_interp(observation, mdata, max_model_gap)
         if gtype == "track":
             # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
-            df_obs = observation.data.to_pandas()  # TODO
+            df_obs = observation.data.to_pandas()  # TODO: xr.Dataset
             _mask_model_outside_observation_track(name, df, df_obs)
 
         if first:
