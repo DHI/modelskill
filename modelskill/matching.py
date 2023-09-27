@@ -313,7 +313,11 @@ def _get_model_start_end(raw_mod_data):
     return min(_mod_start), max(_mod_end)
 
 
-def match_data_in_time(observation, raw_mod_data, max_model_gap=None) -> xr.Dataset:
+def match_data_in_time(
+    observation: Observation,
+    raw_mod_data: Dict[str, pd.DataFrame],
+    max_model_gap: Optional[TimeDeltaTypes] = None,
+) -> xr.Dataset:
     _obs_name = "Observation"
     _mod_names = list(raw_mod_data.keys())
     _mod_start, _mod_end = _get_model_start_end(raw_mod_data)
