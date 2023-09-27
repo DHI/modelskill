@@ -288,12 +288,24 @@ class TimeSeries:
     @property
     def x(self):
         """x-coordinate"""
-        return self.data["x"].to_numpy()
+        return self._coordinate_values("x")
+
+    @x.setter
+    def x(self, value):
+        self.data["x"] = value
 
     @property
     def y(self):
         """y-coordinate"""
-        return self.data["y"].to_numpy()
+        return self._coordinate_values("y")
+
+    @y.setter
+    def y(self, value):
+        self.data["y"] = value
+
+    def _coordinate_values(self, coord):
+        vals = self.data[coord].values
+        return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
     @property
     def _val_item(self) -> str:
@@ -328,8 +340,8 @@ class TimeSeries:
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables
     # what should len() of TimeSeries return?
-    # def __len__(self) -> int:
-    #     return len(self.data.time)
+    def __len__(self) -> int:
+        return len(self.data.time)
 
     @property
     def n_points(self):
