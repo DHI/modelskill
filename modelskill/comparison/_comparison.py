@@ -796,6 +796,7 @@ class Comparer:
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
         from ._collection import ComparerCollection
+        from ..matching import match_data_in_time
 
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
@@ -814,17 +815,12 @@ class Comparer:
                 cmp.data = cmp.data.isel(time=index)
 
             else:
-                cols = ["x", "y"]
-                mod_data = [self.data[cols + [m]] for m in self.mod_names]
-                for m in other.mod_names:
-                    mod_data.append(other.data[cols + [m]])
-
-                cls = self.__class__
-                cmp = cls.__new__(cls)
-                cmp.__init__(
-                    self._to_observation(), mod_data
-                )  # TODO: this is no longer allowed!
-                # TODO cmp = cls.clone()
+                raw_mod_data = self.raw_mod_data.copy()
+                raw_mod_data.update(other.raw_mod_data)
+                matched = match_data_in_time(
+                    observation=self._to_observation(), raw_mod_data=raw_mod_data
+                )
+                cmp = self.__class__(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp
         else:
