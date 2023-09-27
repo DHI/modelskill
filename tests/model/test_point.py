@@ -87,7 +87,7 @@ def test_point_dfs0_multi_item(fn_point_eq2):
     mr2 = PointModelResult(fn, item=item_name)
     assert isinstance(mr2, PointModelResult)
     assert mr2.name == "TS"  # default to filename
-    assert np.all(mr2.data[item_name].values == mr1.data[item_name].values)
+    assert np.all(mr2.data[mr2.name].values == mr1.data[mr1.name].values)
 
     with pytest.raises(ValueError):
         PointModelResult(fn, name="test")
