@@ -490,7 +490,7 @@ def _extract_from_models(obs, mod: List[protocols.ModelResult]) -> List[pd.DataF
             mr = mr.extract(obs)
 
         # TODO: temporary solution until complete swich to xr.Dataset
-        df = mr.data if isinstance(mr.data, pd.DataFrame) else mr.data.to_dataframe()
+        df = mr.data if isinstance(mr.data, pd.DataFrame) else mr.to_dataframe()
 
         # TODO is this robust enough?
         old_item = df.columns.values[-1]  # TODO: xr.Dataset
