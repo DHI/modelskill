@@ -199,7 +199,7 @@ class PointConnector(_SingleObsConnector):
             if hasattr(mr, "extract"):
                 mr = mr.extract(self.obs)
 
-            df = mr.data
+            df = mr.to_dataframe()  # TODO: xr.Dataset
             if (df is not None) and (len(df) > 0):
                 df_model.append(df)
             else:
