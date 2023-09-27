@@ -16,7 +16,7 @@ import mikeio
 from copy import deepcopy
 
 from .utils import _get_name, make_unique_index
-from .types import PointType, TrackType, Quantity
+from .types import GeometryType, PointType, TrackType, Quantity
 from .timeseries import TimeSeries
 
 
@@ -62,22 +62,17 @@ class Observation(TimeSeries):
     def __init__(
         self,
         data: xr.Dataset,
-        name: Optional[str] = None,
-        quantity: Optional[Quantity] = None,
         weight: float = 1.0,
         color: str = "#d62728",
     ):
         data["time"] = self._parse_time(data.time)
 
-        if quantity is None:
-            quantity = Quantity.undefined()
+        # if name is None:
+        #     name = "Observation"
 
-        if name is None:
-            name = "Observation"
-
-        self.weight = weight
-
-        super().__init__(name=name, data=data, quantity=quantity, color=color)
+        super().__init__(data=data)
+        self.data[self.name].attrs["weight"] = weight
+        self.data[self.name].attrs["color"] = color
 
     @staticmethod
     def _parse_time(time):
@@ -153,12 +148,8 @@ class PointObservation(Observation):
             data, get_args(PointType)
         ), "Could not construct PointObservation from provided data type."
 
-        self.x = x
-        self.y = y
-        self.z = z
-
-        self._filename = None
-        self._item = None
+        # self._filename = None
+        # self._item = None
 
         if isinstance(data, (str, Path)):
             assert (
@@ -192,13 +183,23 @@ class PointObservation(Observation):
                 "Time axis has duplicate entries. It must be monotonically increasing."
             )
 
-        ds = ds.dropna(dim="time")
+        name = name or item_name
+        name = self._validate_name(name)
 
-        super().__init__(
-            name=name,
-            data=ds,
-            quantity=quantity,
-        )
+        ds = ds.dropna(dim="time")
+        ds["x"] = x
+        ds["y"] = y
+        ds["z"] = z
+        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
+        ds = ds.rename({vars[0]: name})
+        ds[name].attrs["kind"] = "observation"
+        ds.attrs["gtype"] = GeometryType.POINT
+
+        if quantity is None:
+            quantity = Quantity.undefined()
+        ds[name].attrs["quantity"] = quantity.to_dict()
+
+        super().__init__(data=ds)
 
     def _mikeio_dataset(self, data, item):
         assert len(data.shape) == 1, "Only 0-dimensional data are supported"
@@ -357,8 +358,8 @@ class TrackObservation(Observation):
             data, get_args(TrackType)
         ), "Could not construct TrackObservation from provided data type."
 
-        self._filename = None
-        self._item = None
+        # self._filename = None
+        # self._item = None
 
         if isinstance(data, (str, Path)):
             assert (
@@ -386,23 +387,29 @@ class TrackObservation(Observation):
             )
 
         name = name or item_names[2]
-
-        # A unique index makes lookup much faster O(1)
-        ds["time"] = make_unique_index(
-            ds.time.to_index(), offset_duplicates=offset_duplicates
-        )
+        name = self._validate_name(name)
 
         # make sure that x and y are named x and y
         old_xy_names = list(ds.data_vars)[:2]
         ds = ds.rename(dict(zip(old_xy_names, ["x", "y"])))
 
+        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
+        ds = ds.rename({vars[0]: name})
+
+        # A unique index makes lookup much faster O(1)
+        ds["time"] = make_unique_index(
+            ds.time.to_index(), offset_duplicates=offset_duplicates
+        )
         ds = ds.dropna(dim="time", subset=["x", "y"])
 
-        super().__init__(
-            name=name,
-            data=ds,
-            quantity=quantity,
-        )
+        ds[name].attrs["kind"] = "observation"
+        ds.attrs["gtype"] = GeometryType.TRACK
+
+        if quantity is None:
+            quantity = Quantity.undefined()
+        ds[name].attrs["quantity"] = quantity.to_dict()
+
+        super().__init__(data=ds)
 
     def _mikeio_to_xarray(self, data, items):
         assert isinstance(data, mikeio.Dataset)
