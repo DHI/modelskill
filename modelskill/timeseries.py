@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from .types import Quantity
+from .types import GeometryType, Quantity
 
 DEFAULT_COLORS = [
     "#b30000",
@@ -171,8 +171,6 @@ class TimeSeries:
     @staticmethod
     def _validate_data(ds) -> xr.Dataset:
         """Validate data"""
-        from matplotlib.colors import is_color_like
-
         assert isinstance(ds, xr.Dataset), "data must be a xr.Dataset"
 
         # Validate time
@@ -281,6 +279,11 @@ class TimeSeries:
         return color
 
     @property
+    def gtype(self):
+        """Geometry type"""
+        return self.data.attrs["gtype"]
+
+    @property
     def time(self) -> pd.DatetimeIndex:
         """Time index"""
         return pd.DatetimeIndex(self.data.time)
@@ -348,6 +351,13 @@ class TimeSeries:
         """Number of data points"""
         return len(self.data.time)
 
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert to pandas DataFrame"""
+        if self.gtype == GeometryType.POINT:
+            return self.data.drop(["x", "y", "z"]).to_dataframe()
+        else:
+            return self.data.to_dataframe()
+        
     def trim(
         self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
     ) -> None:
