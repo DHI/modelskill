@@ -7,7 +7,7 @@ import xarray as xr
 
 import mikeio
 
-from ..types import TrackType, Quantity
+from ..types import GeometryType, TrackType, Quantity
 from ..timeseries import TimeSeries
 
 from ..utils import make_unique_index, get_item_name_and_idx
@@ -79,6 +79,7 @@ class TrackModelResult(TimeSeries):
 
         ti = self._parse_track_items(valid_items, x_item, y_item, item)
         name = name or ti.values
+        name = self._validate_name(name)
 
         # parse quantity
         if isinstance(data, mikeio.Dataset):
@@ -101,9 +102,17 @@ class TrackModelResult(TimeSeries):
             ds = data
 
         ds = ds.rename({ti.x: "x", ti.y: "y"})
+        ds = ds.dropna(dim="time", subset=["x", "y"])
         ds["time"] = make_unique_index(ds["time"].to_index(), offset_duplicates=0.001)
 
-        super().__init__(data=ds, name=name, quantity=model_quantity)
+        # ds["z"] = None  # TODO: or np.nan?
+        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
+        ds = ds.rename({vars[0]: name})
+        ds[name].attrs["kind"] = "model"
+        ds[name].attrs["quantity"] = model_quantity.to_dict()
+        ds.attrs["gtype"] = GeometryType.TRACK
+
+        super().__init__(data=ds)
 
     @staticmethod
     def _parse_track_items(items, x_item, y_item, item) -> TrackItem:

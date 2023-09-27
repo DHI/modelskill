@@ -6,7 +6,7 @@ import pandas as pd
 import xarray as xr
 
 from ..utils import _get_name
-from ..types import Quantity, PointType
+from ..types import GeometryType, Quantity, PointType
 from ..timeseries import TimeSeries  # TODO move to main module
 
 
@@ -97,22 +97,17 @@ class PointModelResult(TimeSeries):
             ds = data
 
         name = name or item_name
-        assert isinstance(name, str)
+        name = self._validate_name(name)
 
         # basic processing
         ds = ds.dropna(dim="time")
-        if len(ds) == 0 or len(ds["time"]) == 0:
-            raise ValueError("No data.")
+        ds["x"] = x
+        ds["y"] = y
+        ds["z"] = None  # TODO: or np.nan?
+        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
+        ds = ds.rename({vars[0]: name})
+        ds[name].attrs["kind"] = "model"
+        ds[name].attrs["quantity"] = model_quantity.to_dict()
+        ds.attrs["gtype"] = GeometryType.POINT
 
-        # df.index = make_unique_index(df.index, offset_duplicates=0.001)
-        if not ds.time.to_index().is_monotonic_increasing:
-            # TODO: duplicates_keep="mean","first","last"
-            raise ValueError(
-                "Time axis has duplicate entries. It must be monotonically increasing."
-            )
-
-        super().__init__(data=ds, name=name, quantity=model_quantity)
-        self.x = x
-        self.y = y
-
-        # self.gtype = GeometryType.POINT
+        super().__init__(data=ds)
