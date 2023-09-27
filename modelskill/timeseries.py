@@ -189,7 +189,7 @@ class TimeSeries:
         # Validate data
         vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
         assert len(vars) > 0, "data must have at least one item"
-        assert len(ds["time"]) > 0, "data must have at least one time"
+        # assert len(ds["time"]) > 0, "data must have at least one time"
         for v in vars:
             assert (
                 len(ds[v].dims) == 1
@@ -354,10 +354,12 @@ class TimeSeries:
     def to_dataframe(self) -> pd.DataFrame:
         """Convert to pandas DataFrame"""
         if self.gtype == GeometryType.POINT:
-            return self.data.drop(["x", "y", "z"]).to_dataframe()
+            # we need to remove the scalar coordinate variables as they
+            # will otherwise be columns in the dataframe
+            return self.data.drop_vars(["x", "y", "z"])[self.name].to_dataframe()
         else:
-            return self.data.to_dataframe()
-        
+            return self.data[["x", "y", self.name]].to_dataframe()
+
     def trim(
         self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
     ) -> None:
