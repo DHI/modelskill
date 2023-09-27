@@ -74,6 +74,15 @@ class Observation(TimeSeries):
         self.data[self.name].attrs["weight"] = weight
         self.data[self.name].attrs["color"] = color
 
+    @property
+    def weight(self) -> float:
+        """Weighting factor for skill scores"""
+        return self.data[self.name].attrs["weight"]
+
+    @weight.setter
+    def weight(self, value: float) -> None:
+        self.data[self.name].attrs["weight"] = value
+
     @staticmethod
     def _parse_time(time):
         if not isinstance(time.to_index(), pd.DatetimeIndex):
