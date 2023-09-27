@@ -8,6 +8,18 @@ import xarray as xr
 
 from .types import Quantity
 
+DEFAULT_COLORS = [
+    "#b30000",
+    "#7c1158",
+    "#4421af",
+    "#1a53ff",
+    "#0d88e6",
+    "#00b7c7",
+    "#5ad45a",
+    "#8be04e",
+    "#ebdc78",
+]
+
 
 class TimeSeriesPlotter(Protocol):
     def __init__(self, ts: "TimeSeries") -> None:
@@ -148,21 +160,19 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
 class TimeSeries:
     """Time series data"""
 
+    data: xr.Dataset
     plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
 
-    # name: str
-    data: xr.Dataset
-    # quantity: Quantity
-    # color: str = "#d62728"
-
     def __post_init__(self) -> None:
-        self._validate_data(self.data)
+        self.data = self._validate_data(self.data)
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
         self.hist = self.plot.hist  # TODO remove this
 
     @staticmethod
-    def _validate_data(ds) -> None:
+    def _validate_data(ds) -> xr.Dataset:
         """Validate data"""
+        from matplotlib.colors import is_color_like
+
         assert isinstance(ds, xr.Dataset), "data must be a xr.Dataset"
 
         # Validate time
@@ -191,7 +201,8 @@ class TimeSeries:
             ), f"All data arrays must have a time dimension; {v} has dimensions {ds[v].dims}"
 
         # Validate primary data array
-        da = ds[vars[0]]  # By definition, first data variable is the value variable!
+        name = vars[0]
+        da = ds[name]  # By definition, first data variable is the value variable!
         assert (
             "kind" in da.attrs
         ), f"The first data array {vars[0]} (the value array) must have a kind attribute!"
@@ -209,7 +220,65 @@ class TimeSeries:
                 ], f"data can only have one model/observation array! {vars[0]} is the first array and by definition the 'value' array, any subsequent arrays must be of kind 'aux', but array {v} has kind {ds[v].attrs['kind']}!"
 
         # Validate attrs
-        # TODO
+        assert "gtype" in ds.attrs, "data must have a gtype attribute"
+        if "quantity" not in da.attrs or da.attrs["quantity"] is None:
+            da.attrs["quantity"] = Quantity.undefined().to_dict()
+        # assert "quantity" in da.attrs, "data must have a quantity attribute"
+        # assert "name" in da.attrs["quantity"]
+        # assert "unit" in da.attrs["quantity"]
+        color = da.attrs["color"] if "color" in da.attrs else None
+        da.attrs["color"] = TimeSeries._parse_color(name, color=color)
+
+        return ds
+
+    @staticmethod
+    def _validate_name(name: str) -> str:
+        """Validate name"""
+        assert isinstance(name, str), "name must be a string"
+        RESERVED_NAMES = ["x", "y", "z", "time"]
+        assert (
+            name not in RESERVED_NAMES
+        ), f"name '{name}' is reserved and cannot be used! Please choose another name."
+        return name
+
+    @property
+    def name(self) -> str:
+        """Name of time series (value item name)"""
+        return self._val_item
+
+    # setter
+    @name.setter
+    def name(self, name: str) -> None:
+        self.data = self.data.rename({self._val_item: name})
+
+    @property
+    def quantity(self) -> Quantity:
+        """Quantity of time series"""
+        return Quantity(**self.data[self._val_item].attrs["quantity"])
+
+    @quantity.setter
+    def quantity(self, quantity: Quantity) -> None:
+        self.data[self._val_item].attrs["quantity"] = quantity.to_dict()
+
+    @property
+    def color(self) -> str:
+        """Color of time series"""
+        return self.data[self._val_item].attrs["color"]
+
+    @color.setter
+    def color(self, color: str | None) -> None:
+        self.data[self.name].attrs["color"] = self._parse_color(self.name, color)
+
+    @staticmethod
+    def _parse_color(name: str, color: str | None = None) -> str:
+        from matplotlib.colors import is_color_like
+
+        if color is None:
+            idx = hash(name) % len(DEFAULT_COLORS)
+            color = DEFAULT_COLORS[idx]
+        if not is_color_like(color):
+            raise ValueError(f"color must be a valid (matplotlib) color, not {color}")
+        return color
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -230,7 +299,8 @@ class TimeSeries:
     def _val_item(self) -> str:
         # TODO: better way to find the value item
         # (when aux is introduced this will fail need fixing)
-        return list(self.data.data_vars)[-1]
+        vars = [v for v in self.data.data_vars if v != "x" and v != "y" and v != "z"]
+        return vars[0]
 
     @property
     def values(self) -> np.ndarray:
