@@ -483,14 +483,14 @@ def _parse_single_model(
         )
 
 
-def _extract_from_models(obs, mod: List[protocols.ModelResult]) -> List[pd.DataFrame]:
+def _extract_from_models(obs, mods: List[protocols.ModelResult]) -> List[pd.DataFrame]:
     df_model = []
-    for mr in mod:
-        if hasattr(mr, "extract"):
-            mr = mr.extract(obs)
+    for m in mods:
+        mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m
 
         # TODO: temporary solution until complete swich to xr.Dataset
-        df = mr.data if isinstance(mr.data, pd.DataFrame) else mr.to_dataframe()
+        # mr.data if isinstance(mr.data, pd.DataFrame) else
+        df = mr.to_dataframe()
 
         # TODO is this robust enough?
         old_item = df.columns.values[-1]  # TODO: xr.Dataset
