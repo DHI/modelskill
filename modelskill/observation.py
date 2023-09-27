@@ -342,16 +342,6 @@ class TrackObservation(Observation):
 
         return MultiPoint(np.stack([self.x, self.y]).T)
 
-    @property
-    def x(self):
-        """x-coordinates of observation points"""
-        return self.data["x"].to_numpy()
-
-    @property
-    def y(self):
-        """y-coordinates of observation points"""
-        return self.data["y"].to_numpy()
-
     def __init__(
         self,
         data: TrackType,
