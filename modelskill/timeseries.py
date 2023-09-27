@@ -150,33 +150,81 @@ class TimeSeries:
 
     plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
 
-    name: str
-    data: pd.DataFrame | pd.Series | xr.Dataset
-    quantity: Quantity
-    color: str = "#d62728"
+    # name: str
+    data: xr.Dataset
+    # quantity: Quantity
+    # color: str = "#d62728"
 
     def __post_init__(self) -> None:
-        # # TODO is __post_init__ the most elegant way to handle this?
-        # if self.quantity is None:
-        #     self.quantity = Quantity.undefined()
-        # elif isinstance(self.quantity, str):
-        #     self.quantity = Quantity.from_mikeio_eum_name(self.quantity)
-
-        # assert isinstance(self.quantity, Quantity)
-
-        # assert isinstance(
-        #     self.data, (pd.DataFrame, pd.Series)
-        # ), f"data must be a pandas.DataFrame, not type: {type(self.data)}"  # TODO shouldnt this only be Series?
-        # assert isinstance(
-        #     self.data.index, pd.DatetimeIndex
-        # ), "index must be a DatetimeIndex"
-
+        self._validate_data(self.data)
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
         self.hist = self.plot.hist  # TODO remove this
 
+    @staticmethod
+    def _validate_data(ds) -> None:
+        """Validate data"""
+        assert isinstance(ds, xr.Dataset), "data must be a xr.Dataset"
+
+        # Validate time
+        assert len(ds.dims) == 1, "Only 0-dimensional data are supported"
+        assert list(ds.dims)[0] == "time", "data must have a time dimension"
+        assert isinstance(ds.time.to_index(), pd.DatetimeIndex), "time must be datetime"
+        assert (
+            ds.time.to_index().is_monotonic_increasing
+        ), "time must be increasing (please check for duplicate times))"
+
+        # Validate coordinates
+        assert "x" in ds, "data must have an x-coordinate"
+        assert "y" in ds, "data must have a y-coordinate"
+        # assert "z" in ds, "data must have a z-coordinate"
+
+        # Validate data
+        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
+        assert len(vars) > 0, "data must have at least one item"
+        assert len(ds["time"]) > 0, "data must have at least one time"
+        for v in vars:
+            assert (
+                len(ds[v].dims) == 1
+            ), f"Only 0-dimensional data arrays are supported! {v} has {len(ds[v].dims)} dimensions"
+            assert (
+                list(ds[v].dims)[0] == "time"
+            ), f"All data arrays must have a time dimension; {v} has dimensions {ds[v].dims}"
+
+        # Validate primary data array
+        da = ds[vars[0]]  # By definition, first data variable is the value variable!
+        assert (
+            "kind" in da.attrs
+        ), f"The first data array {vars[0]} (the value array) must have a kind attribute!"
+        assert da.attrs["kind"] in [
+            "model",
+            "observation",
+        ], f"data array {da} attribute 'kind' must be 'model' or 'observation', not {da.attrs['kind']}"
+
+        # Validate aux data arrays
+        for v in vars[1:]:
+            if "kind" in ds[v].attrs:
+                assert ds[v].attrs["kind"] not in [
+                    "model",
+                    "observation",
+                ], f"data can only have one model/observation array! {vars[0]} is the first array and by definition the 'value' array, any subsequent arrays must be of kind 'aux', but array {v} has kind {ds[v].attrs['kind']}!"
+
+        # Validate attrs
+        # TODO
+
     @property
     def time(self) -> pd.DatetimeIndex:
+        """Time index"""
         return pd.DatetimeIndex(self.data.time)
+
+    @property
+    def x(self):
+        """x-coordinate"""
+        return self.data["x"].to_numpy()
+
+    @property
+    def y(self):
+        """y-coordinate"""
+        return self.data["y"].to_numpy()
 
     @property
     def _val_item(self) -> str:
@@ -241,3 +289,36 @@ class TimeSeries:
         else:
             # assume xr
             self.data = self.data.sel(time=slice(start_time, end_time))
+
+
+# TODO: add interp_time method
+#     def interp_time(self, new_time: pd.DatetimeIndex) -> TimeSeries:
+#         """Interpolate time series to new time index
+
+#         Parameters
+#         ----------
+#         new_time : pd.DatetimeIndex
+#             new time index
+
+#         Returns
+#         -------
+#         TimeSeries
+#             interpolated time series
+#         """
+#         new_df = _interp_time(self.data, new_time)
+#         return TimeSeries(
+#             name=self.name,
+#             data=new_df,
+#             quantity=self.quantity,
+#             color=self.color,
+#         )
+
+
+# def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
+#     """Interpolate time series to new time index"""
+#     new_df = (
+#         df.reindex(df.index.union(new_time))
+#         .interpolate(method="time", limit_area="inside")
+#         .reindex(new_time)
+#     )
+#     return new_df
