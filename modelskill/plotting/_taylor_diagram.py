@@ -1,6 +1,10 @@
 from __future__ import annotations
 import warnings
 from collections import namedtuple
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import matplotlib.axes
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,14 +14,16 @@ from ._taylor_diagram_external import TaylorDiagram
 TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size")
 
 
+# TODO: Add tests and consider making API easier to use (e.g. maybe accept a comparer object?)
 def taylor_diagram(
     obs_std,
     points,
     figsize=(7, 7),
     obs_text="Observations",
     normalize_std=False,
+    ax=None,
     title="Taylor diagram",
-):
+) -> matplotlib.axes.Axes:
     """
     Plot a Taylor diagram using the given observations and points.
 
@@ -35,11 +41,16 @@ def taylor_diagram(
         Whether to normalize the standard deviation of the points by the standard deviation of the observations. Default is False.
     title : str, optional
         Title of the plot. Default is "Taylor diagram".
-
+    ax : matplotlib.axes.Axes, optional
+        Adding to existing axis. Default is None.
     Returns:
     --------
-    None
+    matplotlib.axes.Axes
+            The matplotlib axes object
     """
+    if ax is not None:
+        raise NotImplementedError("Adding to existing axes is not implemented yet.")
+
     if np.isscalar(figsize):
         figsize = (figsize, figsize)
     elif figsize[0] != figsize[1]:
@@ -77,3 +88,8 @@ def taylor_diagram(
         loc="upper right",
     )
     fig.suptitle(title, size="x-large")
+
+    axes = fig.get_axes()
+    if (len(axes)) > 1:
+        warnings.warn("More than one axes found in figure. Returning first found.")
+    return axes[0]
