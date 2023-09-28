@@ -4,6 +4,7 @@ from pathlib import Path
 
 from typing import (
     Dict,
+    Mapping,
     Iterable,
     List,
     Literal,
@@ -22,7 +23,7 @@ import mikeio
 
 from modelskill import ModelResult
 from modelskill.timeseries import TimeSeries
-from modelskill.types import GeometryType, Quantity
+from modelskill.types import GeometryType, Quantity, Period
 from .model import protocols
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
@@ -295,16 +296,14 @@ def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
         warnings.warn("no (spatial) overlap between model and observation points")
 
 
-def _get_model_start_end(raw_mod_data) -> Tuple[pd.Timestamp, pd.Timestamp]:
-    """Find first start and last end time of all model data"""
-    _mod_start = [pd.Timestamp.max]
-    _mod_end = [pd.Timestamp.min]
-    for m in raw_mod_data.values():
-        if len(m) == 0:
-            continue
-        _mod_start.append(m.index[0])  # TODO: xr.Dataset
-        _mod_end.append(m.index[-1])  # TODO: xr.Dataset
-    return min(_mod_start), max(_mod_end)
+def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
+    starts = [x[0] for x in idxs if len(x) > 0]
+    ends = [x[-1] for x in idxs if len(x) > 0]
+
+    if len(starts) == 0:
+        return Period(start=None, end=None)
+
+    return Period(start=min(starts), end=max(ends))
 
 
 def match_time(
@@ -334,14 +333,15 @@ def match_time(
     xr.Dataset
         Matched data in the format used by modelskill.Comparer
     """
-    _obs_name = "Observation"
-    _mod_names = list(raw_mod_data.keys())
-    _mod_start, _mod_end = _get_model_start_end(raw_mod_data)
+    obs_name = "Observation"
+    mod_names = list(raw_mod_data.keys())
+    idxs = [m.index for m in raw_mod_data.values()]
+    period = _get_global_start_end(idxs)
 
     assert isinstance(observation, (PointObservation, TrackObservation))
     gtype = "point" if isinstance(observation, PointObservation) else "track"
     observation = observation.copy()
-    observation.trim(_mod_start, _mod_end)
+    observation.trim(period.start, period.end)
 
     first = True
     for name, mdata in raw_mod_data.items():
@@ -372,11 +372,11 @@ def match_time(
     data.attrs["quantity_name"] = observation.quantity.name
     data["x"].attrs["kind"] = "position"
     data["y"].attrs["kind"] = "position"
-    data[_obs_name].attrs["kind"] = "observation"
-    data[_obs_name].attrs["unit"] = observation.quantity.unit
-    data[_obs_name].attrs["color"] = observation.color
-    data[_obs_name].attrs["weight"] = observation.weight
-    for n in _mod_names:
+    data[obs_name].attrs["kind"] = "observation"
+    data[obs_name].attrs["unit"] = observation.quantity.unit
+    data[obs_name].attrs["color"] = observation.color
+    data[obs_name].attrs["weight"] = observation.weight
+    for n in mod_names:
         data[n].attrs["kind"] = "model"
 
     data.attrs["modelskill_version"] = __version__

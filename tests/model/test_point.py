@@ -154,3 +154,9 @@ def test_point_df(point_df):
 #     c = mr1.compare(o1)
 #     assert c.score() == 0.0  # o1=mr1
 #     assert c.n_points == len(o1.data.dropna())
+
+
+def test_point_model_data_can_be_persisted_as_netcdf(point_df, tmp_path):
+    mr = PointModelResult(point_df, item=0)
+
+    mr.data.to_netcdf(tmp_path / "test.nc")

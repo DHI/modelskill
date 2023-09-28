@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Optional
 
 from dataclasses import dataclass
 import warnings
@@ -88,6 +88,14 @@ PointType = Union[
     xr.DataArray,
 ]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
+
+
+@dataclass(frozen=True)
+class Period:
+    """Period of data, defined by start and end time, can be open ended"""
+
+    start: Optional[pd.Timestamp]
+    end: Optional[pd.Timestamp]
 
 
 # TODO change name of fields to match CF conventions?
