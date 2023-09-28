@@ -111,8 +111,21 @@ plotting_functions_ids = [
 ]
 
 
-@pytest.mark.parametrize(
-    "plotting_function", plotting_functions, ids=plotting_functions_ids
-)
-def test_does_setup_work(plotting_function):
-    pass
+@pytest.fixture(params=["title", "figsize", "ax"])
+def matplotlib_param_to_wrap(request):
+    return request.param
+
+
+@pytest.mark.parametrize("func", plotting_functions, ids=plotting_functions_ids)
+def test_plotting_function_includes_optional_matplotlib_wrapper_params(
+    func, matplotlib_param_to_wrap
+):
+    signature = inspect.signature(func)
+    assert matplotlib_param_to_wrap in signature.parameters
+    assert (
+        signature.parameters[matplotlib_param_to_wrap].default
+        is not inspect.Parameter.empty
+    )
+
+
+# TODO: Add test to check if return annotation is matplotlib.axes.Axes
