@@ -133,3 +133,9 @@ def test_trackobservation_x_y_item(c2):
 def test_force_keyword_args(c2):
     with pytest.raises(TypeError):
         TrackObservation(c2, 2, "c2")
+
+
+def test_track_data_can_be_persisted_as_netcdf(c2, tmp_path):
+    t = TrackObservation(c2, item=2, name="c2")
+
+    t.data.to_netcdf(tmp_path / "test.nc")

@@ -116,3 +116,9 @@ def test_hist(klagshamn_filename):
 def test_force_keyword_args(klagshamn_filename):
     with pytest.raises(TypeError):
         PointObservation(klagshamn_filename, 0, 366844, 6154291, "Klagshamn")
+
+
+def test_point_data_can_be_persisted_as_netcdf(klagshamn_filename, tmp_path):
+    p = PointObservation(klagshamn_filename)
+
+    p.data.to_netcdf(tmp_path / "test.nc")
