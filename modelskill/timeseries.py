@@ -219,8 +219,11 @@ class TimeSeries:
 
         # Validate attrs
         assert "gtype" in ds.attrs, "data must have a gtype attribute"
-        if "quantity" not in da.attrs or da.attrs["quantity"] is None:
-            da.attrs["quantity"] = Quantity.undefined().to_dict()
+        if "long_name" not in da.attrs:
+            da.attrs["long_name"] = Quantity.undefined().name
+
+        if "units" not in da.attrs:
+            da.attrs["units"] = Quantity.undefined().unit
         # assert "quantity" in da.attrs, "data must have a quantity attribute"
         # assert "name" in da.attrs["quantity"]
         # assert "unit" in da.attrs["quantity"]
@@ -252,11 +255,15 @@ class TimeSeries:
     @property
     def quantity(self) -> Quantity:
         """Quantity of time series"""
-        return Quantity(**self.data[self._val_item].attrs["quantity"])
+        return Quantity(
+            name=self.data[self._val_item].attrs["long_name"],
+            unit=self.data[self._val_item].attrs["units"],
+        )
 
     @quantity.setter
     def quantity(self, quantity: Quantity) -> None:
-        self.data[self._val_item].attrs["quantity"] = quantity.to_dict()
+        self.data[self._val_item].attrs["long_name"] = quantity.name
+        self.data[self._val_item].attrs["units"] = quantity.unit
 
     @property
     def color(self) -> str:
@@ -353,7 +360,7 @@ class TimeSeries:
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert to pandas DataFrame"""
-        if self.gtype == GeometryType.POINT:
+        if self.gtype == str(GeometryType.POINT):
             # we need to remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
             return self.data.drop_vars(["x", "y", "z"])[self.name].to_dataframe()

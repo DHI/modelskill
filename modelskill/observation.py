@@ -206,9 +206,10 @@ class PointObservation(Observation):
 
         if quantity is None:
             quantity = Quantity.undefined()
-        ds[name].attrs["quantity"] = quantity.to_dict()
+        ds[name].attrs["long_name"] = quantity.name
+        ds[name].attrs["units"] = quantity.unit
 
-        ds.attrs["gtype"] = GeometryType.POINT
+        ds.attrs["gtype"] = str(GeometryType.POINT)
         ds.coords["x"] = x
         ds.coords["y"] = y
         ds.coords["z"] = z
@@ -402,11 +403,12 @@ class TrackObservation(Observation):
         ds = ds.dropna(dim="time", subset=["x", "y"])
 
         ds[name].attrs["kind"] = "observation"
-        ds.attrs["gtype"] = GeometryType.TRACK
+        ds.attrs["gtype"] = str(GeometryType.TRACK)
 
         if quantity is None:
             quantity = Quantity.undefined()
-        ds[name].attrs["quantity"] = quantity.to_dict()
+        ds[name].attrs["long_name"] = quantity.name
+        ds[name].attrs["units"] = quantity.unit
 
         super().__init__(data=ds)
 

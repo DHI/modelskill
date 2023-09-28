@@ -104,9 +104,10 @@ class PointModelResult(TimeSeries):
         vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
         ds = ds.rename({vars[0]: name})
         ds[name].attrs["kind"] = "model"
-        ds[name].attrs["quantity"] = model_quantity.to_dict()
+        ds[name].attrs["long_name"] = model_quantity.name
+        ds[name].attrs["units"] = model_quantity.unit
 
-        ds.attrs["gtype"] = GeometryType.POINT
+        ds.attrs["gtype"] = str(GeometryType.POINT)
         ds.coords["x"] = x
         ds.coords["y"] = y
         ds.coords["z"] = None  # TODO: or np.nan?

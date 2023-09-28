@@ -361,7 +361,7 @@ def match_time(
     data.index.name = "time"
     data = data.dropna()
     data = data.to_xarray()
-    data.attrs["gtype"] = gtype
+    data.attrs["gtype"] = str(gtype)
 
     if gtype == "point":
         data["x"] = observation.x

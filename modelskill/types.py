@@ -90,6 +90,9 @@ PointType = Union[
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
 
 
+# TODO change name of fields to match CF conventions?
+# https://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/build/ch03s03.html
+# long_name, standard_name & units
 @dataclass(frozen=True)
 class Quantity:
     """Quantity of data
