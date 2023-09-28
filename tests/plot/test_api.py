@@ -6,6 +6,7 @@ import inspect
 import modelskill as ms
 import pytest
 import matplotlib.pyplot as plt
+import matplotlib.axes
 
 plt.switch_backend("Agg")
 
@@ -128,4 +129,9 @@ def test_plotting_function_includes_optional_matplotlib_wrapper_params(
     )
 
 
-# TODO: Add test to check if return annotation is matplotlib.axes.Axes
+@pytest.mark.parametrize("func", plotting_functions, ids=plotting_functions_ids)
+def test_plotting_function_has_matplotlib_axes_return_annotation_and_doc(func):
+    signature = inspect.signature(func)
+    docstring = inspect.getdoc(func)
+    assert "matplotlib.axes.Axes" in docstring and "Returns" in docstring
+    assert signature.return_annotation == "matplotlib.axes.Axes"
