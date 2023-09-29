@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import matplotlib.axes
 
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -17,6 +20,8 @@ from ..metrics import _linear_regression
 from ._misc import quantiles_xy, sample_points, format_skill_df
 
 
+# TODO: how to handle return types and parameters for plotly backend?
+# -focus on matplotlib backend for now, things may change soon
 def scatter(
     x: np.ndarray,
     y: np.ndarray,
@@ -38,8 +43,9 @@ def scatter(
     ylabel: str = "",
     skill_df: Optional[pd.DataFrame] = None,
     units: Optional[str] = "",
+    ax: Optional[Axes] = None,
     **kwargs,
-):
+) -> matplotlib.axes.Axes:
     """Scatter plot showing compared data: observation vs modelled
     Optionally, with density histogram.
 
@@ -99,7 +105,14 @@ def scatter(
         dataframe with skill (stats) results to be added to plot, by default None
     units : str, optional
         user default units to override default units, eg 'metre', by default None
-    kwargs
+    ax : matplotlib.axes.Axes, optional
+        axes to plot on, by default None
+    **kwargs
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The axes on which the scatter plot was drawn.
     """
     if show_hist is None and show_density is None:
         # Default: points density
@@ -182,6 +195,7 @@ def scatter(
         skill_df=skill_df,
         units=units,
         fit_to_quantiles=fit_to_quantiles,
+        ax=ax,
         **kwargs,
     )
 
@@ -211,11 +225,18 @@ def _scatter_matplotlib(
     skill_df,
     units,
     fit_to_quantiles,
+    ax,
     **kwargs,
-) -> Axes:
-    _, ax = plt.subplots(figsize=figsize)
+) -> matplotlib.axes.Axes:
+    fig = plt.figure(
+        figsize=figsize
+    )  # Should each plotting function be responsible for creating the figure?
+    if ax is None:
+        ax = fig.subplots()
+    else:
+        fig.add_axes(ax)
 
-    plt.plot(
+    ax.plot(
         [xlim[0], xlim[1]],
         [xlim[0], xlim[1]],
         label=options.plot.scatter.oneone_line.label,
@@ -230,7 +251,7 @@ def _scatter_matplotlib(
         else:
             c = "0.25"
             norm_ = None
-        plt.scatter(
+        ax.scatter(
             x_sample,
             y_sample,
             c=c,
@@ -243,7 +264,7 @@ def _scatter_matplotlib(
             **kwargs,
         )
     if len(xq) > 0:
-        plt.plot(
+        ax.plot(
             xq,
             yq,
             options.plot.scatter.quantiles.marker,
@@ -264,7 +285,7 @@ def _scatter_matplotlib(
         else:
             slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
 
-        plt.plot(
+        ax.plot(
             x_trend,
             intercept + slope * x_trend,
             **settings.get_option("plot.scatter.reg_line.kwargs"),
@@ -275,25 +296,25 @@ def _scatter_matplotlib(
         )
 
     if show_hist:
-        plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
+        ax.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
 
-    plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.axis("square")
-    plt.xlim([xlim[0], xlim[1]])
-    plt.ylim([ylim[0], ylim[1]])
-    plt.minorticks_on()
-    plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
+    ax.legend(**settings.get_option("plot.scatter.legend.kwargs"))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.axis("square")
+    ax.set_xlim([xlim[0], xlim[1]])
+    ax.set_ylim([ylim[0], ylim[1]])
+    ax.minorticks_on()
+    ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
     max_cbar = None
     if show_hist or (show_density and show_points):
-        cbar = plt.colorbar(fraction=0.046, pad=0.04)
+        cbar = fig.colorbar(ax.collections[0], fraction=0.046, pad=0.04)
         ticks = cbar.ax.get_yticks()
         max_cbar = ticks[-1]
         cbar.set_label("# points")
         cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
-    plt.title(title)
+    ax.set_title(title)
     # Add skill table
     if skill_df is not None:
         df = skill_df.df
