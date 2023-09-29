@@ -393,8 +393,15 @@ class TrackObservation(Observation):
         old_xy_names = list(ds.data_vars)[:2]
         ds = ds.rename(dict(zip(old_xy_names, ["x", "y"])))
 
-        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
-        ds = ds.rename({vars[0]: name})
+        SPATIAL_DIMS = ["x", "y", "z"]
+
+        for dim in SPATIAL_DIMS:
+            if dim in ds:
+                ds = ds.set_coords(dim)
+
+        assert len(ds.data_vars) == 1
+        data_var = str(list(ds.data_vars)[0])
+        ds = ds.rename({data_var: name})
 
         # A unique index makes lookup much faster O(1)
         ds["time"] = make_unique_index(

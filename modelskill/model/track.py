@@ -106,8 +106,16 @@ class TrackModelResult(TimeSeries):
         ds["time"] = make_unique_index(ds["time"].to_index(), offset_duplicates=0.001)
 
         # ds["z"] = None  # TODO: or np.nan?
-        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
-        ds = ds.rename({vars[0]: name})
+
+        SPATIAL_DIMS = ["x", "y", "z"]
+
+        for dim in SPATIAL_DIMS:
+            if dim in ds:
+                ds = ds.set_coords(dim)
+
+        assert len(ds.data_vars) == 1
+        data_var = str(list(ds.data_vars)[0])
+        ds = ds.rename({data_var: name})
         ds[name].attrs["kind"] = "model"
         # ds[name].attrs["quantity"] = model_quantity.to_dict()
         ds[name].attrs["long_name"] = model_quantity.name
