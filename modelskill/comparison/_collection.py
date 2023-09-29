@@ -211,8 +211,12 @@ class ComparerCollection(Mapping):
         for cmp in self.comparers.values():
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
-                df = cmp.data[[mod_name]].to_dataframe().copy()
-                df.columns = ["mod_val"]
+                df = (
+                    cmp.data.drop_vars(["x", "y", "z"])[[mod_name]]
+                    .to_dataframe()
+                    .copy()
+                )
+                df.rename(columns={mod_name: "mod_val"})
                 df["model"] = mod_name
                 df["observation"] = cmp.name
                 if self.n_variables > 1:
