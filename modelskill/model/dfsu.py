@@ -146,12 +146,17 @@ class DfsuModelResult(SpatialField):
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
         )
 
+        # TODO: data could be xarray
+        track = (
+            observation.data
+            if isinstance(observation.data, pd.DataFrame)
+            else observation.data.to_dataframe()
+        )
+
         if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-            ds_model = self.data.extract_track(
-                track=observation.data, items=[self.item]
-            )
+            ds_model = self.data.extract_track(track=track, items=[self.item])
         elif isinstance(self.data, (mikeio.Dataset, mikeio.DataArray)):
-            ds_model = self.data.extract_track(track=observation.data)
+            ds_model = self.data.extract_track(track=track)
         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
 
         return TrackModelResult(

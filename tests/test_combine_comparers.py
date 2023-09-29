@@ -132,13 +132,14 @@ def test_concat_time_overlap(o123, mrmike):
 
     # if there they don't cover the same period...
     o1 = o123[0].copy()
-    o1.data = o1.data["2017-10-26":"2017-10-27"]
+    # o1.data = o1.data["2017-10-26":"2017-10-27"]
+    o1.data = o1.data.sel(time=slice("2017-10-26", "2017-10-27"))
 
     o2 = o123[1].copy()
-    o2.data = o2.data["2017-10-26":"2017-10-27"]
+    o2.data = o2.data.sel(time=slice("2017-10-26", "2017-10-27"))
 
     o3 = o123[2].copy()
-    o3.data = o3.data["2017-10-26":"2017-10-27"]
+    o3.data = o3.data.sel(time=slice("2017-10-26", "2017-10-27"))
 
     con26 = Connector([o1, o2, o3], mrmike)
     cc26 = con26.extract()
@@ -155,13 +156,13 @@ def test_concat_time_overlap(o123, mrmike):
     assert cc1.score() == cc12.score()
 
     o1 = o123[0].copy()
-    o1.data = o1.data["2017-10-27 12:00":"2017-10-29 23:00"]
+    o1.data = o1.data.sel(time=slice("2017-10-27 12:00", "2017-10-29 23:00"))
 
     o2 = o123[1].copy()
-    o2.data = o2.data["2017-10-27 12:00":"2017-10-29 23:00"]
+    o2.data = o2.data.sel(time=slice("2017-10-27 12:00", "2017-10-29 23:00"))
 
     o3 = o123[2].copy()
-    o3.data = o3.data["2017-10-27 12:00":"2017-10-29 23:00"]
+    o3.data = o3.data.sel(time=slice("2017-10-27 12:00", "2017-10-29 23:00"))
 
     con2 = Connector([o1, o2, o3], mrmike)
     cc2 = con2.extract()

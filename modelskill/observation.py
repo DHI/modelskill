@@ -6,28 +6,41 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
-import os
-from typing import Optional
+from __future__ import annotations
+from pathlib import Path
+from typing import List, Optional, Sequence, get_args
 import numpy as np
 import pandas as pd
+import xarray as xr
 import mikeio
 from copy import deepcopy
 
-from .utils import make_unique_index
-from .types import Quantity
+from .utils import _get_name, make_unique_index
+from .types import GeometryType, PointType, TrackType, Quantity
 from .timeseries import TimeSeries
 
 
-def _parse_item(items, item, item_str="item"):
-    if isinstance(item, int):
-        item = len(items) + item if (item < 0) else item
-        if (item < 0) or (item >= len(items)):
-            raise IndexError(f"{item_str} is out of range (0, {len(items)})")
-    elif isinstance(item, str):
-        item = items.index(item)
-    else:
-        raise TypeError(f"{item_str} must be int or string")
-    return item
+def _get_item_names(
+    items: Sequence[str | int], valid_names: Sequence[str]
+) -> List[str]:
+    """Parse requested items from list of valid item names, return item names"""
+    if len(valid_names) < len(items):
+        raise ValueError(
+            f"Input has only {len(valid_names)} items. {len(items)} items where requested: {items}"
+        )
+
+    # more valid_names than items and at least one item is None
+    if len(valid_names) > len(items) and any([i is None for i in items]):
+        raise ValueError(
+            f"Cannot infer item names from input. Please provide item names explicitly. Valid names: {valid_names}."
+        )
+
+    item_names = []
+    for item in items:
+        item_names.append(_get_name(x=item, valid_names=valid_names))
+    if len(item_names) != len(set(item_names)):
+        raise ValueError("Items must be unique")
+    return item_names
 
 
 class Observation(TimeSeries):
@@ -35,7 +48,7 @@ class Observation(TimeSeries):
 
     Parameters
     ----------
-    data : pd.DataFrame
+    data : xr.Dataset
     name : str, optional
         user-defined name, e.g. "Station A", by default "Observation"
     quantity : Optional[Quantity], optional
@@ -48,39 +61,35 @@ class Observation(TimeSeries):
 
     def __init__(
         self,
-        data: pd.DataFrame,
-        name: Optional[str] = None,
-        quantity: Optional[Quantity] = None,
+        data: xr.Dataset,
         weight: float = 1.0,
         color: str = "#d62728",
     ):
-        # TODO move this to TimeSeries?
-        if not isinstance(data.index, pd.DatetimeIndex):
+        data["time"] = self._parse_time(data.time)
+
+        # if name is None:
+        #     name = "Observation"
+
+        super().__init__(data=data)
+        self.data[self.name].attrs["weight"] = weight
+        self.data[self.name].attrs["color"] = color
+
+    @property
+    def weight(self) -> float:
+        """Weighting factor for skill scores"""
+        return self.data[self.name].attrs["weight"]
+
+    @weight.setter
+    def weight(self, value: float) -> None:
+        self.data[self.name].attrs["weight"] = value
+
+    @staticmethod
+    def _parse_time(time):
+        if not isinstance(time.to_index(), pd.DatetimeIndex):
             raise TypeError(
-                f"Input must have a datetime index! Provided index was {type(data.index)}"
+                f"Input must have a datetime index! Provided index was {type(time.to_index())}"
             )
-        time = data.index.round(freq="100us")  # 0.0001s accuracy
-        data.index = pd.DatetimeIndex(time, freq="infer")
-
-        if quantity is None:
-            quantity = Quantity.undefined()
-
-        if name is None:
-            name = "Observation"
-
-        self.weight = weight
-
-        super().__init__(name=name, data=data, quantity=quantity, color=color)
-
-    @property
-    def values(self) -> np.ndarray:
-        "Observed values"
-        return self.data.values
-
-    @property
-    def n_points(self):
-        """Number of observations"""
-        return len(self.data)
+        return time.dt.round("100us")
 
     def copy(self):
         return deepcopy(self)
@@ -93,10 +102,11 @@ class PointObservation(Observation):
 
     Parameters
     ----------
-    data : (str, pd.DataFrame, pd.Series)
-        dfs0 filename or dataframe with the data
+    data : (str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset, xr.DataArray)
+        filename or object with the data
     item : (int, str), optional
-        index or name of the wanted item, by default None
+        index or name of the wanted item/column, by default None
+        if data contains more than one item, item must be given
     x : float, optional
         x-coordinate of the observation point, by default None
     y : float, optional
@@ -107,6 +117,7 @@ class PointObservation(Observation):
         user-defined name for easy identification in plots etc, by default file basename
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
+        For MIKE dfs files this is inferred from the EUM information
 
     Examples
     --------
@@ -118,6 +129,7 @@ class PointObservation(Observation):
 
     @property
     def geometry(self):
+        """Coordinates of observation (shapely.geometry.Point)"""
         from shapely.geometry import Point
 
         if self.z is None:
@@ -125,113 +137,132 @@ class PointObservation(Observation):
         else:
             return Point(self.x, self.y, self.z)
 
+    @property
+    def z(self):
+        """z-coordinate of observation point"""
+        return self._coordinate_values("z")
+
+    @z.setter
+    def z(self, value):
+        self.data["z"] = value
+
     def __init__(
         self,
-        data,
+        data: PointType,
         *,
-        item=None,
+        item: Optional[int | str] = None,
         x: Optional[float] = None,
         y: Optional[float] = None,
         z: Optional[float] = None,
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
     ):
-        self.x = x
-        self.y = y
-        self.z = z
+        assert isinstance(
+            data, get_args(PointType)
+        ), "Could not construct PointObservation from provided data type."
 
-        self._filename = None
-        self._item = None
+        # self._filename = None
+        # self._item = None
 
-        # TODO move this to TimeSeries?
-        if isinstance(data, pd.Series):
-            df = data.to_frame()
-            if name is None:
-                name = "Observation"
-        elif isinstance(data, mikeio.DataArray):
-            df = mikeio.Dataset([data]).to_dataframe()
+        if isinstance(data, (str, Path)):
+            assert (
+                Path(data).suffix == ".dfs0"
+            ), "File must be a dfs0 file, other file types must be read with pandas or xarray"
+            name = name or Path(data).stem
+            data = mikeio.read(data)  # now mikeio.Dataset
+        elif isinstance(data, mikeio.Dfs0):
+            data = data.read()  # now mikeio.Dataset
+
+        # parse item and convert to xr.Dataset
+        if isinstance(data, (mikeio.Dataset, mikeio.DataArray)):
+            ds, item_name = self._mikeio_dataset(data, item)
+            iteminfo = ds[item_name].item
+            ds = ds.to_xarray()
             if quantity is None:
-                quantity = Quantity.from_mikeio_iteminfo(data.item)
-        elif isinstance(data, mikeio.Dataset):
-            df = data.to_dataframe()[[item]]
-            if quantity is None:
-                quantity = Quantity.from_mikeio_iteminfo(data[item].item)
-        elif isinstance(data, pd.DataFrame):
-            df = data
-            default_name = "Observation"
-            if item is None:
-                if len(df.columns) == 1:
-                    item = 0
-                else:
-                    raise ValueError(
-                        f"item must be specified (more than one column in dataframe). Available columns: {list(df.columns)}"
-                    )
-            self._item = item
+                quantity = Quantity.from_mikeio_iteminfo(iteminfo)
 
-            if isinstance(item, str):
-                df = df[[item]]
-                default_name = item
-            elif isinstance(item, int):
-                if item < 0:
-                    item = len(df.columns) + item
-                default_name = df.columns[item]
-                df = df.iloc[:, item]
-            else:
-                raise TypeError("item must be int or string")
-            if name is None:
-                name = default_name
-        elif isinstance(data, str):
-            assert os.path.exists(data)
-            self._filename = data
-            if name is None:
-                # TODO is this a sensible default?
-                name = os.path.basename(data).split(".")[0]
-
-            ext = os.path.splitext(data)[-1]
-            if ext == ".dfs0":
-                df, iteminfo = self._read_dfs0(mikeio.open(data), item)
-                if quantity is None:
-                    quantity = Quantity.from_mikeio_iteminfo(iteminfo)
-            else:
-                raise NotImplementedError("Only dfs0 files supported")
+        elif isinstance(data, (pd.DataFrame, pd.Series)):
+            ds, item_name = self._pandas_to_xarray(data, item)
+        elif isinstance(data, (xr.Dataset, xr.DataArray)):
+            ds, item_name = self._xarray_to_xarrray(data, item)
         else:
             raise TypeError(
-                f"input must be str, mikeio.DataArray/Dataset or pandas Series/DataFrame! Given input has type {type(data)}"
+                f"input must be str, Path, mikeio.DataArray/Dataset, pd.Series/DataFrame or xr.Dataset/DataArray! Given input has type {type(data)}"
             )
 
-        if not df.index.is_unique:
+        if not ds.time.to_index().is_monotonic_increasing:
             # TODO: duplicates_keep="mean","first","last"
             raise ValueError(
                 "Time axis has duplicate entries. It must be monotonically increasing."
             )
 
-        super().__init__(
-            name=name,
-            data=df,
-            quantity=quantity,
-        )
+        name = name or item_name
+        name = self._validate_name(name)
+
+        ds = ds.dropna(dim="time")
+        vars = [v for v in ds.data_vars]  # if v != "x" and v != "y" and v != "z"]
+        ds = ds.rename({vars[0]: name})
+        ds[name].attrs["kind"] = "observation"
+
+        if quantity is None:
+            quantity = Quantity.undefined()
+        ds[name].attrs["long_name"] = quantity.name
+        ds[name].attrs["units"] = quantity.unit
+
+        ds.attrs["gtype"] = str(GeometryType.POINT)
+        ds.coords["x"] = x
+        ds.coords["y"] = y
+        ds.coords["z"] = z
+
+        super().__init__(data=ds)
+
+    def _mikeio_dataset(self, data, item):
+        assert len(data.shape) == 1, "Only 0-dimensional data are supported"
+        if isinstance(data, mikeio.Dataset):
+            item_names = [i.name for i in data.items]
+            item_name = _get_name(x=item, valid_names=item_names)
+            ds = data[[item_name]]
+        elif isinstance(data, mikeio.DataArray):
+            if item is not None:
+                raise ValueError("item must be None when data is a mikeio.DataArray")
+            item_name = data.name
+            ds = data._to_dataset()
+
+        return ds, item_name
+
+    def _pandas_to_xarray(self, data, item):
+        if isinstance(data, pd.DataFrame):
+            item_name = _get_name(x=item, valid_names=list(data.columns))
+            df = data[[item_name]]
+        else:
+            if item is not None:
+                raise ValueError("item must be None when data is a pd.Series")
+            df = pd.DataFrame(data)  # to_frame?
+            item_name = df.columns[0]
+        df.index.name = "time"
+        return df.to_xarray(), item_name
+
+    def _xarray_to_xarrray(self, data, item):
+        if isinstance(data, xr.Dataset):
+            item_name = _get_name(x=item, valid_names=list(data.data_vars))
+            ds = data[[item_name]]
+        else:
+            if item is not None:
+                raise ValueError("item must be None when data is a xr.DataArray")
+            item_name = data.name
+            ds = data.to_dataset()
+
+        assert len(ds.dims) == 1, "Only 0-dimensional data are supported"
+
+        # check that name of coords is "time", rename if not
+        if ds.coords[list(ds.coords)[0]].name != "time":
+            ds = ds.rename({list(ds.coords)[0]: "time"})
+
+        return ds, item_name
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
         return out
-
-    # TODO does this belong here?
-    @staticmethod
-    def _read_dfs0(dfs, item):
-        """Read data from dfs0 file"""
-        if item is None:
-            if len(dfs.items) == 1:
-                item = 0
-            else:
-                item_names = [i.name for i in dfs.items]
-                raise ValueError(
-                    f"item needs to be specified (more than one in file). Available items: {item_names} "
-                )
-        ds = dfs.read(items=item)
-        itemInfo = ds.items[0]
-        df = ds.to_dataframe()
-        df.dropna(inplace=True)
-        return df, itemInfo
 
 
 class TrackObservation(Observation):
@@ -243,10 +274,11 @@ class TrackObservation(Observation):
 
     Parameters
     ----------
-    data : (str, pd.DataFrame)
-        path to dfs0 file or DataFrame with track data
+    data : (str, Path, mikeio.Dataset, pd.DataFrame, xr.Dataset)
+        path to dfs0 file or object with track data
     item : (str, int), optional
-        item name or index of values, by default 2
+        item name or index of values, by default None
+        if data contains more than one item, item must be given
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
     x_item : (str, int), optional
@@ -255,6 +287,9 @@ class TrackObservation(Observation):
         item name or index of y-coordinate, by default 1
     offset_duplicates : float, optional
         in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
+        For MIKE dfs files this is inferred from the EUM information
 
 
     Examples
@@ -303,123 +338,121 @@ class TrackObservation(Observation):
 
     @property
     def geometry(self):
+        """Coordinates of observation (shapely.geometry.MultiPoint)"""
         from shapely.geometry import MultiPoint
 
-        """Coordinates of observation"""
-        return MultiPoint(self.data.iloc[:, 0:2].values)
-
-    @property
-    def x(self):
-        return self.data.iloc[:, 0].values
-
-    @property
-    def y(self):
-        return self.data.iloc[:, 1].values
-
-    @property
-    def values(self):
-        return self.data.iloc[:, 2].values
+        return MultiPoint(np.stack([self.x, self.y]).T)
 
     def __init__(
         self,
-        data,
+        data: TrackType,
         *,
-        item: Optional[int] = None,
+        item: Optional[int | str] = None,
         name: Optional[str] = None,
-        x_item=0,
-        y_item=1,
+        x_item: Optional[int | str] = 0,
+        y_item: Optional[int | str] = 1,
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
     ):
-        self._filename = None
-        self._item = None
+        assert isinstance(
+            data, get_args(TrackType)
+        ), "Could not construct TrackObservation from provided data type."
 
-        if isinstance(data, pd.DataFrame):
-            df = data
-            df_items = df.columns.to_list()
-            items = self._parse_track_items(df_items, x_item, y_item, item)
-            df = df.iloc[:, items].copy()
-        elif isinstance(data, str):
-            assert os.path.exists(data)
-            self._filename = data
-            if name is None:
-                name = os.path.basename(data).split(".")[0]
+        # self._filename = None
+        # self._item = None
 
-            ext = os.path.splitext(data)[-1]
-            if ext == ".dfs0":
-                dfs = mikeio.open(data)
-                file_items = [i.name for i in dfs.items]
-                items = self._parse_track_items(file_items, x_item, y_item, item)
-                df, iteminfo = self._read_dfs0(dfs, items)
-                if quantity is None:
-                    quantity = Quantity.from_mikeio_iteminfo(iteminfo)
-            else:
-                raise NotImplementedError(
-                    "Only dfs0 files and DataFrames are supported"
-                )
+        if isinstance(data, (str, Path)):
+            assert (
+                Path(data).suffix == ".dfs0"
+            ), "File must be a dfs0 file, other file types must be read with pandas or xarray"
+            name = name or Path(data).stem
+            data = mikeio.read(data)  # now mikeio.Dataset
+        elif isinstance(data, mikeio.Dfs0):
+            data = data.read()  # now mikeio.Dataset
+
+        # parse items and convert to xr.Dataset
+        items = [x_item, y_item, item]
+        if isinstance(data, mikeio.Dataset):
+            ds, item_names = self._mikeio_to_xarray(data, items)
+            if quantity is None:
+                iteminfo = data[item_names[2]].item  # 2=value item
+                quantity = Quantity.from_mikeio_iteminfo(iteminfo)
+        elif isinstance(data, pd.DataFrame):
+            ds, item_names = self._pandas_to_xarray(data, items)
+        elif isinstance(data, xr.Dataset):
+            ds, item_names = self._xarray_to_xarrray(data, items)
         else:
             raise TypeError(
-                f"input must be str or pandas DataFrame! Given input has type {type(data)}"
+                f"input must be str, Path, mikeio.Dataset, pd.DataFrame or xr.Dataset! Given input has type {type(data)}"
             )
+
+        name = name or item_names[2]
+        name = self._validate_name(name)
+
+        # make sure that x and y are named x and y
+        old_xy_names = list(ds.data_vars)[:2]
+        ds = ds.rename(dict(zip(old_xy_names, ["x", "y"])))
+
+        SPATIAL_DIMS = ["x", "y", "z"]
+
+        for dim in SPATIAL_DIMS:
+            if dim in ds:
+                ds = ds.set_coords(dim)
+
+        assert len(ds.data_vars) == 1
+        data_var = str(list(ds.data_vars)[0])
+        ds = ds.rename({data_var: name})
 
         # A unique index makes lookup much faster O(1)
-        if not df.index.is_unique:
-            df.index = make_unique_index(df.index, offset_duplicates=offset_duplicates)
-
-        # TODO is this needed elsewhere?
-        # make sure location columns are named x and y
-        if isinstance(x_item, str):
-            old_x_name = x_item
-        else:
-            old_x_name = df.columns[x_item]
-
-        if isinstance(y_item, str):
-            old_y_name = y_item
-        else:
-            old_y_name = df.columns[y_item]
-
-        df = df.rename(columns={old_x_name: "x", old_y_name: "y"})
-
-        super().__init__(
-            name=name,
-            data=df,
-            quantity=quantity,
+        ds["time"] = make_unique_index(
+            ds.time.to_index(), offset_duplicates=offset_duplicates
         )
+        ds = ds.dropna(dim="time", subset=["x", "y"])
 
-    @staticmethod
-    def _parse_track_items(items, x_item, y_item, item):
-        """If input has exactly 3 items we accept item=None"""
-        if len(items) < 3:
-            raise ValueError(
-                f"Input has only {len(items)} items. It should have at least 3."
-            )
-        if item is None:
-            if len(items) == 3:
-                item = 2
-            elif len(items) > 3:
-                raise ValueError("Input has more than 3 items, but item was not given!")
-        else:
-            item = _parse_item(items, item)
+        ds[name].attrs["kind"] = "observation"
+        ds.attrs["gtype"] = str(GeometryType.TRACK)
 
-        x_item = _parse_item(items, x_item, "x_item")
-        y_item = _parse_item(items, y_item, "y_item")
+        if quantity is None:
+            quantity = Quantity.undefined()
+        ds[name].attrs["long_name"] = quantity.name
+        ds[name].attrs["units"] = quantity.unit
 
-        if (item == x_item) or (item == y_item) or (x_item == y_item):
-            raise ValueError(
-                f"x-item ({x_item}), y-item ({y_item}) and value-item ({item}) must be different!"
-            )
-        return [x_item, y_item, item]
+        super().__init__(data=ds)
+
+    def _mikeio_to_xarray(self, data, items):
+        assert isinstance(data, mikeio.Dataset)
+        assert len(data.shape) == 1, "Only 0-dimensional data are supported"
+        valid_names = [i.name for i in data.items]
+        item_names = _get_item_names(items, valid_names=valid_names)
+        ds = data[item_names].to_xarray()
+
+        return ds, item_names
+
+    def _pandas_to_xarray(self, data, items):
+        assert isinstance(data, pd.DataFrame)
+
+        item_names = _get_item_names(items, valid_names=list(data.columns))
+        df = data[item_names]
+        df.index.name = "time"
+        return df.to_xarray(), item_names
+
+    def _xarray_to_xarrray(self, data, items):
+        assert isinstance(data, xr.Dataset)
+
+        item_names = _get_item_names(items, valid_names=list(data.data_vars))
+        ds = data[item_names]
+
+        assert len(ds.dims) == 1, "Only 0-dimensional data are supported"
+
+        # check that name of coords is "time", rename if not
+        if ds.coords[list(ds.coords)[0]].name != "time":
+            ds = ds.rename({list(ds.coords)[0]: "time"})
+
+        return ds, item_names
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
         return out
-
-    @staticmethod
-    def _read_dfs0(dfs, items):
-        """Read track data from dfs0 file"""
-        df = dfs.read(items=items).to_dataframe()
-        df.dropna(inplace=True)
-        return df, dfs.items[items[-1]]
 
 
 def unit_display_name(name: str) -> str:
