@@ -31,6 +31,7 @@ from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
 from ..utils import _get_name
+from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
@@ -316,14 +317,14 @@ def _matched_data_to_xarray(
         ds[a].attrs["kind"] = "auxiliary"
 
     if x is not None:
-        ds["x"] = x
-        ds["x"].attrs["kind"] = "position"
+        ds.coords["x"] = x
+        ds.coords["x"].attrs["kind"] = "position"
     if y is not None:
-        ds["y"] = y
-        ds["y"].attrs["kind"] = "position"
+        ds.coords["y"] = y
+        ds.coords["y"].attrs["kind"] = "position"
     if z is not None:
-        ds["z"] = z
-        ds["z"].attrs["kind"] = "position"
+        ds.coords["z"] = z
+        ds.coords["z"].attrs["kind"] = "position"
 
     return ds
 
@@ -436,23 +437,24 @@ class Comparer:
                 matched_data[key].attrs["kind"] = "auxiliary"
         if "x" not in matched_data:
             # Could be problematic to have "x" and "y" as reserved names
-            matched_data["x"] = np.nan
-            matched_data["x"].attrs["kind"] = "position"
-            matched_data.attrs["gtype"] = "point"
+            matched_data.coords["x"] = np.nan
+            matched_data.coords["x"].attrs["kind"] = "position"
+            matched_data.coords.attrs["gtype"] = "point"
 
         if "y" not in matched_data:
-            matched_data["y"] = np.nan
-            matched_data["y"].attrs["kind"] = "position"
+            matched_data.coords["y"] = np.nan
+            matched_data.coords["y"].attrs["kind"] = "position"
 
         if "color" not in matched_data["Observation"].attrs:
             matched_data["Observation"].attrs["color"] = "black"
 
-        if "quantity_name" not in matched_data.attrs:
-            matched_data.attrs["quantity_name"] = Quantity.undefined().name
+        if "long_name" not in matched_data.attrs:
+            matched_data["Observation"].attrs["long_name"] = Quantity.undefined().name
 
-        if "unit" not in matched_data["Observation"].attrs:
-            matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
+        if "units" not in matched_data["Observation"].attrs:
+            matched_data["Observation"].attrs["units"] = Quantity.undefined().unit
 
+        matched_data.attrs["modelskill_version"] = __version__
         return matched_data
 
     @classmethod
@@ -504,26 +506,25 @@ class Comparer:
     def gtype(self):
         return self.data.attrs["gtype"]
 
+    # TODO: remove
     @property
     def quantity_name(self) -> str:
         """name of variable"""
-        return self.data.attrs["quantity_name"]
+        return self.quantity.name
 
     @property
     def quantity(self) -> Quantity:
         """Quantity object"""
-        name = self.data.attrs["quantity_name"]
-        # unit = self.data.attrs["quantity_unit"]
-        unit = self.data[self._obs_name].attrs["unit"]
-        return Quantity(name, unit)
+        return Quantity(
+            name=self.data[self._obs_name].attrs["long_name"],
+            unit=self.data[self._obs_name].attrs["units"],
+        )
 
-    # set quantity
     @quantity.setter
-    def quantity(self, value: Quantity) -> None:
-        assert isinstance(value, Quantity), "value must be a Quantity object"
-        self.data.attrs["quantity_name"] = value.name
-        self.data[self._obs_name].attrs["unit"] = value.unit
-        # self.data.attrs["quantity_unit"] = value.unit
+    def quantity(self, quantity: Quantity) -> None:
+        assert isinstance(quantity, Quantity), "value must be a Quantity object"
+        self.data[self._obs_name].attrs["long_name"] = quantity.name
+        self.data[self._obs_name].attrs["units"] = quantity.unit
 
     @property
     def n_points(self) -> int:
