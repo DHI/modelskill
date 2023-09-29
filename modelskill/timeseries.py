@@ -262,6 +262,7 @@ class TimeSeries:
 
     @quantity.setter
     def quantity(self, quantity: Quantity) -> None:
+        assert isinstance(quantity, Quantity), "value must be a Quantity object"
         self.data[self._val_item].attrs["long_name"] = quantity.name
         self.data[self._val_item].attrs["units"] = quantity.unit
 
