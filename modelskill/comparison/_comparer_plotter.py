@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import Union, List, Optional, Tuple, Sequence
+from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import matplotlib.axes
 
 import matplotlib.pyplot as plt
 import numpy as np  # type: ignore
@@ -175,7 +178,7 @@ class ComparerPlotter:
 
         return ax
 
-    def kde(self, ax=None, **kwargs):
+    def kde(self, ax=None, title=None, figsize=None, **kwargs) -> matplotlib.axes.Axes:
         """Plot kde (kernel density estimates of distributions) of model data and observations.
 
         Wraps pandas.DataFrame kde() method.
@@ -184,11 +187,15 @@ class ComparerPlotter:
         ----------
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
+        title : str, optional
+            plot title, default: "KDE plot for [observation name]"
+        figsize : tuple, optional
+            figure size, by default None
         kwargs : other keyword arguments to df.plot.kde()
 
         Returns
         -------
-        matplotlib axes
+        matplotlib.axes.Axes
 
         Examples
         --------
@@ -221,6 +228,9 @@ class ComparerPlotter:
         ax.yaxis.set_visible(False)
         ax.tick_params(axis="y", which="both", length=0)
         ax.set_ylabel("")
+        ax.set_title(title or f"KDE plot for {cmp.name}")
+        if figsize:
+            ax.figure.set_size_inches(figsize)
 
         # remove box around plot
         ax.spines["top"].set_visible(False)
