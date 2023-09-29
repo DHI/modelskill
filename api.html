@@ -312,7 +312,7 @@ mikeio.Dataset/DataArray or pandas.DataFrame/Series</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>types.UnstructuredType</em>) – the input data or file path</p></li>
+<li><p><strong>data</strong> (<em>types.PointType</em>) – the input data or file path</p></li>
 <li><p><strong>name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – The name of the model result,
 by default None (will be set to file name or item name)</p></li>
 <li><p><strong>x</strong> (<em>float</em><em>, </em><em>optional</em>) – first coordinate of point position, by default None</p></li>
@@ -443,13 +443,15 @@ given a TrackObservation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>)</em>) – dfs0 filename or dataframe with the data</p></li>
-<li><p><strong>item</strong> (<em>(</em><em>int</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) – index or name of the wanted item, by default None</p></li>
+<li><p><strong>data</strong> (<em>(</em><em>str</em><em>, </em><em>Path</em><em>, </em><em>mikeio.Dataset</em><em>, </em><em>mikeio.DataArray</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>pd.Series</em><em>, </em><em>xr.Dataset</em><em>, </em><em>xr.DataArray</em><em>)</em>) – filename or object with the data</p></li>
+<li><p><strong>item</strong> (<em>(</em><em>int</em><em>, </em><em>str</em><em>)</em><em>, </em><em>optional</em>) – index or name of the wanted item/column, by default None
+if data contains more than one item, item must be given</p></li>
 <li><p><strong>x</strong> (<em>float</em><em>, </em><em>optional</em>) – x-coordinate of the observation point, by default None</p></li>
 <li><p><strong>y</strong> (<em>float</em><em>, </em><em>optional</em>) – y-coordinate of the observation point, by default None</p></li>
 <li><p><strong>z</strong> (<em>float</em><em>, </em><em>optional</em>) – z-coordinate of the observation point, by default None</p></li>
 <li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – user-defined name for easy identification in plots etc, by default file basename</p></li>
-<li><p><strong>quantity</strong> (<a class="reference internal" href="#modelskill.types.Quantity" title="modelskill.types.Quantity"><em>Quantity</em></a><em>, </em><em>optional</em>) – The quantity of the observation, for validation with model results</p></li>
+<li><p><strong>quantity</strong> (<a class="reference internal" href="#modelskill.types.Quantity" title="modelskill.types.Quantity"><em>Quantity</em></a><em>, </em><em>optional</em>) – The quantity of the observation, for validation with model results
+For MIKE dfs files this is inferred from the EUM information</p></li>
 </ul>
 </dd>
 </dl>
@@ -461,15 +463,69 @@ given a TrackObservation.</p>
 </pre></div>
 </div>
 <dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.color">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">color</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.color" title="Permalink to this definition">#</a></dt>
+<dd><p>Color of time series</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.end_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">end_time</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.end_time" title="Permalink to this definition">#</a></dt>
+<dd><p>End time of time series data</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.geometry">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">geometry</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.geometry" title="Permalink to this definition">#</a></dt>
+<dd><p>Coordinates of observation (shapely.geometry.Point)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.gtype">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gtype</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.gtype" title="Permalink to this definition">#</a></dt>
+<dd><p>Geometry type</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.n_points">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_points</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.n_points" title="Permalink to this definition">#</a></dt>
-<dd><p>Number of observations</p>
+<dd><p>Number of data points</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.name" title="Permalink to this definition">#</a></dt>
+<dd><p>Name of time series (value item name)</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.plotter">
 <span class="sig-name descname"><span class="pre">plotter</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.plotter" title="Permalink to this definition">#</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">modelskill.timeseries.MatplotlibTimeSeriesPlotter</span></code></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.quantity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantity</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.quantity" title="Permalink to this definition">#</a></dt>
+<dd><p>Quantity of time series</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.start_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_time</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.start_time" title="Permalink to this definition">#</a></dt>
+<dd><p>Start time of time series data</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.time" title="Permalink to this definition">#</a></dt>
+<dd><p>Time index</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.to_dataframe">
+<span class="sig-name descname"><span class="pre">to_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.PointObservation.to_dataframe" title="Permalink to this definition">#</a></dt>
+<dd><p>Convert to pandas DataFrame</p>
 </dd></dl>
 
 <dl class="py method">
@@ -490,7 +546,31 @@ given a TrackObservation.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.values">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">values</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.values" title="Permalink to this definition">#</a></dt>
-<dd><p>Observed values</p>
+<dd><p>Values as numpy array</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.weight">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.weight" title="Permalink to this definition">#</a></dt>
+<dd><p>Weighting factor for skill scores</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.x" title="Permalink to this definition">#</a></dt>
+<dd><p>x-coordinate</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.y" title="Permalink to this definition">#</a></dt>
+<dd><p>y-coordinate</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.z">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">z</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.z" title="Permalink to this definition">#</a></dt>
+<dd><p>z-coordinate of observation point</p>
 </dd></dl>
 
 </dd></dl>
@@ -504,12 +584,15 @@ given a TrackObservation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>(</em><em>str</em><em>, </em><em>pd.DataFrame</em><em>)</em>) – path to dfs0 file or DataFrame with track data</p></li>
-<li><p><strong>item</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – item name or index of values, by default 2</p></li>
+<li><p><strong>data</strong> (<em>(</em><em>str</em><em>, </em><em>Path</em><em>, </em><em>mikeio.Dataset</em><em>, </em><em>pd.DataFrame</em><em>, </em><em>xr.Dataset</em><em>)</em>) – path to dfs0 file or object with track data</p></li>
+<li><p><strong>item</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – item name or index of values, by default None
+if data contains more than one item, item must be given</p></li>
 <li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – user-defined name for easy identification in plots etc, by default file basename</p></li>
 <li><p><strong>x_item</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – item name or index of x-coordinate, by default 0</p></li>
 <li><p><strong>y_item</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – item name or index of y-coordinate, by default 1</p></li>
 <li><p><strong>offset_duplicates</strong> (<em>float</em><em>, </em><em>optional</em>) – in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001</p></li>
+<li><p><strong>quantity</strong> (<a class="reference internal" href="#modelskill.types.Quantity" title="modelskill.types.Quantity"><em>Quantity</em></a><em>, </em><em>optional</em>) – The quantity of the observation, for validation with model results
+For MIKE dfs files this is inferred from the EUM information</p></li>
 </ul>
 </dd>
 </dl>
@@ -560,15 +643,69 @@ given a TrackObservation.</p>
 </pre></div>
 </div>
 <dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.color">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">color</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.color" title="Permalink to this definition">#</a></dt>
+<dd><p>Color of time series</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.end_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">end_time</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.end_time" title="Permalink to this definition">#</a></dt>
+<dd><p>End time of time series data</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.geometry">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">geometry</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.geometry" title="Permalink to this definition">#</a></dt>
+<dd><p>Coordinates of observation (shapely.geometry.MultiPoint)</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.gtype">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gtype</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.gtype" title="Permalink to this definition">#</a></dt>
+<dd><p>Geometry type</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.n_points">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_points</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.n_points" title="Permalink to this definition">#</a></dt>
-<dd><p>Number of observations</p>
+<dd><p>Number of data points</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.name" title="Permalink to this definition">#</a></dt>
+<dd><p>Name of time series (value item name)</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.plotter">
 <span class="sig-name descname"><span class="pre">plotter</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.plotter" title="Permalink to this definition">#</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">modelskill.timeseries.MatplotlibTimeSeriesPlotter</span></code></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.quantity">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantity</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.quantity" title="Permalink to this definition">#</a></dt>
+<dd><p>Quantity of time series</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.start_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_time</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.start_time" title="Permalink to this definition">#</a></dt>
+<dd><p>Start time of time series data</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.time" title="Permalink to this definition">#</a></dt>
+<dd><p>Time index</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.to_dataframe">
+<span class="sig-name descname"><span class="pre">to_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.TrackObservation.to_dataframe" title="Permalink to this definition">#</a></dt>
+<dd><p>Convert to pandas DataFrame</p>
 </dd></dl>
 
 <dl class="py method">
@@ -589,7 +726,25 @@ given a TrackObservation.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.values">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">values</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.values" title="Permalink to this definition">#</a></dt>
-<dd><p>Observed values</p>
+<dd><p>Values as numpy array</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.weight">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.weight" title="Permalink to this definition">#</a></dt>
+<dd><p>Weighting factor for skill scores</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.x" title="Permalink to this definition">#</a></dt>
+<dd><p>x-coordinate</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.y" title="Permalink to this definition">#</a></dt>
+<dd><p>y-coordinate</p>
 </dd></dl>
 
 </dd></dl>
@@ -730,16 +885,14 @@ given a TrackObservation.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="modelskill.comparison.Comparer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.comparison.</span></span><span class="sig-name descname"><span class="pre">Comparer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modeldata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_model_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matched_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.comparison.</span></span><span class="sig-name descname"><span class="pre">Comparer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matched_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer" title="Permalink to this definition">#</a></dt>
 <dd><p>Comparer class for comparing model and observation data.</p>
-<p>Typically, the Comparer is part of a ComparerCollection, initialized using the <cite>compare</cite> function.</p>
+<p>Typically, the Comparer is part of a ComparerCollection,
+created with the <cite>compare</cite> function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>observation</strong> (<em>Observation</em>) – Observation data</p></li>
-<li><p><strong>modeldata</strong> (<em>list of pd.DataFrame</em><em> or </em><em>list of mikeio.Dataset</em><em> or </em><em>list of xr.DataArray</em><em> or </em><em>list of xr.Dataset</em>) – Model data</p></li>
-<li><p><strong>max_model_gap</strong> (<em>float</em><em> or </em><em>int</em><em> or </em><em>np.timedelta64</em><em> or </em><em>pd.Timedelta</em><em> or </em><em>timedelta</em><em>, </em><em>optional</em>) – Maximum time gap to interpolate model data to observation time. If None, no interpolation is done.</p></li>
-<li><p><strong>matched_data</strong> (<em>xr.Dataset</em><em>, </em><em>optional</em>) – Matched data. If None, observation and modeldata must be provided.</p></li>
+<li><p><strong>matched_data</strong> (<em>xr.Dataset</em>) – Matched data</p></li>
 <li><p><strong>raw_mod_data</strong> (<em>dict of pd.DataFrame</em><em>, </em><em>optional</em>) – Raw model data. If None, observation and modeldata must be provided.</p></li>
 </ul>
 </dd>
