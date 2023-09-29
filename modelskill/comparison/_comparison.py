@@ -318,13 +318,13 @@ def _matched_data_to_xarray(
 
     if x is not None:
         ds.coords["x"] = x
-        ds.coords["x"].attrs["kind"] = "position"
+        # ds.coords["x"].attrs["kind"] = "position"
     if y is not None:
         ds.coords["y"] = y
-        ds.coords["y"].attrs["kind"] = "position"
+        # ds.coords["y"].attrs["kind"] = "position"
     if z is not None:
         ds.coords["z"] = z
-        ds.coords["z"].attrs["kind"] = "position"
+        # ds.coords["z"].attrs["kind"] = "position"
 
     return ds
 
@@ -438,12 +438,12 @@ class Comparer:
         if "x" not in matched_data:
             # Could be problematic to have "x" and "y" as reserved names
             matched_data.coords["x"] = np.nan
-            matched_data.coords["x"].attrs["kind"] = "position"
-            matched_data.coords.attrs["gtype"] = "point"
+            # matched_data.coords["x"].attrs["kind"] = "position"
+            # matched_data.coords.attrs["gtype"] = "point"
 
         if "y" not in matched_data:
             matched_data.coords["y"] = np.nan
-            matched_data.coords["y"].attrs["kind"] = "position"
+            # matched_data.coords["y"].attrs["kind"] = "position"
 
         if "color" not in matched_data["Observation"].attrs:
             matched_data["Observation"].attrs["color"] = "black"
@@ -592,12 +592,16 @@ class Comparer:
     @property
     def obs(self) -> np.ndarray:
         """Observation data as 1d numpy array"""
-        return self.data[self._obs_name].to_dataframe().values
+        return (
+            self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe().values
+        )
 
     @property
     def mod(self) -> np.ndarray:
         """Model data as 2d numpy array. Each column is a model"""
-        return self.data[self.mod_names].to_dataframe().values
+        return (
+            self.data.drop_vars(["x", "y", "z"])[self.mod_names].to_dataframe().values
+        )
 
     @property
     def n_models(self) -> int:
@@ -650,7 +654,7 @@ class Comparer:
     def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
 
-        df = self.data.to_dataframe().copy()
+        df = self.data.drop_vars(["x", "y", "z"]).to_dataframe().copy()
         other_models = [m for m in self.mod_names if m is not mod_name]
         df = df.drop(columns=other_models)
         df = df.rename(columns={mod_name: "mod_val", self._obs_name: "obs_val"})
@@ -771,7 +775,7 @@ class Comparer:
     def _to_observation(self) -> Observation:
         """Convert to Observation"""
         if self.gtype == "point":
-            df = self.data[self._obs_name].to_dataframe()
+            df = self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe()
             return PointObservation(
                 data=df,
                 name=self.name,
@@ -781,7 +785,7 @@ class Comparer:
                 # quantity=self.quantity,
             )
         elif self.gtype == "track":
-            df = self.data[["x", "y", self._obs_name]].to_dataframe()
+            df = self.data.drop_vars(["z"])[[self._obs_name]].to_dataframe()
             return TrackObservation(
                 data=df,
                 item=2,
