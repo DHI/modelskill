@@ -352,6 +352,11 @@ def _scatter_plotly(
 ):
     import plotly.graph_objects as go
 
+    if "ax" in kwargs:
+        ax = kwargs.pop("ax")
+        if ax is not None:
+            raise ValueError("Cannot pass matplotlib axes to plotly backend.")
+
     data = [
         go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),
     ]
