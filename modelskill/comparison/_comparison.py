@@ -445,6 +445,9 @@ class Comparer:
             matched_data.coords["y"] = np.nan
             # matched_data.coords["y"].attrs["kind"] = "position"
 
+        if "z" not in matched_data:
+            matched_data.coords["z"] = np.nan
+
         if "color" not in matched_data["Observation"].attrs:
             matched_data["Observation"].attrs["color"] = "black"
 
@@ -638,7 +641,7 @@ class Comparer:
     @property
     def unit_text(self) -> str:
         """Variable name and unit as text suitable for plot labels"""
-        return f"{self.data.attrs['quantity_name']} [{self.data[self._obs_name].attrs['unit']}]"
+        return f"{self.quantity.name} [{self.quantity.unit}]"
 
     @property
     def metrics(self):
@@ -654,7 +657,7 @@ class Comparer:
     def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
 
-        df = self.data.drop_vars(["x", "y", "z"]).to_dataframe().copy()
+        df = self.data.drop_vars(["z"]).to_dataframe().copy()
         other_models = [m for m in self.mod_names if m is not mod_name]
         df = df.drop(columns=other_models)
         df = df.rename(columns={mod_name: "mod_val", self._obs_name: "obs_val"})
