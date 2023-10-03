@@ -1,3 +1,4 @@
+from pathlib import Path
 from platform import architecture
 from typing import Union
 
@@ -27,9 +28,34 @@ from .types import Quantity
 from .model.factory import ModelResult
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .observation import PointObservation, TrackObservation
-from .connection import compare, Connector, from_matched
+from .matching import compare, from_matched
+from .connection import Connector
 from .settings import options, get_option, set_option, reset_option, load_style
-from .plot import plot_temporal_coverage, plot_spatial_overview
+from . import plotting
+from .comparison import ComparerCollection
+
+
+def load(filename: Union[str, Path]) -> ComparerCollection:
+    """Load a ComparerCollection from a zip file.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Filename of the zip file.
+
+    Returns
+    -------
+    ComparerCollection
+        The loaded ComparerCollection.
+
+    Examples
+    --------
+    >>> cc = ms.compare(obs, mod)
+    >>> cc.save("my_comparer_collection.msk")
+    >>> cc2 = ms.load("my_comparer_collection.msk")"""
+
+    return ComparerCollection.load(filename)
+
 
 __all__ = [
     "Quantity",
@@ -48,8 +74,7 @@ __all__ = [
     "set_option",
     "reset_option",
     "load_style",
-    "plot_temporal_coverage",
-    "plot_spatial_overview",
+    "plotting",
     "from_config",
 ]
 

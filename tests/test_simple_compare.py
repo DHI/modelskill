@@ -70,13 +70,12 @@ def test_compare_fail(fn_obs, fn_mod):
 
 
 def test_compare_obs_item(fn_mod):
-
     c = modelskill.compare(
         "tests/testdata/SW/eur_Hm0.dfs0", fn_mod, mod_item=0
     )  # obs file has only 1 item, not necessary to specify obs_item
     assert c.n_points == 67
 
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         modelskill.compare(
             "tests/testdata/SW/eur_Hm0.dfs0", fn_mod, mod_item=0, obs_item=1
         )  # file has only 1 item
@@ -93,7 +92,6 @@ def test_compare_obs_item(fn_mod):
 
 
 def test_compare_obs_item_pointobs(fn_mod):
-
     o1 = PointObservation("tests/testdata/SW/eur_Hm0_Quality.dfs0", item=0)
 
     c = modelskill.compare(o1, fn_mod, mod_item=0)
@@ -101,7 +99,6 @@ def test_compare_obs_item_pointobs(fn_mod):
 
 
 def test_compare_obs_item_pointobs_inconsistent_item_error(fn_mod):
-
     o1 = PointObservation("tests/testdata/SW/eur_Hm0_Quality.dfs0", item=0)
 
     with pytest.raises(ValueError):
@@ -109,6 +106,5 @@ def test_compare_obs_item_pointobs_inconsistent_item_error(fn_mod):
 
 
 def test_force_keyword_args(fn_obs, fn_mod):
-
     with pytest.raises(TypeError):
         modelskill.compare(fn_obs, fn_mod, 0, 0)

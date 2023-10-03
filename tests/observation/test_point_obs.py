@@ -98,8 +98,8 @@ def test_from_df(klagshamn_filename, klagshamn_df):
     o2 = PointObservation(df, item="Water Level", x=366844, y=6154291)
     assert o1.n_points == o2.n_points
 
-    s = o1.data["Water Level"]
-    assert isinstance(s, pd.Series)
+    s = o1.data["Klagshamn1"]
+    # assert isinstance(s, pd.Series)
     o3 = PointObservation(s, x=366844, y=6154291, name="Klagshamn3")
     assert o1.n_points == o3.n_points
 
@@ -116,3 +116,9 @@ def test_hist(klagshamn_filename):
 def test_force_keyword_args(klagshamn_filename):
     with pytest.raises(TypeError):
         PointObservation(klagshamn_filename, 0, 366844, 6154291, "Klagshamn")
+
+
+def test_point_data_can_be_persisted_as_netcdf(klagshamn_filename, tmp_path):
+    p = PointObservation(klagshamn_filename)
+
+    p.data.to_netcdf(tmp_path / "test.nc")

@@ -163,7 +163,14 @@ class GridModelResult(SpatialField):
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
 
-        renamed_obs_data = rename_coords_pd(observation.data)
+        # TODO
+        obs_df = (
+            observation.data
+            if isinstance(observation.data, pd.DataFrame)
+            else observation.data.to_dataframe()
+        )
+
+        renamed_obs_data = rename_coords_pd(obs_df)
         t = xr.DataArray(renamed_obs_data.index, dims="track")
         x = xr.DataArray(renamed_obs_data.x, dims="track")
         y = xr.DataArray(renamed_obs_data.y, dims="track")

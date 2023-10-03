@@ -567,10 +567,10 @@ def test_pc_to_dataframe(pc):
     assert df.y.dtype == "float64"
     assert df.model.dtype == "category"
     assert df.observation.dtype == "category"
-    assert df.x[0] == 10.0
-    assert df.y[0] == 55.0
-    assert df.model[0] == "m1"
-    assert df.model[9] == "m2"
+    assert df.iloc[0].x == 10.0
+    assert df.iloc[0].y == 55.0
+    assert df.iloc[0].model == "m1"
+    assert df.iloc[9].model == "m2"
 
 
 def test_pc_to_dataframe_add_col(pc):

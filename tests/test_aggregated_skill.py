@@ -1,11 +1,17 @@
 import pytest
 import pandas as pd
+
+import matplotlib as mpl
+
 from modelskill import (
     ModelResult,
     PointObservation,
     TrackObservation,
     Connector,
 )
+
+# use non-interactive backend for testing
+mpl.use("Agg")
 
 
 @pytest.fixture

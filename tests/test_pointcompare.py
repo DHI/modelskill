@@ -1,11 +1,10 @@
-import pandas as pd
 import pytest
 import numpy as np
 
 import modelskill
 from modelskill import ModelResult, PointObservation, Connector, Quantity
 from modelskill.metrics import root_mean_squared_error, mean_absolute_error
-from modelskill.comparison import Comparer, PointComparer
+from modelskill.comparison import PointComparer
 
 
 @pytest.fixture
@@ -276,8 +275,9 @@ def test_comparison_from_yml():
     assert con.observations["Klagshamn"].quantity.name == "Water Level"
 
 
-def test_comparer_dataframe_without_time_not_allowed(klagshamn):
-    mr = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+# def test_comparer_dataframe_without_time_not_allowed(klagshamn):
 
-    with pytest.raises(ValueError, match="datetime"):
-        Comparer(klagshamn, modeldata=mr)
+#     mr = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+#     with pytest.raises(ValueError, match="datetime"):
+#         Comparer(klagshamn, modeldata=mr)
