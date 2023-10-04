@@ -64,9 +64,6 @@ class DfsuModelResult(SpatialField):
     def __repr__(self):
         return f"<DfsuModelResult>: {self.name} ({self.quantity})>"
 
-    def __repr__(self):
-        return f"<{self.__class__.__name__}> '{self.name}'"
-
     @property
     def time(self) -> pd.DatetimeIndex:
         return pd.DatetimeIndex(self.data.time)
