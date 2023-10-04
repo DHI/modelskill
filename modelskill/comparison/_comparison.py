@@ -326,6 +326,10 @@ def _matched_data_to_xarray(
         ds.coords["z"] = z
         # ds.coords["z"].attrs["kind"] = "position"
 
+    q = Quantity.undefined()
+    ds["Observation"].attrs["long_name"] = q.name
+    ds["Observation"].attrs["units"] = q.unit
+
     return ds
 
 
@@ -422,43 +426,43 @@ class Comparer:
         # TODO get quantity from matched_data object
         # self.quantity: Quantity = Quantity.undefined()
 
-    def _parse_matched_data(self, matched_data):
-        if not isinstance(matched_data, xr.Dataset):
+    def _parse_matched_data(self, data):
+        if not isinstance(data, xr.Dataset):
             raise ValueError("matched_data must be an xarray.Dataset")
             # matched_data = self._matched_data_to_xarray(matched_data)
-        assert "Observation" in matched_data.data_vars
+        assert "Observation" in data.data_vars
 
         # no missing values allowed in Observation
-        if matched_data["Observation"].isnull().any():
+        if data["Observation"].isnull().any():
             raise ValueError("Observation data must not contain missing values.")
 
-        for key in matched_data.data_vars:
-            if "kind" not in matched_data[key].attrs:
-                matched_data[key].attrs["kind"] = "auxiliary"
-        if "x" not in matched_data:
+        for key in data.data_vars:
+            if "kind" not in data[key].attrs:
+                data[key].attrs["kind"] = "auxiliary"
+        if "x" not in data:
             # Could be problematic to have "x" and "y" as reserved names
-            matched_data.coords["x"] = np.nan
+            data.coords["x"] = np.nan
             # matched_data.coords["x"].attrs["kind"] = "position"
             # matched_data.coords.attrs["gtype"] = "point"
 
-        if "y" not in matched_data:
-            matched_data.coords["y"] = np.nan
+        if "y" not in data:
+            data.coords["y"] = np.nan
             # matched_data.coords["y"].attrs["kind"] = "position"
 
-        if "z" not in matched_data:
-            matched_data.coords["z"] = np.nan
+        if "z" not in data:
+            data.coords["z"] = np.nan
 
-        if "color" not in matched_data["Observation"].attrs:
-            matched_data["Observation"].attrs["color"] = "black"
+        if "color" not in data["Observation"].attrs:
+            data["Observation"].attrs["color"] = "black"
 
-        if "long_name" not in matched_data.attrs:
-            matched_data["Observation"].attrs["long_name"] = Quantity.undefined().name
+        if "long_name" not in data["Observation"].attrs:
+            data["Observation"].attrs["long_name"] = Quantity.undefined().name
 
-        if "units" not in matched_data["Observation"].attrs:
-            matched_data["Observation"].attrs["units"] = Quantity.undefined().unit
+        if "units" not in data["Observation"].attrs:
+            data["Observation"].attrs["units"] = Quantity.undefined().unit
 
-        matched_data.attrs["modelskill_version"] = __version__
-        return matched_data
+        data.attrs["modelskill_version"] = __version__
+        return data
 
     @classmethod
     def from_matched_data(
@@ -785,17 +789,17 @@ class Comparer:
                 x=self.x,
                 y=self.y,
                 z=self.z,
-                # quantity=self.quantity,
+                quantity=self.quantity,
             )
         elif self.gtype == "track":
             df = self.data.drop_vars(["z"])[[self._obs_name]].to_dataframe()
             return TrackObservation(
                 data=df,
-                item=2,
-                x_item=0,
-                y_item=1,
+                item=0,
+                x_item=1,
+                y_item=2,
                 name=self.name,
-                # quantity=self.quantity,
+                quantity=self.quantity,
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
