@@ -361,7 +361,9 @@ def match_time(
         # first = False
 
     # data.index.name = "time"
-    # data = data.dropna()
+
+    data = data.dropna(dim="time")
+
     # data = data.to_xarray()
     # data.attrs["gtype"] = str(gtype)
 
