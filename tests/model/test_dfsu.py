@@ -22,7 +22,6 @@ def klagshamn():
 
 @pytest.fixture
 def drogden():
-
     # >>> from pyproj import Transformer
     # >>> t = Transformer.from_crs(4326,32633, always_xy=True)
     # >>> t.transform(12.7113,55.5364)
@@ -188,14 +187,14 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
     mr1 = ModelResult(sw_dutch_coast, item=0, name="SW1")
     mr_extr_1 = mr1.extract(Hm0_EPL.copy())
     # df1 = mr1._extract_point(Hm0_EPL)
-    assert mr_extr_1.data.columns == ["SW1"]
-    assert len(mr_extr_1.data) == 23
+    assert list(mr_extr_1.data.data_vars) == ["SW1"]
+    assert mr_extr_1.n_points == 23
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ModelResult(da, name="SW1")
     mr_extr_2 = mr2.extract(Hm0_EPL.copy())
 
-    assert mr_extr_1.data.columns == mr_extr_2.data.columns
+    assert list(mr_extr_1.data.data_vars) == list(mr_extr_2.data.data_vars)
     assert np.all(mr_extr_1.data == mr_extr_2.data)
 
     c1 = mr1.extract(Hm0_EPL.copy())
@@ -210,17 +209,19 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
 def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     mr1 = ModelResult(sw_dutch_coast, item=0, name="SW1")
     mr_track1 = mr1.extract(Hm0_C2)
-    df1 = mr_track1.data
-    assert list(df1.columns) == ["x", "y", "SW1"]
-    assert len(df1) == 113
+    ds1 = mr_track1.data
+    assert "SW1" in ds1.data_vars
+    assert "x" in ds1.coords
+    assert "y" in ds1.coords
+    assert mr_track1.n_points == 113
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ModelResult(da, name="SW1")
     mr_track2 = mr2.extract(Hm0_C2.copy())
-    df2 = mr_track2.data
+    ds2 = mr_track2.data
 
-    assert list(df1.columns) == list(df2.columns)
-    assert np.all(df1 == df2)
+    assert list(ds1.data_vars) == list(ds2.data_vars)
+    assert np.all(ds1 == ds2)
 
     c1 = mr1.extract(Hm0_C2.copy())
     c2 = mr2.extract(Hm0_C2.copy())

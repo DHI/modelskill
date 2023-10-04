@@ -2,6 +2,7 @@ from datetime import timedelta
 import numpy as np
 import pytest
 import pandas as pd
+import xarray as xr
 
 import mikeio
 
@@ -102,7 +103,6 @@ def test_connector_add(o1, mr1):
 
 # TODO: remove, obsolete (has been moved to test_compare.py)
 def test_connector_dataarray(o1, o3):
-
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]  # Skip warm-up period
 
@@ -127,7 +127,6 @@ def test_connector_dataarray(o1, o3):
 def test_connector_add_two_models(
     o1: PointObservation, mr1: ModelResult, mr2: ModelResult
 ):
-
     con = Connector(o1, [mr1, mr2])
 
     assert con.n_models == 2
@@ -152,14 +151,14 @@ def test_connector_add_two_model_dataframes(
     mr2_extr = mr2.extract(o1)
     # mr2_df = mr2._extract_point_dfsu(x=o1.x, y=o1.y, item=0).to_dataframe()
 
-    assert isinstance(mr1_extr.data, pd.DataFrame)
-    assert isinstance(mr2_extr.data, pd.DataFrame)
+    assert isinstance(mr1_extr.data, xr.Dataset)
+    assert isinstance(mr2_extr.data, xr.Dataset)
 
-    assert len(mr1_extr.data.columns == 1)
-    assert len(mr2_extr.data.columns == 1)
+    assert len(mr1_extr.data.data_vars) == 1
+    assert len(mr2_extr.data.data_vars) == 1
 
-    assert len(mr1_extr.data) > 1  # Number of rows
-    assert len(mr2_extr.data) > 1  # Number of rows
+    assert mr1_extr.n_points > 1  # Number of rows
+    assert mr2_extr.n_points > 1  # Number of rows
 
     con = Connector(o1, [mr1_extr, mr2_extr])
 
@@ -241,7 +240,6 @@ def test_extract_gaps1(con13):
 
 # TODO: remove, obsolete
 def test_extract_gaps2(o2_gaps, mr12_gaps):
-
     # mr2 has no data between 2017-10-28 00:00 and 2017-10-29 00:00
     # we therefore expect the the 24 observations in this interval to be removed
     mr1, mr2 = mr12_gaps

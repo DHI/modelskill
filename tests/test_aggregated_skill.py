@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 
+import matplotlib as mpl
 
 from modelskill import (
     DfsuModelResult,
@@ -17,6 +18,9 @@ import modelskill as ms
 
 
 geopandas_installed = importlib.util.find_spec("geopandas") is not None
+
+# use non-interactive backend for testing
+mpl.use("Agg")
 
 
 @pytest.fixture

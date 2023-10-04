@@ -4,28 +4,29 @@ from typing import Optional, get_args
 
 import mikeio
 import numpy as np
+import pandas as pd
 
-from ._base import Quantity
-from .. import types, utils
-from ._base import ModelResultBase
+from ._base import SpatialField
+from ..types import Quantity, UnstructuredType
+from ..utils import _get_idx
 from .point import PointModelResult
 from .track import TrackModelResult
 from ..observation import Observation, PointObservation, TrackObservation
 
 
-class DfsuModelResult(ModelResultBase):
+class DfsuModelResult(SpatialField):
     """Construct a DfsuModelResult from a dfsu file or mikeio.Dataset/DataArray."""
 
     def __init__(
         self,
-        data: types.UnstructuredType,
+        data: UnstructuredType,
         *,
         name: str = "Undefined",
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> None:
         assert isinstance(
-            data, get_args(types.UnstructuredType)
+            data, get_args(UnstructuredType)
         ), "Could not construct DfsuModelResult from provided data"
 
         filename = None
@@ -50,18 +51,33 @@ class DfsuModelResult(ModelResultBase):
             quantity = Quantity(name=repr(data.type), unit=data.unit.name)
         else:
             item_names = [i.name for i in data.items]
-            _, idx = utils.get_item_name_and_idx(item_names, item)
+            idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
             quantity = Quantity.from_mikeio_iteminfo(item_info)
 
         self.item = item
-
-        super().__init__(data=data, name=name, quantity=quantity)
-
+        self.data: mikeio.dfsu.Dfsu2DH | mikeio.DataArray | mikeio.Dataset = data
+        self.name = name
+        self.quantity = Quantity.undefined() if quantity is None else quantity
         self.filename = filename  # TODO: remove? backward compatibility
 
     def __repr__(self):
         return f"<DfsuModelResult>: {self.name} ({self.quantity})>"
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}> '{self.name}'"
+
+    @property
+    def time(self) -> pd.DatetimeIndex:
+        return pd.DatetimeIndex(self.data.time)
+
+    @property
+    def start_time(self) -> pd.Timestamp:
+        return self.time[0]
+
+    @property
+    def end_time(self) -> pd.Timestamp:
+        return self.time[-1]
 
     def _in_domain(self, x, y) -> bool:
         return self.data.geometry.contains([x, y])  # type: ignore
@@ -80,15 +96,15 @@ class DfsuModelResult(ModelResultBase):
             A model result object with the same geometry as the observation
         """
         if isinstance(observation, PointObservation):
-            return self._extract_point(observation)
+            return self.extract_point(observation)
         elif isinstance(observation, TrackObservation):
-            return self._extract_track(observation)
+            return self.extract_track(observation)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
-    def _extract_point(self, observation: PointObservation) -> PointModelResult:
+    def extract_point(self, observation: PointObservation) -> PointModelResult:
         """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
         given a PointObservation. No time interpolation is done!"""
 
@@ -101,10 +117,6 @@ class DfsuModelResult(ModelResultBase):
             raise ValueError(
                 f"PointObservation '{observation.name}' ({x}, {y}) outside model domain!"
             )
-
-        self._validate_any_obs_in_model_time(
-            observation.name, observation.data.index, self.time
-        )
 
         # TODO: interp2d
         xy = np.atleast_2d([x, y])
@@ -129,7 +141,7 @@ class DfsuModelResult(ModelResultBase):
             quantity=self.quantity,
         )
 
-    def _extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
         """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
         given a TrackObservation."""
 
@@ -137,16 +149,17 @@ class DfsuModelResult(ModelResultBase):
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
         )
 
-        self._validate_any_obs_in_model_time(
-            observation.name, observation.data.index, self.time
+        # TODO: data could be xarray
+        track = (
+            observation.data
+            if isinstance(observation.data, pd.DataFrame)
+            else observation.data.to_dataframe()
         )
 
         if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-            ds_model = self.data.extract_track(
-                track=observation.data, items=[self.item]
-            )
+            ds_model = self.data.extract_track(track=track, items=[self.item])
         elif isinstance(self.data, (mikeio.Dataset, mikeio.DataArray)):
-            ds_model = self.data.extract_track(track=observation.data)
+            ds_model = self.data.extract_track(track=track)
         ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
 
         return TrackModelResult(

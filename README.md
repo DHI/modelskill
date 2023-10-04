@@ -82,7 +82,7 @@ c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 ### Overview of observation locations
 
 ```python
-ms.plot_spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
+ms.plotting.spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
 ```
 
 ![map](https://raw.githubusercontent.com/DHI/modelskill/main/images/map.png)
@@ -106,17 +106,3 @@ cc["HKNA"].plot.timeseries(width=1000, backend="plotly")
 ```
 
 ![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)
-
-
-## Automated reporting
-
-With a few lines of code, it will be possible to generate an automated report.
-
-```python
-from modelskill.report import Reporter
-
-rep = Reporter(mr)
-rep.to_markdown()
-```
-
-[Very basic first example report](https://github.com/DHI/modelskill/blob/main/notebooks/HKZN_local/HKZN_local.md)
