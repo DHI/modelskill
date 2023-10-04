@@ -106,13 +106,17 @@ def test_options_register_option():
 
 
 def test_load_style_mood():
+    # mood.yml
+    # -------------------------------
+    # plot.scatter.points.size: 10.0
+    # plot.scatter.oneone_line.color: darkorange
     settings.load_style(name="MOOD")
-    assert True
+    assert modelskill.get_option("plot.scatter.oneone_line.color") == "darkorange"
 
 
 def test_load_style_is_case_insensitive():
     settings.load_style(name="mOoD")
-    assert True
+    assert modelskill.get_option("plot.scatter.oneone_line.color") == "darkorange"
 
 
 def test_unknown_style_raises_error():
