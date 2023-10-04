@@ -106,12 +106,20 @@ def test_options_register_option():
 
 
 def test_load_style_mood():
+    # defaults
+    assert len(modelskill.get_option("metrics.list")) == 7
+    assert modelskill.get_option("plot.scatter.points.size") == 20
+
     # mood.yml
     # -------------------------------
     # plot.scatter.points.size: 10.0
     # plot.scatter.oneone_line.color: darkorange
     settings.load_style(name="MOOD")
     assert modelskill.get_option("plot.scatter.oneone_line.color") == "darkorange"
+    assert modelskill.get_option("plot.scatter.points.size") == 10.0
+
+    # metrics are not affected
+    assert len(modelskill.get_option("metrics.list")) == 7
 
 
 def test_load_style_is_case_insensitive():
@@ -122,3 +130,10 @@ def test_load_style_is_case_insensitive():
 def test_unknown_style_raises_error():
     with pytest.raises(KeyError, match="food"):
         settings.load_style(name="food")
+
+
+def test_setting_options_need_even_number_of_args():
+    with pytest.raises(ValueError, match="even number"):
+        settings.set_option(
+            "plot.scatter.points.size", 10, "plot.scatter.oneone_line.color"
+        )

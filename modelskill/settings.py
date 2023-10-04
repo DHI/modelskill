@@ -111,20 +111,21 @@ def _set_option(*args, **kwargs) -> None:
     # must at least 1 arg deal with constraints later
 
     if len(args) == 1 and isinstance(args[0], dict):
-        # accept a dictonary of options
-        d = args[0]
-        args = []  # type: ignore
-        for k, v in d.items():
-            args = args + [k, v]  # type: ignore
-    nargs = len(args)
-    if not nargs or nargs % 2 != 0:
-        print(f"Input was args={args}, kwargs={kwargs}")
-        raise ValueError("Must provide an even number of non-keyword arguments")
+        kwargs.update(args[0])
+
+    if len(args) % 2 == 0:
+        keys = args[::2]
+        values = args[1::2]
+        kwargs.update(dict(zip(keys, values)))
+
+    if len(args) > 1 and len(args) % 2 != 0:
+        raise ValueError("Must provide a value for each key, i.e. even number of args")
+
 
     # default to false
     kwargs.pop("silent", False)
 
-    for k, v in zip(args[::2], args[1::2]):
+    for k, v in kwargs.items():
         key = _get_single_key(k)  # , silent)
 
         o = _get_registered_option(key)
