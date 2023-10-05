@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Optional
 
 from dataclasses import dataclass
 import warnings
@@ -77,11 +77,30 @@ UnstructuredType = Union[
 GridType = Union[str, Path, List, xr.Dataset, xr.DataArray]
 
 PointType = Union[
-    str, Path, pd.DataFrame, pd.Series, mikeio.Dfs0, mikeio.DataArray, mikeio.Dataset
+    str,
+    Path,
+    pd.DataFrame,
+    pd.Series,
+    mikeio.Dfs0,
+    mikeio.Dataset,
+    mikeio.DataArray,
+    xr.Dataset,
+    xr.DataArray,
 ]
-TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset]
+TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
 
 
+@dataclass(frozen=True)
+class Period:
+    """Period of data, defined by start and end time, can be open ended"""
+
+    start: Optional[pd.Timestamp]
+    end: Optional[pd.Timestamp]
+
+
+# TODO change name of fields to match CF conventions?
+# https://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/build/ch03s03.html
+# long_name, standard_name & units
 @dataclass(frozen=True)
 class Quantity:
     """Quantity of data
@@ -137,6 +156,9 @@ class Quantity:
     @staticmethod
     def undefined():
         return Quantity(name="Undefined", unit="Undefined")
+
+    def to_dict(self):
+        return {"name": self.name, "unit": self.unit}
 
     @staticmethod
     def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo):
