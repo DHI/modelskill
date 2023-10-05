@@ -152,6 +152,7 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
             self._ts._values_as_series,
             nbins=bins,
             color_discrete_sequence=[self._ts.color],
+            **kwargs,
         )
         fig.show()
 
@@ -219,6 +220,10 @@ class TimeSeries:
 
         # Validate attrs
         assert "gtype" in ds.attrs, "data must have a gtype attribute"
+        assert ds.attrs["gtype"] in [
+            str(GeometryType.POINT),
+            str(GeometryType.TRACK),
+        ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
         if "long_name" not in da.attrs:
             da.attrs["long_name"] = Quantity.undefined().name
 
@@ -250,6 +255,7 @@ class TimeSeries:
     # setter
     @name.setter
     def name(self, name: str) -> None:
+        name = self._validate_name(name)
         self.data = self.data.rename({self._val_item: name})
 
     @property
