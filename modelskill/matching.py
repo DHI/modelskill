@@ -422,7 +422,7 @@ def parse_modeldata_list(modeldata) -> Dict[str, pd.DataFrame]:
 def _parse_single_modeldata(modeldata) -> pd.DataFrame:
     """Convert to dataframe and set index to pd.DatetimeIndex"""
     if hasattr(modeldata, "to_dataframe"):
-        mod_df = modeldata.to_dataframe()
+        mod_df = modeldata.to_dataframe().drop(columns=["z"])
     elif isinstance(modeldata, pd.DataFrame):
         mod_df = modeldata
     else:
