@@ -235,8 +235,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        if ax is None:
-            ax = plt.gca()
+        _, ax = _get_fig_ax(ax, figsize)
 
         cmp.data.Observation.to_series().plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
@@ -254,8 +253,6 @@ class ComparerPlotter:
         ax.tick_params(axis="y", which="both", length=0)
         ax.set_ylabel("")
         ax.set_title(title or f"KDE plot for {cmp.name}")
-        if figsize:
-            ax.figure.set_size_inches(figsize)
 
         # remove box around plot
         ax.spines["top"].set_visible(False)
