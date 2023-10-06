@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import pandas as pd
 import xarray as xr
+import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
 
 
@@ -311,9 +312,28 @@ def pc_plot_function(pc, request):
     return func
 
 
-def test_plots_return_an_object(pc_plot_function):
+def test_plot_returns_an_object(pc_plot_function):
     obj = pc_plot_function()
     assert obj is not None
+
+
+def test_plot_accepts_ax_if_relevant(pc_plot_function):
+    _, ax = plt.subplots()
+    ret_ax = pc_plot_function(ax=ax)
+    assert ret_ax is ax
+
+
+def test_plot_accepts_title(pc_plot_function):
+    title = "test title"
+    ax = pc_plot_function(title=title)
+    assert ax.get_title() == title
+
+
+def test_plot_accepts_figsize(pc_plot_function):
+    figsize = (10, 10)
+    ax = pc_plot_function(figsize=figsize)
+    a, b = ax.get_figure().get_size_inches()
+    assert a, b == figsize
 
 
 def test_plots_directional(pt_df):
