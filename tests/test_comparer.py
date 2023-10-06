@@ -69,6 +69,7 @@ def tc() -> Comparer:
     raw_data = {"m1": df[["x", "y", "m1"]], "m2": df[["x", "y", "m2"]]}
 
     data = df.dropna().to_xarray()
+    data = data.set_coords(["x", "y"])
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
@@ -237,7 +238,7 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
 
 def test_minimal_plots(pt_df):
     data = xr.Dataset(pt_df)
-    
+
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["color"] = "pink"
     data["Observation"].attrs["long_name"] = "Waterlevel"
