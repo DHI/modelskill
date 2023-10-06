@@ -3,6 +3,7 @@ from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.figure
+    import matplotlib.axes
 
 import matplotlib.pyplot as plt
 import numpy as np  # type: ignore
@@ -617,7 +618,9 @@ class ComparerPlotter:
             title=title,
         )
 
-    def residual_hist(self, bins=100, title=None, color=None, **kwargs):
+    def residual_hist(
+        self, bins=100, title=None, color=None, figsize=None, ax=None, **kwargs
+    ) -> matplotlib.axes.Axes:
         """plot histogram of residual values
 
         Parameters
@@ -628,16 +631,24 @@ class ComparerPlotter:
             plot title, default: Residuals, [name]
         color : str, optional
             residual color, by default "#8B8D8E"
+        figsize : tuple, optional
+            figure size, by default None
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
         kwargs : other keyword arguments to plt.hist()
+
+        Returns
+        -------
+        matplotlib.axes.Axes
         """
+        _, ax = _get_fig_ax(ax, figsize)
 
         default_color = "#8B8D8E"
         color = default_color if color is None else color
         title = f"Residuals, {self.comparer.name}" if title is None else title
-        plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
-        plt.title(title)
-        plt.xlabel(f"Residuals of {self.comparer.unit_text}")
-        ax = plt.gca()
+        ax.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
+        ax.set_title(title)
+        ax.set_xlabel(f"Residuals of {self.comparer.unit_text}")
 
         if self.is_directional:
             ticks = np.linspace(-180, 180, 9)
