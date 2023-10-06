@@ -217,7 +217,7 @@ class ComparerCollection(Mapping):
                 df["model"] = mod_name
                 df["observation"] = cmp.name
                 if self.n_variables > 1:
-                    df["variable"] = cmp.quantity_name
+                    df["variable"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
