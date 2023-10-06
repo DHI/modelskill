@@ -312,7 +312,7 @@ class ComparerPlotter:
             ymin = min([y.min(), ymin])
             ymax = max([y.max(), ymax])
             xq, yq = quantiles_xy(x, y, quantiles)
-            plt.plot(
+            ax.plot(
                 xq,
                 yq,
                 ".-",
@@ -325,18 +325,20 @@ class ComparerPlotter:
         xymax = max([xmax, ymax])
 
         # 1:1 line
-        plt.plot(
+        ax.plot(
             [xymin, xymax],
             [xymin, xymax],
             label=options.plot.scatter.oneone_line.label,
             c=options.plot.scatter.oneone_line.color,
             zorder=3,
         )
-        plt.axis("square")
-        plt.xlim([xymin, xymax])
-        plt.ylim([xymin, xymax])
-        plt.minorticks_on()
-        plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
+
+        ax: matplotlib.axes.Axes
+        ax.axis("square")
+        ax.set_xlim([xymin, xymax])
+        ax.set_ylim([xymin, xymax])
+        ax.minorticks_on()
+        ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
 
         ax.legend()
         ax.set_xlabel("Observation, " + cmp.unit_text)
