@@ -291,6 +291,31 @@ def test_minimal_plots(pt_df):
     assert "m1" in ax.get_title()
 
 
+@pytest.fixture(
+    params=[
+        "scatter",
+        "kde",
+        "qq",
+        "box",
+        "hist",
+        "timeseries",
+        "taylor",
+        "residual_hist",
+    ]
+)
+def pc_plot_function(pc, request):
+    func = getattr(pc.plot, request.param)
+    # special cases reuqire a model to be selected
+    if request.param in ["scatter", "hist", "residual_hist"]:
+        func = getattr(pc.sel(model=0).plot, request.param)
+    return func
+
+
+def test_plots_return_an_object(pc_plot_function):
+    obj = pc_plot_function()
+    assert obj is not None
+
+
 def test_plots_directional(pt_df):
     data = xr.Dataset(pt_df)
     data.attrs["quantity_name"] = "Waterlevel"
