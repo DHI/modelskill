@@ -345,7 +345,6 @@ def match_time(
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: obs_name})
 
-    # first = True
     for name, mdata in raw_mod_data.items():
         df = _model2obs_interp(observation, mdata, max_model_gap)
         if gtype == "track":
@@ -353,33 +352,10 @@ def match_time(
             df_obs = observation.data.to_pandas()  # TODO: xr.Dataset
             _mask_model_outside_observation_track(name, df, df_obs)
 
-        # if first:
-        #     data = df
-        # else:
         data[name] = df[name]
-
-        # first = False
-
-    # data.index.name = "time"
 
     data = data.dropna(dim="time")
 
-    # data = data.to_xarray()
-    # data.attrs["gtype"] = str(gtype)
-
-    # if gtype == "point":
-    #     data["x"] = observation.x
-    #     data["y"] = observation.y
-    #     data["z"] = observation.z  # type: ignore
-
-    # data.attrs["name"] = observation.name
-    # data.attrs["quantity_name"] = observation.quantity.name
-    # data["x"].attrs["kind"] = "position"
-    # data["y"].attrs["kind"] = "position"
-    # data[obs_name].attrs["kind"] = "observation"
-    # data[obs_name].attrs["unit"] = observation.quantity.unit
-    # data[obs_name].attrs["color"] = observation.color
-    # data[obs_name].attrs["weight"] = observation.weight
     for n in mod_names:
         data[n].attrs["kind"] = "model"
 
