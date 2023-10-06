@@ -125,7 +125,16 @@ class ComparerPlotter:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
     def hist(
-        self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
+        self,
+        *,
+        model=None,
+        bins=100,
+        title=None,
+        ax=None,
+        figsize=None,
+        density=True,
+        alpha=0.5,
+        **kwargs,
     ):
         """Plot histogram of model data and observations.
 
@@ -139,6 +148,10 @@ class ComparerPlotter:
             number of bins, by default 100
         title : str, optional
             plot title, default: [model name] vs [observation name]
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
+        figsize : tuple, optional
+            figure size, by default None
         density: bool, optional
             If True, draw and return a probability density
         alpha : float, optional
@@ -162,8 +175,11 @@ class ComparerPlotter:
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
 
+        _, ax = _get_fig_ax(ax, figsize)
+
         kwargs["alpha"] = alpha
         kwargs["density"] = density
+        kwargs["ax"] = ax
 
         ax = (
             cmp.data[mod_name]
@@ -172,15 +188,15 @@ class ComparerPlotter:
         )
 
         cmp.data[cmp.obs_name].to_series().hist(
-            bins=bins, color=cmp.data[cmp.obs_name].attrs["color"], ax=ax, **kwargs
+            bins=bins, color=cmp.data[cmp.obs_name].attrs["color"], **kwargs
         )
         ax.legend([mod_name, cmp.obs_name])
-        plt.title(title)
-        plt.xlabel(f"{cmp.unit_text}")
+        ax.set_title(title)
+        ax.set_xlabel(f"{cmp.unit_text}")
         if density:
-            plt.ylabel("density")
+            ax.set_ylabel("density")
         else:
-            plt.ylabel("count")
+            ax.set_ylabel("count")
 
         if self.is_directional:
             _xtick_directional(ax)
