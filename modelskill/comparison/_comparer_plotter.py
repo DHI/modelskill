@@ -32,7 +32,14 @@ class ComparerPlotter:
         return self.scatter(*args, **kwargs)
 
     def timeseries(
-        self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
+        self,
+        title=None,
+        *,
+        ylim=None,
+        ax=None,
+        figsize=None,
+        backend="matplotlib",
+        **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
 
@@ -42,6 +49,8 @@ class ComparerPlotter:
             plot title, by default None
         ylim : tuple, optional
             plot range for the model (ymin, ymax), by default None
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
         figsize : (float, float), optional
             figure size, by default None
         backend : str, optional
@@ -59,7 +68,7 @@ class ComparerPlotter:
             title = cmp.name
 
         if backend == "matplotlib":
-            _, ax = plt.subplots(figsize=figsize)
+            fig, ax = _get_fig_ax(ax, figsize)
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
                 mod_df = cmp.raw_mod_data[key]
@@ -76,7 +85,7 @@ class ComparerPlotter:
             ax.set_ylim(ylim)
             if self.is_directional:
                 _ytick_directional(ax, ylim)
-            plt.title(title)
+            ax.set_title(title)
             return ax
 
         elif backend == "plotly":  # pragma: no cover
@@ -111,7 +120,7 @@ class ComparerPlotter:
             fig.update_layout(title=title, yaxis_title=cmp.unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
 
-            fig.show()
+            return fig
         else:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
