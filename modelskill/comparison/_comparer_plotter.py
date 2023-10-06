@@ -351,7 +351,7 @@ class ComparerPlotter:
 
         return ax
 
-    def box(self, ax=None, title=None, **kwargs):
+    def box(self, ax=None, title=None, figsize=None, **kwargs):
         """Make a box plot of model data and observations.
 
         Wraps pandas.DataFrame boxplot() method.
@@ -362,6 +362,8 @@ class ComparerPlotter:
             axes to plot on, by default None
         title : str, optional
             plot title, default: [observation name]
+        figsize : tuple, optional
+            figure size, by default None
         kwargs : other keyword arguments to df.boxplot()
 
         Returns
@@ -381,8 +383,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        if ax is None:
-            ax = plt.gca()
+        _, ax = _get_fig_ax(ax, figsize)
 
         cols = ["Observation"] + cmp.mod_names
         df = cmp.data[cols].to_dataframe()
