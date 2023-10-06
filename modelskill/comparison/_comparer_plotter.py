@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import matplotlib.axes
+    import matplotlib.figure
 
 import matplotlib.pyplot as plt
 import numpy as np  # type: ignore
@@ -556,7 +556,7 @@ class ComparerPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-    ) -> None:
+    ) -> matplotlib.figure.Figure:
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
@@ -608,7 +608,7 @@ class ComparerPlotter:
             for r in df.itertuples()
         ]
 
-        taylor_diagram(
+        return taylor_diagram(
             obs_std=ref_std,
             points=pts,
             figsize=figsize,

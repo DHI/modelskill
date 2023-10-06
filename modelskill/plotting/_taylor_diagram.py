@@ -4,7 +4,7 @@ from collections import namedtuple
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import matplotlib.axes
+    import matplotlib.figure
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,7 +23,7 @@ def taylor_diagram(
     normalize_std=False,
     ax=None,
     title="Taylor diagram",
-) -> matplotlib.axes.Axes:
+) -> matplotlib.figure.Figure:
     """
     Plot a Taylor diagram using the given observations and points.
 
@@ -41,15 +41,11 @@ def taylor_diagram(
         Whether to normalize the standard deviation of the points by the standard deviation of the observations. Default is False.
     title : str, optional
         Title of the plot. Default is "Taylor diagram".
-    ax : matplotlib.axes.Axes, optional
-        Adding to existing axis. Default is None.
     Returns:
     --------
-    matplotlib.axes.Axes
-            The matplotlib axes object
+    matplotlib.figure.Figure
+            The matplotlib figure object
     """
-    if ax is not None:
-        raise NotImplementedError("Adding to existing axes is not implemented yet.")
 
     if np.isscalar(figsize):
         figsize = (figsize, figsize)
@@ -89,7 +85,4 @@ def taylor_diagram(
     )
     fig.suptitle(title, size="x-large")
 
-    axes = fig.get_axes()
-    if (len(axes)) > 1:
-        warnings.warn("More than one axes found in figure. Returning first found.")
-    return axes[0]
+    return fig
