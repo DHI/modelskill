@@ -318,13 +318,10 @@ def _matched_data_to_xarray(
 
     if x is not None:
         ds.coords["x"] = x
-        # ds.coords["x"].attrs["kind"] = "position"
     if y is not None:
         ds.coords["y"] = y
-        # ds.coords["y"].attrs["kind"] = "position"
     if z is not None:
         ds.coords["z"] = z
-        # ds.coords["z"].attrs["kind"] = "position"
 
     q = Quantity.undefined()
     ds["Observation"].attrs["long_name"] = q.name
@@ -439,17 +436,14 @@ class Comparer:
         for key in data.data_vars:
             if "kind" not in data[key].attrs:
                 data[key].attrs["kind"] = "auxiliary"
-        if "x" not in data:
+        if "x" not in data.coords:
             # Could be problematic to have "x" and "y" as reserved names
             data.coords["x"] = np.nan
-            # matched_data.coords["x"].attrs["kind"] = "position"
-            # matched_data.coords.attrs["gtype"] = "point"
 
-        if "y" not in data:
+        if "y" not in data.coords:
             data.coords["y"] = np.nan
-            # matched_data.coords["y"].attrs["kind"] = "position"
 
-        if "z" not in data:
+        if "z" not in data.coords:
             data.coords["z"] = np.nan
 
         if "color" not in data["Observation"].attrs:
@@ -577,24 +571,22 @@ class Comparer:
 
     @property
     def x(self):
-        if "x" in self.data[self._obs_name].attrs.keys():
-            return self.data[self._obs_name].attrs["x"]
-        else:
-            return self.data["x"].values
+        """x-coordinate"""
+        return self._coordinate_values("x")
 
     @property
     def y(self):
-        if "y" in self.data[self._obs_name].attrs.keys():
-            return self.data[self._obs_name].attrs["y"]
-        else:
-            return self.data["y"].values
+        """y-coordinate"""
+        return self._coordinate_values("y")
 
     @property
     def z(self):
-        if "z" in self.data[self._obs_name].attrs.keys():
-            return self.data[self._obs_name].attrs["z"]
-        else:
-            return self.data["z"].values
+        """z-coordinate"""
+        return self._coordinate_values("z")
+
+    def _coordinate_values(self, coord):
+        vals = self.data[coord].values
+        return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
     @property
     def obs(self) -> np.ndarray:
