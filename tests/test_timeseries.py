@@ -102,6 +102,7 @@ def test_timeseries_point_properties(ds_point):
     assert ts.start_time == pd.Timestamp("2000-01-01")
     assert ts.end_time == pd.Timestamp("2000-01-03")
     assert ts.n_points == 3
+    assert len(ts) == 3
     assert len(ts.color) == 7
 
 
@@ -114,6 +115,7 @@ def test_timeseries_track_properties(ds_track):
     assert ts.start_time == pd.Timestamp("2000-01-01")
     assert ts.end_time == pd.Timestamp("2000-01-03")
     assert ts.n_points == 3
+    assert len(ts) == 3
     assert len(ts.color) == 7
 
 
@@ -164,3 +166,56 @@ def test_timeseries_set_color(ds_track):
 
     with pytest.raises(ValueError, match="color"):
         ts.color = 1
+
+
+def test_timeseries_point_set_xy(ds_point):
+    ts = TimeSeries(ds_point)
+    assert ts.x == 0
+    assert ts.y == 3
+
+    ts.x = 1
+    ts.y = 2
+    assert ts.x == 1
+    assert ts.y == 2
+
+    # with pytest.raises(AssertionError, match="must be a float"):
+    #     ts.x = "1"
+
+    # with pytest.raises(AssertionError, match="must be a float"):
+    #     ts.y = None
+
+
+def test_timeseries_track_set_xy(ds_track):
+    ts = TimeSeries(ds_track)
+    assert list(ts.x) == [0, 1, 2]
+    assert list(ts.y) == [3, 4, 5]
+
+    ts.x = [1, 2, 3]
+    ts.y = [4, 5, 6]
+    assert list(ts.x) == [1, 2, 3]
+    assert list(ts.y) == [4, 5, 6]
+
+    # with pytest.raises(AssertionError):
+    #     ts.x = [8, 9] # wrong length
+
+
+def test_timeseries_point_to_dataframe(ds_point):
+    ts = TimeSeries(ds_point)
+    df = ts.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert tuple(df.columns) == ("dataitem",)
+    assert tuple(df.index.names) == ("time",)
+    assert tuple(df.index) == tuple(ts.time)
+    assert tuple(df.dataitem) == tuple(ts.data.dataitem)
+    assert len(df) == 3
+
+
+def test_timeseries_track_to_dataframe(ds_track):
+    ts = TimeSeries(ds_track)
+    df = ts.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert tuple(df.columns) == ("x", "y", "dataitem")
+    assert tuple(df.index.names) == ("time",)
+    assert tuple(df.index) == tuple(ts.time)
+    assert tuple(df.dataitem) == tuple(ts.data.dataitem)
+    assert len(df) == 3
