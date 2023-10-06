@@ -183,9 +183,11 @@ class TimeSeries:
         ), "time must be increasing (please check for duplicate times))"
 
         # Validate coordinates
-        assert "x" in ds, "data must have an x-coordinate"
-        assert "y" in ds, "data must have a y-coordinate"
-        # assert "z" in ds, "data must have a z-coordinate"
+        assert "x" in ds.coords, "data must have an x-coordinate"
+        assert "y" in ds.coords, "data must have a y-coordinate"
+        if "z" not in ds.coords:
+            ds.coords["z"] = np.nan
+        # assert "z" in ds.coords, "data must have a z-coordinate"
 
         # Validate data
         vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
@@ -372,7 +374,7 @@ class TimeSeries:
             # will otherwise be columns in the dataframe
             return self.data.drop_vars(["x", "y", "z"])[self.name].to_dataframe()
         else:
-            return self.data[["x", "y", self.name]].to_dataframe()
+            return self.data.drop_vars(["z"])[["x", "y", self.name]].to_dataframe()
 
     def trim(
         self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
