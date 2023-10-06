@@ -487,8 +487,6 @@ class ComparerPlotter:
         """
 
         cmp = self.comparer
-
-        cmp = self.comparer
         mod_id = _get_idx(model, cmp.mod_names)
         mod_name = cmp.mod_names[mod_id]
 

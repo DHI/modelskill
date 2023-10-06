@@ -8,6 +8,7 @@ import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.cm import ScalarMappable
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.ticker import MaxNLocator
@@ -17,7 +18,7 @@ import modelskill.settings as settings
 from modelskill.settings import options
 
 from ..metrics import _linear_regression
-from ._misc import quantiles_xy, sample_points, format_skill_df
+from ._misc import quantiles_xy, sample_points, format_skill_df, _get_fig_ax
 
 
 # TODO: how to handle return types and parameters for plotly backend?
@@ -228,13 +229,7 @@ def _scatter_matplotlib(
     ax,
     **kwargs,
 ) -> matplotlib.axes.Axes:
-    fig = plt.figure(
-        figsize=figsize
-    )  # Should each plotting function be responsible for creating the figure?
-    if ax is None:
-        ax = fig.subplots()
-    else:
-        fig.add_axes(ax)
+    fig, ax = _get_fig_ax(ax, figsize)
 
     ax.plot(
         [xlim[0], xlim[1]],
@@ -296,7 +291,16 @@ def _scatter_matplotlib(
         )
 
     if show_hist:
-        ax.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
+        ax.hist2d(
+            x,
+            y,
+            bins=nbins_hist,
+            cmin=0.01,
+            zorder=0.5,
+            norm=norm,
+            alpha=options.plot.scatter.points.alpha,
+            **kwargs,
+        )
 
     ax.legend(**settings.get_option("plot.scatter.legend.kwargs"))
     ax.set_xlabel(xlabel)
@@ -307,8 +311,15 @@ def _scatter_matplotlib(
     ax.minorticks_on()
     ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
     max_cbar = None
+    cmap = kwargs.get("cmap", None)
     if show_hist or (show_density and show_points):
-        cbar = fig.colorbar(ax.collections[0], fraction=0.046, pad=0.04)
+        cbar = fig.colorbar(
+            ScalarMappable(norm, cmap),
+            ax=ax,
+            fraction=0.046,
+            pad=0.04,
+            alpha=options.plot.scatter.points.alpha,
+        )
         ticks = cbar.ax.get_yticks()
         max_cbar = ticks[-1]
         cbar.set_label("# points")
