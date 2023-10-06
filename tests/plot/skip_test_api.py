@@ -6,7 +6,6 @@ import inspect
 import modelskill as ms
 import pytest
 import matplotlib.pyplot as plt
-import matplotlib.axes
 
 plt.switch_backend("Agg")
 

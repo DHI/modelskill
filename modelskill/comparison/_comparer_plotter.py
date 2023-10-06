@@ -5,7 +5,6 @@ if TYPE_CHECKING:
     import matplotlib.figure
     import matplotlib.axes
 
-import matplotlib.pyplot as plt
 import numpy as np  # type: ignore
 
 from .. import metrics as mtr
