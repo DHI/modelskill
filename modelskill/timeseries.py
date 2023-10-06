@@ -190,35 +190,35 @@ class TimeSeries:
         # assert "z" in ds.coords, "data must have a z-coordinate"
 
         # Validate data
-        vars = [v for v in ds.data_vars if v != "x" and v != "y" and v != "z"]
-        assert len(vars) > 0, "data must have at least one item"
+        vars = [v for v in ds.data_vars]
+        assert len(vars) > 0, "data must have at least one data array"
         # assert len(ds["time"]) > 0, "data must have at least one time"
+        name = None
+        n_primary = 0
         for v in vars:
+            v = TimeSeries._validate_name(v)
             assert (
                 len(ds[v].dims) == 1
             ), f"Only 0-dimensional data arrays are supported! {v} has {len(ds[v].dims)} dimensions"
             assert (
                 list(ds[v].dims)[0] == "time"
             ), f"All data arrays must have a time dimension; {v} has dimensions {ds[v].dims}"
+            if "kind" not in ds[v].attrs:
+                ds[v].attrs["kind"] = "auxiliary"
+            if ds[v].attrs["kind"] in ["model", "observation"]:
+                n_primary += 1
+                name = v
 
         # Validate primary data array
-        name = str(vars[0])
-        da = ds[name]  # By definition, first data variable is the value variable!
-        assert (
-            "kind" in da.attrs
-        ), f"The first data array {vars[0]} (the value array) must have a kind attribute!"
-        assert da.attrs["kind"] in [
-            "model",
-            "observation",
-        ], f"data array {da} attribute 'kind' must be 'model' or 'observation', not {da.attrs['kind']}"
-
-        # Validate aux data arrays
-        for v in vars[1:]:
-            if "kind" in ds[v].attrs:
-                assert ds[v].attrs["kind"] not in [
-                    "model",
-                    "observation",
-                ], f"data can only have one model/observation array! {vars[0]} is the first array and by definition the 'value' array, any subsequent arrays must be of kind 'aux', but array {v} has kind {ds[v].attrs['kind']}!"
+        if n_primary == 0:
+            raise ValueError(
+                "data must have at least one model or observation array (marked by the kind attribute)"
+            )
+        if n_primary > 1:
+            raise ValueError(
+                "data can only have one model or observation array (marked by the kind attribute)"
+            )
+        da = ds[name]
 
         # Validate attrs
         assert "gtype" in ds.attrs, "data must have a gtype attribute"
@@ -228,12 +228,8 @@ class TimeSeries:
         ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
         if "long_name" not in da.attrs:
             da.attrs["long_name"] = Quantity.undefined().name
-
         if "units" not in da.attrs:
             da.attrs["units"] = Quantity.undefined().unit
-        # assert "quantity" in da.attrs, "data must have a quantity attribute"
-        # assert "name" in da.attrs["quantity"]
-        # assert "unit" in da.attrs["quantity"]
         color = da.attrs["color"] if "color" in da.attrs else None
         da.attrs["color"] = TimeSeries._parse_color(name, color=color)
 
