@@ -247,11 +247,6 @@ class TimeSeries:
         return name
 
     @property
-    def name(self) -> str:
-        """Name of time series (value item name)"""
-        return self._val_item
-
-    @property
     def _val_item(self) -> str:
         return [
             str(v)
@@ -259,6 +254,11 @@ class TimeSeries:
             if self.data[v].attrs["kind"] == "model"
             or self.data[v].attrs["kind"] == "observation"
         ][0]
+
+    @property
+    def name(self) -> str:
+        """Name of time series (value item name)"""
+        return self._val_item
 
     # setter
     @name.setter
