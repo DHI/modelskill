@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import ClassVar, Protocol
 import numpy as np
@@ -165,12 +166,12 @@ class TimeSeries:
     plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
 
     def __post_init__(self) -> None:
-        self.data = self._validate_data(self.data)
+        self.data = self._validate_dataset(self.data)
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
         self.hist = self.plot.hist  # TODO remove this
 
     @staticmethod
-    def _validate_data(ds) -> xr.Dataset:
+    def _validate_dataset(ds) -> xr.Dataset:
         """Validate data"""
         assert isinstance(ds, xr.Dataset), "data must be a xr.Dataset"
 
@@ -250,6 +251,15 @@ class TimeSeries:
         """Name of time series (value item name)"""
         return self._val_item
 
+    @property
+    def _val_item(self) -> str:
+        return [
+            str(v)
+            for v in self.data.data_vars
+            if self.data[v].attrs["kind"] == "model"
+            or self.data[v].attrs["kind"] == "observation"
+        ][0]
+
     # setter
     @name.setter
     def name(self, name: str) -> None:
@@ -260,20 +270,20 @@ class TimeSeries:
     def quantity(self) -> Quantity:
         """Quantity of time series"""
         return Quantity(
-            name=self.data[self._val_item].attrs["long_name"],
-            unit=self.data[self._val_item].attrs["units"],
+            name=self.data[self.name].attrs["long_name"],
+            unit=self.data[self.name].attrs["units"],
         )
 
     @quantity.setter
     def quantity(self, quantity: Quantity) -> None:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
-        self.data[self._val_item].attrs["long_name"] = quantity.name
-        self.data[self._val_item].attrs["units"] = quantity.unit
+        self.data[self.name].attrs["long_name"] = quantity.name
+        self.data[self.name].attrs["units"] = quantity.unit
 
     @property
     def color(self) -> str:
         """Color of time series"""
-        return self.data[self._val_item].attrs["color"]
+        return self.data[self.name].attrs["color"]
 
     @color.setter
     def color(self, color: str | None) -> None:
@@ -323,21 +333,18 @@ class TimeSeries:
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
     @property
-    def _val_item(self) -> str:
-        # TODO: better way to find the value item
-        # (when aux is introduced this will fail need fixing)
-        vars = [v for v in self.data.data_vars if v != "x" and v != "y" and v != "z"]
-        return str(vars[0])
+    def _is_modelresult(self) -> bool:
+        return self.data[self.name].attrs["kind"] == "model"
 
     @property
     def values(self) -> np.ndarray:
         """Values as numpy array"""
-        return self.data[self._val_item].values
+        return self.data[self.name].values
 
     @property
     def _values_as_series(self) -> pd.Series:
         """Values to series (for plotting)"""
-        return self.data[self._val_item].to_series()
+        return self.data[self.name].to_series()
 
     @property
     def start_time(self) -> pd.Timestamp:
@@ -363,10 +370,13 @@ class TimeSeries:
         """Number of data points"""
         return len(self.data.time)
 
+    def copy(self):
+        return deepcopy(self)
+
     def to_dataframe(self) -> pd.DataFrame:
         """Convert to pandas DataFrame"""
         if self.gtype == str(GeometryType.POINT):
-            # we need to remove the scalar coordinate variables as they
+            # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
             return self.data.drop_vars(["x", "y", "z"])[self.name].to_dataframe()
         else:

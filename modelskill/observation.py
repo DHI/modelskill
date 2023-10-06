@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import mikeio
-from copy import deepcopy
 
 from .utils import _get_name, make_unique_index
 from .types import GeometryType, PointType, TrackType, Quantity
@@ -67,9 +66,6 @@ class Observation(TimeSeries):
     ):
         data["time"] = self._parse_time(data.time)
 
-        # if name is None:
-        #     name = "Observation"
-
         super().__init__(data=data)
         self.data[self.name].attrs["weight"] = weight
         self.data[self.name].attrs["color"] = color
@@ -90,9 +86,6 @@ class Observation(TimeSeries):
                 f"Input must have a datetime index! Provided index was {type(time.to_index())}"
             )
         return time.dt.round("100us")
-
-    def copy(self):
-        return deepcopy(self)
 
 
 class PointObservation(Observation):
@@ -200,7 +193,7 @@ class PointObservation(Observation):
         name = self._validate_name(name)
 
         ds = ds.dropna(dim="time")
-        vars = [v for v in ds.data_vars]  # if v != "x" and v != "y" and v != "z"]
+        vars = [v for v in ds.data_vars]
         ds = ds.rename({vars[0]: name})
         ds[name].attrs["kind"] = "observation"
 
@@ -407,7 +400,7 @@ class TrackObservation(Observation):
         ds["time"] = make_unique_index(
             ds.time.to_index(), offset_duplicates=offset_duplicates
         )
-        ds = ds.dropna(dim="time", subset=["x", "y"])
+        ds = ds.dropna(dim="time", subset=["x", "y"])  # , name])
 
         ds[name].attrs["kind"] = "observation"
         ds.attrs["gtype"] = str(GeometryType.TRACK)
