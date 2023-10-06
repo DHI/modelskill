@@ -74,11 +74,11 @@ def test_timeseries_validation_fails_gtype(ds_point):
 
 def test_timeseries_validation_fails_kind(ds_point):
     ds_point["dataitem"].attrs["kind"] = "MODEL"
-    with pytest.raises(AssertionError, match="attribute 'kind' must be"):
+    with pytest.raises(ValueError, match="kind attribute"):
         TimeSeries(ds_point)
 
     ds_point["dataitem"].attrs["kind"] = "aux"
-    with pytest.raises(AssertionError, match="attribute 'kind' must be"):
+    with pytest.raises(ValueError, match="kind attribute"):
         TimeSeries(ds_point)
 
 
