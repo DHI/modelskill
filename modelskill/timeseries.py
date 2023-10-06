@@ -193,10 +193,10 @@ class TimeSeries:
         vars = [v for v in ds.data_vars]
         assert len(vars) > 0, "data must have at least one data array"
         # assert len(ds["time"]) > 0, "data must have at least one time"
-        name = None
+        name = ""
         n_primary = 0
         for v in vars:
-            v = TimeSeries._validate_name(v)
+            v = TimeSeries._validate_name(str(v))
             assert (
                 len(ds[v].dims) == 1
             ), f"Only 0-dimensional data arrays are supported! {v} has {len(ds[v].dims)} dimensions"
