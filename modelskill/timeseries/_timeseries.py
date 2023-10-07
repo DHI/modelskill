@@ -9,8 +9,8 @@ import xarray as xr
 
 import mikeio
 
-from .types import GeometryType, PointType, Quantity, TrackType
-from .utils import _get_name, make_unique_index
+from ..types import GeometryType, PointType, Quantity, TrackType
+from ..utils import _get_name, make_unique_index
 
 DEFAULT_COLORS = [
     "#b30000",
