@@ -377,7 +377,9 @@ class TimeSeries:
         """Check if two TimeSeries are equal"""
         return self.data.equals(other.data)
 
-    def __eq__(self, other: TimeSeries) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TimeSeries):
+            raise NotImplementedError("Can only compare TimeSeries objects")
         return self.equals(other)
 
     def to_dataframe(self) -> pd.DataFrame:
