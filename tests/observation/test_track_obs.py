@@ -66,7 +66,7 @@ def test_non_unique_index():
 
 
 def test_trackobservation_item_dfs0(c2):
-    with pytest.raises(ValueError, match="Cannot infer item names"):
+    with pytest.raises(ValueError, match="more than 3 items, but item was not given"):
         TrackObservation(c2)
 
     o1 = TrackObservation(c2, item=2)
@@ -83,7 +83,7 @@ def test_trackobservation_item_csv():
     with pytest.raises(ValueError, match="Input has only 2 items"):
         TrackObservation(df[["lon", "surface_elevation"]])
 
-    with pytest.raises(ValueError, match="Cannot infer item names"):
+    with pytest.raises(ValueError, match="more than 3 items, but item was not given"):
         TrackObservation(df)
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
@@ -109,7 +109,7 @@ def test_trackobservation_x_y_item(c2):
     cols = ["lat", "surface_elevation", "lon", "wind_speed"]
     df = df_in[cols]  # re-order columns
 
-    with pytest.raises(ValueError, match="Cannot infer item names"):
+    with pytest.raises(ValueError, match="more than 3 items, but item was not given"):
         TrackObservation(df)
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
@@ -121,12 +121,12 @@ def test_trackobservation_x_y_item(c2):
         o2 = TrackObservation(df, item="surface_elevation", x_item=2, y_item=0)
     assert o2.n_points == 1115  # including 5 NaN
 
-    with pytest.raises(ValueError, match="must be unique"):
+    with pytest.raises(ValueError, match="must be different"):
         TrackObservation(df, item=-1, x_item="lon", y_item="lon")
 
     cols = ["lat", "surface_elevation", "lon"]
     df = df_in[cols]
-    with pytest.raises(ValueError, match="Multiple items available"):
+    with pytest.raises(ValueError, match="must be different"):
         TrackObservation(df, x_item="lon", y_item="lat")
 
 

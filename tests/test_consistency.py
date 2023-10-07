@@ -321,14 +321,14 @@ def test_consistency_trackobservation(fn5, func):
 )
 def test_consistency_trackobservation_fails(fn5, data_provider):
     """Test that it fails when item is not specified"""
-    with pytest.raises(ValueError, match="Cannot infer item names from input"):
+    with pytest.raises(ValueError, match="more than 3 items, but item was not given"):
         ms.TrackObservation(data_provider(fn5))
 
-    with pytest.raises(ValueError, match="Cannot infer item names from input"):
+    with pytest.raises(ValueError, match="more than 3 items, but item was not given"):
         ms.TrackObservation(data_provider(fn5), x_item="swh")
 
     # same item given twice
-    with pytest.raises(ValueError, match="must be unique"):
+    with pytest.raises(ValueError, match="must be different"):
         ms.TrackObservation(data_provider(fn5), item="Longitude", x_item=0, y_item=1)
 
 
