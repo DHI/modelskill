@@ -373,6 +373,13 @@ class TimeSeries:
     def copy(self):
         return deepcopy(self)
 
+    def equals(self, other: TimeSeries) -> bool:
+        """Check if two TimeSeries are equal"""
+        return self.data.equals(other.data)
+
+    def __eq__(self, other: TimeSeries) -> bool:
+        return self.equals(other)
+
     def to_dataframe(self) -> pd.DataFrame:
         """Convert to pandas DataFrame"""
         if self.gtype == str(GeometryType.POINT):
