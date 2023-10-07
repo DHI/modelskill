@@ -10,7 +10,7 @@ import xarray as xr
 import mikeio
 
 from .types import GeometryType, PointType, Quantity, TrackType
-from .utils import _get_name, make_unique_index, get_item_name_and_idx
+from .utils import _get_name, make_unique_index
 
 DEFAULT_COLORS = [
     "#b30000",
@@ -126,9 +126,9 @@ def _parse_track_items(items, x_item, y_item, item) -> TrackItem:
         elif len(items) > 3:
             raise ValueError("Input has more than 3 items, but item was not given!")
 
-    item, _ = get_item_name_and_idx(items, item)
-    x_item, _ = get_item_name_and_idx(items, x_item)
-    y_item, _ = get_item_name_and_idx(items, y_item)
+    item = _get_name(item, valid_names=items)
+    x_item = _get_name(x_item, valid_names=items)
+    y_item = _get_name(y_item, valid_names=items)
 
     if (item == x_item) or (item == y_item) or (x_item == y_item):
         raise ValueError(
@@ -144,6 +144,7 @@ def _parse_track_input(
     quantity: Optional[Quantity],
     x_item: str | int,
     y_item: str | int,
+    offset_duplicates: float = 0.001,
 ) -> xr.Dataset:
     assert isinstance(
         data, get_args(TrackType)
@@ -191,11 +192,14 @@ def _parse_track_input(
         ds = data
 
     ds = ds.rename({ti.x: "x", ti.y: "y"})
+
+    # A unique index makes lookup much faster O(1)
+    ds["time"] = make_unique_index(
+        ds["time"].to_index(), offset_duplicates=offset_duplicates
+    )
     ds = ds.dropna(dim="time", subset=["x", "y"])
-    ds["time"] = make_unique_index(ds["time"].to_index(), offset_duplicates=0.001)
 
     SPATIAL_DIMS = ["x", "y", "z"]
-
     for dim in SPATIAL_DIMS:
         if dim in ds:
             ds = ds.set_coords(dim)
