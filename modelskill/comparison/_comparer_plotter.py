@@ -333,7 +333,6 @@ class ComparerPlotter:
             zorder=3,
         )
 
-        ax: matplotlib.axes.Axes
         ax.axis("square")
         ax.set_xlim([xymin, xymax])
         ax.set_ylim([xymin, xymax])
@@ -556,7 +555,7 @@ class ComparerPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-    ) -> matplotlib.figure.Figure:
+    ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 

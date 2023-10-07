@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Tuple, TYPE_CHECKING
+from typing import Optional, Sequence, Tuple, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -46,7 +46,7 @@ def scatter(
     units: Optional[str] = "",
     ax: Optional[Axes] = None,
     **kwargs,
-) -> matplotlib.axes.Axes:
+):
     """Scatter plot showing compared data: observation vs modelled
     Optionally, with density histogram.
 
@@ -164,7 +164,7 @@ def scatter(
         # scale Z by sample size
         z = z * len(x) / len(x_sample)
 
-    PLOTTING_BACKENDS = {
+    PLOTTING_BACKENDS: dict[str, Callable] = {
         "matplotlib": _scatter_matplotlib,
         "plotly": _scatter_plotly,
     }
