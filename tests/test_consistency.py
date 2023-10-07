@@ -14,7 +14,7 @@ def fn1():
 @pytest.fixture
 def fn5():
     """Track file with 5 items"""
-    return "tests/testdata/SW/alti_c2_Dutch_short.dfs0"
+    return "tests/testdata/SW/Alti_c2_Dutch_short.dfs0"
 
 
 def _all_equal(iterable):
@@ -330,6 +330,7 @@ def test_consistency_trackobservation_fails(fn5, data_provider):
     # same item given twice
     with pytest.raises(ValueError, match="must be unique"):
         ms.TrackObservation(data_provider(fn5), item="Longitude", x_item=0, y_item=1)
+
 
 def test_consistency_track_obs_mod(fn5):
     """Test that observation and modelresult are (almost) equal"""
