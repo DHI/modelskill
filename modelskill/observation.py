@@ -16,7 +16,7 @@ import mikeio
 
 from .utils import _get_name, make_unique_index
 from .types import GeometryType, PointType, TrackType, Quantity
-from .timeseries import TimeSeries
+from .timeseries import TimeSeries, _validate_name
 
 
 def _get_item_names(
@@ -190,7 +190,7 @@ class PointObservation(Observation):
             )
 
         name = name or item_name
-        name = self._validate_name(name)
+        name = _validate_name(name)
 
         ds = ds.dropna(dim="time")
         vars = [v for v in ds.data_vars]
@@ -380,7 +380,7 @@ class TrackObservation(Observation):
             )
 
         name = name or item_names[2]
-        name = self._validate_name(name)
+        name = _validate_name(name)
 
         # make sure that x and y are named x and y
         old_xy_names = list(ds.data_vars)[:2]

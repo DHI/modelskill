@@ -1,13 +1,16 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Protocol
+from pathlib import Path
+from typing import ClassVar, Protocol, get_args, Optional, List
 import numpy as np
-
 import pandas as pd
 import xarray as xr
 
-from .types import GeometryType, Quantity
+import mikeio
+
+from .types import GeometryType, PointType, Quantity, TrackType
+from .utils import _get_name, make_unique_index, get_item_name_and_idx
 
 DEFAULT_COLORS = [
     "#b30000",
@@ -20,6 +23,200 @@ DEFAULT_COLORS = [
     "#8be04e",
     "#ebdc78",
 ]
+
+
+def _parse_point_input(
+    data: PointType,
+    name: Optional[str],
+    item: str | int | None,
+    quantity: Optional[Quantity],
+) -> xr.Dataset:
+    """Convert accepted input data to an xr.Dataset"""
+    assert isinstance(
+        data, get_args(PointType)
+    ), f"Could not construct object from provided data of type {type(data)}"
+
+    if isinstance(data, (str, Path)):
+        assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
+        name = name or Path(data).stem
+        data = mikeio.read(data)  # now mikeio.Dataset
+    elif isinstance(data, mikeio.Dfs0):
+        data = data.read()  # now mikeio.Dataset
+
+    # parse items
+    if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):  # type: ignore
+        item_name = data.name if hasattr(data, "name") else "PointModelResult"
+        if item is not None:
+            raise ValueError(f"item must be None when data is a {type(data)}")
+    elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):  # type: ignore
+        if isinstance(data, mikeio.Dataset):
+            valid_items = [i.name for i in data.items]
+        elif isinstance(data, pd.DataFrame):
+            valid_items = list(data.columns)
+        else:
+            valid_items = list(data.data_vars)
+        item_name = _get_name(x=item, valid_names=valid_items)
+
+    # select relevant items
+    if isinstance(data, mikeio.DataArray):
+        data = mikeio.Dataset(data)
+    elif isinstance(data, pd.Series):
+        data = data.to_frame()
+    elif isinstance(data, xr.DataArray):
+        data = data.to_dataset()
+    else:
+        data = data[[item_name]]
+    assert isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset))
+
+    # parse quantity
+    if isinstance(data, mikeio.Dataset):
+        if quantity is None:
+            quantity = Quantity.from_mikeio_iteminfo(data[0].item)
+    model_quantity = Quantity.undefined() if quantity is None else quantity
+
+    # convert to xr.Dataset
+    if isinstance(data, mikeio.Dataset):
+        ds = data.to_xarray()
+    elif isinstance(data, pd.DataFrame):
+        data.index.name = "time"
+        ds = data.to_xarray()
+    else:
+        assert len(data.dims) == 1, "Only 0-dimensional data are supported"
+        if data.coords[list(data.coords)[0]].name != "time":
+            data = data.rename({list(data.coords)[0]: "time"})
+        ds = data
+
+    name = name or item_name
+    name = _validate_name(name)
+
+    # basic processing
+    ds = ds.dropna(dim="time")
+
+    vars = [v for v in ds.data_vars]
+    assert len(ds.data_vars) == 1
+    ds = ds.rename({vars[0]: name})
+
+    ds[name].attrs["long_name"] = model_quantity.name
+    ds[name].attrs["units"] = model_quantity.unit
+
+    ds.attrs["gtype"] = str(GeometryType.POINT)
+    return ds
+
+
+@dataclass
+class TrackItem:
+    x: str
+    y: str
+    values: str
+
+    @property
+    def all(self) -> List[str]:
+        return [self.x, self.y, self.values]
+
+
+def _parse_track_items(items, x_item, y_item, item) -> TrackItem:
+    """If input has exactly 3 items we accept item=None"""
+    if len(items) < 3:
+        raise ValueError(
+            f"Input has only {len(items)} items. It should have at least 3."
+        )
+    if item is None:
+        if len(items) == 3:
+            item = 2
+        elif len(items) > 3:
+            raise ValueError("Input has more than 3 items, but item was not given!")
+
+    item, _ = get_item_name_and_idx(items, item)
+    x_item, _ = get_item_name_and_idx(items, x_item)
+    y_item, _ = get_item_name_and_idx(items, y_item)
+
+    if (item == x_item) or (item == y_item) or (x_item == y_item):
+        raise ValueError(
+            f"x-item ({x_item}), y-item ({y_item}) and value-item ({item}) must be different!"
+        )
+    return TrackItem(x=x_item, y=y_item, values=item)
+
+
+def _parse_track_input(
+    data: TrackType,
+    name: Optional[str],
+    item: str | int | None,
+    quantity: Optional[Quantity],
+    x_item: str | int,
+    y_item: str | int,
+) -> xr.Dataset:
+    assert isinstance(
+        data, get_args(TrackType)
+    ), "Could not construct TrackModelResult from provided data."
+
+    if isinstance(data, (str, Path)):
+        assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
+        name = name or Path(data).stem
+        data = mikeio.read(data)  # now mikeio.Dataset
+    elif isinstance(data, mikeio.Dfs0):
+        data = data.read()  # now mikeio.Dataset
+
+    # parse items
+    if isinstance(data, mikeio.Dataset):
+        valid_items = [i.name for i in data.items]
+    elif isinstance(data, pd.DataFrame):
+        valid_items = list(data.columns)
+    elif isinstance(data, xr.Dataset):
+        valid_items = list(data.data_vars)
+    else:
+        raise ValueError("Could not construct TrackModelResult from provided data")
+
+    ti = _parse_track_items(valid_items, x_item, y_item, item)
+    name = name or ti.values
+    name = _validate_name(name)
+
+    # parse quantity
+    if isinstance(data, mikeio.Dataset):
+        if quantity is None:
+            quantity = Quantity.from_mikeio_iteminfo(data[ti.values].item)
+    model_quantity = Quantity.undefined() if quantity is None else quantity
+
+    # select relevant items and convert to xr.Dataset
+    assert isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset))
+    data = data[ti.all]
+    if isinstance(data, mikeio.Dataset):
+        ds = data.to_xarray()
+    elif isinstance(data, pd.DataFrame):
+        data.index.name = "time"
+        ds = data.to_xarray()
+    else:
+        assert len(data.dims) == 1, "Only 0-dimensional data are supported"
+        if data.coords[list(data.coords)[0]].name != "time":
+            data = data.rename({list(data.coords)[0]: "time"})
+        ds = data
+
+    ds = ds.rename({ti.x: "x", ti.y: "y"})
+    ds = ds.dropna(dim="time", subset=["x", "y"])
+    ds["time"] = make_unique_index(ds["time"].to_index(), offset_duplicates=0.001)
+
+    SPATIAL_DIMS = ["x", "y", "z"]
+
+    for dim in SPATIAL_DIMS:
+        if dim in ds:
+            ds = ds.set_coords(dim)
+
+    assert len(ds.data_vars) == 1
+    data_var = str(list(ds.data_vars)[0])
+    ds = ds.rename({data_var: name})
+    ds[name].attrs["long_name"] = model_quantity.name
+    ds[name].attrs["units"] = model_quantity.unit
+
+    ds.attrs["gtype"] = str(GeometryType.TRACK)
+    return ds
+
+
+def _validate_name(name: str) -> str:
+    assert isinstance(name, str), "name must be a string"
+    RESERVED_NAMES = ["x", "y", "z", "time"]
+    assert (
+        name not in RESERVED_NAMES
+    ), f"name '{name}' is reserved and cannot be used! Please choose another name."
+    return name
 
 
 class TimeSeriesPlotter(Protocol):
@@ -197,7 +394,7 @@ class TimeSeries:
         name = ""
         n_primary = 0
         for v in vars:
-            v = TimeSeries._validate_name(str(v))
+            v = _validate_name(str(v))
             assert (
                 len(ds[v].dims) == 1
             ), f"Only 0-dimensional data arrays are supported! {v} has {len(ds[v].dims)} dimensions"
@@ -236,16 +433,6 @@ class TimeSeries:
 
         return ds
 
-    @staticmethod
-    def _validate_name(name: str) -> str:
-        """Validate name"""
-        assert isinstance(name, str), "name must be a string"
-        RESERVED_NAMES = ["x", "y", "z", "time"]
-        assert (
-            name not in RESERVED_NAMES
-        ), f"name '{name}' is reserved and cannot be used! Please choose another name."
-        return name
-
     @property
     def _val_item(self) -> str:
         return [
@@ -263,7 +450,7 @@ class TimeSeries:
     # setter
     @name.setter
     def name(self, name: str) -> None:
-        name = self._validate_name(name)
+        name = _validate_name(name)
         self.data = self.data.rename({self._val_item: name})
 
     @property
@@ -357,7 +544,7 @@ class TimeSeries:
         return self.time[-1]  # type: ignore
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}> '{self.name}'"
+        return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points}))"
 
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables
