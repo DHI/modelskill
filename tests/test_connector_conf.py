@@ -33,9 +33,9 @@ def o3():
     return ms.TrackObservation(fn, item=3, name="c2")
 
 
-@pytest.fixture
-def con32(o1, o2, o3, mr1, mr2):
-    return ms.Connector([o1, o2, o3], [mr1, mr2])
+# @pytest.fixture
+# def con32(o1, o2, o3, mr1, mr2):
+#     return ms.Connector([o1, o2, o3], [mr1, mr2])
 
 
 @pytest.fixture

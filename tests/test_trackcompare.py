@@ -28,9 +28,7 @@ def modelresult():
 
 @pytest.fixture
 def comparer(observation, modelresult):
-    con = ms.Connector(observation, modelresult)
-    cc = con.extract()
-    return cc
+    return ms.compare(observation, modelresult)
 
 
 def test_skill(comparer):
