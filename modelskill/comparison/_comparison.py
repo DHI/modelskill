@@ -20,7 +20,9 @@ from copy import deepcopy
 
 from .. import metrics as mtr
 from .. import Quantity
+from ..types import GeometryType
 from ..observation import Observation, PointObservation, TrackObservation
+from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
 from ._utils import (
     _parse_metric,
@@ -40,29 +42,68 @@ if TYPE_CHECKING:
     from ._collection import ComparerCollection
 
 
-def _parse_matched_data(self, data):
+def _parse_dataset(data) -> xr.Dataset:
     if not isinstance(data, xr.Dataset):
         raise ValueError("matched_data must be an xarray.Dataset")
         # matched_data = self._matched_data_to_xarray(matched_data)
     assert "Observation" in data.data_vars
 
+    # Validate time
+    assert len(data.dims) == 1, "Only 0-dimensional data are supported"
+    assert list(data.dims)[0] == "time", "data must have a time dimension"
+    assert isinstance(data.time.to_index(), pd.DatetimeIndex), "time must be datetime"
+    assert (
+        data.time.to_index().is_monotonic_increasing
+    ), "time must be increasing (please check for duplicate times))"
+
     # no missing values allowed in Observation
     if data["Observation"].isnull().any():
         raise ValueError("Observation data must not contain missing values.")
 
-    for key in data.data_vars:
-        if "kind" not in data[key].attrs:
-            data[key].attrs["kind"] = "auxiliary"
+    # coordinates
     if "x" not in data.coords:
-        # Could be problematic to have "x" and "y" as reserved names
         data.coords["x"] = np.nan
-
     if "y" not in data.coords:
         data.coords["y"] = np.nan
-
     if "z" not in data.coords:
         data.coords["z"] = np.nan
 
+    # Validate data
+    vars = [v for v in data.data_vars]
+    assert len(vars) > 1, "dataset must have at least two data arrays"
+    mod_names = []
+    n_obs = 0
+    for v in data.data_vars:
+        v = _validate_data_var_name(str(v))
+        assert (
+            len(data[v].dims) == 1
+        ), f"Only 0-dimensional data arrays are supported! {v} has {len(data[v].dims)} dimensions"
+        assert (
+            list(data[v].dims)[0] == "time"
+        ), f"All data arrays must have a time dimension; {v} has dimensions {data[v].dims}"
+        if "kind" not in data[v].attrs:
+            data[v].attrs["kind"] = "auxiliary"
+        if data[v].attrs["kind"] == "observation":
+            n_obs += 1
+        if data[v].attrs["kind"] == "model":
+            mod_names.append(v)
+
+    # Validate observation data array
+    if n_obs != 1:
+        raise ValueError(
+            f"dataset must have exactly one observation array (marked by the kind attribute), this has {n_obs}"
+        )
+    if len(mod_names) == 0:
+        raise ValueError(
+            "dataset must have at least one model array (marked by the kind attribute)"
+        )
+
+    # Validate attrs
+    assert "gtype" in data.attrs, "data must have a gtype attribute"
+    assert data.attrs["gtype"] in [
+        str(GeometryType.POINT),
+        str(GeometryType.TRACK),
+    ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
     if "color" not in data["Observation"].attrs:
         data["Observation"].attrs["color"] = "black"
 
@@ -338,7 +379,7 @@ class Comparer:
     ):
         self.plot = Comparer.plotter(self)
 
-        self.data = _parse_matched_data(matched_data)
+        self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
             raw_mod_data
             if raw_mod_data is not None
