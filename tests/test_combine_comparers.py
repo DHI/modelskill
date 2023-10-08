@@ -1,7 +1,6 @@
 import pytest
 
 import modelskill as ms
-from modelskill import Connector
 
 
 @pytest.fixture
