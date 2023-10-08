@@ -331,10 +331,15 @@ def test_plot_accepts_title(pc_plot_function):
     ret_obj = pc_plot_function(title=expected_title)
 
     # Handle both ax and fig titles
+    title = None
     if hasattr(ret_obj, "get_title"):
         title = ret_obj.get_title()
     elif hasattr(ret_obj, "get_suptitle"):
         title = ret_obj.get_suptitle()
+    elif hasattr(ret_obj, "_suptitle"):  # older versions of matplotlib
+        title = ret_obj._suptitle.get_text()
+    else:
+        raise pytest.fail("Could not access title from return object.")
 
     assert title == expected_title
 
