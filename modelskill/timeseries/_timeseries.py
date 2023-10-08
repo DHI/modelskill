@@ -118,7 +118,6 @@ class TimeSeries:
     def __post_init__(self) -> None:
         self.data = _validate_dataset(self.data)
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
-        # self.hist = self.plot.hist  # TODO remove this
 
     @property
     def _val_item(self) -> str:
@@ -220,7 +219,7 @@ class TimeSeries:
         return self.time[-1]  # type: ignore
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points}))"
+        return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"
 
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables
@@ -272,41 +271,28 @@ class TimeSeries:
         start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
         end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
 
-        if isinstance(self.data, (pd.DataFrame, pd.Series)):
-            self.data = self.data.loc[start_time:end_time]  # type: ignore
-        else:
-            # assume xr
-            self.data = self.data.sel(time=slice(start_time, end_time))
+        self.data = self.data.sel(time=slice(start_time, end_time))
 
+    def interp_time(self, new_time: pd.DatetimeIndex) -> TimeSeries:
+        """Interpolate time series to new time index
 
-# TODO: add interp_time method
-#     def interp_time(self, new_time: pd.DatetimeIndex) -> TimeSeries:
-#         """Interpolate time series to new time index
+        Parameters
+        ----------
+        new_time : pd.DatetimeIndex
+            new time index
 
-#         Parameters
-#         ----------
-#         new_time : pd.DatetimeIndex
-#             new time index
+        Returns
+        -------
+        TimeSeries
+            interpolated time series
+        """
+        if not isinstance(new_time, pd.DatetimeIndex):
+            try:
+                new_time = pd.DatetimeIndex(new_time)
+            except Exception:
+                raise ValueError(
+                    "new_time must be a pandas DatetimeIndex (or convertible to one)"
+                )
 
-#         Returns
-#         -------
-#         TimeSeries
-#             interpolated time series
-#         """
-#         new_df = _interp_time(self.data, new_time)
-#         return TimeSeries(
-#             name=self.name,
-#             data=new_df,
-#             quantity=self.quantity,
-#             color=self.color,
-#         )
-
-
-# def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
-#     """Interpolate time series to new time index"""
-#     new_df = (
-#         df.reindex(df.index.union(new_time))
-#         .interpolate(method="time", limit_area="inside")
-#         .reindex(new_time)
-#     )
-#     return new_df
+        # TODO: self.__class__
+        return TimeSeries(self.data.interp(time=new_time))
