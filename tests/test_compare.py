@@ -4,21 +4,19 @@ import pandas as pd
 import pytest
 import mikeio
 import modelskill as ms
-from modelskill import ModelResult
-from modelskill.observation import PointObservation, TrackObservation
 from modelskill.comparison._comparison import ItemSelection
 
 
 @pytest.fixture
 def o1():
     fn = "tests/testdata/SW/HKNA_Hm0.dfs0"
-    return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
+    return ms.PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
 
 
 @pytest.fixture
 def o2():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
-    return PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
+    return ms.PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
 
 
 @pytest.fixture
@@ -28,13 +26,13 @@ def o2_gaps():
     dt = pd.Timedelta(180, unit="s")
     obs.index = obs.index - dt
     obs.index = obs.index.round("S")
-    return PointObservation(obs, item=0, x=3.2760, y=51.9990, name="EPL")
+    return ms.PointObservation(obs, item=0, x=3.2760, y=51.9990, name="EPL")
 
 
 @pytest.fixture
 def o3():
     fn = "tests/testdata/SW/Alti_c2_Dutch.dfs0"
-    return TrackObservation(fn, item=3, name="c2")
+    return ms.TrackObservation(fn, item=3, name="c2")
 
 
 @pytest.fixture
@@ -48,27 +46,27 @@ def mr12_gaps():
     # keep 2017-10-28 00:00 and 2017-10-29 00:00
     # but remove the 11 steps in between
     df2.loc["2017-10-28 01:00":"2017-10-28 23:00"] = np.nan
-    mr1 = ModelResult(df1, name="mr1")
-    mr2 = ModelResult(df2, name="mr2")
+    mr1 = ms.ModelResult(df1, name="mr1")
+    mr2 = ms.ModelResult(df2, name="mr2")
     return mr1, mr2
 
 
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, item=0, name="SW_1")
+    return ms.ModelResult(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, item=0, name="SW_2")
+    return ms.ModelResult(fn, item=0, name="SW_2")
 
 
 @pytest.fixture
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
-    return ModelResult(fn, item=0, name="SW_3")
+    return ms.ModelResult(fn, item=0, name="SW_3")
 
 
 def test_compare_multi_obs_multi_model(o1, o2, o3, mr1, mr2):

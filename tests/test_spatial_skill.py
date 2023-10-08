@@ -1,53 +1,49 @@
 import pytest
 import pandas as pd
 import xarray as xr
-from modelskill import (
-    ModelResult,
-    PointObservation,
-    TrackObservation,
-    Connector,
-)
+
+import modelskill as ms
 
 
 @pytest.fixture
 def cc1():
     fn = "tests/testdata/NorthSeaHD_and_windspeed.dfsu"
-    mr = ModelResult(fn, item=0, name="HD")
+    mr = ms.ModelResult(fn, item=0, name="HD")
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        o1 = TrackObservation(df, item=2, name="alti")
+        o1 = ms.TrackObservation(df, item=2, name="alti")
 
-    con = Connector(o1, mr)
+    con = ms.Connector(o1, mr)
     return con.extract()
 
 
 @pytest.fixture
 def o1():
     fn = "tests/testdata/SW/HKNA_Hm0.dfs0"
-    return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
+    return ms.PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
 
 
 @pytest.fixture
 def o2():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
-    return PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
+    return ms.PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
 
 
 @pytest.fixture
 def o3():
     fn = "tests/testdata/SW/Alti_c2_Dutch.dfs0"
-    return TrackObservation(fn, item=3, name="c2")
+    return ms.TrackObservation(fn, item=3, name="c2")
 
 
 @pytest.fixture
 def cc2(o1, o2, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    mr1 = ModelResult(fn, item=0, name="SW_1")
+    mr1 = ms.ModelResult(fn, item=0, name="SW_1")
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    mr2 = ModelResult(fn, item=0, name="SW_2")
+    mr2 = ms.ModelResult(fn, item=0, name="SW_2")
 
-    con = Connector([o1, o2, o3], [mr1, mr2])
+    con = ms.Connector([o1, o2, o3], [mr1, mr2])
     return con.extract()
 
 
