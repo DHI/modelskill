@@ -9,7 +9,7 @@ import mikeio
 
 from ..types import GeometryType, Quantity, TrackType
 from ..utils import _get_name, make_unique_index
-from ._timeseries import _validate_name
+from ._timeseries import _validate_data_var_name
 
 
 @dataclass
@@ -78,7 +78,7 @@ def _parse_track_input(
 
     ti = _parse_track_items(valid_items, x_item, y_item, item)
     name = name or ti.values
-    name = _validate_name(name)
+    name = _validate_data_var_name(name)
 
     # parse quantity
     if isinstance(data, mikeio.Dataset):

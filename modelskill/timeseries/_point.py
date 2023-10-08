@@ -8,7 +8,7 @@ import mikeio
 
 from ..types import GeometryType, PointType, Quantity
 from ..utils import _get_name
-from ._timeseries import _validate_name
+from ._timeseries import _validate_data_var_name
 
 
 def _parse_point_input(
@@ -73,7 +73,7 @@ def _parse_point_input(
         ds = data
 
     name = name or item_name
-    name = _validate_name(name)
+    name = _validate_data_var_name(name)
 
     # basic processing
     ds = ds.dropna(dim="time")
