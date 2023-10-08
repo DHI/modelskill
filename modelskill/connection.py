@@ -1,5 +1,4 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
 import os
 
 import yaml
@@ -8,7 +7,6 @@ from typing import (
     Union,
     Mapping,
     Sequence,
-    Any,
 )
 import warnings
 import numpy as np
@@ -25,28 +23,7 @@ from . import plotting
 from .comparison import Comparer, ComparerCollection
 
 
-class _BaseConnector(ABC):
-    def __init__(self) -> None:
-        self.modelresults: {}  # type: ignore
-        self.name = None
-        self.obs: Any = None
-
-    @property
-    def n_models(self):
-        """Number of (unique) model results in Connector."""
-        return len(self.modelresults)
-
-    @property
-    def mod_names(self):
-        """Names of (unique) model results in Connector."""
-        return list(self.modelresults.keys())
-
-    @abstractmethod
-    def extract(self):
-        pass
-
-
-class SingleObsConnector(_BaseConnector):
+class SingleObsConnector:
     """A connection between a single observation and model(s)"""
 
     def __repr__(self):
@@ -65,7 +42,7 @@ class SingleObsConnector(_BaseConnector):
         return f"<{self.__class__.__name__}> {txt}"
 
     def __init__(self, obs, mod, weight=1.0, validate=True):
-        super().__init__()
+        self.obs = None
         obs = self._parse_observation(obs)
         self.name = obs.name
         modelresults = self._parse_model(mod)
@@ -126,6 +103,16 @@ class SingleObsConnector(_BaseConnector):
 
         return True
 
+    @property
+    def n_models(self):
+        """Number of (unique) model results in Connector."""
+        return len(self.modelresults)
+
+    @property
+    def mod_names(self):
+        """Names of (unique) model results in Connector."""
+        return list(self.modelresults.keys())
+
     def plot_observation_positions(self, figsize=None):
         """Plot observation points on a map showing the model domain
 
@@ -159,107 +146,13 @@ class SingleObsConnector(_BaseConnector):
         comparer = _single_obs_compare(
             obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
         )
-        return self._comparer_or_None(comparer)
-
-    @staticmethod
-    def _comparer_or_None(comparer, warn=True):
-        """If comparer is empty issue warning and return None."""
         if comparer.n_points == 0:
-            if warn:
-                name = comparer.name
-                warnings.warn(f"No overlapping data was found for {name}!")
+            warnings.warn(f"No overlapping data was found for {comparer.name}!")
             return None
         return comparer
 
 
-# class PointConnector(SingleObsConnector):
-
-
-#     def extract(self, max_model_gap: Optional[float] = None) -> Optional[PointComparer]:
-#         """Extract model results at times and positions of observation.
-
-#         Returns
-#         -------
-#         PointComparer
-#             A comparer object for further analysis and plotting.
-#         """
-
-#         # assert isinstance(self.obs, PointObservation)
-#         # df_model = []
-#         # for mr in self.modelresults:
-#         #     if hasattr(mr, "extract"):
-#         #         mr = mr.extract(self.obs)
-
-#         #     df = mr.to_dataframe()  # TODO: xr.Dataset
-#         #     if (df is not None) and (len(df) > 0):
-#         #         df_model.append(df)
-#         #     else:
-#         #         warnings.warn(
-#         #             f"No data found when extracting '{self.obs.name}' from model '{mr.name}'"
-#         #         )
-
-#         # if len(df_model) == 0:
-#         #     warnings.warn(
-#         #         f"No overlapping data was found for PointObservation '{self.obs.name}'!"
-#         #     )
-#         #     return None
-
-#         # raw_mod_data = parse_modeldata_list(df_model)
-#         # matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
-
-#         # comparer = PointComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
-#         comparer = _single_obs_compare(
-#             obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
-#         )
-#         return self._comparer_or_None(comparer)
-
-
-# class TrackConnector(SingleObsConnector):
-#     def _parse_observation(self, obs) -> TrackObservation:
-#         if isinstance(obs, TrackObservation):
-#             return obs
-#         else:
-#             raise ValueError(f"Unknown track observation type {type(obs)}")
-
-#     def extract(self, max_model_gap: Optional[float] = None) -> Optional[TrackComparer]:
-#         """Extract model results at times and positions of track observation.
-
-#         Returns
-#         -------
-#         TrackComparer
-#             A comparer object for further analysis and plotting."""
-
-#         # assert isinstance(self.obs, TrackObservation)
-#         # df_model = []
-#         # for mr in self.modelresults:
-#         #     if hasattr(mr, "extract"):
-#         #         mr = mr.extract(self.obs)
-
-#         #     df = mr.data
-#         #     if (df is not None) and (len(df) > 0):
-#         #         df_model.append(df)
-#         #     else:
-#         #         warnings.warn(
-#         #             f"No data in extracted track '{self.obs.name}' from model '{mr.name}'"
-#         #         )
-
-#         # if len(df_model) == 0:
-#         #     warnings.warn(
-#         #         f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
-#         #     )
-#         #     return None
-
-#         # raw_mod_data = parse_modeldata_list(df_model)
-#         # matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
-
-#         # comparer = TrackComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
-#         comparer = _single_obs_compare(
-#             obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
-#         )
-#         return self._comparer_or_None(comparer)
-
-
-class Connector(_BaseConnector, Mapping, Sequence):
+class Connector(Mapping, Sequence):
     """The Connector is used for matching Observations and ModelResults
 
     It is one of the most important classes in modelskill. The connections are
@@ -300,12 +193,22 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """Names of (unique) observations in Connector."""
         return list(self.observations.keys())
 
+    @property
+    def n_models(self):
+        """Number of (unique) model results in Connector."""
+        return len(self.modelresults)
+
+    @property
+    def mod_names(self):
+        """Names of (unique) model results in Connector."""
+        return list(self.modelresults.keys())
+
     def __repr__(self):
         txt = "<Connector> with \n"
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
     def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
-        super().__init__()
+        self.name = None
         self.connections = {}
         self.observations = {}
         self.modelresults = {}
@@ -437,8 +340,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
 
         cmps = [con.extract(*args, **kwargs) for con in self.connections.values()]
-        cc = ComparerCollection(cmps)
-        return cc
+        return ComparerCollection(cmps)
 
     def plot_observation_positions(self, title=None, figsize=None):
         """Plot observation points on a map showing the model domain
@@ -636,7 +538,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
 
         Parameters
         ----------
-        configuration : Union[atr, dict]
+        configuration : Union[str, dict]
             path to config file or dict with configuration
         validate_eum : bool, optional
             require eum to match, by default True
