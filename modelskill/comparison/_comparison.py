@@ -99,11 +99,15 @@ def _parse_dataset(data) -> xr.Dataset:
         )
 
     # Validate attrs
-    assert "gtype" in data.attrs, "data must have a gtype attribute"
-    assert data.attrs["gtype"] in [
-        str(GeometryType.POINT),
-        str(GeometryType.TRACK),
-    ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
+    # TODO: should we
+    if "gtype" not in data.attrs:
+        data.attrs["gtype"] = str(GeometryType.POINT)
+    # assert "gtype" in data.attrs, "data must have a gtype attribute"
+    # assert data.attrs["gtype"] in [
+    #     str(GeometryType.POINT),
+    #     str(GeometryType.TRACK),
+    # ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
+
     if "color" not in data["Observation"].attrs:
         data["Observation"].attrs["color"] = "black"
 
@@ -291,6 +295,11 @@ def _matched_data_to_xarray(
         ds.coords["y"] = y
     if z is not None:
         ds.coords["z"] = z
+
+    if x is None or np.isscalar(x):
+        ds.attrs["gtype"] = str(GeometryType.POINT)
+    else:
+        ds.attrs["gtype"] = str(GeometryType.TRACK)
 
     q = Quantity.undefined()
     ds["Observation"].attrs["long_name"] = q.name
