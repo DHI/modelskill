@@ -43,11 +43,6 @@ def cc(mr1, mr2, o1, o2, o3):
     return ms.compare([o1, o2, o3], [mr1, mr2])
 
 
-# def test_connector(mr1, mr2, o1):
-#     con = Connector(o1, [mr1, mr2])
-#     assert len(con.observations) == 1
-
-
 def test_compare(mr1, mr2, o1, o2, o3):
     cc = ms.compare([o1, o2, o3], [mr1, mr2])
 

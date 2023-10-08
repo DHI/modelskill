@@ -32,16 +32,10 @@ def modelresult_oresund_WL():
 @pytest.fixture
 def cc(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
-    con = ms.Connector([klagshamn, drogden], mr, validate=False)
-    return con.extract()
+    return ms.compare([klagshamn, drogden], mr)
 
 
-def test_get_comparer_by_name(modelresult_oresund_WL, klagshamn, drogden):
-    mr = modelresult_oresund_WL
-
-    con = ms.Connector([klagshamn, drogden], mr, validate=False)
-    cc = con.extract()
-
+def test_get_comparer_by_name(cc):
     assert len(cc) == 2
     assert "Klagshamn" in cc.keys()
     assert "dmi_30357_Drogden_Fyr" in cc.keys()
@@ -65,12 +59,7 @@ def test_get_comparer_by_position(cc):
     # assert isinstance(ccs, ComparerCollection)
 
 
-def test_iterate_over_comparers(modelresult_oresund_WL, klagshamn, drogden):
-    mr = modelresult_oresund_WL
-
-    con = ms.Connector([klagshamn, drogden], mr, validate=False)
-    cc = con.extract()
-
+def test_iterate_over_comparers(cc):
     assert len(cc) == 2
     for c in cc:
         assert isinstance(c, Comparer)
@@ -85,9 +74,8 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
         name="Klagshamn",
     )
     mr = modelresult_oresund_WL
-    con = ms.Connector(o1, mr)
-    c = con.extract()
-    df = c["Klagshamn"].skill().df
+    cc = ms.compare(o1, mr)
+    df = cc["Klagshamn"].skill().df
     assert not np.any(np.isnan(df))
 
 
@@ -106,15 +94,14 @@ def test_extraction_no_overlap(modelresult_oresund_WL):
     # assert "Could not add observation" in str(wn[1].message)
     assert len(con.observations) == 1
     with pytest.warns(UserWarning, match="No overlapping data"):
-        c = con.extract()
-    assert c.n_comparers == 0
+        cc = con.extract()
+    assert cc.n_comparers == 0
 
 
 def test_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    con = ms.Connector([klagshamn, drogden], mr, validate=False)
-    cc = con.extract()
+    cc = ms.compare([klagshamn, drogden], mr)
 
     assert cc.score(metric=root_mean_squared_error) > 0.0
     cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
@@ -123,8 +110,7 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    con = ms.Connector([klagshamn, drogden], mr, validate=False)
-    cc = con.extract()
+    cc = ms.compare([klagshamn, drogden], mr)
     unweighted_skill = cc.score()
 
     con = ms.Connector()
@@ -147,8 +133,7 @@ def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
 def test_misc_properties(klagshamn, drogden):
     mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    con = ms.Connector([klagshamn, drogden], mr, validate=False)
-    cc = con.extract()
+    cc = ms.compare([klagshamn, drogden], mr)
 
     assert len(cc) == 2
     assert cc.n_comparers == 2
@@ -176,8 +161,7 @@ def test_misc_properties(klagshamn, drogden):
 def test_skill(klagshamn, drogden):
     mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    con = ms.Connector([klagshamn, drogden], mr, validate=False)
-    cc = con.extract()
+    cc = ms.compare([klagshamn, drogden], mr)
 
     df = cc.skill().df
     assert df.loc["Klagshamn"].n == 167
@@ -190,8 +174,7 @@ def test_skill(klagshamn, drogden):
 def test_skill_choose_metrics(klagshamn, drogden):
     mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    con = ms.Connector([klagshamn, drogden], mr, validate=False)
-    cc = con.extract()
+    cc = ms.compare([klagshamn, drogden], mr)
 
     cc.metrics = ["mae", "si"]
 
@@ -258,17 +241,17 @@ def test_comparison_from_dict():
     )
 
     con = ms.from_config(configuration, validate_eum=False)
-    c = con.extract()
-    assert len(c) == 2
-    assert c.n_comparers == 2
-    assert c.n_models == 1
+    cc = con.extract()
+    assert len(cc) == 2
+    assert cc.n_comparers == 2
+    assert cc.n_models == 1
 
 
 def test_comparison_from_yml():
     con = ms.from_config("tests/testdata/conf.yml", validate_eum=False)
-    c = con.extract()
+    cc = con.extract()
 
-    assert len(c) == 2
-    assert c.n_comparers == 2
-    assert c.n_models == 1
+    assert len(cc) == 2
+    assert cc.n_comparers == 2
+    assert cc.n_models == 1
     assert con.observations["Klagshamn"].quantity.name == "Water Level"
