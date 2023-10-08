@@ -97,7 +97,7 @@ class ComparerCollection(Mapping):
 
         Parameters
         ----------
-        comparer : (PointComparer, TrackComparer, ComparerCollection)
+        comparer : (Comparer, ComparerCollection)
             Comparer to add to this collection
         """
         if isinstance(comparer, (ComparerCollection, Sequence)):

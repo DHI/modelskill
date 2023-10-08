@@ -55,8 +55,8 @@ def test_extract(mr1, mr2, o1, o2, o3):
 
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
-    assert "PointComparer" in repr(cc["EPL"])
-    assert "TrackComparer" in repr(cc[2])
+    assert "Comparer" in repr(cc["EPL"])
+    assert "Comparer" in repr(cc[2])
 
 
 def test_add_comparer(mr1, mr2, o1, o2):
@@ -65,8 +65,8 @@ def test_add_comparer(mr1, mr2, o1, o2):
     cc = cc1 + cc2
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
-    assert "PointComparer" in repr(cc["EPL"])
-    assert "PointComparer" in repr(cc["HKNA"])
+    assert "Comparer" in repr(cc["EPL"])
+    assert "Comparer" in repr(cc["HKNA"])
 
 
 def test_add_same_comparer_twice(mr1, mr2, o1, o2):
@@ -78,8 +78,8 @@ def test_add_same_comparer_twice(mr1, mr2, o1, o2):
     assert len(cc) == 2  # adding the same comparer again doesn't have any effect
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
-    assert "PointComparer" in repr(cc["EPL"])
-    assert "PointComparer" in repr(cc["HKNA"])
+    assert "Comparer" in repr(cc["EPL"])
+    assert "Comparer" in repr(cc["HKNA"])
 
 
 def test_mm_skill(cc):

@@ -1308,9 +1308,9 @@ class Comparer:
         return self.plot.residual_hist(bins=bins, title=title, color=color, **kwargs)
 
 
-class PointComparer(Comparer):
-    pass
+# class PointComparer(Comparer):
+#     pass
 
 
-class TrackComparer(Comparer):
-    pass
+# class TrackComparer(Comparer):
+#     pass

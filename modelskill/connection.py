@@ -18,11 +18,11 @@ import matplotlib.pyplot as plt
 import mikeio
 
 from modelskill import ModelResult
-from .matching import match_time, parse_modeldata_list
+from .matching import _single_obs_compare
 from .observation import Observation, PointObservation, TrackObservation
 from .utils import is_iterable_not_str
 from . import plotting
-from .comparison import PointComparer, ComparerCollection, TrackComparer
+from .comparison import Comparer, ComparerCollection
 
 
 class _BaseConnector(ABC):
@@ -46,7 +46,7 @@ class _BaseConnector(ABC):
         pass
 
 
-class _SingleObsConnector(_BaseConnector):
+class SingleObsConnector(_BaseConnector):
     """A connection between a single observation and model(s)"""
 
     def __repr__(self):
@@ -106,21 +106,9 @@ class _SingleObsConnector(_BaseConnector):
         for mod in modelresults:
             # has_mod_item = self._has_mod_item(mod)
             quantity_match = obs.quantity.is_compatible(mod.quantity)
-            in_domain = self._validate_in_domain(obs, mod)
             time_overlaps = self._validate_start_end(obs, mod)
-            ok = ok and quantity_match and in_domain and time_overlaps
+            ok = ok and quantity_match and time_overlaps
         return ok
-
-    @staticmethod
-    def _validate_in_domain(obs, mod):
-        in_domain = True
-        # if isinstance(mod, protocols.ModelResult) and isinstance(obs, PointObservation):
-        #     in_domain = mod._in_domain(obs.x, obs.y)
-        #     if not in_domain:
-        #         warnings.warn(
-        #             f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
-        #         )
-        return in_domain
 
     @staticmethod
     def _validate_start_end(obs, mod):
@@ -150,6 +138,29 @@ class _SingleObsConnector(_BaseConnector):
             obs=[self.obs], mod=self.modelresults, figsize=figsize
         )
 
+    def _parse_observation(self, obs):
+        if isinstance(obs, Observation):
+            return obs
+        elif isinstance(obs, (pd.Series, pd.DataFrame)):
+            return PointObservation(obs)
+        elif isinstance(obs, str):
+            return PointObservation(obs)
+        else:
+            raise ValueError(f"Unknown observation type {type(obs)}")
+
+    def extract(self, max_model_gap: Optional[float] = None) -> Optional[Comparer]:
+        """Extract model results at times and positions of observation.
+
+        Returns
+        -------
+        Comparer
+            A comparer object for further analysis and plotting.
+        """
+        comparer = _single_obs_compare(
+            obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
+        )
+        return self._comparer_or_None(comparer)
+
     @staticmethod
     def _comparer_or_None(comparer, warn=True):
         """If comparer is empty issue warning and return None."""
@@ -161,117 +172,91 @@ class _SingleObsConnector(_BaseConnector):
         return comparer
 
 
-class PointConnector(_SingleObsConnector):
-    """Connector for a single PointObservation and ModelResults
-
-    Typically, not constructed directly, but part of a Connector.
-
-    Examples
-    --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
-    >>> con1 = PointConnector(o1, mr)
-    >>> con = Connector(o1, mr)    # con[0] = con1
-    """
-
-    def _parse_observation(self, obs):
-        if isinstance(obs, (pd.Series, pd.DataFrame)):
-            return PointObservation(obs)
-        elif isinstance(obs, str):
-            return PointObservation(obs)
-        elif isinstance(obs, Observation):
-            return obs
-        else:
-            raise ValueError(f"Unknown observation type {type(obs)}")
-
-    def extract(self, max_model_gap: Optional[float] = None) -> Optional[PointComparer]:
-        """Extract model results at times and positions of observation.
-
-        Returns
-        -------
-        PointComparer
-            A comparer object for further analysis and plotting.
-        """
-
-        assert isinstance(self.obs, PointObservation)
-        df_model = []
-        for mr in self.modelresults:
-            if hasattr(mr, "extract"):
-                mr = mr.extract(self.obs)
-
-            df = mr.to_dataframe()  # TODO: xr.Dataset
-            if (df is not None) and (len(df) > 0):
-                df_model.append(df)
-            else:
-                warnings.warn(
-                    f"No data found when extracting '{self.obs.name}' from model '{mr.name}'"
-                )
-
-        if len(df_model) == 0:
-            warnings.warn(
-                f"No overlapping data was found for PointObservation '{self.obs.name}'!"
-            )
-            return None
-
-        raw_mod_data = parse_modeldata_list(df_model)
-        matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
-
-        comparer = PointComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
-        return self._comparer_or_None(comparer)
+# class PointConnector(SingleObsConnector):
 
 
-class TrackConnector(_SingleObsConnector):
-    """Connector for a single TrackObservation and ModelResults
+#     def extract(self, max_model_gap: Optional[float] = None) -> Optional[PointComparer]:
+#         """Extract model results at times and positions of observation.
 
-    Typically, not constructed directly, but part of a Connector.
+#         Returns
+#         -------
+#         PointComparer
+#             A comparer object for further analysis and plotting.
+#         """
 
-    Examples
-    --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> o1 = TrackObservation(df, item=2, name="altimeter")
-    >>> con1 = TrackConnector(o1, mr)
-    >>> con = Connector(o1, mr)    # con[0] = con1
-    """
+#         # assert isinstance(self.obs, PointObservation)
+#         # df_model = []
+#         # for mr in self.modelresults:
+#         #     if hasattr(mr, "extract"):
+#         #         mr = mr.extract(self.obs)
 
-    def _parse_observation(self, obs) -> TrackObservation:
-        if isinstance(obs, TrackObservation):
-            return obs
-        else:
-            raise ValueError(f"Unknown track observation type {type(obs)}")
+#         #     df = mr.to_dataframe()  # TODO: xr.Dataset
+#         #     if (df is not None) and (len(df) > 0):
+#         #         df_model.append(df)
+#         #     else:
+#         #         warnings.warn(
+#         #             f"No data found when extracting '{self.obs.name}' from model '{mr.name}'"
+#         #         )
 
-    def extract(self, max_model_gap: Optional[float] = None) -> Optional[TrackComparer]:
-        """Extract model results at times and positions of track observation.
+#         # if len(df_model) == 0:
+#         #     warnings.warn(
+#         #         f"No overlapping data was found for PointObservation '{self.obs.name}'!"
+#         #     )
+#         #     return None
 
-        Returns
-        -------
-        TrackComparer
-            A comparer object for further analysis and plotting."""
+#         # raw_mod_data = parse_modeldata_list(df_model)
+#         # matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
 
-        assert isinstance(self.obs, TrackObservation)
-        df_model = []
-        for mr in self.modelresults:
-            if hasattr(mr, "extract"):
-                mr = mr.extract(self.obs)
+#         # comparer = PointComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
+#         comparer = _single_obs_compare(
+#             obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
+#         )
+#         return self._comparer_or_None(comparer)
 
-            df = mr.data
-            if (df is not None) and (len(df) > 0):
-                df_model.append(df)
-            else:
-                warnings.warn(
-                    f"No data in extracted track '{self.obs.name}' from model '{mr.name}'"
-                )
 
-        if len(df_model) == 0:
-            warnings.warn(
-                f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
-            )
-            return None
+# class TrackConnector(SingleObsConnector):
+#     def _parse_observation(self, obs) -> TrackObservation:
+#         if isinstance(obs, TrackObservation):
+#             return obs
+#         else:
+#             raise ValueError(f"Unknown track observation type {type(obs)}")
 
-        raw_mod_data = parse_modeldata_list(df_model)
-        matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
+#     def extract(self, max_model_gap: Optional[float] = None) -> Optional[TrackComparer]:
+#         """Extract model results at times and positions of track observation.
 
-        comparer = TrackComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
-        return self._comparer_or_None(comparer)
+#         Returns
+#         -------
+#         TrackComparer
+#             A comparer object for further analysis and plotting."""
+
+#         # assert isinstance(self.obs, TrackObservation)
+#         # df_model = []
+#         # for mr in self.modelresults:
+#         #     if hasattr(mr, "extract"):
+#         #         mr = mr.extract(self.obs)
+
+#         #     df = mr.data
+#         #     if (df is not None) and (len(df) > 0):
+#         #         df_model.append(df)
+#         #     else:
+#         #         warnings.warn(
+#         #             f"No data in extracted track '{self.obs.name}' from model '{mr.name}'"
+#         #         )
+
+#         # if len(df_model) == 0:
+#         #     warnings.warn(
+#         #         f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
+#         #     )
+#         #     return None
+
+#         # raw_mod_data = parse_modeldata_list(df_model)
+#         # matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
+
+#         # comparer = TrackComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
+#         comparer = _single_obs_compare(
+#             obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
+#         )
+#         return self._comparer_or_None(comparer)
 
 
 class Connector(_BaseConnector, Mapping, Sequence):
@@ -370,13 +355,12 @@ class Connector(_BaseConnector, Mapping, Sequence):
             for j, o in enumerate(obs):
                 self.add(o, mod, weight=weight[j], validate=validate)
             return
-        elif isinstance(obs, _SingleObsConnector):
+        elif isinstance(obs, SingleObsConnector):
             con = obs
+        elif isinstance(obs, Observation):
+            con = SingleObsConnector(obs, mod, weight=weight, validate=validate)
         else:
-            if isinstance(obs, TrackObservation):
-                con = TrackConnector(obs, mod, weight=weight, validate=validate)
-            else:
-                con = PointConnector(obs, mod, weight=weight, validate=validate)
+            raise ValueError(f"Unknown observation type {type(obs)}")
         if con.n_models > 0:  # What other option is there??
             if con.name not in self.connections:
                 self.connections[con.name] = con

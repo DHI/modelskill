@@ -4,7 +4,7 @@ import numpy as np
 import modelskill
 from modelskill import ModelResult, PointObservation, Connector, Quantity
 from modelskill.metrics import root_mean_squared_error, mean_absolute_error
-from modelskill.comparison import PointComparer
+from modelskill.comparison import Comparer
 
 
 @pytest.fixture
@@ -51,11 +51,11 @@ def test_get_comparer_by_name(modelresult_oresund_WL, klagshamn, drogden):
 
 def test_get_comparer_by_position(cc):
     cc0 = cc[0]
-    assert isinstance(cc0, PointComparer)
+    assert isinstance(cc0, Comparer)
     assert cc0.name == "Klagshamn"
 
     cc1 = cc[-1]
-    assert isinstance(cc1, PointComparer)
+    assert isinstance(cc1, Comparer)
     assert cc1.name == "dmi_30357_Drogden_Fyr"
 
     with pytest.raises(NotImplementedError):
@@ -74,7 +74,7 @@ def test_iterate_over_comparers(modelresult_oresund_WL, klagshamn, drogden):
 
     assert len(cc) == 2
     for c in cc:
-        assert isinstance(c, PointComparer)
+        assert isinstance(c, Comparer)
 
 
 def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):

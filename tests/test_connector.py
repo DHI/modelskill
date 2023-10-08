@@ -9,7 +9,7 @@ import mikeio
 from modelskill import ModelResult
 from modelskill import PointObservation, TrackObservation
 from modelskill import Connector
-from modelskill.connection import PointConnector
+from modelskill.connection import SingleObsConnector
 
 
 @pytest.fixture
@@ -90,9 +90,9 @@ def con32(o1, o2, o3, mr1, mr2):
 
 
 def test_point_connector_repr(o1, mr1):
-    con = PointConnector(o1, mr1)
+    con = SingleObsConnector(o1, mr1)
     txt = repr(con)
-    assert "PointConnector" in txt
+    assert "SingleObsConnector" in txt
 
 
 def test_connector_add(o1, mr1):
