@@ -17,14 +17,14 @@ from ..spatial import SpatialSkill
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
-from ._comparison import (
-    Comparer,
+from ._comparison import Comparer
+from ._utils import (
+    _parse_metric,
+    _add_spatial_grid_to_df,
+    _groupby_df,
+    _parse_groupby,
     IdOrNameTypes,
     TimeTypes,
-    _parse_metric,
-    _parse_groupby,
-    _groupby_df,
-    _add_spatial_grid_to_df,
 )
 from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
 
