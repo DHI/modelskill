@@ -29,7 +29,7 @@ from .model.factory import ModelResult
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .observation import PointObservation, TrackObservation
 from .matching import compare, from_matched
-from .connection import Connector
+from .connection import Connector, from_config
 from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
 from .comparison import ComparerCollection
@@ -77,11 +77,3 @@ __all__ = [
     "plotting",
     "from_config",
 ]
-
-
-def from_config(
-    configuration: Union[dict, str], *, validate_eum=True, relative_path=True
-):
-    return Connector.from_config(
-        configuration, validate_eum=validate_eum, relative_path=relative_path
-    )
