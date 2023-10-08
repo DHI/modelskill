@@ -361,6 +361,7 @@ def match_time(
     for n in mod_names:
         data[n].attrs["kind"] = "model"
 
+    data.attrs["gtype"] = gtype
     data.attrs["modelskill_version"] = __version__
 
     return data
