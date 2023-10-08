@@ -1,6 +1,7 @@
 import pytest
 import matplotlib.pyplot as plt
 import numpy as np
+
 import modelskill as ms
 import modelskill.metrics as mtr
 
@@ -67,18 +68,16 @@ def wind3():
 
 @pytest.fixture
 def cc_1model(mr1Hm0, mr1WS, o1, o2, o3, wind1, wind2, wind3):
-    con = ms.Connector()
-    con.add([o1, o2, o3], mr1Hm0)
-    con.add([wind1, wind2, wind3], mr1WS)
-    return con.extract()
+    cc1 = ms.compare([o1, o2, o3], mr1Hm0)
+    cc2 = ms.compare([wind1, wind2, wind3], mr1WS)
+    return cc1 + cc2
 
 
 @pytest.fixture
-def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):
-    con = ms.Connector()
-    con.add([o1, o2, o3], [mr1Hm0, mr2Hm0])
-    con.add([wind1, wind2, wind3], [mr1WS, mr2WS])
-    return con.extract()
+def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):    
+    cc1 = ms.compare([o1, o2, o3], [mr1Hm0, mr2Hm0])
+    cc2 = ms.compare([wind1, wind2, wind3], [mr1WS, mr2WS])
+    return cc1 + cc2
 
 
 def test_n_variables(cc):

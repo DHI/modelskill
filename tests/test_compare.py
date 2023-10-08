@@ -127,9 +127,6 @@ def test_extract_gaps2(o2_gaps, mr12_gaps):
     # mr2 has no data between 2017-10-28 00:00 and 2017-10-29 00:00
     # we therefore expect the the 24 observations in this interval to be removed
     mr1, mr2 = mr12_gaps
-    # con1 = Connector(o2_gaps, mr1)
-    # con2 = Connector(o2_gaps, mr2)
-    # con12 = Connector(o2_gaps, [mr1, mr2])
 
     cmp = ms.compare(o2_gaps, [mr1, mr2])[0]  # con12.extract()  # no max gap argument
     assert cmp.data["mr1"].count() == 66
