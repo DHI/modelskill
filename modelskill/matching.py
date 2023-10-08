@@ -19,9 +19,9 @@ import xarray as xr
 
 import mikeio
 
-from modelskill import ModelResult
-from modelskill.timeseries import TimeSeries
-from modelskill.types import GeometryType, Quantity, Period
+from . import ModelResult
+from .timeseries import TimeSeries
+from .types import GeometryType, Quantity, Period
 from .model import protocols
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
@@ -97,6 +97,7 @@ def from_matched(
         y-coordinate of observation, by default None
     z : float, optional
         z-coordinate of observation, by default None
+
     Examples
     --------
     >>> import pandas as pd
@@ -168,6 +169,7 @@ def compare(
         Geometry type of the model result. If not specified, it will be guessed.
     max_model_gap : (float, optional)
         Maximum gap in the model result, by default None
+
     Returns
     -------
     ComparerCollection
