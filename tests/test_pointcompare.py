@@ -1,8 +1,7 @@
 import pytest
 import numpy as np
 
-import modelskill
-from modelskill import ModelResult, PointObservation, Connector, Quantity
+import modelskill as ms
 from modelskill.metrics import root_mean_squared_error, mean_absolute_error
 from modelskill.comparison import Comparer
 
@@ -10,37 +9,37 @@ from modelskill.comparison import Comparer
 @pytest.fixture
 def klagshamn():
     fn = "tests/testdata/smhi_2095_klagshamn.dfs0"
-    return PointObservation(fn, item=0, x=366844, y=6154291, name="Klagshamn")
+    return ms.PointObservation(fn, item=0, x=366844, y=6154291, name="Klagshamn")
 
 
 @pytest.fixture
 def drogden():
     fn = "tests/testdata/dmi_30357_Drogden_Fyr.dfs0"
-    return PointObservation(
+    return ms.PointObservation(
         fn,
         item=0,
         x=355568.0,
         y=6156863.0,
-        quantity=Quantity("Water Level", unit="meter"),
+        quantity=ms.Quantity("Water Level", unit="meter"),
     )
 
 
 @pytest.fixture
 def modelresult_oresund_WL():
-    return ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
+    return ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
 
 @pytest.fixture
 def cc(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
-    con = Connector([klagshamn, drogden], mr, validate=False)
+    con = ms.Connector([klagshamn, drogden], mr, validate=False)
     return con.extract()
 
 
 def test_get_comparer_by_name(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    con = Connector([klagshamn, drogden], mr, validate=False)
+    con = ms.Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -69,7 +68,7 @@ def test_get_comparer_by_position(cc):
 def test_iterate_over_comparers(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    con = Connector([klagshamn, drogden], mr, validate=False)
+    con = ms.Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -78,7 +77,7 @@ def test_iterate_over_comparers(modelresult_oresund_WL, klagshamn, drogden):
 
 
 def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
-    o1 = PointObservation(
+    o1 = ms.PointObservation(
         "tests/testdata/eq_ts_with_gaps.dfs0",
         item=0,
         x=366844,
@@ -86,14 +85,14 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
         name="Klagshamn",
     )
     mr = modelresult_oresund_WL
-    con = Connector(o1, mr)
+    con = ms.Connector(o1, mr)
     c = con.extract()
     df = c["Klagshamn"].skill().df
     assert not np.any(np.isnan(df))
 
 
 def test_extraction_no_overlap(modelresult_oresund_WL):
-    o1 = PointObservation(
+    o1 = ms.PointObservation(
         "tests/testdata/smhi_2095_klagshamn_shifted.dfs0",
         x=366844,
         y=6154291,
@@ -101,7 +100,7 @@ def test_extraction_no_overlap(modelresult_oresund_WL):
     )
     mr = modelresult_oresund_WL
     with pytest.warns(UserWarning) as wn:
-        con = Connector(o1, mr, validate=False)
+        con = ms.Connector(o1, mr, validate=False)
     assert len(wn) == 1
     assert "No time overlap" in str(wn[0].message)
     # assert "Could not add observation" in str(wn[1].message)
@@ -114,7 +113,7 @@ def test_extraction_no_overlap(modelresult_oresund_WL):
 def test_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    con = Connector([klagshamn, drogden], mr, validate=False)
+    con = ms.Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     assert cc.score(metric=root_mean_squared_error) > 0.0
@@ -124,11 +123,11 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
-    con = Connector([klagshamn, drogden], mr, validate=False)
+    con = ms.Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
     unweighted_skill = cc.score()
 
-    con = Connector()
+    con = ms.Connector()
 
     con.add(klagshamn, mr, weight=0.9, validate=False)
     con.add(drogden, mr, weight=0.1, validate=False)
@@ -138,7 +137,7 @@ def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
 
     obs = [klagshamn, drogden]
 
-    con = Connector(obs, mr, weight=[0.9, 0.1], validate=False)
+    con = ms.Connector(obs, mr, weight=[0.9, 0.1], validate=False)
     cc = con.extract()
     weighted_skill2 = cc.score()
 
@@ -146,9 +145,9 @@ def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
 
 
 def test_misc_properties(klagshamn, drogden):
-    mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    con = Connector([klagshamn, drogden], mr, validate=False)
+    con = ms.Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     assert len(cc) == 2
@@ -175,9 +174,9 @@ def test_misc_properties(klagshamn, drogden):
 
 
 def test_skill(klagshamn, drogden):
-    mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    con = Connector([klagshamn, drogden], mr, validate=False)
+    con = ms.Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     df = cc.skill().df
@@ -189,9 +188,9 @@ def test_skill(klagshamn, drogden):
 
 
 def test_skill_choose_metrics(klagshamn, drogden):
-    mr = ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
 
-    con = Connector([klagshamn, drogden], mr, validate=False)
+    con = ms.Connector([klagshamn, drogden], mr, validate=False)
     cc = con.extract()
 
     cc.metrics = ["mae", "si"]
@@ -258,7 +257,7 @@ def test_comparison_from_dict():
         ),
     )
 
-    con = modelskill.from_config(configuration, validate_eum=False)
+    con = ms.from_config(configuration, validate_eum=False)
     c = con.extract()
     assert len(c) == 2
     assert c.n_comparers == 2
@@ -266,18 +265,10 @@ def test_comparison_from_dict():
 
 
 def test_comparison_from_yml():
-    con = modelskill.from_config("tests/testdata/conf.yml", validate_eum=False)
+    con = ms.from_config("tests/testdata/conf.yml", validate_eum=False)
     c = con.extract()
 
     assert len(c) == 2
     assert c.n_comparers == 2
     assert c.n_models == 1
     assert con.observations["Klagshamn"].quantity.name == "Water Level"
-
-
-# def test_comparer_dataframe_without_time_not_allowed(klagshamn):
-
-#     mr = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
-
-#     with pytest.raises(ValueError, match="datetime"):
-#         Comparer(klagshamn, modeldata=mr)
