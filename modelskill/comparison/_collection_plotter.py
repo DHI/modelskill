@@ -245,6 +245,8 @@ class ComparerCollectionPlotter:
         title: Optional[str] = None,
         density=True,
         alpha: float = 0.5,
+        ax=None,
+        figsize: Optional[Tuple[float, float]] = None,
         **kwargs,
     ):
         """Plot histogram of specific model and all observations.
@@ -263,6 +265,10 @@ class ComparerCollectionPlotter:
             If True, draw and return a probability density, by default True
         alpha : float, optional
             alpha transparency fraction, by default 0.5
+        ax : matplotlib axes, optional
+            axes to plot on, by default None
+        figsize : tuple, optional
+            width and height of the figure, by default None
         kwargs : other keyword arguments to df.hist()
 
         Returns
@@ -281,6 +287,8 @@ class ComparerCollectionPlotter:
         """
         from ._comparison import MOD_COLORS
 
+        _, ax = _get_fig_ax(ax, figsize)
+
         mod_id = _get_idx(model, self.cc.mod_names)
         mod_name = self.cc.mod_names[mod_id]
 
@@ -290,21 +298,22 @@ class ComparerCollectionPlotter:
         df = cmp.to_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        ax = df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
+        df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], ax=ax, **kwargs)
         df.obs_val.hist(
             bins=bins,
             color=self.cc[0].data["Observation"].attrs["color"],
             ax=ax,
             **kwargs,
         )
+
         ax.legend([mod_name, "observations"])
-        plt.title(title)
-        plt.xlabel(f"{self.cc[df.observation[0]].unit_text}")
+        ax.set_title(title)
+        ax.set_xlabel(f"{self.cc[df.observation.iloc[0]].unit_text}")
 
         if density:
-            plt.ylabel("density")
+            ax.set_ylabel("density")
         else:
-            plt.ylabel("count")
+            ax.set_ylabel("count")
 
         if self.is_directional:
             _xtick_directional(ax)

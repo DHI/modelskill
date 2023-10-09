@@ -256,36 +256,37 @@ def test_plots_directional(cc):
         "taylor",
     ]
 )
-def pc_plot_function(cc, request):
+def cc_plot_function(cc, request):
     func = getattr(cc.plot, request.param)
     # special cases require selecting a model
-    if request.param in ["scatter"]:
-        # wrap the function func by providing it with a model parameter
+    if request.param in ["scatter", "hist"]:
+
         def func(**kwargs):
             kwargs["model"] = 0
-            return cc.plot.scatter(**kwargs)  # noqa: E731
+            wrapped_func = getattr(cc.plot, request.param)
+            return wrapped_func(**kwargs)
 
     return func
 
 
-def test_plot_returns_an_object(pc_plot_function):
-    obj = pc_plot_function()
+def test_plot_returns_an_object(cc_plot_function):
+    obj = cc_plot_function()
     assert obj is not None
 
 
-def test_plot_accepts_ax_if_relevant(pc_plot_function):
+def test_plot_accepts_ax_if_relevant(cc_plot_function):
     _, ax = plt.subplots()
-    func_name = pc_plot_function.__name__
+    func_name = cc_plot_function.__name__
     # plots that don't accept ax
     if func_name in ["taylor"]:
         return
-    ret_ax = pc_plot_function(ax=ax)
+    ret_ax = cc_plot_function(ax=ax)
     assert ret_ax is ax
 
 
-def test_plot_accepts_title(pc_plot_function):
+def test_plot_accepts_title(cc_plot_function):
     expected_title = "test title"
-    ret_obj = pc_plot_function(title=expected_title)
+    ret_obj = cc_plot_function(title=expected_title)
 
     # Handle both ax and fig titles
     title = None
@@ -301,8 +302,8 @@ def test_plot_accepts_title(pc_plot_function):
     assert title == expected_title
 
 
-def test_plot_accepts_figsize(pc_plot_function):
+def test_plot_accepts_figsize(cc_plot_function):
     figsize = (10, 10)
-    ax = pc_plot_function(figsize=figsize)
+    ax = cc_plot_function(figsize=figsize)
     a, b = ax.get_figure().get_size_inches()
     assert a, b == figsize
