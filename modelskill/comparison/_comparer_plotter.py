@@ -572,6 +572,10 @@ class ComparerPlotter:
         title : str, optional
             title of the plot, by default "Taylor diagram"
 
+        Returns
+        -------
+        matplotlib.figure.Figure
+
         Examples
         ------
         >>> comparer.taylor()

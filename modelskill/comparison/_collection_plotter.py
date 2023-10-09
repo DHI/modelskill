@@ -362,6 +362,10 @@ class ComparerCollectionPlotter:
         title : str, optional
             title of the plot, by default "Taylor diagram"
 
+        Returns
+        -------
+        matplotlib.figure.Figure
+
         Examples
         ------
         >>> cc.plot.taylor()
@@ -401,7 +405,7 @@ class ComparerCollectionPlotter:
             for r in df.itertuples()
         ]
 
-        taylor_diagram(
+        return taylor_diagram(
             obs_std=ref_std,
             points=pts,
             figsize=figsize,
