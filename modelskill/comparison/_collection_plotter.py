@@ -8,10 +8,7 @@ import pandas as pd
 from .. import metrics as mtr
 from ..utils import _get_idx
 from ..plotting import taylor_diagram, scatter, TaylorPoint
-from ..plotting._misc import (
-    _xtick_directional,
-    _ytick_directional,
-)
+from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
 
 
 class ComparerCollectionPlotter:
@@ -180,13 +177,17 @@ class ComparerCollectionPlotter:
 
         return ax
 
-    def kde(self, ax=None, **kwargs) -> Axes:
+    def kde(self, ax=None, figsize=None, title=None, **kwargs) -> Axes:
         """Plot kernel density estimate of observation and model data.
 
         Parameters
         ----------
         ax : Axes, optional
             matplotlib axes, by default None
+        figsize : tuple, optional
+            width and height of the figure, by default None
+        title : str, optional
+            plot title, by default None
         **kwargs
             passed to pandas.DataFrame.plot.kde()
 
@@ -202,8 +203,7 @@ class ComparerCollectionPlotter:
         >>> cc.plot.kde(bw_method='silverman')
 
         """
-        if ax is None:
-            ax = plt.gca()
+        _, ax = _get_fig_ax(ax, figsize)
 
         df = self.cc.to_dataframe()
         ax = df.obs_val.plot.kde(
@@ -217,9 +217,10 @@ class ComparerCollectionPlotter:
         # TODO use unit_text from the first comparer
         # TODO make sure they are conistent
         # then it should be a property of the collection, not only the comparer
-        plt.xlabel(f"{self.cc[0].unit_text}")
+        ax.set_xlabel(f"{self.cc[0].unit_text}")
 
-        # TODO title?
+        default_title = f"KDE plot for {', '.join(cmp.name for cmp in self.cc)}"
+        ax.set_title(title or default_title)
         ax.legend()
 
         # remove y-axis, ticks and label
