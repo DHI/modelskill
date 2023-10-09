@@ -320,6 +320,7 @@ def test_plot_returns_an_object(pc_plot_function):
 def test_plot_accepts_ax_if_relevant(pc_plot_function):
     _, ax = plt.subplots()
     func_name = pc_plot_function.__name__
+    # plots that don't accept ax
     if func_name in ["taylor"]:
         return
     ret_ax = pc_plot_function(ax=ax)
