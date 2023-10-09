@@ -41,6 +41,7 @@ class ComparerCollectionPlotter:
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
         skill_table: Optional[Union[str, List[str], bool]] = None,
+        ax: Optional[Axes] = None,
         **kwargs,
     ):
         """Scatter plot showing compared data: observation vs modelled
@@ -95,6 +96,8 @@ class ComparerCollectionPlotter:
             list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
             by default False
+        ax : matplotlib axes, optional
+            axes to plot on, by default None
         kwargs
 
         Examples
@@ -167,6 +170,7 @@ class ComparerCollectionPlotter:
             ylabel=ylabel,
             skill_df=skill_df,
             units=units,
+            ax=ax,
             **kwargs,
         )
 

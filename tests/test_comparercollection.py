@@ -258,6 +258,13 @@ def test_plots_directional(cc):
 )
 def pc_plot_function(cc, request):
     func = getattr(cc.plot, request.param)
+    # special cases require selecting a model
+    if request.param in ["scatter"]:
+        # wrap the function func by providing it with a model parameter
+        def func(**kwargs):
+            kwargs["model"] = 0
+            return cc.plot.scatter(**kwargs)  # noqa: E731
+
     return func
 
 
