@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Any, List, Union, Optional, Tuple, Sequence
 from matplotlib.axes import Axes  # type: ignore
 
-import matplotlib.pyplot as plt  # type: ignore
 import pandas as pd
 
 from .. import metrics as mtr
