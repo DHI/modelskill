@@ -713,7 +713,7 @@ class Comparer:
                     )
                     raw_mod_data[new_key] = df
 
-                    data = data.drop_vars(var_name)
+                    data = data.drop(var_name).drop("_time_raw_" + new_key)
 
             return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
