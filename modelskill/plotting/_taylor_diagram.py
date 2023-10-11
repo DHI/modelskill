@@ -14,7 +14,6 @@ from ._taylor_diagram_external import TaylorDiagram
 TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size")
 
 
-# TODO: Add tests and consider making API easier to use (e.g. maybe accept a comparer object?)
 def taylor_diagram(
     obs_std,
     points,

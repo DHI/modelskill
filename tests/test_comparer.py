@@ -306,7 +306,7 @@ def test_minimal_plots(pt_df):
 )
 def pc_plot_function(pc, request):
     func = getattr(pc.plot, request.param)
-    # special cases reuqire a model to be selected
+    # special cases requiring a model to be selected
     if request.param in ["scatter", "hist", "residual_hist"]:
         func = getattr(pc.sel(model=0).plot, request.param)
     return func

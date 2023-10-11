@@ -21,8 +21,6 @@ from ..metrics import _linear_regression
 from ._misc import quantiles_xy, sample_points, format_skill_df, _get_fig_ax
 
 
-# TODO: how to handle return types and parameters for plotly backend?
-# -focus on matplotlib backend for now, things may change soon
 def scatter(
     x: np.ndarray,
     y: np.ndarray,
