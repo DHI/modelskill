@@ -217,6 +217,51 @@ class ItemSelection:
     def all(self) -> Sequence[str]:
         return [self.obs] + list(self.model) + list(self.aux)
 
+    @staticmethod
+    def parse(
+        items: List[str],
+        obs_item: str | int | None = None,
+        mod_items: Optional[List[str | int]] = None,
+        aux_items: Optional[List[str | int]] = None,
+    ) -> ItemSelection:
+        """Parse items and return observation, model and auxiliary items
+        Default behaviour:
+        - obs_item is first item
+        - mod_items are all but obs_item and aux_items
+        - aux_items are all but obs_item and mod_items
+
+        Both integer and str are accepted as items. If str, it must be a key in data.
+        """
+        assert len(items) > 1, "data must contain at least two items"
+        if obs_item is None:
+            obs_name: str = items[0]
+        else:
+            obs_name = _get_name(obs_item, items)
+
+        # Check existance of items and convert to names
+        if mod_items is not None:
+            mod_names = [_get_name(m, items) for m in mod_items]
+        if aux_items is not None:
+            aux_names = [_get_name(a, items) for a in aux_items]
+        else:
+            aux_names = []
+
+        items.remove(obs_name)
+
+        if mod_items is None:
+            mod_names = list(set(items) - set(aux_names))
+        if aux_items is None:
+            aux_names = list(set(items) - set(mod_names))
+
+        assert len(mod_names) > 0, "no model items were found! Must be at least one"
+        assert obs_name not in mod_names, "observation item must not be a model item"
+        assert (
+            obs_name not in aux_names
+        ), "observation item must not be an auxiliary item"
+        assert isinstance(obs_name, str), "observation item must be a string"
+
+        return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
+
 
 def _area_is_bbox(area) -> bool:
     is_bbox = False
@@ -276,7 +321,7 @@ def _matched_data_to_xarray(
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
     cols = list(df.columns)
-    items = _parse_items(cols, obs_item, mod_items, aux_items)
+    items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
     df = df[items.all]
     df.index.name = "time"
     df.rename(columns={items.obs: "Observation"}, inplace=True)
@@ -306,49 +351,6 @@ def _matched_data_to_xarray(
     ds["Observation"].attrs["units"] = q.unit
 
     return ds
-
-
-def _parse_items(
-    items: List[str],
-    obs_item: str | int | None = None,
-    mod_items: Optional[List[str | int]] = None,
-    aux_items: Optional[List[str | int]] = None,
-) -> ItemSelection:
-    """Parse items and return observation, model and auxiliary items
-    Default behaviour:
-    - obs_item is first item
-    - mod_items are all but obs_item and aux_items
-    - aux_items are all but obs_item and mod_items
-
-    Both integer and str are accepted as items. If str, it must be a key in data.
-    """
-    assert len(items) > 1, "data must contain at least two items"
-    if obs_item is None:
-        obs_name: str = items[0]
-    else:
-        obs_name = _get_name(obs_item, items)
-
-    # Check existance of items and convert to names
-    if mod_items is not None:
-        mod_names = [_get_name(m, items) for m in mod_items]
-    if aux_items is not None:
-        aux_names = [_get_name(a, items) for a in aux_items]
-    else:
-        aux_names = []
-
-    items.remove(obs_name)
-
-    if mod_items is None:
-        mod_names = list(set(items) - set(aux_names))
-    if aux_items is None:
-        aux_names = list(set(items) - set(mod_names))
-
-    assert len(mod_names) > 0, "no model items were found! Must be at least one"
-    assert obs_name not in mod_names, "observation item must not be a model item"
-    assert obs_name not in aux_names, "observation item must not be an auxiliary item"
-    assert isinstance(obs_name, str), "observation item must be a string"
-
-    return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
 
 
 class Comparer:
@@ -711,7 +713,7 @@ class Comparer:
                     )
                     raw_mod_data[new_key] = df
 
-                    data = data.drop_vars(var_name)
+                    data = data.drop(var_name).drop("_time_raw_" + new_key)
 
             return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 

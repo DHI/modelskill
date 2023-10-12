@@ -71,6 +71,7 @@ def tc() -> modelskill.comparison.Comparer:
     data = df.dropna().to_xarray()
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
+    data["m3"].attrs["kind"] = "model"
     data = _set_attrs(data)
 
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
