@@ -1,7 +1,10 @@
 from __future__ import annotations
-from typing import Union, List, Optional, Tuple, Sequence
+from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
 
-import matplotlib.pyplot as plt
+if TYPE_CHECKING:
+    import matplotlib.figure
+    import matplotlib.axes
+
 import numpy as np  # type: ignore
 
 from .. import metrics as mtr
@@ -29,7 +32,14 @@ class ComparerPlotter:
         return self.scatter(*args, **kwargs)
 
     def timeseries(
-        self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
+        self,
+        title=None,
+        *,
+        ylim=None,
+        ax=None,
+        figsize=None,
+        backend="matplotlib",
+        **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
 
@@ -39,6 +49,8 @@ class ComparerPlotter:
             plot title, by default None
         ylim : tuple, optional
             plot range for the model (ymin, ymax), by default None
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
         figsize : (float, float), optional
             figure size, by default None
         backend : str, optional
@@ -56,7 +68,7 @@ class ComparerPlotter:
             title = cmp.name
 
         if backend == "matplotlib":
-            _, ax = plt.subplots(figsize=figsize)
+            fig, ax = _get_fig_ax(ax, figsize)
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
                 mod_df = cmp.raw_mod_data[key]
@@ -73,7 +85,7 @@ class ComparerPlotter:
             ax.set_ylim(ylim)
             if self.is_directional:
                 _ytick_directional(ax, ylim)
-            plt.title(title)
+            ax.set_title(title)
             return ax
 
         elif backend == "plotly":  # pragma: no cover
@@ -108,12 +120,21 @@ class ComparerPlotter:
             fig.update_layout(title=title, yaxis_title=cmp.unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
 
-            fig.show()
+            return fig
         else:
             raise ValueError(f"Plotting backend: {backend} not supported")
 
     def hist(
-        self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
+        self,
+        *,
+        model=None,
+        bins=100,
+        title=None,
+        ax=None,
+        figsize=None,
+        density=True,
+        alpha=0.5,
+        **kwargs,
     ):
         """Plot histogram of model data and observations.
 
@@ -127,6 +148,10 @@ class ComparerPlotter:
             number of bins, by default 100
         title : str, optional
             plot title, default: [model name] vs [observation name]
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
+        figsize : tuple, optional
+            figure size, by default None
         density: bool, optional
             If True, draw and return a probability density
         alpha : float, optional
@@ -150,8 +175,11 @@ class ComparerPlotter:
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
 
+        _, ax = _get_fig_ax(ax, figsize)
+
         kwargs["alpha"] = alpha
         kwargs["density"] = density
+        kwargs["ax"] = ax
 
         ax = (
             cmp.data[mod_name]
@@ -160,22 +188,22 @@ class ComparerPlotter:
         )
 
         cmp.data[cmp.obs_name].to_series().hist(
-            bins=bins, color=cmp.data[cmp.obs_name].attrs["color"], ax=ax, **kwargs
+            bins=bins, color=cmp.data[cmp.obs_name].attrs["color"], **kwargs
         )
         ax.legend([mod_name, cmp.obs_name])
-        plt.title(title)
-        plt.xlabel(f"{cmp.unit_text}")
+        ax.set_title(title)
+        ax.set_xlabel(f"{cmp.unit_text}")
         if density:
-            plt.ylabel("density")
+            ax.set_ylabel("density")
         else:
-            plt.ylabel("count")
+            ax.set_ylabel("count")
 
         if self.is_directional:
             _xtick_directional(ax)
 
         return ax
 
-    def kde(self, ax=None, **kwargs):
+    def kde(self, ax=None, title=None, figsize=None, **kwargs) -> matplotlib.axes.Axes:
         """Plot kde (kernel density estimates of distributions) of model data and observations.
 
         Wraps pandas.DataFrame kde() method.
@@ -184,11 +212,15 @@ class ComparerPlotter:
         ----------
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
+        title : str, optional
+            plot title, default: "KDE plot for [observation name]"
+        figsize : tuple, optional
+            figure size, by default None
         kwargs : other keyword arguments to df.plot.kde()
 
         Returns
         -------
-        matplotlib axes
+        matplotlib.axes.Axes
 
         Examples
         --------
@@ -203,8 +235,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        if ax is None:
-            ax = plt.gca()
+        _, ax = _get_fig_ax(ax, figsize)
 
         cmp.data.Observation.to_series().plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
@@ -221,6 +252,7 @@ class ComparerPlotter:
         ax.yaxis.set_visible(False)
         ax.tick_params(axis="y", which="both", length=0)
         ax.set_ylabel("")
+        ax.set_title(title or f"KDE plot for {cmp.name}")
 
         # remove box around plot
         ax.spines["top"].set_visible(False)
@@ -280,7 +312,7 @@ class ComparerPlotter:
             ymin = min([y.min(), ymin])
             ymax = max([y.max(), ymax])
             xq, yq = quantiles_xy(x, y, quantiles)
-            plt.plot(
+            ax.plot(
                 xq,
                 yq,
                 ".-",
@@ -293,18 +325,19 @@ class ComparerPlotter:
         xymax = max([xmax, ymax])
 
         # 1:1 line
-        plt.plot(
+        ax.plot(
             [xymin, xymax],
             [xymin, xymax],
             label=options.plot.scatter.oneone_line.label,
             c=options.plot.scatter.oneone_line.color,
             zorder=3,
         )
-        plt.axis("square")
-        plt.xlim([xymin, xymax])
-        plt.ylim([xymin, xymax])
-        plt.minorticks_on()
-        plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
+
+        ax.axis("square")
+        ax.set_xlim([xymin, xymax])
+        ax.set_ylim([xymin, xymax])
+        ax.minorticks_on()
+        ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
 
         ax.legend()
         ax.set_xlabel("Observation, " + cmp.unit_text)
@@ -317,7 +350,7 @@ class ComparerPlotter:
 
         return ax
 
-    def box(self, ax=None, title=None, **kwargs):
+    def box(self, ax=None, title=None, figsize=None, **kwargs):
         """Make a box plot of model data and observations.
 
         Wraps pandas.DataFrame boxplot() method.
@@ -328,6 +361,8 @@ class ComparerPlotter:
             axes to plot on, by default None
         title : str, optional
             plot title, default: [observation name]
+        figsize : tuple, optional
+            figure size, by default None
         kwargs : other keyword arguments to df.boxplot()
 
         Returns
@@ -347,8 +382,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        if ax is None:
-            ax = plt.gca()
+        _, ax = _get_fig_ax(ax, figsize)
 
         cols = ["Observation"] + cmp.mod_names
         df = cmp.data[cols].to_dataframe()
@@ -452,8 +486,6 @@ class ComparerPlotter:
         """
 
         cmp = self.comparer
-
-        cmp = self.comparer
         mod_id = _get_idx(model, cmp.mod_names)
         mod_name = cmp.mod_names[mod_id]
 
@@ -523,7 +555,7 @@ class ComparerPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-    ) -> None:
+    ):
         """Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
@@ -539,6 +571,10 @@ class ComparerPlotter:
             size of the marker, by default 6
         title : str, optional
             title of the plot, by default "Taylor diagram"
+
+        Returns
+        -------
+        matplotlib.figure.Figure
 
         Examples
         ------
@@ -575,7 +611,7 @@ class ComparerPlotter:
             for r in df.itertuples()
         ]
 
-        taylor_diagram(
+        return taylor_diagram(
             obs_std=ref_std,
             points=pts,
             figsize=figsize,
@@ -584,7 +620,9 @@ class ComparerPlotter:
             title=title,
         )
 
-    def residual_hist(self, bins=100, title=None, color=None, **kwargs):
+    def residual_hist(
+        self, bins=100, title=None, color=None, figsize=None, ax=None, **kwargs
+    ) -> matplotlib.axes.Axes:
         """plot histogram of residual values
 
         Parameters
@@ -595,16 +633,24 @@ class ComparerPlotter:
             plot title, default: Residuals, [name]
         color : str, optional
             residual color, by default "#8B8D8E"
+        figsize : tuple, optional
+            figure size, by default None
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
         kwargs : other keyword arguments to plt.hist()
+
+        Returns
+        -------
+        matplotlib.axes.Axes
         """
+        _, ax = _get_fig_ax(ax, figsize)
 
         default_color = "#8B8D8E"
         color = default_color if color is None else color
         title = f"Residuals, {self.comparer.name}" if title is None else title
-        plt.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
-        plt.title(title)
-        plt.xlabel(f"Residuals of {self.comparer.unit_text}")
-        ax = plt.gca()
+        ax.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
+        ax.set_title(title)
+        ax.set_xlabel(f"Residuals of {self.comparer.unit_text}")
 
         if self.is_directional:
             ticks = np.linspace(-180, 180, 9)

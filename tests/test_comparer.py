@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import pandas as pd
 import xarray as xr
+import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
 
 
@@ -292,6 +293,66 @@ def test_minimal_plots(pt_df):
 
     ax = cmp.plot.scatter()
     assert "m1" in ax.get_title()
+
+
+@pytest.fixture(
+    params=[
+        "scatter",
+        "kde",
+        "qq",
+        "box",
+        "hist",
+        "timeseries",
+        "taylor",
+        "residual_hist",
+    ]
+)
+def pc_plot_function(pc, request):
+    func = getattr(pc.plot, request.param)
+    # special cases requiring a model to be selected
+    if request.param in ["scatter", "hist", "residual_hist"]:
+        func = getattr(pc.sel(model=0).plot, request.param)
+    return func
+
+
+def test_plot_returns_an_object(pc_plot_function):
+    obj = pc_plot_function()
+    assert obj is not None
+
+
+def test_plot_accepts_ax_if_relevant(pc_plot_function):
+    _, ax = plt.subplots()
+    func_name = pc_plot_function.__name__
+    # plots that don't accept ax
+    if func_name in ["taylor"]:
+        return
+    ret_ax = pc_plot_function(ax=ax)
+    assert ret_ax is ax
+
+
+def test_plot_accepts_title(pc_plot_function):
+    expected_title = "test title"
+    ret_obj = pc_plot_function(title=expected_title)
+
+    # Handle both ax and fig titles
+    title = None
+    if hasattr(ret_obj, "get_title"):
+        title = ret_obj.get_title()
+    elif hasattr(ret_obj, "get_suptitle"):
+        title = ret_obj.get_suptitle()
+    elif hasattr(ret_obj, "_suptitle"):  # older versions of matplotlib
+        title = ret_obj._suptitle.get_text()
+    else:
+        raise pytest.fail("Could not access title from return object.")
+
+    assert title == expected_title
+
+
+def test_plot_accepts_figsize(pc_plot_function):
+    figsize = (10, 10)
+    ax = pc_plot_function(figsize=figsize)
+    a, b = ax.get_figure().get_size_inches()
+    assert a, b == figsize
 
 
 def test_plots_directional(pt_df):
