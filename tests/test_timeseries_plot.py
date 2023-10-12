@@ -2,7 +2,8 @@ import pytest
 import xarray as xr
 import numpy as np
 import pandas as pd
-from modelskill.timeseries import MatplotlibTimeSeriesPlotter, TimeSeries
+from modelskill.timeseries import TimeSeries
+from modelskill.timeseries._plotter import MatplotlibTimeSeriesPlotter
 import matplotlib.pyplot as plt
 
 
