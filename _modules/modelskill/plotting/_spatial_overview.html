@@ -233,7 +233,10 @@ document.write(`
                   
   <h1>Source code for modelskill.plotting._spatial_overview</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.axes</span>
 
 <span class="kn">from</span> <span class="nn">..model.point</span> <span class="kn">import</span> <span class="n">PointModelResult</span>
 <span class="kn">from</span> <span class="nn">..model.track</span> <span class="kn">import</span> <span class="n">TrackModelResult</span>
@@ -247,38 +250,39 @@ document.write(`
     <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot observation points on a map showing the model domain</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    obs: list[Observation]</span>
-<span class="sd">        List of observations to be shown on map</span>
-<span class="sd">    mod : Union[ModelResult, mikeio.GeometryFM], optional</span>
-<span class="sd">        Model domain to be shown as outline</span>
-<span class="sd">    ax: matplotlib.axes, optional</span>
-<span class="sd">        Adding to existing axis, instead of creating new fig</span>
-<span class="sd">    figsize : (float, float), optional</span>
-<span class="sd">        figure size, by default None</span>
-<span class="sd">    title: str, optional</span>
-<span class="sd">        plot title, default empty</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        obs: list[Observation]</span>
+<span class="sd">            List of observations to be shown on map</span>
+<span class="sd">        mod : Union[ModelResult, mikeio.GeometryFM], optional</span>
+<span class="sd">            Model domain to be shown as outline</span>
+<span class="sd">        ax: matplotlib.axes, optional</span>
+<span class="sd">            Adding to existing axis, instead of creating new fig</span>
+<span class="sd">        figsize : (float, float), optional</span>
+<span class="sd">            figure size, by default None</span>
+<span class="sd">        title: str, optional</span>
+<span class="sd">            plot title, default empty</span>
 
-<span class="sd">    See Also</span>
-<span class="sd">    --------</span>
-<span class="sd">    temporal_coverage</span>
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        temporal_coverage</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    &lt;matplotlib.axes&gt;</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matplotlib.axes.Axes</span>
+<span class="sd">            The matplotlib axes object</span>
 
-<span class="sd">    Examples</span>
-<span class="sd">    --------</span>
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
 <span class="sd">    &gt;&gt;&gt; import modelskill as ms</span>
-<span class="sd">    &gt;&gt;&gt; o1 = ms.PointObservation(&#39;HKNA_Hm0.dfs0&#39;, item=0, x=4.2420, y=52.6887, name=&quot;HKNA&quot;)</span>
-<span class="sd">    &gt;&gt;&gt; o2 = ms.TrackObservation(&quot;Alti_c2_Dutch.dfs0&quot;, item=3, name=&quot;c2&quot;)</span>
-<span class="sd">    &gt;&gt;&gt; mr1 = ModelResult(&#39;HKZN_local_2017_DutchCoast.dfsu&#39;, name=&#39;SW_1&#39;, item=0)</span>
-<span class="sd">    &gt;&gt;&gt; mr2 = ModelResult(&#39;HKZN_local_2017_DutchCoast_v2.dfsu&#39;, name=&#39;SW_2&#39;, item=0)</span>
-<span class="sd">    &gt;&gt;&gt; ms.plotting.spatial_overview([o1, o2], [mr1, mr2])</span>
+<span class="sd">        &gt;&gt;&gt; o1 = ms.PointObservation(&#39;HKNA_Hm0.dfs0&#39;, item=0, x=4.2420, y=52.6887, name=&quot;HKNA&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; o2 = ms.TrackObservation(&quot;Alti_c2_Dutch.dfs0&quot;, item=3, name=&quot;c2&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; mr1 = ModelResult(&#39;HKZN_local_2017_DutchCoast.dfsu&#39;, name=&#39;SW_1&#39;, item=0)</span>
+<span class="sd">        &gt;&gt;&gt; mr2 = ModelResult(&#39;HKZN_local_2017_DutchCoast_v2.dfsu&#39;, name=&#39;SW_2&#39;, item=0)</span>
+<span class="sd">        &gt;&gt;&gt; ms.plotting.spatial_overview([o1, o2], [mr1, mr2])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">obs</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">obs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">obs</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
     <span class="n">mod</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">mod</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">mod</span><span class="p">]</span>  <span class="c1"># type: ignore</span>

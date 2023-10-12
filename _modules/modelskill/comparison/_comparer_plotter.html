@@ -233,9 +233,12 @@ document.write(`
                   
   <h1>Source code for modelskill.comparison._comparer_plotter</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.figure</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.axes</span>
+
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>  <span class="c1"># type: ignore</span>
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">metrics</span> <span class="k">as</span> <span class="n">mtr</span>
@@ -263,7 +266,14 @@ document.write(`
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ComparerPlotter.timeseries"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.timeseries">[docs]</a>    <span class="k">def</span> <span class="nf">timeseries</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;matplotlib&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;matplotlib&quot;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Timeseries plot showing compared data: observation vs modelled</span>
 
@@ -273,6 +283,8 @@ document.write(`
 <span class="sd">            plot title, by default None</span>
 <span class="sd">        ylim : tuple, optional</span>
 <span class="sd">            plot range for the model (ymin, ymax), by default None</span>
+<span class="sd">        ax : matplotlib.axes.Axes, optional</span>
+<span class="sd">            axes to plot on, by default None</span>
 <span class="sd">        figsize : (float, float), optional</span>
 <span class="sd">            figure size, by default None</span>
 <span class="sd">        backend : str, optional</span>
@@ -290,7 +302,7 @@ document.write(`
             <span class="n">title</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">name</span>
 
         <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;matplotlib&quot;</span><span class="p">:</span>
-            <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">_get_fig_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">figsize</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cmp</span><span class="o">.</span><span class="n">n_models</span><span class="p">):</span>
                 <span class="n">key</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
                 <span class="n">mod_df</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
@@ -307,7 +319,7 @@ document.write(`
             <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylim</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
                 <span class="n">_ytick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">ylim</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">ax</span>
 
         <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;plotly&quot;</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
@@ -342,12 +354,21 @@ document.write(`
             <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">yaxis_title</span><span class="o">=</span><span class="n">cmp</span><span class="o">.</span><span class="n">unit_text</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="n">ylim</span><span class="p">)</span>
 
-            <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">fig</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Plotting backend: </span><span class="si">{</span><span class="n">backend</span><span class="si">}</span><span class="s2"> not supported&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ComparerPlotter.hist"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.hist">[docs]</a>    <span class="k">def</span> <span class="nf">hist</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot histogram of model data and observations.</span>
 
@@ -361,6 +382,10 @@ document.write(`
 <span class="sd">            number of bins, by default 100</span>
 <span class="sd">        title : str, optional</span>
 <span class="sd">            plot title, default: [model name] vs [observation name]</span>
+<span class="sd">        ax : matplotlib.axes.Axes, optional</span>
+<span class="sd">            axes to plot on, by default None</span>
+<span class="sd">        figsize : tuple, optional</span>
+<span class="sd">            figure size, by default None</span>
 <span class="sd">        density: bool, optional</span>
 <span class="sd">            If True, draw and return a probability density</span>
 <span class="sd">        alpha : float, optional</span>
@@ -384,8 +409,11 @@ document.write(`
 
         <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mod_name</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="n">cmp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">title</span>
 
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">_get_fig_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">figsize</span><span class="p">)</span>
+
         <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;alpha&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;density&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">density</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;ax&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax</span>
 
         <span class="n">ax</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span>
@@ -394,22 +422,22 @@ document.write(`
         <span class="p">)</span>
 
         <span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">cmp</span><span class="o">.</span><span class="n">obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">to_series</span><span class="p">()</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span>
-            <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">cmp</span><span class="o">.</span><span class="n">obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">],</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">cmp</span><span class="o">.</span><span class="n">obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
         <span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="n">mod_name</span><span class="p">,</span> <span class="n">cmp</span><span class="o">.</span><span class="n">obs_name</span><span class="p">])</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cmp</span><span class="o">.</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cmp</span><span class="o">.</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">density</span><span class="p">:</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;density&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;density&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
             <span class="n">_xtick_directional</span><span class="p">(</span><span class="n">ax</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">ax</span></div>
 
-<div class="viewcode-block" id="ComparerPlotter.kde"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.kde">[docs]</a>    <span class="k">def</span> <span class="nf">kde</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ComparerPlotter.kde"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.kde">[docs]</a>    <span class="k">def</span> <span class="nf">kde</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot kde (kernel density estimates of distributions) of model data and observations.</span>
 
 <span class="sd">        Wraps pandas.DataFrame kde() method.</span>
@@ -418,11 +446,15 @@ document.write(`
 <span class="sd">        ----------</span>
 <span class="sd">        ax : matplotlib.axes.Axes, optional</span>
 <span class="sd">            axes to plot on, by default None</span>
+<span class="sd">        title : str, optional</span>
+<span class="sd">            plot title, default: &quot;KDE plot for [observation name]&quot;</span>
+<span class="sd">        figsize : tuple, optional</span>
+<span class="sd">            figure size, by default None</span>
 <span class="sd">        kwargs : other keyword arguments to df.plot.kde()</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        matplotlib axes</span>
+<span class="sd">        matplotlib.axes.Axes</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -437,8 +469,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparer</span>
 
-        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">_get_fig_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">figsize</span><span class="p">)</span>
 
         <span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Observation</span><span class="o">.</span><span class="n">to_series</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">kde</span><span class="p">(</span>
             <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;dashed&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Observation&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
@@ -455,6 +486,7 @@ document.write(`
         <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;KDE plot for </span><span class="si">{</span><span class="n">cmp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># remove box around plot</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
@@ -514,7 +546,7 @@ document.write(`
             <span class="n">ymin</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">y</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">ymin</span><span class="p">])</span>
             <span class="n">ymax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">y</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">ymax</span><span class="p">])</span>
             <span class="n">xq</span><span class="p">,</span> <span class="n">yq</span> <span class="o">=</span> <span class="n">quantiles_xy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">quantiles</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
                 <span class="n">xq</span><span class="p">,</span>
                 <span class="n">yq</span><span class="p">,</span>
                 <span class="s2">&quot;.-&quot;</span><span class="p">,</span>
@@ -527,18 +559,19 @@ document.write(`
         <span class="n">xymax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">])</span>
 
         <span class="c1"># 1:1 line</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
             <span class="p">[</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">],</span>
             <span class="p">[</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">],</span>
             <span class="n">label</span><span class="o">=</span><span class="n">options</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="o">.</span><span class="n">oneone_line</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
             <span class="n">c</span><span class="o">=</span><span class="n">options</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">scatter</span><span class="o">.</span><span class="n">oneone_line</span><span class="o">.</span><span class="n">color</span><span class="p">,</span>
             <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">])</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">])</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">minorticks_on</span><span class="p">()</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="s2">&quot;0.2&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="n">xymin</span><span class="p">,</span> <span class="n">xymax</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">minorticks_on</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="s2">&quot;0.2&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
 
         <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Observation, &quot;</span> <span class="o">+</span> <span class="n">cmp</span><span class="o">.</span><span class="n">unit_text</span><span class="p">)</span>
@@ -551,7 +584,7 @@ document.write(`
 
         <span class="k">return</span> <span class="n">ax</span></div>
 
-<div class="viewcode-block" id="ComparerPlotter.box"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.box">[docs]</a>    <span class="k">def</span> <span class="nf">box</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ComparerPlotter.box"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.box">[docs]</a>    <span class="k">def</span> <span class="nf">box</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a box plot of model data and observations.</span>
 
 <span class="sd">        Wraps pandas.DataFrame boxplot() method.</span>
@@ -562,6 +595,8 @@ document.write(`
 <span class="sd">            axes to plot on, by default None</span>
 <span class="sd">        title : str, optional</span>
 <span class="sd">            plot title, default: [observation name]</span>
+<span class="sd">        figsize : tuple, optional</span>
+<span class="sd">            figure size, by default None</span>
 <span class="sd">        kwargs : other keyword arguments to df.boxplot()</span>
 
 <span class="sd">        Returns</span>
@@ -581,8 +616,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparer</span>
 
-        <span class="k">if</span> <span class="n">ax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">_get_fig_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">figsize</span><span class="p">)</span>
 
         <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Observation&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
@@ -686,8 +720,6 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">cmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparer</span>
-
-        <span class="n">cmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparer</span>
         <span class="n">mod_id</span> <span class="o">=</span> <span class="n">_get_idx</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">)</span>
         <span class="n">mod_name</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">[</span><span class="n">mod_id</span><span class="p">]</span>
 
@@ -757,7 +789,7 @@ document.write(`
         <span class="n">marker</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span>
         <span class="n">marker_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">6.0</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Taylor diagram&quot;</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Taylor diagram showing model std and correlation to observation</span>
 <span class="sd">        in a single-quadrant polar plot, with r=std and theta=arccos(cc).</span>
 
@@ -773,6 +805,10 @@ document.write(`
 <span class="sd">            size of the marker, by default 6</span>
 <span class="sd">        title : str, optional</span>
 <span class="sd">            title of the plot, by default &quot;Taylor diagram&quot;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matplotlib.figure.Figure</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        ------</span>
@@ -809,7 +845,7 @@ document.write(`
             <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">itertuples</span><span class="p">()</span>
         <span class="p">]</span>
 
-        <span class="n">taylor_diagram</span><span class="p">(</span>
+        <span class="k">return</span> <span class="n">taylor_diagram</span><span class="p">(</span>
             <span class="n">obs_std</span><span class="o">=</span><span class="n">ref_std</span><span class="p">,</span>
             <span class="n">points</span><span class="o">=</span><span class="n">pts</span><span class="p">,</span>
             <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span>
@@ -818,7 +854,9 @@ document.write(`
             <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="ComparerPlotter.residual_hist"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.residual_hist">[docs]</a>    <span class="k">def</span> <span class="nf">residual_hist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ComparerPlotter.residual_hist"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerPlotter.residual_hist">[docs]</a>    <span class="k">def</span> <span class="nf">residual_hist</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">Axes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;plot histogram of residual values</span>
 
 <span class="sd">        Parameters</span>
@@ -829,16 +867,24 @@ document.write(`
 <span class="sd">            plot title, default: Residuals, [name]</span>
 <span class="sd">        color : str, optional</span>
 <span class="sd">            residual color, by default &quot;#8B8D8E&quot;</span>
+<span class="sd">        figsize : tuple, optional</span>
+<span class="sd">            figure size, by default None</span>
+<span class="sd">        ax : matplotlib.axes.Axes, optional</span>
+<span class="sd">            axes to plot on, by default None</span>
 <span class="sd">        kwargs : other keyword arguments to plt.hist()</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        matplotlib.axes.Axes</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">_get_fig_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">figsize</span><span class="p">)</span>
 
         <span class="n">default_color</span> <span class="o">=</span> <span class="s2">&quot;#8B8D8E&quot;</span>
         <span class="n">color</span> <span class="o">=</span> <span class="n">default_color</span> <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">color</span>
         <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Residuals, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">title</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Residuals of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Residuals of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">comparer</span><span class="o">.</span><span class="n">unit_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_directional</span><span class="p">:</span>
             <span class="n">ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
