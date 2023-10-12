@@ -46,7 +46,7 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
             line style, by default None
         kwargs: other keyword arguments to df.plot()
         """
-        self.plot(
+        return self.plot(
             title=title, color=color, marker=marker, linestyle=linestyle, **kwargs
         )
 
