@@ -14,10 +14,12 @@ def timeseries():
     ds = xr.Dataset(
         {
             "modelskill-rocks": ("time", data1, {"kind": "observation"}),
+        },
+        coords={
+            "time": times,
             "x": None,
             "y": None,
         },
-        coords={"time": times},
         attrs={
             "gtype": "point",
         },
