@@ -68,6 +68,10 @@ def test_options_set_options():
         modelskill.set_option("plot.scatter.points.size", "200")
         modelskill.set_option("plot.scatter.points.size", -1)
 
+    # TODO extract into common teardown, this is needed since options is global state
+    # reset all options
+    modelskill.reset_option("all")
+
 
 def test_options_set_invalid_metric_raises_error():
     o = modelskill.options
@@ -82,6 +86,9 @@ def test_options_set_invalid_metric_raises_error():
     # neither is a mix of valid and invalid
     with pytest.raises(ValueError, match="invalid_metric"):
         o.metrics.list = ["bias", "invalid_metric"]
+
+    # reset all options
+    modelskill.reset_option("all")
 
 
 def test_options_reset_options():
@@ -106,15 +113,43 @@ def test_options_register_option():
 
 
 def test_load_style_mood():
+    # defaults
+    assert len(modelskill.get_option("metrics.list")) == 7
+    assert modelskill.get_option("plot.scatter.points.size") == 20
+
+    # mood.yml
+    # -------------------------------
+    # plot.scatter.points.size: 10.0
+    # plot.scatter.oneone_line.color: darkorange
     settings.load_style(name="MOOD")
-    assert True
+    assert modelskill.get_option("plot.scatter.oneone_line.color") == "darkorange"
+    assert modelskill.get_option("plot.scatter.points.size") == 10.0
+
+    # metrics are not affected
+    assert len(modelskill.get_option("metrics.list")) == 7
+
+    # reset all options
+    modelskill.reset_option("all")
 
 
 def test_load_style_is_case_insensitive():
     settings.load_style(name="mOoD")
-    assert True
+    assert modelskill.get_option("plot.scatter.oneone_line.color") == "darkorange"
+
+    # reset all options
+    modelskill.reset_option("all")
 
 
 def test_unknown_style_raises_error():
     with pytest.raises(KeyError, match="food"):
         settings.load_style(name="food")
+
+
+def test_setting_options_need_even_number_of_args():
+    with pytest.raises(ValueError, match="even number"):
+        settings.set_option(
+            "plot.scatter.points.size", 10, "plot.scatter.oneone_line.color"
+        )
+
+    # reset all options
+    modelskill.reset_option("all")
