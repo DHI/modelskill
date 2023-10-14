@@ -1140,10 +1140,12 @@ class Comparer:
                 mod_name = self.mod_names[j]
                 mod_df = self.raw_mod_data[mod_name]
                 mod_df[mod_name] = mod_df.values - bias[j]
-                self.data[mod_name] = self.data[mod_name] - bias[j]
+                with xr.set_options(keep_attrs=True):
+                    self.data[mod_name] = self.data[mod_name] - bias[j]
         elif correct == "Observation":
             # what if multiple models?
-            self.data[self._obs_name] = self.obs + bias
+            with xr.set_options(keep_attrs=True):
+                self.data[self._obs_name] = self.obs + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
