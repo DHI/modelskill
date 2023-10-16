@@ -23,6 +23,7 @@ notebooks](https://nbviewer.jupyter.org/github/DHI/modelskill/tree/main/notebook
    :hidden:
 
    getting-started
+   terminology
    simple-compare
    vision
    api
