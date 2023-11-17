@@ -13,6 +13,46 @@ from matplotlib.offsetbox import AnchoredText
 from matplotlib.patches import Polygon, Rectangle
 
 
+def hist2d(
+    data: np.ndarray,
+    ui: np.ndarray,
+    thetai: np.ndarray,
+    vmin: float,
+    n: int | None = None,
+) -> Tuple[float, np.ndarray]:
+    """Calculate a masked 2d histogram.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        array with 2 columns (magnitude, direction)
+    ui : np.ndarray
+        magnitude bins
+    thetai : np.ndarray
+        direction bins
+    vmin : float
+        minimum value for data being counted as valid (i.e. below this is calm)
+    n : int, optional
+        normalization factor, by default None
+    """
+    assert data.shape[1] == 2, "data must have 2 columns"
+    assert data[:, 1].min() >= 0, "direction must be positive"
+    assert data[:, 1].max() <= 360, "direction must be in 0-360"
+    assert data[:, 0].min() >= 0, "magnitude must be positive"
+
+    mask = data[:, 0] >= vmin
+    calm = len(data[~mask]) / len(data)
+    if n is None:
+        n = len(data)
+    counts, _, _ = np.histogram2d(
+        data[mask][:, 0],
+        data[mask][:, 1],
+        bins=[ui, thetai],
+    )
+    counts = counts / n
+    return calm, counts
+
+
 def wind_rose(
     data,
     *,
@@ -127,20 +167,10 @@ def wind_rose(
     )
     thetac = thetai[:-1] + half_dir_step
 
-    mask_1 = data_1[:, 0] >= vmin
-
-    # compute total calms
-    n = len(data_1)
-    calm = len(data_1[~mask_1]) / n
-
-    counts = _calc_masked_histogram2d(data=data_1, mask=mask_1, ui=ui, thetai=thetai)
+    calm, counts = hist2d(data_1, ui=ui, thetai=thetai, vmin=vmin)
 
     if dual:
-        mask_2 = data_2[:, 0] >= vmin
-        calm2 = len(data_2[~mask_2]) / n
-        counts_2 = _calc_masked_histogram2d(
-            data=data_2, mask=mask_2, ui=ui, thetai=thetai, n=len(data_1)
-        )
+        calm2, counts_2 = hist2d(data_2, ui=ui, thetai=thetai, vmin=vmin, n=len(data_1))
         assert counts.shape == counts_2.shape
 
     ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
@@ -403,20 +433,6 @@ def _calc_mag_step(xmax: float, ymax: Optional[float] = None, factor: float = 16
         mag_step2 = np.round(ymax / factor, 2)
     mag_step = max(mag_step, mag_step2)
     return mag_step
-
-
-def _calc_masked_histogram2d(
-    *, data, mask, ui, thetai, n: Optional[int] = None
-) -> np.ndarray:
-    if n is None:
-        n = len(data)
-    counts, _, _ = np.histogram2d(
-        data[mask][:, 0],
-        data[mask][:, 1],
-        bins=[ui, thetai],
-    )
-    counts = counts / n
-    return counts
 
 
 def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: Optional[float]):
