@@ -948,7 +948,7 @@ document.write(`
 
         <span class="c1"># group by</span>
         <span class="n">by</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">_mean_skill_by</span><span class="p">(</span><span class="n">skilldf</span><span class="p">,</span> <span class="n">mod_names</span><span class="p">,</span> <span class="n">var_names</span><span class="p">)</span>
-        <span class="n">agg</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">}</span>
+        <span class="n">agg</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">}</span>
         <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
             <span class="n">agg</span><span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">weighted_mean</span>  <span class="c1"># type: ignore</span>
         <span class="n">res</span> <span class="o">=</span> <span class="n">skilldf</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">agg</span><span class="p">)</span>
