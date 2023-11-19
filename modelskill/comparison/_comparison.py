@@ -669,6 +669,8 @@ class Comparer:
 
         # There is no need to save raw data for track data, since it is identical to the matched data
         if self.gtype == "point":
+            ds = self.data.copy()  # copy needed to avoid modifying self.data
+
             for key, value in self.raw_mod_data.items():
                 value = value.copy()
                 #  rename time to unique name
