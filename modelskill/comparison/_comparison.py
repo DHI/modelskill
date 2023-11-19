@@ -671,11 +671,11 @@ class Comparer:
         if self.gtype == "point":
             ds = self.data.copy()  # copy needed to avoid modifying self.data
 
-            for key, value in self.raw_mod_data.items():
-                value = value.copy()
+            for key, df in self.raw_mod_data.items():
+                df = df.copy()
                 #  rename time to unique name
-                value.index.name = "_time_raw_" + key
-                da = value.to_xarray()[key]
+                df.index.name = "_time_raw_" + key
+                da = df.to_xarray()[key]
                 ds["_raw_" + key] = da
 
         ds.to_netcdf(filename)
