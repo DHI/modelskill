@@ -17,14 +17,14 @@ from ..spatial import SpatialSkill
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
-from ._comparison import (
-    Comparer,
+from ._comparison import Comparer
+from ._utils import (
+    _parse_metric,
+    _add_spatial_grid_to_df,
+    _groupby_df,
+    _parse_groupby,
     IdOrNameTypes,
     TimeTypes,
-    _parse_metric,
-    _parse_groupby,
-    _groupby_df,
-    _add_spatial_grid_to_df,
 )
 from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
 
@@ -97,7 +97,7 @@ class ComparerCollection(Mapping):
 
         Parameters
         ----------
-        comparer : (PointComparer, TrackComparer, ComparerCollection)
+        comparer : (Comparer, ComparerCollection)
             Comparer to add to this collection
         """
         if isinstance(comparer, (ComparerCollection, Sequence)):
@@ -181,7 +181,7 @@ class ComparerCollection(Mapping):
         """List of unique variable names"""
         unique_names = []
         for cmp in self.comparers.values():
-            n = cmp.quantity_name
+            n = cmp.quantity.name
             if n not in unique_names:
                 unique_names.append(n)
         return unique_names
@@ -211,12 +211,13 @@ class ComparerCollection(Mapping):
         for cmp in self.comparers.values():
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
-                df = cmp.data[[mod_name]].to_dataframe().copy()
-                df.columns = ["mod_val"]
+                # drop "x", "y",  ?
+                df = cmp.data.drop_vars(["z"])[[mod_name]].to_dataframe().copy()
+                df = df.rename(columns={mod_name: "mod_val"})
                 df["model"] = mod_name
                 df["observation"] = cmp.name
                 if self.n_variables > 1:
-                    df["variable"] = cmp.quantity_name
+                    df["variable"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
@@ -329,7 +330,7 @@ class ComparerCollection(Mapping):
 
         cc = ComparerCollection()
         for cmp in self.comparers.values():
-            if cmp.name in observation and cmp.quantity_name in variable:
+            if cmp.name in observation and cmp.quantity.name in variable:
                 thismodel = (
                     [m for m in mod_names if m in cmp.mod_names] if model else None
                 )

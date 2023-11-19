@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Tuple, Sequence
+from typing import Sequence
 import warnings
 import numpy as np
 import pandas as pd
@@ -63,41 +63,41 @@ def rename_coords_pd(df: pd.DataFrame) -> pd.DataFrame:
     return df.rename(columns=mapping)
 
 
-def get_item_name_and_idx(
-    item_names: List[str], item: int | str | None = None
-) -> Tuple[str, int]:
-    """Returns the name and index of the requested variable, provided
-    either as either a str or int.
+# def get_item_name_and_idx(
+#     item_names: List[str], item: int | str | None = None
+# ) -> Tuple[str, int]:
+#     """Returns the name and index of the requested variable, provided
+#     either as either a str or int.
 
-    Examples
-    --------
-    >>> get_item_name_and_idx(['a', 'b', 'c'], 1)
-    ('b', 1)
-    >>> get_item_name_and_idx(['a', 'b', 'c'], 'a')
-    ('a', 0)
-    >>> get_item_name_and_idx(['a', 'b', 'c'], -1)
-    ('c', 2)
-    """
-    n_items = len(item_names)
-    if item is None:
-        if n_items == 1:
-            return item_names[0], 0
-        else:
-            raise ValueError(
-                f"item must be specified when more than one item available. Available items: {item_names}"
-            )
-    if isinstance(item, int):
-        if item < 0:  # Handle negative indices
-            item = n_items + item
-        if (item < 0) or (item >= n_items):
-            raise IndexError(f"item {item} out of range (0, {n_items-1})")
-        return item_names[item], item
-    elif isinstance(item, str):
-        if item not in item_names:
-            raise KeyError(f"item must be one of {item_names}, got {item}.")
-        return item, item_names.index(item)
-    else:
-        raise TypeError("item must be int or string")
+#     Examples
+#     --------
+#     >>> get_item_name_and_idx(['a', 'b', 'c'], 1)
+#     ('b', 1)
+#     >>> get_item_name_and_idx(['a', 'b', 'c'], 'a')
+#     ('a', 0)
+#     >>> get_item_name_and_idx(['a', 'b', 'c'], -1)
+#     ('c', 2)
+#     """
+#     n_items = len(item_names)
+#     if item is None:
+#         if n_items == 1:
+#             return item_names[0], 0
+#         else:
+#             raise ValueError(
+#                 f"item must be specified when more than one item available. Available items: {item_names}"
+#             )
+#     if isinstance(item, int):
+#         if item < 0:  # Handle negative indices
+#             item = n_items + item
+#         if (item < 0) or (item >= n_items):
+#             raise IndexError(f"item {item} out of range (0, {n_items-1})")
+#         return item_names[item], item
+#     elif isinstance(item, str):
+#         if item not in item_names:
+#             raise KeyError(f"item must be one of {item_names}, got {item}.")
+#         return item, item_names.index(item)
+#     else:
+#         raise TypeError("item must be int or string")
 
 
 def is_iterable_not_str(obj):

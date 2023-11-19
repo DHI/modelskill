@@ -2,7 +2,7 @@ from typing import Any, Protocol, Union, runtime_checkable
 
 import pandas as pd
 
-from modelskill import types
+from .. import types
 
 
 @runtime_checkable
@@ -21,7 +21,6 @@ class Observation(Protocol):
 
 @runtime_checkable
 class PointObject(Protocol):
-
     x: float
     y: float
 
@@ -33,7 +32,6 @@ class PointObservation(PointObject, Observation, Protocol):
 
 @runtime_checkable
 class Comparable(ModelResult, Protocol):
-
     data: pd.DataFrame
 
     def compare(self, observation: Union[PointObservation, Observation]):
