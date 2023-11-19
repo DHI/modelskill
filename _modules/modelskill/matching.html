@@ -253,9 +253,9 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">mikeio</span>
 
-<span class="kn">from</span> <span class="nn">modelskill</span> <span class="kn">import</span> <span class="n">ModelResult</span>
-<span class="kn">from</span> <span class="nn">modelskill.timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>
-<span class="kn">from</span> <span class="nn">modelskill.types</span> <span class="kn">import</span> <span class="n">GeometryType</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">Period</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">ModelResult</span>
+<span class="kn">from</span> <span class="nn">.timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>
+<span class="kn">from</span> <span class="nn">.types</span> <span class="kn">import</span> <span class="n">GeometryType</span><span class="p">,</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">Period</span>
 <span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">protocols</span>
 <span class="kn">from</span> <span class="nn">.model.grid</span> <span class="kn">import</span> <span class="n">GridModelResult</span>
 <span class="kn">from</span> <span class="nn">.model.dfsu</span> <span class="kn">import</span> <span class="n">DfsuModelResult</span>
@@ -331,6 +331,7 @@ document.write(`
 <span class="sd">        y-coordinate of observation, by default None</span>
 <span class="sd">    z : float, optional</span>
 <span class="sd">        z-coordinate of observation, by default None</span>
+
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
@@ -402,6 +403,7 @@ document.write(`
 <span class="sd">        Geometry type of the model result. If not specified, it will be guessed.</span>
 <span class="sd">    max_model_gap : (float, optional)</span>
 <span class="sd">        Maximum gap in the model result, by default None</span>
+
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    ComparerCollection</span>
@@ -575,7 +577,10 @@ document.write(`
     <span class="n">observation</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">observation</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">period</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">period</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
 
-    <span class="n">first</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">name</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">observation</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">obs_name</span><span class="p">})</span>
+
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">mdata</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">_model2obs_interp</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">mdata</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;track&quot;</span><span class="p">:</span>
@@ -583,34 +588,14 @@ document.write(`
             <span class="n">df_obs</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>  <span class="c1"># TODO: xr.Dataset</span>
             <span class="n">_mask_model_outside_observation_track</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">df_obs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">first</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">df</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 
-        <span class="n">first</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
 
-    <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;time&quot;</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_xarray</span><span class="p">()</span>
-    <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;gtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gtype</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;point&quot;</span><span class="p">:</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">x</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">y</span>
-        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">z</span>  <span class="c1"># type: ignore</span>
-
-    <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">name</span>
-    <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;quantity_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">name</span>
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;position&quot;</span>
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;position&quot;</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;observation&quot;</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">unit</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">color</span>
-    <span class="n">data</span><span class="p">[</span><span class="n">obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">weight</span>
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">mod_names</span><span class="p">:</span>
         <span class="n">data</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;model&quot;</span>
 
+    <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;gtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gtype</span>
     <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;modelskill_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">__version__</span>
 
     <span class="k">return</span> <span class="n">data</span>
@@ -627,6 +612,7 @@ document.write(`
     <span class="k">if</span> <span class="n">max_model_gap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">_remove_model_gaps</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">mod_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">)</span>
 
+    <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;time&quot;</span>
     <span class="k">return</span> <span class="n">df</span>
 
 
@@ -649,7 +635,7 @@ document.write(`
 <span class="k">def</span> <span class="nf">_parse_single_modeldata</span><span class="p">(</span><span class="n">modeldata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert to dataframe and set index to pd.DatetimeIndex&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">modeldata</span><span class="p">,</span> <span class="s2">&quot;to_dataframe&quot;</span><span class="p">):</span>
-        <span class="n">mod_df</span> <span class="o">=</span> <span class="n">modeldata</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+        <span class="n">mod_df</span> <span class="o">=</span> <span class="n">modeldata</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">])</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">modeldata</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
         <span class="n">mod_df</span> <span class="o">=</span> <span class="n">modeldata</span>
     <span class="k">else</span><span class="p">:</span>

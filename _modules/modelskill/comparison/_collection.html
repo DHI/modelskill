@@ -251,14 +251,14 @@ document.write(`
 <span class="kn">from</span> <span class="nn">..settings</span> <span class="kn">import</span> <span class="n">options</span><span class="p">,</span> <span class="n">reset_option</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_get_idx</span><span class="p">,</span> <span class="n">_get_name</span>
-<span class="kn">from</span> <span class="nn">._comparison</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Comparer</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">._comparison</span> <span class="kn">import</span> <span class="n">Comparer</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_parse_metric</span><span class="p">,</span>
+    <span class="n">_add_spatial_grid_to_df</span><span class="p">,</span>
+    <span class="n">_groupby_df</span><span class="p">,</span>
+    <span class="n">_parse_groupby</span><span class="p">,</span>
     <span class="n">IdOrNameTypes</span><span class="p">,</span>
     <span class="n">TimeTypes</span><span class="p">,</span>
-    <span class="n">_parse_metric</span><span class="p">,</span>
-    <span class="n">_parse_groupby</span><span class="p">,</span>
-    <span class="n">_groupby_df</span><span class="p">,</span>
-    <span class="n">_add_spatial_grid_to_df</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">._comparison</span> <span class="kn">import</span> <span class="n">_get_deprecated_args</span>  <span class="c1"># TODO remove in v 1.1</span>
 
@@ -331,7 +331,7 @@ document.write(`
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        comparer : (PointComparer, TrackComparer, ComparerCollection)</span>
+<span class="sd">        comparer : (Comparer, ComparerCollection)</span>
 <span class="sd">            Comparer to add to this collection</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">comparer</span><span class="p">,</span> <span class="p">(</span><span class="n">ComparerCollection</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
@@ -415,7 +415,7 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;List of unique variable names&quot;&quot;&quot;</span>
         <span class="n">unique_names</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">cmp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">n</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">quantity_name</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">name</span>
             <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unique_names</span><span class="p">:</span>
                 <span class="n">unique_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">unique_names</span>
@@ -445,12 +445,13 @@ document.write(`
         <span class="k">for</span> <span class="n">cmp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cmp</span><span class="o">.</span><span class="n">n_models</span><span class="p">):</span>
                 <span class="n">mod_name</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-                <span class="n">df</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="p">[[</span><span class="n">mod_name</span><span class="p">]]</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mod_val&quot;</span><span class="p">]</span>
+                <span class="c1"># drop &quot;x&quot;, &quot;y&quot;,  ?</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="s2">&quot;z&quot;</span><span class="p">])[[</span><span class="n">mod_name</span><span class="p">]]</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">mod_name</span><span class="p">:</span> <span class="s2">&quot;mod_val&quot;</span><span class="p">})</span>
                 <span class="n">df</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_name</span>
                 <span class="n">df</span><span class="p">[</span><span class="s2">&quot;observation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">name</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_variables</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;variable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">quantity_name</span>
+                    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;variable&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">name</span>
                 <span class="n">df</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">x</span>
                 <span class="n">df</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">y</span>
                 <span class="n">df</span><span class="p">[</span><span class="s2">&quot;obs_val&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmp</span><span class="o">.</span><span class="n">obs</span>
@@ -563,7 +564,7 @@ document.write(`
 
         <span class="n">cc</span> <span class="o">=</span> <span class="n">ComparerCollection</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">cmp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">cmp</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">observation</span> <span class="ow">and</span> <span class="n">cmp</span><span class="o">.</span><span class="n">quantity_name</span> <span class="ow">in</span> <span class="n">variable</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cmp</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">observation</span> <span class="ow">and</span> <span class="n">cmp</span><span class="o">.</span><span class="n">quantity</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">variable</span><span class="p">:</span>
                 <span class="n">thismodel</span> <span class="o">=</span> <span class="p">(</span>
                     <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mod_names</span> <span class="k">if</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">cmp</span><span class="o">.</span><span class="n">mod_names</span><span class="p">]</span> <span class="k">if</span> <span class="n">model</span> <span class="k">else</span> <span class="kc">None</span>
                 <span class="p">)</span>

@@ -241,40 +241,18 @@ document.write(`
 <span class="sd">&gt;&gt;&gt; o1 = PointObservation(&quot;klagshamn.dfs0&quot;, item=0, x=366844, y=6154291, name=&quot;Klagshamn&quot;)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">get_args</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
-<span class="kn">import</span> <span class="nn">mikeio</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">_get_name</span><span class="p">,</span> <span class="n">make_unique_index</span>
-<span class="kn">from</span> <span class="nn">.types</span> <span class="kn">import</span> <span class="n">GeometryType</span><span class="p">,</span> <span class="n">PointType</span><span class="p">,</span> <span class="n">TrackType</span><span class="p">,</span> <span class="n">Quantity</span>
-<span class="kn">from</span> <span class="nn">.timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span>
-
-
-<span class="k">def</span> <span class="nf">_get_item_names</span><span class="p">(</span>
-    <span class="n">items</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">],</span> <span class="n">valid_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse requested items from list of valid item names, return item names&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_names</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Input has only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">valid_names</span><span class="p">)</span><span class="si">}</span><span class="s2"> items. </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2"> items where requested: </span><span class="si">{</span><span class="n">items</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-
-    <span class="c1"># more valid_names than items and at least one item is None</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid_names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">([</span><span class="n">i</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Cannot infer item names from input. Please provide item names explicitly. Valid names: </span><span class="si">{</span><span class="n">valid_names</span><span class="si">}</span><span class="s2">.&quot;</span>
-        <span class="p">)</span>
-
-    <span class="n">item_names</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
-        <span class="n">item_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_get_name</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="n">valid_names</span><span class="p">))</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">item_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">item_names</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Items must be unique&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">item_names</span>
+<span class="kn">from</span> <span class="nn">.types</span> <span class="kn">import</span> <span class="n">PointType</span><span class="p">,</span> <span class="n">TrackType</span><span class="p">,</span> <span class="n">Quantity</span>
+<span class="kn">from</span> <span class="nn">.timeseries</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TimeSeries</span><span class="p">,</span>
+    <span class="n">_parse_point_input</span><span class="p">,</span>
+    <span class="n">_parse_track_input</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">Observation</span><span class="p">(</span><span class="n">TimeSeries</span><span class="p">):</span>
@@ -301,9 +279,6 @@ document.write(`
     <span class="p">):</span>
         <span class="n">data</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_time</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
 
-        <span class="c1"># if name is None:</span>
-        <span class="c1">#     name = &quot;Observation&quot;</span>
-
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span>
@@ -317,6 +292,7 @@ document.write(`
     <span class="k">def</span> <span class="nf">weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
+    <span class="c1"># TODO: move this to TimeSeries?</span>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_parse_time</span><span class="p">(</span><span class="n">time</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">(),</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
@@ -324,9 +300,6 @@ document.write(`
                 <span class="sa">f</span><span class="s2">&quot;Input must have a datetime index! Provided index was </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="s2">&quot;100us&quot;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="PointObservation"><a class="viewcode-back" href="../../api.html#modelskill.observation.PointObservation">[docs]</a><span class="k">class</span> <span class="nc">PointObservation</span><span class="p">(</span><span class="n">Observation</span><span class="p">):</span>
@@ -361,6 +334,26 @@ document.write(`
 <span class="sd">    &gt;&gt;&gt; o1 = PointObservation(df[&quot;Water Level&quot;], x=366844, y=6154291)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">PointType</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">z</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">_parse_point_input</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span>
+        <span class="n">data_var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="n">data_var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;observation&quot;</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">ds</span><span class="p">)</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Coordinates of observation (shapely.geometry.Point)&quot;&quot;&quot;</span>
@@ -379,120 +372,6 @@ document.write(`
     <span class="nd">@z</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">PointType</span><span class="p">,</span>
-        <span class="o">*</span><span class="p">,</span>
-        <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">x</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">z</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">PointType</span><span class="p">)</span>
-        <span class="p">),</span> <span class="s2">&quot;Could not construct PointObservation from provided data type.&quot;</span>
-
-        <span class="c1"># self._filename = None</span>
-        <span class="c1"># self._item = None</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
-            <span class="k">assert</span> <span class="p">(</span>
-                <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.dfs0&quot;</span>
-            <span class="p">),</span> <span class="s2">&quot;File must be a dfs0 file, other file types must be read with pandas or xarray&quot;</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># now mikeio.Dataset</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dfs0</span><span class="p">):</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>  <span class="c1"># now mikeio.Dataset</span>
-
-        <span class="c1"># parse item and convert to xr.Dataset</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)):</span>
-            <span class="n">ds</span><span class="p">,</span> <span class="n">item_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mikeio_dataset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-            <span class="n">iteminfo</span> <span class="o">=</span> <span class="n">ds</span><span class="p">[</span><span class="n">item_name</span><span class="p">]</span><span class="o">.</span><span class="n">item</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">to_xarray</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">iteminfo</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)):</span>
-            <span class="n">ds</span><span class="p">,</span> <span class="n">item_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pandas_to_xarray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)):</span>
-            <span class="n">ds</span><span class="p">,</span> <span class="n">item_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xarray_to_xarrray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;input must be str, Path, mikeio.DataArray/Dataset, pd.Series/DataFrame or xr.Dataset/DataArray! Given input has type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">()</span><span class="o">.</span><span class="n">is_monotonic_increasing</span><span class="p">:</span>
-            <span class="c1"># TODO: duplicates_keep=&quot;mean&quot;,&quot;first&quot;,&quot;last&quot;</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Time axis has duplicate entries. It must be monotonically increasing.&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">item_name</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
-        <span class="nb">vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">]</span>  <span class="c1"># if v != &quot;x&quot; and v != &quot;y&quot; and v != &quot;z&quot;]</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="nb">vars</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">name</span><span class="p">})</span>
-        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;observation&quot;</span>
-
-        <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">undefined</span><span class="p">()</span>
-        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quantity</span><span class="o">.</span><span class="n">name</span>
-        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quantity</span><span class="o">.</span><span class="n">unit</span>
-
-        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;gtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">GeometryType</span><span class="o">.</span><span class="n">POINT</span><span class="p">)</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span>
-
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">ds</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_mikeio_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only 0-dimensional data are supported&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-            <span class="n">item_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">]</span>
-            <span class="n">item_name</span> <span class="o">=</span> <span class="n">_get_name</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="n">item_names</span><span class="p">)</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="n">item_name</span><span class="p">]]</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;item must be None when data is a mikeio.DataArray&quot;</span><span class="p">)</span>
-            <span class="n">item_name</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">name</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">_to_dataset</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">ds</span><span class="p">,</span> <span class="n">item_name</span>
-
-    <span class="k">def</span> <span class="nf">_pandas_to_xarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-            <span class="n">item_name</span> <span class="o">=</span> <span class="n">_get_name</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="n">item_name</span><span class="p">]]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;item must be None when data is a pd.Series&quot;</span><span class="p">)</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># to_frame?</span>
-            <span class="n">item_name</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;time&quot;</span>
-        <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">to_xarray</span><span class="p">(),</span> <span class="n">item_name</span>
-
-    <span class="k">def</span> <span class="nf">_xarray_to_xarrray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-            <span class="n">item_name</span> <span class="o">=</span> <span class="n">_get_name</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="p">))</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="n">item_name</span><span class="p">]]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;item must be None when data is a xr.DataArray&quot;</span><span class="p">)</span>
-            <span class="n">item_name</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">name</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">to_dataset</span><span class="p">()</span>
-
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only 0-dimensional data are supported&quot;</span>
-
-        <span class="c1"># check that name of coords is &quot;time&quot;, rename if not</span>
-        <span class="k">if</span> <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span> <span class="s2">&quot;time&quot;</span><span class="p">})</span>
-
-        <span class="k">return</span> <span class="n">ds</span><span class="p">,</span> <span class="n">item_name</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;PointObservation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, x=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="s2">, y=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -588,101 +467,19 @@ document.write(`
         <span class="n">offset_duplicates</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
         <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">TrackType</span><span class="p">)</span>
-        <span class="p">),</span> <span class="s2">&quot;Could not construct TrackObservation from provided data type.&quot;</span>
-
-        <span class="c1"># self._filename = None</span>
-        <span class="c1"># self._item = None</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
-            <span class="k">assert</span> <span class="p">(</span>
-                <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.dfs0&quot;</span>
-            <span class="p">),</span> <span class="s2">&quot;File must be a dfs0 file, other file types must be read with pandas or xarray&quot;</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># now mikeio.Dataset</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dfs0</span><span class="p">):</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>  <span class="c1"># now mikeio.Dataset</span>
-
-        <span class="c1"># parse items and convert to xr.Dataset</span>
-        <span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_item</span><span class="p">,</span> <span class="n">y_item</span><span class="p">,</span> <span class="n">item</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-            <span class="n">ds</span><span class="p">,</span> <span class="n">item_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mikeio_to_xarray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">iteminfo</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">item_names</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span><span class="o">.</span><span class="n">item</span>  <span class="c1"># 2=value item</span>
-                <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">iteminfo</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-            <span class="n">ds</span><span class="p">,</span> <span class="n">item_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pandas_to_xarray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-            <span class="n">ds</span><span class="p">,</span> <span class="n">item_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xarray_to_xarrray</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;input must be str, Path, mikeio.Dataset, pd.DataFrame or xr.Dataset! Given input has type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-
-        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">item_names</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-
-        <span class="c1"># make sure that x and y are named x and y</span>
-        <span class="n">old_xy_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">old_xy_names</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">])))</span>
-
-        <span class="n">SPATIAL_DIMS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">]</span>
-
-        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">SPATIAL_DIMS</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">:</span>
-                <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">set_coords</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
-
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="n">data_var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">data_var</span><span class="p">:</span> <span class="n">name</span><span class="p">})</span>
-
-        <span class="c1"># A unique index makes lookup much faster O(1)</span>
-        <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">make_unique_index</span><span class="p">(</span>
-            <span class="n">ds</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">(),</span> <span class="n">offset_duplicates</span><span class="o">=</span><span class="n">offset_duplicates</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">_parse_track_input</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span>
+            <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span>
+            <span class="n">x_item</span><span class="o">=</span><span class="n">x_item</span><span class="p">,</span>
+            <span class="n">y_item</span><span class="o">=</span><span class="n">y_item</span><span class="p">,</span>
+            <span class="n">offset_duplicates</span><span class="o">=</span><span class="n">offset_duplicates</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">])</span>
-
-        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;observation&quot;</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;gtype&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">GeometryType</span><span class="o">.</span><span class="n">TRACK</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">quantity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">quantity</span> <span class="o">=</span> <span class="n">Quantity</span><span class="o">.</span><span class="n">undefined</span><span class="p">()</span>
-        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;long_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quantity</span><span class="o">.</span><span class="n">name</span>
-        <span class="n">ds</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">quantity</span><span class="o">.</span><span class="n">unit</span>
+        <span class="n">data_var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">ds</span><span class="p">[</span><span class="n">data_var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;observation&quot;</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">ds</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_mikeio_to_xarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only 0-dimensional data are supported&quot;</span>
-        <span class="n">valid_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">]</span>
-        <span class="n">item_names</span> <span class="o">=</span> <span class="n">_get_item_names</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="n">valid_names</span><span class="p">)</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">item_names</span><span class="p">]</span><span class="o">.</span><span class="n">to_xarray</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">ds</span><span class="p">,</span> <span class="n">item_names</span>
-
-    <span class="k">def</span> <span class="nf">_pandas_to_xarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
-
-        <span class="n">item_names</span> <span class="o">=</span> <span class="n">_get_item_names</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">item_names</span><span class="p">]</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;time&quot;</span>
-        <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">to_xarray</span><span class="p">(),</span> <span class="n">item_names</span>
-
-    <span class="k">def</span> <span class="nf">_xarray_to_xarrray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
-
-        <span class="n">item_names</span> <span class="o">=</span> <span class="n">_get_item_names</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">valid_names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="p">))</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">item_names</span><span class="p">]</span>
-
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only 0-dimensional data are supported&quot;</span>
-
-        <span class="c1"># check that name of coords is &quot;time&quot;, rename if not</span>
-        <span class="k">if</span> <span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">coords</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span> <span class="s2">&quot;time&quot;</span><span class="p">})</span>
-
-        <span class="k">return</span> <span class="n">ds</span><span class="p">,</span> <span class="n">item_names</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;TrackObservation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, n=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_points</span><span class="si">}</span><span class="s2">&quot;</span>

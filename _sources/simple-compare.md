@@ -47,7 +47,7 @@ c = ms.compare(fn_obs, fn_mod, mod_item=0)
 ### 4. Analysis and plotting
 
 The returned
-[PointComparer](modelskill.comparison.PointComparer) can make
+[Comparer](modelskill.comparison.Comparer) can make
 scatter plots, skill assessment, time series plots etc.
 
 ```python

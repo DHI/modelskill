@@ -348,7 +348,7 @@ must be given (as either an index or a string), by default None</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="modelskill.model.DfsuModelResult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.model.</span></span><span class="sig-name descname"><span class="pre">DfsuModelResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Undefined'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/dfsu.html#DfsuModelResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.DfsuModelResult" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.model.</span></span><span class="sig-name descname"><span class="pre">DfsuModelResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/dfsu.html#DfsuModelResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.DfsuModelResult" title="Permalink to this definition">#</a></dt>
 <dd><p>Construct a DfsuModelResult from a dfsu file or mikeio.Dataset/DataArray.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="modelskill.model.DfsuModelResult.extract">
@@ -474,6 +474,12 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dd><p>End time of time series data</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.equals">
+<span class="sig-name descname"><span class="pre">equals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.PointObservation.equals" title="Permalink to this definition">#</a></dt>
+<dd><p>Check if two TimeSeries are equal</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.geometry">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">geometry</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.geometry" title="Permalink to this definition">#</a></dt>
@@ -484,6 +490,23 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.gtype">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gtype</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.gtype" title="Permalink to this definition">#</a></dt>
 <dd><p>Geometry type</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.interp_time">
+<span class="sig-name descname"><span class="pre">interp_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_time</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.PointObservation.interp_time" title="Permalink to this definition">#</a></dt>
+<dd><p>Interpolate time series to new time index</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_time</strong> (<em>pd.DatetimeIndex</em>) – new time index</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>interpolated time series</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>TimeSeries</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py property">
@@ -501,7 +524,7 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.plotter">
 <span class="sig-name descname"><span class="pre">plotter</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.plotter" title="Permalink to this definition">#</a></dt>
-<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">modelskill.timeseries.MatplotlibTimeSeriesPlotter</span></code></p>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">modelskill.timeseries._plotter.MatplotlibTimeSeriesPlotter</span></code></p>
 </dd></dl>
 
 <dl class="py property">
@@ -654,6 +677,12 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dd><p>End time of time series data</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.equals">
+<span class="sig-name descname"><span class="pre">equals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.TrackObservation.equals" title="Permalink to this definition">#</a></dt>
+<dd><p>Check if two TimeSeries are equal</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.geometry">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">geometry</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.geometry" title="Permalink to this definition">#</a></dt>
@@ -664,6 +693,23 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.gtype">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gtype</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.gtype" title="Permalink to this definition">#</a></dt>
 <dd><p>Geometry type</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.interp_time">
+<span class="sig-name descname"><span class="pre">interp_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_time</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.TrackObservation.interp_time" title="Permalink to this definition">#</a></dt>
+<dd><p>Interpolate time series to new time index</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>new_time</strong> (<em>pd.DatetimeIndex</em>) – new time index</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>interpolated time series</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>TimeSeries</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py property">
@@ -681,7 +727,7 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.plotter">
 <span class="sig-name descname"><span class="pre">plotter</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.plotter" title="Permalink to this definition">#</a></dt>
-<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">modelskill.timeseries.MatplotlibTimeSeriesPlotter</span></code></p>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">modelskill.timeseries._plotter.MatplotlibTimeSeriesPlotter</span></code></p>
 </dd></dl>
 
 <dl class="py property">
@@ -975,12 +1021,6 @@ created with the <cite>compare</cite> function.</p>
 <dd><p>Quantity object</p>
 </dd></dl>
 
-<dl class="py property">
-<dt class="sig sig-object py" id="modelskill.comparison.Comparer.quantity_name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quantity_name</span></span><a class="headerlink" href="#modelskill.comparison.Comparer.quantity_name" title="Permalink to this definition">#</a></dt>
-<dd><p>name of variable</p>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="modelskill.comparison.Comparer.query">
 <span class="sig-name descname"><span class="pre">query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.query" title="Permalink to this definition">#</a></dt>
@@ -1246,6 +1286,24 @@ cells with fewer observations get a score of <cite>np.nan</cite></p></li>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">c2</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Observation</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.comparison.Comparer.x">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#modelskill.comparison.Comparer.x" title="Permalink to this definition">#</a></dt>
+<dd><p>x-coordinate</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.comparison.Comparer.y">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#modelskill.comparison.Comparer.y" title="Permalink to this definition">#</a></dt>
+<dd><p>y-coordinate</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="modelskill.comparison.Comparer.z">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">z</span></span><a class="headerlink" href="#modelskill.comparison.Comparer.z" title="Permalink to this definition">#</a></dt>
+<dd><p>z-coordinate</p>
 </dd></dl>
 
 </dd></dl>
@@ -1516,7 +1574,7 @@ in a single-quadrant polar plot, with r=std and theta=arccos(cc).</p>
 <dd><p>Add another Comparer to this collection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>comparer</strong> (<em>(</em><em>PointComparer</em><em>, </em><em>TrackComparer</em><em>, </em><a class="reference internal" href="#modelskill.comparison.ComparerCollection" title="modelskill.comparison.ComparerCollection"><em>ComparerCollection</em></a><em>)</em>) – Comparer to add to this collection</p>
+<dd class="field-odd"><p><strong>comparer</strong> (<em>(</em><a class="reference internal" href="#modelskill.comparison.Comparer" title="modelskill.comparison.Comparer"><em>Comparer</em></a><em>, </em><a class="reference internal" href="#modelskill.comparison.ComparerCollection" title="modelskill.comparison.ComparerCollection"><em>ComparerCollection</em></a><em>)</em>) – Comparer to add to this collection</p>
 </dd>
 </dl>
 </dd></dl>
