@@ -306,6 +306,10 @@ class AggregatedSkill:
     def loc(self, *args, **kwargs):
         return self.df.loc(*args, **kwargs)
 
+    def swaplevel(self, *args, **kwargs):
+        """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
+        return self.__class__(self.df.swaplevel(*args, **kwargs))
+
     @property
     def mod_names(self):
         """List of model names (in index)"""
