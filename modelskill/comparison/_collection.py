@@ -715,7 +715,7 @@ class ComparerCollection(Mapping):
 
         # group by
         by = cmp._mean_skill_by(skilldf, mod_names, var_names)
-        agg = {"n": np.sum}
+        agg = {"n": "sum"}
         for metric in metrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
         res = skilldf.groupby(by).agg(agg)
