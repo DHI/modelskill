@@ -306,6 +306,12 @@ class AggregatedSkill:
     def loc(self, *args, **kwargs):
         return self.df.loc(*args, **kwargs)
 
+    # TODO: remove?
+    def sort_index(self, *args, **kwargs):
+        """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
+        return self.__class__(self.df.sort_index(*args, **kwargs))
+
+    # TODO: remove?
     def swaplevel(self, *args, **kwargs):
         """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
         return self.__class__(self.df.swaplevel(*args, **kwargs))
