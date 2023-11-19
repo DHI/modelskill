@@ -1,52 +1,181 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
 import os
 
 import yaml
-from typing import (
-    Optional,
-    Union,
-    Mapping,
-    Sequence,
-    Any,
-)
+from typing import Optional, Union, Sequence
 import warnings
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 import mikeio
 
-from modelskill import ModelResult
-from .matching import match_time, parse_modeldata_list
+from . import ModelResult, plotting
+from .matching import _single_obs_compare
 from .observation import Observation, PointObservation, TrackObservation
 from .utils import is_iterable_not_str
-from . import plotting
-from .comparison import PointComparer, ComparerCollection, TrackComparer
+from .comparison import Comparer, ComparerCollection
 
 
-class _BaseConnector(ABC):
-    def __init__(self) -> None:
-        self.modelresults: {}  # type: ignore
-        self.name = None
-        self.obs: Any = None
+def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True):
+    """Load Connector from a config file (or dict)
 
-    @property
-    def n_models(self):
-        """Number of (unique) model results in Connector."""
-        return len(self.modelresults)
+    Parameters
+    ----------
+    configuration : Union[str, dict]
+        path to config file or dict with configuration
+    validate_eum : bool, optional
+        require eum to match, by default True
+    relative_path: bool, optional
+            file path are relative to configuration file, and not current directory
 
-    @property
-    def mod_names(self):
-        """Names of (unique) model results in Connector."""
-        return list(self.modelresults.keys())
+    Returns
+    -------
+    Connector
+        A Connector object with the given configuration
 
-    @abstractmethod
-    def extract(self):
-        pass
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> con = ms.from_config('Oresund.yml')
+    >>> cc = con.extract()
+    """
+    if isinstance(conf, str):
+        filename = conf
+        ext = os.path.splitext(filename)[-1]
+        dirname = os.path.dirname(filename)
+        if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
+            conf = _yaml_to_dict(filename)
+        elif "xls" in ext:
+            conf = _excel_to_dict(filename)
+        else:
+            raise ValueError("Filename extension not supported! Use .yml or .xlsx")
+    else:
+        dirname = ""
+
+    modelresults = {}
+
+    assert isinstance(conf, dict)
+    for name, mr_dict in conf["modelresults"].items():
+        if not mr_dict.get("include", True):
+            continue
+        if relative_path:
+            filename = os.path.join(dirname, mr_dict["filename"])
+        else:
+            filename = mr_dict["filename"]
+        item = mr_dict.get("item")
+        mr = ModelResult(filename, name=name, item=item)
+        modelresults[name] = mr
+    mr_list = list(modelresults.values())
+
+    observations = {}
+    for name, obs_dict in conf["observations"].items():
+        if not obs_dict.get("include", True):
+            continue
+        if relative_path:
+            filename = os.path.join(dirname, obs_dict["filename"])
+        else:
+            filename = obs_dict["filename"]
+        item = obs_dict.get("item")
+        alt_name = obs_dict.get("name")
+        name = name if alt_name is None else alt_name
+
+        otype = obs_dict.get("type")
+        if (otype is not None) and ("track" in otype.lower()):
+            obs = TrackObservation(filename, item=item, name=name)  # type: ignore
+        else:
+            x, y = obs_dict.get("x"), obs_dict.get("y")
+            obs = PointObservation(filename, item=item, x=x, y=y, name=name)  # type: ignore
+        observations[name] = obs
+    obs_list = list(observations.values())
+
+    if "connections" in conf:
+        raise NotImplementedError()
+    else:
+        con = Connector(obs_list, mr_list, validate=validate_eum)
+    return con
 
 
-class _SingleObsConnector(_BaseConnector):
+def _modelresult_to_dict(mr, folder):
+    d = {}
+    # d["display_name"] = mr.name
+    if mr.filename is None:
+        raise ValueError(
+            f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
+        )
+    if folder is None:
+        d["filename"] = mr.filename
+    else:
+        d["filename"] = os.path.relpath(mr.filename, start=folder)
+    d["item"] = mr.item
+    return d
+
+
+def _observation_to_dict(obs, folder):
+    d = {}
+    # d["display_name"] = obs.name
+    d["type"] = obs.__class__.__name__
+    if obs.filename is None:
+        raise ValueError(
+            f"Cannot write Connector to conf file! Observation '{obs.name}' has no filename."
+        )
+    if folder is None:
+        d["filename"] = obs.filename
+    else:
+        d["filename"] = os.path.relpath(obs.filename, start=folder)
+    d["item"] = obs._item
+    if isinstance(obs, PointObservation):
+        d["x"] = obs.x
+        d["y"] = obs.y
+    # d["quantity_name"] = obs.quantity.name
+    return d
+
+
+def _config_to_excel(filename, conf):
+    with pd.ExcelWriter(filename) as writer:
+        dfmr = pd.DataFrame(conf["modelresults"]).T
+        dfmr.index.name = "name"
+        dfmr.to_excel(writer, sheet_name="modelresults")
+
+        dfo = pd.DataFrame(conf["observations"]).T
+        dfo.index.name = "name"
+        dfo.to_excel(writer, sheet_name="observations")
+
+
+def _config_to_yml(filename, conf):
+    with open(filename, "w") as f:
+        # TODO: preserve order
+        yaml.dump(conf, f)  # , default_flow_style=False
+
+
+def _yaml_to_dict(filename):
+    with open(filename) as f:
+        contents = f.read()
+    conf = yaml.load(contents, Loader=yaml.FullLoader)
+    return conf
+
+
+def _excel_to_dict(filename):
+    with pd.ExcelFile(filename, engine="openpyxl") as xls:
+        dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
+        dfo = pd.read_excel(xls, "observations", index_col=0).T
+        # try: dfc = pd.read_excel(xls, "connections", index_col=0).T
+    conf = {}
+    conf["modelresults"] = _remove_keys_w_nan_value(dfmr.to_dict())
+    conf["observations"] = _remove_keys_w_nan_value(dfo.to_dict())
+    return conf
+
+
+def _remove_keys_w_nan_value(d):
+    """Loops through dicts in dict and removes all entries where value is NaN
+    e.g. x,y values of TrackObservations
+    """
+    dout = {}
+    for key, subdict in d.items():
+        dout[key] = {k: v for k, v in subdict.items() if pd.Series(v).notna().all()}
+    return dout
+
+
+class SingleObsConnector:
     """A connection between a single observation and model(s)"""
 
     def __repr__(self):
@@ -65,7 +194,7 @@ class _SingleObsConnector(_BaseConnector):
         return f"<{self.__class__.__name__}> {txt}"
 
     def __init__(self, obs, mod, weight=1.0, validate=True):
-        super().__init__()
+        self.obs = None
         obs = self._parse_observation(obs)
         self.name = obs.name
         modelresults = self._parse_model(mod)
@@ -106,21 +235,9 @@ class _SingleObsConnector(_BaseConnector):
         for mod in modelresults:
             # has_mod_item = self._has_mod_item(mod)
             quantity_match = obs.quantity.is_compatible(mod.quantity)
-            in_domain = self._validate_in_domain(obs, mod)
             time_overlaps = self._validate_start_end(obs, mod)
-            ok = ok and quantity_match and in_domain and time_overlaps
+            ok = ok and quantity_match and time_overlaps
         return ok
-
-    @staticmethod
-    def _validate_in_domain(obs, mod):
-        in_domain = True
-        # if isinstance(mod, protocols.ModelResult) and isinstance(obs, PointObservation):
-        #     in_domain = mod._in_domain(obs.x, obs.y)
-        #     if not in_domain:
-        #         warnings.warn(
-        #             f"Outside domain! Obs '{obs.name}' outside model '{mod.name}'"
-        #         )
-        return in_domain
 
     @staticmethod
     def _validate_start_end(obs, mod):
@@ -138,6 +255,16 @@ class _SingleObsConnector(_BaseConnector):
 
         return True
 
+    @property
+    def n_models(self):
+        """Number of (unique) model results in Connector."""
+        return len(self.modelresults)
+
+    @property
+    def mod_names(self):
+        """Names of (unique) model results in Connector."""
+        return list(self.modelresults.keys())
+
     def plot_observation_positions(self, figsize=None):
         """Plot observation points on a map showing the model domain
 
@@ -150,131 +277,34 @@ class _SingleObsConnector(_BaseConnector):
             obs=[self.obs], mod=self.modelresults, figsize=figsize
         )
 
-    @staticmethod
-    def _comparer_or_None(comparer, warn=True):
-        """If comparer is empty issue warning and return None."""
-        if comparer.n_points == 0:
-            if warn:
-                name = comparer.name
-                warnings.warn(f"No overlapping data was found for {name}!")
-            return None
-        return comparer
-
-
-class PointConnector(_SingleObsConnector):
-    """Connector for a single PointObservation and ModelResults
-
-    Typically, not constructed directly, but part of a Connector.
-
-    Examples
-    --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
-    >>> con1 = PointConnector(o1, mr)
-    >>> con = Connector(o1, mr)    # con[0] = con1
-    """
-
     def _parse_observation(self, obs):
-        if isinstance(obs, (pd.Series, pd.DataFrame)):
+        if isinstance(obs, Observation):
+            return obs
+        elif isinstance(obs, (pd.Series, pd.DataFrame)):
             return PointObservation(obs)
         elif isinstance(obs, str):
             return PointObservation(obs)
-        elif isinstance(obs, Observation):
-            return obs
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self, max_model_gap: Optional[float] = None) -> Optional[PointComparer]:
+    def extract(self, max_model_gap: Optional[float] = None) -> Optional[Comparer]:
         """Extract model results at times and positions of observation.
 
         Returns
         -------
-        PointComparer
+        Comparer
             A comparer object for further analysis and plotting.
         """
-
-        assert isinstance(self.obs, PointObservation)
-        df_model = []
-        for mr in self.modelresults:
-            if hasattr(mr, "extract"):
-                mr = mr.extract(self.obs)
-
-            df = mr.to_dataframe()  # TODO: xr.Dataset
-            if (df is not None) and (len(df) > 0):
-                df_model.append(df)
-            else:
-                warnings.warn(
-                    f"No data found when extracting '{self.obs.name}' from model '{mr.name}'"
-                )
-
-        if len(df_model) == 0:
-            warnings.warn(
-                f"No overlapping data was found for PointObservation '{self.obs.name}'!"
-            )
+        comparer = _single_obs_compare(
+            obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
+        )
+        if comparer.n_points == 0:
+            warnings.warn(f"No overlapping data was found for {comparer.name}!")
             return None
-
-        raw_mod_data = parse_modeldata_list(df_model)
-        matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
-
-        comparer = PointComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
-        return self._comparer_or_None(comparer)
+        return comparer
 
 
-class TrackConnector(_SingleObsConnector):
-    """Connector for a single TrackObservation and ModelResults
-
-    Typically, not constructed directly, but part of a Connector.
-
-    Examples
-    --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> o1 = TrackObservation(df, item=2, name="altimeter")
-    >>> con1 = TrackConnector(o1, mr)
-    >>> con = Connector(o1, mr)    # con[0] = con1
-    """
-
-    def _parse_observation(self, obs) -> TrackObservation:
-        if isinstance(obs, TrackObservation):
-            return obs
-        else:
-            raise ValueError(f"Unknown track observation type {type(obs)}")
-
-    def extract(self, max_model_gap: Optional[float] = None) -> Optional[TrackComparer]:
-        """Extract model results at times and positions of track observation.
-
-        Returns
-        -------
-        TrackComparer
-            A comparer object for further analysis and plotting."""
-
-        assert isinstance(self.obs, TrackObservation)
-        df_model = []
-        for mr in self.modelresults:
-            if hasattr(mr, "extract"):
-                mr = mr.extract(self.obs)
-
-            df = mr.data
-            if (df is not None) and (len(df) > 0):
-                df_model.append(df)
-            else:
-                warnings.warn(
-                    f"No data in extracted track '{self.obs.name}' from model '{mr.name}'"
-                )
-
-        if len(df_model) == 0:
-            warnings.warn(
-                f"No overlapping data was found for TrackObservation '{self.obs.name}'!"
-            )
-            return None
-
-        raw_mod_data = parse_modeldata_list(df_model)
-        matched_data = match_time(self.obs, raw_mod_data, max_model_gap)
-
-        comparer = TrackComparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
-        return self._comparer_or_None(comparer)
-
-
-class Connector(_BaseConnector, Mapping, Sequence):
+class Connector(Sequence):
     """The Connector is used for matching Observations and ModelResults
 
     It is one of the most important classes in modelskill. The connections are
@@ -315,12 +345,22 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """Names of (unique) observations in Connector."""
         return list(self.observations.keys())
 
+    @property
+    def n_models(self):
+        """Number of (unique) model results in Connector."""
+        return len(self.modelresults)
+
+    @property
+    def mod_names(self):
+        """Names of (unique) model results in Connector."""
+        return list(self.modelresults.keys())
+
     def __repr__(self):
         txt = "<Connector> with \n"
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
     def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
-        super().__init__()
+        self.name = None
         self.connections = {}
         self.observations = {}
         self.modelresults = {}
@@ -370,13 +410,12 @@ class Connector(_BaseConnector, Mapping, Sequence):
             for j, o in enumerate(obs):
                 self.add(o, mod, weight=weight[j], validate=validate)
             return
-        elif isinstance(obs, _SingleObsConnector):
+        elif isinstance(obs, SingleObsConnector):
             con = obs
+        elif isinstance(obs, Observation):
+            con = SingleObsConnector(obs, mod, weight=weight, validate=validate)
         else:
-            if isinstance(obs, TrackObservation):
-                con = TrackConnector(obs, mod, weight=weight, validate=validate)
-            else:
-                con = PointConnector(obs, mod, weight=weight, validate=validate)
+            raise ValueError(f"Unknown observation type {type(obs)}")
         if con.n_models > 0:  # What other option is there??
             if con.name not in self.connections:
                 self.connections[con.name] = con
@@ -440,9 +479,6 @@ class Connector(_BaseConnector, Mapping, Sequence):
     def __len__(self) -> int:
         return len(self.connections)
 
-    def __iter__(self):
-        return iter(self.connections.values())
-
     def extract(self, *args, **kwargs) -> ComparerCollection:
         """Extract model results at times and positions of all observations.
 
@@ -453,8 +489,7 @@ class Connector(_BaseConnector, Mapping, Sequence):
         """
 
         cmps = [con.extract(*args, **kwargs) for con in self.connections.values()]
-        cc = ComparerCollection(cmps)
-        return cc
+        return ComparerCollection(cmps)
 
     def plot_observation_positions(self, title=None, figsize=None):
         """Plot observation points on a map showing the model domain
@@ -509,42 +544,52 @@ class Connector(_BaseConnector, Mapping, Sequence):
         >>> con.plot_temporal_coverage(marker=".")
         >>> con.plot_temporal_coverage(figsize=(5,3))
         """
-        n_models = self.n_models if show_model else 0
-        n_lines = n_models + self.n_observations
-        if figsize is None:
-            ysize = max(2.0, 0.45 * n_lines)
-            figsize = (7, ysize)
+        obs = list(self.observations.values())
+        mods = list(self.modelresults.values()) if show_model else []
+        return plotting.temporal_coverage(
+            obs=obs,
+            mod=mods,
+            limit_to_model_period=limit_to_model_period,
+            title=title,
+            figsize=figsize,
+            marker=marker,
+        )
+        # n_models = self.n_models if show_model else 0
+        # n_lines = n_models + self.n_observations
+        # if figsize is None:
+        #     ysize = max(2.0, 0.45 * n_lines)
+        #     figsize = (7, ysize)
 
-        fig, ax = plt.subplots(figsize=figsize)
-        y = np.repeat(0.0, 2)
-        labels = []
+        # fig, ax = plt.subplots(figsize=figsize)
+        # y = np.repeat(0.0, 2)
+        # labels = []
 
-        if show_model:
-            for key, mr in self.modelresults.items():
-                y += 1.0
-                plt.plot([mr.start_time, mr.end_time], y)
-                labels.append(key)
+        # if show_model:
+        #     for key, mr in self.modelresults.items():
+        #         y += 1.0
+        #         plt.plot([mr.start_time, mr.end_time], y)
+        #         labels.append(key)
 
-        for key, obs in self.observations.items():
-            y += 1.0
-            plt.plot(obs.time, y[0] * np.ones_like(obs.values), marker, markersize=5)
-            labels.append(key)
+        # for key, obs in self.observations.items():
+        #     y += 1.0
+        #     plt.plot(obs.time, y[0] * np.ones_like(obs.values), marker, markersize=5)
+        #     labels.append(key)
 
-        if limit_to_model_period:
-            mr = list(self.modelresults.values())[0]  # take first
-            plt.xlim([mr.start_time, mr.end_time])
+        # if limit_to_model_period:
+        #     mr = list(self.modelresults.values())[0]  # take first
+        #     plt.xlim([mr.start_time, mr.end_time])
 
-        plt.yticks(np.arange(n_lines) + 1, labels)
-        if show_model:
-            for j in range(n_models):
-                ax.get_yticklabels()[j].set_fontstyle("italic")
-                ax.get_yticklabels()[j].set_weight("bold")
-                # set_color("#004165")
-        fig.autofmt_xdate()
+        # plt.yticks(np.arange(n_lines) + 1, labels)
+        # if show_model:
+        #     for j in range(n_models):
+        #         ax.get_yticklabels()[j].set_fontstyle("italic")
+        #         ax.get_yticklabels()[j].set_weight("bold")
+        #         # set_color("#004165")
+        # fig.autofmt_xdate()
 
-        if title:
-            ax.set_title(title)
-        return ax
+        # if title:
+        #     ax.set_title(title)
+        # return ax
 
     def to_config(self, filename: Optional[str] = None, relative_path=True):
         """Save Connector to a config file.
@@ -571,183 +616,22 @@ class Connector(_BaseConnector, Mapping, Sequence):
         # model results
         conf_mr = {}
         for name, mr in self.modelresults.items():
-            conf_mr[name] = self._modelresult_to_dict(mr, folder)
+            conf_mr[name] = _modelresult_to_dict(mr, folder)
         conf["modelresults"] = conf_mr
 
         # observations
         conf_obs = {}
         for name, obs in self.observations.items():
-            conf_obs[name] = self._observation_to_dict(obs, folder)
+            conf_obs[name] = _observation_to_dict(obs, folder)
         conf["observations"] = conf_obs
 
         if filename is not None:
             ext = os.path.splitext(filename)[-1]
             if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
-                self._config_to_yml(filename, conf)
+                _config_to_yml(filename, conf)
             elif "xls" in ext:
-                self._config_to_excel(filename, conf)
+                _config_to_excel(filename, conf)
             else:
                 raise ValueError("Filename extension not supported! Use .yml or .xlsx")
         else:
             return conf
-
-    @staticmethod
-    def _modelresult_to_dict(mr, folder):
-        d = {}
-        # d["display_name"] = mr.name
-        if mr.filename is None:
-            raise ValueError(
-                f"Cannot write Connector to conf file! ModelResult '{mr.name}' has no filename."
-            )
-        if folder is None:
-            d["filename"] = mr.filename
-        else:
-            d["filename"] = os.path.relpath(mr.filename, start=folder)
-        d["item"] = mr.item
-        return d
-
-    @staticmethod
-    def _observation_to_dict(obs, folder):
-        d = {}
-        # d["display_name"] = obs.name
-        d["type"] = obs.__class__.__name__
-        if obs.filename is None:
-            raise ValueError(
-                f"Cannot write Connector to conf file! Observation '{obs.name}' has no filename."
-            )
-        if folder is None:
-            d["filename"] = obs.filename
-        else:
-            d["filename"] = os.path.relpath(obs.filename, start=folder)
-        d["item"] = obs._item
-        if isinstance(obs, PointObservation):
-            d["x"] = obs.x
-            d["y"] = obs.y
-        # d["quantity_name"] = obs.quantity.name
-        return d
-
-    @staticmethod
-    def _config_to_excel(filename, conf):
-        with pd.ExcelWriter(filename) as writer:
-            dfmr = pd.DataFrame(conf["modelresults"]).T
-            dfmr.index.name = "name"
-            dfmr.to_excel(writer, sheet_name="modelresults")
-
-            dfo = pd.DataFrame(conf["observations"]).T
-            dfo.index.name = "name"
-            dfo.to_excel(writer, sheet_name="observations")
-
-            # dfo = pd.DataFrame(conf["connections"]).T
-            # dfo.to_excel(writer, sheet_name="connections")
-
-    @staticmethod
-    def _config_to_yml(filename, conf):
-        with open(filename, "w") as f:
-            # TODO: preserve order
-            yaml.dump(conf, f)  # , default_flow_style=False
-
-    @staticmethod
-    def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True):
-        """Load Connector from a config file (or dict)
-
-        Parameters
-        ----------
-        configuration : Union[atr, dict]
-            path to config file or dict with configuration
-        validate_eum : bool, optional
-            require eum to match, by default True
-        relative_path: bool, optional
-             file path are relative to configuration file, and not current directory
-
-        Returns
-        -------
-        Connector
-            A Connector object with the given configuration
-
-        Examples
-        --------
-        >>> con = Connector.from_config('Oresund.yml')
-        >>> cc = con.extract()
-        """
-        if isinstance(conf, str):
-            filename = conf
-            ext = os.path.splitext(filename)[-1]
-            dirname = os.path.dirname(filename)
-            if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
-                conf = Connector._yaml_to_dict(filename)
-            elif "xls" in ext:
-                conf = Connector._excel_to_dict(filename)
-            else:
-                raise ValueError("Filename extension not supported! Use .yml or .xlsx")
-        else:
-            dirname = ""
-
-        modelresults = {}
-
-        assert isinstance(conf, dict)
-        for name, mr_dict in conf["modelresults"].items():
-            if not mr_dict.get("include", True):
-                continue
-            if relative_path:
-                filename = os.path.join(dirname, mr_dict["filename"])
-            else:
-                filename = mr_dict["filename"]
-            item = mr_dict.get("item")
-            mr = ModelResult(filename, name=name, item=item)
-            modelresults[name] = mr
-        mr_list = list(modelresults.values())
-
-        observations = {}
-        for name, obs_dict in conf["observations"].items():
-            if not obs_dict.get("include", True):
-                continue
-            if relative_path:
-                filename = os.path.join(dirname, obs_dict["filename"])
-            else:
-                filename = obs_dict["filename"]
-            item = obs_dict.get("item")
-            alt_name = obs_dict.get("name")
-            name = name if alt_name is None else alt_name
-
-            otype = obs_dict.get("type")
-            if (otype is not None) and ("track" in otype.lower()):
-                obs = TrackObservation(filename, item=item, name=name)  # type: ignore
-            else:
-                x, y = obs_dict.get("x"), obs_dict.get("y")
-                obs = PointObservation(filename, item=item, x=x, y=y, name=name)  # type: ignore
-            observations[name] = obs
-        obs_list = list(observations.values())
-
-        if "connections" in conf:
-            raise NotImplementedError()
-        else:
-            con = Connector(obs_list, mr_list, validate=validate_eum)
-        return con
-
-    @staticmethod
-    def _yaml_to_dict(filename):
-        with open(filename) as f:
-            contents = f.read()
-        conf = yaml.load(contents, Loader=yaml.FullLoader)
-        return conf
-
-    @staticmethod
-    def _excel_to_dict(filename):
-        with pd.ExcelFile(filename, engine="openpyxl") as xls:
-            dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
-            dfo = pd.read_excel(xls, "observations", index_col=0).T
-            # try: dfc = pd.read_excel(xls, "connections", index_col=0).T
-        conf = {}
-        conf["modelresults"] = Connector._remove_keys_w_nan_value(dfmr.to_dict())
-        conf["observations"] = Connector._remove_keys_w_nan_value(dfo.to_dict())
-        return conf
-
-    @staticmethod
-    def _remove_keys_w_nan_value(d):
-        """Loops through dicts in dict and removes all entries where value is NaN
-        e.g. x,y values of TrackObservations
-        """
-        dout = {}
-        for key, subdict in d.items():
-            dout[key] = {k: v for k, v in subdict.items() if pd.Series(v).notna().all()}
-        return dout
