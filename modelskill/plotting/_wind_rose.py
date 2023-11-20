@@ -18,7 +18,6 @@ def hist2d(
     *,
     ui: np.ndarray,
     dir_step: float,
-    vmin: float,
     n: int | None = None,
 ) -> Tuple[float, np.ndarray, np.ndarray]:
     """Calculate a masked 2d histogram.
@@ -28,11 +27,9 @@ def hist2d(
     data : np.ndarray
         array with 2 columns (magnitude, direction)
     ui : np.ndarray
-        magnitude bins
+        magnitude bins, values below the first bin is considered calm
     dir_step : float
         direction step size
-    vmin : float
-        minimum value for data being counted as valid (i.e. below this is calm)
     n : int, optional
         normalization factor, by default None
     """
@@ -42,6 +39,7 @@ def hist2d(
     assert data[:, 0].min() >= 0, "magnitude must be positive"
 
     half_dir_step = dir_step / 2
+    vmin = ui[0]
 
     thetai = np.linspace(
         start=half_dir_step,
@@ -170,12 +168,10 @@ def wind_rose(
 
     n_dir_labels = n_sectors if n_dir_labels is None else n_dir_labels
 
-    calm, counts, thetac = hist2d(data_1, ui=ui, dir_step=dir_step, vmin=vmin)
+    calm, counts, thetac = hist2d(data_1, ui=ui, dir_step=dir_step)
 
     if dual:
-        calm2, counts_2, _ = hist2d(
-            data_2, ui=ui, dir_step=dir_step, vmin=vmin, n=len(data_1)
-        )
+        calm2, counts_2, _ = hist2d(data_2, ui=ui, dir_step=dir_step, n=len(data_1))
         assert counts.shape == counts_2.shape
 
     ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
@@ -225,7 +221,6 @@ def wind_rose(
         _add_legend_to_ax(
             ax,
             cmap=cmap,
-            vmin=vmin,
             vmax=vmax,
             ui=ui,
             calm=calm,
@@ -256,7 +251,6 @@ def wind_rose(
             _add_legend_to_ax(
                 ax,
                 cmap=cmap,
-                vmin=vmin,
                 vmax=vmax,
                 ui=ui,
                 calm=calm2,
@@ -469,10 +463,11 @@ def _add_calms_to_ax(ax, *, threshold: float, text: str) -> None:
 
 
 def _add_legend_to_ax(
-    ax, *, cmap, vmin, vmax, ui, calm, counts, label, primary: bool, dual=False
+    ax, *, cmap, vmax, ui, calm, counts, label, primary: bool, dual=False
 ) -> None:
     norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
     colors = [cmap(norm(x)) for x in ui]
+    vmin = ui[0]
 
     percentages = np.sum(counts, axis=1) * 100
 
