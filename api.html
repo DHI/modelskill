@@ -2163,9 +2163,9 @@ class which can be accessed from the attribute df.</p>
 </pre></div>
 </div>
 <dl class="py property">
-<dt class="sig sig-object py" id="modelskill.skill.AggregatedSkill.field_names">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">field_names</span></span><a class="headerlink" href="#modelskill.skill.AggregatedSkill.field_names" title="Permalink to this definition">#</a></dt>
-<dd><p>List of field names (=dataframe columns)</p>
+<dt class="sig sig-object py" id="modelskill.skill.AggregatedSkill.metrics">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#modelskill.skill.AggregatedSkill.metrics" title="Permalink to this definition">#</a></dt>
+<dd><p>List of metrics (columns) in the dataframe</p>
 </dd></dl>
 
 <dl class="py property">
@@ -2181,6 +2181,17 @@ class which can be accessed from the attribute df.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="modelskill.skill.AggregatedSkill.round">
+<span class="sig-name descname"><span class="pre">round</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decimals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/skill.html#AggregatedSkill.round"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.skill.AggregatedSkill.round" title="Permalink to this definition">#</a></dt>
+<dd><p>round all values in dataframe</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>decimals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of decimal places to round to (default: 3). If decimals is negative, it specifies the number of positions to the left of the decimal point.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="modelskill.skill.AggregatedSkill.sel">
 <span class="sig-name descname"><span class="pre">sel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reduce_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/skill.html#AggregatedSkill.sel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.skill.AggregatedSkill.sel" title="Permalink to this definition">#</a></dt>
 <dd><dl class="simple">
@@ -2193,9 +2204,9 @@ class which can be accessed from the attribute df.</p>
 <li><p><strong>query</strong> (<em>str</em><em>, </em><em>optional</em>) – string supported by pd.DataFrame.query(), by default None</p></li>
 <li><p><strong>reduce_index</strong> (<em>bool</em><em>, </em><em>optional</em>) – Should unnecessary levels of the index be removed after subsetting?
 Removed levels will stay as columns. By default True</p></li>
-<li><p><strong>**kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – “columns”=… to select specific columns,
-“model”=… to select specific models,
-“observation”=… to select specific observations, etc.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – “metrics”=… to select specific metrics (=columns),
+“model”=… to select specific models (=rows),
+“observation”=… to select specific observations (=rows)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -2210,21 +2221,27 @@ Removed levels will stay as columns. By default True</p></li>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="s2">&quot;rmse&gt;0.3&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">model</span> <span class="o">=</span> <span class="s2">&quot;SW_1&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">observation</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;EPL&quot;</span><span class="p">,</span> <span class="s2">&quot;HKNA&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="s2">&quot;rmse&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="s2">&quot;rmse&gt;0.2&quot;</span><span class="p">,</span> <span class="n">observation</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;n&quot;</span><span class="p">,</span><span class="s2">&quot;rmse&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">metrics</span><span class="o">=</span><span class="s2">&quot;rmse&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="s2">&quot;rmse&gt;0.2&quot;</span><span class="p">,</span> <span class="n">observation</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;n&quot;</span><span class="p">,</span><span class="s2">&quot;rmse&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="modelskill.skill.AggregatedSkill.sort_index">
+<span class="sig-name descname"><span class="pre">sort_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/skill.html#AggregatedSkill.sort_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.skill.AggregatedSkill.sort_index" title="Permalink to this definition">#</a></dt>
+<dd><p>Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="modelskill.skill.AggregatedSkill.style">
-<span class="sig-name descname"><span class="pre">style</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'OrRd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_best</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/skill.html#AggregatedSkill.style"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.skill.AggregatedSkill.style" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">style</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decimals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'OrRd'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_best</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/skill.html#AggregatedSkill.style"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.skill.AggregatedSkill.style" title="Permalink to this definition">#</a></dt>
 <dd><p>style dataframe with colors using pandas style</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>precision</strong> (<em>int</em><em>, </em><em>optional</em>) – number of decimals, by default 3</p></li>
-<li><p><strong>columns</strong> (<em>str</em><em> or </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – apply background gradient color to these columns, by default all;
+<li><p><strong>decimals</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of decimal places to round to (default: 3).</p></li>
+<li><p><strong>metrics</strong> (<em>str</em><em> or </em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – apply background gradient color to these columns, by default all;
 if columns is [] then no background gradient will be applied.</p></li>
 <li><p><strong>cmap</strong> (<em>str</em><em>, </em><em>optional</em>) – colormap of background gradient, by default “OrRd”,
 except “bias” column which will always be “coolwarm”</p></li>
@@ -2241,10 +2258,16 @@ except “bias” column which will always be “coolwarm”</p></li>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">comparer</span><span class="o">.</span><span class="n">skill</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">style</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">style</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;rmse&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">style</span><span class="p">(</span><span class="n">precision</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="s2">&quot;rmse&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">s</span><span class="o">.</span><span class="n">style</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Blues&quot;</span><span class="p">,</span> <span class="n">show_best</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.skill.AggregatedSkill.swaplevel">
+<span class="sig-name descname"><span class="pre">swaplevel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/skill.html#AggregatedSkill.swaplevel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.skill.AggregatedSkill.swaplevel" title="Permalink to this definition">#</a></dt>
+<dd><p>Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation</p>
 </dd></dl>
 
 <dl class="py property">
