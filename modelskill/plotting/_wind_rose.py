@@ -30,8 +30,6 @@ def hist2d(
         magnitude bins, values below the first bin is considered calm
     dir_step : float
         direction step size
-    n : int, optional
-        normalization factor, by default None
     """
     assert data.ndim == 2, "data must be 2d"
     assert data.shape[1] == 2, "data must have 2 columns"
@@ -60,8 +58,8 @@ def hist2d(
 
     mask = data[:, 0] >= vmin
     calm = len(data[~mask]) / len(data)
-    if n is None:
-        n = len(data)
+    # if n is None:
+    n = len(data)
     counts, _, _ = np.histogram2d(  # type: ignore
         data[mask][:, 0],
         data[mask][:, 1],
@@ -149,7 +147,7 @@ def wind_rose(
     assert hasattr(data, "__array__"), "data must be array_like"
 
     data_1 = data[:, 0:2]  # primary magnitude and direction
-    data_1_max = data_1[:, 0].max()
+    magmax = data_1[:, 0].max()
 
     ncols = data.shape[1]
     assert ncols in [2, 4], "data must have 2 or 4 columns"
@@ -157,16 +155,12 @@ def wind_rose(
 
     if dual:
         data_2 = data[:, 2:4]  # secondary magnitude and direction
-        data_2_max = data_2[:, 0].max()
+        magmax = max(magmax, data_2[:, 0].max())
         assert len(labels) == 2, "labels must have 2 elements"
-    else:
-        data_2 = None
-        data_2_max = None
 
     # magnitude bins
     ui, vmin, vmax = pretty_intervals(
-        data_1_max,
-        data_2_max,
+        magmax,
         mag_bins,
         mag_step,
         calm_threshold,
@@ -180,7 +174,8 @@ def wind_rose(
     calm, counts, thetac = hist2d(data_1, ui=ui, dir_step=dir_step)
 
     if dual:
-        calm2, counts_2, _ = hist2d(data_2, ui=ui, dir_step=dir_step, n=len(data_1))
+        assert len(data_1) == len(data_2), "data_1 and data_2 must have same length"
+        calm2, counts_2, _ = hist2d(data_2, ui=ui, dir_step=dir_step)
         assert counts.shape == counts_2.shape
 
     ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
@@ -318,8 +313,7 @@ def directional_labels(n: int) -> Tuple[str, ...]:
 
 
 def pretty_intervals(
-    xmax: float,
-    ymax: Optional[float] = None,
+    magmax: float,
     mag_bins: Optional[List[float]] = None,
     mag_step: Optional[float] = None,
     vmin: Optional[float] = None,
@@ -339,18 +333,14 @@ def pretty_intervals(
 
     else:
         if mag_step is None:
-            mag_step = _calc_mag_step(xmax, ymax)
+            mag_step = _calc_mag_step(magmax)
 
         if vmin is None:
             vmin = mag_step
 
-        if ymax is None:
-            magmax = xmax
-        else:
-            magmax = max(xmax, ymax)
         # Bins
         ui = np.arange(vmin, magmax, mag_step)
-        ui = np.append(ui, xmax)
+        ui = np.append(ui, magmax)
 
         if max_bin is None:
             max_bin = magmax / 2
@@ -412,34 +402,25 @@ def _create_patch(
     return p
 
 
-def _calc_mag_step(xmax: float, ymax: Optional[float] = None, factor: float = 16.0):
+def _calc_mag_step(magmax: float):
     """
     Calculate the magnitude step size for a rose plot.
 
     Parameters
     ----------
-    x : float
+    magmax : float
         The maximum value of the histogram.
-    y : float, optional
-        The maximum value of the histogram.
-    factor : float, optional
-        The factor to use to calculate the magnitude step size, by default 16.0
 
     Returns
     -------
     float
     """
-    mag_step = np.round(xmax / factor, 1)
+    FACTOR: float = 16.0
+
+    mag_step = np.round(magmax / FACTOR, 1)
     if mag_step == 0:
-        mag_step = np.round(xmax / factor, 2)
+        mag_step = np.round(magmax / FACTOR, 2)
 
-    if ymax is None:
-        return mag_step
-
-    mag_step2 = np.round(ymax / factor, 1)
-    if mag_step2 == 0:
-        mag_step2 = np.round(ymax / factor, 2)
-    mag_step = max(mag_step, mag_step2)
     return mag_step
 
 
