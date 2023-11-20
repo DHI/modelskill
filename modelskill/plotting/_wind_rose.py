@@ -15,11 +15,12 @@ from matplotlib.patches import Polygon, Rectangle
 
 def hist2d(
     data: np.ndarray,
+    *,
     ui: np.ndarray,
-    thetai: np.ndarray,
+    dir_step: float,
     vmin: float,
     n: int | None = None,
-) -> Tuple[float, np.ndarray]:
+) -> Tuple[float, np.ndarray, np.ndarray]:
     """Calculate a masked 2d histogram.
 
     Parameters
@@ -28,8 +29,8 @@ def hist2d(
         array with 2 columns (magnitude, direction)
     ui : np.ndarray
         magnitude bins
-    thetai : np.ndarray
-        direction bins
+    dir_step : float
+        direction step size
     vmin : float
         minimum value for data being counted as valid (i.e. below this is calm)
     n : int, optional
@@ -40,17 +41,27 @@ def hist2d(
     assert data[:, 1].max() <= 360, "direction must be in 0-360"
     assert data[:, 0].min() >= 0, "magnitude must be positive"
 
+    half_dir_step = dir_step / 2
+
+    thetai = np.linspace(
+        start=half_dir_step,
+        stop=360 + half_dir_step,
+        num=int(((360 + half_dir_step) - half_dir_step) / dir_step + 1),
+    )
+
+    thetac = thetai[:-1] + half_dir_step
+
     mask = data[:, 0] >= vmin
     calm = len(data[~mask]) / len(data)
     if n is None:
         n = len(data)
-    counts, _, _ = np.histogram2d(
+    counts, _, _ = np.histogram2d(  # type: ignore
         data[mask][:, 0],
         data[mask][:, 1],
-        bins=[ui, thetai],
+        bins=[ui, thetai],  # type: ignore
     )
     counts = counts / n
-    return calm, counts
+    return calm, counts, thetac
 
 
 def wind_rose(
@@ -156,21 +167,15 @@ def wind_rose(
     )
 
     dir_step = 360 // n_sectors
-    half_dir_step = dir_step / 2
 
     n_dir_labels = n_sectors if n_dir_labels is None else n_dir_labels
 
-    thetai = np.linspace(
-        start=half_dir_step,
-        stop=360 + half_dir_step,
-        num=int(((360 + half_dir_step) - half_dir_step) / dir_step + 1),
-    )
-    thetac = thetai[:-1] + half_dir_step
-
-    calm, counts = hist2d(data_1, ui=ui, thetai=thetai, vmin=vmin)
+    calm, counts, thetac = hist2d(data_1, ui=ui, dir_step=dir_step, vmin=vmin)
 
     if dual:
-        calm2, counts_2 = hist2d(data_2, ui=ui, thetai=thetai, vmin=vmin, n=len(data_1))
+        calm2, counts_2, _ = hist2d(
+            data_2, ui=ui, dir_step=dir_step, vmin=vmin, n=len(data_1)
+        )
         assert counts.shape == counts_2.shape
 
     ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
