@@ -1,3 +1,4 @@
+from pathlib import Path
 from platform import architecture
 from typing import Union
 
@@ -18,7 +19,7 @@ from typing import Union
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = "1.0.dev2"
+__version__ = "1.0.a2"
 
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
@@ -27,9 +28,34 @@ from .types import Quantity
 from .model.factory import ModelResult
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .observation import PointObservation, TrackObservation
-from .connection import compare, Connector, from_matched
+from .matching import compare, from_matched
+from .connection import Connector, from_config
 from .settings import options, get_option, set_option, reset_option, load_style
-from .plot import plot_temporal_coverage, plot_spatial_overview
+from . import plotting
+from .comparison import ComparerCollection
+
+
+def load(filename: Union[str, Path]) -> ComparerCollection:
+    """Load a ComparerCollection from a zip file.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Filename of the zip file.
+
+    Returns
+    -------
+    ComparerCollection
+        The loaded ComparerCollection.
+
+    Examples
+    --------
+    >>> cc = ms.compare(obs, mod)
+    >>> cc.save("my_comparer_collection.msk")
+    >>> cc2 = ms.load("my_comparer_collection.msk")"""
+
+    return ComparerCollection.load(filename)
+
 
 __all__ = [
     "Quantity",
@@ -48,15 +74,6 @@ __all__ = [
     "set_option",
     "reset_option",
     "load_style",
-    "plot_temporal_coverage",
-    "plot_spatial_overview",
+    "plotting",
     "from_config",
 ]
-
-
-def from_config(
-    configuration: Union[dict, str], *, validate_eum=True, relative_path=True
-):
-    return Connector.from_config(
-        configuration, validate_eum=validate_eum, relative_path=relative_path
-    )

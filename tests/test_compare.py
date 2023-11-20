@@ -4,21 +4,19 @@ import pandas as pd
 import pytest
 import mikeio
 import modelskill as ms
-from modelskill import ModelResult
-from modelskill.observation import PointObservation, TrackObservation
 from modelskill.comparison._comparison import ItemSelection
 
 
 @pytest.fixture
 def o1():
     fn = "tests/testdata/SW/HKNA_Hm0.dfs0"
-    return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
+    return ms.PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA")
 
 
 @pytest.fixture
 def o2():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
-    return PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
+    return ms.PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL")
 
 
 @pytest.fixture
@@ -28,13 +26,13 @@ def o2_gaps():
     dt = pd.Timedelta(180, unit="s")
     obs.index = obs.index - dt
     obs.index = obs.index.round("S")
-    return PointObservation(obs, item=0, x=3.2760, y=51.9990, name="EPL")
+    return ms.PointObservation(obs, item=0, x=3.2760, y=51.9990, name="EPL")
 
 
 @pytest.fixture
 def o3():
     fn = "tests/testdata/SW/Alti_c2_Dutch.dfs0"
-    return TrackObservation(fn, item=3, name="c2")
+    return ms.TrackObservation(fn, item=3, name="c2")
 
 
 @pytest.fixture
@@ -48,27 +46,27 @@ def mr12_gaps():
     # keep 2017-10-28 00:00 and 2017-10-29 00:00
     # but remove the 11 steps in between
     df2.loc["2017-10-28 01:00":"2017-10-28 23:00"] = np.nan
-    mr1 = ModelResult(df1, name="mr1")
-    mr2 = ModelResult(df2, name="mr2")
+    mr1 = ms.ModelResult(df1, name="mr1")
+    mr2 = ms.ModelResult(df2, name="mr2")
     return mr1, mr2
 
 
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, item=0, name="SW_1")
+    return ms.ModelResult(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, item=0, name="SW_2")
+    return ms.ModelResult(fn, item=0, name="SW_2")
 
 
 @pytest.fixture
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
-    return ModelResult(fn, item=0, name="SW_3")
+    return ms.ModelResult(fn, item=0, name="SW_3")
 
 
 def test_compare_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
@@ -129,46 +127,43 @@ def test_extract_gaps2(o2_gaps, mr12_gaps):
     # mr2 has no data between 2017-10-28 00:00 and 2017-10-29 00:00
     # we therefore expect the the 24 observations in this interval to be removed
     mr1, mr2 = mr12_gaps
-    # con1 = Connector(o2_gaps, mr1)
-    # con2 = Connector(o2_gaps, mr2)
-    # con12 = Connector(o2_gaps, [mr1, mr2])
 
-    cmp = ms.compare(o2_gaps, [mr1, mr2])  # con12.extract()  # no max gap argument
+    cmp = ms.compare(o2_gaps, [mr1, mr2])[0]  # con12.extract()  # no max gap argument
     assert cmp.data["mr1"].count() == 66
     assert cmp.data["mr2"].count() == 66
 
     # no gap in mr1
-    cmp = ms.compare(o2_gaps, mr1, max_model_gap=7200)
+    cmp = ms.compare(o2_gaps, mr1, max_model_gap=7200)[0]
     assert cmp.data["mr1"].count() == 66
 
     # one day gap in mr2
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=7200)
+    cmp = ms.compare(o2_gaps, mr2, max_model_gap=7200)[0]
     assert cmp.data["mr2"].count() == 42  # 66 - 24
     assert cmp.data["mr2"].sel(time="2017-10-28").count() == 0
 
     # will syncronize the two models,
     # so gap in one will remove points from the other
-    cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=7200)
+    cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=7200)[0]
     assert cmp.data["mr1"].count() == 42
     assert cmp.data["mr2"].count() == 42
 
     # the 24 hour gap (86400 seconds) in the file cannot be filled
     # with the max_model_gap=27200
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=27200)
+    cmp = ms.compare(o2_gaps, mr2, max_model_gap=27200)[0]
     assert cmp.data["mr2"].count() == 42
     assert cmp.data["mr2"].sel(time="2017-10-28").count() == 0
 
 
 def test_extract_gaps_big(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=86401)  # 24 hours + 1 second
+    cmp = ms.compare(o2_gaps, mr2, max_model_gap=86401)[0]  # 24 hours + 1 second
     assert cmp.data["mr2"].count() == 66  # no data removed
 
 
 def test_extract_gaps_small(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
     # with pytest.warns(UserWarning, match="No overlapping data"):
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=10)  # no data with that small gap
+    cmp = ms.compare(o2_gaps, mr2, max_model_gap=10)[0]  # no data with that small gap
     assert cmp.n_points == 0
 
 
@@ -189,7 +184,7 @@ def test_compare_gaps_types(o2_gaps, mr12_gaps):
         timedelta(seconds=gap_seconds),
     ]
     for gap in gaps:
-        cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=gap)
+        cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=gap)[0]
         assert cmp.data["mr1"].count() == 42
 
 
@@ -324,3 +319,15 @@ def test_trackmodelresult_and_trackobservation_uses_model_name():
 def test_item_selection_items_are_unique():
     with pytest.raises(ValueError):
         ItemSelection(obs="foo", model=["foo", "bar"], aux=["baz"])
+
+
+def test_save_comparercollection(o1, o3, tmp_path):
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]
+
+    cc = ms.compare([o1, o3], da)
+
+    fn = tmp_path / "cc.msk"
+    cc.save(fn)
+
+    assert fn.exists()

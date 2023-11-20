@@ -50,9 +50,6 @@ And it should be
 
 ## Future
 
-### Automatic reports
-Both static as markdown, docx, pptx and interactive as html
-
 ### Web app
 Create a web app that wraps this library 
 

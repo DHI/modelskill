@@ -9,7 +9,7 @@ import pandas as pd
 
 
 from .. import metrics as mtr
-from ..plot import taylor_diagram, TaylorPoint
+from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import AggregatedSkill
@@ -17,14 +17,14 @@ from ..spatial import SpatialSkill
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
-from ._comparison import (
-    Comparer,
+from ._comparison import Comparer
+from ._utils import (
+    _parse_metric,
+    _add_spatial_grid_to_df,
+    _groupby_df,
+    _parse_groupby,
     IdOrNameTypes,
     TimeTypes,
-    _parse_metric,
-    _parse_groupby,
-    _groupby_df,
-    _add_spatial_grid_to_df,
 )
 from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
 
@@ -97,7 +97,7 @@ class ComparerCollection(Mapping):
 
         Parameters
         ----------
-        comparer : (PointComparer, TrackComparer, ComparerCollection)
+        comparer : (Comparer, ComparerCollection)
             Comparer to add to this collection
         """
         if isinstance(comparer, (ComparerCollection, Sequence)):
@@ -181,7 +181,7 @@ class ComparerCollection(Mapping):
         """List of unique variable names"""
         unique_names = []
         for cmp in self.comparers.values():
-            n = cmp.quantity_name
+            n = cmp.quantity.name
             if n not in unique_names:
                 unique_names.append(n)
         return unique_names
@@ -211,12 +211,13 @@ class ComparerCollection(Mapping):
         for cmp in self.comparers.values():
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
-                df = cmp.data[[mod_name]].to_dataframe().copy()
-                df.columns = ["mod_val"]
+                # drop "x", "y",  ?
+                df = cmp.data.drop_vars(["z"])[[mod_name]].to_dataframe().copy()
+                df = df.rename(columns={mod_name: "mod_val"})
                 df["model"] = mod_name
                 df["observation"] = cmp.name
                 if self.n_variables > 1:
-                    df["variable"] = cmp.quantity_name
+                    df["variable"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
@@ -329,7 +330,7 @@ class ComparerCollection(Mapping):
 
         cc = ComparerCollection()
         for cmp in self.comparers.values():
-            if cmp.name in observation and cmp.quantity_name in variable:
+            if cmp.name in observation and cmp.quantity.name in variable:
                 thismodel = (
                     [m for m in mod_names if m in cmp.mod_names] if model else None
                 )
@@ -714,7 +715,7 @@ class ComparerCollection(Mapping):
 
         # group by
         by = cmp._mean_skill_by(skilldf, mod_names, var_names)
-        agg = {"n": np.sum}
+        agg = {"n": "sum"}
         for metric in metrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
         res = skilldf.groupby(by).agg(agg)
@@ -1005,9 +1006,23 @@ class ComparerCollection(Mapping):
             title=title,
         )
 
-    def save(self, fn: Union[str, Path]) -> None:
-        # save to file in netcdf format using xarray
-        # save each comparer to a netcdf and pack them into a zip file
+    def save(self, filename: Union[str, Path]) -> None:
+        """Save the ComparerCollection to a zip file.
+
+        Parameters
+        ----------
+        filename : str or Path
+            Filename of the zip file.
+
+        Examples
+        --------
+        >>> cc = ms.compare(obs, mod)
+        >>> cc.save("my_comparer_collection.msk")
+
+        Notes
+        -----
+        Each comparer is stored as a netcdf file in the zip file.
+        """
 
         files = []
         for name, cmp in self.comparers.items():
@@ -1015,27 +1030,50 @@ class ComparerCollection(Mapping):
             cmp.save(cmp_fn)
             files.append(cmp_fn)
 
-        with zipfile.ZipFile(fn, "w") as zip:
+        with zipfile.ZipFile(filename, "w") as zip:
             for f in files:
                 zip.write(f)
                 os.remove(f)
 
     @staticmethod
-    def load(fn: Union[str, Path]) -> "ComparerCollection":
-        # load each comparer stored as a netcdf in a zip file
+    def load(filename: Union[str, Path]) -> "ComparerCollection":
+        """Load a ComparerCollection from a zip file.
+
+        Parameters
+        ----------
+        filename : str or Path
+            Filename of the zip file.
+
+        Returns
+        -------
+        ComparerCollection
+            The loaded ComparerCollection.
+
+        Examples
+        --------
+        >>> cc = ms.compare(obs, mod)
+        >>> cc.save("my_comparer_collection.msk")
+        >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.msk")
+        """
+
         folder = tempfile.TemporaryDirectory().name
 
-        with zipfile.ZipFile(fn, "r") as zip:
-            zip.extractall(path=folder)
+        with zipfile.ZipFile(filename, "r") as zip:
+            for f in zip.namelist():
+                if f.endswith(".nc"):
+                    zip.extract(f, path=folder)
 
-        comparers = []
-        for f in zip.namelist():
-            f = os.path.join(folder, f)
-            if f.endswith(".nc"):
-                cmp = Comparer.load(f)
-                os.remove(f)
-                comparers.append(cmp)
+        comparers = [
+            ComparerCollection._load_comparer(folder, f) for f in os.listdir(folder)
+        ]
         return ComparerCollection(comparers)
+
+    @staticmethod
+    def _load_comparer(folder, f) -> Comparer:
+        f = os.path.join(folder, f)
+        cmp = Comparer.load(f)
+        os.remove(f)
+        return cmp
 
     def kde(self, ax=None, **kwargs):
         warnings.warn("kde is deprecated, use plot.kde instead", FutureWarning)

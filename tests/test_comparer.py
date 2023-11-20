@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import pandas as pd
 import xarray as xr
+import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
 
 
@@ -34,12 +35,12 @@ def _get_track_df() -> pd.DataFrame:
 
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
-    data.attrs["quantity_name"] = "fake var"
-    data["x"].attrs["kind"] = "position"
-    data["y"].attrs["kind"] = "position"
+    # data["x"].attrs["kind"] = "position"
+    # data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["weight"] = 1.0
-    data["Observation"].attrs["unit"] = "m"
+    data["Observation"].attrs["units"] = "m"
+    data["Observation"].attrs["long_name"] = "fake var"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     return data
@@ -55,8 +56,9 @@ def pc() -> Comparer:
     data = df.dropna().to_xarray()
     data.attrs["gtype"] = "point"
     data.attrs["name"] = "fake point obs"
-    data["x"] = x
-    data["y"] = y
+    data.coords["x"] = x
+    data.coords["y"] = y
+    data.coords["z"] = np.nan
     data = _set_attrs(data)
     return Comparer(matched_data=data, raw_mod_data=raw_data)
 
@@ -68,6 +70,7 @@ def tc() -> Comparer:
     raw_data = {"m1": df[["x", "y", "m1"]], "m2": df[["x", "y", "m2"]]}
 
     data = df.dropna().to_xarray()
+    data = data.set_coords(["x", "y"])
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
@@ -133,6 +136,50 @@ def test_matched_df_with_aux(pt_df):
     assert cmp.data["wind"].attrs["kind"] == "auxiliary"
 
 
+def test_rename_model(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert "m1" in cmp.mod_names
+    assert "m2" in cmp.mod_names
+    cmp2 = cmp.rename({"m1": "model_1", "m2": "model_2"})
+    assert "model_1" in cmp2.mod_names
+    assert "model_2" in cmp2.mod_names
+    assert "m1" not in cmp2.mod_names
+    assert "m2" not in cmp2.mod_names
+    assert "model_1" in cmp2.raw_mod_data
+    assert "model_2" in cmp2.raw_mod_data
+
+
+def test_partial_rename_model(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert "m1" in cmp.mod_names
+    assert "m2" in cmp.mod_names
+    cmp2 = cmp.rename({"m1": "model_1"})
+    assert "model_1" in cmp2.mod_names
+    assert "m2" in cmp2.mod_names
+    assert "m1" not in cmp2.mod_names
+
+
+def test_rename_aux(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    assert cmp.aux_names == ("wind",)
+    cmp2 = cmp.rename({"wind": "wind_speed"})
+    assert cmp.aux_names == ("wind",)
+    assert cmp2.aux_names == ("wind_speed",)
+
+
+def test_rename_model_and_aux(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    cmp2 = cmp.rename({"m1": "model_1", "wind": "wind_speed"})
+    assert "model_1" in cmp2.mod_names
+    assert "wind_speed" in cmp2.aux_names
+
+
 def test_matched_df_illegal_items(pt_df):
     with pytest.raises(AssertionError, match="data must contain at least two items"):
         # dataframe has only one column
@@ -162,8 +209,8 @@ def test_minimal_matched_data(pt_df):
     cmp = Comparer.from_matched_data(data=data)  # no additional raw_mod_data
 
     assert cmp.data["Observation"].attrs["color"] == "black"
-    assert cmp.data["Observation"].attrs["unit"] == "Undefined"
-    assert cmp.data.attrs["quantity_name"] == "Undefined"
+    assert cmp.data["Observation"].attrs["units"] == "Undefined"
+    assert cmp.data["Observation"].attrs["long_name"] == "Undefined"
     assert len(cmp.raw_mod_data["m1"]) == 6
 
     assert cmp.mod_names == ["m1", "m2"]
@@ -192,10 +239,11 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
 
 def test_minimal_plots(pt_df):
     data = xr.Dataset(pt_df)
-    data.attrs["quantity_name"] = "Waterlevel"
+
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["color"] = "pink"
-    data["Observation"].attrs["unit"] = "m"
+    data["Observation"].attrs["long_name"] = "Waterlevel"
+    data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
@@ -247,11 +295,72 @@ def test_minimal_plots(pt_df):
     assert "m1" in ax.get_title()
 
 
+@pytest.fixture(
+    params=[
+        "scatter",
+        "kde",
+        "qq",
+        "box",
+        "hist",
+        "timeseries",
+        "taylor",
+        "residual_hist",
+    ]
+)
+def pc_plot_function(pc, request):
+    func = getattr(pc.plot, request.param)
+    # special cases requiring a model to be selected
+    if request.param in ["scatter", "hist", "residual_hist"]:
+        func = getattr(pc.sel(model=0).plot, request.param)
+    return func
+
+
+def test_plot_returns_an_object(pc_plot_function):
+    obj = pc_plot_function()
+    assert obj is not None
+
+
+def test_plot_accepts_ax_if_relevant(pc_plot_function):
+    _, ax = plt.subplots()
+    func_name = pc_plot_function.__name__
+    # plots that don't accept ax
+    if func_name in ["taylor"]:
+        return
+    ret_ax = pc_plot_function(ax=ax)
+    assert ret_ax is ax
+
+
+def test_plot_accepts_title(pc_plot_function):
+    expected_title = "test title"
+    ret_obj = pc_plot_function(title=expected_title)
+
+    # Handle both ax and fig titles
+    title = None
+    if hasattr(ret_obj, "get_title"):
+        title = ret_obj.get_title()
+    elif hasattr(ret_obj, "get_suptitle"):
+        title = ret_obj.get_suptitle()
+    elif hasattr(ret_obj, "_suptitle"):  # older versions of matplotlib
+        title = ret_obj._suptitle.get_text()
+    else:
+        raise pytest.fail("Could not access title from return object.")
+
+    assert title == expected_title
+
+
+def test_plot_accepts_figsize(pc_plot_function):
+    figsize = (10, 10)
+    ax = pc_plot_function(figsize=figsize)
+    a, b = ax.get_figure().get_size_inches()
+    assert a, b == figsize
+
+
 def test_plots_directional(pt_df):
     data = xr.Dataset(pt_df)
-    data.attrs["quantity_name"] = "Waterlevel"
+
     data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["unit"] = "m"
+    data["Observation"].attrs["long_name"] = "Waterlevel"
+    data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
@@ -333,7 +442,7 @@ def test_pc_properties(pc):
     assert pc.x == 10.0
     assert pc.y == 55.0
     assert pc.name == "fake point obs"
-    assert pc.quantity_name == "fake var"
+    assert pc.quantity.name == "fake var"
     assert pc.start == pd.Timestamp("2019-01-01")
     assert pc.end == pd.Timestamp("2019-01-05")
     assert pc.mod_names == ["m1", "m2"]
@@ -351,7 +460,7 @@ def test_tc_properties(tc):
     assert np.all(tc.x == [10.1, 10.2, 10.3, 10.4, 10.5])
     assert np.all(tc.y == [55.1, 55.2, 55.3, 55.4, 55.5])
     assert tc.name == "fake track obs"
-    assert tc.quantity_name == "fake var"
+    assert tc.quantity.name == "fake var"
     assert tc.start == pd.Timestamp("2019-01-01")
     assert tc.end == pd.Timestamp("2019-01-05")
     assert tc.mod_names == ["m1", "m2"]
@@ -523,10 +632,10 @@ def test_pc_to_dataframe(pc):
     assert df.y.dtype == "float64"
     assert df.model.dtype == "category"
     assert df.observation.dtype == "category"
-    assert df.x[0] == 10.0
-    assert df.y[0] == 55.0
-    assert df.model[0] == "m1"
-    assert df.model[9] == "m2"
+    assert df.iloc[0].x == 10.0
+    assert df.iloc[0].y == 55.0
+    assert df.iloc[0].model == "m1"
+    assert df.iloc[9].model == "m2"
 
 
 def test_pc_to_dataframe_add_col(pc):

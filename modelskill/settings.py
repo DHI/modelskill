@@ -112,17 +112,20 @@ def _set_option(*args, **kwargs) -> None:
 
     if len(args) == 1 and isinstance(args[0], dict):
         kwargs.update(args[0])
-    else:
-        nargs = len(args)
-        if not nargs or nargs % 2 != 0:
-            raise ValueError(
-                f"Must provide an even number of non-keyword arguments, Input was args={args}, kwargs={kwargs}"
-            )
+
+    if len(args) % 2 == 0:
+        keys = args[::2]
+        values = args[1::2]
+        kwargs.update(dict(zip(keys, values)))
+
+    if len(args) > 1 and len(args) % 2 != 0:
+        raise ValueError("Must provide a value for each key, i.e. even number of args")
+
 
     # default to false
     kwargs.pop("silent", False)
 
-    for k, v in zip(args[::2], args[1::2]):
+    for k, v in kwargs.items():
         key = _get_single_key(k)  # , silent)
 
         o = _get_registered_option(key)
