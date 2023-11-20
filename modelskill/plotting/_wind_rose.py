@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Any
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.axes
