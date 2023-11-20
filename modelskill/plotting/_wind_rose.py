@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -33,6 +33,7 @@ def hist2d(
     n : int, optional
         normalization factor, by default None
     """
+    assert data.ndim == 2, "data must be 2d"
     assert data.shape[1] == 2, "data must have 2 columns"
     assert data[:, 1].min() >= 0, "direction must be positive"
     assert data[:, 1].max() <= 360, "direction must be in 0-360"
@@ -40,6 +41,14 @@ def hist2d(
 
     half_dir_step = dir_step / 2
     vmin = ui[0]
+
+    # data in the [0,half_dir_step] range is shifted 360 degrees
+    data = data.copy()
+    data[:, 1] = np.where(
+        data[:, 1] < half_dir_step,
+        data[:, 1] + 360,
+        data[:, 1],
+    )
 
     thetai = np.linspace(
         start=half_dir_step,
