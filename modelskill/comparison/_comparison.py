@@ -300,8 +300,8 @@ def _area_is_polygon(area) -> bool:
     return True
 
 
-def _inside_polygon(polygon, xy):
-    import matplotlib.path as mp
+def _inside_polygon(polygon, xy) -> np.ndarray:
+    import matplotlib.path as mp  # type: ignore
 
     if polygon.ndim == 1:
         polygon = np.column_stack((polygon[0::2], polygon[1::2]))
