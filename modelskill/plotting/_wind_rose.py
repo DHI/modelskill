@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import PatchCollection
 from matplotlib.legend import Legend
-from matplotlib.offsetbox import AnchoredText
 from matplotlib.patches import Polygon, Rectangle
 
 
@@ -58,7 +57,6 @@ def hist2d(
 
     mask = data[:, 0] >= vmin
     calm = len(data[~mask]) / len(data)
-    # if n is None:
     n = len(data)
     counts, _, _ = np.histogram2d(  # type: ignore
         data[mask][:, 0],
@@ -402,7 +400,7 @@ def _create_patch(
     return p
 
 
-def _calc_mag_step(magmax: float):
+def _calc_mag_step(magmax: float) -> float:
     """
     Calculate the magnitude step size for a rose plot.
 
@@ -508,17 +506,6 @@ def _add_legend_to_ax(
         ax_right = ax.inset_axes([1.15, -0.05, box_width * 1.15, 0.5])
         ax_right.axis("off")
     ax.add_artist(leg)
-
-
-def _add_watermark_to_ax(ax, watermark: str) -> None:
-    text = AnchoredText(
-        watermark,
-        "center right",
-        frameon=False,
-        borderpad=-27.5,
-        prop=dict(fontsize="xx-small", alpha=0.15, rotation=90),
-    )
-    ax.add_artist(text)
 
 
 def _get_cmap(cmap: Union[str, mpl.colors.ListedColormap]):
