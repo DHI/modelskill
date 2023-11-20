@@ -554,42 +554,6 @@ class Connector(Sequence):
             figsize=figsize,
             marker=marker,
         )
-        # n_models = self.n_models if show_model else 0
-        # n_lines = n_models + self.n_observations
-        # if figsize is None:
-        #     ysize = max(2.0, 0.45 * n_lines)
-        #     figsize = (7, ysize)
-
-        # fig, ax = plt.subplots(figsize=figsize)
-        # y = np.repeat(0.0, 2)
-        # labels = []
-
-        # if show_model:
-        #     for key, mr in self.modelresults.items():
-        #         y += 1.0
-        #         plt.plot([mr.start_time, mr.end_time], y)
-        #         labels.append(key)
-
-        # for key, obs in self.observations.items():
-        #     y += 1.0
-        #     plt.plot(obs.time, y[0] * np.ones_like(obs.values), marker, markersize=5)
-        #     labels.append(key)
-
-        # if limit_to_model_period:
-        #     mr = list(self.modelresults.values())[0]  # take first
-        #     plt.xlim([mr.start_time, mr.end_time])
-
-        # plt.yticks(np.arange(n_lines) + 1, labels)
-        # if show_model:
-        #     for j in range(n_models):
-        #         ax.get_yticklabels()[j].set_fontstyle("italic")
-        #         ax.get_yticklabels()[j].set_weight("bold")
-        #         # set_color("#004165")
-        # fig.autofmt_xdate()
-
-        # if title:
-        #     ax.set_title(title)
-        # return ax
 
     def to_config(self, filename: Optional[str] = None, relative_path=True):
         """Save Connector to a config file.
