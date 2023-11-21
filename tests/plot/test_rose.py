@@ -35,8 +35,10 @@ def test_hist2d():
     )
 
     assert calm == pytest.approx(0.2)
-
-    assert counts.sum() + calm == pytest.approx(1.0)
+    assert counts[1, 0] == pytest.approx(0.2)
+    assert counts[1, 1] == pytest.approx(0.2)
+    assert counts[1, 2] == pytest.approx(0.2)
+    assert counts[1, 3] == pytest.approx(0.2)
 
 
 def test_rose(wave_data_model_obs):
