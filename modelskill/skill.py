@@ -1,101 +1,11 @@
 from __future__ import annotations
-import sys
 import warnings
-from collections.abc import Iterable
+from typing import Iterable, Collection
+
 import numpy as np
 import pandas as pd
 
 from matplotlib import pyplot as plt
-
-
-class SkillDataFrame:
-    def __init__(self, df):
-        self.df = df
-
-    def __repr__(self):
-        return repr(self.df)
-
-    def _repr_html_(self):
-        return self.df._repr_html_()
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, x):
-        return self.df[x]
-
-    @property
-    def loc(self, *args, **kwargs):
-        return self.df.loc(*args, **kwargs)
-
-    @property
-    def iloc(self, *args, **kwargs):
-        return self.df.iloc(*args, **kwargs)
-
-    @property
-    def index(self):
-        return self.df.index
-
-    @property
-    def columns(self):
-        return self.df.columns
-
-    @property
-    def shape(self):
-        return self.df.shape
-
-    @property
-    def size(self):
-        return self.df.size
-
-    @property
-    def ndim(self):
-        return self.df.ndim
-
-    def to_html(self, *args, **kwargs):
-        return self.df.to_html(*args, **kwargs)
-
-    def to_markdown(self, *args, **kwargs):
-        return self.df.to_markdown(*args, **kwargs)
-
-    def to_excel(self, *args, **kwargs):
-        return self.df.to_excel(*args, **kwargs)
-
-    def to_csv(self, *args, **kwargs):
-        return self.df.to_csv(*args, **kwargs)
-
-    def to_dataframe(self, copy=True):
-        if copy:
-            return self.df.copy()
-        else:
-            return self.df
-
-    def head(self, *args, **kwargs):
-        return self.__class__(self.df.head(*args, **kwargs))
-
-    def tail(self, *args, **kwargs):
-        return self.__class__(self.df.tail(*args, **kwargs))
-
-    def round(self, decimals, *args, **kwargs):
-        return self.__class__(self.df.round(decimals))
-
-    def sort_index(self, *args, **kwargs):
-        return self.__class__(self.df.sort_index(*args, **kwargs))
-
-    def sort_values(self, by, **kwargs):
-        return self.__class__(self.df.sort_values(by, **kwargs))
-
-    def query(self, expr, **kwargs):
-        return self.__class__(self.df.query(expr, **kwargs))
-
-    def xs(self, *args, **kwargs):
-        return self.__class__(self.df.xs(*args, **kwargs))
-
-    def reorder_levels(self, order, **kwargs):
-        return self.__class__(self.df.reorder_levels(order, **kwargs))
-
-    def swaplevel(self, *args, **kwargs):
-        return self.__class__(self.df.swaplevel(*args, **kwargs))
 
 
 class AggregatedSkillPlotter:
@@ -116,7 +26,7 @@ class AggregatedSkillPlotter:
                 f"{field} is not a valid field. Choose from {list(s.df.columns)}"
             )
 
-        if isinstance(s.index, pd.MultiIndex):
+        if isinstance(s.df.index, pd.MultiIndex):
             df = s.df[field].unstack(level=level)
         else:
             df = s.df[field]
@@ -322,7 +232,7 @@ class AggregatedSkillPlotter:
         plt.title(title, fontsize=14)
 
 
-class AggregatedSkill(SkillDataFrame):
+class AggregatedSkill:
     """
     AggregatedSkill object for visualization and analysis returned by
     the comparer's skill method. The object wraps the pd.DataFrame
@@ -364,8 +274,47 @@ class AggregatedSkill(SkillDataFrame):
     zero_is_best_metrics = ["bias"]
 
     def __init__(self, df):
-        super().__init__(df)
+        self.df = df
         self.plot = AggregatedSkillPlotter(self)
+
+    # @property
+    # def columns(self):
+    #    """Columns of the dataframe"""
+    #    return self.df.columns
+
+    @property
+    def metrics(self) -> Collection[str]:
+        """List of metrics (columns) in the dataframe"""
+        return list(self.df.columns)
+
+    def __len__(self):
+        return len(self.df)
+
+    def to_dataframe(self):
+        return self.df
+
+    def __repr__(self):
+        return repr(self.df)
+
+    def _repr_html_(self):
+        return self.df._repr_html_()
+
+    def __getitem__(self, x):
+        return self.df[x]
+
+    @property
+    def loc(self, *args, **kwargs):
+        return self.df.loc(*args, **kwargs)
+
+    # TODO: remove?
+    def sort_index(self, *args, **kwargs):
+        """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
+        return self.__class__(self.df.sort_index(*args, **kwargs))
+
+    # TODO: remove?
+    def swaplevel(self, *args, **kwargs):
+        """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
+        return self.__class__(self.df.swaplevel(*args, **kwargs))
 
     @property
     def mod_names(self):
@@ -382,15 +331,12 @@ class AggregatedSkill(SkillDataFrame):
         """List of variable names (in index)"""
         return self._get_index_level_by_name("variable")
 
-    @property
-    def field_names(self):
-        """List of field names (=dataframe columns)"""
-        return list(self.df.columns)
-
+    # TODO what does this method actually do?
     def _get_index_level_by_name(self, name):
-        if name in self.index.names:
-            level = self.index.names.index(name)
-            return self.index.get_level_values(level).unique()
+        index = self.df.index
+        if name in index.names:
+            level = index.names.index(name)
+            return index.get_level_values(level).unique()
         else:
             return []
             # raise ValueError(f"name {name} not in index {list(self.index.names)}")
@@ -440,9 +386,9 @@ class AggregatedSkill(SkillDataFrame):
             Should unnecessary levels of the index be removed after subsetting?
             Removed levels will stay as columns. By default True
         **kwargs : dict, optional
-            "columns"=... to select specific columns,
-            "model"=... to select specific models,
-            "observation"=... to select specific observations, etc.
+            "metrics"=... to select specific metrics (=columns),
+            "model"=... to select specific models (=rows),
+            "observation"=... to select specific observations (=rows)
 
         Returns
         -------
@@ -455,8 +401,8 @@ class AggregatedSkill(SkillDataFrame):
         >>> s.sel(query="rmse>0.3")
         >>> s.sel(model = "SW_1")
         >>> s.sel(observation = ["EPL", "HKNA"])
-        >>> s.sel(columns="rmse")
-        >>> s.sel("rmse>0.2", observation=[0, 2], columns=["n","rmse"])
+        >>> s.sel(metrics="rmse")
+        >>> s.sel("rmse>0.2", observation=[0, 2], metrics=["n","rmse"])
         """
         df = self.df
 
@@ -467,7 +413,7 @@ class AggregatedSkill(SkillDataFrame):
         for key, value in kwargs.items():
             if key in df.index.names:
                 df = self._sel_from_index(df, key, value)
-            elif key == "columns":
+            elif key == "metrics" or key == "columns":
                 cols = [value] if isinstance(value, str) else value
                 df = df[cols]
             else:
@@ -490,14 +436,16 @@ class AggregatedSkill(SkillDataFrame):
                 levels_to_reset.append(j)
         return df.reset_index(level=levels_to_reset)
 
+    # TODO remove ?
     def _validate_multi_index(self, min_levels=2, max_levels=2):
         errors = []
-        if isinstance(self.index, pd.MultiIndex):
-            if len(self.index.levels) < min_levels:
+        index = self.df.index
+        if isinstance(index, pd.MultiIndex):
+            if len(index.levels) < min_levels:
                 errors.append(
                     f"not possible for MultiIndex with fewer than {min_levels} levels"
                 )
-            if len(self.index.levels) > max_levels:
+            if len(index.levels) > max_levels:
                 errors.append(
                     f"not possible for MultiIndex with more than {max_levels} levels"
                 )
@@ -545,20 +493,32 @@ class AggregatedSkill(SkillDataFrame):
             cmap=cmap,
         )
 
+    def round(self, decimals=3):
+        """round all values in dataframe
+
+        Parameters
+        ----------
+        decimals : int, optional
+            Number of decimal places to round to (default: 3). If decimals is negative, it specifies the number of positions to the left of the decimal point.
+        """
+
+        return self.__class__(self.df.round(decimals=decimals))
+
     def style(
         self,
-        precision=3,
-        columns=None,
+        decimals=3,
+        metrics=None,
         cmap="OrRd",
         show_best=True,
+        **kwargs,
     ):
         """style dataframe with colors using pandas style
 
         Parameters
         ----------
-        precision : int, optional
-            number of decimals, by default 3
-        columns : str or List[str], optional
+        decimals : int, optional
+            Number of decimal places to round to (default: 3).
+        metrics : str or List[str], optional
             apply background gradient color to these columns, by default all;
             if columns is [] then no background gradient will be applied.
         cmap : str, optional
@@ -576,36 +536,39 @@ class AggregatedSkill(SkillDataFrame):
         --------
         >>> s = comparer.skill()
         >>> s.style()
-        >>> s.style(precision=1, columns="rmse")
+        >>> s.style(precision=1, metrics="rmse")
         >>> s.style(cmap="Blues", show_best=False)
         """
         # identity metric columns
-        float_list = ["float16", "float32", "float64"]
-        float_cols = list(self.df.select_dtypes(include=float_list).columns.values)
+        float_cols = list(self.df.select_dtypes(include="number").columns)
+
+        if "precision" in kwargs:
+            warnings.warn(
+                FutureWarning(
+                    "precision is deprecated, it has been renamed to decimals"
+                )
+            )
+            decimals = kwargs["precision"]
 
         # selected columns
-        if columns is None:
-            columns = float_cols
+        if metrics is None:
+            metrics = float_cols
         else:
-            if isinstance(columns, str):
-                if not columns:
-                    columns = []
+            if isinstance(metrics, str):
+                if not metrics:
+                    metrics = []
                 else:
-                    columns = [columns]
-            for column in columns:
+                    metrics = [metrics]
+            for column in metrics:
                 if column not in float_cols:
                     raise ValueError(
                         f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        sdf = (
-            self.df.style.format(precision=precision)
-            if sys.version_info >= (3, 7)
-            else self.df.style.set_precision(precision)
-        )
+        sdf = self.df.style.format(precision=decimals)
 
         # apply background gradient
-        bg_cols = list(set(columns) & set(float_cols))
+        bg_cols = list(set(metrics) & set(float_cols))
         if "bias" in bg_cols:
             mm = self.df.bias.abs().max()
             sdf = sdf.background_gradient(

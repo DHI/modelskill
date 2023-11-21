@@ -12,12 +12,10 @@ mpl.use("Agg")
 
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
-    data.attrs["quantity_name"] = "fake var"
-    data["x"].attrs["kind"] = "position"
-    data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["weight"] = 1.0
-    data["Observation"].attrs["unit"] = "m"
+    data["Observation"].attrs["long_name"] = "fake var"
+    data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["modelskill_version"] = modelskill.__version__
@@ -42,8 +40,9 @@ def pc() -> modelskill.comparison.Comparer:
     data = df.dropna().to_xarray()
     data.attrs["gtype"] = "point"
     data.attrs["name"] = "fake point obs"
-    data["x"] = x
-    data["y"] = y
+    data.coords["x"] = x
+    data.coords["y"] = y
+    data.coords["z"] = np.nan
 
     data = _set_attrs(data)
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
@@ -73,6 +72,7 @@ def tc() -> modelskill.comparison.Comparer:
     data = df.dropna().to_xarray()
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
+    data["m3"].attrs["kind"] = "model"
     data = _set_attrs(data)
 
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)

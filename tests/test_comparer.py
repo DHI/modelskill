@@ -35,12 +35,12 @@ def _get_track_df() -> pd.DataFrame:
 
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
-    data.attrs["quantity_name"] = "fake var"
-    data["x"].attrs["kind"] = "position"
-    data["y"].attrs["kind"] = "position"
+    # data["x"].attrs["kind"] = "position"
+    # data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["weight"] = 1.0
-    data["Observation"].attrs["unit"] = "m"
+    data["Observation"].attrs["units"] = "m"
+    data["Observation"].attrs["long_name"] = "fake var"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     return data
@@ -56,8 +56,9 @@ def pc() -> Comparer:
     data = df.dropna().to_xarray()
     data.attrs["gtype"] = "point"
     data.attrs["name"] = "fake point obs"
-    data["x"] = x
-    data["y"] = y
+    data.coords["x"] = x
+    data.coords["y"] = y
+    data.coords["z"] = np.nan
     data = _set_attrs(data)
     return Comparer(matched_data=data, raw_mod_data=raw_data)
 
@@ -69,6 +70,7 @@ def tc() -> Comparer:
     raw_data = {"m1": df[["x", "y", "m1"]], "m2": df[["x", "y", "m2"]]}
 
     data = df.dropna().to_xarray()
+    data = data.set_coords(["x", "y"])
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
@@ -207,8 +209,8 @@ def test_minimal_matched_data(pt_df):
     cmp = Comparer.from_matched_data(data=data)  # no additional raw_mod_data
 
     assert cmp.data["Observation"].attrs["color"] == "black"
-    assert cmp.data["Observation"].attrs["unit"] == "Undefined"
-    assert cmp.data.attrs["quantity_name"] == "Undefined"
+    assert cmp.data["Observation"].attrs["units"] == "Undefined"
+    assert cmp.data["Observation"].attrs["long_name"] == "Undefined"
     assert len(cmp.raw_mod_data["m1"]) == 6
 
     assert cmp.mod_names == ["m1", "m2"]
@@ -237,10 +239,11 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
 
 def test_minimal_plots(pt_df):
     data = xr.Dataset(pt_df)
-    data.attrs["quantity_name"] = "Waterlevel"
+
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["color"] = "pink"
-    data["Observation"].attrs["unit"] = "m"
+    data["Observation"].attrs["long_name"] = "Waterlevel"
+    data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
@@ -354,9 +357,10 @@ def test_plot_accepts_figsize(pc_plot_function):
 
 def test_plots_directional(pt_df):
     data = xr.Dataset(pt_df)
-    data.attrs["quantity_name"] = "Waterlevel"
+
     data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["unit"] = "m"
+    data["Observation"].attrs["long_name"] = "Waterlevel"
+    data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["name"] = "mini"
@@ -438,7 +442,7 @@ def test_pc_properties(pc):
     assert pc.x == 10.0
     assert pc.y == 55.0
     assert pc.name == "fake point obs"
-    assert pc.quantity_name == "fake var"
+    assert pc.quantity.name == "fake var"
     assert pc.start == pd.Timestamp("2019-01-01")
     assert pc.end == pd.Timestamp("2019-01-05")
     assert pc.mod_names == ["m1", "m2"]
@@ -456,7 +460,7 @@ def test_tc_properties(tc):
     assert np.all(tc.x == [10.1, 10.2, 10.3, 10.4, 10.5])
     assert np.all(tc.y == [55.1, 55.2, 55.3, 55.4, 55.5])
     assert tc.name == "fake track obs"
-    assert tc.quantity_name == "fake var"
+    assert tc.quantity.name == "fake var"
     assert tc.start == pd.Timestamp("2019-01-01")
     assert tc.end == pd.Timestamp("2019-01-05")
     assert tc.mod_names == ["m1", "m2"]

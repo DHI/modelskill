@@ -19,9 +19,9 @@ import xarray as xr
 
 import mikeio
 
-from modelskill import ModelResult
-from modelskill.timeseries import TimeSeries
-from modelskill.types import GeometryType, Quantity, Period
+from . import ModelResult
+from .timeseries import TimeSeries
+from .types import GeometryType, Quantity, Period
 from .model import protocols
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
@@ -97,6 +97,7 @@ def from_matched(
         y-coordinate of observation, by default None
     z : float, optional
         z-coordinate of observation, by default None
+
     Examples
     --------
     >>> import pandas as pd
@@ -168,6 +169,7 @@ def compare(
         Geometry type of the model result. If not specified, it will be guessed.
     max_model_gap : (float, optional)
         Maximum gap in the model result, by default None
+
     Returns
     -------
     ComparerCollection
@@ -341,7 +343,10 @@ def match_time(
     observation = observation.copy()
     observation.trim(period.start, period.end)
 
-    first = True
+    data = observation.data.copy()
+    data.attrs["name"] = observation.name
+    data = data.rename({observation.name: obs_name})
+
     for name, mdata in raw_mod_data.items():
         df = _model2obs_interp(observation, mdata, max_model_gap)
         if gtype == "track":
@@ -349,34 +354,14 @@ def match_time(
             df_obs = observation.data.to_pandas()  # TODO: xr.Dataset
             _mask_model_outside_observation_track(name, df, df_obs)
 
-        if first:
-            data = df
-        else:
-            data[name] = df[name]
+        data[name] = df[name]
 
-        first = False
+    data = data.dropna(dim="time")
 
-    data.index.name = "time"
-    data = data.dropna()
-    data = data.to_xarray()
-    data.attrs["gtype"] = str(gtype)
-
-    if gtype == "point":
-        data["x"] = observation.x
-        data["y"] = observation.y
-        data["z"] = observation.z  # type: ignore
-
-    data.attrs["name"] = observation.name
-    data.attrs["quantity_name"] = observation.quantity.name
-    data["x"].attrs["kind"] = "position"
-    data["y"].attrs["kind"] = "position"
-    data[obs_name].attrs["kind"] = "observation"
-    data[obs_name].attrs["unit"] = observation.quantity.unit
-    data[obs_name].attrs["color"] = observation.color
-    data[obs_name].attrs["weight"] = observation.weight
     for n in mod_names:
         data[n].attrs["kind"] = "model"
 
+    data.attrs["gtype"] = gtype
     data.attrs["modelskill_version"] = __version__
 
     return data
@@ -393,6 +378,7 @@ def _model2obs_interp(
     if max_model_gap is not None:
         df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
 
+    df.index.name = "time"
     return df
 
 
@@ -415,7 +401,7 @@ def parse_modeldata_list(modeldata) -> Dict[str, pd.DataFrame]:
 def _parse_single_modeldata(modeldata) -> pd.DataFrame:
     """Convert to dataframe and set index to pd.DatetimeIndex"""
     if hasattr(modeldata, "to_dataframe"):
-        mod_df = modeldata.to_dataframe()
+        mod_df = modeldata.to_dataframe().drop(columns=["z"])
     elif isinstance(modeldata, pd.DataFrame):
         mod_df = modeldata
     else:
