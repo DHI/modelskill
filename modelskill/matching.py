@@ -348,13 +348,19 @@ def match_time(
 
     for name, mr in raw_mod_data.items():
         # df = _model2obs_interp(observation, mdata, max_model_gap)
-        mri = mr.time_interp(new_time=observation.time)
-        if gtype == "track":
-            # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
-            df_obs = observation.data.to_pandas()  # TODO: xr.Dataset
-            _mask_model_outside_observation_track(name, df, df_obs)
+        mri = mr.interp_time(new_time=observation.time)
 
-        data[name] = df[name]
+        # TODO
+        # if max_model_gap is not None:
+        #    mri = _remove_model_gaps(mri, mr.time, max_model_gap)
+
+        # TODO: temporary solution until complete swich to xr.Dataset
+        # if gtype == "track":
+        #    # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
+        #    df_obs = observation.data.to_pandas()  # TODO: xr.Dataset
+        #    _mask_model_outside_observation_track(name, df, df_obs)
+
+        data[name] = mri.data[name]
 
     data = data.dropna(dim="time")
 
