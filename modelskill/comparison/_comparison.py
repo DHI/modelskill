@@ -221,8 +221,8 @@ class ItemSelection:
     def parse(
         items: List[str],
         obs_item: str | int | None = None,
-        mod_items: Optional[List[str | int]] = None,
-        aux_items: Optional[List[str | int]] = None,
+        mod_items: Optional[Iterable[str | int]] = None,
+        aux_items: Optional[Iterable[str | int]] = None,
     ) -> ItemSelection:
         """Parse items and return observation, model and auxiliary items
         Default behaviour:
@@ -310,13 +310,14 @@ def _inside_polygon(polygon, xy) -> np.ndarray:
 
 def _matched_data_to_xarray(
     df: pd.DataFrame,
-    obs_item=None,
-    mod_items=None,
-    aux_items=None,
-    name=None,
-    x=None,
-    y=None,
-    z=None,
+    obs_item: int | str | None = None,
+    mod_items: Optional[Iterable[str | int]] = None,
+    aux_items: Optional[Iterable[str | int]] = None,
+    name: Optional[str] = None,
+    x: Optional[float] = None,
+    y: Optional[float] = None,
+    z: Optional[float] = None,
+    quantity: Optional[Quantity] = None,
 ):
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
@@ -346,7 +347,11 @@ def _matched_data_to_xarray(
     else:
         ds.attrs["gtype"] = str(GeometryType.TRACK)
 
-    q = Quantity.undefined()
+    if quantity is None:
+        q = Quantity.undefined()
+    else:
+        q = quantity
+
     ds["Observation"].attrs["long_name"] = q.name
     ds["Observation"].attrs["units"] = q.unit
 
@@ -406,15 +411,16 @@ class Comparer:
     @classmethod
     def from_matched_data(
         cls,
-        data,
-        raw_mod_data=None,
-        obs_item=None,
-        mod_items=None,
-        aux_items=None,
-        name=None,
-        x=None,
-        y=None,
-        z=None,
+        data: xr.Dataset | pd.DataFrame,
+        raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
+        obs_item: str | int | None = None,
+        mod_items: Optional[Iterable[str | int]] = None,
+        aux_items: Optional[Iterable[str | int]] = None,
+        name: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        z: Optional[float] = None,
+        quantity: Optional[Quantity] = None,
     ):
         """Initialize from compared data"""
         if not isinstance(data, xr.Dataset):
@@ -428,6 +434,7 @@ class Comparer:
                 x=x,
                 y=y,
                 z=z,
+                quantity=quantity,
             )
         return cls(matched_data=data, raw_mod_data=raw_mod_data)
 

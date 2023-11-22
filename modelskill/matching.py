@@ -139,9 +139,8 @@ def from_matched(
         x=x,
         y=y,
         z=z,
+        quantity=quantity,
     )
-    if quantity is not None:
-        cmp.quantity = quantity
     return cmp
 
 
