@@ -250,7 +250,8 @@ def _remove_model_gaps(
     """Remove model gaps longer than max_gap from TimeSeries"""
     max_gap = _time_delta_to_pd_timedelta(max_gap)
     valid_time = _get_valid_query_time(mod_index, ts.time, max_gap)
-    return ts.loc[valid_time]
+    ds = ts.data.sel(time=valid_time[valid_time].index)
+    return ts.__class__(ds)
 
 
 def _get_valid_query_time(
@@ -350,9 +351,8 @@ def match_time(
         # df = _model2obs_interp(observation, mdata, max_model_gap)
         mri = mr.interp_time(new_time=observation.time)
 
-        # TODO
-        # if max_model_gap is not None:
-        #    mri = _remove_model_gaps(mri, mr.time, max_model_gap)
+        if max_model_gap is not None:
+            mri = _remove_model_gaps(mri, mr.time, max_model_gap)
 
         # TODO: temporary solution until complete swich to xr.Dataset
         # if gtype == "track":
