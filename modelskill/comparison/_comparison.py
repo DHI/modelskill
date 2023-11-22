@@ -22,7 +22,7 @@ from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
 from ..observation import Observation, PointObservation, TrackObservation
-from ..timeseries._timeseries import _validate_data_var_name
+from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
 from ._utils import (
     _parse_metric,
@@ -370,7 +370,7 @@ class Comparer:
     ----------
     matched_data : xr.Dataset
         Matched data
-    raw_mod_data : dict of pd.DataFrame, optional
+    raw_mod_data : dict of modelskill.TimeSeries, optional
         Raw model data. If None, observation and modeldata must be provided.
 
     Examples
@@ -385,14 +385,14 @@ class Comparer:
     """
 
     data: xr.Dataset
-    raw_mod_data: Dict[str, pd.DataFrame]
+    raw_mod_data: Dict[str, TimeSeries]
     _obs_name = "Observation"
     plotter = ComparerPlotter
 
     def __init__(
         self,
         matched_data: xr.Dataset,
-        raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
+        raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
     ):
         self.plot = Comparer.plotter(self)
 
@@ -401,19 +401,18 @@ class Comparer:
             raw_mod_data
             if raw_mod_data is not None
             else {
-                key: value.to_dataframe()
+                # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
+                key: TimeSeries(self.data[[key]])
                 for key, value in matched_data.data_vars.items()
                 if value.attrs["kind"] == "model"
             }
         )
-        # TODO get quantity from matched_data object
-        # self.quantity: Quantity = Quantity.undefined()
 
     @classmethod
     def from_matched_data(
         cls,
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
+        raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
@@ -494,22 +493,22 @@ class Comparer:
     def _mod_start(self) -> pd.Timestamp:
         mod_starts = [pd.Timestamp.max]
         for m in self.raw_mod_data.values():
-            time = (
-                m.index if isinstance(m, pd.DataFrame) else m.time
-            )  # TODO: xr.Dataset
-            if len(time) > 0:
-                mod_starts.append(time[0])
+            # time = (
+            #     m.index if isinstance(m, pd.DataFrame) else m.time
+            # )  # TODO: xr.Dataset
+            if len(m.time) > 0:
+                mod_starts.append(m.time[0])
         return min(mod_starts)
 
     @property
     def _mod_end(self) -> pd.Timestamp:
         mod_ends = [pd.Timestamp.min]
         for m in self.raw_mod_data.values():
-            time = (
-                m.index if isinstance(m, pd.DataFrame) else m.time
-            )  # TODO: xr.Dataset
-            if len(time) > 0:
-                mod_ends.append(time[-1])
+            # time = (
+            #     m.index if isinstance(m, pd.DataFrame) else m.time
+            # )  # TODO: xr.Dataset
+            if len(m.time) > 0:
+                mod_ends.append(m.time[-1])
         return max(mod_ends)
 
     @property
@@ -679,12 +678,12 @@ class Comparer:
         if self.gtype == "point":
             ds = self.data.copy()  # copy needed to avoid modifying self.data
 
-            for key, df in self.raw_mod_data.items():
-                df = df.copy()
+            for key, ts_mod in self.raw_mod_data.items():
+                ts_mod = ts_mod.copy()
                 #  rename time to unique name
-                df.index.name = "_time_raw_" + key
-                da = df.to_xarray()[key]
-                ds["_raw_" + key] = da
+                ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
+                # da = ds_mod.to_xarray()[key]
+                ds["_raw_" + key] = ts_mod.data[key]
 
         ds.to_netcdf(filename)
 
@@ -714,14 +713,17 @@ class Comparer:
                 var_name = str(var)
                 if var_name[:5] == "_raw_":
                     new_key = var_name[5:]  # remove prefix '_raw_'
-                    df = (
-                        data[var_name]
-                        .to_dataframe()
-                        .rename(
-                            columns={"_time_raw_" + new_key: "time", var_name: new_key}
-                        )
-                    )
-                    raw_mod_data[new_key] = df
+                    ts = PointObservation(data=data[[var_name]])
+                    # TODO: name of time?
+                    ts.name = new_key
+                    # df = (
+                    #     data[var_name]
+                    #     .to_dataframe()
+                    #     .rename(
+                    #         columns={"_time_raw_" + new_key: "time", var_name: new_key}
+                    #     )
+                    # )
+                    raw_mod_data[new_key] = ts
 
                     data = data.drop(var_name).drop("_time_raw_" + new_key)
 
@@ -779,7 +781,7 @@ class Comparer:
 
             else:
                 raw_mod_data = self.raw_mod_data.copy()
-                raw_mod_data.update(other.raw_mod_data)
+                raw_mod_data.update(other.raw_mod_data)  # TODO!
                 matched = match_time(
                     observation=self._to_observation(), raw_mod_data=raw_mod_data
                 )
@@ -1148,8 +1150,8 @@ class Comparer:
         if correct == "Model":
             for j in range(self.n_models):
                 mod_name = self.mod_names[j]
-                mod_df = self.raw_mod_data[mod_name]
-                mod_df[mod_name] = mod_df.values - bias[j]
+                mod_ts = self.raw_mod_data[mod_name]
+                mod_ts.data[mod_name] = mod_ts.values - bias[j]  # TODO!
                 with xr.set_options(keep_attrs=True):
                     self.data[mod_name] = self.data[mod_name] - bias[j]
         elif correct == "Observation":
