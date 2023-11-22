@@ -25,7 +25,7 @@ def scatter(
     x: np.ndarray,
     y: np.ndarray,
     *,
-    bins: int | float = 20,
+    bins: int | float = 120,
     quantiles: int | Sequence[float] | None = None,
     fit_to_quantiles: bool = False,
     show_points: bool | int | float | None = None,
@@ -55,7 +55,7 @@ def scatter(
     y: np.array
         Y values e.g observation values, must be same length as x
     bins: (int, float, sequence), optional
-        bins for the 2D histogram on the background. By default 20 bins.
+        bins for the 2D histogram on the background. By default 120 bins.
         if int, represents the number of bins of 2D
         if float, represents the bin size
         if sequence (list of int or float), represents the bin edges
