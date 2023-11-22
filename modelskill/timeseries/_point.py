@@ -68,8 +68,9 @@ def _parse_point_input(
         ds = data.to_xarray()
     else:
         assert len(data.dims) == 1, "Only 0-dimensional data are supported"
-        if data.coords[list(data.coords)[0]].name != "time":
-            data = data.rename({list(data.coords)[0]: "time"})
+        time_dim_name = list(data.dims)[0]
+        if time_dim_name != "time":
+            data = data.rename({time_dim_name: "time"})
         ds = data
 
     name = name or item_name
