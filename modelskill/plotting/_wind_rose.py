@@ -114,6 +114,7 @@ def wind_rose(
     mag_step: float, (optional) Default= None
         discretization for magnitude (delta_r, in radial direction )
     n_sectors: int (optional) Default= 16
+        number of directional sectors
     calm_threshold: float (optional) Default= None (auto calculated)
         minimum value for data being counted as valid (i.e. below this is calm)
     resize_calm: bool or float (optional) Default: 0.05
@@ -179,7 +180,12 @@ def wind_rose(
 
     dir_step = 360 // n_sectors
 
-    n_dir_labels = n_sectors if n_dir_labels is None else n_dir_labels
+    if n_dir_labels is None:
+        if n_sectors in (4, 8, 16):
+            n_dir_labels = n_sectors
+        else:
+            # Directional labels are not identical to the number of sectors, use a sane default
+            n_dir_labels = 16
 
     dh = hist2d(data_1, ui=ui, dir_step=dir_step)
     calm = dh.calm
