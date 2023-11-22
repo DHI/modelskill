@@ -407,6 +407,21 @@ class Comparer:
                 if value.attrs["kind"] == "model"
             }
         )
+        # TODO: validate that the names in raw_mod_data are the same as in matched_data
+        assert isinstance(self.raw_mod_data, dict)
+        for k in self.raw_mod_data.keys():
+            v = self.raw_mod_data[k]
+            if not isinstance(v, TimeSeries):
+                try:
+                    self.raw_mod_data[k] = TimeSeries(v)
+                except Exception:
+                    raise ValueError(
+                        f"raw_mod_data[{k}] could not be converted to a TimeSeries object"
+                    )
+            else:
+                assert isinstance(
+                    v, TimeSeries
+                ), f"raw_mod_data[{k}] must be a TimeSeries object"
 
     @classmethod
     def from_matched_data(
