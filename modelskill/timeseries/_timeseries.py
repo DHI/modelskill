@@ -50,7 +50,7 @@ def _validate_dataset(ds) -> xr.Dataset:
     assert len(ds.dims) == 1, "Only 0-dimensional data are supported"
     assert list(ds.dims)[0] == "time", "data must have a time dimension"
     assert isinstance(ds.time.to_index(), pd.DatetimeIndex), "time must be datetime"
-    ds.time = pd.DatetimeIndex(ds.time.to_index()).round(freq="100us")  # 0.0001s
+    ds["time"] = pd.DatetimeIndex(ds.time.to_index()).round(freq="100us")  # 0.0001s
     assert (
         ds.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"
@@ -272,15 +272,22 @@ class TimeSeries:
         start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
         end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
 
+        # TODO: return a new TimeSeries object instead of modifying the existing one
         self.data = self.data.sel(time=slice(start_time, end_time))
 
-    def interp_time(self, new_time: pd.DatetimeIndex) -> TimeSeries:
+    def interp_time(
+        self, new_time: pd.DatetimeIndex, dropna=True, **kwargs
+    ) -> TimeSeries:
         """Interpolate time series to new time index
 
         Parameters
         ----------
         new_time : pd.DatetimeIndex
             new time index
+        dropna : bool, optional
+            drop nan values, by default True
+        **kwargs
+            keyword arguments passed to xarray.interp()
 
         Returns
         -------
@@ -295,5 +302,11 @@ class TimeSeries:
                     "new_time must be a pandas DatetimeIndex (or convertible to one)"
                 )
 
-        # TODO: self.__class__
-        return TimeSeries(self.data.interp(time=new_time))
+        # TODO: is it necessary to dropna before interpolation?
+        dati = self.data.dropna("time").interp(
+            time=new_time, assume_sorted=True, **kwargs
+        )
+        if dropna:
+            dati = dati.dropna(dim="time")
+        # TODO: find a way to bypass the standard input parsing
+        return self.__class__(dati)
