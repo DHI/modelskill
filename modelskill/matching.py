@@ -308,7 +308,7 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def match_time(
     observation: Observation,
-    raw_mod_data: Dict[str, pd.DataFrame],
+    raw_mod_data: Dict[str, TimeSeries],
     max_model_gap: Optional[TimeDeltaTypes] = None,
 ) -> xr.Dataset:
     """Match observation with one or more model results in time domain
@@ -322,7 +322,7 @@ def match_time(
     ----------
     observation : Observation
         Observation to be matched
-    raw_mod_data : Dict[str, pd.DataFrame]
+    raw_mod_data : Dict[str, TimeSeries]
         Dictionary of model results ready for interpolation
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
@@ -335,7 +335,7 @@ def match_time(
     """
     obs_name = "Observation"
     mod_names = list(raw_mod_data.keys())
-    idxs = [m.index for m in raw_mod_data.values()]
+    idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
     assert isinstance(observation, (PointObservation, TrackObservation))
@@ -343,12 +343,13 @@ def match_time(
     observation = observation.copy()
     observation.trim(period.start, period.end)
 
-    data = observation.data.copy()
+    data = observation.data  # .copy() #already a copy?
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: obs_name})
 
-    for name, mdata in raw_mod_data.items():
-        df = _model2obs_interp(observation, mdata, max_model_gap)
+    for name, mr in raw_mod_data.items():
+        #df = _model2obs_interp(observation, mdata, max_model_gap)
+        mri = mr.time_interp(new_time=observation.time)
         if gtype == "track":
             # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
             df_obs = observation.data.to_pandas()  # TODO: xr.Dataset
