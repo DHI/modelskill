@@ -244,14 +244,14 @@ def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
 
 
 def _remove_model_gaps(
-    df: pd.DataFrame,
+    ts: TimeSeries,
     mod_index: pd.DatetimeIndex,
     max_gap: TimeDeltaTypes,
-) -> pd.DataFrame:
-    """Remove model gaps longer than max_gap from dataframe"""
+) -> TimeSeries:
+    """Remove model gaps longer than max_gap from TimeSeries"""
     max_gap = _time_delta_to_pd_timedelta(max_gap)
-    valid_time = _get_valid_query_time(mod_index, df.index, max_gap)
-    return df.loc[valid_time]
+    valid_time = _get_valid_query_time(mod_index, ts.time, max_gap)
+    return ts.loc[valid_time]
 
 
 def _get_valid_query_time(
@@ -348,7 +348,7 @@ def match_time(
     data = data.rename({observation.name: obs_name})
 
     for name, mr in raw_mod_data.items():
-        #df = _model2obs_interp(observation, mdata, max_model_gap)
+        # df = _model2obs_interp(observation, mdata, max_model_gap)
         mri = mr.time_interp(new_time=observation.time)
         if gtype == "track":
             # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
