@@ -215,7 +215,7 @@ def _single_obs_compare(
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
     mod = _parse_models(mod, mod_item, gtype=gtype)
-    emods = _extract_from_models(obs, mod)  # type: ignore
+    emods = _extract_from_models(obs, mod)
 
     raw_mod_data = parse_modeldata_list(emods)
     matched_data = match_time(obs, raw_mod_data, max_model_gap)
@@ -389,34 +389,36 @@ def _minimal_accepted_distance(obs_xy):
     return 0.5 * np.quantile(vec, 0.1)
 
 
-def parse_modeldata_list(modeldata) -> Dict[str, pd.DataFrame]:
-    """Convert to dict of dataframes"""
+def parse_modeldata_list(modeldata) -> Dict[str, TimeSeries]:
+    """Make sure modeldata is a dict of TimeSeries"""
     if not isinstance(modeldata, Sequence):
         modeldata = [modeldata]
 
-    mod_dfs = [_parse_single_modeldata(m) for m in modeldata]
-    return {m.columns[-1]: m for m in mod_dfs if m is not None}
+    mods = [_parse_single_modeldata(m) for m in modeldata]
+    return {m.name: m for m in mods if m is not None}
 
 
-def _parse_single_modeldata(modeldata) -> pd.DataFrame:
-    """Convert to dataframe and set index to pd.DatetimeIndex"""
-    if hasattr(modeldata, "to_dataframe"):
-        mod_df = modeldata.to_dataframe().drop(columns=["z"])
-    elif isinstance(modeldata, pd.DataFrame):
-        mod_df = modeldata
-    else:
-        raise ValueError(
-            f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
-        )
+def _parse_single_modeldata(modeldata) -> TimeSeries:
+    # if hasattr(modeldata, "to_dataframe"):
+    #     mod_df = modeldata.to_dataframe().drop(columns=["z"])
+    # elif isinstance(modeldata, TimeSeries):
+    #     mod_df = modeldata
+    # else:
+    #     raise ValueError(
+    #         f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
+    #     )
 
-    if not isinstance(mod_df.index, pd.DatetimeIndex):
-        raise ValueError(
-            "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
-        )
+    # if not isinstance(mod_df.index, pd.DatetimeIndex):
+    #     raise ValueError(
+    #         "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
+    #     )
+    assert isinstance(
+        modeldata.time, pd.DatetimeIndex
+    ), "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
 
-    time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
-    mod_df.index = pd.DatetimeIndex(time, freq="infer")
-    return mod_df
+    # time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
+    # mod_df.index = pd.DatetimeIndex(time, freq="infer")
+    return modeldata
 
 
 def _parse_single_obs(
@@ -468,21 +470,22 @@ def _parse_single_model(
 
 
 def _extract_from_models(obs, mods: List[protocols.ModelResult]) -> List[pd.DataFrame]:
-    df_model = []
+    e_mods = []
     for m in mods:
-        mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m
+        ext_mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m.copy()
 
         # TODO: temporary solution until complete swich to xr.Dataset
         # mr.data if isinstance(mr.data, pd.DataFrame) else
-        df = mr.to_dataframe()
+        # df = mr.to_dataframe()
 
         # TODO is this robust enough?
-        old_item = df.columns.values[-1]  # TODO: xr.Dataset
-        df = df.rename(columns={old_item: mr.name})  # TODO: xr.Dataset
-        if (df is not None) and (len(df) > 0):  # TODO: xr.Dataset
-            df_model.append(df)
+        # old_item = df.columns.values[-1]  # TODO: xr.Dataset
+        # df = df.rename(columns={old_item: mr.name})  # TODO: xr.Dataset
+        # if (df is not None) and (len(df) > 0):  # TODO: xr.Dataset
+        if len(ext_mr) > 0:
+            e_mods.append(ext_mr)
         else:
             warnings.warn(
-                f"No data found when extracting '{obs.name}' from model '{mr.name}'"
+                f"No data found when extracting '{obs.name}' from model '{ext_mr.name}'"
             )
-    return df_model
+    return e_mods
