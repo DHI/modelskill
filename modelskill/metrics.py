@@ -658,6 +658,8 @@ def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
 
 METRICS_WITH_DIMENSION = set(["urmse", "rmse", "bias", "mae"])  # TODO is this complete?
 
+default_metrics = [bias, rmse, urmse, mae, cc, si, r2]
+
 
 def metric_has_units(metric: Union[str, Callable]) -> bool:
     """Check if a metric has units (dimension).
@@ -676,9 +678,9 @@ def metric_has_units(metric: Union[str, Callable]) -> bool:
 
     Examples
     --------
-    >>> metric_has_units("rmse")
+    >>> metrihas_units("rmse")
     True
-    >>> metric_has_units("kge")
+    >>> metrihas_units("kge")
     False
     """
     if hasattr(metric, "__name__"):
@@ -693,12 +695,6 @@ def metric_has_units(metric: Union[str, Callable]) -> bool:
 
 
 NON_METRICS = set(["metric_has_units", "get_metric", "is_valid_metric", "add_metric"])
-
-
-defined_metrics: Set[str] = (
-    set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
-    - NON_METRICS
-)
 
 
 def is_valid_metric(metric: Union[str, Callable]) -> bool:
@@ -908,3 +904,60 @@ def _partial_duration_series(
                     old_peak = i
         i += 1
     return peak_list.astype(bool), AAP
+
+
+def _c_residual(obs: np.ndarray, model: np.ndarray) -> np.ndarray:
+    assert obs.size == model.size
+    resi = model.ravel() - obs.ravel()
+    resi = (resi + 180) % 360 - 180
+    return resi
+
+
+def c_max_error(obs, model) -> float:
+    resi = _c_residual(obs, model)
+
+    # Compute the absolute differences and then
+    # find the shortest distance between angles
+    abs_diffs = np.abs(resi)
+    circular_diffs = np.minimum(abs_diffs, 360 - abs_diffs)
+    return np.max(circular_diffs)
+
+
+def c_mean_absolute_error(
+    obs: np.ndarray,
+    model: np.ndarray,
+    weights: Optional[np.ndarray] = None,
+) -> float:
+    resi = _c_residual(obs, model)
+    return np.average(np.abs(resi), weights=weights)
+
+
+def c_mae(
+    obs: np.ndarray,
+    model: np.ndarray,
+    weights: Optional[np.ndarray] = None,
+) -> float:
+    return c_mean_absolute_error(obs, model, weights)
+
+
+def c_root_mean_squared_error(
+    obs: np.ndarray,
+    model: np.ndarray,
+    weights: Optional[np.ndarray] = None,
+) -> float:
+    residual = _c_residual(obs, model)
+    return np.sqrt(np.average(residual**2, weights=weights))
+
+
+def c_rmse(
+    obs: np.ndarray,
+    model: np.ndarray,
+    weights: Optional[np.ndarray] = None,
+) -> float:
+    return c_root_mean_squared_error(obs, model, weights)
+
+
+defined_metrics: Set[str] = (
+    set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
+    - NON_METRICS
+)

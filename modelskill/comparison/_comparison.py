@@ -173,7 +173,7 @@ def _validate_metrics(metrics) -> None:
 
 register_option(
     key="metrics.list",
-    defval=[mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    defval=mtr.default_metrics,
     validator=_validate_metrics,
     doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
 )
@@ -354,6 +354,7 @@ def _matched_data_to_xarray(
 
     ds["Observation"].attrs["long_name"] = q.name
     ds["Observation"].attrs["units"] = q.unit
+    ds["Observation"].attrs["circular"] = q.circular
 
     return ds
 
@@ -468,9 +469,15 @@ class Comparer:
     @property
     def quantity(self) -> Quantity:
         """Quantity object"""
+
+        circular = False
+        if "circular" in self.data[self._obs_name].attrs:
+            circular = self.data[self._obs_name].attrs["circular"]
+
         return Quantity(
             name=self.data[self._obs_name].attrs["long_name"],
             unit=self.data[self._obs_name].attrs["units"],
+            circular=circular,
         )
 
     @quantity.setter
@@ -478,6 +485,7 @@ class Comparer:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
         self.data[self._obs_name].attrs["long_name"] = quantity.name
         self.data[self._obs_name].attrs["units"] = quantity.unit
+        self.data[self._obs_name].attrs["circular"] = quantity.circular
 
     @property
     def n_points(self) -> int:
@@ -597,7 +605,11 @@ class Comparer:
 
     @property
     def metrics(self):
-        return options.metrics.list
+        if self.quantity.circular:
+            # TODO define default circular metrics elsewhere
+            return [mtr.c_rmse, mtr.c_max_error]
+        else:
+            return options.metrics.list
 
     @metrics.setter
     def metrics(self, values) -> None:

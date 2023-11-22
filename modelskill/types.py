@@ -111,6 +111,7 @@ class Quantity:
         Name of the quantity
     unit : str
         Unit of the quantity
+    circular : bool, optional
 
     Examples
     --------
@@ -127,6 +128,7 @@ class Quantity:
 
     name: str
     unit: str
+    circular: bool = False
 
     def __str__(self):
         return f"{self.name} [{self.unit}]"
