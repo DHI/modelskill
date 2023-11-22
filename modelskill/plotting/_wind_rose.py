@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -12,13 +13,24 @@ from matplotlib.legend import Legend
 from matplotlib.patches import Polygon, Rectangle
 
 
+@dataclass
+class DirectionalHistogram:
+    calm: float
+    density: np.ndarray
+    dir_bins: np.ndarray
+    mag_bins: np.ndarray
+
+    @property
+    def dir_centers(self) -> np.ndarray:
+        return (self.dir_bins[:-1] + self.dir_bins[1:]) / 2
+
+
 def hist2d(
     data: np.ndarray,
     *,
     ui: np.ndarray,
     dir_step: float,
-    n: int | None = None,
-) -> Tuple[float, np.ndarray, np.ndarray]:
+) -> DirectionalHistogram:
     """Calculate a masked 2d histogram.
 
     Parameters
@@ -53,8 +65,6 @@ def hist2d(
         num=int(((360 + half_dir_step) - half_dir_step) / dir_step + 1),
     )
 
-    thetac = thetai[:-1] + half_dir_step
-
     mask = data[:, 0] >= vmin
     calm = len(data[~mask]) / len(data)
     n = len(data)
@@ -63,8 +73,10 @@ def hist2d(
         data[mask][:, 1],
         bins=[ui, thetai],  # type: ignore
     )
-    counts = counts / n
-    return calm, counts, thetac
+    density = counts / n
+    return DirectionalHistogram(
+        calm=calm, density=density, dir_bins=thetai, mag_bins=ui
+    )
 
 
 def wind_rose(
@@ -169,14 +181,16 @@ def wind_rose(
 
     n_dir_labels = n_sectors if n_dir_labels is None else n_dir_labels
 
-    calm, counts, thetac = hist2d(data_1, ui=ui, dir_step=dir_step)
+    dh = hist2d(data_1, ui=ui, dir_step=dir_step)
+    calm = dh.calm
 
     if dual:
         assert len(data_1) == len(data_2), "data_1 and data_2 must have same length"
-        calm2, counts_2, _ = hist2d(data_2, ui=ui, dir_step=dir_step)
-        assert counts.shape == counts_2.shape
+        dh2 = hist2d(data_2, ui=ui, dir_step=dir_step)
+        calm2 = dh2.calm
+        assert dh.density.shape == dh2.density.shape
 
-    ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
+    ri, rmax = _calc_radial_ticks(counts=dh.density, step=r_step, stop=r_max)
 
     # Resize calm
     # TODO this overwrites the calm value calculated above
@@ -209,11 +223,11 @@ def wind_rose(
 
     # primary histogram (model)
     p = _create_patch(
-        thetac=thetac,
+        thetac=dh.dir_centers,
         dir_step=dir_step,
         calm=calm,
         ui=ui,
-        counts=counts,
+        counts=dh.density,
         cmap=cmap,
         vmax=vmax,
     )
@@ -226,7 +240,7 @@ def wind_rose(
             vmax=vmax,
             ui=ui,
             calm=calm,
-            counts=counts,
+            counts=dh.density,
             label=labels[0],
             primary=True,
             dual=dual,
@@ -238,11 +252,11 @@ def wind_rose(
 
         # TODO should this be calm2?
         p = _create_patch(
-            thetac=thetac,
+            thetac=dh.dir_centers,
             dir_step=dir_step,
             calm=calm,
             ui=ui,
-            counts=counts_2,
+            counts=dh2.density,
             cmap=cmap,
             vmax=vmax,
             dir_step_factor=secondary_dir_step_factor,
@@ -255,8 +269,8 @@ def wind_rose(
                 cmap=cmap,
                 vmax=vmax,
                 ui=ui,
-                calm=calm2,
-                counts=counts_2,
+                calm=dh2.calm,
+                counts=dh2.density,
                 label=labels[1],
                 primary=False,
                 dual=dual,

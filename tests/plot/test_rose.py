@@ -28,17 +28,17 @@ def test_hist2d():
 
     X = np.vstack((mag, dirs)).T
 
-    calm, counts, _ = hist2d(
+    dh = hist2d(
         X,
         ui=np.array([0.2, 0.5, 10.0]),
         dir_step=90.0,
     )
 
-    assert calm == pytest.approx(0.2)
-    assert counts[1, 0] == pytest.approx(0.2)
-    assert counts[1, 1] == pytest.approx(0.2)
-    assert counts[1, 2] == pytest.approx(0.2)
-    assert counts[1, 3] == pytest.approx(0.2)
+    assert dh.calm == pytest.approx(0.2)
+    assert dh.density[1, 0] == pytest.approx(0.2)
+    assert dh.density[1, 1] == pytest.approx(0.2)
+    assert dh.density[1, 2] == pytest.approx(0.2)
+    assert dh.density[1, 3] == pytest.approx(0.2)
 
 
 def test_rose(wave_data_model_obs):
