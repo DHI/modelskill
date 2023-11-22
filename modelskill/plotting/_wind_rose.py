@@ -187,7 +187,6 @@ def wind_rose(
     if dual:
         assert len(data_1) == len(data_2), "data_1 and data_2 must have same length"
         dh2 = hist2d(data_2, ui=ui, dir_step=dir_step)
-        calm2 = dh2.calm
         assert dh.density.shape == dh2.density.shape
 
     ri, rmax = _calc_radial_ticks(counts=dh.density, step=r_step, stop=r_max)
