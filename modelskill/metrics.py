@@ -48,10 +48,6 @@ Examples
 0.8715019052958266
 >>> spearmanr(obs, mod)
 0.5
->>> cc(obs, mod)
-0.637783218973691
->>> lin_slope(obs, mod)
-0.4724896836313617
 >>> willmott(obs, mod)
 0.7484604452865941
 >>> hit_ratio(obs, mod, a=0.5)
@@ -656,7 +652,9 @@ def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
     return model.std()
 
 
-METRICS_WITH_DIMENSION = set(["urmse", "rmse", "bias", "mae"])  # TODO is this complete?
+METRICS_WITH_DIMENSION = set(
+    ["urmse", "rmse", "bias", "mae", "c_rmse", "c_mae"]
+)  # TODO is this complete?
 
 default_metrics = [bias, rmse, urmse, mae, cc, si, r2]
 
@@ -678,9 +676,9 @@ def metric_has_units(metric: Union[str, Callable]) -> bool:
 
     Examples
     --------
-    >>> metrihas_units("rmse")
+    >>> metric_has_units("rmse")
     True
-    >>> metrihas_units("kge")
+    >>> metric_has_units("kge")
     False
     """
     if hasattr(metric, "__name__"):
