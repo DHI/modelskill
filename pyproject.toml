@@ -7,7 +7,7 @@ exclude = ["notebooks", "tests"]
 
 [project]
 name="modelskill"
-version="1.0.dev2"
+version="1.0.a2"
 dependencies = [
     "numpy",
     "pandas",
@@ -41,9 +41,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering",
 ]
-
-[project.scripts]
-modelskill = "modelskill.cli:report"
 
 [project.optional-dependencies]
 dev = ["pytest",

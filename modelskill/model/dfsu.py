@@ -21,7 +21,7 @@ class DfsuModelResult(SpatialField):
         self,
         data: UnstructuredType,
         *,
-        name: str = "Undefined",
+        name: Optional[str] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> None:
@@ -32,6 +32,7 @@ class DfsuModelResult(SpatialField):
         filename = None
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfsu", "File must be a dfsu file"
+            name = name or Path(data).stem
             filename = str(data)
             data = mikeio.open(data)
 
@@ -45,6 +46,8 @@ class DfsuModelResult(SpatialField):
                 f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
             )
 
+        # TODO: user given quantity will be overwritten!
+
         if isinstance(data, mikeio.DataArray):
             if isinstance(item, int):
                 raise ValueError("item must be a string when data is a DataArray")
@@ -57,7 +60,7 @@ class DfsuModelResult(SpatialField):
 
         self.item = item
         self.data: mikeio.dfsu.Dfsu2DH | mikeio.DataArray | mikeio.Dataset = data
-        self.name = name
+        self.name = name or str(item)
         self.quantity = Quantity.undefined() if quantity is None else quantity
         self.filename = filename  # TODO: remove? backward compatibility
 

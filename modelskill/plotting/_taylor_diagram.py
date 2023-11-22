@@ -1,6 +1,10 @@
 from __future__ import annotations
 import warnings
 from collections import namedtuple
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import matplotlib.figure
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,8 +20,32 @@ def taylor_diagram(
     figsize=(7, 7),
     obs_text="Observations",
     normalize_std=False,
+    ax=None,
     title="Taylor diagram",
-):
+) -> matplotlib.figure.Figure:
+    """
+    Plot a Taylor diagram using the given observations and points.
+
+    Parameters:
+    -----------
+    obs_std : float
+        Standard deviation of the observations.
+    points : list of TaylorPoint objects or a single TaylorPoint object
+        Points to plot on the Taylor diagram.
+    figsize : tuple, optional
+        Figure size in inches. Default is (7, 7).
+    obs_text : str, optional
+        Label for the observations. Default is "Observations".
+    normalize_std : bool, optional
+        Whether to normalize the standard deviation of the points by the standard deviation of the observations. Default is False.
+    title : str, optional
+        Title of the plot. Default is "Taylor diagram".
+    Returns:
+    --------
+    matplotlib.figure.Figure
+            The matplotlib figure object
+    """
+
     if np.isscalar(figsize):
         figsize = (figsize, figsize)
     elif figsize[0] != figsize[1]:
@@ -55,3 +83,5 @@ def taylor_diagram(
         loc="upper right",
     )
     fig.suptitle(title, size="x-large")
+
+    return fig

@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import matplotlib.axes
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -30,7 +33,8 @@ def wind_rose(
     secondary_dir_step_factor: float = 2.0,
     figsize: Tuple[float, float] = (8, 8),
     ax=None,
-):
+    title=None,
+) -> matplotlib.axes.Axes:
     """Plots a (dual) wind (wave or current) roses with calms.
 
     The size of the calm is determined by the primary (measurement) data.
@@ -72,11 +76,12 @@ def wind_rose(
         figure size
     ax: Matplotlib axis Default= None
         Matplotlib axis to plot on defined as polar, it can be done using "subplot_kw = dict(projection = 'polar')". Default = None, new axis created.
-
+    title: str Default= None
+        title of the plot
 
     Returns
     -------
-    ax: Matplotlib axis
+    matplotlib.axes.Axes
         Matplotlib axis with the plot
     """
     if hasattr(data, "to_numpy"):
@@ -150,6 +155,7 @@ def wind_rose(
     if ax is None:
         _, ax = plt.subplots(figsize=figsize, subplot_kw=dict(projection="polar"))
 
+    ax.set_title(title)
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(-1)
 
