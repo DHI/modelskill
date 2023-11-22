@@ -52,6 +52,7 @@ def _parse_dataset(data) -> xr.Dataset:
     assert len(data.dims) == 1, "Only 0-dimensional data are supported"
     assert list(data.dims)[0] == "time", "data must have a time dimension"
     assert isinstance(data.time.to_index(), pd.DatetimeIndex), "time must be datetime"
+    data.time = pd.DatetimeIndex(data.time.to_index()).round(freq="100us")  # 0.0001s
     assert (
         data.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"

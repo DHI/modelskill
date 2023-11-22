@@ -50,6 +50,7 @@ def _validate_dataset(ds) -> xr.Dataset:
     assert len(ds.dims) == 1, "Only 0-dimensional data are supported"
     assert list(ds.dims)[0] == "time", "data must have a time dimension"
     assert isinstance(ds.time.to_index(), pd.DatetimeIndex), "time must be datetime"
+    ds.time = pd.DatetimeIndex(ds.time.to_index()).round(freq="100us")  # 0.0001s
     assert (
         ds.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"
