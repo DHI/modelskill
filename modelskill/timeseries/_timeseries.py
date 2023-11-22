@@ -8,6 +8,7 @@ import xarray as xr
 
 from ..types import GeometryType, Quantity
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
+from .. import __version__
 
 DEFAULT_COLORS = [
     "#b30000",
@@ -106,6 +107,8 @@ def _validate_dataset(ds) -> xr.Dataset:
     color = da.attrs["color"] if "color" in da.attrs else None
     da.attrs["color"] = _parse_color(name, color=color)
 
+    ds.attrs["modelskill_version"] = __version__
+
     return ds
 
 
@@ -116,9 +119,21 @@ class TimeSeries:
     data: xr.Dataset
     plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
 
-    def __post_init__(self) -> None:
-        self.data = _validate_dataset(self.data)
+    def __init__(self, data: xr.Dataset) -> None:
+        self.data = data if self._is_input_validated(data) else _validate_dataset(data)
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
+
+    def _is_input_validated(self, data) -> bool:
+        """Check if data is already a valid TimeSeries (contains the modelskill_version attribute)"""
+        if not isinstance(data, xr.Dataset):
+            return False
+        else:
+            if not hasattr(data, "attrs"):
+                return False
+            else:
+                if "modelskill_version" not in data.attrs:
+                    return False
+        return True
 
     @property
     def _val_item(self) -> str:

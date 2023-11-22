@@ -37,14 +37,15 @@ class TrackModelResult(TimeSeries):
         x_item: str | int = 0,
         y_item: str | int = 1,
     ) -> None:
-        ds = _parse_track_input(
-            data=data,
-            name=name,
-            item=item,
-            quantity=quantity,
-            x_item=x_item,
-            y_item=y_item,
-        )
-        data_var = str(list(ds.data_vars)[0])
-        ds[data_var].attrs["kind"] = "model"
-        super().__init__(data=ds)
+        if not self._is_input_validated(data):
+            data = _parse_track_input(
+                data=data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                x_item=x_item,
+                y_item=y_item,
+            )
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["kind"] = "model"
+        super().__init__(data=data)

@@ -37,12 +37,13 @@ class PointModelResult(TimeSeries):
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> None:
-        ds = _parse_point_input(data, name=name, item=item, quantity=quantity)
-        data_var = str(list(ds.data_vars)[0])
-        ds[data_var].attrs["kind"] = "model"
+        if not self._is_input_validated(data):
+            data = _parse_point_input(data, name=name, item=item, quantity=quantity)
 
-        ds.coords["x"] = x
-        ds.coords["y"] = y
-        ds.coords["z"] = None  # TODO: or np.nan?
+            data.coords["x"] = x
+            data.coords["y"] = y
+            data.coords["z"] = None  # TODO: or np.nan?
 
-        super().__init__(data=ds)
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["kind"] = "model"
+        super().__init__(data=data)
