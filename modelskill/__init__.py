@@ -29,7 +29,8 @@ from .model.factory import ModelResult
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .observation import PointObservation, TrackObservation
 from .matching import compare, from_matched
-from .connection import Connector, from_config
+from .connection import Connector
+from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
 from .comparison import ComparerCollection
