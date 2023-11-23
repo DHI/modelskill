@@ -856,12 +856,12 @@ class Comparer:
             d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)  # type: ignore
 
             # Note: if user asks for a specific time, we also filter raw
-            raw_mod_data = {k: v.loc[start:end] for k, v in raw_mod_data.items()}  # type: ignore
+            raw_mod_data = {k: v.sel(time=slice(start, end)) for k, v in raw_mod_data.items()}  # type: ignore
         if time is not None:
             d = d.sel(time=time)
 
             # Note: if user asks for a specific time, we also filter raw
-            raw_mod_data = {k: v.loc[time] for k, v in raw_mod_data.items()}
+            raw_mod_data = {k: v.sel(time=time) for k, v in raw_mod_data.items()}
         if area is not None:
             if _area_is_bbox(area):
                 x0, y0, x1, y1 = area

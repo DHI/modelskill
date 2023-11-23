@@ -269,6 +269,10 @@ class TimeSeries:
         else:
             return self.data.drop_vars(["z"])[["x", "y", self.name]].to_dataframe()
 
+    def sel(self, **kwargs) -> TimeSeries:
+        """Select data by label"""
+        return self.__class__(self.data.sel(**kwargs))
+
     def trim(
         self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
     ) -> None:
