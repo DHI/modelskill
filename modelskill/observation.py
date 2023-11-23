@@ -117,6 +117,8 @@ class PointObservation(Observation):
             data.coords["y"] = y
             data.coords["z"] = z
 
+        assert isinstance(data, xr.Dataset)
+
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "observation"
         super().__init__(data=data)
@@ -244,6 +246,8 @@ class TrackObservation(Observation):
                 y_item=y_item,
                 offset_duplicates=offset_duplicates,
             )
+        assert isinstance(data, xr.Dataset)
+
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "observation"
 

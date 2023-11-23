@@ -475,7 +475,8 @@ def _parse_single_model(
         )
 
 
-def _extract_from_models(obs, mods: List[protocols.ModelResult]) -> List[pd.DataFrame]:
+# TODO Type hints for mod
+def _extract_from_models(obs: Observation, mods) -> List[TimeSeries]:
     e_mods = []
     for m in mods:
         ext_mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m.copy()

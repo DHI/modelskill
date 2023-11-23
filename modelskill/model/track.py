@@ -1,8 +1,11 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..types import TrackType, Quantity
 from ..timeseries import TimeSeries, _parse_track_input
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 
 class TrackModelResult(TimeSeries):
@@ -46,6 +49,8 @@ class TrackModelResult(TimeSeries):
                 x_item=x_item,
                 y_item=y_item,
             )
+
+        assert isinstance(data, xr.Dataset)
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)

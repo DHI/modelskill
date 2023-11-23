@@ -722,7 +722,7 @@ class Comparer:
             return Comparer(matched_data=data)
 
         if data.gtype == "point":
-            raw_mod_data = {}
+            raw_mod_data: Dict[str, TimeSeries] = {}
 
             for var in data.data_vars:
                 var_name = str(var)

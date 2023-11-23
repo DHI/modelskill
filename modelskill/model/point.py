@@ -1,8 +1,11 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..types import Quantity, PointType
 from ..timeseries import TimeSeries, _parse_point_input
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 
 class PointModelResult(TimeSeries):
@@ -43,6 +46,8 @@ class PointModelResult(TimeSeries):
             data.coords["x"] = x
             data.coords["y"] = y
             data.coords["z"] = None  # TODO: or np.nan?
+
+        assert isinstance(data, xr.Dataset)
 
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
