@@ -49,8 +49,8 @@ def _parse_dataset(data) -> xr.Dataset:
     assert "Observation" in data.data_vars
 
     # Validate time
-    assert len(data.dims) == 1, "Only 0-dimensional data are supported"
-    assert list(data.dims)[0] == "time", "data must have a time dimension"
+    # assert len(data.dims) == 1, "Only 0-dimensional data are supported"
+    assert "time" in data.dims, "data must have a time dimension"
     assert isinstance(data.time.to_index(), pd.DatetimeIndex), "time must be datetime"
     data["time"] = pd.DatetimeIndex(data.time.to_index()).round(freq="100us")  # 0.0001s
     assert (
@@ -728,9 +728,12 @@ class Comparer:
                 var_name = str(var)
                 if var_name[:5] == "_raw_":
                     new_key = var_name[5:]  # remove prefix '_raw_'
-                    ts = PointObservation(data=data[[var_name]])
+                    ds = data[[var_name]].rename(
+                        {"_time_raw_" + new_key: "time", var_name: new_key}
+                    )
+                    ts = PointObservation(data=ds, name=new_key)
                     # TODO: name of time?
-                    ts.name = new_key
+                    # ts.name = new_key
                     # df = (
                     #     data[var_name]
                     #     .to_dataframe()
@@ -740,7 +743,10 @@ class Comparer:
                     # )
                     raw_mod_data[new_key] = ts
 
-                    data = data.drop(var_name).drop("_time_raw_" + new_key)
+                    # data = data.drop(var_name).drop("_time_raw_" + new_key)
+
+            # filter variables, only keep the ones with a 'time' dimension
+            data = data[[v for v in data.data_vars if "time" in data[v].dims]]
 
             return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 

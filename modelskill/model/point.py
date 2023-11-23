@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
+
+import xarray as xr
 
 from ..types import Quantity, PointType
 from ..timeseries import TimeSeries, _parse_point_input
-
-if TYPE_CHECKING:
-    import xarray as xr
 
 
 class PointModelResult(TimeSeries):

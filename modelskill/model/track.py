@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
+
+import xarray as xr
 
 from ..types import TrackType, Quantity
 from ..timeseries import TimeSeries, _parse_track_input
-
-if TYPE_CHECKING:
-    import xarray as xr
 
 
 class TrackModelResult(TimeSeries):
