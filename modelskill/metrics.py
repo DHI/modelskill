@@ -904,6 +904,9 @@ def _partial_duration_series(
     return peak_list.astype(bool), AAP
 
 
+## Circular metrics
+
+
 def _c_residual(obs: np.ndarray, model: np.ndarray) -> np.ndarray:
     assert obs.size == model.size
     resi = model.ravel() - obs.ravel()
@@ -911,7 +914,29 @@ def _c_residual(obs: np.ndarray, model: np.ndarray) -> np.ndarray:
     return resi
 
 
-def c_max_error(obs, model) -> float:
+def c_max_error(obs: np.ndarray, model: np.ndarray) -> float:
+    """Circular max error
+
+    Parameters
+    ----------
+    obs : np.ndarray
+        Observation
+    model : np.ndarray
+        Model
+
+    Returns
+    -------
+    float
+        Circular max error
+
+    Examples
+    --------
+    >>> obs = np.array([10., 350., 10.])
+    >>> mod = np.array([20., 10., 350.])
+    >>> c_max_error(obs, mod)
+    20.0
+    """
+
     resi = _c_residual(obs, model)
 
     # Compute the absolute differences and then
@@ -926,6 +951,23 @@ def c_mean_absolute_error(
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
 ) -> float:
+    """Circular mean absolute error
+
+    Parameters
+    ----------
+    obs : np.ndarray
+        Observation
+    model : np.ndarray
+        Model
+    weights : np.ndarray, optional
+        Weights, by default None
+
+    Returns
+    -------
+    float
+        Circular mean absolute error
+    """
+
     resi = _c_residual(obs, model)
     return np.average(np.abs(resi), weights=weights)
 
@@ -935,6 +977,7 @@ def c_mae(
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
 ) -> float:
+    """alias for circular mean absolute error"""
     return c_mean_absolute_error(obs, model, weights)
 
 
@@ -943,6 +986,22 @@ def c_root_mean_squared_error(
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
 ) -> float:
+    """Circular root mean squared error
+
+    Parameters
+    ----------
+    obs : np.ndarray
+        Observation
+    model : np.ndarray
+        Model
+    weights : np.ndarray, optional
+        Weights, by default None
+
+    Returns
+    -------
+    float
+        Circular root mean squared error
+    """
     residual = _c_residual(obs, model)
     return np.sqrt(np.average(residual**2, weights=weights))
 
@@ -952,6 +1011,7 @@ def c_rmse(
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
 ) -> float:
+    """alias for circular root mean squared error"""
     return c_root_mean_squared_error(obs, model, weights)
 
 
