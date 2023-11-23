@@ -455,10 +455,8 @@ def test_pc_properties(pc):
     assert pc.obs[-1] == 5.0
     assert pc.mod[-1, 1] == 4.9
 
-    assert list(pc.raw_mod_data["m1"].data_vars) == ["m1"]
-    assert np.all(
-        pc.raw_mod_data["m1"]["m1"].to_numpy() == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4]
-    )
+    assert list(pc.raw_mod_data["m1"].data.data_vars) == ["m1"]
+    assert np.all(pc.raw_mod_data["m1"].values == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
 
 
 def test_tc_properties(tc):
@@ -475,13 +473,9 @@ def test_tc_properties(tc):
     assert tc.obs[-1] == 5.0
     assert tc.mod[-1, 1] == 4.9
 
-    assert list(tc.raw_mod_data["m1"].data_vars) == ["m1"]
-    assert np.all(
-        tc.raw_mod_data["m1"]["m1"].to_numpy() == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4]
-    )
-    assert np.all(
-        tc.raw_mod_data["m1"]["x"].to_numpy() == [10.1, 10.2, 10.3, 10.4, 10.5, 10.6]
-    )
+    assert list(tc.raw_mod_data["m1"].data.data_vars) == ["m1"]
+    assert np.all(tc.raw_mod_data["m1"].values == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
+    assert np.all(tc.raw_mod_data["m1"].x == [10.1, 10.2, 10.3, 10.4, 10.5, 10.6])
 
 
 def test_pc_sel_time(pc):
