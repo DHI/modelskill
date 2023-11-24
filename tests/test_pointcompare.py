@@ -87,15 +87,10 @@ def test_extraction_no_overlap(modelresult_oresund_WL):
         name="Klagshamn",
     )
     mr = modelresult_oresund_WL
-    with pytest.warns(UserWarning) as wn:
-        con = ms.Connector(o1, mr, validate=False)
-    assert len(wn) == 1
-    assert "No time overlap" in str(wn[0].message)
-    # assert "Could not add observation" in str(wn[1].message)
-    assert len(con.observations) == 1
-    with pytest.warns(UserWarning, match="No overlapping data"):
-        cc = con.extract()
-    assert cc.n_comparers == 0
+
+    con = ms.Connector(o1, mr, validate=False)
+    with pytest.raises(ValueError, match="No data"):
+        con.extract()
 
 
 def test_score(modelresult_oresund_WL, klagshamn, drogden):

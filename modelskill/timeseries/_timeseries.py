@@ -292,7 +292,13 @@ class TimeSeries:
         end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
 
         # TODO: return a new TimeSeries object instead of modifying the existing one
-        self.data = self.data.sel(time=slice(start_time, end_time))
+
+        data = self.data.sel(time=slice(start_time, end_time))
+        if len(data.time) == 0:
+            raise ValueError(
+                f"No data left after trimming to {start_time} - {end_time}"
+            )
+        self.data = data
 
     def interp_time(
         self, new_time: pd.DatetimeIndex, dropna=True, **kwargs
