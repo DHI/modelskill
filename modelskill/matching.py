@@ -349,7 +349,12 @@ def match_time(
 
     for name, mr in raw_mod_data.items():
         # df = _model2obs_interp(observation, mdata, max_model_gap)
-        mri = mr.interp_time(new_time=observation.time)
+        if isinstance(observation, PointObservation):
+            assert len(observation.time) > 0
+            mri = mr.interp_time(new_time=observation.time)
+        else:
+            # It doesn't make sense to interpolate track data in time (each point is at a different location in space)
+            mri = mr
 
         if max_model_gap is not None:
             mri = _remove_model_gaps(mri, mr.time, max_model_gap)
