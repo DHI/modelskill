@@ -22,7 +22,7 @@ class ComparerCollectionPlotter:
         self,
         *,
         model=None,
-        bins: int | float = 20,
+        bins: int | float = 120,
         quantiles: int | Sequence[float] | None = None,
         fit_to_quantiles: bool = False,
         show_points: bool | int | float | None = None,
