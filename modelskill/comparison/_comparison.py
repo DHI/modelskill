@@ -1167,18 +1167,21 @@ class Comparer:
         return self.mod - np.vstack(self.obs)
 
     def remove_bias(self, correct="Model"):
+        # TODO: return a new Comparer object instead of modifying self
         bias = self.residual.mean(axis=0)
         if correct == "Model":
             for j in range(self.n_models):
                 mod_name = self.mod_names[j]
                 mod_ts = self.raw_mod_data[mod_name]
-                mod_ts.data[mod_name] = mod_ts.values - bias[j]  # TODO!
                 with xr.set_options(keep_attrs=True):
-                    self.data[mod_name] = self.data[mod_name] - bias[j]
+                    mod_ts.data[mod_name].values = mod_ts.values - bias[j]
+                    self.data[mod_name].values = self.data[mod_name].values - bias[j]
         elif correct == "Observation":
             # what if multiple models?
             with xr.set_options(keep_attrs=True):
-                self.data[self._obs_name] = self.obs + bias
+                self.data[self._obs_name].values = (
+                    self.data[self._obs_name].values + bias
+                )
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
