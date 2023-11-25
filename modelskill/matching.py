@@ -376,9 +376,10 @@ def match_time(
             # (each point is at a different location in space)
             # mri = mr.interp_time(new_time=observation.data.dropna(dim="time").time)
             # We check the positions are within tolerance (also time)
-            mri = _remove_non_matching_positions(
-                mr, data.dropna(dim="time").to_dataframe()[["x", "y"]]
-            )
+            # mri = _remove_non_matching_positions(
+            #     mr, data.dropna(dim="time").to_dataframe()[["x", "y"]]
+            # )
+            mri = mr
 
         if max_model_gap is not None:
             # e.g. in case of event data
