@@ -277,23 +277,42 @@ def _get_valid_query_time(
     return valid_idx
 
 
-def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
-    if len(df_mod) == 0:
-        return
-    if len(df_mod) != len(df_obs):
-        raise ValueError("model and observation data must have same length")
-
-    mod_xy = df_mod[["x", "y"]]
-    obs_xy = df_obs[["x", "y"]]
+def _remove_non_matching_positions(
+    ts: TimeSeries,
+    obs_xy: pd.DataFrame,
+) -> TimeSeries:
+    """Remove model data points that are too far from observation positions"""
+    mod_xy = ts.data.to_dataframe()[["x", "y"]]
     d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
 
     # Find minimal accepted distance from data
     # (could be long/lat or x/y, small or large domain)
     tol_xy = _minimal_accepted_distance(obs_xy)
-    mask = d_xy > tol_xy
-    df_mod.loc[mask, name] = np.nan
-    if all(mask):
+    mask = d_xy < tol_xy  # to keep
+    if not any(mask):
         warnings.warn("no (spatial) overlap between model and observation points")
+
+    ds = ts.data.isel(time=mask)
+    return ts.__class__(ds)
+
+
+# def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
+#     if len(df_mod) == 0:
+#         return
+#     if len(df_mod) != len(df_obs):
+#         raise ValueError("model and observation data must have same length")
+
+#     mod_xy = df_mod[["x", "y"]]
+#     obs_xy = df_obs[["x", "y"]]
+#     d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
+
+#     # Find minimal accepted distance from data
+#     # (could be long/lat or x/y, small or large domain)
+#     tol_xy = _minimal_accepted_distance(obs_xy)
+#     mask = d_xy > tol_xy
+#     df_mod.loc[mask, name] = np.nan
+#     if all(mask):
+#         warnings.warn("no (spatial) overlap between model and observation points")
 
 
 def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
@@ -353,10 +372,16 @@ def match_time(
             assert len(observation.time) > 0
             mri = mr.interp_time(new_time=observation.time)
         else:
-            # It doesn't make sense to interpolate track data in time (each point is at a different location in space)
-            mri = mr
+            # It doesn't make sense to interpolate track data in time
+            # (each point is at a different location in space)
+            # mri = mr.interp_time(new_time=observation.data.dropna(dim="time").time)
+            # We check the positions are within tolerance (also time)
+            mri = _remove_non_matching_positions(
+                mr, data.dropna(dim="time").to_dataframe()[["x", "y"]]
+            )
 
         if max_model_gap is not None:
+            # e.g. in case of event data
             mri = _remove_model_gaps(mri, mr.time, max_model_gap)
 
         # TODO: temporary solution until complete swich to xr.Dataset
@@ -378,19 +403,19 @@ def match_time(
     return data
 
 
-def _model2obs_interp(
-    obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]
-) -> pd.DataFrame:
-    """interpolate model to measurement time"""
-    _obs_name = "Observation"
-    df = _interp_time(mod_df.dropna(), obs.time)
-    df[_obs_name] = obs.values
+# def _model2obs_interp(
+#     obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]
+# ) -> pd.DataFrame:
+#     """interpolate model to measurement time"""
+#     _obs_name = "Observation"
+#     df = _interp_time(mod_df.dropna(), obs.time)
+#     df[_obs_name] = obs.values
 
-    if max_model_gap is not None:
-        df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
+#     if max_model_gap is not None:
+#         df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
 
-    df.index.name = "time"
-    return df
+#     df.index.name = "time"
+#     return df
 
 
 def _minimal_accepted_distance(obs_xy):
