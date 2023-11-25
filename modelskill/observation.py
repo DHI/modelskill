@@ -40,8 +40,8 @@ class Observation(TimeSeries):
     def __init__(
         self,
         data: xr.Dataset,
-        weight: float = 1.0,
-        color: str = "#d62728",
+        weight: float = 1.0,  # TODO: cannot currently be set
+        color: str = "#d62728",  # TODO: cannot currently be set
     ):
         data["time"] = self._parse_time(data.time)
 
@@ -91,6 +91,8 @@ class PointObservation(Observation):
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
 
     Examples
     --------
@@ -110,6 +112,7 @@ class PointObservation(Observation):
         z: Optional[float] = None,
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
+        attrs: Optional[dict] = None,
     ):
         if not self._is_input_validated(data):
             data = _parse_point_input(data, name=name, item=item, quantity=quantity)
@@ -121,6 +124,13 @@ class PointObservation(Observation):
 
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "observation"
+
+        # check that user-defined attrs don't overwrite existing attrs!
+        assert not any(
+            [k in data.attrs for k in attrs]
+        ), "attrs must not overwrite existing attrs!"
+        data.attrs = {**data.attrs, **(attrs or {})}
+
         super().__init__(data=data)
 
     @property
@@ -172,6 +182,8 @@ class TrackObservation(Observation):
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
 
 
     Examples
@@ -235,6 +247,7 @@ class TrackObservation(Observation):
         y_item: Optional[int | str] = 1,
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
+        attrs: Optional[dict] = None,
     ):
         if not self._is_input_validated(data):
             data = _parse_track_input(
@@ -250,6 +263,8 @@ class TrackObservation(Observation):
 
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "observation"
+        # TODO: check that attrs don't overwrite existing attrs!
+        data.attrs = {**data.attrs, **(attrs or {})}
 
         super().__init__(data=data)
 
