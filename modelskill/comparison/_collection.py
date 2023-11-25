@@ -464,6 +464,29 @@ class ComparerCollection(Mapping):
                     skilldf.insert(loc=0, column=field, value=unames[0])
         return skilldf
 
+    def skill_geodataframe(
+        self, metric, crs="EPSG:4326", by: Optional[Union[str, List[str]]] = None
+    ):
+        import geopandas as gpd
+
+        metric = _parse_metric(metric, self.metrics)
+        df = self.to_dataframe()
+
+        # TODO: FIX: len(df.variable.unique()) if (self.n_variables > 1) else 1
+        n_var = self.n_variables
+        by = _parse_groupby(by, self.n_models, self.n_observations, n_var)
+        res = _groupby_df(df, by, [metric])
+        res = self._add_as_col_if_not_in_index(df, skilldf=res)
+
+        # calculate mean x, y group by observation
+        obs_coords = df[["observation", "x", "y"]].groupby("observation").mean()
+
+        # TODO this doesn't work when res has MultiIndex, since indices doesn't align, and no error is raised, and I have no idea how to fix it
+        res["x"] = obs_coords["x"]
+        res["y"] = obs_coords["y"]
+
+        return gpd.GeoDataFrame(res, geometry=gpd.points_from_xy(res.x, res.y), crs=crs)
+
     def spatial_skill(
         self,
         bins=5,
