@@ -1165,7 +1165,7 @@ class Comparer:
     def scatter(
         self,
         *,
-        bins=20,
+        bins=120,
         quantiles=None,
         fit_to_quantiles=False,
         show_points=None,
