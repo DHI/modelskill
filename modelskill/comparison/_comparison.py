@@ -394,8 +394,6 @@ class Comparer:
         matched_data: xr.Dataset,
         raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
     ):
-        self.plot = Comparer.plotter(self)
-
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
             raw_mod_data
@@ -406,8 +404,7 @@ class Comparer:
                 if value.attrs["kind"] == "model"
             }
         )
-        # TODO get quantity from matched_data object
-        # self.quantity: Quantity = Quantity.undefined()
+        self.plot = Comparer.plotter(self)
 
     @classmethod
     def from_matched_data(
