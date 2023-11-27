@@ -126,23 +126,41 @@ def test_rmse_circular_weighted():
     assert mtr.c_rmse(obs, mod, weights=weights) == pytest.approx(142.3, 0.01)
 
 
+name2func = {
+    "bias": mtr.bias,
+    "max_error": mtr.max_error,
+    "rmse": mtr.rmse,
+    "mae": mtr.mae,
+    "urmse": mtr.urmse,
+}
+name2cfunc = {
+    "bias": mtr.c_bias,
+    "max_error": mtr.c_max_error,
+    "rmse": mtr.c_rmse,
+    "mae": mtr.c_mae,
+    "urmse": mtr.c_urmse,
+}
+
+
 @pytest.mark.parametrize(
-    "func",
+    "metric",
     [
-        mtr.c_bias,
-        mtr.c_max_error,
-        mtr.c_rmse,
-        mtr.c_mae,
-        mtr.c_urmse,
+        "bias",
+        "max_error",
+        "rmse",
+        "mae",
+        "urmse",
     ],
 )
-def test_metrics_consistency(func):
+def test_metrics_consistency(metric):
     x = np.array([0, 5, 15, 30])
     y = np.array([1, 2, 9, 21])
 
     # Standard and circular versions should give same result (for small angles)
+    func = name2func[metric]
     v = func(x, y)
-    vc = (func(x, y) + 180) % 360 - 180
+    cfunc = name2cfunc[metric]
+    vc = (cfunc(x, y) + 180) % 360 - 180
     assert v == pytest.approx(vc, 1e-2)
 
 
