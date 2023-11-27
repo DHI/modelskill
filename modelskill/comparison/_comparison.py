@@ -604,7 +604,7 @@ class Comparer:
     def metrics(self):
         if self.quantity.circular:
             # TODO define default circular metrics elsewhere
-            return [mtr.c_rmse, mtr.c_max_error]
+            return [mtr.c_bias, mtr.c_rmse, mtr.c_urmse, mtr.c_max_error]
         else:
             return options.metrics.list
 
