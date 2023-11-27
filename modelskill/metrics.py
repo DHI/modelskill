@@ -908,10 +908,41 @@ def _partial_duration_series(
 
 
 def _c_residual(obs: np.ndarray, model: np.ndarray) -> np.ndarray:
+    """Circular residual (0, 360) - output between -180 and 180"""
     assert obs.size == model.size
     resi = model.ravel() - obs.ravel()
     resi = (resi + 180) % 360 - 180
     return resi
+
+
+def c_bias(obs: np.ndarray, model: np.ndarray) -> float:
+    """Circular bias (mean error)
+
+    Parameters
+    ----------
+    obs : np.ndarray
+        Observation in degrees (0, 360)
+    model : np.ndarray
+        Model in degrees (0, 360)
+
+    Range: [-180., 180.]; Best: 0.
+
+    Returns
+    -------
+    float
+        Circular bias
+
+    Examples
+    --------
+    >>> obs = np.array([10., 355., 170.])
+    >>> mod = np.array([20., 5., -180.])
+    >>> c_bias(obs, mod)
+    10.0
+    """
+    from scipy.stats import circmean
+
+    resi = _c_residual(obs, model)
+    return circmean(resi, low=-180.0, high=180.0)
 
 
 def c_max_error(obs: np.ndarray, model: np.ndarray) -> float:
@@ -920,9 +951,11 @@ def c_max_error(obs: np.ndarray, model: np.ndarray) -> float:
     Parameters
     ----------
     obs : np.ndarray
-        Observation
+        Observation in degrees (0, 360)
     model : np.ndarray
-        Model
+        Model in degrees (0, 360)
+
+    Range: :math:`[0, \\infty)`; Best: 0
 
     Returns
     -------
@@ -956,11 +989,13 @@ def c_mean_absolute_error(
     Parameters
     ----------
     obs : np.ndarray
-        Observation
+        Observation in degrees (0, 360)
     model : np.ndarray
-        Model
+        Model in degrees (0, 360)
     weights : np.ndarray, optional
         Weights, by default None
+
+    Range: [0, 180]; Best: 0
 
     Returns
     -------
@@ -991,11 +1026,13 @@ def c_root_mean_squared_error(
     Parameters
     ----------
     obs : np.ndarray
-        Observation
+        Observation in degrees (0, 360)
     model : np.ndarray
-        Model
+        Model in degrees (0, 360)
     weights : np.ndarray, optional
         Weights, by default None
+
+    Range: [0, 180]; Best: 0
 
     Returns
     -------
@@ -1013,6 +1050,45 @@ def c_rmse(
 ) -> float:
     """alias for circular root mean squared error"""
     return c_root_mean_squared_error(obs, model, weights)
+
+
+def c_unbiased_root_mean_squared_error(
+    obs: np.ndarray,
+    model: np.ndarray,
+    weights: Optional[np.ndarray] = None,
+) -> float:
+    """Circular unbiased root mean squared error
+
+    Parameters
+    ----------
+    obs : np.ndarray
+        Observation in degrees (0, 360)
+    model : np.ndarray
+        Model in degrees (0, 360)
+    weights : np.ndarray, optional
+        Weights, by default None
+
+    Range: [0, 180]; Best: 0
+
+    Returns
+    -------
+    float
+        Circular unbiased root mean squared error
+    """
+    from scipy.stats import circmean
+
+    residual = _c_residual(obs, model)
+    residual = residual - circmean(residual, low=-180.0, high=180.0)
+    return np.sqrt(np.average(residual**2, weights=weights))
+
+
+def c_urmse(
+    obs: np.ndarray,
+    model: np.ndarray,
+    weights: Optional[np.ndarray] = None,
+) -> float:
+    """alias for circular unbiased root mean squared error"""
+    return c_unbiased_root_mean_squared_error(obs, model, weights)
 
 
 defined_metrics: Set[str] = (
