@@ -129,9 +129,11 @@ def test_rmse_circular_weighted():
 @pytest.mark.parametrize(
     "func",
     [
+        mtr.c_bias,
         mtr.c_max_error,
         mtr.c_rmse,
         mtr.c_mae,
+        mtr.c_urmse,
     ],
 )
 def test_metrics_consistency(func):
@@ -145,9 +147,11 @@ def test_metrics_consistency(func):
 
 
 mtr_funs = [
+    mtr.c_bias,
     mtr.c_max_error,
     mtr.c_rmse,
     mtr.c_mae,
+    mtr.c_urmse,
 ]
 
 rotations = [-4, 170, 340]
