@@ -216,7 +216,7 @@ def _single_obs_compare(
     obs_item: Optional[int | str] = None,
     mod_item: Optional[int | str] = None,
     gtype: Optional[GeometryTypes] = None,
-    max_model_gap=None,
+    max_model_gap: Optional[float] = None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
@@ -366,10 +366,9 @@ def match_time(
 
     assert isinstance(observation, (PointObservation, TrackObservation))
     gtype = "point" if isinstance(observation, PointObservation) else "track"
-    observation = observation.copy()
-    observation.trim(period.start, period.end)
+    observation = observation.trim(period.start, period.end)
 
-    data = observation.data  # .copy() #already a copy?
+    data = observation.data
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: obs_name})
 
@@ -407,7 +406,7 @@ def _minimal_accepted_distance(obs_xy: ArrayLike) -> float:
     # all consequtive distances
     vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
     # fraction of small quantile
-    return 0.5 * np.quantile(vec, 0.1)
+    return float(0.5 * np.quantile(vec, 0.1))
 
 
 def parse_modeldata_list(modeldata: Iterable[TimeSeries]) -> Dict[str, TimeSeries]:
@@ -450,7 +449,7 @@ def _parse_models(
     mod: Any,  # TODO
     item: Optional[IdOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
-):
+) -> List[Any]:  # TODO
     """Return a list of ModelResult objects"""
     if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
@@ -464,7 +463,7 @@ def _parse_single_model(
     mod: Any,  # TODO
     item: Optional[IdOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
-):
+) -> Any:  # TODO
     if isinstance(mod, protocols.ModelResult):
         if item is not None:
             raise ValueError(
@@ -481,7 +480,7 @@ def _parse_single_model(
 
 
 # TODO Type hints for mod
-def _extract_from_models(obs: Observation, mods) -> List[TimeSeries]:
+def _extract_from_models(obs: Observation, mods: Any) -> List[TimeSeries]:
     e_mods = []
     for m in mods:
         ext_mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m.copy()

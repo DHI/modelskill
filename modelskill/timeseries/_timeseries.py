@@ -276,11 +276,11 @@ class TimeSeries:
         return self.__class__(self.data.sel(**kwargs))
 
     def trim(
-        self,
+        self: T,
         start_time: Optional[pd.Timestamp] = None,
         end_time: Optional[pd.Timestamp] = None,
         buffer="1s",
-    ) -> None:
+    ) -> T:
         """Trim observation data to a given time interval
 
         Parameters
@@ -296,11 +296,9 @@ class TimeSeries:
         start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
         end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
 
-        # TODO: return a new TimeSeries object instead of modifying the existing one
-
         data = self.data.sel(time=slice(start_time, end_time))
         if len(data.time) == 0:
             raise ValueError(
                 f"No data left after trimming to {start_time} - {end_time}"
             )
-        self.data = data
+        return self.__class__(data)
