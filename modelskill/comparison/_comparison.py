@@ -505,28 +505,6 @@ class Comparer:
         return self.data.time.to_index()
 
     @property
-    def _mod_start(self) -> pd.Timestamp:
-        mod_starts = [pd.Timestamp.max]
-        for m in self.raw_mod_data.values():
-            # time = (
-            #     m.index if isinstance(m, pd.DataFrame) else m.time
-            # )  # TODO: xr.Dataset
-            if len(m.time) > 0:
-                mod_starts.append(m.time[0])
-        return min(mod_starts)
-
-    @property
-    def _mod_end(self) -> pd.Timestamp:
-        mod_ends = [pd.Timestamp.min]
-        for m in self.raw_mod_data.values():
-            # time = (
-            #     m.index if isinstance(m, pd.DataFrame) else m.time
-            # )  # TODO: xr.Dataset
-            if len(m.time) > 0:
-                mod_ends.append(m.time[-1])
-        return max(mod_ends)
-
-    @property
     def start(self) -> pd.Timestamp:
         """start pd.Timestamp of compared data"""
         return self.time[0]
