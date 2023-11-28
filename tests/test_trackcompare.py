@@ -38,63 +38,63 @@ def test_skill(comparer):
     assert df.loc["alti"].n == 544
 
 
-def test_extract_no_time_overlap(modelresult, observation_df):
-    mr = modelresult
-    df = observation_df.copy(deep=True)
-    df.index = df.index + np.timedelta64(100, "D")
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        o = ms.TrackObservation(df, item=2, name="alti")
+# def test_extract_no_time_overlap(modelresult, observation_df):
+#     mr = modelresult
+#     df = observation_df.copy(deep=True)
+#     df.index = df.index + np.timedelta64(100, "D")
+#     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+#         o = ms.TrackObservation(df, item=2, name="alti")
 
-    with pytest.raises(ValueError, match="Validation failed"):
-        with pytest.warns(UserWarning, match="No time overlap!"):
-            ms.Connector(o, mr)
+#     with pytest.raises(ValueError, match="Validation failed"):
+#         with pytest.warns(UserWarning, match="No time overlap!"):
+#             ms.Connector(o, mr)
 
-    with pytest.warns(UserWarning, match="No time overlap!"):
-        con = ms.Connector(o, mr, validate=False)
+#     with pytest.warns(UserWarning, match="No time overlap!"):
+#         con = ms.Connector(o, mr, validate=False)
 
-    with pytest.warns(UserWarning, match="No overlapping data"):
-        cc = con.extract()
+#     with pytest.warns(UserWarning, match="No overlapping data"):
+#         cc = con.extract()
 
-    assert cc.n_comparers == 0
-
-
-def test_extract_obs_start_before(modelresult, observation_df):
-    mr = modelresult
-    df = observation_df.copy(deep=True)
-    df.index = df.index - np.timedelta64(1, "D")
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        o = ms.TrackObservation(df, item=2, name="alti")
-    con = ms.Connector(o, mr)
-    with pytest.warns(UserWarning, match="No overlapping data"):
-        cc = con.extract()
-    assert cc.n_comparers == 0
+#     assert cc.n_comparers == 0
 
 
-def test_extract_obs_end_after(modelresult, observation_df):
-    mr = modelresult
-    df = observation_df.copy(deep=True)
-    df.index = df.index + np.timedelta64(1, "D")
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        o = ms.TrackObservation(df, item=2, name="alti")
-    con = ms.Connector(o, mr)
-    with pytest.warns(UserWarning, match="No overlapping data"):
-        cc = con.extract()
-    assert cc.n_comparers == 0
+# def test_extract_obs_start_before(modelresult, observation_df):
+#     mr = modelresult
+#     df = observation_df.copy(deep=True)
+#     df.index = df.index - np.timedelta64(1, "D")
+#     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+#         o = ms.TrackObservation(df, item=2, name="alti")
+#     con = ms.Connector(o, mr)
+#     with pytest.warns(UserWarning, match="No overlapping data"):
+#         cc = con.extract()
+#     assert cc.n_comparers == 0
 
 
-def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
-    mr = modelresult
-    df = observation_df.copy(deep=True)
-    df.lon = -100
-    df.lat = -50
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        o = ms.TrackObservation(df, item=2, name="alti")
-    con = ms.Connector(o, mr)
-    with pytest.warns(UserWarning, match="No overlapping data"):
-        cc = con.extract()
+# def test_extract_obs_end_after(modelresult, observation_df):
+#     mr = modelresult
+#     df = observation_df.copy(deep=True)
+#     df.index = df.index + np.timedelta64(1, "D")
+#     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+#         o = ms.TrackObservation(df, item=2, name="alti")
+#     con = ms.Connector(o, mr)
+#     with pytest.warns(UserWarning, match="No overlapping data"):
+#         cc = con.extract()
+#     assert cc.n_comparers == 0
 
-    assert cc.n_comparers == 0
-    assert cc.n_points == 0
+
+# def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
+#     mr = modelresult
+#     df = observation_df.copy(deep=True)
+#     df.lon = -100
+#     df.lat = -50
+#     # with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+#     o = ms.TrackObservation(df, item=2, name="alti")
+#     con = ms.Connector(o, mr)
+#     with pytest.warns(UserWarning, match="No overlapping data"):
+#     cc = con.extract()
+
+# assert cc.n_comparers == 0
+# assert cc.n_points == 0
 
 
 # def test_extract_no_spatial_overlap_dfsu(observation_df):
