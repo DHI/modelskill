@@ -11,9 +11,12 @@ from typing import (
     Union,
     Sequence,
     get_args,
+    TypeVar,
+    Any,
 )
 import warnings
 import numpy as np
+from numpy.typing import ArrayLike
 import pandas as pd
 import xarray as xr
 
@@ -62,6 +65,8 @@ ObsInputType = Union[
     # protocols.Observation,
     Observation,
 ]
+
+T = TypeVar("T", bound="TimeSeries")
 
 
 def from_matched(
@@ -142,6 +147,7 @@ def from_matched(
         z=z,
         quantity=quantity,
     )
+
     return cmp
 
 
@@ -152,7 +158,7 @@ def compare(
     obs_item: Optional[IdOrNameTypes] = None,
     mod_item: Optional[IdOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
-    max_model_gap=None,
+    max_model_gap: Optional[float] = None,
 ) -> ComparerCollection:
     """Compare observations and model results
     Parameters
@@ -168,7 +174,7 @@ def compare(
     gtype : (str, optional)
         Geometry type of the model result. If not specified, it will be guessed.
     max_model_gap : (float, optional)
-        Maximum gap in the model result, by default None
+        Maximum time gap (s) in the model result, by default None
 
     Returns
     -------
@@ -207,8 +213,8 @@ def _single_obs_compare(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item=None,
-    mod_item=None,
+    obs_item: Optional[int | str] = None,
+    mod_item: Optional[int | str] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap=None,
 ) -> Comparer:
@@ -238,16 +244,16 @@ def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
         time_delta = pd.Timedelta(time_delta)
     elif np.isscalar(time_delta):
         # assume seconds
-        time_delta = pd.Timedelta(time_delta, "s")  # type: ignore
+        time_delta = pd.Timedelta(time_delta, "s")
     assert isinstance(time_delta, pd.Timedelta)
     return time_delta
 
 
 def _remove_model_gaps(
-    ts: TimeSeries,
+    ts: T,
     mod_index: pd.DatetimeIndex,
     max_gap: TimeDeltaTypes,
-) -> TimeSeries:
+) -> T:
     """Remove model gaps longer than max_gap from TimeSeries"""
     max_gap = _time_delta_to_pd_timedelta(max_gap)
     valid_time = _get_valid_query_time(mod_index, ts.time, max_gap)
@@ -257,7 +263,7 @@ def _remove_model_gaps(
 
 def _get_valid_query_time(
     mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
-):
+) -> pd.Series[bool]:
     """Used only by _remove_model_gaps"""
     # init dataframe of available timesteps and their index
     df = pd.DataFrame(index=mod_index)
@@ -368,18 +374,10 @@ def match_time(
     data = data.rename({observation.name: obs_name})
 
     for name, mr in raw_mod_data.items():
-        # df = _model2obs_interp(observation, mdata, max_model_gap)
         if isinstance(mr, PointModelResult):
             assert len(observation.time) > 0
             mri: TimeSeries = mr.interp_time(new_time=observation.time)
         else:
-            # It doesn't make sense to interpolate track data in time
-            # (each point is at a different location in space)
-            # mri = mr.interp_time(new_time=observation.data.dropna(dim="time").time)
-            # We check the positions are within tolerance (also time)
-            # mri = _remove_non_matching_positions(
-            #     mr, data.dropna(dim="time").to_dataframe()[["x", "y"]]
-            # )
             mri = mr
 
         if max_model_gap is not None:
@@ -405,51 +403,20 @@ def match_time(
     return data
 
 
-# def _model2obs_interp(
-#     obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]
-# ) -> pd.DataFrame:
-#     """interpolate model to measurement time"""
-#     _obs_name = "Observation"
-#     df = _interp_time(mod_df.dropna(), obs.time)
-#     df[_obs_name] = obs.values
-
-#     if max_model_gap is not None:
-#         df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
-
-#     df.index.name = "time"
-#     return df
-
-
-def _minimal_accepted_distance(obs_xy):
+def _minimal_accepted_distance(obs_xy: ArrayLike) -> float:
     # all consequtive distances
     vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
     # fraction of small quantile
     return 0.5 * np.quantile(vec, 0.1)
 
 
-def parse_modeldata_list(modeldata) -> Dict[str, TimeSeries]:
+def parse_modeldata_list(modeldata: Iterable[TimeSeries]) -> Dict[str, TimeSeries]:
     """Make sure modeldata is a dict of TimeSeries"""
-    if not isinstance(modeldata, Sequence):
-        modeldata = [modeldata]
-
     mods = [_parse_single_modeldata(m) for m in modeldata]
     return {m.name: m for m in mods if m is not None}
 
 
-def _parse_single_modeldata(modeldata) -> TimeSeries:
-    # if hasattr(modeldata, "to_dataframe"):
-    #     mod_df = modeldata.to_dataframe().drop(columns=["z"])
-    # elif isinstance(modeldata, TimeSeries):
-    #     mod_df = modeldata
-    # else:
-    #     raise ValueError(
-    #         f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
-    #     )
-
-    # if not isinstance(mod_df.index, pd.DatetimeIndex):
-    #     raise ValueError(
-    #         "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
-    #     )
+def _parse_single_modeldata(modeldata: TimeSeries) -> TimeSeries:
     assert isinstance(
         modeldata.time, pd.DatetimeIndex
     ), "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
@@ -460,7 +427,9 @@ def _parse_single_modeldata(modeldata) -> TimeSeries:
 
 
 def _parse_single_obs(
-    obs, item=None, gtype: Optional[GeometryTypes] = None
+    obs: ObsInputType,
+    item: Optional[int | str] = None,
+    gtype: Optional[GeometryTypes] = None,
 ) -> Observation:
     if isinstance(obs, Observation):
         if item is not None:
@@ -478,7 +447,9 @@ def _parse_single_obs(
 
 
 def _parse_models(
-    mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None
+    mod: Any,  # TODO
+    item: Optional[IdOrNameTypes] = None,
+    gtype: Optional[GeometryTypes] = None,
 ):
     """Return a list of ModelResult objects"""
     if isinstance(mod, get_args(MRInputType)):
@@ -490,7 +461,9 @@ def _parse_models(
 
 
 def _parse_single_model(
-    mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None
+    mod: Any,  # TODO
+    item: Optional[IdOrNameTypes] = None,
+    gtype: Optional[GeometryTypes] = None,
 ):
     if isinstance(mod, protocols.ModelResult):
         if item is not None:
