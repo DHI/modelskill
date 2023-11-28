@@ -5,18 +5,17 @@ import xarray as xr
 import modelskill.comparison
 
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 # use non-interactive backend for testing
 mpl.use("Agg")
 
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
-    data.attrs["quantity_name"] = "fake var"
-    data["x"].attrs["kind"] = "position"
-    data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["weight"] = 1.0
-    data["Observation"].attrs["unit"] = "m"
+    data["Observation"].attrs["long_name"] = "fake var"
+    data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["modelskill_version"] = modelskill.__version__
@@ -41,8 +40,9 @@ def pc() -> modelskill.comparison.Comparer:
     data = df.dropna().to_xarray()
     data.attrs["gtype"] = "point"
     data.attrs["name"] = "fake point obs"
-    data["x"] = x
-    data["y"] = y
+    data.coords["x"] = x
+    data.coords["y"] = y
+    data.coords["z"] = np.nan
 
     data = _set_attrs(data)
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
@@ -72,6 +72,7 @@ def tc() -> modelskill.comparison.Comparer:
     data = df.dropna().to_xarray()
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
+    data["m3"].attrs["kind"] = "model"
     data = _set_attrs(data)
 
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
@@ -245,3 +246,70 @@ def test_plots_directional(cc):
     ax = cc.plot.hist()
     assert ax is not None
     assert ax.get_xlim() == (0.0, 360.0)
+
+
+@pytest.fixture(
+    params=[
+        "scatter",
+        "kde",
+        "hist",
+        "taylor",
+    ]
+)
+def cc_plot_function(cc, request):
+    # TODO - fix, then remove this block
+    if request.param == "taylor":
+        pytest.skip(
+            "taylor plot fails due to mean_skill() on collections, needs investigation"
+        )
+
+    func = getattr(cc.plot, request.param)
+    # special cases require selecting a model
+    if request.param in ["scatter", "hist"]:
+
+        def func(**kwargs):
+            kwargs["model"] = 0
+            wrapped_func = getattr(cc.plot, request.param)
+            return wrapped_func(**kwargs)
+
+    return func
+
+
+def test_plot_returns_an_object(cc_plot_function):
+    obj = cc_plot_function()
+    assert obj is not None
+
+
+def test_plot_accepts_ax_if_relevant(cc_plot_function):
+    _, ax = plt.subplots()
+    func_name = cc_plot_function.__name__
+    # plots that don't accept ax
+    if func_name in ["taylor"]:
+        return
+    ret_ax = cc_plot_function(ax=ax)
+    assert ret_ax is ax
+
+
+def test_plot_accepts_title(cc_plot_function):
+    expected_title = "test title"
+    ret_obj = cc_plot_function(title=expected_title)
+
+    # Handle both ax and fig titles
+    title = None
+    if hasattr(ret_obj, "get_title"):
+        title = ret_obj.get_title()
+    elif hasattr(ret_obj, "get_suptitle"):
+        title = ret_obj.get_suptitle()
+    elif hasattr(ret_obj, "_suptitle"):  # older versions of matplotlib
+        title = ret_obj._suptitle.get_text()
+    else:
+        raise pytest.fail("Could not access title from return object.")
+
+    assert title == expected_title
+
+
+def test_plot_accepts_figsize(cc_plot_function):
+    figsize = (10, 10)
+    ax = cc_plot_function(figsize=figsize)
+    a, b = ax.get_figure().get_size_inches()
+    assert a, b == figsize

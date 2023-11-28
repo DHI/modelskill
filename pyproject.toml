@@ -41,9 +41,6 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 
-[project.scripts]
-modelskill = "modelskill.cli:report"
-
 [project.optional-dependencies]
 dev = ["pytest",
         "sphinx==4.5.0",  # pin version to work with sphinx-book-theme

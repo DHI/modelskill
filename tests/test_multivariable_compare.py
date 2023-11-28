@@ -1,85 +1,83 @@
 import pytest
 import matplotlib.pyplot as plt
 import numpy as np
-from modelskill import ModelResult
-from modelskill import PointObservation, TrackObservation
-from modelskill import Connector
+
+import modelskill as ms
 import modelskill.metrics as mtr
+
 
 @pytest.fixture
 def mr1Hm0():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, item="Sign. Wave Height", name="SW_1")
+    return ms.ModelResult(fn, item="Sign. Wave Height", name="SW_1")
 
 
 @pytest.fixture
 def mr1WS():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ModelResult(fn, item="Wind speed", name="SW_1")
+    return ms.ModelResult(fn, item="Wind speed", name="SW_1")
 
 
 @pytest.fixture
 def mr2Hm0():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, item="Sign. Wave Height", name="SW_2")
+    return ms.ModelResult(fn, item="Sign. Wave Height", name="SW_2")
 
 
 @pytest.fixture
 def mr2WS():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ModelResult(fn, item="Wind speed", name="SW_2")
+    return ms.ModelResult(fn, item="Wind speed", name="SW_2")
 
 
 @pytest.fixture
 def o1():
     fn = "tests/testdata/SW/HKNA_Hm0.dfs0"
-    return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA_Hm0")
+    return ms.PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA_Hm0")
 
 
 @pytest.fixture
 def o2():
     fn = "tests/testdata/SW/eur_Hm0.dfs0"
-    return PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL_Hm0")
+    return ms.PointObservation(fn, item=0, x=3.2760, y=51.9990, name="EPL_Hm0")
 
 
 @pytest.fixture
 def o3():
     fn = "tests/testdata/SW/Alti_c2_Dutch.dfs0"
-    return TrackObservation(fn, item=3, name="c2_Hm0")
+    return ms.TrackObservation(fn, item=3, name="c2_Hm0")
 
 
 @pytest.fixture
 def wind1():
     fn = "tests/testdata/SW/HKNA_wind.dfs0"
-    return PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA_wind")
+    return ms.PointObservation(fn, item=0, x=4.2420, y=52.6887, name="HKNA_wind")
 
 
 @pytest.fixture
 def wind2():
     fn = "tests/testdata/SW/F16_wind.dfs0"
-    return PointObservation(fn, item=0, x=4.01222, y=54.1167, name="F16_wind")
+    return ms.PointObservation(fn, item=0, x=4.01222, y=54.1167, name="F16_wind")
 
 
 @pytest.fixture
 def wind3():
     fn = "tests/testdata/SW/Alti_c2_Dutch.dfs0"
-    return TrackObservation(fn, item=2, name="c2_wind")
+    return ms.TrackObservation(fn, item=2, name="c2_wind")
 
 
 @pytest.fixture
 def cc_1model(mr1Hm0, mr1WS, o1, o2, o3, wind1, wind2, wind3):
-    con = Connector()
-    con.add([o1, o2, o3], mr1Hm0)
-    con.add([wind1, wind2, wind3], mr1WS)
-    return con.extract()
+    cc1 = ms.compare([o1, o2, o3], mr1Hm0)
+    cc2 = ms.compare([wind1, wind2, wind3], mr1WS)
+    return cc1 + cc2
 
 
 @pytest.fixture
-def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):
-    con = Connector()
-    con.add([o1, o2, o3], [mr1Hm0, mr2Hm0])
-    con.add([wind1, wind2, wind3], [mr1WS, mr2WS])
-    return con.extract()
+def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):    
+    cc1 = ms.compare([o1, o2, o3], [mr1Hm0, mr2Hm0])
+    cc2 = ms.compare([wind1, wind2, wind3], [mr1WS, mr2WS])
+    return cc1 + cc2
 
 
 def test_n_variables(cc):
@@ -139,22 +137,29 @@ def test_mv_mm_scatter(cc):
     assert True
     plt.close("all")
 
+
 def cm_1(obs, model):
-    '''Custom metric #1'''
+    """Custom metric #1"""
     return np.mean(obs.ravel() / model.ravel())
 
+
 def cm_2(obs, model):
-    '''Custom metric #2'''
-    return np.mean(obs.ravel()*1.5 / model.ravel())
+    """Custom metric #2"""
+    return np.mean(obs.ravel() * 1.5 / model.ravel())
+
 
 def test_custom_metric_skilltable_mv_mm_scatter(cc):
     mtr.add_metric(cm_1)
-    mtr.add_metric(cm_2,has_units =True)
+    mtr.add_metric(cm_2, has_units=True)
     cc.scatter(
-        model="SW_1", variable="Wind speed", observation="F16_wind", skill_table=['bias',cm_1,'si',cm_2],
+        model="SW_1",
+        variable="Wind speed",
+        observation="F16_wind",
+        skill_table=["bias", cm_1, "si", cm_2],
     )
     assert True
     plt.close("all")
+
 
 def test_mv_mm_taylor(cc):
     cc.sel(variable="Wind speed").plot.taylor()

@@ -1,10 +1,14 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple, Callable, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import matplotlib.axes
 
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.cm import ScalarMappable
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.ticker import MaxNLocator
@@ -14,14 +18,14 @@ import modelskill.settings as settings
 from modelskill.settings import options
 
 from ..metrics import _linear_regression
-from ._misc import quantiles_xy, sample_points, format_skill_df
+from ._misc import quantiles_xy, sample_points, format_skill_df, _get_fig_ax
 
 
 def scatter(
     x: np.ndarray,
     y: np.ndarray,
     *,
-    bins: int | float = 20,
+    bins: int | float = 120,
     quantiles: int | Sequence[float] | None = None,
     fit_to_quantiles: bool = False,
     show_points: bool | int | float | None = None,
@@ -38,6 +42,7 @@ def scatter(
     ylabel: str = "",
     skill_df: Optional[pd.DataFrame] = None,
     units: Optional[str] = "",
+    ax: Optional[Axes] = None,
     **kwargs,
 ):
     """Scatter plot showing compared data: observation vs modelled
@@ -50,7 +55,7 @@ def scatter(
     y: np.array
         Y values e.g observation values, must be same length as x
     bins: (int, float, sequence), optional
-        bins for the 2D histogram on the background. By default 20 bins.
+        bins for the 2D histogram on the background. By default 120 bins.
         if int, represents the number of bins of 2D
         if float, represents the bin size
         if sequence (list of int or float), represents the bin edges
@@ -99,7 +104,14 @@ def scatter(
         dataframe with skill (stats) results to be added to plot, by default None
     units : str, optional
         user default units to override default units, eg 'metre', by default None
-    kwargs
+    ax : matplotlib.axes.Axes, optional
+        axes to plot on, by default None
+    **kwargs
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The axes on which the scatter plot was drawn.
     """
     if show_hist is None and show_density is None:
         # Default: points density
@@ -150,7 +162,7 @@ def scatter(
         # scale Z by sample size
         z = z * len(x) / len(x_sample)
 
-    PLOTTING_BACKENDS = {
+    PLOTTING_BACKENDS: dict[str, Callable] = {
         "matplotlib": _scatter_matplotlib,
         "plotly": _scatter_plotly,
     }
@@ -182,6 +194,7 @@ def scatter(
         skill_df=skill_df,
         units=units,
         fit_to_quantiles=fit_to_quantiles,
+        ax=ax,
         **kwargs,
     )
 
@@ -211,11 +224,12 @@ def _scatter_matplotlib(
     skill_df,
     units,
     fit_to_quantiles,
+    ax,
     **kwargs,
-) -> Axes:
-    _, ax = plt.subplots(figsize=figsize)
+) -> matplotlib.axes.Axes:
+    fig, ax = _get_fig_ax(ax, figsize)
 
-    plt.plot(
+    ax.plot(
         [xlim[0], xlim[1]],
         [xlim[0], xlim[1]],
         label=options.plot.scatter.oneone_line.label,
@@ -230,7 +244,7 @@ def _scatter_matplotlib(
         else:
             c = "0.25"
             norm_ = None
-        plt.scatter(
+        ax.scatter(
             x_sample,
             y_sample,
             c=c,
@@ -243,7 +257,7 @@ def _scatter_matplotlib(
             **kwargs,
         )
     if len(xq) > 0:
-        plt.plot(
+        ax.plot(
             xq,
             yq,
             options.plot.scatter.quantiles.marker,
@@ -264,7 +278,7 @@ def _scatter_matplotlib(
         else:
             slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
 
-        plt.plot(
+        ax.plot(
             x_trend,
             intercept + slope * x_trend,
             **settings.get_option("plot.scatter.reg_line.kwargs"),
@@ -275,25 +289,41 @@ def _scatter_matplotlib(
         )
 
     if show_hist:
-        plt.hist2d(x, y, bins=nbins_hist, cmin=0.01, zorder=0.5, norm=norm, **kwargs)
+        ax.hist2d(
+            x,
+            y,
+            bins=nbins_hist,
+            cmin=0.01,
+            zorder=0.5,
+            norm=norm,
+            alpha=options.plot.scatter.points.alpha,
+            **kwargs,
+        )
 
-    plt.legend(**settings.get_option("plot.scatter.legend.kwargs"))
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.axis("square")
-    plt.xlim([xlim[0], xlim[1]])
-    plt.ylim([ylim[0], ylim[1]])
-    plt.minorticks_on()
-    plt.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
+    ax.legend(**settings.get_option("plot.scatter.legend.kwargs"))
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.axis("square")
+    ax.set_xlim([xlim[0], xlim[1]])
+    ax.set_ylim([ylim[0], ylim[1]])
+    ax.minorticks_on()
+    ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
     max_cbar = None
+    cmap = kwargs.get("cmap", None)
     if show_hist or (show_density and show_points):
-        cbar = plt.colorbar(fraction=0.046, pad=0.04)
+        cbar = fig.colorbar(
+            ScalarMappable(norm, cmap),
+            ax=ax,
+            fraction=0.046,
+            pad=0.04,
+            alpha=options.plot.scatter.points.alpha,
+        )
         ticks = cbar.ax.get_yticks()
         max_cbar = ticks[-1]
         cbar.set_label("# points")
         cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
-    plt.title(title)
+    ax.set_title(title)
     # Add skill table
     if skill_df is not None:
         df = skill_df.df
@@ -330,6 +360,11 @@ def _scatter_plotly(
     **kwargs,
 ):
     import plotly.graph_objects as go
+
+    if "ax" in kwargs:
+        ax = kwargs.pop("ax")
+        if ax is not None:
+            raise ValueError("Cannot pass matplotlib axes to plotly backend.")
 
     data = [
         go.Scatter(x=xlim, y=xlim, name="1:1", mode="lines", line=dict(color="blue")),

@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import Sequence
+from typing import Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import matplotlib.axes
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +19,7 @@ def temporal_coverage(
     ax=None,
     figsize=None,
     title=None,
-):
+) -> matplotlib.axes.Axes:
     """Plot graph showing temporal coverage for all observations and models
 
     Parameters
@@ -43,7 +46,8 @@ def temporal_coverage(
 
     Returns
     -------
-    <matplotlib.axes>
+    matplotlib.axes.Axes
+        The matplotlib axes object
 
     Examples
     --------

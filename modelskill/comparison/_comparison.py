@@ -9,7 +9,6 @@ from typing import (
     Union,
     Iterable,
     Sequence,
-    Callable,
     TYPE_CHECKING,
 )
 import warnings
@@ -17,23 +16,109 @@ from matplotlib.axes import Axes  # type: ignore
 import numpy as np
 import pandas as pd
 import xarray as xr
-from datetime import datetime
 from copy import deepcopy
 
 from .. import metrics as mtr
 from .. import Quantity
-
-# from .. import __version__
+from ..types import GeometryType
 from ..observation import Observation, PointObservation, TrackObservation
-
+from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
+from ._utils import (
+    _parse_metric,
+    _add_spatial_grid_to_df,
+    _groupby_df,
+    _parse_groupby,
+    TimeTypes,
+    IdOrNameTypes,
+)
 from ..skill import AggregatedSkill
 from ..spatial import SpatialSkill
 from ..settings import options, register_option, reset_option
 from ..utils import _get_name
+from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+
+def _parse_dataset(data) -> xr.Dataset:
+    if not isinstance(data, xr.Dataset):
+        raise ValueError("matched_data must be an xarray.Dataset")
+        # matched_data = self._matched_data_to_xarray(matched_data)
+    assert "Observation" in data.data_vars
+
+    # Validate time
+    assert len(data.dims) == 1, "Only 0-dimensional data are supported"
+    assert list(data.dims)[0] == "time", "data must have a time dimension"
+    assert isinstance(data.time.to_index(), pd.DatetimeIndex), "time must be datetime"
+    assert (
+        data.time.to_index().is_monotonic_increasing
+    ), "time must be increasing (please check for duplicate times))"
+
+    # no missing values allowed in Observation
+    if data["Observation"].isnull().any():
+        raise ValueError("Observation data must not contain missing values.")
+
+    # coordinates
+    if "x" not in data.coords:
+        data.coords["x"] = np.nan
+    if "y" not in data.coords:
+        data.coords["y"] = np.nan
+    if "z" not in data.coords:
+        data.coords["z"] = np.nan
+
+    # Validate data
+    vars = [v for v in data.data_vars]
+    assert len(vars) > 1, "dataset must have at least two data arrays"
+    mod_names = []
+    n_obs = 0
+    for v in data.data_vars:
+        v = _validate_data_var_name(str(v))
+        assert (
+            len(data[v].dims) == 1
+        ), f"Only 0-dimensional data arrays are supported! {v} has {len(data[v].dims)} dimensions"
+        assert (
+            list(data[v].dims)[0] == "time"
+        ), f"All data arrays must have a time dimension; {v} has dimensions {data[v].dims}"
+        if "kind" not in data[v].attrs:
+            data[v].attrs["kind"] = "auxiliary"
+        if data[v].attrs["kind"] == "observation":
+            n_obs += 1
+        if data[v].attrs["kind"] == "model":
+            mod_names.append(v)
+
+    # Validate observation data array
+    if n_obs != 1:
+        raise ValueError(
+            f"dataset must have exactly one observation array (marked by the kind attribute), this has {n_obs}"
+        )
+    if len(mod_names) == 0:
+        raise ValueError(
+            "dataset must have at least one model array (marked by the kind attribute)"
+        )
+
+    # Validate attrs
+    # TODO: should we
+    if "gtype" not in data.attrs:
+        data.attrs["gtype"] = str(GeometryType.POINT)
+    # assert "gtype" in data.attrs, "data must have a gtype attribute"
+    # assert data.attrs["gtype"] in [
+    #     str(GeometryType.POINT),
+    #     str(GeometryType.TRACK),
+    # ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
+
+    if "color" not in data["Observation"].attrs:
+        data["Observation"].attrs["color"] = "black"
+
+    if "long_name" not in data["Observation"].attrs:
+        data["Observation"].attrs["long_name"] = Quantity.undefined().name
+
+    if "units" not in data["Observation"].attrs:
+        data["Observation"].attrs["units"] = Quantity.undefined().unit
+
+    data.attrs["modelskill_version"] = __version__
+    return data
 
 
 # TODO remove in v1.1
@@ -93,7 +178,6 @@ register_option(
     doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
 )
 
-
 MOD_COLORS = (
     "#1f78b4",
     "#33a02c",
@@ -116,10 +200,6 @@ MOD_COLORS = (
 )
 
 
-TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
-IdOrNameTypes = Union[int, str, List[int], List[str]]
-
-
 @dataclass
 class ItemSelection:
     "Utility class to keep track of observation, model and auxiliary items"
@@ -137,22 +217,50 @@ class ItemSelection:
     def all(self) -> Sequence[str]:
         return [self.obs] + list(self.model) + list(self.aux)
 
+    @staticmethod
+    def parse(
+        items: List[str],
+        obs_item: str | int | None = None,
+        mod_items: Optional[Iterable[str | int]] = None,
+        aux_items: Optional[Iterable[str | int]] = None,
+    ) -> ItemSelection:
+        """Parse items and return observation, model and auxiliary items
+        Default behaviour:
+        - obs_item is first item
+        - mod_items are all but obs_item and aux_items
+        - aux_items are all but obs_item and mod_items
 
-def _parse_metric(metric, default_metrics, return_list=False):
-    if metric is None:
-        metric = default_metrics
+        Both integer and str are accepted as items. If str, it must be a key in data.
+        """
+        assert len(items) > 1, "data must contain at least two items"
+        if obs_item is None:
+            obs_name: str = items[0]
+        else:
+            obs_name = _get_name(obs_item, items)
 
-    if isinstance(metric, (str, Callable)):
-        metric = mtr.get_metric(metric)
-    elif isinstance(metric, Iterable):
-        metrics = [_parse_metric(m, default_metrics) for m in metric]
-        return metrics
-    elif not callable(metric):
-        raise TypeError(f"Invalid metric: {metric}. Must be either string or callable.")
-    if return_list:
-        if callable(metric) or isinstance(metric, str):
-            metric = [metric]
-    return metric
+        # Check existance of items and convert to names
+        if mod_items is not None:
+            mod_names = [_get_name(m, items) for m in mod_items]
+        if aux_items is not None:
+            aux_names = [_get_name(a, items) for a in aux_items]
+        else:
+            aux_names = []
+
+        items.remove(obs_name)
+
+        if mod_items is None:
+            mod_names = list(set(items) - set(aux_names))
+        if aux_items is None:
+            aux_names = list(set(items) - set(mod_names))
+
+        assert len(mod_names) > 0, "no model items were found! Must be at least one"
+        assert obs_name not in mod_names, "observation item must not be a model item"
+        assert (
+            obs_name not in aux_names
+        ), "observation item must not be an auxiliary item"
+        assert isinstance(obs_name, str), "observation item must be a string"
+
+        return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
 
 
 def _area_is_bbox(area) -> bool:
@@ -192,117 +300,29 @@ def _area_is_polygon(area) -> bool:
     return True
 
 
-def _inside_polygon(polygon, xy):
-    import matplotlib.path as mp
+def _inside_polygon(polygon, xy) -> np.ndarray:
+    import matplotlib.path as mp  # type: ignore
 
     if polygon.ndim == 1:
         polygon = np.column_stack((polygon[0::2], polygon[1::2]))
     return mp.Path(polygon).contains_points(xy)
 
 
-def _add_spatial_grid_to_df(
-    df: pd.DataFrame, bins, binsize: Optional[float]
-) -> pd.DataFrame:
-    if binsize is None:
-        # bins from bins
-        if isinstance(bins, tuple):
-            bins_x = bins[0]
-            bins_y = bins[1]
-        else:
-            bins_x = bins
-            bins_y = bins
-    else:
-        # bins from binsize
-        x_ptp = df.x.values.ptp()  # type: ignore
-        y_ptp = df.y.values.ptp()  # type: ignore
-        nx = int(np.ceil(x_ptp / binsize))
-        ny = int(np.ceil(y_ptp / binsize))
-        x_mean = np.round(df.x.mean())
-        y_mean = np.round(df.y.mean())
-        bins_x = np.arange(
-            x_mean - nx / 2 * binsize, x_mean + (nx / 2 + 1) * binsize, binsize
-        )
-        bins_y = np.arange(
-            y_mean - ny / 2 * binsize, y_mean + (ny / 2 + 1) * binsize, binsize
-        )
-    # cut and get bin centre
-    df["xBin"] = pd.cut(df.x, bins=bins_x)
-    df["xBin"] = df["xBin"].apply(lambda x: x.mid)
-    df["yBin"] = pd.cut(df.y, bins=bins_y)
-    df["yBin"] = df["yBin"].apply(lambda x: x.mid)
-
-    return df
-
-
-def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
-    def calc_metrics(x):
-        row = {}
-        row["n"] = len(x)
-        for metric in metrics:
-            row[metric.__name__] = metric(x.obs_val, x.mod_val)
-        return pd.Series(row)
-
-    # .drop(columns=["x", "y"])
-
-    res = df.groupby(by=by, observed=False).apply(calc_metrics)
-
-    if n_min:
-        # nan for all cols but n
-        cols = [col for col in res.columns if not col == "n"]
-        res.loc[res.n < n_min, cols] = np.nan
-
-    res["n"] = res["n"].fillna(0)
-    res = res.astype({"n": int})
-
-    return res
-
-
-def _parse_groupby(by, n_models, n_obs, n_var=1):
-    if by is None:
-        by = []
-        if n_models > 1:
-            by.append("model")
-        if n_obs > 1:  # or ((n_models == 1) and (n_obs == 1)):
-            by.append("observation")
-        if n_var > 1:
-            by.append("variable")
-        if len(by) == 0:
-            # default value
-            by.append("observation")
-        return by
-
-    if isinstance(by, str):
-        if by in {"mdl", "mod", "models"}:
-            by = "model"
-        if by in {"obs", "observations"}:
-            by = "observation"
-        if by in {"var", "variables", "item"}:
-            by = "variable"
-        if by[:5] == "freq:":
-            freq = by.split(":")[1]
-            by = pd.Grouper(freq=freq)
-    elif isinstance(by, Iterable):
-        by = [_parse_groupby(b, n_models, n_obs, n_var) for b in by]
-        return by
-    else:
-        raise ValueError("Invalid by argument. Must be string or list of strings.")
-    return by
-
-
 def _matched_data_to_xarray(
     df: pd.DataFrame,
-    obs_item=None,
-    mod_items=None,
-    aux_items=None,
-    name=None,
-    x=None,
-    y=None,
-    z=None,
+    obs_item: int | str | None = None,
+    mod_items: Optional[Iterable[str | int]] = None,
+    aux_items: Optional[Iterable[str | int]] = None,
+    name: Optional[str] = None,
+    x: Optional[float] = None,
+    y: Optional[float] = None,
+    z: Optional[float] = None,
+    quantity: Optional[Quantity] = None,
 ):
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
     cols = list(df.columns)
-    items = _parse_items(cols, obs_item, mod_items, aux_items)
+    items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
     df = df[items.all]
     df.index.name = "time"
     df.rename(columns={items.obs: "Observation"}, inplace=True)
@@ -316,59 +336,26 @@ def _matched_data_to_xarray(
         ds[a].attrs["kind"] = "auxiliary"
 
     if x is not None:
-        ds["x"] = x
-        ds["x"].attrs["kind"] = "position"
+        ds.coords["x"] = x
     if y is not None:
-        ds["y"] = y
-        ds["y"].attrs["kind"] = "position"
+        ds.coords["y"] = y
     if z is not None:
-        ds["z"] = z
-        ds["z"].attrs["kind"] = "position"
+        ds.coords["z"] = z
+
+    if x is None or np.isscalar(x):
+        ds.attrs["gtype"] = str(GeometryType.POINT)
+    else:
+        ds.attrs["gtype"] = str(GeometryType.TRACK)
+
+    if quantity is None:
+        q = Quantity.undefined()
+    else:
+        q = quantity
+
+    ds["Observation"].attrs["long_name"] = q.name
+    ds["Observation"].attrs["units"] = q.unit
 
     return ds
-
-
-def _parse_items(
-    items: List[str],
-    obs_item: str | int | None = None,
-    mod_items: Optional[List[str | int]] = None,
-    aux_items: Optional[List[str | int]] = None,
-) -> ItemSelection:
-    """Parse items and return observation, model and auxiliary items
-    Default behaviour:
-    - obs_item is first item
-    - mod_items are all but obs_item and aux_items
-    - aux_items are all but obs_item and mod_items
-
-    Both integer and str are accepted as items. If str, it must be a key in data.
-    """
-    assert len(items) > 1, "data must contain at least two items"
-    if obs_item is None:
-        obs_name: str = items[0]
-    else:
-        obs_name = _get_name(obs_item, items)
-
-    # Check existance of items and convert to names
-    if mod_items is not None:
-        mod_names = [_get_name(m, items) for m in mod_items]
-    if aux_items is not None:
-        aux_names = [_get_name(a, items) for a in aux_items]
-    else:
-        aux_names = []
-
-    items.remove(obs_name)
-
-    if mod_items is None:
-        mod_names = list(set(items) - set(aux_names))
-    if aux_items is None:
-        aux_names = list(set(items) - set(mod_names))
-
-    assert len(mod_names) > 0, "no model items were found! Must be at least one"
-    assert obs_name not in mod_names, "observation item must not be a model item"
-    assert obs_name not in aux_names, "observation item must not be an auxiliary item"
-    assert isinstance(obs_name, str), "observation item must be a string"
-
-    return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
 
 
 class Comparer:
@@ -408,7 +395,7 @@ class Comparer:
     ):
         self.plot = Comparer.plotter(self)
 
-        self.data = self._parse_matched_data(matched_data)
+        self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
             raw_mod_data
             if raw_mod_data is not None
@@ -421,52 +408,19 @@ class Comparer:
         # TODO get quantity from matched_data object
         # self.quantity: Quantity = Quantity.undefined()
 
-    def _parse_matched_data(self, matched_data):
-        if not isinstance(matched_data, xr.Dataset):
-            raise ValueError("matched_data must be an xarray.Dataset")
-            # matched_data = self._matched_data_to_xarray(matched_data)
-        assert "Observation" in matched_data.data_vars
-
-        # no missing values allowed in Observation
-        if matched_data["Observation"].isnull().any():
-            raise ValueError("Observation data must not contain missing values.")
-
-        for key in matched_data.data_vars:
-            if "kind" not in matched_data[key].attrs:
-                matched_data[key].attrs["kind"] = "auxiliary"
-        if "x" not in matched_data:
-            # Could be problematic to have "x" and "y" as reserved names
-            matched_data["x"] = np.nan
-            matched_data["x"].attrs["kind"] = "position"
-            matched_data.attrs["gtype"] = "point"
-
-        if "y" not in matched_data:
-            matched_data["y"] = np.nan
-            matched_data["y"].attrs["kind"] = "position"
-
-        if "color" not in matched_data["Observation"].attrs:
-            matched_data["Observation"].attrs["color"] = "black"
-
-        if "quantity_name" not in matched_data.attrs:
-            matched_data.attrs["quantity_name"] = Quantity.undefined().name
-
-        if "unit" not in matched_data["Observation"].attrs:
-            matched_data["Observation"].attrs["unit"] = Quantity.undefined().unit
-
-        return matched_data
-
     @classmethod
     def from_matched_data(
         cls,
-        data,
-        raw_mod_data=None,
-        obs_item=None,
-        mod_items=None,
-        aux_items=None,
-        name=None,
-        x=None,
-        y=None,
-        z=None,
+        data: xr.Dataset | pd.DataFrame,
+        raw_mod_data: Optional[Dict[str, pd.DataFrame]] = None,
+        obs_item: str | int | None = None,
+        mod_items: Optional[Iterable[str | int]] = None,
+        aux_items: Optional[Iterable[str | int]] = None,
+        name: Optional[str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        z: Optional[float] = None,
+        quantity: Optional[Quantity] = None,
     ):
         """Initialize from compared data"""
         if not isinstance(data, xr.Dataset):
@@ -480,6 +434,7 @@ class Comparer:
                 x=x,
                 y=y,
                 z=z,
+                quantity=quantity,
             )
         return cls(matched_data=data, raw_mod_data=raw_mod_data)
 
@@ -504,26 +459,25 @@ class Comparer:
     def gtype(self):
         return self.data.attrs["gtype"]
 
+    # TODO: remove
     @property
     def quantity_name(self) -> str:
-        """name of variable"""
-        return self.data.attrs["quantity_name"]
+        warnings.warn("Use quantity.name instead of quantity_name", FutureWarning)
+        return self.quantity.name
 
     @property
     def quantity(self) -> Quantity:
         """Quantity object"""
-        name = self.data.attrs["quantity_name"]
-        # unit = self.data.attrs["quantity_unit"]
-        unit = self.data[self._obs_name].attrs["unit"]
-        return Quantity(name, unit)
+        return Quantity(
+            name=self.data[self._obs_name].attrs["long_name"],
+            unit=self.data[self._obs_name].attrs["units"],
+        )
 
-    # set quantity
     @quantity.setter
-    def quantity(self, value: Quantity) -> None:
-        assert isinstance(value, Quantity), "value must be a Quantity object"
-        self.data.attrs["quantity_name"] = value.name
-        self.data[self._obs_name].attrs["unit"] = value.unit
-        # self.data.attrs["quantity_unit"] = value.unit
+    def quantity(self, quantity: Quantity) -> None:
+        assert isinstance(quantity, Quantity), "value must be a Quantity object"
+        self.data[self._obs_name].attrs["long_name"] = quantity.name
+        self.data[self._obs_name].attrs["units"] = quantity.unit
 
     @property
     def n_points(self) -> int:
@@ -569,34 +523,36 @@ class Comparer:
 
     @property
     def x(self):
-        if "x" in self.data[self._obs_name].attrs.keys():
-            return self.data[self._obs_name].attrs["x"]
-        else:
-            return self.data["x"].values
+        """x-coordinate"""
+        return self._coordinate_values("x")
 
     @property
     def y(self):
-        if "y" in self.data[self._obs_name].attrs.keys():
-            return self.data[self._obs_name].attrs["y"]
-        else:
-            return self.data["y"].values
+        """y-coordinate"""
+        return self._coordinate_values("y")
 
     @property
     def z(self):
-        if "z" in self.data[self._obs_name].attrs.keys():
-            return self.data[self._obs_name].attrs["z"]
-        else:
-            return self.data["z"].values
+        """z-coordinate"""
+        return self._coordinate_values("z")
+
+    def _coordinate_values(self, coord):
+        vals = self.data[coord].values
+        return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
     @property
     def obs(self) -> np.ndarray:
         """Observation data as 1d numpy array"""
-        return self.data[self._obs_name].to_dataframe().values
+        return (
+            self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe().values
+        )
 
     @property
     def mod(self) -> np.ndarray:
         """Model data as 2d numpy array. Each column is a model"""
-        return self.data[self.mod_names].to_dataframe().values
+        return (
+            self.data.drop_vars(["x", "y", "z"])[self.mod_names].to_dataframe().values
+        )
 
     @property
     def n_models(self) -> int:
@@ -622,8 +578,12 @@ class Comparer:
         return self._obs_name
 
     @property
-    def weight(self) -> str:
+    def weight(self) -> float:
         return self.data[self._obs_name].attrs["weight"]
+
+    @weight.setter
+    def weight(self, value: float) -> None:
+        self.data[self._obs_name].attrs["weight"] = value
 
     @property
     def _unit_text(self):
@@ -633,7 +593,7 @@ class Comparer:
     @property
     def unit_text(self) -> str:
         """Variable name and unit as text suitable for plot labels"""
-        return f"{self.data.attrs['quantity_name']} [{self.data[self._obs_name].attrs['unit']}]"
+        return f"{self.quantity.name} [{self.quantity.unit}]"
 
     @property
     def metrics(self):
@@ -649,7 +609,7 @@ class Comparer:
     def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
 
-        df = self.data.to_dataframe().copy()
+        df = self.data.drop_vars(["z"]).to_dataframe().copy()
         other_models = [m for m in self.mod_names if m is not mod_name]
         df = df.drop(columns=other_models)
         df = df.rename(columns={mod_name: "mod_val", self._obs_name: "obs_val"})
@@ -716,11 +676,13 @@ class Comparer:
 
         # There is no need to save raw data for track data, since it is identical to the matched data
         if self.gtype == "point":
-            for key, value in self.raw_mod_data.items():
-                value = value.copy()
+            ds = self.data.copy()  # copy needed to avoid modifying self.data
+
+            for key, df in self.raw_mod_data.items():
+                df = df.copy()
                 #  rename time to unique name
-                value.index.name = "_time_raw_" + key
-                da = value.to_xarray()[key]
+                df.index.name = "_time_raw_" + key
+                da = df.to_xarray()[key]
                 ds["_raw_" + key] = da
 
         ds.to_netcdf(filename)
@@ -760,7 +722,7 @@ class Comparer:
                     )
                     raw_mod_data[new_key] = df
 
-                    data = data.drop_vars(var_name)
+                    data = data.drop(var_name).drop("_time_raw_" + new_key)
 
             return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
@@ -770,24 +732,24 @@ class Comparer:
     def _to_observation(self) -> Observation:
         """Convert to Observation"""
         if self.gtype == "point":
-            df = self.data[self._obs_name].to_dataframe()
+            df = self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe()
             return PointObservation(
                 data=df,
                 name=self.name,
                 x=self.x,
                 y=self.y,
                 z=self.z,
-                # quantity=self.quantity,
+                quantity=self.quantity,
             )
         elif self.gtype == "track":
-            df = self.data[["x", "y", self._obs_name]].to_dataframe()
+            df = self.data.drop_vars(["z"])[[self._obs_name]].to_dataframe()
             return TrackObservation(
                 data=df,
-                item=2,
-                x_item=0,
-                y_item=1,
+                item=0,
+                x_item=1,
+                y_item=2,
                 name=self.name,
-                # quantity=self.quantity,
+                quantity=self.quantity,
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
@@ -1187,10 +1149,12 @@ class Comparer:
                 mod_name = self.mod_names[j]
                 mod_df = self.raw_mod_data[mod_name]
                 mod_df[mod_name] = mod_df.values - bias[j]
-                self.data[mod_name] = self.data[mod_name] - bias[j]
+                with xr.set_options(keep_attrs=True):
+                    self.data[mod_name] = self.data[mod_name] - bias[j]
         elif correct == "Observation":
             # what if multiple models?
-            self.data[self._obs_name] = self.obs + bias
+            with xr.set_options(keep_attrs=True):
+                self.data[self._obs_name] = self.obs + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
@@ -1201,7 +1165,7 @@ class Comparer:
     def scatter(
         self,
         *,
-        bins=20,
+        bins=120,
         quantiles=None,
         fit_to_quantiles=False,
         show_points=None,
@@ -1304,9 +1268,9 @@ class Comparer:
         return self.plot.residual_hist(bins=bins, title=title, color=color, **kwargs)
 
 
-class PointComparer(Comparer):
-    pass
+# class PointComparer(Comparer):
+#     pass
 
 
-class TrackComparer(Comparer):
-    pass
+# class TrackComparer(Comparer):
+#     pass
