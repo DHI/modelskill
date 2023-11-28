@@ -87,7 +87,7 @@ class ComparerCollection(Mapping):
 
     """Collection of Comparers, indexed by name"""
 
-    def __init__(self, comparers=None):
+    def __init__(self, comparers=None) -> None:
         self.comparers = {}
         self.add_comparer(comparers)
         self.plot = ComparerCollection.plotter(self)

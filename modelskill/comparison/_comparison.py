@@ -393,7 +393,7 @@ class Comparer:
         self,
         matched_data: xr.Dataset,
         raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
-    ):
+    ) -> None:
         self.plot = Comparer.plotter(self)
 
         self.data = _parse_dataset(matched_data)
@@ -423,9 +423,8 @@ class Comparer:
                     v, TimeSeries
                 ), f"raw_mod_data[{k}] must be a TimeSeries object"
 
-    @classmethod
+    @staticmethod
     def from_matched_data(
-        cls,
         data: xr.Dataset | pd.DataFrame,
         raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
         obs_item: str | int | None = None,
@@ -436,7 +435,7 @@ class Comparer:
         y: Optional[float] = None,
         z: Optional[float] = None,
         quantity: Optional[Quantity] = None,
-    ):
+    ) -> "Comparer":
         """Initialize from compared data"""
         if not isinstance(data, xr.Dataset):
             # TODO: handle raw_mod_data by accessing data.attrs["kind"] and only remove nan after
@@ -451,7 +450,7 @@ class Comparer:
                 z=z,
                 quantity=quantity,
             )
-        return cls(matched_data=data, raw_mod_data=raw_mod_data)
+        return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
         out = [
@@ -861,7 +860,7 @@ class Comparer:
                 d = d if mask else d.isel(time=slice(None, 0))
             else:
                 d = d.isel(time=mask)
-        return self.__class__.from_matched_data(data=d, raw_mod_data=raw_mod_data)
+        return Comparer.from_matched_data(data=d, raw_mod_data=raw_mod_data)
 
     def where(
         self,
@@ -885,7 +884,7 @@ class Comparer:
         """
         d = self.data.where(cond, other=np.nan)
         d = d.dropna(dim="time", how="all")
-        return self.__class__.from_matched_data(d, self.raw_mod_data)
+        return Comparer.from_matched_data(d, self.raw_mod_data)
 
     def query(self, query: str) -> "Comparer":
         """Return a new Comparer with values where query cond is True
@@ -906,7 +905,7 @@ class Comparer:
         """
         d = self.data.query({"time": query})
         d = d.dropna(dim="time", how="all")
-        return self.__class__.from_matched_data(d, self.raw_mod_data)
+        return Comparer.from_matched_data(d, self.raw_mod_data)
 
     def skill(
         self,

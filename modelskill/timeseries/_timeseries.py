@@ -1,7 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Optional
+from typing import ClassVar, Optional, TypeVar
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -9,6 +9,8 @@ import xarray as xr
 from ..types import GeometryType, Quantity
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
+
+T = TypeVar("T", bound="TimeSeries")
 
 DEFAULT_COLORS = [
     "#b30000",
@@ -269,7 +271,7 @@ class TimeSeries:
         else:
             return self.data.drop_vars(["z"])[["x", "y", self.name]].to_dataframe()
 
-    def sel(self, **kwargs) -> TimeSeries:
+    def sel(self: T, **kwargs) -> T:
         """Select data by label"""
         return self.__class__(self.data.sel(**kwargs))
 
