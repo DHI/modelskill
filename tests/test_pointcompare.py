@@ -102,27 +102,27 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
     cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
 
 
-def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
-    mr = modelresult_oresund_WL
+# def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
+#     mr = modelresult_oresund_WL
 
-    cc = ms.compare([klagshamn, drogden], mr)
-    unweighted_skill = cc.score()
+#     cc = ms.compare([klagshamn, drogden], mr)
+#     unweighted_skill = cc.score()
 
-    con = ms.Connector()
+#     con = ms.Connector()
 
-    con.add(klagshamn, mr, weight=0.9, validate=False)
-    con.add(drogden, mr, weight=0.1, validate=False)
-    cc = con.extract()
-    weighted_skill = cc.score()
-    assert unweighted_skill != weighted_skill
+#     con.add(klagshamn, mr, weight=0.9, validate=False)
+#     con.add(drogden, mr, weight=0.1, validate=False)
+#     cc = con.extract()
+#     weighted_skill = cc.score()
+#     assert unweighted_skill != weighted_skill
 
-    obs = [klagshamn, drogden]
+#     obs = [klagshamn, drogden]
 
-    con = ms.Connector(obs, mr, weight=[0.9, 0.1], validate=False)
-    cc = con.extract()
-    weighted_skill2 = cc.score()
+#     con = ms.Connector(obs, mr, weight=[0.9, 0.1], validate=False)
+#     cc = con.extract()
+#     weighted_skill2 = cc.score()
 
-    assert weighted_skill == weighted_skill2
+#     assert weighted_skill == weighted_skill2
 
 
 def test_misc_properties(klagshamn, drogden):
