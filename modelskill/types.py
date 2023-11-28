@@ -94,8 +94,8 @@ TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Datas
 class Period:
     """Period of data, defined by start and end time, can be open ended"""
 
-    start: Optional[pd.Timestamp]
-    end: Optional[pd.Timestamp]
+    start: Optional[pd.Timestamp] = None
+    end: Optional[pd.Timestamp] = None
 
 
 # TODO change name of fields to match CF conventions?

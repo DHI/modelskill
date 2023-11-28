@@ -1,7 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, Optional
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -274,7 +274,10 @@ class TimeSeries:
         return self.__class__(self.data.sel(**kwargs))
 
     def trim(
-        self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
+        self,
+        start_time: Optional[pd.Timestamp] = None,
+        end_time: Optional[pd.Timestamp] = None,
+        buffer="1s",
     ) -> None:
         """Trim observation data to a given time interval
 
