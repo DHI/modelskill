@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Union, List, Optional
+from typing import Dict, Union, List, Optional
 
 from dataclasses import dataclass
 import warnings
@@ -154,18 +154,18 @@ class Quantity:
         return False
 
     @staticmethod
-    def undefined():
+    def undefined() -> "Quantity":
         return Quantity(name="Undefined", unit="Undefined")
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, str]:
         return {"name": self.name, "unit": self.unit}
 
     @staticmethod
-    def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo):
+    def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo) -> "Quantity":
         return Quantity(name=repr(iteminfo.type), unit=iteminfo.unit.name)
 
     @staticmethod
-    def from_mikeio_eum_name(type_name: str):
+    def from_mikeio_eum_name(type_name: str) -> "Quantity":
         """Create a Quantity from a name recognized by mikeio
 
         Parameters

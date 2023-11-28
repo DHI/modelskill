@@ -1,8 +1,9 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Optional, TypeVar
+from typing import ClassVar, Optional, TypeVar, Any
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 import xarray as xr
 
@@ -45,7 +46,7 @@ def _parse_color(name: str, color: str | None = None) -> str:
     return color
 
 
-def _validate_dataset(ds) -> xr.Dataset:
+def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     """Validate data"""
     assert isinstance(ds, xr.Dataset), "data must be a xr.Dataset"
 
@@ -125,7 +126,7 @@ class TimeSeries:
         self.data = data if self._is_input_validated(data) else _validate_dataset(data)
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
 
-    def _is_input_validated(self, data) -> bool:
+    def _is_input_validated(self, data: Any) -> bool:
         """Check if data is already a valid TimeSeries (contains the modelskill_version attribute)"""
         if not isinstance(data, xr.Dataset):
             return False
@@ -174,16 +175,16 @@ class TimeSeries:
     @property
     def color(self) -> str:
         """Color of time series"""
-        return self.data[self.name].attrs["color"]
+        return str(self.data[self.name].attrs["color"])
 
     @color.setter
     def color(self, color: str | None) -> None:
         self.data[self.name].attrs["color"] = _parse_color(self.name, color)
 
     @property
-    def gtype(self):
+    def gtype(self) -> str:
         """Geometry type"""
-        return self.data.attrs["gtype"]
+        return str(self.data.attrs["gtype"])
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -191,33 +192,33 @@ class TimeSeries:
         return pd.DatetimeIndex(self.data.time)
 
     @property
-    def x(self):
+    def x(self) -> Any:  # TODO should this be a float?
         """x-coordinate"""
         return self._coordinate_values("x")
 
     @x.setter
-    def x(self, value):
+    def x(self, value: Any) -> None:
         self.data["x"] = value
 
     @property
-    def y(self):
+    def y(self) -> Any:
         """y-coordinate"""
         return self._coordinate_values("y")
 
     @y.setter
-    def y(self, value):
+    def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    def _coordinate_values(self, coord):
+    def _coordinate_values(self, coord: str) -> float | NDArray[Any]:
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
     @property
     def _is_modelresult(self) -> bool:
-        return self.data[self.name].attrs["kind"] == "model"
+        return bool(self.data[self.name].attrs["kind"] == "model")
 
     @property
-    def values(self) -> np.ndarray:
+    def values(self) -> NDArray[Any]:
         """Values as numpy array"""
         return self.data[self.name].values
 
@@ -229,12 +230,12 @@ class TimeSeries:
     @property
     def start_time(self) -> pd.Timestamp:
         """Start time of time series data"""
-        return self.time[0]  # type: ignore
+        return self.time[0]
 
     @property
     def end_time(self) -> pd.Timestamp:
         """End time of time series data"""
-        return self.time[-1]  # type: ignore
+        return self.time[-1]
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"
@@ -246,11 +247,11 @@ class TimeSeries:
         return len(self.data.time)
 
     @property
-    def n_points(self):
+    def n_points(self) -> int:
         """Number of data points"""
         return len(self.data.time)
 
-    def copy(self):
+    def copy(self: T) -> T:
         return deepcopy(self)
 
     def equals(self, other: TimeSeries) -> bool:
@@ -271,7 +272,7 @@ class TimeSeries:
         else:
             return self.data.drop_vars(["z"])[["x", "y", self.name]].to_dataframe()
 
-    def sel(self: T, **kwargs) -> T:
+    def sel(self: T, **kwargs: Any) -> T:
         """Select data by label"""
         return self.__class__(self.data.sel(**kwargs))
 
@@ -279,7 +280,7 @@ class TimeSeries:
         self: T,
         start_time: Optional[pd.Timestamp] = None,
         end_time: Optional[pd.Timestamp] = None,
-        buffer="1s",
+        buffer: str = "1s",
     ) -> T:
         """Trim observation data to a given time interval
 
