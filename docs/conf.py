@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = "ModelSkill"
-copyright = "2021, Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger"
-author = "Jesper Mariegaard, Henrik Andersson, Hendrik Wrenger"
+copyright = "2021, Jesper Mariegaard, Henrik Andersson, Daniel Caichac"
+author = "Jesper Mariegaard, Henrik Andersson, Daniel Caichac"
 
 # The full version, including alpha/beta/rc tags
 release = ""
