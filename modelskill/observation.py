@@ -42,7 +42,7 @@ class Observation(TimeSeries):
         data: xr.Dataset,
         weight: float = 1.0,
         color: str = "#d62728",
-    ):
+    ) -> None:
         data["time"] = self._parse_time(data.time)
 
         super().__init__(data=data)
@@ -110,7 +110,7 @@ class PointObservation(Observation):
         z: Optional[float] = None,
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
-    ):
+    ) -> None:
         if not self._is_input_validated(data):
             data = _parse_point_input(data, name=name, item=item, quantity=quantity)
             data.coords["x"] = x
@@ -235,7 +235,7 @@ class TrackObservation(Observation):
         y_item: Optional[int | str] = 1,
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
-    ):
+    ) -> None:
         if not self._is_input_validated(data):
             data = _parse_track_input(
                 data=data,

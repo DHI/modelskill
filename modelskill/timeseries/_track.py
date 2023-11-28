@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import get_args, Optional, List
+from typing import get_args, Optional, List, Sequence
 import pandas as pd
 import xarray as xr
 
@@ -23,7 +23,12 @@ class TrackItem:
         return [self.x, self.y, self.values]
 
 
-def _parse_track_items(items, x_item, y_item, item) -> TrackItem:
+def _parse_track_items(
+    items: Sequence[str],
+    x_item: int | str | None,
+    y_item: int | str | None,
+    item: int | str | None,
+) -> TrackItem:
     """If input has exactly 3 items we accept item=None"""
     if len(items) < 3:
         raise ValueError(
@@ -120,4 +125,5 @@ def _parse_track_input(
     ds[name].attrs["units"] = model_quantity.unit
 
     ds.attrs["gtype"] = str(GeometryType.TRACK)
+    assert isinstance(ds, xr.Dataset)
     return ds
