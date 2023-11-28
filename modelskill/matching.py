@@ -26,6 +26,7 @@ from .model import protocols
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
+from .model.point import PointModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
@@ -368,9 +369,9 @@ def match_time(
 
     for name, mr in raw_mod_data.items():
         # df = _model2obs_interp(observation, mdata, max_model_gap)
-        if isinstance(observation, PointObservation):
+        if isinstance(mr, PointModelResult):
             assert len(observation.time) > 0
-            mri = mr.interp_time(new_time=observation.time)
+            mri: TimeSeries = mr.interp_time(new_time=observation.time)
         else:
             # It doesn't make sense to interpolate track data in time
             # (each point is at a different location in space)

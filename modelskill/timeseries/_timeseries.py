@@ -299,39 +299,3 @@ class TimeSeries:
                 f"No data left after trimming to {start_time} - {end_time}"
             )
         self.data = data
-
-    def interp_time(
-        self, new_time: pd.DatetimeIndex, dropna=True, **kwargs
-    ) -> TimeSeries:
-        """Interpolate time series to new time index
-
-        Parameters
-        ----------
-        new_time : pd.DatetimeIndex
-            new time index
-        dropna : bool, optional
-            drop nan values, by default True
-        **kwargs
-            keyword arguments passed to xarray.interp()
-
-        Returns
-        -------
-        TimeSeries
-            interpolated time series
-        """
-        if not isinstance(new_time, pd.DatetimeIndex):
-            try:
-                new_time = pd.DatetimeIndex(new_time)
-            except Exception:
-                raise ValueError(
-                    "new_time must be a pandas DatetimeIndex (or convertible to one)"
-                )
-
-        # TODO: is it necessary to dropna before interpolation?
-        dati = self.data.dropna("time").interp(
-            time=new_time, assume_sorted=True, **kwargs
-        )
-        if dropna:
-            dati = dati.dropna(dim="time")
-        # TODO: find a way to bypass the standard input parsing
-        return self.__class__(dati)

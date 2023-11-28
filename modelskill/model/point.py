@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional
 
 import xarray as xr
+import pandas as pd
 
 from ..types import Quantity, PointType
 from ..timeseries import TimeSeries, _parse_point_input
@@ -51,3 +52,38 @@ class PointModelResult(TimeSeries):
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
+
+    def interp_time(
+        self, new_time: pd.DatetimeIndex, dropna=True, **kwargs
+    ) -> PointModelResult:
+        """Interpolate time series to new time index
+
+        Parameters
+        ----------
+        new_time : pd.DatetimeIndex
+            new time index
+        dropna : bool, optional
+            drop nan values, by default True
+        **kwargs
+            keyword arguments passed to xarray.interp()
+
+        Returns
+        -------
+        TimeSeries
+            interpolated time series
+        """
+        if not isinstance(new_time, pd.DatetimeIndex):
+            try:
+                new_time = pd.DatetimeIndex(new_time)
+            except Exception:
+                raise ValueError(
+                    "new_time must be a pandas DatetimeIndex (or convertible to one)"
+                )
+
+        # TODO: is it necessary to dropna before interpolation?
+        dati = self.data.dropna("time").interp(
+            time=new_time, assume_sorted=True, **kwargs
+        )
+        if dropna:
+            dati = dati.dropna(dim="time")
+        return PointModelResult(dati)
