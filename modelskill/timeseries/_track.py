@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import get_args, Optional, List, Sequence
+import warnings
 import pandas as pd
 import xarray as xr
 
@@ -58,6 +59,7 @@ def _parse_track_input(
     quantity: Optional[Quantity],
     x_item: str | int | None,
     y_item: str | int | None,
+    keep_duplicates: bool = False,
     offset_duplicates: float = 0.001,
 ) -> xr.Dataset:
     assert isinstance(
@@ -108,9 +110,19 @@ def _parse_track_input(
     ds = ds.rename({ti.x: "x", ti.y: "y"})
 
     # A unique index makes lookup much faster O(1)
-    ds["time"] = make_unique_index(
-        ds["time"].to_index(), offset_duplicates=offset_duplicates
-    )
+    if keep_duplicates == "offset":
+        ds["time"] = make_unique_index(
+            ds["time"].to_index(), offset_duplicates=offset_duplicates
+        )
+    else:
+        # keep first, last or none of the duplicates
+        n = len(ds["time"])
+        ds = ds.drop_duplicates(dim="time", keep=keep_duplicates)
+        n_removed = n - len(ds["time"])
+        if n_removed > 0:
+            warnings.warn(
+                f"Removed {n_removed} duplicate timestamps with keep={keep_duplicates}"
+            )
     ds = ds.dropna(dim="time", subset=["x", "y"])
 
     SPATIAL_DIMS = ["x", "y", "z"]
