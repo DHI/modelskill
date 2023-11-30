@@ -20,13 +20,13 @@ def track_from_dfs0():
 
 def test_track_df(track_df):
     df = track_df
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr1 = ms.TrackModelResult(df, item=2)
     assert isinstance(mr1, protocols.ModelResult)
     # assert "Item: surface_elevation" in repr(mr1)
 
     # item as string
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr2 = ms.TrackModelResult(df, item="surface_elevation")
     assert len(mr2.data) == len(mr1.data)
 
@@ -37,7 +37,7 @@ def test_track_df(track_df):
 
 def test_track_df_iteminfo(track_df):
     df = track_df
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr1 = ms.TrackModelResult(
             df, item=2, quantity=ms.Quantity(name="Surface Elevation", unit="meter")
         )
@@ -47,12 +47,12 @@ def test_track_df_iteminfo(track_df):
 
 def test_track_df_modelresult(track_df):
     df = track_df
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr1 = ms.TrackModelResult(df, item=2)
     assert isinstance(mr1, protocols.ModelResult)
     assert len(mr1.data) == 1
 
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr3 = ms.TrackModelResult(df, item=2)
     assert len(mr3.data) == len(mr1.data)
     assert isinstance(mr3, protocols.ModelResult)
@@ -60,7 +60,7 @@ def test_track_df_modelresult(track_df):
 
 def test_track_from_dfs0_df_modelresult(track_from_dfs0):
     df = track_from_dfs0
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr1 = ms.TrackModelResult(df, item=-1)
     assert isinstance(mr1, protocols.ModelResult)
     assert len(mr1.data) == 1
@@ -79,7 +79,7 @@ def test_track_df_default_items(track_df):
 
     # Which columns are used for position, lon and lat?
     # will default to 0,1,2 (bad idea in this case)
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr0 = ms.ModelResult(df, gtype="track")
     assert "x" in mr0.data.coords
     # assert np.all(mr0.data.values == df.dropna().values)
@@ -101,7 +101,7 @@ def test_track_df_default_items(track_df):
         # cannot default anymore - more than 3 columns
         ms.ModelResult(df, gtype="track")
 
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr3 = ms.ModelResult(
             df, item="wl", gtype="track", x_item="longitude", y_item="latitude"
         )
