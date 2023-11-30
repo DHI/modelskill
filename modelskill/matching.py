@@ -220,10 +220,17 @@ def _single_obs_compare(
 ) -> Comparer:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
-    mod = _parse_models(mod, mod_item, gtype=gtype)
-    emods = _extract_from_models(obs, mod)
 
-    raw_mod_data = parse_modeldata_list(emods)
+    mods = _parse_models(mod, mod_item, gtype=gtype)
+
+    # emods = _extract_from_models(obs, mods)
+    e_mods = []
+    for m in mods:
+        ext_mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m.copy()
+        if len(ext_mr) > 0:
+            e_mods.append(ext_mr)
+
+    raw_mod_data = parse_modeldata_list(e_mods)
     matched_data = match_time(obs, raw_mod_data, max_model_gap)
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
