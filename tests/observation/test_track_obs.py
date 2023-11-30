@@ -52,19 +52,19 @@ def test_non_unique_index():
     assert df.index[160] == df.index[161]
 
     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        o = ms.TrackObservation(df, item=2)
+        o = ms.TrackObservation(df, item=2, keep_duplicates="offset")
     o_index = o.data.time.to_index()
     assert o_index.is_unique
     assert not df.index.is_unique  # did not change input data
     assert o_index[160].to_pydatetime().microsecond == 1000
     assert o_index[161].to_pydatetime().microsecond == 2000
 
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-        o = ms.TrackObservation(df, item=2, offset_duplicates=0.0001)
-    o_index = o.data.time.to_index()
-    assert o_index.is_unique
-    assert o_index[160].to_pydatetime().microsecond == 100
-    assert o_index[161].to_pydatetime().microsecond == 200
+    # with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    # o = ms.TrackObservation(df, item=2)  # , offset_duplicates=0.0001)
+    # o_index = o.data.time.to_index()
+    # assert o_index.is_unique
+    # assert o_index[160].to_pydatetime().microsecond == 100
+    # assert o_index[161].to_pydatetime().microsecond == 200
 
 
 def test_trackobservation_item_dfs0(c2):
@@ -88,14 +88,14 @@ def test_trackobservation_item_csv():
     with pytest.raises(ValueError, match="more than 3 items, but item was not given"):
         ms.TrackObservation(df)
 
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         o1 = ms.TrackObservation(df, item=-1)
-    assert o1.n_points == 1115
+    assert o1.n_points == 1093  # 1115
     assert list(o1.data.data_vars)[-1] == "wind_speed"
 
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         o2 = ms.TrackObservation(df, item="significant_wave_height")
-    assert o2.n_points == 1115  # including 1 NaN
+    assert o2.n_points == 1093  # 1115  # including 1 NaN
 
 
 def test_hist(c2):
@@ -114,14 +114,14 @@ def test_trackobservation_x_y_item(c2):
     with pytest.raises(ValueError, match="more than 3 items, but item was not given"):
         ms.TrackObservation(df)
 
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         o1 = ms.TrackObservation(df, item=-1, x_item="lon", y_item="lat")
-    assert o1.n_points == 1115
+    assert o1.n_points == 1093  # 1115
     assert list(o1.data.data_vars)[-1] == "wind_speed"
 
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         o2 = ms.TrackObservation(df, item="surface_elevation", x_item=2, y_item=0)
-    assert o2.n_points == 1115  # including 5 NaN
+    assert o2.n_points == 1093  # 1115  # including 5 NaN
 
     with pytest.raises(ValueError, match="must be different"):
         ms.TrackObservation(df, item=-1, x_item="lon", y_item="lon")
