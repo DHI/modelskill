@@ -27,6 +27,11 @@ class TrackModelResult(TimeSeries):
         Item of the second coordinate of positions, by default None
     quantity : Optional[str], optional
         A string to identify the quantity, by default None
+    keep_duplicates : (str, bool), optional
+        strategy for handling duplicate timestamps (wraps xarray.Dataset.drop_duplicates)
+        "first" to keep first occurrence, "last" to keep last occurrence,
+        False to drop all duplicates, "offset" to add milliseconds to
+        consecutive duplicates, by default "first"
     """
 
     def __init__(
@@ -38,6 +43,7 @@ class TrackModelResult(TimeSeries):
         quantity: Optional[Quantity] = None,
         x_item: str | int = 0,
         y_item: str | int = 1,
+        keep_duplicates: str | bool = "first",
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_track_input(
@@ -47,6 +53,7 @@ class TrackModelResult(TimeSeries):
                 quantity=quantity,
                 x_item=x_item,
                 y_item=y_item,
+                keep_duplicates=keep_duplicates,
             )
 
         assert isinstance(data, xr.Dataset)
