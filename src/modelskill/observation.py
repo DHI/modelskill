@@ -22,6 +22,12 @@ from .timeseries import (
 )
 
 
+def _validate_attrs(data_attrs: dict, attrs: dict) -> None:
+    for k in attrs or {}:
+        if k in data_attrs:
+            raise ValueError(f"attrs key {k} not allowed, conflicts with build-in key!")
+
+
 class Observation(TimeSeries):
     """Base class for observations
 
@@ -41,8 +47,8 @@ class Observation(TimeSeries):
     def __init__(
         self,
         data: xr.Dataset,
-        weight: float = 1.0,
-        color: str = "#d62728",
+        weight: float = 1.0,  # TODO: cannot currently be set
+        color: str = "#d62728",  # TODO: cannot currently be set
     ) -> None:
         data["time"] = self._parse_time(data.time)
 
@@ -92,6 +98,8 @@ class PointObservation(Observation):
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
 
     Examples
     --------
@@ -111,6 +119,7 @@ class PointObservation(Observation):
         z: Optional[float] = None,
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
+        attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_point_input(data, name=name, item=item, quantity=quantity)
@@ -122,6 +131,11 @@ class PointObservation(Observation):
 
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "observation"
+
+        # check that user-defined attrs don't overwrite existing attrs!
+        _validate_attrs(data.attrs, attrs)
+        data.attrs = {**data.attrs, **(attrs or {})}
+
         super().__init__(data=data)
 
     @property
@@ -179,7 +193,8 @@ class TrackObservation(Observation):
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
-
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
 
     Examples
     --------
@@ -243,6 +258,7 @@ class TrackObservation(Observation):
         keep_duplicates: bool | str = "first",
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
+        attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
             if offset_duplicates != 0.001:
@@ -264,6 +280,10 @@ class TrackObservation(Observation):
 
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "observation"
+
+        # check that user-defined attrs don't overwrite existing attrs!
+        _validate_attrs(data.attrs, attrs)
+        data.attrs = {**data.attrs, **(attrs or {})}
 
         super().__init__(data=data)
 
