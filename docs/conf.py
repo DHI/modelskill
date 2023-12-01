@@ -65,3 +65,4 @@ html_theme = "sphinx_book_theme"
 html_logo = "../images/logo/modelskill.svg"
 
 autodoc_typehints = "none"
+myst_heading_anchors = 3
