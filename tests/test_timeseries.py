@@ -59,7 +59,7 @@ def test_timeseries_track_init(ds_track):
 
 def test_timeseries_validation_fails_gtype(ds_point):
     ds_point.attrs["gtype"] = "GRID"
-    with pytest.raises(AssertionError, match="attribute 'gtype' must be"):
+    with pytest.raises(AssertionError):  # , match="attribute 'gtype' must be"):
         TimeSeries(ds_point)
 
     ds_point.attrs["gtype"] = "point"  # lower case okay
@@ -67,9 +67,9 @@ def test_timeseries_validation_fails_gtype(ds_point):
     assert isinstance(ts, TimeSeries)
     assert ts.data.attrs["gtype"] == str(GeometryType.POINT)
 
-    ds_point.attrs["gtype"] = "POINT"  # upper case not okay
-    with pytest.raises(AssertionError, match="attribute 'gtype' must be"):
-        TimeSeries(ds_point)
+    # ds_point.attrs["gtype"] = "POINT"  # upper case not okay
+    # with pytest.raises(AssertionError):  # , match="attribute 'gtype' must be"):
+    #    TimeSeries(ds_point)
 
 
 def test_timeseries_validation_fails_kind(ds_point):

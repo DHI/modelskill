@@ -1,13 +1,17 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, Optional, TypeVar, Any
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 import xarray as xr
 
 from ..types import GeometryType, Quantity
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
+from .. import __version__
+
+T = TypeVar("T", bound="TimeSeries")
 
 DEFAULT_COLORS = [
     "#b30000",
@@ -42,7 +46,7 @@ def _parse_color(name: str, color: str | None = None) -> str:
     return color
 
 
-def _validate_dataset(ds) -> xr.Dataset:
+def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     """Validate data"""
     assert isinstance(ds, xr.Dataset), "data must be a xr.Dataset"
 
@@ -50,6 +54,7 @@ def _validate_dataset(ds) -> xr.Dataset:
     assert len(ds.dims) == 1, "Only 0-dimensional data are supported"
     assert list(ds.dims)[0] == "time", "data must have a time dimension"
     assert isinstance(ds.time.to_index(), pd.DatetimeIndex), "time must be datetime"
+    ds["time"] = pd.DatetimeIndex(ds.time.to_index()).round(freq="100us")  # 0.0001s
     assert (
         ds.time.to_index().is_monotonic_increasing
     ), "time must be increasing (please check for duplicate times))"
@@ -105,6 +110,8 @@ def _validate_dataset(ds) -> xr.Dataset:
     color = da.attrs["color"] if "color" in da.attrs else None
     da.attrs["color"] = _parse_color(name, color=color)
 
+    ds.attrs["modelskill_version"] = __version__
+
     return ds
 
 
@@ -115,9 +122,21 @@ class TimeSeries:
     data: xr.Dataset
     plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
 
-    def __post_init__(self) -> None:
-        self.data = _validate_dataset(self.data)
+    def __init__(self, data: xr.Dataset) -> None:
+        self.data = data if self._is_input_validated(data) else _validate_dataset(data)
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
+
+    def _is_input_validated(self, data: Any) -> bool:
+        """Check if data is already a valid TimeSeries (contains the modelskill_version attribute)"""
+        if not isinstance(data, xr.Dataset):
+            return False
+        else:
+            if not hasattr(data, "attrs"):
+                return False
+            else:
+                if "modelskill_version" not in data.attrs:
+                    return False
+        return True
 
     @property
     def _val_item(self) -> str:
@@ -156,16 +175,16 @@ class TimeSeries:
     @property
     def color(self) -> str:
         """Color of time series"""
-        return self.data[self.name].attrs["color"]
+        return str(self.data[self.name].attrs["color"])
 
     @color.setter
     def color(self, color: str | None) -> None:
         self.data[self.name].attrs["color"] = _parse_color(self.name, color)
 
     @property
-    def gtype(self):
+    def gtype(self) -> str:
         """Geometry type"""
-        return self.data.attrs["gtype"]
+        return str(self.data.attrs["gtype"])
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -173,33 +192,33 @@ class TimeSeries:
         return pd.DatetimeIndex(self.data.time)
 
     @property
-    def x(self):
+    def x(self) -> Any:  # TODO should this be a float?
         """x-coordinate"""
         return self._coordinate_values("x")
 
     @x.setter
-    def x(self, value):
+    def x(self, value: Any) -> None:
         self.data["x"] = value
 
     @property
-    def y(self):
+    def y(self) -> Any:
         """y-coordinate"""
         return self._coordinate_values("y")
 
     @y.setter
-    def y(self, value):
+    def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    def _coordinate_values(self, coord):
+    def _coordinate_values(self, coord: str) -> float | NDArray[Any]:
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
     @property
     def _is_modelresult(self) -> bool:
-        return self.data[self.name].attrs["kind"] == "model"
+        return bool(self.data[self.name].attrs["kind"] == "model")
 
     @property
-    def values(self) -> np.ndarray:
+    def values(self) -> NDArray[Any]:
         """Values as numpy array"""
         return self.data[self.name].values
 
@@ -211,12 +230,12 @@ class TimeSeries:
     @property
     def start_time(self) -> pd.Timestamp:
         """Start time of time series data"""
-        return self.time[0]  # type: ignore
+        return self.time[0]
 
     @property
     def end_time(self) -> pd.Timestamp:
         """End time of time series data"""
-        return self.time[-1]  # type: ignore
+        return self.time[-1]
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"
@@ -228,11 +247,11 @@ class TimeSeries:
         return len(self.data.time)
 
     @property
-    def n_points(self):
+    def n_points(self) -> int:
         """Number of data points"""
         return len(self.data.time)
 
-    def copy(self):
+    def copy(self: T) -> T:
         return deepcopy(self)
 
     def equals(self, other: TimeSeries) -> bool:
@@ -253,9 +272,16 @@ class TimeSeries:
         else:
             return self.data.drop_vars(["z"])[["x", "y", self.name]].to_dataframe()
 
+    def sel(self: T, **kwargs: Any) -> T:
+        """Select data by label"""
+        return self.__class__(self.data.sel(**kwargs))
+
     def trim(
-        self, start_time: pd.Timestamp, end_time: pd.Timestamp, buffer="1s"
-    ) -> None:
+        self: T,
+        start_time: Optional[pd.Timestamp] = None,
+        end_time: Optional[pd.Timestamp] = None,
+        buffer: str = "1s",
+    ) -> T:
         """Trim observation data to a given time interval
 
         Parameters
@@ -271,28 +297,9 @@ class TimeSeries:
         start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
         end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
 
-        self.data = self.data.sel(time=slice(start_time, end_time))
-
-    def interp_time(self, new_time: pd.DatetimeIndex) -> TimeSeries:
-        """Interpolate time series to new time index
-
-        Parameters
-        ----------
-        new_time : pd.DatetimeIndex
-            new time index
-
-        Returns
-        -------
-        TimeSeries
-            interpolated time series
-        """
-        if not isinstance(new_time, pd.DatetimeIndex):
-            try:
-                new_time = pd.DatetimeIndex(new_time)
-            except Exception:
-                raise ValueError(
-                    "new_time must be a pandas DatetimeIndex (or convertible to one)"
-                )
-
-        # TODO: self.__class__
-        return TimeSeries(self.data.interp(time=new_time))
+        data = self.data.sel(time=slice(start_time, end_time))
+        if len(data.time) == 0:
+            raise ValueError(
+                f"No data left after trimming to {start_time} - {end_time}"
+            )
+        return self.__class__(data)

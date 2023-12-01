@@ -4,6 +4,7 @@ import pandas as pd
 import xarray as xr
 import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
+from modelskill import __version__
 
 
 @pytest.fixture
@@ -35,14 +36,13 @@ def _get_track_df() -> pd.DataFrame:
 
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
-    # data["x"].attrs["kind"] = "position"
-    # data["y"].attrs["kind"] = "position"
     data["Observation"].attrs["kind"] = "observation"
     data["Observation"].attrs["weight"] = 1.0
     data["Observation"].attrs["units"] = "m"
     data["Observation"].attrs["long_name"] = "fake var"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
+    data.attrs["modelskill_version"] = __version__
     return data
 
 
@@ -51,15 +51,19 @@ def pc() -> Comparer:
     """A comparer with fake point data"""
     x, y = 10.0, 55.0
     df = _get_track_df().drop(columns=["x", "y"])
-    raw_data = {"m1": df[["m1"]], "m2": df[["m2"]]}
 
-    data = df.dropna().to_xarray()
+    data = df.to_xarray()
     data.attrs["gtype"] = "point"
     data.attrs["name"] = "fake point obs"
     data.coords["x"] = x
     data.coords["y"] = y
     data.coords["z"] = np.nan
     data = _set_attrs(data)
+
+    raw_data = {"m1": data[["m1"]], "m2": data[["m2"]]}
+
+    data = data.dropna(dim="time")
+
     return Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
@@ -67,14 +71,16 @@ def pc() -> Comparer:
 def tc() -> Comparer:
     """A comparer with fake track data"""
     df = _get_track_df()
-    raw_data = {"m1": df[["x", "y", "m1"]], "m2": df[["x", "y", "m2"]]}
 
-    data = df.dropna().to_xarray()
+    data = df.to_xarray()
     data = data.set_coords(["x", "y"])
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
 
+    raw_data = {"m1": data[["m1"]], "m2": data[["m2"]]}
+
+    data = data.dropna(dim="time")
     return Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
@@ -449,8 +455,8 @@ def test_pc_properties(pc):
     assert pc.obs[-1] == 5.0
     assert pc.mod[-1, 1] == 4.9
 
-    assert pc.raw_mod_data["m1"].columns.tolist() == ["m1"]
-    assert np.all(pc.raw_mod_data["m1"]["m1"] == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
+    assert list(pc.raw_mod_data["m1"].data.data_vars) == ["m1"]
+    assert np.all(pc.raw_mod_data["m1"].values == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
 
 
 def test_tc_properties(tc):
@@ -467,9 +473,9 @@ def test_tc_properties(tc):
     assert tc.obs[-1] == 5.0
     assert tc.mod[-1, 1] == 4.9
 
-    assert tc.raw_mod_data["m1"].columns.tolist() == ["x", "y", "m1"]
-    assert np.all(tc.raw_mod_data["m1"]["m1"] == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
-    assert np.all(tc.raw_mod_data["m1"]["x"] == [10.1, 10.2, 10.3, 10.4, 10.5, 10.6])
+    assert list(tc.raw_mod_data["m1"].data.data_vars) == ["m1"]
+    assert np.all(tc.raw_mod_data["m1"].values == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
+    assert np.all(tc.raw_mod_data["m1"].x == [10.1, 10.2, 10.3, 10.4, 10.5, 10.6])
 
 
 def test_pc_sel_time(pc):

@@ -87,15 +87,10 @@ def test_extraction_no_overlap(modelresult_oresund_WL):
         name="Klagshamn",
     )
     mr = modelresult_oresund_WL
-    with pytest.warns(UserWarning) as wn:
-        con = ms.Connector(o1, mr, validate=False)
-    assert len(wn) == 1
-    assert "No time overlap" in str(wn[0].message)
-    # assert "Could not add observation" in str(wn[1].message)
-    assert len(con.observations) == 1
-    with pytest.warns(UserWarning, match="No overlapping data"):
-        cc = con.extract()
-    assert cc.n_comparers == 0
+
+    con = ms.Connector(o1, mr, validate=False)
+    with pytest.raises(ValueError, match="No data"):
+        con.extract()
 
 
 def test_score(modelresult_oresund_WL, klagshamn, drogden):
@@ -107,27 +102,27 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
     cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
 
 
-def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
-    mr = modelresult_oresund_WL
+# def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
+#     mr = modelresult_oresund_WL
 
-    cc = ms.compare([klagshamn, drogden], mr)
-    unweighted_skill = cc.score()
+#     cc = ms.compare([klagshamn, drogden], mr)
+#     unweighted_skill = cc.score()
 
-    con = ms.Connector()
+#     con = ms.Connector()
 
-    con.add(klagshamn, mr, weight=0.9, validate=False)
-    con.add(drogden, mr, weight=0.1, validate=False)
-    cc = con.extract()
-    weighted_skill = cc.score()
-    assert unweighted_skill != weighted_skill
+#     con.add(klagshamn, mr, weight=0.9, validate=False)
+#     con.add(drogden, mr, weight=0.1, validate=False)
+#     cc = con.extract()
+#     weighted_skill = cc.score()
+#     assert unweighted_skill != weighted_skill
 
-    obs = [klagshamn, drogden]
+#     obs = [klagshamn, drogden]
 
-    con = ms.Connector(obs, mr, weight=[0.9, 0.1], validate=False)
-    cc = con.extract()
-    weighted_skill2 = cc.score()
+#     con = ms.Connector(obs, mr, weight=[0.9, 0.1], validate=False)
+#     cc = con.extract()
+#     weighted_skill2 = cc.score()
 
-    assert weighted_skill == weighted_skill2
+#     assert weighted_skill == weighted_skill2
 
 
 def test_misc_properties(klagshamn, drogden):

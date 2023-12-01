@@ -71,8 +71,8 @@ class ComparerPlotter:
             fig, ax = _get_fig_ax(ax, figsize)
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
-                mod_df = cmp.raw_mod_data[key]
-                mod_df[key].plot(ax=ax, color=MOD_COLORS[j])
+                mod = cmp.raw_mod_data[key]._values_as_series
+                mod.plot(ax=ax, color=MOD_COLORS[j])
 
             ax.scatter(
                 cmp.time,
@@ -94,11 +94,11 @@ class ComparerPlotter:
             mod_scatter_list = []
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
-                mod_df = cmp.raw_mod_data[key]
+                mod = cmp.raw_mod_data[key]._values_as_series
                 mod_scatter_list.append(
                     go.Scatter(
-                        x=mod_df.index,
-                        y=mod_df[key],
+                        x=mod.index,
+                        y=mod.values,
                         name=key,
                         line=dict(color=MOD_COLORS[j]),
                     )

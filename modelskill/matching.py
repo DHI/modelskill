@@ -11,8 +11,9 @@ from typing import (
     Union,
     Sequence,
     get_args,
+    TypeVar,
+    Any,
 )
-import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -26,13 +27,13 @@ from .model import protocols
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
+from .model.point import PointModelResult
 from .observation import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 IdOrNameTypes = Optional[Union[int, str]]
-# ModelResultTypes = Union[ModelResult, DfsuModelResult, str]
 GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
 MRInputType = Union[
     str,
@@ -58,9 +59,10 @@ ObsInputType = Union[
     mikeio.Dfs0,
     pd.DataFrame,
     pd.Series,
-    # protocols.Observation,
     Observation,
 ]
+
+T = TypeVar("T", bound="TimeSeries")
 
 
 def from_matched(
@@ -141,6 +143,7 @@ def from_matched(
         z=z,
         quantity=quantity,
     )
+
     return cmp
 
 
@@ -151,7 +154,7 @@ def compare(
     obs_item: Optional[IdOrNameTypes] = None,
     mod_item: Optional[IdOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
-    max_model_gap=None,
+    max_model_gap: Optional[float] = None,
 ) -> ComparerCollection:
     """Compare observations and model results
     Parameters
@@ -167,37 +170,27 @@ def compare(
     gtype : (str, optional)
         Geometry type of the model result. If not specified, it will be guessed.
     max_model_gap : (float, optional)
-        Maximum gap in the model result, by default None
+        Maximum time gap (s) in the model result, by default None
 
     Returns
     -------
     ComparerCollection
         To be used for plotting and statistics
     """
-    if isinstance(obs, get_args(ObsInputType)):
-        cmp = _single_obs_compare(
-            obs,
+    observations = [obs] if isinstance(obs, get_args(ObsInputType)) else obs
+    assert isinstance(observations, Iterable)
+
+    clist = [
+        _single_obs_compare(
+            o,
             mod,
             obs_item=obs_item,
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
         )
-        clist = [cmp]
-    elif isinstance(obs, Sequence):
-        clist = [
-            _single_obs_compare(
-                o,
-                mod,
-                obs_item=obs_item,
-                mod_item=mod_item,
-                gtype=gtype,
-                max_model_gap=max_model_gap,
-            )
-            for o in obs
-        ]
-    else:
-        raise ValueError(f"Unknown obs type {type(obs)}")
+        for o in observations
+    ]
 
     return ComparerCollection(clist)
 
@@ -206,18 +199,18 @@ def _single_obs_compare(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item=None,
-    mod_item=None,
+    obs_item: Optional[int | str] = None,
+    mod_item: Optional[int | str] = None,
     gtype: Optional[GeometryTypes] = None,
-    max_model_gap=None,
+    max_model_gap: Optional[float] = None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
-    mod = _parse_models(mod, mod_item, gtype=gtype)
-    emods = _extract_from_models(obs, mod)  # type: ignore
 
-    raw_mod_data = parse_modeldata_list(emods)
-    matched_data = match_time(obs, raw_mod_data, max_model_gap)
+    mods = _parse_models(mod, mod_item, gtype=gtype)
+
+    raw_mod_data = {m.name: m.extract(obs) for m in mods}
+    matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
@@ -237,25 +230,26 @@ def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
         time_delta = pd.Timedelta(time_delta)
     elif np.isscalar(time_delta):
         # assume seconds
-        time_delta = pd.Timedelta(time_delta, "s")  # type: ignore
+        time_delta = pd.Timedelta(time_delta, "s")
     assert isinstance(time_delta, pd.Timedelta)
     return time_delta
 
 
 def _remove_model_gaps(
-    df: pd.DataFrame,
+    ts: T,
     mod_index: pd.DatetimeIndex,
     max_gap: TimeDeltaTypes,
-) -> pd.DataFrame:
-    """Remove model gaps longer than max_gap from dataframe"""
+) -> T:
+    """Remove model gaps longer than max_gap from TimeSeries"""
     max_gap = _time_delta_to_pd_timedelta(max_gap)
-    valid_time = _get_valid_query_time(mod_index, df.index, max_gap)
-    return df.loc[valid_time]
+    valid_time = _get_valid_query_time(mod_index, ts.time, max_gap)
+    ds = ts.data.sel(time=valid_time[valid_time].index)
+    return ts.__class__(ds)
 
 
 def _get_valid_query_time(
     mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
-):
+) -> pd.Series[bool]:
     """Used only by _remove_model_gaps"""
     # init dataframe of available timesteps and their index
     df = pd.DataFrame(index=mod_index)
@@ -276,39 +270,20 @@ def _get_valid_query_time(
     return valid_idx
 
 
-def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
-    if len(df_mod) == 0:
-        return
-    if len(df_mod) != len(df_obs):
-        raise ValueError("model and observation data must have same length")
-
-    mod_xy = df_mod[["x", "y"]]
-    obs_xy = df_obs[["x", "y"]]
-    d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-
-    # Find minimal accepted distance from data
-    # (could be long/lat or x/y, small or large domain)
-    tol_xy = _minimal_accepted_distance(obs_xy)
-    mask = d_xy > tol_xy
-    df_mod.loc[mask, name] = np.nan
-    if all(mask):
-        warnings.warn("no (spatial) overlap between model and observation points")
-
-
 def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
-    starts = [x[0] for x in idxs if len(x) > 0]
-    ends = [x[-1] for x in idxs if len(x) > 0]
+    assert all([len(x) > 0 for x in idxs])
 
-    if len(starts) == 0:
-        return Period(start=None, end=None)
+    starts = [x[0] for x in idxs]
+    ends = [x[-1] for x in idxs]
 
     return Period(start=min(starts), end=max(ends))
 
 
-def match_time(
-    observation: Observation,
-    raw_mod_data: Dict[str, pd.DataFrame],
+def match_space_time(
+    observation: PointObservation | TrackObservation,
+    raw_mod_data: Dict[str, PointModelResult | TrackModelResult],
     max_model_gap: Optional[TimeDeltaTypes] = None,
+    spatial_tolerance: float = 1e-3,
 ) -> xr.Dataset:
     """Match observation with one or more model results in time domain
     and return as xr.Dataset in the format used by modelskill.Comparer
@@ -316,16 +291,19 @@ def match_time(
     Will interpolate model results to observation time.
 
     Note: assumes that observation and model data are already matched in space.
+        But positions of track observations will be checked.
 
     Parameters
     ----------
     observation : Observation
         Observation to be matched
-    raw_mod_data : Dict[str, pd.DataFrame]
+    raw_mod_data : Dict[str, PointModelResult | TrackModelResult]
         Dictionary of model results ready for interpolation
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
         max_model_gap can be given e.g. as seconds, by default None
+    spatial_tolerance : float, optional
+        Tolerance for spatial matching, by default 1e-3
 
     Returns
     -------
@@ -334,26 +312,35 @@ def match_time(
     """
     obs_name = "Observation"
     mod_names = list(raw_mod_data.keys())
-    idxs = [m.index for m in raw_mod_data.values()]
+    idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
     assert isinstance(observation, (PointObservation, TrackObservation))
     gtype = "point" if isinstance(observation, PointObservation) else "track"
-    observation = observation.copy()
-    observation.trim(period.start, period.end)
+    observation = observation.trim(period.start, period.end)
 
-    data = observation.data.copy()
+    data = observation.data
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: obs_name})
 
-    for name, mdata in raw_mod_data.items():
-        df = _model2obs_interp(observation, mdata, max_model_gap)
-        if gtype == "track":
-            # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
-            df_obs = observation.data.to_pandas()  # TODO: xr.Dataset
-            _mask_model_outside_observation_track(name, df, df_obs)
+    for name, mr in raw_mod_data.items():
+        if isinstance(mr, PointModelResult):
+            assert len(observation.time) > 0
+            mri: TimeSeries = mr.interp_time(new_time=observation.time)
+        else:
+            mri = mr
 
-        data[name] = df[name]
+        if max_model_gap is not None:
+            # e.g. in case of event data
+            mri = _remove_model_gaps(mri, mr.time, max_model_gap)
+
+        if isinstance(observation, TrackObservation):
+            assert isinstance(mri, TrackModelResult)
+            mri.data = _select_overlapping_trackdata_with_tolerance(
+                observation=observation, mri=mri, spatial_tolerance=spatial_tolerance
+            )
+
+        data[name] = mri.data[name]
 
     data = data.dropna(dim="time")
 
@@ -366,62 +353,28 @@ def match_time(
     return data
 
 
-def _model2obs_interp(
-    obs, mod_df: pd.DataFrame, max_model_gap: Optional[TimeDeltaTypes]
-) -> pd.DataFrame:
-    """interpolate model to measurement time"""
-    _obs_name = "Observation"
-    df = _interp_time(mod_df.dropna(), obs.time)
-    df[_obs_name] = obs.values
+def _select_overlapping_trackdata_with_tolerance(
+    observation: TrackObservation, mri: TrackModelResult, spatial_tolerance: float
+) -> xr.Dataset:
+    mod_df = mri.data.to_dataframe()
+    obs_df = observation.data.to_dataframe()
 
-    if max_model_gap is not None:
-        df = _remove_model_gaps(df, mod_df.dropna().index, max_model_gap)
+    # 1. inner join on time
+    df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
 
-    df.index.name = "time"
-    return df
-
-
-def _minimal_accepted_distance(obs_xy):
-    # all consequtive distances
-    vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
-    # fraction of small quantile
-    return 0.5 * np.quantile(vec, 0.1)
-
-
-def parse_modeldata_list(modeldata) -> Dict[str, pd.DataFrame]:
-    """Convert to dict of dataframes"""
-    if not isinstance(modeldata, Sequence):
-        modeldata = [modeldata]
-
-    mod_dfs = [_parse_single_modeldata(m) for m in modeldata]
-    return {m.columns[-1]: m for m in mod_dfs if m is not None}
-
-
-def _parse_single_modeldata(modeldata) -> pd.DataFrame:
-    """Convert to dataframe and set index to pd.DatetimeIndex"""
-    if hasattr(modeldata, "to_dataframe"):
-        mod_df = modeldata.to_dataframe().drop(columns=["z"])
-    elif isinstance(modeldata, pd.DataFrame):
-        mod_df = modeldata
-    else:
-        raise ValueError(
-            f"Unknown modeldata type '{type(modeldata)}' (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)"
-        )
-
-    if not isinstance(mod_df.index, pd.DatetimeIndex):
-        raise ValueError(
-            "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
-        )
-
-    time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
-    mod_df.index = pd.DatetimeIndex(time, freq="infer")
-    return mod_df
+    # 2. remove model points outside observation track
+    keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
+    keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
+    df = df[keep_x & keep_y]
+    return mri.data.sel(time=df.index)
 
 
 def _parse_single_obs(
-    obs, item=None, gtype: Optional[GeometryTypes] = None
-) -> Observation:
-    if isinstance(obs, Observation):
+    obs: ObsInputType,
+    item: Optional[int | str] = None,
+    gtype: Optional[GeometryTypes] = None,
+) -> PointObservation | TrackObservation:
+    if isinstance(obs, (PointObservation, TrackObservation)):
         if item is not None:
             raise ValueError(
                 "obs_item argument not allowed if obs is an modelskill.Observation type"
@@ -437,8 +390,10 @@ def _parse_single_obs(
 
 
 def _parse_models(
-    mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None
-):
+    mod: Any,  # TODO
+    item: Optional[IdOrNameTypes] = None,
+    gtype: Optional[GeometryTypes] = None,
+) -> List[Any]:  # TODO
     """Return a list of ModelResult objects"""
     if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
@@ -449,8 +404,10 @@ def _parse_models(
 
 
 def _parse_single_model(
-    mod, item: Optional[IdOrNameTypes] = None, gtype: Optional[GeometryTypes] = None
-):
+    mod: Any,  # TODO
+    item: Optional[IdOrNameTypes] = None,
+    gtype: Optional[GeometryTypes] = None,
+) -> Any:  # TODO
     if isinstance(mod, protocols.ModelResult):
         if item is not None:
             raise ValueError(
@@ -464,24 +421,3 @@ def _parse_single_model(
         raise ValueError(
             f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
         )
-
-
-def _extract_from_models(obs, mods: List[protocols.ModelResult]) -> List[pd.DataFrame]:
-    df_model = []
-    for m in mods:
-        mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m
-
-        # TODO: temporary solution until complete swich to xr.Dataset
-        # mr.data if isinstance(mr.data, pd.DataFrame) else
-        df = mr.to_dataframe()
-
-        # TODO is this robust enough?
-        old_item = df.columns.values[-1]  # TODO: xr.Dataset
-        df = df.rename(columns={old_item: mr.name})  # TODO: xr.Dataset
-        if (df is not None) and (len(df) > 0):  # TODO: xr.Dataset
-            df_model.append(df)
-        else:
-            warnings.warn(
-                f"No data found when extracting '{obs.name}' from model '{mr.name}'"
-            )
-    return df_model

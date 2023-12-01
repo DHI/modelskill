@@ -35,16 +35,18 @@ def pc() -> modelskill.comparison.Comparer:
         index=pd.date_range("2019-01-01", periods=6, freq="D"),
     )
     df.index.name = "time"
-    raw_data = {"m1": df[["m1"]], "m2": df[["m2"]]}
 
-    data = df.dropna().to_xarray()
+    data = df.to_xarray()
     data.attrs["gtype"] = "point"
     data.attrs["name"] = "fake point obs"
     data.coords["x"] = x
     data.coords["y"] = y
     data.coords["z"] = np.nan
-
     data = _set_attrs(data)
+
+    raw_data = {"m1": data[["m1"]].copy(), "m2": data[["m2"]].copy()}
+
+    data = data.dropna(dim="time")
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
@@ -63,26 +65,28 @@ def tc() -> modelskill.comparison.Comparer:
         index=pd.date_range("2019-01-03", periods=6, freq="D"),
     )
     df.index.name = "time"
-    raw_data = {
-        "m1": df[["x", "y", "m1"]],
-        "m2": df[["x", "y", "m2"]],
-        "m3": df[["x", "y", "m3"]],
-    }
-
-    data = df.dropna().to_xarray()
+    data = df.to_xarray()
+    data = data.set_coords(["x", "y"])
     data.attrs["gtype"] = "track"
     data.attrs["name"] = "fake track obs"
     data["m3"].attrs["kind"] = "model"
     data = _set_attrs(data)
 
+    raw_data = {
+        "m1": data[["m1"]].copy(),
+        "m2": data[["m2"]].copy(),
+        "m3": data[["m3"]].copy(),
+    }
+
+    data = data.dropna(dim="time")
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
 @pytest.fixture
-def cc(pc, tc) -> modelskill.comparison.ComparerCollection:
+def cc(pc, tc) -> modelskill.ComparerCollection:
     """A comparer collection with two comparers, with partial overlap in time
     one comparer with 2 models, one comparer with 3 models"""
-    return modelskill.comparison.ComparerCollection([pc, tc])
+    return modelskill.ComparerCollection([pc, tc])
 
 
 def test_cc_properties(cc):
@@ -155,12 +159,12 @@ def test_cc_query(cc):
     assert cc2.n_points == 2
 
 
-def test_save(cc: modelskill.comparison.ComparerCollection, tmp_path):
+def test_save(cc: modelskill.ComparerCollection, tmp_path):
     fn = tmp_path / "test_cc.msk"
     assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__
     cc.save(fn)
 
-    cc2 = modelskill.comparison.ComparerCollection.load(fn)
+    cc2 = modelskill.load(fn)
     assert cc2.n_comparers == 2
 
     # this belongs to the comparer, but ComparerCollection is the commonly used class
@@ -180,7 +184,7 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
     assert len(cc["fake point obs"].raw_mod_data["m1"]) == 6
     cc.save(fn)
 
-    cc2 = modelskill.comparison.ComparerCollection.load(fn)
+    cc2 = modelskill.load(fn)
 
     # we ideally would like to test is the original raw_mod_data is fully included in this plot
     cc2[0].plot.timeseries()
