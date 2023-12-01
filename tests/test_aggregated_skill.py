@@ -57,6 +57,11 @@ def test_skill(cc1):
     assert "bias" in repr(s)
 
 
+def test_skill_bad_args(cc1):
+    with pytest.raises(AssertionError):
+        cc1.skill(nonexisting_arg=1)
+
+
 def test_skill_multi_model(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
 
