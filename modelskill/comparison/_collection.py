@@ -422,6 +422,7 @@ class ComparerCollection(Mapping):
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,
@@ -530,6 +531,7 @@ class ComparerCollection(Mapping):
 
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
@@ -677,6 +679,7 @@ class ComparerCollection(Mapping):
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         # filter data
         cmp = self.sel(
@@ -769,6 +772,7 @@ class ComparerCollection(Mapping):
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         # filter data
         cmp = self.sel(
@@ -905,6 +909,7 @@ class ComparerCollection(Mapping):
 
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         if model is None:
             models = self.mod_names
@@ -960,6 +965,7 @@ class ComparerCollection(Mapping):
 
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,
