@@ -508,7 +508,7 @@ class ComparerPlotter:
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
-            skill_df = cmp.skill(metrics=metrics)
+            skill_df = cmp.skill(metrics=metrics,**kwargs)
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:
@@ -518,7 +518,7 @@ class ComparerPlotter:
             # hide quantiles and regression line
             quantiles = 0
             reg_method = False
-
+        
         ax = scatter(
             x=x,
             y=y,

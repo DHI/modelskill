@@ -61,12 +61,12 @@ def _add_spatial_grid_to_df(
     return df
 
 
-def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
+def _groupby_df(df, by, metrics, n_min: Optional[int] = None , **kwargs):
     def calc_metrics(x):
         row = {}
         row["n"] = len(x)
         for metric in metrics:
-            row[metric.__name__] = metric(x.obs_val, x.mod_val)
+            row[metric.__name__] = metric(x.obs_val, x.mod_val , **kwargs)
         return pd.Series(row)
 
     # .drop(columns=["x", "y"])

@@ -17,7 +17,7 @@ from scipy import interpolate
 import modelskill.settings as settings
 from modelskill.settings import options
 
-from ..metrics import _linear_regression
+from ..metrics import _linear_regression, _allowed_kwargs
 from ._misc import quantiles_xy, sample_points, format_skill_df, _get_fig_ax
 
 
@@ -169,6 +169,8 @@ def scatter(
 
     if backend not in PLOTTING_BACKENDS:
         raise ValueError(f"backend must be one of {list(PLOTTING_BACKENDS.keys())}")
+    
+    kwargs={k:v for (k,v) in kwargs.items() if k not in _allowed_kwargs()}
 
     return PLOTTING_BACKENDS[backend](
         x=x,
