@@ -53,6 +53,10 @@ class PointModelResult(TimeSeries):
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
+    def extract(self, obs) -> PointModelResult:
+        # TODO check x,y,z
+        return self
+
     def interp_time(
         self, new_time: pd.DatetimeIndex, dropna=True, **kwargs
     ) -> PointModelResult:

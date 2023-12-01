@@ -14,9 +14,7 @@ from typing import (
     TypeVar,
     Any,
 )
-import warnings
 import numpy as np
-from numpy.typing import ArrayLike
 import pandas as pd
 import xarray as xr
 
@@ -36,7 +34,6 @@ from . import __version__
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 IdOrNameTypes = Optional[Union[int, str]]
-# ModelResultTypes = Union[ModelResult, DfsuModelResult, str]
 GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
 MRInputType = Union[
     str,
@@ -62,7 +59,6 @@ ObsInputType = Union[
     mikeio.Dfs0,
     pd.DataFrame,
     pd.Series,
-    # protocols.Observation,
     Observation,
 ]
 
@@ -213,14 +209,7 @@ def _single_obs_compare(
 
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
-    # emods = _extract_from_models(obs, mods)
-    e_mods = []
-    for m in mods:
-        ext_mr = m.extract(obs) if hasattr(m, "extract") else m.copy()
-        if len(ext_mr) > 0:
-            e_mods.append(ext_mr)
-
-    raw_mod_data = {m.name: m for m in e_mods if m is not None}
+    raw_mod_data = {m.name: m.extract(obs) for m in mods}
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
@@ -279,44 +268,6 @@ def _get_valid_query_time(
     # valid query times where time delta is less than max_gap
     valid_idx = df.dt <= max_gap
     return valid_idx
-
-
-def _remove_non_matching_positions(
-    ts: TimeSeries,
-    obs_xy: pd.DataFrame,
-) -> TimeSeries:
-    """Remove model data points that are too far from observation positions"""
-    mod_xy = ts.data.to_dataframe()[["x", "y"]]
-    d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-
-    # Find minimal accepted distance from data
-    # (could be long/lat or x/y, small or large domain)
-    tol_xy = _minimal_accepted_distance(obs_xy)
-    mask = d_xy < tol_xy  # to keep
-    if not any(mask):
-        warnings.warn("no (spatial) overlap between model and observation points")
-
-    ds = ts.data.isel(time=mask)
-    return ts.__class__(ds)
-
-
-# def _mask_model_outside_observation_track(name, df_mod, df_obs) -> None:
-#     if len(df_mod) == 0:
-#         return
-#     if len(df_mod) != len(df_obs):
-#         raise ValueError("model and observation data must have same length")
-
-#     mod_xy = df_mod[["x", "y"]]
-#     obs_xy = df_obs[["x", "y"]]
-#     d_xy = np.sqrt(np.sum((obs_xy - mod_xy) ** 2, axis=1))
-
-#     # Find minimal accepted distance from data
-#     # (could be long/lat or x/y, small or large domain)
-#     tol_xy = _minimal_accepted_distance(obs_xy)
-#     mask = d_xy > tol_xy
-#     df_mod.loc[mask, name] = np.nan
-#     if all(mask):
-#         warnings.warn("no (spatial) overlap between model and observation points")
 
 
 def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
@@ -386,14 +337,13 @@ def match_space_time(
         if isinstance(observation, TrackObservation) and isinstance(
             mri, TrackModelResult
         ):
-            pass
-            # observation = observation.trim_space(mri)
-
             mod_df = mri.data.to_dataframe()
             obs_df = observation.data.to_dataframe()
 
-            # inner join on time
+            # 1. inner join on time
             df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
+
+            # 2. remove model points outside observation track
             keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
             keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
             df = df[keep_x & keep_y]
@@ -410,13 +360,6 @@ def match_space_time(
     data.attrs["modelskill_version"] = __version__
 
     return data
-
-
-def _minimal_accepted_distance(obs_xy: ArrayLike) -> float:
-    # all consequtive distances
-    vec = np.sqrt(np.sum(np.diff(obs_xy, axis=0), axis=1) ** 2)
-    # fraction of small quantile
-    return float(0.5 * np.quantile(vec, 0.1))
 
 
 def _parse_single_obs(
@@ -471,26 +414,3 @@ def _parse_single_model(
         raise ValueError(
             f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
         )
-
-
-# TODO Type hints for mod
-def _extract_from_models(obs: Observation, mods: Any) -> List[TimeSeries]:
-    e_mods = []
-    for m in mods:
-        ext_mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m.copy()
-
-        # TODO: temporary solution until complete swich to xr.Dataset
-        # mr.data if isinstance(mr.data, pd.DataFrame) else
-        # df = mr.to_dataframe()
-
-        # TODO is this robust enough?
-        # old_item = df.columns.values[-1]  # TODO: xr.Dataset
-        # df = df.rename(columns={old_item: mr.name})  # TODO: xr.Dataset
-        # if (df is not None) and (len(df) > 0):  # TODO: xr.Dataset
-        if len(ext_mr) > 0:
-            e_mods.append(ext_mr)
-        else:
-            warnings.warn(
-                f"No data found when extracting '{obs.name}' from model '{ext_mr.name}'"
-            )
-    return e_mods

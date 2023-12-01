@@ -60,3 +60,7 @@ class TrackModelResult(TimeSeries):
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
+
+    def extract(self, obs) -> TrackModelResult:
+        # TODO check x,y,z
+        return self
