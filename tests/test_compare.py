@@ -248,6 +248,30 @@ def test_matched_data_name_xyz():
     assert cmp.z == 3
 
 
+def test_matched_data_not_time_index():
+    df = pd.DataFrame(
+        {
+            "ts_1": [
+                1.0,
+                2.0,
+            ],
+            "sensor_a": [2.0, 3.0],
+        },
+        index=["A", "B"],  # arbitrary index, not time
+    )
+
+    cmp = ms.from_matched(df, obs_item="sensor_a")
+
+    # scatter plot doesn't care about time
+    cmp.plot.scatter()
+
+    # skill metrics do not care about time
+    s = cmp.skill(metrics="mae")
+    assert s.loc["sensor_a", "mae"] == pytest.approx(1.0)
+
+    cmp.plot.timeseries()
+
+
 def test_matched_data_multiple_models():
     df = pd.DataFrame(
         {
