@@ -50,12 +50,12 @@ def _parse_dataset(data) -> xr.Dataset:
 
     # Validate time
     # assert len(data.dims) == 1, "Only 0-dimensional data are supported"
-    # assert "time" in data.dims, "data must have a time dimension"
-    # assert isinstance(data.time.to_index(), pd.DatetimeIndex), "time must be datetime"
-    # data["time"] = pd.DatetimeIndex(data.time.to_index()).round(freq="100us")  # 0.0001s
-    # assert (
-    #    data.time.to_index().is_monotonic_increasing
-    # ), "time must be increasing (please check for duplicate times))"
+    assert "time" in data.dims, "data must have a time dimension"
+    assert isinstance(data.time.to_index(), pd.DatetimeIndex), "time must be datetime"
+    data["time"] = pd.DatetimeIndex(data.time.to_index()).round(freq="100us")  # 0.0001s
+    assert (
+        data.time.to_index().is_monotonic_increasing
+    ), "time must be increasing (please check for duplicate times))"
 
     # no missing values allowed in Observation
     if data["Observation"].isnull().any():
