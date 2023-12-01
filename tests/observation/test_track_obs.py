@@ -59,13 +59,6 @@ def test_non_unique_index():
     assert o_index[160].to_pydatetime().microsecond == 1000
     assert o_index[161].to_pydatetime().microsecond == 2000
 
-    # with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-    # o = ms.TrackObservation(df, item=2)  # , offset_duplicates=0.0001)
-    # o_index = o.data.time.to_index()
-    # assert o_index.is_unique
-    # assert o_index[160].to_pydatetime().microsecond == 100
-    # assert o_index[161].to_pydatetime().microsecond == 200
-
 
 def test_trackobservation_item_dfs0(c2):
     with pytest.raises(ValueError, match="more than 3 items, but item was not given"):
