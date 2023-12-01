@@ -385,6 +385,7 @@ class ComparerCollection(Mapping):
         cc = ComparerCollection()
         for cmp in self.comparers.values():
             for k, v in kwargs.items():
+                # TODO: should we also filter on cmp.data.Observation.attrs?
                 if cmp.data.attrs.get(k) != v:
                     break
             else:
