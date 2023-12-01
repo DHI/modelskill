@@ -273,8 +273,8 @@ def test_tiny_mod_unique(obs_tiny, mod_tiny_unique):
 
 # Currently fails as check on x, y difference is missing!
 def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
-    obs_tiny_df.x[0] = 1.1  # difference in x larger than tolerance
-    obs_tiny_df.y[3] = 13.6  # difference in y larger than tolerance
+    obs_tiny_df.x.iloc[0] = 1.1  # difference in x larger than tolerance
+    obs_tiny_df.y.iloc[3] = 13.6  # difference in y larger than tolerance
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
         obs_tiny = ms.TrackObservation(
             obs_tiny_df, item="alti", x_item="x", y_item="y", keep_duplicates="first"

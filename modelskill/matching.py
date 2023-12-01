@@ -336,6 +336,7 @@ def match_space_time(
             mri = _remove_model_gaps(mri, mr.time, max_model_gap)
 
         if isinstance(observation, TrackObservation):
+            assert isinstance(mri, TrackModelResult)
             mri.data = _select_overlapping_trackdata_with_tolerance(
                 observation=observation, mri=mri, spatial_tolerance=spatial_tolerance
             )
@@ -355,9 +356,7 @@ def match_space_time(
 
 def _select_overlapping_trackdata_with_tolerance(
     observation: TrackObservation, mri: TrackModelResult, spatial_tolerance: float
-) -> xr.DataArray:
-    assert isinstance(observation, TrackObservation)
-    assert isinstance(mri, TrackModelResult)
+) -> xr.Dataset:
     mod_df = mri.data.to_dataframe()
     obs_df = observation.data.to_dataframe()
 
