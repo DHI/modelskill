@@ -284,6 +284,7 @@ class ComparerCollection(Mapping):
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
+        **kwargs,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
 
@@ -303,6 +304,11 @@ class ComparerCollection(Mapping):
             Time. If None, all times are selected.
         area : list of float, optional
             bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+        kwargs : dict, optional
+            Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs
+            e.g. `sel(gtype='track')` or `sel(obs_provider='CMEMS')` if at least
+            one comparer has an entry `obs_provider` with value `CMEMS` in its
+            attrs container. Multiple kwargs are combined with logical AND.
 
         Returns
         -------
@@ -347,6 +353,42 @@ class ComparerCollection(Mapping):
                     # TODO: check if cmpsel is empty
                     if cmpsel.n_points > 0:
                         cc.add_comparer(cmpsel)
+
+        if kwargs:
+            cc = cc.filter_by_attrs(**kwargs)
+
+        return cc
+
+    def filter_by_attrs(self, **kwargs) -> "ComparerCollection":
+        """Filter by comparer attrs similar to xarray.Dataset.filter_by_attrs
+
+        Parameters
+        ----------
+        kwargs : dict, optional
+            Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs
+            e.g. `sel(gtype='track')` or `sel(obs_provider='CMEMS')` if at least
+            one comparer has an entry `obs_provider` with value `CMEMS` in its
+            attrs container. Multiple kwargs are combined with logical AND.
+
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with selected data.
+
+        Examples
+        --------
+        >>> cc = ms.compare([HKNA, EPL, alti], mr)
+        >>> cc.filter_by_attrs(gtype='track')
+        <ComparerCollection>
+        Comparer: alti
+        """
+        cc = ComparerCollection()
+        for cmp in self.comparers.values():
+            for k, v in kwargs.items():
+                if cmp.data.attrs.get(k) != v:
+                    break
+            else:
+                cc.add_comparer(cmp)
         return cc
 
     def query(self, query: str) -> "ComparerCollection":
