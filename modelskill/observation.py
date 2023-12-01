@@ -22,7 +22,7 @@ from .timeseries import (
 )
 
 
-def _validate_attrs(data_attrs: dict, attrs: dict) -> None:
+def _validate_attrs(data_attrs: dict, attrs: Optional[dict]) -> None:
     for k in attrs or {}:
         if k in data_attrs:
             raise ValueError(f"attrs key {k} not allowed, conflicts with build-in key!")
