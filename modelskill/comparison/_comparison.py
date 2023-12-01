@@ -21,7 +21,7 @@ from copy import deepcopy
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
-from ..observation import Observation, PointObservation, TrackObservation
+from ..observation import PointObservation, TrackObservation
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
 from ._utils import (
@@ -730,7 +730,7 @@ class Comparer:
         else:
             raise NotImplementedError(f"Unknown gtype: {data.gtype}")
 
-    def _to_observation(self) -> Observation:
+    def _to_observation(self) -> PointObservation | TrackObservation:
         """Convert to Observation"""
         if self.gtype == "point":
             df = self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe()
@@ -759,7 +759,7 @@ class Comparer:
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
         from ._collection import ComparerCollection
-        from ..matching import match_time
+        from ..matching import match_space_time
 
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
@@ -780,8 +780,8 @@ class Comparer:
             else:
                 raw_mod_data = self.raw_mod_data.copy()
                 raw_mod_data.update(other.raw_mod_data)  # TODO!
-                matched = match_time(
-                    observation=self._to_observation(), raw_mod_data=raw_mod_data
+                matched = match_space_time(
+                    observation=self._to_observation(), raw_mod_data=raw_mod_data  # type: ignore
                 )
                 cmp = self.__class__(matched_data=matched, raw_mod_data=raw_mod_data)
 

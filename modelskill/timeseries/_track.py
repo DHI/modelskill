@@ -59,7 +59,7 @@ def _parse_track_input(
     quantity: Optional[Quantity],
     x_item: str | int | None,
     y_item: str | int | None,
-    keep_duplicates: bool = False,
+    keep_duplicates: bool | str,
     offset_duplicates: float = 0.001,
 ) -> xr.Dataset:
     assert isinstance(

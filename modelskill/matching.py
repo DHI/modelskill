@@ -181,7 +181,8 @@ def compare(
     ComparerCollection
         To be used for plotting and statistics
     """
-    obs = [obs] if isinstance(obs, get_args(ObsInputType)) else obs
+    observations = [obs] if isinstance(obs, get_args(ObsInputType)) else obs
+    assert isinstance(observations, Iterable)
 
     clist = [
         _single_obs_compare(
@@ -192,7 +193,7 @@ def compare(
             gtype=gtype,
             max_model_gap=max_model_gap,
         )
-        for o in obs
+        for o in observations
     ]
 
     return ComparerCollection(clist)
@@ -215,12 +216,12 @@ def _single_obs_compare(
     # emods = _extract_from_models(obs, mods)
     e_mods = []
     for m in mods:
-        ext_mr: TimeSeries = m.extract(obs) if hasattr(m, "extract") else m.copy()
+        ext_mr = m.extract(obs) if hasattr(m, "extract") else m.copy()
         if len(ext_mr) > 0:
             e_mods.append(ext_mr)
 
-    raw_mod_data = parse_modeldata_list(e_mods)
-    matched_data = match_time(obs, raw_mod_data, max_model_gap)
+    raw_mod_data = {m.name: m for m in e_mods if m is not None}
+    matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
@@ -328,10 +329,11 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
     return Period(start=min(starts), end=max(ends))
 
 
-def match_time(
-    observation: Observation,
-    raw_mod_data: Dict[str, TimeSeries],
+def match_space_time(
+    observation: PointObservation | TrackObservation,
+    raw_mod_data: Dict[str, PointModelResult | TrackModelResult],
     max_model_gap: Optional[TimeDeltaTypes] = None,
+    spatial_tolerance: float = 1e-3,
 ) -> xr.Dataset:
     """Match observation with one or more model results in time domain
     and return as xr.Dataset in the format used by modelskill.Comparer
@@ -344,11 +346,13 @@ def match_time(
     ----------
     observation : Observation
         Observation to be matched
-    raw_mod_data : Dict[str, TimeSeries]
+    raw_mod_data : Dict[str, PointModelResult | TrackModelResult]
         Dictionary of model results ready for interpolation
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
         max_model_gap can be given e.g. as seconds, by default None
+    spatial_tolerance : float, optional
+        Tolerance for spatial matching, by default 1e-3
 
     Returns
     -------
@@ -379,11 +383,21 @@ def match_time(
             # e.g. in case of event data
             mri = _remove_model_gaps(mri, mr.time, max_model_gap)
 
-        # TODO: temporary solution until complete swich to xr.Dataset
-        # if gtype == "track":
-        #    # TODO why is it necessary to do mask here? Isn't it an error if the model data is outside the observation track?
-        #    df_obs = observation.data.to_pandas()  # TODO: xr.Dataset
-        #    _mask_model_outside_observation_track(name, df, df_obs)
+        if isinstance(observation, TrackObservation) and isinstance(
+            mri, TrackModelResult
+        ):
+            pass
+            # observation = observation.trim_space(mri)
+
+            mod_df = mri.data.to_dataframe()
+            obs_df = observation.data.to_dataframe()
+
+            # inner join on time
+            df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
+            keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
+            keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
+            df = df[keep_x & keep_y]
+            mri.data[name] = df[name]
 
         data[name] = mri.data[name]
 
@@ -405,28 +419,12 @@ def _minimal_accepted_distance(obs_xy: ArrayLike) -> float:
     return float(0.5 * np.quantile(vec, 0.1))
 
 
-def parse_modeldata_list(modeldata: Iterable[TimeSeries]) -> Dict[str, TimeSeries]:
-    """Make sure modeldata is a dict of TimeSeries"""
-    mods = [_parse_single_modeldata(m) for m in modeldata]
-    return {m.name: m for m in mods if m is not None}
-
-
-def _parse_single_modeldata(modeldata: TimeSeries) -> TimeSeries:
-    assert isinstance(
-        modeldata.time, pd.DatetimeIndex
-    ), "Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)"
-
-    # time = mod_df.index.round(freq="100us")  # 0.0001s accuracy
-    # mod_df.index = pd.DatetimeIndex(time, freq="infer")
-    return modeldata
-
-
 def _parse_single_obs(
     obs: ObsInputType,
     item: Optional[int | str] = None,
     gtype: Optional[GeometryTypes] = None,
-) -> Observation:
-    if isinstance(obs, Observation):
+) -> PointObservation | TrackObservation:
+    if isinstance(obs, (PointObservation, TrackObservation)):
         if item is not None:
             raise ValueError(
                 "obs_item argument not allowed if obs is an modelskill.Observation type"
