@@ -323,11 +323,32 @@ must be given (as either an index or a string), by default None</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.model.PointModelResult.interp_time">
+<span class="sig-name descname"><span class="pre">interp_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropna</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/point.html#PointModelResult.interp_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.PointModelResult.interp_time" title="Permalink to this definition">#</a></dt>
+<dd><p>Interpolate time series to new time index</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>new_time</strong> (<em>pd.DatetimeIndex</em>) – new time index</p></li>
+<li><p><strong>dropna</strong> (<em>bool</em><em>, </em><em>optional</em>) – drop nan values, by default True</p></li>
+<li><p><strong>**kwargs</strong> – keyword arguments passed to xarray.interp()</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>interpolated time series</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>TimeSeries</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="modelskill.model.TrackModelResult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.model.</span></span><span class="sig-name descname"><span class="pre">TrackModelResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/track.html#TrackModelResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.TrackModelResult" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.model.</span></span><span class="sig-name descname"><span class="pre">TrackModelResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_duplicates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'first'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/model/track.html#TrackModelResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.model.TrackModelResult" title="Permalink to this definition">#</a></dt>
 <dd><p>Construct a TrackModelResult from a dfs0 file,
 mikeio.Dataset or pandas.DataFrame</p>
 <dl class="field-list simple">
@@ -341,6 +362,10 @@ must be given (as either an index or a string), by default None</p></li>
 <li><p><strong>x_item</strong> (<em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Item of the first coordinate of positions, by default None</p></li>
 <li><p><strong>y_item</strong> (<em>str</em><em> | </em><em>int</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Item of the second coordinate of positions, by default None</p></li>
 <li><p><strong>quantity</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em><em>, </em><em>optional</em>) – A string to identify the quantity, by default None</p></li>
+<li><p><strong>keep_duplicates</strong> (<em>(</em><em>str</em><em>, </em><em>bool</em><em>)</em><em>, </em><em>optional</em>) – strategy for handling duplicate timestamps (wraps xarray.Dataset.drop_duplicates)
+“first” to keep first occurrence, “last” to keep last occurrence,
+False to drop all duplicates, “offset” to add milliseconds to
+consecutive duplicates, by default “first”</p></li>
 </ul>
 </dd>
 </dl>
@@ -492,23 +517,6 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dd><p>Geometry type</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="modelskill.observation.PointObservation.interp_time">
-<span class="sig-name descname"><span class="pre">interp_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_time</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.PointObservation.interp_time" title="Permalink to this definition">#</a></dt>
-<dd><p>Interpolate time series to new time index</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>new_time</strong> (<em>pd.DatetimeIndex</em>) – new time index</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>interpolated time series</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>TimeSeries</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.n_points">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_points</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.n_points" title="Permalink to this definition">#</a></dt>
@@ -533,6 +541,12 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dd><p>Quantity of time series</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.observation.PointObservation.sel">
+<span class="sig-name descname"><span class="pre">sel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.PointObservation.sel" title="Permalink to this definition">#</a></dt>
+<dd><p>Select data by label</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.start_time">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_time</span></span><a class="headerlink" href="#modelskill.observation.PointObservation.start_time" title="Permalink to this definition">#</a></dt>
@@ -553,7 +567,7 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="modelskill.observation.PointObservation.trim">
-<span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.PointObservation.trim" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.PointObservation.trim" title="Permalink to this definition">#</a></dt>
 <dd><p>Trim observation data to a given time interval</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -600,7 +614,7 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.observation.</span></span><span class="sig-name descname"><span class="pre">TrackObservation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_duplicates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/observation.html#TrackObservation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.observation.TrackObservation" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modelskill.observation.</span></span><span class="sig-name descname"><span class="pre">TrackObservation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_duplicates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'first'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_duplicates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/observation.html#TrackObservation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.observation.TrackObservation" title="Permalink to this definition">#</a></dt>
 <dd><p>Class for observation with locations moving in space, e.g. satellite altimetry</p>
 <p>The data needs in addition to the datetime of each single observation point also, x and y coordinates.</p>
 <p>Create TrackObservation from dfs0 or DataFrame</p>
@@ -613,7 +627,12 @@ if data contains more than one item, item must be given</p></li>
 <li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) – user-defined name for easy identification in plots etc, by default file basename</p></li>
 <li><p><strong>x_item</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – item name or index of x-coordinate, by default 0</p></li>
 <li><p><strong>y_item</strong> (<em>(</em><em>str</em><em>, </em><em>int</em><em>)</em><em>, </em><em>optional</em>) – item name or index of y-coordinate, by default 1</p></li>
-<li><p><strong>offset_duplicates</strong> (<em>float</em><em>, </em><em>optional</em>) – in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001</p></li>
+<li><p><strong>keep_duplicates</strong> (<em>(</em><em>str</em><em>, </em><em>bool</em><em>)</em><em>, </em><em>optional</em>) – strategy for handling duplicate timestamps (xarray.Dataset.drop_duplicates):
+“first” to keep first occurrence, “last” to keep last occurrence,
+False to drop all duplicates, “offset” to add milliseconds to
+consecutive duplicates, by default “first”</p></li>
+<li><p><strong>offset_duplicates</strong> (<em>float</em><em>, </em><em>optional</em>) – DEPRECATED! in case of duplicate timestamps and keep_duplicates=”offset”,
+add this many seconds to consecutive duplicate entries, by default 0.001</p></li>
 <li><p><strong>quantity</strong> (<a class="reference internal" href="#modelskill.types.Quantity" title="modelskill.types.Quantity"><em>Quantity</em></a><em>, </em><em>optional</em>) – The quantity of the observation, for validation with model results
 For MIKE dfs files this is inferred from the EUM information</p></li>
 </ul>
@@ -695,23 +714,6 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dd><p>Geometry type</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.interp_time">
-<span class="sig-name descname"><span class="pre">interp_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_time</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.TrackObservation.interp_time" title="Permalink to this definition">#</a></dt>
-<dd><p>Interpolate time series to new time index</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>new_time</strong> (<em>pd.DatetimeIndex</em>) – new time index</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>interpolated time series</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>TimeSeries</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.n_points">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">n_points</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.n_points" title="Permalink to this definition">#</a></dt>
@@ -736,6 +738,12 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 <dd><p>Quantity of time series</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="modelskill.observation.TrackObservation.sel">
+<span class="sig-name descname"><span class="pre">sel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.TrackObservation.sel" title="Permalink to this definition">#</a></dt>
+<dd><p>Select data by label</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.start_time">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_time</span></span><a class="headerlink" href="#modelskill.observation.TrackObservation.start_time" title="Permalink to this definition">#</a></dt>
@@ -756,7 +764,7 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="modelskill.observation.TrackObservation.trim">
-<span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.TrackObservation.trim" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#modelskill.observation.TrackObservation.trim" title="Permalink to this definition">#</a></dt>
 <dd><p>Trim observation data to a given time interval</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -873,7 +881,7 @@ For MIKE dfs files this is inferred from the EUM information</p></li>
 :type mod_item: (int, str), optional
 :param gtype: Geometry type of the model result. If not specified, it will be guessed.
 :type gtype: (str, optional)
-:param max_model_gap: Maximum gap in the model result, by default None
+:param max_model_gap: Maximum time gap (s) in the model result, by default None
 :type max_model_gap: (float, optional)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -939,7 +947,7 @@ created with the <cite>compare</cite> function.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>matched_data</strong> (<em>xr.Dataset</em>) – Matched data</p></li>
-<li><p><strong>raw_mod_data</strong> (<em>dict of pd.DataFrame</em><em>, </em><em>optional</em>) – Raw model data. If None, observation and modeldata must be provided.</p></li>
+<li><p><strong>raw_mod_data</strong> (<em>dict of modelskill.TimeSeries</em><em>, </em><em>optional</em>) – Raw model data. If None, observation and modeldata must be provided.</p></li>
 </ul>
 </dd>
 </dl>
@@ -961,7 +969,7 @@ created with the <cite>compare</cite> function.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="modelskill.comparison.Comparer.from_matched_data">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_matched_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.from_matched_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.from_matched_data" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_matched_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_mod_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mod_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aux_items</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/comparison/_comparison.html#Comparer.from_matched_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.comparison.Comparer.from_matched_data" title="Permalink to this definition">#</a></dt>
 <dd><p>Initialize from compared data</p>
 </dd></dl>
 

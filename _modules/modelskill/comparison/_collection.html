@@ -321,7 +321,7 @@ document.write(`
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Collection of Comparers, indexed by name&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comparers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comparers</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comparers</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">add_comparer</span><span class="p">(</span><span class="n">comparers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plot</span> <span class="o">=</span> <span class="n">ComparerCollection</span><span class="o">.</span><span class="n">plotter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>

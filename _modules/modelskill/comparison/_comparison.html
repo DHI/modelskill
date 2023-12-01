@@ -255,8 +255,8 @@ document.write(`
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">metrics</span> <span class="k">as</span> <span class="n">mtr</span>
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">Quantity</span>
 <span class="kn">from</span> <span class="nn">..types</span> <span class="kn">import</span> <span class="n">GeometryType</span>
-<span class="kn">from</span> <span class="nn">..observation</span> <span class="kn">import</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span>
-<span class="kn">from</span> <span class="nn">..timeseries._timeseries</span> <span class="kn">import</span> <span class="n">_validate_data_var_name</span>
+<span class="kn">from</span> <span class="nn">..observation</span> <span class="kn">import</span> <span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span>
+<span class="kn">from</span> <span class="nn">..timeseries._timeseries</span> <span class="kn">import</span> <span class="n">_validate_data_var_name</span><span class="p">,</span> <span class="n">TimeSeries</span>
 <span class="kn">from</span> <span class="nn">._comparer_plotter</span> <span class="kn">import</span> <span class="n">ComparerPlotter</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">_parse_metric</span><span class="p">,</span>
@@ -283,9 +283,10 @@ document.write(`
     <span class="k">assert</span> <span class="s2">&quot;Observation&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span>
 
     <span class="c1"># Validate time</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only 0-dimensional data are supported&quot;</span>
-    <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">dims</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;data must have a time dimension&quot;</span>
+    <span class="c1"># assert len(data.dims) == 1, &quot;Only 0-dimensional data are supported&quot;</span>
+    <span class="k">assert</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dims</span><span class="p">,</span> <span class="s2">&quot;data must have a time dimension&quot;</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">(),</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">),</span> <span class="s2">&quot;time must be datetime&quot;</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">())</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s2">&quot;100us&quot;</span><span class="p">)</span>  <span class="c1"># 0.0001s</span>
     <span class="k">assert</span> <span class="p">(</span>
         <span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">()</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
     <span class="p">),</span> <span class="s2">&quot;time must be increasing (please check for duplicate times))&quot;</span>
@@ -603,7 +604,7 @@ document.write(`
 <span class="sd">    ----------</span>
 <span class="sd">    matched_data : xr.Dataset</span>
 <span class="sd">        Matched data</span>
-<span class="sd">    raw_mod_data : dict of pd.DataFrame, optional</span>
+<span class="sd">    raw_mod_data : dict of modelskill.TimeSeries, optional</span>
 <span class="sd">        Raw model data. If None, observation and modeldata must be provided.</span>
 
 <span class="sd">    Examples</span>
@@ -618,15 +619,15 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">data</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span>
-    <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span>
+    <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">]</span>
     <span class="n">_obs_name</span> <span class="o">=</span> <span class="s2">&quot;Observation&quot;</span>
     <span class="n">plotter</span> <span class="o">=</span> <span class="n">ComparerPlotter</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">matched_data</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span>
-        <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
+        <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plot</span> <span class="o">=</span> <span class="n">Comparer</span><span class="o">.</span><span class="n">plotter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">_parse_dataset</span><span class="p">(</span><span class="n">matched_data</span><span class="p">)</span>
@@ -634,19 +635,32 @@ document.write(`
             <span class="n">raw_mod_data</span>
             <span class="k">if</span> <span class="n">raw_mod_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">else</span> <span class="p">{</span>
-                <span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+                <span class="c1"># key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)</span>
+                <span class="n">key</span><span class="p">:</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[[</span><span class="n">key</span><span class="p">]])</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">matched_data</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                 <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;model&quot;</span>
             <span class="p">}</span>
         <span class="p">)</span>
-        <span class="c1"># TODO get quantity from matched_data object</span>
-        <span class="c1"># self.quantity: Quantity = Quantity.undefined()</span>
+        <span class="c1"># TODO: validate that the names in raw_mod_data are the same as in matched_data</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;raw_mod_data[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">] could not be converted to a TimeSeries object&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">v</span><span class="p">,</span> <span class="n">TimeSeries</span>
+                <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;raw_mod_data[</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">] must be a TimeSeries object&quot;</span>
 
-<div class="viewcode-block" id="Comparer.from_matched_data"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.Comparer.from_matched_data">[docs]</a>    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Comparer.from_matched_data"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.Comparer.from_matched_data">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">from_matched_data</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-        <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">obs_item</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">mod_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">aux_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -655,7 +669,7 @@ document.write(`
         <span class="n">y</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">z</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Comparer&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize from compared data&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
             <span class="c1"># TODO: handle raw_mod_data by accessing data.attrs[&quot;kind&quot;] and only remove nan after</span>
@@ -670,7 +684,7 @@ document.write(`
                 <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
                 <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">[</span>
@@ -722,28 +736,6 @@ document.write(`
     <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;time of compared data as pandas DatetimeIndex&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">()</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_mod_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">:</span>
-        <span class="n">mod_starts</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">max</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">time</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">m</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">m</span><span class="o">.</span><span class="n">time</span>
-            <span class="p">)</span>  <span class="c1"># TODO: xr.Dataset</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">mod_starts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">mod_starts</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">_mod_end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">:</span>
-        <span class="n">mod_ends</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="o">.</span><span class="n">min</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">time</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">m</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="k">else</span> <span class="n">m</span><span class="o">.</span><span class="n">time</span>
-            <span class="p">)</span>  <span class="c1"># TODO: xr.Dataset</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">mod_ends</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">mod_ends</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">:</span>
@@ -912,12 +904,12 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;point&quot;</span><span class="p">:</span>
             <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># copy needed to avoid modifying self.data</span>
 
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">ts_mod</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">ts_mod</span> <span class="o">=</span> <span class="n">ts_mod</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                 <span class="c1">#  rename time to unique name</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;_time_raw_&quot;</span> <span class="o">+</span> <span class="n">key</span>
-                <span class="n">da</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">to_xarray</span><span class="p">()[</span><span class="n">key</span><span class="p">]</span>
-                <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;_raw_&quot;</span> <span class="o">+</span> <span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">da</span>
+                <span class="n">ts_mod</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">ts_mod</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="s2">&quot;_time_raw_&quot;</span> <span class="o">+</span> <span class="n">key</span><span class="p">})</span>
+                <span class="c1"># da = ds_mod.to_xarray()[key]</span>
+                <span class="n">ds</span><span class="p">[</span><span class="s2">&quot;_raw_&quot;</span> <span class="o">+</span> <span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_mod</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
         <span class="n">ds</span><span class="o">.</span><span class="n">to_netcdf</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
 
@@ -941,29 +933,38 @@ document.write(`
             <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;point&quot;</span><span class="p">:</span>
-            <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TimeSeries</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
             <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
                 <span class="n">var_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">var_name</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;_raw_&quot;</span><span class="p">:</span>
                     <span class="n">new_key</span> <span class="o">=</span> <span class="n">var_name</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>  <span class="c1"># remove prefix &#39;_raw_&#39;</span>
-                    <span class="n">df</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">data</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
-                        <span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
-                        <span class="o">.</span><span class="n">rename</span><span class="p">(</span>
-                            <span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;_time_raw_&quot;</span> <span class="o">+</span> <span class="n">new_key</span><span class="p">:</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">var_name</span><span class="p">:</span> <span class="n">new_key</span><span class="p">}</span>
-                        <span class="p">)</span>
+                    <span class="n">ds</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="n">var_name</span><span class="p">]]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span>
+                        <span class="p">{</span><span class="s2">&quot;_time_raw_&quot;</span> <span class="o">+</span> <span class="n">new_key</span><span class="p">:</span> <span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">var_name</span><span class="p">:</span> <span class="n">new_key</span><span class="p">}</span>
                     <span class="p">)</span>
-                    <span class="n">raw_mod_data</span><span class="p">[</span><span class="n">new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span>
+                    <span class="n">ts</span> <span class="o">=</span> <span class="n">PointObservation</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">ds</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">new_key</span><span class="p">)</span>
+                    <span class="c1"># TODO: name of time?</span>
+                    <span class="c1"># ts.name = new_key</span>
+                    <span class="c1"># df = (</span>
+                    <span class="c1">#     data[var_name]</span>
+                    <span class="c1">#     .to_dataframe()</span>
+                    <span class="c1">#     .rename(</span>
+                    <span class="c1">#         columns={&quot;_time_raw_&quot; + new_key: &quot;time&quot;, var_name: new_key}</span>
+                    <span class="c1">#     )</span>
+                    <span class="c1"># )</span>
+                    <span class="n">raw_mod_data</span><span class="p">[</span><span class="n">new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts</span>
 
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">var_name</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;_time_raw_&quot;</span> <span class="o">+</span> <span class="n">new_key</span><span class="p">)</span>
+                    <span class="c1"># data = data.drop(var_name).drop(&quot;_time_raw_&quot; + new_key)</span>
+
+            <span class="c1"># filter variables, only keep the ones with a &#39;time&#39; dimension</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span> <span class="k">if</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span><span class="p">]]</span>
 
             <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown gtype: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">gtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_to_observation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observation</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_to_observation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PointObservation</span> <span class="o">|</span> <span class="n">TrackObservation</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to Observation&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;point&quot;</span><span class="p">:</span>
             <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">drop_vars</span><span class="p">([</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">])[</span><span class="bp">self</span><span class="o">.</span><span class="n">_obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
@@ -992,7 +993,7 @@ document.write(`
         <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;Comparer&quot;</span><span class="p">,</span> <span class="s2">&quot;ComparerCollection&quot;</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ComparerCollection&quot;</span><span class="p">:</span>
         <span class="kn">from</span> <span class="nn">._collection</span> <span class="kn">import</span> <span class="n">ComparerCollection</span>
-        <span class="kn">from</span> <span class="nn">..matching</span> <span class="kn">import</span> <span class="n">match_time</span>
+        <span class="kn">from</span> <span class="nn">..matching</span> <span class="kn">import</span> <span class="n">match_space_time</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="n">Comparer</span><span class="p">,</span> <span class="n">ComparerCollection</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot add </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1012,9 +1013,9 @@ document.write(`
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-                <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">)</span>
-                <span class="n">matched</span> <span class="o">=</span> <span class="n">match_time</span><span class="p">(</span>
-                    <span class="n">observation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_observation</span><span class="p">(),</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span>
+                <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">)</span>  <span class="c1"># TODO!</span>
+                <span class="n">matched</span> <span class="o">=</span> <span class="n">match_space_time</span><span class="p">(</span>
+                    <span class="n">observation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_observation</span><span class="p">(),</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span>  <span class="c1"># type: ignore</span>
                 <span class="p">)</span>
                 <span class="n">cmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">matched</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span>
 
@@ -1072,12 +1073,12 @@ document.write(`
             <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">()</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
             <span class="c1"># Note: if user asks for a specific time, we also filter raw</span>
-            <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>  <span class="c1"># type: ignore</span>
+            <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>  <span class="c1"># type: ignore</span>
         <span class="k">if</span> <span class="n">time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">)</span>
 
             <span class="c1"># Note: if user asks for a specific time, we also filter raw</span>
-            <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="k">if</span> <span class="n">area</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">_area_is_bbox</span><span class="p">(</span><span class="n">area</span><span class="p">):</span>
                 <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">area</span>
@@ -1093,7 +1094,7 @@ document.write(`
                 <span class="n">d</span> <span class="o">=</span> <span class="n">d</span> <span class="k">if</span> <span class="n">mask</span> <span class="k">else</span> <span class="n">d</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">isel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">from_matched_data</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Comparer</span><span class="o">.</span><span class="n">from_matched_data</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Comparer.where"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.Comparer.where">[docs]</a>    <span class="k">def</span> <span class="nf">where</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1117,7 +1118,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">from_matched_data</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Comparer</span><span class="o">.</span><span class="n">from_matched_data</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Comparer.query"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.Comparer.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Comparer&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a new Comparer with values where query cond is True</span>
@@ -1138,7 +1139,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">query</span><span class="p">({</span><span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">from_matched_data</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Comparer</span><span class="o">.</span><span class="n">from_matched_data</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Comparer.skill"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.Comparer.skill">[docs]</a>    <span class="k">def</span> <span class="nf">skill</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1377,18 +1378,21 @@ document.write(`
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mod</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">remove_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">correct</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">):</span>
+        <span class="c1"># TODO: return a new Comparer object instead of modifying self</span>
         <span class="n">bias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">correct</span> <span class="o">==</span> <span class="s2">&quot;Model&quot;</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_models</span><span class="p">):</span>
                 <span class="n">mod_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mod_names</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-                <span class="n">mod_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span>
-                <span class="n">mod_df</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">mod_df</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">bias</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">mod_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_mod_data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span>
                 <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">set_options</span><span class="p">(</span><span class="n">keep_attrs</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span> <span class="o">-</span> <span class="n">bias</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                    <span class="n">mod_ts</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">mod_ts</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">bias</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mod_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">bias</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
         <span class="k">elif</span> <span class="n">correct</span> <span class="o">==</span> <span class="s2">&quot;Observation&quot;</span><span class="p">:</span>
             <span class="c1"># what if multiple models?</span>
             <span class="k">with</span> <span class="n">xr</span><span class="o">.</span><span class="n">set_options</span><span class="p">(</span><span class="n">keep_attrs</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_obs_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">+</span> <span class="n">bias</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_obs_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">bias</span>
+                <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Unknown correct=</span><span class="si">{</span><span class="n">correct</span><span class="si">}</span><span class="s2">. Only know &#39;Model&#39; and &#39;Observation&#39;&quot;</span>

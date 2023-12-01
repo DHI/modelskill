@@ -234,7 +234,7 @@ document.write(`
   <h1>Source code for modelskill.types</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
@@ -328,8 +328,8 @@ document.write(`
 <span class="k">class</span> <span class="nc">Period</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Period of data, defined by start and end time, can be open ended&quot;&quot;&quot;</span>
 
-    <span class="n">start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">]</span>
-    <span class="n">end</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">]</span>
+    <span class="n">start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">end</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 
 <span class="c1"># TODO change name of fields to match CF conventions?</span>
@@ -388,18 +388,18 @@ document.write(`
         <span class="k">return</span> <span class="kc">False</span></div>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">undefined</span><span class="p">():</span>
+    <span class="k">def</span> <span class="nf">undefined</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;Quantity&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Quantity</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Undefined&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;Undefined&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">}</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">iteminfo</span><span class="p">:</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">ItemInfo</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_mikeio_iteminfo</span><span class="p">(</span><span class="n">iteminfo</span><span class="p">:</span> <span class="n">mikeio</span><span class="o">.</span><span class="n">ItemInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Quantity&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Quantity</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="nb">repr</span><span class="p">(</span><span class="n">iteminfo</span><span class="o">.</span><span class="n">type</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="n">iteminfo</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Quantity.from_mikeio_eum_name"><a class="viewcode-back" href="../../api.html#modelskill.types.Quantity.from_mikeio_eum_name">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">from_mikeio_eum_name</span><span class="p">(</span><span class="n">type_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_mikeio_eum_name</span><span class="p">(</span><span class="n">type_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Quantity&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Quantity from a name recognized by mikeio</span>
 
 <span class="sd">        Parameters</span>

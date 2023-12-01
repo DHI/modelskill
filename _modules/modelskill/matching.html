@@ -245,8 +245,9 @@ document.write(`
     <span class="n">Union</span><span class="p">,</span>
     <span class="n">Sequence</span><span class="p">,</span>
     <span class="n">get_args</span><span class="p">,</span>
+    <span class="n">TypeVar</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
@@ -260,13 +261,13 @@ document.write(`
 <span class="kn">from</span> <span class="nn">.model.grid</span> <span class="kn">import</span> <span class="n">GridModelResult</span>
 <span class="kn">from</span> <span class="nn">.model.dfsu</span> <span class="kn">import</span> <span class="n">DfsuModelResult</span>
 <span class="kn">from</span> <span class="nn">.model.track</span> <span class="kn">import</span> <span class="n">TrackModelResult</span>
+<span class="kn">from</span> <span class="nn">.model.point</span> <span class="kn">import</span> <span class="n">PointModelResult</span>
 <span class="kn">from</span> <span class="nn">.observation</span> <span class="kn">import</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span>
 <span class="kn">from</span> <span class="nn">.comparison</span> <span class="kn">import</span> <span class="n">Comparer</span><span class="p">,</span> <span class="n">ComparerCollection</span>
 <span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">__version__</span>
 
 <span class="n">TimeDeltaTypes</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">]</span>
 <span class="n">IdOrNameTypes</span> <span class="o">=</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
-<span class="c1"># ModelResultTypes = Union[ModelResult, DfsuModelResult, str]</span>
 <span class="n">GeometryTypes</span> <span class="o">=</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;point&quot;</span><span class="p">,</span> <span class="s2">&quot;track&quot;</span><span class="p">,</span> <span class="s2">&quot;unstructured&quot;</span><span class="p">,</span> <span class="s2">&quot;grid&quot;</span><span class="p">]]</span>
 <span class="n">MRInputType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
     <span class="nb">str</span><span class="p">,</span>
@@ -292,9 +293,10 @@ document.write(`
     <span class="n">mikeio</span><span class="o">.</span><span class="n">Dfs0</span><span class="p">,</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
     <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span>
-    <span class="c1"># protocols.Observation,</span>
     <span class="n">Observation</span><span class="p">,</span>
 <span class="p">]</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;TimeSeries&quot;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="from_matched"><a class="viewcode-back" href="../../api.html#modelskill.from_matched">[docs]</a><span class="k">def</span> <span class="nf">from_matched</span><span class="p">(</span>
@@ -375,6 +377,7 @@ document.write(`
         <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">,</span>
         <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span>
     <span class="p">)</span>
+
     <span class="k">return</span> <span class="n">cmp</span></div>
 
 
@@ -385,7 +388,7 @@ document.write(`
     <span class="n">obs_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mod_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">max_model_gap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_model_gap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ComparerCollection</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare observations and model results</span>
 <span class="sd">    Parameters</span>
@@ -401,37 +404,27 @@ document.write(`
 <span class="sd">    gtype : (str, optional)</span>
 <span class="sd">        Geometry type of the model result. If not specified, it will be guessed.</span>
 <span class="sd">    max_model_gap : (float, optional)</span>
-<span class="sd">        Maximum gap in the model result, by default None</span>
+<span class="sd">        Maximum time gap (s) in the model result, by default None</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    ComparerCollection</span>
 <span class="sd">        To be used for plotting and statistics</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">ObsInputType</span><span class="p">)):</span>
-        <span class="n">cmp</span> <span class="o">=</span> <span class="n">_single_obs_compare</span><span class="p">(</span>
-            <span class="n">obs</span><span class="p">,</span>
+    <span class="n">observations</span> <span class="o">=</span> <span class="p">[</span><span class="n">obs</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">ObsInputType</span><span class="p">))</span> <span class="k">else</span> <span class="n">obs</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+
+    <span class="n">clist</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_single_obs_compare</span><span class="p">(</span>
+            <span class="n">o</span><span class="p">,</span>
             <span class="n">mod</span><span class="p">,</span>
             <span class="n">obs_item</span><span class="o">=</span><span class="n">obs_item</span><span class="p">,</span>
             <span class="n">mod_item</span><span class="o">=</span><span class="n">mod_item</span><span class="p">,</span>
             <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">,</span>
             <span class="n">max_model_gap</span><span class="o">=</span><span class="n">max_model_gap</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">clist</span> <span class="o">=</span> <span class="p">[</span><span class="n">cmp</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
-        <span class="n">clist</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">_single_obs_compare</span><span class="p">(</span>
-                <span class="n">o</span><span class="p">,</span>
-                <span class="n">mod</span><span class="p">,</span>
-                <span class="n">obs_item</span><span class="o">=</span><span class="n">obs_item</span><span class="p">,</span>
-                <span class="n">mod_item</span><span class="o">=</span><span class="n">mod_item</span><span class="p">,</span>
-                <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">,</span>
-                <span class="n">max_model_gap</span><span class="o">=</span><span class="n">max_model_gap</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">obs</span>
-        <span class="p">]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown obs type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">observations</span>
+    <span class="p">]</span>
 
     <span class="k">return</span> <span class="n">ComparerCollection</span><span class="p">(</span><span class="n">clist</span><span class="p">)</span></div>
 
@@ -440,18 +433,18 @@ document.write(`
     <span class="n">obs</span><span class="p">:</span> <span class="n">ObsInputType</span><span class="p">,</span>
     <span class="n">mod</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">MRInputType</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">MRInputType</span><span class="p">]],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">obs_item</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">mod_item</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">obs_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mod_item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">max_model_gap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_model_gap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Comparer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare a single observation with multiple models&quot;&quot;&quot;</span>
     <span class="n">obs</span> <span class="o">=</span> <span class="n">_parse_single_obs</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">obs_item</span><span class="p">,</span> <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">)</span>
-    <span class="n">mod</span> <span class="o">=</span> <span class="n">_parse_models</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">mod_item</span><span class="p">,</span> <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">)</span>
-    <span class="n">emods</span> <span class="o">=</span> <span class="n">_extract_from_models</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mod</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
-    <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="n">parse_modeldata_list</span><span class="p">(</span><span class="n">emods</span><span class="p">)</span>
-    <span class="n">matched_data</span> <span class="o">=</span> <span class="n">match_time</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">)</span>
+    <span class="n">mods</span> <span class="o">=</span> <span class="n">_parse_models</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">mod_item</span><span class="p">,</span> <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">)</span>
+
+    <span class="n">raw_mod_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">}</span>
+    <span class="n">matched_data</span> <span class="o">=</span> <span class="n">match_space_time</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Comparer</span><span class="p">(</span><span class="n">matched_data</span><span class="o">=</span><span class="n">matched_data</span><span class="p">,</span> <span class="n">raw_mod_data</span><span class="o">=</span><span class="n">raw_mod_data</span><span class="p">)</span>
 
@@ -471,25 +464,26 @@ document.write(`
         <span class="n">time_delta</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">time_delta</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">time_delta</span><span class="p">):</span>
         <span class="c1"># assume seconds</span>
-        <span class="n">time_delta</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">time_delta</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="n">time_delta</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">time_delta</span><span class="p">,</span> <span class="s2">&quot;s&quot;</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_delta</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">time_delta</span>
 
 
 <span class="k">def</span> <span class="nf">_remove_model_gaps</span><span class="p">(</span>
-    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+    <span class="n">ts</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="n">mod_index</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">,</span>
     <span class="n">max_gap</span><span class="p">:</span> <span class="n">TimeDeltaTypes</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove model gaps longer than max_gap from dataframe&quot;&quot;&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove model gaps longer than max_gap from TimeSeries&quot;&quot;&quot;</span>
     <span class="n">max_gap</span> <span class="o">=</span> <span class="n">_time_delta_to_pd_timedelta</span><span class="p">(</span><span class="n">max_gap</span><span class="p">)</span>
-    <span class="n">valid_time</span> <span class="o">=</span> <span class="n">_get_valid_query_time</span><span class="p">(</span><span class="n">mod_index</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">max_gap</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">valid_time</span><span class="p">]</span>
+    <span class="n">valid_time</span> <span class="o">=</span> <span class="n">_get_valid_query_time</span><span class="p">(</span><span class="n">mod_index</span><span class="p">,</span> <span class="n">ts</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">max_gap</span><span class="p">)</span>
+    <span class="n">ds</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">valid_time</span><span class="p">[</span><span class="n">valid_time</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ts</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_get_valid_query_time</span><span class="p">(</span>
     <span class="n">mod_index</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">,</span> <span class="n">obs_index</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">,</span> <span class="n">max_gap</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span>
-<span class="p">):</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used only by _remove_model_gaps&quot;&quot;&quot;</span>
     <span class="c1"># init dataframe of available timesteps and their index</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">mod_index</span><span class="p">)</span>
@@ -510,39 +504,20 @@ document.write(`
     <span class="k">return</span> <span class="n">valid_idx</span>
 
 
-<span class="k">def</span> <span class="nf">_mask_model_outside_observation_track</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">df_mod</span><span class="p">,</span> <span class="n">df_obs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_mod</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_mod</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_obs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;model and observation data must have same length&quot;</span><span class="p">)</span>
-
-    <span class="n">mod_xy</span> <span class="o">=</span> <span class="n">df_mod</span><span class="p">[[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]]</span>
-    <span class="n">obs_xy</span> <span class="o">=</span> <span class="n">df_obs</span><span class="p">[[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]]</span>
-    <span class="n">d_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">obs_xy</span> <span class="o">-</span> <span class="n">mod_xy</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-
-    <span class="c1"># Find minimal accepted distance from data</span>
-    <span class="c1"># (could be long/lat or x/y, small or large domain)</span>
-    <span class="n">tol_xy</span> <span class="o">=</span> <span class="n">_minimal_accepted_distance</span><span class="p">(</span><span class="n">obs_xy</span><span class="p">)</span>
-    <span class="n">mask</span> <span class="o">=</span> <span class="n">d_xy</span> <span class="o">&gt;</span> <span class="n">tol_xy</span>
-    <span class="n">df_mod</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">,</span> <span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;no (spatial) overlap between model and observation points&quot;</span><span class="p">)</span>
-
-
 <span class="k">def</span> <span class="nf">_get_global_start_end</span><span class="p">(</span><span class="n">idxs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Period</span><span class="p">:</span>
-    <span class="n">starts</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">idxs</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
-    <span class="n">ends</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">idxs</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">])</span>
 
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">starts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Period</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">starts</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">]</span>
+    <span class="n">ends</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">idxs</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="n">Period</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">starts</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">ends</span><span class="p">))</span>
 
 
-<span class="k">def</span> <span class="nf">match_time</span><span class="p">(</span>
-    <span class="n">observation</span><span class="p">:</span> <span class="n">Observation</span><span class="p">,</span>
-    <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">],</span>
+<span class="k">def</span> <span class="nf">match_space_time</span><span class="p">(</span>
+    <span class="n">observation</span><span class="p">:</span> <span class="n">PointObservation</span> <span class="o">|</span> <span class="n">TrackObservation</span><span class="p">,</span>
+    <span class="n">raw_mod_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PointModelResult</span> <span class="o">|</span> <span class="n">TrackModelResult</span><span class="p">],</span>
     <span class="n">max_model_gap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TimeDeltaTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">spatial_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Match observation with one or more model results in time domain</span>
 <span class="sd">    and return as xr.Dataset in the format used by modelskill.Comparer</span>
@@ -550,16 +525,19 @@ document.write(`
 <span class="sd">    Will interpolate model results to observation time.</span>
 
 <span class="sd">    Note: assumes that observation and model data are already matched in space.</span>
+<span class="sd">        But positions of track observations will be checked.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    observation : Observation</span>
 <span class="sd">        Observation to be matched</span>
-<span class="sd">    raw_mod_data : Dict[str, pd.DataFrame]</span>
+<span class="sd">    raw_mod_data : Dict[str, PointModelResult | TrackModelResult]</span>
 <span class="sd">        Dictionary of model results ready for interpolation</span>
 <span class="sd">    max_model_gap : Optional[TimeDeltaTypes], optional</span>
 <span class="sd">        In case of non-equidistant model results (e.g. event data),</span>
 <span class="sd">        max_model_gap can be given e.g. as seconds, by default None</span>
+<span class="sd">    spatial_tolerance : float, optional</span>
+<span class="sd">        Tolerance for spatial matching, by default 1e-3</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -568,26 +546,35 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">obs_name</span> <span class="o">=</span> <span class="s2">&quot;Observation&quot;</span>
     <span class="n">mod_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">raw_mod_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-    <span class="n">idxs</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">index</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    <span class="n">idxs</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">time</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
     <span class="n">period</span> <span class="o">=</span> <span class="n">_get_global_start_end</span><span class="p">(</span><span class="n">idxs</span><span class="p">)</span>
 
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="p">(</span><span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span><span class="p">))</span>
     <span class="n">gtype</span> <span class="o">=</span> <span class="s2">&quot;point&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">PointObservation</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;track&quot;</span>
-    <span class="n">observation</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">observation</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">period</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">period</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
+    <span class="n">observation</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">period</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">period</span><span class="o">.</span><span class="n">end</span><span class="p">)</span>
 
-    <span class="n">data</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">data</span>
     <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">name</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">observation</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">obs_name</span><span class="p">})</span>
 
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">mdata</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">_model2obs_interp</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">mdata</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">gtype</span> <span class="o">==</span> <span class="s2">&quot;track&quot;</span><span class="p">:</span>
-            <span class="c1"># TODO why is it necessary to do mask here? Isn&#39;t it an error if the model data is outside the observation track?</span>
-            <span class="n">df_obs</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>  <span class="c1"># TODO: xr.Dataset</span>
-            <span class="n">_mask_model_outside_observation_track</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">df_obs</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">mr</span> <span class="ow">in</span> <span class="n">raw_mod_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mr</span><span class="p">,</span> <span class="n">PointModelResult</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">observation</span><span class="o">.</span><span class="n">time</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="n">mri</span><span class="p">:</span> <span class="n">TimeSeries</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">interp_time</span><span class="p">(</span><span class="n">new_time</span><span class="o">=</span><span class="n">observation</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mri</span> <span class="o">=</span> <span class="n">mr</span>
 
-        <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">max_model_gap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># e.g. in case of event data</span>
+            <span class="n">mri</span> <span class="o">=</span> <span class="n">_remove_model_gaps</span><span class="p">(</span><span class="n">mri</span><span class="p">,</span> <span class="n">mr</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span> <span class="n">TrackObservation</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mri</span><span class="p">,</span> <span class="n">TrackModelResult</span><span class="p">)</span>
+            <span class="n">mri</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">_select_overlapping_trackdata_with_tolerance</span><span class="p">(</span>
+                <span class="n">observation</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span> <span class="n">mri</span><span class="o">=</span><span class="n">mri</span><span class="p">,</span> <span class="n">spatial_tolerance</span><span class="o">=</span><span class="n">spatial_tolerance</span>
+            <span class="p">)</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">mri</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
 
     <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
 
@@ -600,62 +587,28 @@ document.write(`
     <span class="k">return</span> <span class="n">data</span>
 
 
-<span class="k">def</span> <span class="nf">_model2obs_interp</span><span class="p">(</span>
-    <span class="n">obs</span><span class="p">,</span> <span class="n">mod_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TimeDeltaTypes</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;interpolate model to measurement time&quot;&quot;&quot;</span>
-    <span class="n">_obs_name</span> <span class="o">=</span> <span class="s2">&quot;Observation&quot;</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">_interp_time</span><span class="p">(</span><span class="n">mod_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(),</span> <span class="n">obs</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
-    <span class="n">df</span><span class="p">[</span><span class="n">_obs_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">values</span>
+<span class="k">def</span> <span class="nf">_select_overlapping_trackdata_with_tolerance</span><span class="p">(</span>
+    <span class="n">observation</span><span class="p">:</span> <span class="n">TrackObservation</span><span class="p">,</span> <span class="n">mri</span><span class="p">:</span> <span class="n">TrackModelResult</span><span class="p">,</span> <span class="n">spatial_tolerance</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+    <span class="n">mod_df</span> <span class="o">=</span> <span class="n">mri</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
+    <span class="n">obs_df</span> <span class="o">=</span> <span class="n">observation</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">max_model_gap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">_remove_model_gaps</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">mod_df</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">max_model_gap</span><span class="p">)</span>
+    <span class="c1"># 1. inner join on time</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">mod_df</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">obs_df</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;inner&quot;</span><span class="p">,</span> <span class="n">lsuffix</span><span class="o">=</span><span class="s2">&quot;_mod&quot;</span><span class="p">,</span> <span class="n">rsuffix</span><span class="o">=</span><span class="s2">&quot;_obs&quot;</span><span class="p">)</span>
 
-    <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;time&quot;</span>
-    <span class="k">return</span> <span class="n">df</span>
-
-
-<span class="k">def</span> <span class="nf">_minimal_accepted_distance</span><span class="p">(</span><span class="n">obs_xy</span><span class="p">):</span>
-    <span class="c1"># all consequtive distances</span>
-    <span class="n">vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">obs_xy</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="c1"># fraction of small quantile</span>
-    <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">parse_modeldata_list</span><span class="p">(</span><span class="n">modeldata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert to dict of dataframes&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">modeldata</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
-        <span class="n">modeldata</span> <span class="o">=</span> <span class="p">[</span><span class="n">modeldata</span><span class="p">]</span>
-
-    <span class="n">mod_dfs</span> <span class="o">=</span> <span class="p">[</span><span class="n">_parse_single_modeldata</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">modeldata</span><span class="p">]</span>
-    <span class="k">return</span> <span class="p">{</span><span class="n">m</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span> <span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mod_dfs</span> <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
-
-
-<span class="k">def</span> <span class="nf">_parse_single_modeldata</span><span class="p">(</span><span class="n">modeldata</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert to dataframe and set index to pd.DatetimeIndex&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">modeldata</span><span class="p">,</span> <span class="s2">&quot;to_dataframe&quot;</span><span class="p">):</span>
-        <span class="n">mod_df</span> <span class="o">=</span> <span class="n">modeldata</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">])</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">modeldata</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="n">mod_df</span> <span class="o">=</span> <span class="n">modeldata</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Unknown modeldata type &#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">modeldata</span><span class="p">)</span><span class="si">}</span><span class="s2">&#39; (mikeio.Dataset, xr.DataArray, xr.Dataset or pd.DataFrame)&quot;</span>
-        <span class="p">)</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod_df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Modeldata index must be datetime-like (pd.DatetimeIndex, pd.to_datetime)&quot;</span>
-        <span class="p">)</span>
-
-    <span class="n">time</span> <span class="o">=</span> <span class="n">mod_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s2">&quot;100us&quot;</span><span class="p">)</span>  <span class="c1"># 0.0001s accuracy</span>
-    <span class="n">mod_df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s2">&quot;infer&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">mod_df</span>
+    <span class="c1"># 2. remove model points outside observation track</span>
+    <span class="n">keep_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">x_mod</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">x_obs</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">spatial_tolerance</span>
+    <span class="n">keep_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">df</span><span class="o">.</span><span class="n">y_mod</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">y_obs</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">spatial_tolerance</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">keep_x</span> <span class="o">&amp;</span> <span class="n">keep_y</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">mri</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_parse_single_obs</span><span class="p">(</span>
-    <span class="n">obs</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observation</span><span class="p">:</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Observation</span><span class="p">):</span>
+    <span class="n">obs</span><span class="p">:</span> <span class="n">ObsInputType</span><span class="p">,</span>
+    <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PointObservation</span> <span class="o">|</span> <span class="n">TrackObservation</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="p">(</span><span class="n">PointObservation</span><span class="p">,</span> <span class="n">TrackObservation</span><span class="p">)):</span>
         <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;obs_item argument not allowed if obs is an modelskill.Observation type&quot;</span>
@@ -671,8 +624,10 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">_parse_models</span><span class="p">(</span>
-    <span class="n">mod</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">):</span>
+    <span class="n">mod</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>  <span class="c1"># TODO</span>
+    <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>  <span class="c1"># TODO</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a list of ModelResult objects&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">get_args</span><span class="p">(</span><span class="n">MRInputType</span><span class="p">)):</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">_parse_single_model</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">gtype</span><span class="o">=</span><span class="n">gtype</span><span class="p">)]</span>
@@ -683,8 +638,10 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">_parse_single_model</span><span class="p">(</span>
-    <span class="n">mod</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">):</span>
+    <span class="n">mod</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>  <span class="c1"># TODO</span>
+    <span class="n">item</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">IdOrNameTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GeometryTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>  <span class="c1"># TODO</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span> <span class="n">protocols</span><span class="o">.</span><span class="n">ModelResult</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -698,27 +655,6 @@ document.write(`
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Could not compare. Unknown model result type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">_extract_from_models</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">mods</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">protocols</span><span class="o">.</span><span class="n">ModelResult</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
-    <span class="n">df_model</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mods</span><span class="p">:</span>
-        <span class="n">mr</span><span class="p">:</span> <span class="n">TimeSeries</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">&quot;extract&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="n">m</span>
-
-        <span class="c1"># TODO: temporary solution until complete swich to xr.Dataset</span>
-        <span class="c1"># mr.data if isinstance(mr.data, pd.DataFrame) else</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">mr</span><span class="o">.</span><span class="n">to_dataframe</span><span class="p">()</span>
-
-        <span class="c1"># TODO is this robust enough?</span>
-        <span class="n">old_item</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># TODO: xr.Dataset</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="n">old_item</span><span class="p">:</span> <span class="n">mr</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>  <span class="c1"># TODO: xr.Dataset</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>  <span class="c1"># TODO: xr.Dataset</span>
-            <span class="n">df_model</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;No data found when extracting &#39;</span><span class="si">{</span><span class="n">obs</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; from model &#39;</span><span class="si">{</span><span class="n">mr</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-            <span class="p">)</span>
-    <span class="k">return</span> <span class="n">df_model</span>
 </pre></div>
 
                 </article>

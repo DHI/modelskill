@@ -235,6 +235,8 @@ document.write(`
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
 <span class="kn">from</span> <span class="nn">..types</span> <span class="kn">import</span> <span class="n">TrackType</span><span class="p">,</span> <span class="n">Quantity</span>
 <span class="kn">from</span> <span class="nn">..timeseries</span> <span class="kn">import</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">_parse_track_input</span>
 
@@ -259,6 +261,11 @@ document.write(`
 <span class="sd">        Item of the second coordinate of positions, by default None</span>
 <span class="sd">    quantity : Optional[str], optional</span>
 <span class="sd">        A string to identify the quantity, by default None</span>
+<span class="sd">    keep_duplicates : (str, bool), optional</span>
+<span class="sd">        strategy for handling duplicate timestamps (wraps xarray.Dataset.drop_duplicates)</span>
+<span class="sd">        &quot;first&quot; to keep first occurrence, &quot;last&quot; to keep last occurrence,</span>
+<span class="sd">        False to drop all duplicates, &quot;offset&quot; to add milliseconds to</span>
+<span class="sd">        consecutive duplicates, by default &quot;first&quot;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -270,18 +277,27 @@ document.write(`
         <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">x_item</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">y_item</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">keep_duplicates</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">=</span> <span class="s2">&quot;first&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">ds</span> <span class="o">=</span> <span class="n">_parse_track_input</span><span class="p">(</span>
-            <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
-            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span>
-            <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span>
-            <span class="n">x_item</span><span class="o">=</span><span class="n">x_item</span><span class="p">,</span>
-            <span class="n">y_item</span><span class="o">=</span><span class="n">y_item</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">data_var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">ds</span><span class="p">[</span><span class="n">data_var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;model&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">ds</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_input_validated</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">_parse_track_input</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span>
+                <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span>
+                <span class="n">x_item</span><span class="o">=</span><span class="n">x_item</span><span class="p">,</span>
+                <span class="n">y_item</span><span class="o">=</span><span class="n">y_item</span><span class="p">,</span>
+                <span class="n">keep_duplicates</span><span class="o">=</span><span class="n">keep_duplicates</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
+        <span class="n">data_var</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">data_var</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;model&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrackModelResult</span><span class="p">:</span>
+        <span class="c1"># TODO check x,y,z</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 </pre></div>
 
                 </article>
