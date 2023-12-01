@@ -201,3 +201,9 @@ def test_skill_choose_metrics_back_defaults(cc):
     df = cc.mean_skill().df
     assert "kge" not in df.columns
     assert "rmse" in df.columns
+
+
+def test_obs_attrs_carried_over(klagshamn, modelresult_oresund_WL):
+    klagshamn.data.attrs["A"] = "B"  # could also have been added in constructor
+    cmp = ms.compare(klagshamn, modelresult_oresund_WL)[0]
+    assert cmp.data.attrs["A"] == "B"
