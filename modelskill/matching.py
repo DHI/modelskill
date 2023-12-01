@@ -181,30 +181,19 @@ def compare(
     ComparerCollection
         To be used for plotting and statistics
     """
-    if isinstance(obs, get_args(ObsInputType)):
-        cmp = _single_obs_compare(
-            obs,
+    obs = [obs] if isinstance(obs, get_args(ObsInputType)) else obs
+
+    clist = [
+        _single_obs_compare(
+            o,
             mod,
             obs_item=obs_item,
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
         )
-        clist = [cmp]
-    elif isinstance(obs, Sequence):
-        clist = [
-            _single_obs_compare(
-                o,
-                mod,
-                obs_item=obs_item,
-                mod_item=mod_item,
-                gtype=gtype,
-                max_model_gap=max_model_gap,
-            )
-            for o in obs
-        ]
-    else:
-        raise ValueError(f"Unknown obs type {type(obs)}")
+        for o in obs
+    ]
 
     return ComparerCollection(clist)
 
