@@ -131,5 +131,7 @@ def test_attrs(klagshamn_filename):
     )
     assert o1.data.attrs["a1"] == "v1"
 
+
+def test_attrs_not_allowed(klagshamn_filename):
     with pytest.raises(ValueError, match="attrs key gtype not allowed"):
         ms.PointObservation(klagshamn_filename, item=0, attrs={"gtype": "v1"})
