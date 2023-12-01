@@ -292,6 +292,7 @@ def match_space_time(
     Will interpolate model results to observation time.
 
     Note: assumes that observation and model data are already matched in space.
+        But positions of track observations will be checked.
 
     Parameters
     ----------
@@ -334,20 +335,10 @@ def match_space_time(
             # e.g. in case of event data
             mri = _remove_model_gaps(mri, mr.time, max_model_gap)
 
-        if isinstance(observation, TrackObservation) and isinstance(
-            mri, TrackModelResult
-        ):
-            mod_df = mri.data.to_dataframe()
-            obs_df = observation.data.to_dataframe()
-
-            # 1. inner join on time
-            df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
-
-            # 2. remove model points outside observation track
-            keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
-            keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
-            df = df[keep_x & keep_y]
-            mri.data[name] = df[name]
+        if isinstance(observation, TrackObservation):
+            mri.data = _select_overlapping_trackdata_with_tolerance(
+                observation=observation, mri=mri, spatial_tolerance=spatial_tolerance
+            )
 
         data[name] = mri.data[name]
 
@@ -360,6 +351,24 @@ def match_space_time(
     data.attrs["modelskill_version"] = __version__
 
     return data
+
+
+def _select_overlapping_trackdata_with_tolerance(
+    observation: TrackObservation, mri: TrackModelResult, spatial_tolerance: float
+) -> xr.DataArray:
+    assert isinstance(observation, TrackObservation)
+    assert isinstance(mri, TrackModelResult)
+    mod_df = mri.data.to_dataframe()
+    obs_df = observation.data.to_dataframe()
+
+    # 1. inner join on time
+    df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
+
+    # 2. remove model points outside observation track
+    keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
+    keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
+    df = df[keep_x & keep_y]
+    return mri.data.sel(time=df.index)
 
 
 def _parse_single_obs(
