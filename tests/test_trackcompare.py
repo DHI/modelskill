@@ -467,3 +467,22 @@ def test_residual_hist(comparer):
     cc = comparer
     cc[0].plot.residual_hist()
     cc[0].plot.residual_hist(bins=10, title="new_title", color="blue")
+
+
+def test_df_input(obs_tiny_df, mod_tiny3):
+    """A dataframe is a valid input to ms.compare, without explicitly creating a TrackObservation"""
+    # excerpt from obs_tiny_df
+    # time                | value
+    # --------------------------
+    # 2017-10-27 13:00:02  2.0
+    # 2017-10-27 13:00:02  3.0
+
+    assert isinstance(obs_tiny_df, pd.DataFrame)
+    assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
+    cmp = ms.compare(obs=obs_tiny_df, mod=mod_tiny3, gtype="track")[0]
+    assert (
+        cmp.data.sel(
+            time=slice("2017-10-27 13:00:02", "2017-10-27 13:00:02")
+        ).Observation
+        == 2.0  # first value
+    )

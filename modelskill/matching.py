@@ -271,11 +271,10 @@ def _get_valid_query_time(
 
 
 def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
-    starts = [x[0] for x in idxs if len(x) > 0]
-    ends = [x[-1] for x in idxs if len(x) > 0]
+    assert all([len(x) > 0 for x in idxs])
 
-    if len(starts) == 0:
-        return Period(start=None, end=None)
+    starts = [x[0] for x in idxs]
+    ends = [x[-1] for x in idxs]
 
     return Period(start=min(starts), end=max(ends))
 
