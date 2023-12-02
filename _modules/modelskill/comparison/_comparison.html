@@ -284,12 +284,12 @@ document.write(`
 
     <span class="c1"># Validate time</span>
     <span class="c1"># assert len(data.dims) == 1, &quot;Only 0-dimensional data are supported&quot;</span>
-    <span class="c1"># assert &quot;time&quot; in data.dims, &quot;data must have a time dimension&quot;</span>
-    <span class="c1"># assert isinstance(data.time.to_index(), pd.DatetimeIndex), &quot;time must be datetime&quot;</span>
-    <span class="c1"># data[&quot;time&quot;] = pd.DatetimeIndex(data.time.to_index()).round(freq=&quot;100us&quot;)  # 0.0001s</span>
-    <span class="c1"># assert (</span>
-    <span class="c1">#    data.time.to_index().is_monotonic_increasing</span>
-    <span class="c1"># ), &quot;time must be increasing (please check for duplicate times))&quot;</span>
+    <span class="k">assert</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dims</span><span class="p">,</span> <span class="s2">&quot;data must have a time dimension&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">(),</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">),</span> <span class="s2">&quot;time must be datetime&quot;</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">())</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s2">&quot;100us&quot;</span><span class="p">)</span>  <span class="c1"># 0.0001s</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">()</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
+    <span class="p">),</span> <span class="s2">&quot;time must be increasing (please check for duplicate times))&quot;</span>
 
     <span class="c1"># no missing values allowed in Observation</span>
     <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Observation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
