@@ -30,11 +30,11 @@ def _parse_point_input(
         data = data.read()  # now mikeio.Dataset
 
     # parse items
-    if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):  # type: ignore
+    if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):
         item_name = data.name if hasattr(data, "name") else "PointModelResult"
         if item is not None:
             raise ValueError(f"item must be None when data is a {type(data)}")
-    elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):  # type: ignore
+    elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):
         if isinstance(data, mikeio.Dataset):
             valid_items = [i.name for i in data.items]
         elif isinstance(data, pd.DataFrame):
@@ -68,8 +68,9 @@ def _parse_point_input(
         ds = data.to_xarray()
     else:
         assert len(data.dims) == 1, "Only 0-dimensional data are supported"
-        if data.coords[list(data.coords)[0]].name != "time":
-            data = data.rename({list(data.coords)[0]: "time"})
+        time_dim_name = list(data.dims)[0]
+        if time_dim_name != "time":
+            data = data.rename({time_dim_name: "time"})
         ds = data
 
     name = name or item_name
@@ -86,4 +87,5 @@ def _parse_point_input(
     ds[name].attrs["units"] = model_quantity.unit
 
     ds.attrs["gtype"] = str(GeometryType.POINT)
+    assert isinstance(ds, xr.Dataset)
     return ds

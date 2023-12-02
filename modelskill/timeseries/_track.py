@@ -1,7 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import get_args, Optional, List
+from typing import get_args, Optional, List, Sequence
+import warnings
 import pandas as pd
 import xarray as xr
 
@@ -23,7 +24,12 @@ class TrackItem:
         return [self.x, self.y, self.values]
 
 
-def _parse_track_items(items, x_item, y_item, item) -> TrackItem:
+def _parse_track_items(
+    items: Sequence[str],
+    x_item: int | str | None,
+    y_item: int | str | None,
+    item: int | str | None,
+) -> TrackItem:
     """If input has exactly 3 items we accept item=None"""
     if len(items) < 3:
         raise ValueError(
@@ -53,6 +59,7 @@ def _parse_track_input(
     quantity: Optional[Quantity],
     x_item: str | int | None,
     y_item: str | int | None,
+    keep_duplicates: bool | str,
     offset_duplicates: float = 0.001,
 ) -> xr.Dataset:
     assert isinstance(
@@ -103,9 +110,19 @@ def _parse_track_input(
     ds = ds.rename({ti.x: "x", ti.y: "y"})
 
     # A unique index makes lookup much faster O(1)
-    ds["time"] = make_unique_index(
-        ds["time"].to_index(), offset_duplicates=offset_duplicates
-    )
+    if keep_duplicates == "offset":
+        ds["time"] = make_unique_index(
+            ds["time"].to_index(), offset_duplicates=offset_duplicates
+        )
+    else:
+        # keep first, last or none of the duplicates
+        n = len(ds["time"])
+        ds = ds.drop_duplicates(dim="time", keep=keep_duplicates)
+        n_removed = n - len(ds["time"])
+        if n_removed > 0:
+            warnings.warn(
+                f"Removed {n_removed} duplicate timestamps with keep={keep_duplicates}"
+            )
     ds = ds.dropna(dim="time", subset=["x", "y"])
 
     SPATIAL_DIMS = ["x", "y", "z"]
@@ -120,4 +137,5 @@ def _parse_track_input(
     ds[name].attrs["units"] = model_quantity.unit
 
     ds.attrs["gtype"] = str(GeometryType.TRACK)
+    assert isinstance(ds, xr.Dataset)
     return ds

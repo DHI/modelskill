@@ -11,7 +11,7 @@ def cc1():
     mr = ms.ModelResult(fn, item=0, name="HD")
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
-    with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         o1 = ms.TrackObservation(df, item=2, name="alti")
 
     return ms.compare(o1, mr)

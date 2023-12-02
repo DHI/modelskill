@@ -9,6 +9,7 @@ Examples
 from __future__ import annotations
 
 from typing import Optional
+import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -42,7 +43,7 @@ class Observation(TimeSeries):
         data: xr.Dataset,
         weight: float = 1.0,
         color: str = "#d62728",
-    ):
+    ) -> None:
         data["time"] = self._parse_time(data.time)
 
         super().__init__(data=data)
@@ -110,15 +111,18 @@ class PointObservation(Observation):
         z: Optional[float] = None,
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
-    ):
-        ds = _parse_point_input(data, name=name, item=item, quantity=quantity)
-        data_var = str(list(ds.data_vars)[0])
-        ds[data_var].attrs["kind"] = "observation"
-        ds.coords["x"] = x
-        ds.coords["y"] = y
-        ds.coords["z"] = z
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_point_input(data, name=name, item=item, quantity=quantity)
+            data.coords["x"] = x
+            data.coords["y"] = y
+            data.coords["z"] = z
 
-        super().__init__(data=ds)
+        assert isinstance(data, xr.Dataset)
+
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["kind"] = "observation"
+        super().__init__(data=data)
 
     @property
     def geometry(self):
@@ -164,8 +168,14 @@ class TrackObservation(Observation):
         item name or index of x-coordinate, by default 0
     y_item : (str, int), optional
         item name or index of y-coordinate, by default 1
+    keep_duplicates : (str, bool), optional
+        strategy for handling duplicate timestamps (xarray.Dataset.drop_duplicates):
+        "first" to keep first occurrence, "last" to keep last occurrence,
+        False to drop all duplicates, "offset" to add milliseconds to
+        consecutive duplicates, by default "first"
     offset_duplicates : float, optional
-        in case of duplicate timestamps, add this many seconds to consecutive duplicate entries, by default 0.001
+        DEPRECATED! in case of duplicate timestamps and keep_duplicates="offset",
+        add this many seconds to consecutive duplicate entries, by default 0.001
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
@@ -230,22 +240,32 @@ class TrackObservation(Observation):
         name: Optional[str] = None,
         x_item: Optional[int | str] = 0,
         y_item: Optional[int | str] = 1,
+        keep_duplicates: bool | str = "first",
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
-    ):
-        ds = _parse_track_input(
-            data=data,
-            name=name,
-            item=item,
-            quantity=quantity,
-            x_item=x_item,
-            y_item=y_item,
-            offset_duplicates=offset_duplicates,
-        )
-        data_var = str(list(ds.data_vars)[0])
-        ds[data_var].attrs["kind"] = "observation"
+    ) -> None:
+        if not self._is_input_validated(data):
+            if offset_duplicates != 0.001:
+                warnings.warn(
+                    "The 'offset_duplicates' argument is deprecated, use 'keep_duplicates' argument.",
+                    FutureWarning,
+                )
+            data = _parse_track_input(
+                data=data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                x_item=x_item,
+                y_item=y_item,
+                keep_duplicates=keep_duplicates,
+                offset_duplicates=offset_duplicates,
+            )
+        assert isinstance(data, xr.Dataset)
 
-        super().__init__(data=ds)
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["kind"] = "observation"
+
+        super().__init__(data=data)
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
