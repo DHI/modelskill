@@ -958,7 +958,7 @@ class Comparer:
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
-        # assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,
