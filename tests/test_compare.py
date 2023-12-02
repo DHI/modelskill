@@ -288,6 +288,17 @@ def test_from_matched_dfs0():
     assert cmp.quantity.unit == "meter"
 
 
+def test_from_matched_Dfs0():
+    # Not sure if this is really needed, but let's test it anyway
+    fn = "tests/testdata/SW/ts_storm_4.dfs0"
+    dfs = mikeio.open(fn)
+    cmp = ms.from_matched(dfs, obs_item=0, mod_items=[1, 2, 3, 4, 5])
+    assert cmp.n_points == 397
+    assert cmp.n_models == 5
+    assert cmp.quantity.name == "Significant wave height"
+    assert cmp.quantity.unit == "meter"
+
+
 def test_from_matched_mikeio_dataset():
     fn = "tests/testdata/SW/ts_storm_4.dfs0"
     ds = mikeio.read(fn, time=slice("2017-10-28 00:00", "2017-10-29 00:00"))
@@ -331,3 +342,15 @@ def test_save_comparercollection(o1, o3, tmp_path):
     cc.save(fn)
 
     assert fn.exists()
+
+
+def test_specifying_mod_item_not_allowed_twice(o1, mr1):
+    # item was already specified in the construction of the DfsuModelResult
+
+    with pytest.raises(ValueError, match="item"):
+        ms.compare(obs=o1, mod=mr1, mod_item=1)
+
+
+def test_bad_model_input(o1):
+    with pytest.raises(ValueError, match="mod type"):
+        ms.compare(obs=o1, mod=None)
