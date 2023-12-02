@@ -395,8 +395,6 @@ class Comparer:
         matched_data: xr.Dataset,
         raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
     ) -> None:
-        self.plot = Comparer.plotter(self)
-
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
             raw_mod_data
@@ -423,6 +421,8 @@ class Comparer:
                 assert isinstance(
                     v, TimeSeries
                 ), f"raw_mod_data[{k}] must be a TimeSeries object"
+
+        self.plot = Comparer.plotter(self)
 
     @staticmethod
     def from_matched_data(
