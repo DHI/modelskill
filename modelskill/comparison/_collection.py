@@ -448,7 +448,7 @@ class ComparerCollection(Mapping):
 
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
-        return AggregatedSkill(res)
+        return AggregatedSkill(res.to_xarray())
 
     def _add_as_col_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "variable"]
@@ -725,7 +725,7 @@ class ComparerCollection(Mapping):
 
         # output
         res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
-        return AggregatedSkill(res.astype({"n": int}))
+        return AggregatedSkill(res.astype({"n": int}).to_xarray())
 
     def mean_skill_points(
         self,

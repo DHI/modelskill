@@ -4,6 +4,7 @@ from typing import Iterable, Collection
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from matplotlib import pyplot as plt
 
@@ -273,8 +274,9 @@ class AggregatedSkill:
     one_is_best_metrics = ["lin_slope"]
     zero_is_best_metrics = ["bias"]
 
-    def __init__(self, df):
-        self.df = df
+    def __init__(self, data: xr.Dataset):
+        self.data = data
+        # self._df =
         self.plot = AggregatedSkillPlotter(self)
 
     # @property
@@ -289,6 +291,14 @@ class AggregatedSkill:
 
     def __len__(self):
         return len(self.df)
+
+    @property
+    def df(self):
+        return self.data.to_dataframe()
+        # if self.include_spatial_cols:
+        #     return self._df
+        # else:
+        #     return self._df.copy().drop(columns=["x", "y"], errors="ignore")
 
     def to_dataframe(self):
         return self.df
@@ -425,7 +435,16 @@ class AggregatedSkill:
             df = df.to_frame()
         if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
-        return self.__class__(df)
+
+        return self.__class__(df.to_xarray())
+
+        # data = self.data
+
+        # if query is not None:
+        #     data = data.query(query)
+        # if kwargs:
+        #     data = data.sel(**kwargs)
+        # return self.__class__(data)
 
     def _reduce_index(self, df):
         """Remove unnecessary levels of MultiIndex"""
