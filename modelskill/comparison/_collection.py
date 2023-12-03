@@ -705,7 +705,7 @@ class ComparerCollection(Mapping):
         s = cmp.skill(metrics=metrics)
         if s is None:
             return None
-        skilldf = s._df
+        skilldf = s.to_dataframe()
 
         # weights
         weights = cmp._parse_weights(weights, s.obs_names)
@@ -936,7 +936,7 @@ class ComparerCollection(Mapping):
         if skill is None:
             return None
 
-        df = skill._df
+        df = skill.to_dataframe()
 
         if n_models == 1:
             score = df[metric.__name__].values.mean()
@@ -989,7 +989,7 @@ class ComparerCollection(Mapping):
         skill_func = cmp.mean_skill if aggregate_observations else cmp.skill
         s = skill_func(metrics=metrics)
 
-        df = s._df
+        df = s.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
