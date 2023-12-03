@@ -276,7 +276,6 @@ class AggregatedSkill:
 
     def __init__(self, data: xr.Dataset):
         self.data = data
-        # self._df =
         self.plot = AggregatedSkillPlotter(self)
 
     # @property
@@ -319,12 +318,12 @@ class AggregatedSkill:
     # TODO: remove?
     def sort_index(self, *args, **kwargs):
         """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
-        return self.__class__(self.df.sort_index(*args, **kwargs))
+        return self.__class__(self.df.sort_index(*args, **kwargs).to_xarray())
 
     # TODO: remove?
     def swaplevel(self, *args, **kwargs):
         """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
-        return self.__class__(self.df.swaplevel(*args, **kwargs))
+        return self.__class__(self.df.swaplevel(*args, **kwargs).to_xarray())
 
     @property
     def mod_names(self):
@@ -521,7 +520,7 @@ class AggregatedSkill:
             Number of decimal places to round to (default: 3). If decimals is negative, it specifies the number of positions to the left of the decimal point.
         """
 
-        return self.__class__(self.df.round(decimals=decimals))
+        return self.__class__(self.df.round(decimals=decimals).to_xarray())
 
     def style(
         self,
