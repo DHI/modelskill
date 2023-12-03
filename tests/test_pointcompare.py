@@ -75,7 +75,7 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
     )
     mr = modelresult_oresund_WL
     cc = ms.compare(o1, mr)
-    df = cc["Klagshamn"].skill().df
+    df = cc["Klagshamn"].skill()._df
     assert not np.any(np.isnan(df))
 
 
@@ -158,11 +158,11 @@ def test_skill(klagshamn, drogden):
 
     cc = ms.compare([klagshamn, drogden], mr)
 
-    df = cc.skill().df
+    df = cc.skill()._df
     assert df.loc["Klagshamn"].n == 167
 
     # Filtered skill
-    df = cc.skill(observation="Klagshamn").df
+    df = cc.skill(observation="Klagshamn")._df
     assert df.loc["Klagshamn"].n == 167
 
 
@@ -173,13 +173,13 @@ def test_skill_choose_metrics(klagshamn, drogden):
 
     cc.metrics = ["mae", "si"]
 
-    df = cc.skill().df
+    df = cc.skill()._df
 
     assert "mae" in df.columns
     assert "rmse" not in df.columns
 
     # Override defaults
-    df = cc.skill(metrics=["urmse", "r2"]).df
+    df = cc.skill(metrics=["urmse", "r2"])._df
 
     assert "r2" in df.columns
     assert "rmse" not in df.columns

@@ -286,13 +286,13 @@ class AggregatedSkill:
     @property
     def metrics(self) -> Collection[str]:
         """List of metrics (columns) in the dataframe"""
-        return list(self.df.columns)
+        return list(self._df.columns)
 
     def __len__(self):
-        return len(self.df)
+        return len(self._df)
 
     @property
-    def df(self):
+    def _df(self):
         return self.data.to_dataframe()
         # if self.include_spatial_cols:
         #     return self._df
@@ -300,30 +300,30 @@ class AggregatedSkill:
         #     return self._df.copy().drop(columns=["x", "y"], errors="ignore")
 
     def to_dataframe(self):
-        return self.df
+        return self._df
 
     def __repr__(self):
-        return repr(self.df)
+        return repr(self._df)
 
     def _repr_html_(self):
-        return self.df._repr_html_()
+        return self._df._repr_html_()
 
     def __getitem__(self, x):
-        return self.df[x]
+        return self._df[x]
 
     @property
     def loc(self, *args, **kwargs):
-        return self.df.loc(*args, **kwargs)
+        return self._df.loc(*args, **kwargs)
 
     # TODO: remove?
     def sort_index(self, *args, **kwargs):
         """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
-        return self.__class__(self.df.sort_index(*args, **kwargs).to_xarray())
+        return self.__class__(self._df.sort_index(*args, **kwargs).to_xarray())
 
     # TODO: remove?
     def swaplevel(self, *args, **kwargs):
         """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
-        return self.__class__(self.df.swaplevel(*args, **kwargs).to_xarray())
+        return self.__class__(self._df.swaplevel(*args, **kwargs).to_xarray())
 
     @property
     def mod_names(self):
@@ -342,7 +342,7 @@ class AggregatedSkill:
 
     # TODO what does this method actually do?
     def _get_index_level_by_name(self, name):
-        index = self.df.index
+        index = self._df.index
         if name in index.names:
             level = index.names.index(name)
             return index.get_level_values(level).unique()
@@ -413,7 +413,7 @@ class AggregatedSkill:
         >>> s.sel(metrics="rmse")
         >>> s.sel("rmse>0.2", observation=[0, 2], metrics=["n","rmse"])
         """
-        df = self.df
+        df = self._df
 
         if query is not None:
             if isinstance(query, str):
@@ -457,7 +457,7 @@ class AggregatedSkill:
     # TODO remove ?
     def _validate_multi_index(self, min_levels=2, max_levels=2):
         errors = []
-        index = self.df.index
+        index = self._df.index
         if isinstance(index, pd.MultiIndex):
             if len(index.levels) < min_levels:
                 errors.append(
@@ -520,7 +520,7 @@ class AggregatedSkill:
             Number of decimal places to round to (default: 3). If decimals is negative, it specifies the number of positions to the left of the decimal point.
         """
 
-        return self.__class__(self.df.round(decimals=decimals).to_xarray())
+        return self.__class__(self._df.round(decimals=decimals).to_xarray())
 
     def style(
         self,
@@ -558,7 +558,7 @@ class AggregatedSkill:
         >>> s.style(cmap="Blues", show_best=False)
         """
         # identity metric columns
-        float_cols = list(self.df.select_dtypes(include="number").columns)
+        float_cols = list(self._df.select_dtypes(include="number").columns)
 
         if "precision" in kwargs:
             warnings.warn(
@@ -583,18 +583,18 @@ class AggregatedSkill:
                         f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        sdf = self.df.style.format(precision=decimals)
+        sdf = self._df.style.format(precision=decimals)
 
         # apply background gradient
         bg_cols = list(set(metrics) & set(float_cols))
         if "bias" in bg_cols:
-            mm = self.df.bias.abs().max()
+            mm = self._df.bias.abs().max()
             sdf = sdf.background_gradient(
                 subset=["bias"], cmap="coolwarm", vmin=-mm, vmax=mm
             )
             bg_cols.remove("bias")
         if "lin_slope" in bg_cols:
-            mm = (self.df.lin_slope - 1).abs().max()
+            mm = (self._df.lin_slope - 1).abs().max()
             sdf = sdf.background_gradient(
                 subset=["lin_slope"], cmap="coolwarm", vmin=(1 - mm), vmax=(1 + mm)
             )
