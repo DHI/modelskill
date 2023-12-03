@@ -15,6 +15,9 @@ authors:
     - name: Daniel Caichac
       orcid: 0000-0000-0000-0000
       affiliation: "1"
+    - name: Ryan Walter Murray
+      orcid: 0000-0000-0000-0000
+      affiliation: "1"
 affiliations:
  - name: DHI
    index: 1
