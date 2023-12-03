@@ -958,6 +958,7 @@ class Comparer:
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,
@@ -1026,6 +1027,7 @@ class Comparer:
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         s = self.skill(
             metrics=[metric],
@@ -1108,6 +1110,7 @@ class Comparer:
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,
