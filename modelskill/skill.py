@@ -22,15 +22,15 @@ class AggregatedSkillPlotter:
         s = self.agg_skill
 
         # raise error if field is not a column in the dataframe
-        if field not in s.df.columns:
+        if field not in s._df.columns:
             raise KeyError(
-                f"{field} is not a valid field. Choose from {list(s.df.columns)}"
+                f"{field} is not a valid field. Choose from {list(s._df.columns)}"
             )
 
-        if isinstance(s.df.index, pd.MultiIndex):
-            df = s.df[field].unstack(level=level)
+        if isinstance(s._df.index, pd.MultiIndex):
+            df = s._df[field].unstack(level=level)
         else:
-            df = s.df[field]
+            df = s._df[field]
         return df
 
     def line(
@@ -180,7 +180,7 @@ class AggregatedSkillPlotter:
             warnings.warn("plot_grid: " + "\n".join(errors))
             return None
             # df = self.df[field]    TODO: at_least_2d...
-        df = s.df[field].unstack()
+        df = s._df[field].unstack()
 
         vmin = None
         vmax = None
@@ -188,7 +188,7 @@ class AggregatedSkillPlotter:
             cmap = "OrRd"
             if field == "bias":
                 cmap = "coolwarm"
-                mm = s.df.bias.abs().max()
+                mm = s._df.bias.abs().max()
                 vmin = -mm
                 vmax = mm
         if title is None:
@@ -293,7 +293,7 @@ class AggregatedSkill:
 
     @property
     def _df(self):
-        return self.data.to_dataframe()
+        return self.data.to_dataframe().dropna(how="all")
         # if self.include_spatial_cols:
         #     return self._df
         # else:
