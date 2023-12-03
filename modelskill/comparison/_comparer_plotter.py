@@ -598,7 +598,7 @@ class ComparerPlotter:
 
         if s is None:  # TODO
             return
-        df = s.df
+        df = s.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()

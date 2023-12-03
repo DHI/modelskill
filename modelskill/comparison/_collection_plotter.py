@@ -389,7 +389,7 @@ class ComparerCollectionPlotter:
         if s is None:
             return
 
-        df = s.df
+        df = s.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
