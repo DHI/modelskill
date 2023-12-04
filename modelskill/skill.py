@@ -274,7 +274,7 @@ class AggregatedSkill:
     one_is_best_metrics = ["lin_slope"]
     zero_is_best_metrics = ["bias"]
 
-    def __init__(self, data: xr.Dataset):
+    def __init__(self, data: xr.Dataset) -> None:
         self.data = data
         self.plot = AggregatedSkillPlotter(self)
 
@@ -288,21 +288,21 @@ class AggregatedSkill:
         """List of metrics (columns) in the dataframe"""
         return list(self._df.columns)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._df)
 
     @property
-    def _df(self):
+    def _df(self) -> pd.DataFrame:
         return self.data.to_dataframe().dropna(how="all")
         # if self.include_spatial_cols:
         #     return self._df
         # else:
         #     return self._df.copy().drop(columns=["x", "y"], errors="ignore")
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         return self._df
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self._df)
 
     def _repr_html_(self):
@@ -316,12 +316,12 @@ class AggregatedSkill:
         return self._df.loc(*args, **kwargs)
 
     # TODO: remove?
-    def sort_index(self, *args, **kwargs):
+    def sort_index(self, *args, **kwargs) -> AggregatedSkill:
         """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
         return self.__class__(self._df.sort_index(*args, **kwargs).to_xarray())
 
     # TODO: remove?
-    def swaplevel(self, *args, **kwargs):
+    def swaplevel(self, *args, **kwargs) -> AggregatedSkill:
         """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
         return self.__class__(self._df.swaplevel(*args, **kwargs).to_xarray())
 
@@ -383,7 +383,7 @@ class AggregatedSkill:
             df = df[df.index == value]  # .copy()
         return df
 
-    def sel(self, query=None, reduce_index=True, **kwargs):
+    def sel(self, query=None, **kwargs) -> AggregatedSkill:
         """Select a subset of the AggregatedSkill by a query,
            (part of) the index, or specific columns
 
@@ -391,9 +391,6 @@ class AggregatedSkill:
         ----------
         query : str, optional
             string supported by pd.DataFrame.query(), by default None
-        reduce_index : bool, optional
-            Should unnecessary levels of the index be removed after subsetting?
-            Removed levels will stay as columns. By default True
         **kwargs : dict, optional
             "metrics"=... to select specific metrics (=columns),
             "model"=... to select specific models (=rows),
@@ -413,37 +410,96 @@ class AggregatedSkill:
         >>> s.sel(metrics="rmse")
         >>> s.sel("rmse>0.2", observation=[0, 2], metrics=["n","rmse"])
         """
-        df = self._df
+        data = self.data
 
         if query is not None:
-            if isinstance(query, str):
-                df = df.query(query)
+            data = data.query(query)
+        if "metrics" in kwargs:
+            cols = (
+                [kwargs["metrics"]]
+                if isinstance(kwargs["metrics"], str)
+                else kwargs["metrics"]
+            )
+            cols = list(set(["n"] + cols))  # prepend n?
+            data = data[cols]
+            kwargs.pop("metrics")
+        if "columns" in kwargs:
+            cols = (
+                [kwargs["columns"]]
+                if isinstance(kwargs["columns"], str)
+                else kwargs["columns"]
+            )
+            cols = list(set(["n"] + cols))  # prepend n?
+            data = data[cols]
+            kwargs.pop("columns")
+        if kwargs:
+            data = data.sel(**kwargs)
+        if len(data.dims) == 0:
+            # AggregatedSkill cannot have zero dimensions
+            data = data.expand_dims("observation")  # or model? list(s.data.dims)[0]
+        return self.__class__(data)
 
-        for key, value in kwargs.items():
-            if key in df.index.names:
-                df = self._sel_from_index(df, key, value)
-            elif key == "metrics" or key == "columns":
-                cols = [value] if isinstance(value, str) else value
-                df = df[cols]
-            else:
-                raise KeyError(
-                    f"Unknown index {key}. Valid index names are {df.index.names}"
-                )
+    # def sel(self, query=None, reduce_index=True, **kwargs) -> AggregatedSkill:
+    #     """Select a subset of the AggregatedSkill by a query,
+    #        (part of) the index, or specific columns
 
-        if isinstance(df, pd.Series):
-            df = df.to_frame()
-        if reduce_index and isinstance(df.index, pd.MultiIndex):
-            df = self._reduce_index(df)
+    #     Parameters
+    #     ----------
+    #     query : str, optional
+    #         string supported by pd.DataFrame.query(), by default None
+    #     reduce_index : bool, optional
+    #         Should unnecessary levels of the index be removed after subsetting?
+    #         Removed levels will stay as columns. By default True
+    #     **kwargs : dict, optional
+    #         "metrics"=... to select specific metrics (=columns),
+    #         "model"=... to select specific models (=rows),
+    #         "observation"=... to select specific observations (=rows)
 
-        return self.__class__(df.to_xarray())
+    #     Returns
+    #     -------
+    #     AggregatedSkill
+    #         A subset of the orignal AggregatedSkill
 
-        # data = self.data
+    #     Examples
+    #     --------
+    #     >>> s = comparer.skill()
+    #     >>> s.sel(query="rmse>0.3")
+    #     >>> s.sel(model = "SW_1")
+    #     >>> s.sel(observation = ["EPL", "HKNA"])
+    #     >>> s.sel(metrics="rmse")
+    #     >>> s.sel("rmse>0.2", observation=[0, 2], metrics=["n","rmse"])
+    #     """
+    #     df = self._df
 
-        # if query is not None:
-        #     data = data.query(query)
-        # if kwargs:
-        #     data = data.sel(**kwargs)
-        # return self.__class__(data)
+    #     if query is not None:
+    #         if isinstance(query, str):
+    #             df = df.query(query)
+
+    #     for key, value in kwargs.items():
+    #         if key in df.index.names:
+    #             df = self._sel_from_index(df, key, value)
+    #         elif key == "metrics" or key == "columns":
+    #             cols = [value] if isinstance(value, str) else value
+    #             df = df[cols]
+    #         else:
+    #             raise KeyError(
+    #                 f"Unknown index {key}. Valid index names are {df.index.names}"
+    #             )
+
+    #     if isinstance(df, pd.Series):
+    #         df = df.to_frame()
+    #     if reduce_index and isinstance(df.index, pd.MultiIndex):
+    #         df = self._reduce_index(df)
+
+    #     return self.__class__(df.to_xarray())
+
+    #     # data = self.data
+
+    #     # if query is not None:
+    #     #     data = data.query(query)
+    #     # if kwargs:
+    #     #     data = data.sel(**kwargs)
+    #     # return self.__class__(data)
 
     def _reduce_index(self, df):
         """Remove unnecessary levels of MultiIndex"""
@@ -511,7 +567,7 @@ class AggregatedSkill:
             cmap=cmap,
         )
 
-    def round(self, decimals=3):
+    def round(self, decimals=3) -> AggregatedSkill:
         """round all values in dataframe
 
         Parameters
