@@ -1,6 +1,7 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from pathlib import Path
-from typing import get_args, Optional
+from typing import Sequence, get_args, List, Optional
 import pandas as pd
 import xarray as xr
 
@@ -11,11 +12,45 @@ from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
 
 
+@dataclass
+class PointItem:
+    values: str
+    aux: list[str]
+
+    @property
+    def all(self) -> List[str]:
+        return [self.values] + self.aux
+
+
+def _parse_point_items(
+    items: Sequence[str],
+    item: int | str | None,
+    aux_items: Optional[list[int | str]] = None,
+) -> PointItem:
+    """If input has exactly 3 items we accept item=None"""
+    if item is None:
+        if len(items) == 1:
+            item = 0
+        elif len(items) > 1:
+            raise ValueError("Input has more than 1 item, but item was not given!")
+
+    item = _get_name(item, valid_names=items)
+    aux_items = [_get_name(i, valid_names=items) for i in aux_items or []]
+
+    # check that there are no duplicates
+    res = PointItem(values=item, aux=aux_items)
+    if len(set(res.all)) != len(res.all):
+        raise ValueError(f"Duplicate items! {res.all}")
+
+    return res
+
+
 def _parse_point_input(
     data: PointType,
     name: Optional[str],
     item: str | int | None,
     quantity: Optional[Quantity],
+    aux_items: Optional[list[int | str]] = None,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset"""
     assert isinstance(
@@ -34,6 +69,16 @@ def _parse_point_input(
         item_name = data.name if hasattr(data, "name") else "PointModelResult"
         if item is not None:
             raise ValueError(f"item must be None when data is a {type(data)}")
+        if aux_items is not None:
+            raise ValueError(f"aux_items must be None when data is a {type(data)}")
+
+        if isinstance(data, mikeio.DataArray):
+            data = mikeio.Dataset(data)
+        elif isinstance(data, pd.Series):
+            data = data.to_frame()
+        elif isinstance(data, xr.DataArray):
+            data = data.to_dataset()
+
     elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):
         if isinstance(data, mikeio.Dataset):
             valid_items = [i.name for i in data.items]
@@ -41,17 +86,12 @@ def _parse_point_input(
             valid_items = list(data.columns)
         else:
             valid_items = list(data.data_vars)
-        item_name = _get_name(x=item, valid_names=valid_items)
-
-    # select relevant items
-    if isinstance(data, mikeio.DataArray):
-        data = mikeio.Dataset(data)
-    elif isinstance(data, pd.Series):
-        data = data.to_frame()
-    elif isinstance(data, xr.DataArray):
-        data = data.to_dataset()
+        sel_items = _parse_point_items(valid_items, item=item, aux_items=aux_items)
+        item_name = sel_items.values
+        data = data[sel_items.all]
     else:
-        data = data[[item_name]]
+        raise ValueError("Could not Point object from provided data")
+
     assert isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset))
 
     # parse quantity
@@ -73,6 +113,8 @@ def _parse_point_input(
             data = data.rename({time_dim_name: "time"})
         ds = data
 
+    assert isinstance(ds, xr.Dataset)
+
     name = name or item_name
     name = _validate_data_var_name(name)
 
@@ -80,11 +122,14 @@ def _parse_point_input(
     ds = ds.dropna(dim="time")
 
     vars = [v for v in ds.data_vars]
-    assert len(ds.data_vars) == 1
+    assert len(ds.data_vars) == 1 + len(sel_items.aux)
     ds = ds.rename({vars[0]: name})
 
     ds[name].attrs["long_name"] = model_quantity.name
     ds[name].attrs["units"] = model_quantity.unit
+
+    for aux_item in sel_items.aux:
+        ds[aux_item].attrs["kind"] = "aux"
 
     ds.attrs["gtype"] = str(GeometryType.POINT)
     assert isinstance(ds, xr.Dataset)
