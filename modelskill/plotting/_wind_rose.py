@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from matplotlib.collections import PatchCollection
 from matplotlib.legend import Legend
 from matplotlib.patches import Polygon, Rectangle
@@ -27,6 +28,24 @@ class DirectionalHistogram:
     @property
     def dir_centers(self) -> np.ndarray:
         return (self.dir_bins[:-1] + self.dir_bins[1:]) / 2
+
+    def __str__(self):
+        # columns are dir_bins (-45-45, 45-135, 135-225, 225-315, 315-405)
+        columns = [
+            f"({start}-{stop}]"
+            for start, stop in zip(self.dir_bins[:-1], self.dir_bins[1:])
+        ]
+        rows = [
+            f"({start}-{stop}]"
+            for start, stop in zip(self.mag_bins[:-1], self.mag_bins[1:])
+        ]
+
+        df = pd.DataFrame(self.density, index=rows, columns=columns)
+        df.index.name = "Magnitude"
+        df.columns.name = "Direction"
+        body = df.__repr__()
+        calm = f"Calm: {self.calm}"
+        return "\n".join([calm, body])
 
     @staticmethod
     def create_from_data(
