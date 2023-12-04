@@ -50,13 +50,15 @@ def test_grid_from_nc(mr_ERA5_pp1d):
 
 def test_grid_from_DataArray(ERA5_DutchCoast_nc):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
-    mr = ms.ModelResult(ds["swh"])
+    mr = ms.GridModelResult(ds["swh"])
+    assert mr.quantity.name == "Significant height of combined wind waves and swell"
+    assert mr.quantity.unit == "m"
 
-    assert isinstance(mr, ms.GridModelResult)
-
-    # TODO get quantity info from nc
-    # assert mr.quantity.name == "Significant Wave Height"
-    assert mr.quantity.name == "Undefined"
+    mr2 = ms.GridModelResult(
+        ds["swh"], quantity=ms.Quantity("Significant height", unit="meter")
+    )
+    assert mr2.quantity.name == "Significant height"
+    assert mr2.quantity.unit == "meter"
 
 
 def test_dataset_with_missing_coordinates(ERA5_DutchCoast_nc):
