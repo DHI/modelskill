@@ -69,12 +69,13 @@ from scipy import stats
 
 
 def bias(obs, model) -> float:
-    """Bias (mean error)
+    r"""Bias (mean error)
 
-    .. math::
-        bias=\\frac{1}{n}\\sum_{i=1}^n (model_i - obs_i)
+    $$
+    bias=\frac{1}{n}\sum_{i=1}^n (model_i - obs_i)
+    $$
 
-    Range: :math:`(-\\infty, \\infty)`; Best: 0
+    Range: $(-\infty, \infty)$; Best: 0
     """
 
     assert obs.size == model.size
@@ -82,12 +83,13 @@ def bias(obs, model) -> float:
 
 
 def max_error(obs, model) -> float:
-    """Max (absolute) error
+    r"""Max (absolute) error
 
-    .. math::
-        max_{error} = max(|model_i - obs_i|)
+    $$
+    max_{error} = max(|model_i - obs_i|)
+    $$
 
-    Range: :math:`[0, \\infty)`; Best: 0
+    Range: $[0, \infty)$; Best: 0
     """
 
     assert obs.size == model.size
@@ -105,12 +107,13 @@ def mae(
 def mean_absolute_error(
     obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None
 ) -> float:
-    """Mean Absolute Error (MAE)
+    r"""Mean Absolute Error (MAE)
 
-    .. math::
-        MAE=\\frac{1}{n}\\sum_{i=1}^n|model_i - obs_i|
+    $$
+    MAE=\frac{1}{n}\sum_{i=1}^n|model_i - obs_i|
+    $$
 
-    Range: :math:`[0, \\infty)`; Best: 0
+    Range: $[0, \infty)$; Best: 0
     """
     assert obs.size == model.size
 
@@ -125,12 +128,13 @@ def mape(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
-    """Mean Absolute Percentage Error (MAPE)
+    r"""Mean Absolute Percentage Error (MAPE)
 
-    .. math::
-        MAPE=\\frac{1}{n}\\sum_{i=1}^n\\frac{|model_i - obs_i|}{obs_i}*100
+    $$
+    MAPE=\frac{1}{n}\sum_{i=1}^n\frac{|model_i - obs_i|}{obs_i}*100
+    $$
 
-    Range: :math:`[0, \\infty)`; Best: 0
+    Range: $[0, \infty)$; Best: 0
     """
 
     assert obs.size == model.size
@@ -147,17 +151,18 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
 def urmse(
     obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None
 ) -> float:
-    """Unbiased Root Mean Squared Error (uRMSE)
+    r"""Unbiased Root Mean Squared Error (uRMSE)
 
-    .. math::
+    $$
 
-        res_i = model_i - obs_i
+    res_i = model_i - obs_i
 
-        res_{u,i} = res_i - \\overline {res}
+    res_{u,i} = res_i - \overline {res}
 
-        uRMSE = \\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
+    uRMSE = \sqrt{\frac{1}{n} \sum_{i=1}^n res_{u,i}^2}
+    $$
 
-    Range: :math:`[0, \\infty)`; Best: 0
+    Range: $[0, \infty)$; Best: 0
 
     See Also
     --------
@@ -182,22 +187,25 @@ def root_mean_squared_error(
     weights: Optional[np.ndarray] = None,
     unbiased: bool = False,
 ) -> float:
-    """Root Mean Squared Error (RMSE)
+    r"""Root Mean Squared Error (RMSE)
 
-    .. math::
-        res_i = model_i - obs_i
+    $$
+    res_i = model_i - obs_i
 
-        RMSE=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_i^2}
+    RMSE=\sqrt{\frac{1}{n} \sum_{i=1}^n res_i^2}
+    $$
 
     Unbiased version:
 
-    .. math::
+    $$
 
-        res_{u,i} = res_i - \\overline {res}
+    res_{u,i} = res_i - \overline {res}
 
-        uRMSE=\\sqrt{\\frac{1}{n} \\sum_{i=1}^n res_{u,i}^2}
+    uRMSE=\sqrt{\frac{1}{n} \sum_{i=1}^n res_{u,i}^2}
 
-    Range: :math:`[0, \\infty)`; Best: 0
+    $$
+
+    Range: $[0, \infty)$; Best: 0
 
     """
     assert obs.size == model.size
@@ -216,14 +224,16 @@ def nse(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
-    """Nash-Sutcliffe Efficiency (NSE)
+    r"""Nash-Sutcliffe Efficiency (NSE)
 
-    .. math::
+    $$
 
-        NSE = 1 - \\frac {\\sum _{i=1}^{n}\\left(model_{i} - obs_{i}\\right)^{2}}
-                       {\\sum_{i=1}^{n}\\left(obs_{i} - {\\overline{obs}}\\right)^{2}}
+    NSE = 1 - \frac {\sum _{i=1}^{n}\left(model_{i} - obs_{i}\right)^{2}}
+                    {\sum_{i=1}^{n}\left(obs_{i} - {\overline{obs}}\right)^{2}}
 
-    Range: :math:`(-\\infty, 1]`; Best: 1
+    $$
+
+    Range: $(-\infty, 1]$; Best: 1
 
     Note
     ----
@@ -246,17 +256,18 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
-    """
+    r"""
     Kling-Gupta Efficiency (KGE)
 
-    .. math::
+    $$
 
-        KGE = 1 - \\sqrt{(r-1)^2 + \\left(\\frac{\\sigma_{mod}}{\\sigma_{obs}} - 1\\right)^2 +
-                                   \\left(\\frac{\\mu_{mod}}{\\mu_{obs}} - 1\\right)^2 }
+    KGE = 1 - \sqrt{(r-1)^2 + \left(\frac{\sigma_{mod}}{\sigma_{obs}} - 1\right)^2 +
+                                \left(\frac{\mu_{mod}}{\mu_{obs}} - 1\right)^2 }
+    $$
 
-    where :math:`r` is the pearson correlation coefficient, :math:`\\mu_{obs},\\mu_{mod}` and :math:`\\sigma_{obs},\\sigma_{mod}` is the mean and standard deviation of observations and model.
+    where $r` is the pearson correlation coefficient, $\mu_{obs},\mu_{mod}` and $\sigma_{obs},\sigma_{mod}` is the mean and standard deviation of observations and model.
 
-    Range: :math:`(-\\infty, 1]`; Best: 1
+    Range: $(-\infty, 1]$; Best: 1
 
     References
     ----------
@@ -291,16 +302,17 @@ def kge(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def r2(obs: np.ndarray, model: np.ndarray) -> float:
-    """Coefficient of determination (R2)
+    r"""Coefficient of determination (R2)
 
     Pronounced 'R-squared'; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.
 
-    .. math::
+    $$
 
-        R^2 = 1 - \\frac{\\sum_{i=1}^n (model_i - obs_i)^2}
-                    {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
+    R^2 = 1 - \frac{\sum_{i=1}^n (model_i - obs_i)^2}
+                    {\sum_{i=1}^n (obs_i - \overline {obs})^2}
+    $$
 
-    Range: :math:`(-\\infty, 1]`; Best: 1
+    Range: $(-\infty, 1]$; Best: 1
 
     Note
     ----
@@ -330,16 +342,16 @@ def mef(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
-    """Model Efficiency Factor (MEF)
+    r"""Model Efficiency Factor (MEF)
 
     Scale independent RMSE, standardized by Stdev of observations
 
-    .. math::
+    $$
+    MEF = \frac{RMSE}{STDEV}=\frac{\sqrt{\frac{1}{n} \sum_{i=1}^n(model_i - obs_i)^2}}
+                                    {\sqrt{\frac{1}{n} \sum_{i=1}^n(obs_i - \overline{obs})^2}}=\sqrt{1-NSE}
+    $$
 
-        MEF = \\frac{RMSE}{STDEV}=\\frac{\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}}
-                                        {\\sqrt{\\frac{1}{n} \\sum_{i=1}^n(obs_i - \\overline{obs})^2}}=\\sqrt{1-NSE}
-
-    Range: :math:`[0, \\infty)`; Best: 0
+    Range: $[0, \infty)$; Best: 0
 
     See Also
     --------
@@ -358,12 +370,13 @@ def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
 
 
 def corrcoef(obs, model, weights=None) -> float:
-    """Pearson’s Correlation coefficient (CC)
+    r"""Pearson’s Correlation coefficient (CC)
 
-    .. math::
-        CC = \\frac{\\sum_{i=1}^n (model_i - \\overline{model})(obs_i - \\overline{obs}) }
-                   {\\sqrt{\\sum_{i=1}^n (model_i - \\overline{model})^2}
-                    \\sqrt{\\sum_{i=1}^n (obs_i - \\overline{obs})^2} }
+    $$
+    CC = \frac{\sum_{i=1}^n (model_i - \overline{model})(obs_i - \overline{obs}) }
+                   {\sqrt{\sum_{i=1}^n (model_i - \overline{model})^2}
+                    \sqrt{\sum_{i=1}^n (obs_i - \overline{obs})^2} }
+    $$
 
     Range: [-1, 1]; Best: 1
 
@@ -389,15 +402,16 @@ def rho(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
-    """Spearman rank correlation coefficient
+    r"""Spearman rank correlation coefficient
 
     The rank correlation coefficient is similar to the Pearson correlation coefficient but
     applied to ranked quantities and is useful to quantify a monotonous relationship
 
-    .. math::
-        \\rho = \\frac{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})(robs_i - \\overline{robs}) }
-                      {\\sqrt{\\sum_{i=1}^n (rmodel_i - \\overline{rmodel})^2}
-                       \\sqrt{\\sum_{i=1}^n (robs_i - \\overline{robs})^2} }
+    $$
+    \rho = \frac{\sum_{i=1}^n (rmodel_i - \overline{rmodel})(robs_i - \overline{robs}) }
+                    {\sqrt{\sum_{i=1}^n (rmodel_i - \overline{rmodel})^2}
+                    \sqrt{\sum_{i=1}^n (robs_i - \overline{robs})^2} }
+    $$
 
     Range: [-1, 1]; Best: 1
 
@@ -425,15 +439,16 @@ def si(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
-    """Scatter index (SI)
+    r"""Scatter index (SI)
 
     Which is the same as the unbiased-RMSE normalized by the absolute mean of the observations.
 
-    .. math::
-        \\frac{ \\sqrt{ \\frac{1}{n} \\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2} }
-        {\\frac{1}{n} \\sum_{i=1}^n | obs_i | }
+    $$
+    \frac{ \sqrt{ \frac{1}{n} \sum_{i=1}^n \left( (model_i - \overline {model}) - (obs_i - \overline {obs}) \right)^2} }
+    {\frac{1}{n} \sum_{i=1}^n | obs_i | }
+    $$
 
-    Range: [0, \\infty); Best: 0
+    Range: [0, \infty); Best: 0
     """
     assert obs.size == model.size
     if len(obs) == 0:
@@ -445,11 +460,12 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
-    """Alternative formulation of the scatter index (SI)
+    r"""Alternative formulation of the scatter index (SI)
 
-    .. math::
-        \\sqrt {\\frac{\\sum_{i=1}^n \\left( (model_i - \\overline {model}) - (obs_i - \\overline {obs}) \\right)^2}
-        {\\sum_{i=1}^n obs_i^2}}
+    $$
+    \sqrt {\frac{\sum_{i=1}^n \left( (model_i - \overline {model}) - (obs_i - \overline {obs}) \right)^2}
+    {\sum_{i=1}^n obs_i^2}}
+    $$
 
     Range: [0, 100]; Best: 0
     """
@@ -470,7 +486,7 @@ def ev(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
-    """EV: Explained variance
+    r"""EV: Explained variance
 
      EV is the explained variance and measures the proportion
      [0 - 1] to which the model accounts for the variation
@@ -478,13 +494,14 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
 
      In cases with no bias, EV is equal to r2
 
-    .. math::
-         \\frac{ \\sum_{i=1}^n (obs_i - \\overline{obs})^2 -
-         \\sum_{i=1}^n \\left( (obs_i - \\overline{obs}) -
-         (model_i - \\overline{model}) \\right)^2}{\\sum_{i=1}^n
-         (obs_i - \\overline{obs})^2}
+    $$
+    \frac{ \sum_{i=1}^n (obs_i - \overline{obs})^2 -
+    \sum_{i=1}^n \left( (obs_i - \overline{obs}) -
+    (model_i - \overline{model}) \right)^2}{\sum_{i=1}^n
+    (obs_i - \overline{obs})^2}
+    $$
 
-     Range: [0, 1]; Best: 1
+    Range: [0, 1]; Best: 1
 
     See Also
     --------
@@ -510,13 +527,14 @@ def pr(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def peak_ratio(obs: pd.Series, model: pd.Series) -> float:
-    """Peak Ratio
+    r"""Peak Ratio
 
     PR is the ratio of the mean of the identified peaks in the
     model / identified peaks in the measurements
 
-    .. math::
-            \\frac{\\sum_{i=1}^{N_{peak}} (model_i)}{\\sum_{i=1}^{N_{peak}} (obs_i)}
+    $$
+    \frac{\sum_{i=1}^{N_{peak}} (model_i)}{\sum_{i=1}^{N_{peak}} (obs_i)}
+    $$
 
     Range: [0, inf]; Best: 1.0
 
@@ -546,14 +564,15 @@ def peak_ratio(obs: pd.Series, model: pd.Series) -> float:
 
 
 def willmott(obs: np.ndarray, model: np.ndarray) -> float:
-    """Willmott's Index of Agreement
+    r"""Willmott's Index of Agreement
 
     A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.
 
-    .. math::
+    $$
 
-        willmott = 1 - \\frac{\\frac{1}{n} \\sum_{i=1}^n(model_i - obs_i)^2}
-                           {\\frac{1}{n} \\sum_{i=1}^n(|model_i - \\overline{obs}| + |obs_i - \\overline{obs}|)^2}
+    willmott = 1 - \frac{\frac{1}{n} \sum_{i=1}^n(model_i - obs_i)^2}
+                        {\frac{1}{n} \sum_{i=1}^n(|model_i - \overline{obs}| + |obs_i - \overline{obs}|)^2}
+    $$
 
     Range: [0, 1]; Best: 1
 
@@ -581,11 +600,11 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
-    """Fraction within obs ± acceptable deviation
+    r"""Fraction within obs ± acceptable deviation
 
-    .. math::
-
-        HR = \\frac{1}{n}\\sum_{i=1}^n I_{|(model_i - obs_i)|} < a
+    $$
+    HR = \frac{1}{n}\sum_{i=1}^n I_{|(model_i - obs_i)|} < a
+    $$
 
     Range: [0, 1]; Best: 1
 
@@ -606,14 +625,15 @@ def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
 
 
 def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
-    """Slope of the regression line.
+    r"""Slope of the regression line.
 
-    .. math::
+    $$
 
-        slope = \\frac{\\sum_{i=1}^n (model_i - \\overline {model})(obs_i - \\overline {obs})}
-                      {\\sum_{i=1}^n (obs_i - \\overline {obs})^2}
+    slope = \frac{\sum_{i=1}^n (model_i - \overline {model})(obs_i - \overline {obs})}
+                    {\sum_{i=1}^n (obs_i - \overline {obs})^2}
+    $$
 
-    Range: :math:`(-\\infty, \\infty )`; Best: 1
+    Range: $(-\infty, \infty )$; Best: 1
     """
     assert obs.size == model.size
     return _linear_regression(obs.ravel(), model.ravel(), reg_method)[0]
