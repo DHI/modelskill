@@ -71,6 +71,7 @@ def _parse_point_input(
             raise ValueError(f"item must be None when data is a {type(data)}")
         if aux_items is not None:
             raise ValueError(f"aux_items must be None when data is a {type(data)}")
+        sel_items = PointItem(values=item_name, aux=[])
 
         if isinstance(data, mikeio.DataArray):
             data = mikeio.Dataset(data)
