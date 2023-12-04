@@ -260,7 +260,6 @@ def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     Kling-Gupta Efficiency (KGE)
 
     $$
-
     KGE = 1 - \sqrt{(r-1)^2 + \left(\frac{\sigma_{mod}}{\sigma_{obs}} - 1\right)^2 +
                                 \left(\frac{\mu_{mod}}{\mu_{obs}} - 1\right)^2 }
     $$
