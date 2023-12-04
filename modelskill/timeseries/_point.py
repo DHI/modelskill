@@ -27,7 +27,7 @@ def _parse_point_items(
     item: int | str | None,
     aux_items: Optional[list[int | str]] = None,
 ) -> PointItem:
-    """If input has exactly 3 items we accept item=None"""
+    """If input has exactly 1 item we accept item=None"""
     if item is None:
         if len(items) == 1:
             item = 0
