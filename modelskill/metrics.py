@@ -914,6 +914,3 @@ def _partial_duration_series(
                     old_peak = i
         i += 1
     return peak_list.astype(bool), AAP
-
-def _allowed_kwargs():
-    return ['inter_event_time','use_inter_event_level','inter_event_level','AAP','a','weights','unbiased']

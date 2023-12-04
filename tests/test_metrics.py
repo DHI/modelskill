@@ -2,16 +2,17 @@ from typing import Callable
 import pytest
 import numpy as np
 import pandas as pd
+import mikeio
 
 import modelskill.metrics as mtr
 
 @pytest.fixture
 def obs_series():
-    return pd.Series(data=np.arange(24*365*4)/1000,index=pd.date_range(start='2100-01-01',periods=24*365*4,freq='H'))
+    return mikeio.Dfs0('./tests/testdata/wave_dir.dfs0').read(items=0).to_dataframe().iloc[:,0]
 
 @pytest.fixture
 def mod_series():
-    return pd.Series(data=np.arange(24*365*4)/1000+5,index=pd.date_range(start='2100-01-01',periods=24*365*4,freq='H'))
+    return mikeio.Dfs0('./tests/testdata/wave_dir.dfs0').read(items=1).to_dataframe().iloc[:,0]
 
 def test_nse_optimal():
 
@@ -200,7 +201,17 @@ def test_pr(obs_series,mod_series):
 
     pr = mtr.pr(obs, mod)
 
-    assert pr == pytest.approx(1.14269813636) 
+    assert pr == pytest.approx(0.730928683656) 
+
+def test_pr_2(obs_series,mod_series):
+    #Obs needs to be a series as the mode of the time index is used.
+    # Will use the same data for a real test of ev
+    obs = obs_series
+    mod = mod_series
+
+    pr = mtr.pr(obs, mod, AAP= 6 , inter_event_level=0.1)
+
+    assert pr == pytest.approx(0.719003840045) 
 
 def test_metric_has_dimension():
 
