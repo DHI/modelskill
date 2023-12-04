@@ -39,5 +39,4 @@ jobs:
       run: |
         pytest --cov=modelskill --ignore tests/notebooks/
     - name: Test docstrings with pytest
-      run: |
-        pytest ./modelskill/metrics.py --doctest-modules
+      run: make doctest
