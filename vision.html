@@ -284,10 +284,10 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scope">Scope</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limitations">Limitations</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#future">Future</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-reports">Automatic reports</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#forecast-skill">Forecast skill</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#better-support-for-3d-data">Better support for 3D data</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#web-app">Web app</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-to-observation-apis">Interface to observation APIs</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-to-alternative-models">Interface to alternative models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-reports">Automatic reports</a></li>
 </ul>
 </li>
 </ul>
@@ -303,9 +303,8 @@ document.write(`
                   
   <section id="vision">
 <h1>Vision<a class="headerlink" href="#vision" title="Permalink to this headline">#</a></h1>
-<p><a class="reference external" href="https://github.com/DHI/modelskill">ModelSkill</a> wishes to be your
-modelling assistant. It should be useful enough for you to use every
-time you do a MIKE 21/3 simulation.</p>
+<p><a class="reference external" href="https://github.com/DHI/modelskill">ModelSkill</a> would like to be your
+modelling companion. It should be indispensable good such that you want to use it every time you do a MIKE simulation.</p>
 <section id="objective">
 <h2>Objective<a class="headerlink" href="#objective" title="Permalink to this headline">#</a></h2>
 <p>We want <a class="reference external" href="https://github.com/DHI/modelskill">ModelSkill</a> to make it easy
@@ -321,6 +320,8 @@ to</p>
 diagrams</p></li>
 <li><p>do <em>aggregations</em> - assess for all observations, geographic areas,
 monthly, …</p></li>
+<li><p>do <em>filtering</em> - assess for a subset of observations, geographic
+areas, …</p></li>
 <li><p>make <em>fast</em> comparisons (optimized code)</p></li>
 </ul>
 <p>And it should be</p>
@@ -337,21 +338,16 @@ documentation</p></li>
 <p><a class="reference external" href="https://github.com/DHI/modelskill">ModelSkill</a> wants to balance general
 and specific needs:</p>
 <ul class="simple">
-<li><p>It should be general enough to cover &gt;90% of MIKE FM simulations</p></li>
+<li><p>It should be general enough to cover &gt;90% of MIKE simulations</p></li>
 <li><p>It should be general enough to cover generic modelling irrespective
 of software.</p></li>
-<li></li>
+<li><p>But specific enough to be useful</p>
+<ul>
+<li><p>Support dfs files (using <a class="reference external" href="https://github.com/DHI/mikeio">mikeio</a>)</p></li>
+<li><p>Handle circular variables such as wave direction</p></li>
 </ul>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>But specific enough to be useful
-
-:   -   Support dfs files (using
-        [mikeio](https://github.com/DHI/mikeio))
-    -   Handle circular variables such as wave direction
-    -   Handle vector variables such as u- and v-components of
-        current
-    -   Tidal analysis
-</pre></div>
-</div>
+</li>
+</ul>
 </section>
 <section id="limitations">
 <h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">#</a></h2>
@@ -368,24 +364,24 @@ cover</p>
 </section>
 <section id="future">
 <h2>Future<a class="headerlink" href="#future" title="Permalink to this headline">#</a></h2>
-<section id="automatic-reports">
-<h3>Automatic reports<a class="headerlink" href="#automatic-reports" title="Permalink to this headline">#</a></h3>
-<p>Both static as markdown, docx, pptx and interactive as html</p>
+<section id="forecast-skill">
+<h3>Forecast skill<a class="headerlink" href="#forecast-skill" title="Permalink to this headline">#</a></h3>
+<p>It should be possible to compare forecasts with observations using
+forecast lead time as a dimension. Planned 2024.</p>
+</section>
+<section id="better-support-for-3d-data">
+<h3>Better support for 3D data<a class="headerlink" href="#better-support-for-3d-data" title="Permalink to this headline">#</a></h3>
+<p>Currently 3D data is supported only as point data and only if data has
+already been extracted from model result files. It should be possible to extract
+date from 3D files directly. Furthermore, vertical columns data should be supported as an observation type with z as a dimension. Planned 2024.</p>
 </section>
 <section id="web-app">
 <h3>Web app<a class="headerlink" href="#web-app" title="Permalink to this headline">#</a></h3>
-<p>Create a web app that wraps this library</p>
+<p>Create a web app that wraps this library.</p>
 </section>
-<section id="interface-to-observation-apis">
-<h3>Interface to observation APIs<a class="headerlink" href="#interface-to-observation-apis" title="Permalink to this headline">#</a></h3>
-<p>Easy to get observation data from <a class="reference external" href="https://altimetry.dhigroup.com">DHI’s altimetry
-portal</a>, CMEMS, etc. See the sister
-package <a class="reference external" href="https://github.com/DHI/WatObs">WatObs</a> .</p>
-</section>
-<section id="interface-to-alternative-models">
-<h3>Interface to alternative models<a class="headerlink" href="#interface-to-alternative-models" title="Permalink to this headline">#</a></h3>
-<p>Should be easy to compare your model to publically available alternative
-e.g. from CMEMS or NOAA. Or from DHI’s DataLink.</p>
+<section id="automatic-reports">
+<h3>Automatic reports<a class="headerlink" href="#automatic-reports" title="Permalink to this headline">#</a></h3>
+<p>Both static as markdown, docx, pptx and interactive as html.</p>
 </section>
 </section>
 </section>
@@ -442,10 +438,10 @@ e.g. from CMEMS or NOAA. Or from DHI’s DataLink.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scope">Scope</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limitations">Limitations</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#future">Future</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-reports">Automatic reports</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#forecast-skill">Forecast skill</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#better-support-for-3d-data">Better support for 3D data</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#web-app">Web app</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-to-observation-apis">Interface to observation APIs</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interface-to-alternative-models">Interface to alternative models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-reports">Automatic reports</a></li>
 </ul>
 </li>
 </ul>
