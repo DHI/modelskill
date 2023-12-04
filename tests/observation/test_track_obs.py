@@ -11,6 +11,22 @@ def c2():
 
 
 @pytest.fixture
+def obs_tiny_df4():
+    time = pd.DatetimeIndex(
+        [
+            "2017-10-27 13:00:01",
+            "2017-10-27 13:00:02",
+            "2017-10-27 13:00:03",
+            "2017-10-27 13:00:04",
+        ]
+    )
+    x = np.array([1.0, 2.0, 3.0, 4.0])
+    y = np.array([11.0, 12.0, 13.0, 14.0])
+    val = np.array([1.0, 2.0, 4.0, 6.0])
+    return pd.DataFrame(data={"x": x, "y": y, "alti": val}, index=time)
+
+
+@pytest.fixture
 def obs_tiny_df_duplicates():
     time = pd.DatetimeIndex(
         [
@@ -263,3 +279,13 @@ def test_track_data_can_be_persisted_as_netcdf(c2, tmp_path):
     t = ms.TrackObservation(c2, item=2, name="c2")
 
     t.data.to_netcdf(tmp_path / "test.nc")
+
+
+def test_track_attrs(obs_tiny_df4):
+    o1 = ms.TrackObservation(obs_tiny_df4, item="alti", attrs={"a1": "v1"})
+    assert o1.data.attrs["a1"] == "v1"
+
+
+def test_track_attrs_not_allowed(obs_tiny_df4):
+    with pytest.raises(ValueError, match="attrs key gtype not allowed"):
+        ms.PointObservation(obs_tiny_df4, item="alti", attrs={"gtype": "v1"})

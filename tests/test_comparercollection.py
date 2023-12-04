@@ -152,6 +152,12 @@ def test_cc_sel_time(cc):
     assert cc2.mod_names == ["m1", "m2", "m3"]
 
 
+def test_cc_sel_attrs(cc):
+    cc2 = cc.sel(gtype="point")
+    assert cc2.n_comparers == 1
+    assert cc2[0].gtype == "point"
+
+
 def test_cc_query(cc):
     cc2 = cc.query("Observation > 3")
     assert cc2.n_comparers == 1
@@ -317,3 +323,25 @@ def test_plot_accepts_figsize(cc_plot_function):
     ax = cc_plot_function(figsize=figsize)
     a, b = ax.get_figure().get_size_inches()
     assert a, b == figsize
+
+
+def test_filter_by_attrs(cc):
+    cc2 = cc.filter_by_attrs(gtype="point")
+    assert cc2.n_comparers == 1
+    assert cc2[0].gtype == "point"
+
+
+def test_filter_by_attrs_custom(cc):
+    cc[0].data.attrs["custom"] = 12
+    cc[1].data.attrs["custom"] = 13
+
+    cc2 = cc.filter_by_attrs(custom=12)
+    assert cc2.n_comparers == 1
+    assert cc2[0].data.attrs["custom"] == 12
+    assert cc2[0] == cc[0]
+
+    cc[0].data.attrs["custom2"] = True
+    cc3 = cc.filter_by_attrs(custom2=True)
+    assert cc3.n_comparers == 1
+    assert cc3[0].data.attrs["custom2"]
+    assert cc3[0] == cc[0]

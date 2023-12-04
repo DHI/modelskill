@@ -741,6 +741,7 @@ class Comparer:
                 y=self.y,
                 z=self.z,
                 quantity=self.quantity,
+                # TODO: add attrs
             )
         elif self.gtype == "track":
             df = self.data.drop_vars(["z"])[[self._obs_name]].to_dataframe()
@@ -751,6 +752,7 @@ class Comparer:
                 y_item=2,
                 name=self.name,
                 quantity=self.quantity,
+                # TODO: add attrs
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
