@@ -14,6 +14,9 @@ test:
 typecheck:
 	mypy $(LIB)/ --config-file pyproject.toml
 
+doctest:
+	pytest $(LIB)/metrics.py --doctest-modules
+
 coverage: 
 	pytest --cov-report html --cov=$(LIB) tests/
 
