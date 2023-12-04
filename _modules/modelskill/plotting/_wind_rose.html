@@ -233,6 +233,7 @@ document.write(`
                   
   <h1>Source code for modelskill.plotting._wind_rose</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -241,10 +242,123 @@ document.write(`
 <span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">matplotlib.collections</span> <span class="kn">import</span> <span class="n">PatchCollection</span>
 <span class="kn">from</span> <span class="nn">matplotlib.legend</span> <span class="kn">import</span> <span class="n">Legend</span>
-<span class="kn">from</span> <span class="nn">matplotlib.offsetbox</span> <span class="kn">import</span> <span class="n">AnchoredText</span>
 <span class="kn">from</span> <span class="nn">matplotlib.patches</span> <span class="kn">import</span> <span class="n">Polygon</span><span class="p">,</span> <span class="n">Rectangle</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">DirectionalHistogram</span><span class="p">:</span>
+    <span class="n">calm</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">density</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">dir_bins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">mag_bins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+
+    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mag_bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir_bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dir_centers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dir_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># columns are dir_bins (-45-45, 45-135, 135-225, 225-315, 315-405)</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">stop</span><span class="si">}</span><span class="s2">]&quot;</span>
+            <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">dir_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="p">]</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">stop</span><span class="si">}</span><span class="s2">]&quot;</span>
+            <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mag_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">mag_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="p">]</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Magnitude&quot;</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Direction&quot;</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+        <span class="n">calm</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Calm: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">calm</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">calm</span><span class="p">,</span> <span class="n">body</span><span class="p">])</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">create_from_data</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">ui</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">dir_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DirectionalHistogram</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a masked 2d directional histogram.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data : np.ndarray</span>
+<span class="sd">            array with 2 columns (magnitude, direction)</span>
+<span class="sd">        ui : np.ndarray</span>
+<span class="sd">            magnitude bins, values below the first bin is considered calm</span>
+<span class="sd">        dir_step : float</span>
+<span class="sd">            direction step size</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        DirectionalHistogram</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="n">_dirhist2d</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span> <span class="n">dir_step</span><span class="o">=</span><span class="n">dir_step</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_dirhist2d</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">ui</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">dir_step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DirectionalHistogram</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate a masked 2d histogram.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : np.ndarray</span>
+<span class="sd">        array with 2 columns (magnitude, direction)</span>
+<span class="sd">    ui : np.ndarray</span>
+<span class="sd">        magnitude bins, values below the first bin is considered calm</span>
+<span class="sd">    dir_step : float</span>
+<span class="sd">        direction step size</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;data must be 2d&quot;</span>
+    <span class="k">assert</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;data must have 2 columns&quot;</span>
+    <span class="k">assert</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;direction must be positive&quot;</span>
+    <span class="k">assert</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">360</span><span class="p">,</span> <span class="s2">&quot;direction must be in 0-360&quot;</span>
+    <span class="k">assert</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;magnitude must be positive&quot;</span>
+
+    <span class="n">half_dir_step</span> <span class="o">=</span> <span class="n">dir_step</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">vmin</span> <span class="o">=</span> <span class="n">ui</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># data in the [0,half_dir_step] range is shifted 360 degrees</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">half_dir_step</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">360</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="n">thetai</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+        <span class="n">start</span><span class="o">=</span><span class="n">half_dir_step</span><span class="p">,</span>
+        <span class="n">stop</span><span class="o">=</span><span class="mi">360</span> <span class="o">+</span> <span class="n">half_dir_step</span><span class="p">,</span>
+        <span class="n">num</span><span class="o">=</span><span class="nb">int</span><span class="p">(((</span><span class="mi">360</span> <span class="o">+</span> <span class="n">half_dir_step</span><span class="p">)</span> <span class="o">-</span> <span class="n">half_dir_step</span><span class="p">)</span> <span class="o">/</span> <span class="n">dir_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">vmin</span>
+    <span class="n">calm</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">counts</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">mask</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">mask</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="n">bins</span><span class="o">=</span><span class="p">[</span><span class="n">ui</span><span class="p">,</span> <span class="n">thetai</span><span class="p">],</span>  <span class="c1"># type: ignore</span>
+    <span class="p">)</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="k">return</span> <span class="n">DirectionalHistogram</span><span class="p">(</span>
+        <span class="n">calm</span><span class="o">=</span><span class="n">calm</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">dir_bins</span><span class="o">=</span><span class="n">thetai</span><span class="p">,</span> <span class="n">mag_bins</span><span class="o">=</span><span class="n">ui</span>
+    <span class="p">)</span>
 
 
 <div class="viewcode-block" id="wind_rose"><a class="viewcode-back" href="../../../api.html#modelskill.plotting.wind_rose">[docs]</a><span class="k">def</span> <span class="nf">wind_rose</span><span class="p">(</span>
@@ -282,6 +396,7 @@ document.write(`
 <span class="sd">    mag_step: float, (optional) Default= None</span>
 <span class="sd">        discretization for magnitude (delta_r, in radial direction )</span>
 <span class="sd">    n_sectors: int (optional) Default= 16</span>
+<span class="sd">        number of directional sectors</span>
 <span class="sd">    calm_threshold: float (optional) Default= None (auto calculated)</span>
 <span class="sd">        minimum value for data being counted as valid (i.e. below this is calm)</span>
 <span class="sd">    resize_calm: bool or float (optional) Default: 0.05</span>
@@ -325,7 +440,7 @@ document.write(`
     <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;__array__&quot;</span><span class="p">),</span> <span class="s2">&quot;data must be array_like&quot;</span>
 
     <span class="n">data_1</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># primary magnitude and direction</span>
-    <span class="n">data_1_max</span> <span class="o">=</span> <span class="n">data_1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="n">magmax</span> <span class="o">=</span> <span class="n">data_1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
 
     <span class="n">ncols</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">assert</span> <span class="n">ncols</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;data must have 2 or 4 columns&quot;</span>
@@ -333,16 +448,12 @@ document.write(`
 
     <span class="k">if</span> <span class="n">dual</span><span class="p">:</span>
         <span class="n">data_2</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># secondary magnitude and direction</span>
-        <span class="n">data_2_max</span> <span class="o">=</span> <span class="n">data_2</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">magmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">magmax</span><span class="p">,</span> <span class="n">data_2</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;labels must have 2 elements&quot;</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">data_2</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">data_2_max</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># magnitude bins</span>
     <span class="n">ui</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">pretty_intervals</span><span class="p">(</span>
-        <span class="n">data_1_max</span><span class="p">,</span>
-        <span class="n">data_2_max</span><span class="p">,</span>
+        <span class="n">magmax</span><span class="p">,</span>
         <span class="n">mag_bins</span><span class="p">,</span>
         <span class="n">mag_step</span><span class="p">,</span>
         <span class="n">calm_threshold</span><span class="p">,</span>
@@ -350,34 +461,23 @@ document.write(`
     <span class="p">)</span>
 
     <span class="n">dir_step</span> <span class="o">=</span> <span class="mi">360</span> <span class="o">//</span> <span class="n">n_sectors</span>
-    <span class="n">half_dir_step</span> <span class="o">=</span> <span class="n">dir_step</span> <span class="o">/</span> <span class="mi">2</span>
 
-    <span class="n">n_dir_labels</span> <span class="o">=</span> <span class="n">n_sectors</span> <span class="k">if</span> <span class="n">n_dir_labels</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">n_dir_labels</span>
+    <span class="k">if</span> <span class="n">n_dir_labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n_sectors</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">):</span>
+            <span class="n">n_dir_labels</span> <span class="o">=</span> <span class="n">n_sectors</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Directional labels are not identical to the number of sectors, use a sane default</span>
+            <span class="n">n_dir_labels</span> <span class="o">=</span> <span class="mi">16</span>
 
-    <span class="n">thetai</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
-        <span class="n">start</span><span class="o">=</span><span class="n">half_dir_step</span><span class="p">,</span>
-        <span class="n">stop</span><span class="o">=</span><span class="mi">360</span> <span class="o">+</span> <span class="n">half_dir_step</span><span class="p">,</span>
-        <span class="n">num</span><span class="o">=</span><span class="nb">int</span><span class="p">(((</span><span class="mi">360</span> <span class="o">+</span> <span class="n">half_dir_step</span><span class="p">)</span> <span class="o">-</span> <span class="n">half_dir_step</span><span class="p">)</span> <span class="o">/</span> <span class="n">dir_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">thetac</span> <span class="o">=</span> <span class="n">thetai</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">half_dir_step</span>
-
-    <span class="n">mask_1</span> <span class="o">=</span> <span class="n">data_1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">vmin</span>
-
-    <span class="c1"># compute total calms</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_1</span><span class="p">)</span>
-    <span class="n">calm</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_1</span><span class="p">[</span><span class="o">~</span><span class="n">mask_1</span><span class="p">])</span> <span class="o">/</span> <span class="n">n</span>
-
-    <span class="n">counts</span> <span class="o">=</span> <span class="n">_calc_masked_histogram2d</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data_1</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask_1</span><span class="p">,</span> <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span> <span class="n">thetai</span><span class="o">=</span><span class="n">thetai</span><span class="p">)</span>
+    <span class="n">dh</span> <span class="o">=</span> <span class="n">_dirhist2d</span><span class="p">(</span><span class="n">data_1</span><span class="p">,</span> <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span> <span class="n">dir_step</span><span class="o">=</span><span class="n">dir_step</span><span class="p">)</span>
+    <span class="n">calm</span> <span class="o">=</span> <span class="n">dh</span><span class="o">.</span><span class="n">calm</span>
 
     <span class="k">if</span> <span class="n">dual</span><span class="p">:</span>
-        <span class="n">mask_2</span> <span class="o">=</span> <span class="n">data_2</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">vmin</span>
-        <span class="n">calm2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_2</span><span class="p">[</span><span class="o">~</span><span class="n">mask_2</span><span class="p">])</span> <span class="o">/</span> <span class="n">n</span>
-        <span class="n">counts_2</span> <span class="o">=</span> <span class="n">_calc_masked_histogram2d</span><span class="p">(</span>
-            <span class="n">data</span><span class="o">=</span><span class="n">data_2</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask_2</span><span class="p">,</span> <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span> <span class="n">thetai</span><span class="o">=</span><span class="n">thetai</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">data_1</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="k">assert</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">counts_2</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_1</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_2</span><span class="p">),</span> <span class="s2">&quot;data_1 and data_2 must have same length&quot;</span>
+        <span class="n">dh2</span> <span class="o">=</span> <span class="n">_dirhist2d</span><span class="p">(</span><span class="n">data_2</span><span class="p">,</span> <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span> <span class="n">dir_step</span><span class="o">=</span><span class="n">dir_step</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">dh</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">dh2</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">shape</span>
 
-    <span class="n">ri</span><span class="p">,</span> <span class="n">rmax</span> <span class="o">=</span> <span class="n">_calc_radial_ticks</span><span class="p">(</span><span class="n">counts</span><span class="o">=</span><span class="n">counts</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">r_step</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">r_max</span><span class="p">)</span>
+    <span class="n">ri</span><span class="p">,</span> <span class="n">rmax</span> <span class="o">=</span> <span class="n">_calc_radial_ticks</span><span class="p">(</span><span class="n">counts</span><span class="o">=</span><span class="n">dh</span><span class="o">.</span><span class="n">density</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">r_step</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">r_max</span><span class="p">)</span>
 
     <span class="c1"># Resize calm</span>
     <span class="c1"># TODO this overwrites the calm value calculated above</span>
@@ -410,11 +510,11 @@ document.write(`
 
     <span class="c1"># primary histogram (model)</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">_create_patch</span><span class="p">(</span>
-        <span class="n">thetac</span><span class="o">=</span><span class="n">thetac</span><span class="p">,</span>
+        <span class="n">thetac</span><span class="o">=</span><span class="n">dh</span><span class="o">.</span><span class="n">dir_centers</span><span class="p">,</span>
         <span class="n">dir_step</span><span class="o">=</span><span class="n">dir_step</span><span class="p">,</span>
         <span class="n">calm</span><span class="o">=</span><span class="n">calm</span><span class="p">,</span>
         <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span>
-        <span class="n">counts</span><span class="o">=</span><span class="n">counts</span><span class="p">,</span>
+        <span class="n">counts</span><span class="o">=</span><span class="n">dh</span><span class="o">.</span><span class="n">density</span><span class="p">,</span>
         <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
         <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
     <span class="p">)</span>
@@ -424,11 +524,10 @@ document.write(`
         <span class="n">_add_legend_to_ax</span><span class="p">(</span>
             <span class="n">ax</span><span class="p">,</span>
             <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
-            <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span>
             <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
             <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span>
             <span class="n">calm</span><span class="o">=</span><span class="n">calm</span><span class="p">,</span>
-            <span class="n">counts</span><span class="o">=</span><span class="n">counts</span><span class="p">,</span>
+            <span class="n">counts</span><span class="o">=</span><span class="n">dh</span><span class="o">.</span><span class="n">density</span><span class="p">,</span>
             <span class="n">label</span><span class="o">=</span><span class="n">labels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
             <span class="n">primary</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">dual</span><span class="o">=</span><span class="n">dual</span><span class="p">,</span>
@@ -440,11 +539,11 @@ document.write(`
 
         <span class="c1"># TODO should this be calm2?</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">_create_patch</span><span class="p">(</span>
-            <span class="n">thetac</span><span class="o">=</span><span class="n">thetac</span><span class="p">,</span>
+            <span class="n">thetac</span><span class="o">=</span><span class="n">dh</span><span class="o">.</span><span class="n">dir_centers</span><span class="p">,</span>
             <span class="n">dir_step</span><span class="o">=</span><span class="n">dir_step</span><span class="p">,</span>
             <span class="n">calm</span><span class="o">=</span><span class="n">calm</span><span class="p">,</span>
             <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span>
-            <span class="n">counts</span><span class="o">=</span><span class="n">counts_2</span><span class="p">,</span>
+            <span class="n">counts</span><span class="o">=</span><span class="n">dh2</span><span class="o">.</span><span class="n">density</span><span class="p">,</span>
             <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
             <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
             <span class="n">dir_step_factor</span><span class="o">=</span><span class="n">secondary_dir_step_factor</span><span class="p">,</span>
@@ -455,11 +554,10 @@ document.write(`
             <span class="n">_add_legend_to_ax</span><span class="p">(</span>
                 <span class="n">ax</span><span class="p">,</span>
                 <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
-                <span class="n">vmin</span><span class="o">=</span><span class="n">vmin</span><span class="p">,</span>
                 <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">,</span>
                 <span class="n">ui</span><span class="o">=</span><span class="n">ui</span><span class="p">,</span>
-                <span class="n">calm</span><span class="o">=</span><span class="n">calm2</span><span class="p">,</span>
-                <span class="n">counts</span><span class="o">=</span><span class="n">counts_2</span><span class="p">,</span>
+                <span class="n">calm</span><span class="o">=</span><span class="n">dh2</span><span class="o">.</span><span class="n">calm</span><span class="p">,</span>
+                <span class="n">counts</span><span class="o">=</span><span class="n">dh2</span><span class="o">.</span><span class="n">density</span><span class="p">,</span>
                 <span class="n">label</span><span class="o">=</span><span class="n">labels</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
                 <span class="n">primary</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">dual</span><span class="o">=</span><span class="n">dual</span><span class="p">,</span>
@@ -514,8 +612,7 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">pretty_intervals</span><span class="p">(</span>
-    <span class="n">xmax</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">ymax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">magmax</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">mag_bins</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">mag_step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">vmin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -535,18 +632,14 @@ document.write(`
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">mag_step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">mag_step</span> <span class="o">=</span> <span class="n">_calc_mag_step</span><span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
+            <span class="n">mag_step</span> <span class="o">=</span> <span class="n">_calc_mag_step</span><span class="p">(</span><span class="n">magmax</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">vmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">vmin</span> <span class="o">=</span> <span class="n">mag_step</span>
 
-        <span class="k">if</span> <span class="n">ymax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">magmax</span> <span class="o">=</span> <span class="n">xmax</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">magmax</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
         <span class="c1"># Bins</span>
         <span class="n">ui</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">magmax</span><span class="p">,</span> <span class="n">mag_step</span><span class="p">)</span>
-        <span class="n">ui</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ui</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)</span>
+        <span class="n">ui</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ui</span><span class="p">,</span> <span class="n">magmax</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">max_bin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">max_bin</span> <span class="o">=</span> <span class="n">magmax</span> <span class="o">/</span> <span class="mi">2</span>
@@ -608,49 +701,26 @@ document.write(`
     <span class="k">return</span> <span class="n">p</span>
 
 
-<span class="k">def</span> <span class="nf">_calc_mag_step</span><span class="p">(</span><span class="n">xmax</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ymax</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">16.0</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_calc_mag_step</span><span class="p">(</span><span class="n">magmax</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculate the magnitude step size for a rose plot.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    x : float</span>
+<span class="sd">    magmax : float</span>
 <span class="sd">        The maximum value of the histogram.</span>
-<span class="sd">    y : float, optional</span>
-<span class="sd">        The maximum value of the histogram.</span>
-<span class="sd">    factor : float, optional</span>
-<span class="sd">        The factor to use to calculate the magnitude step size, by default 16.0</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    float</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">mag_step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">xmax</span> <span class="o">/</span> <span class="n">factor</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">FACTOR</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">16.0</span>
+
+    <span class="n">mag_step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">magmax</span> <span class="o">/</span> <span class="n">FACTOR</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">mag_step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">mag_step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">xmax</span> <span class="o">/</span> <span class="n">factor</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">mag_step</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">magmax</span> <span class="o">/</span> <span class="n">FACTOR</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">ymax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">mag_step</span>
-
-    <span class="n">mag_step2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">ymax</span> <span class="o">/</span> <span class="n">factor</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">mag_step2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">mag_step2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">ymax</span> <span class="o">/</span> <span class="n">factor</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">mag_step</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">mag_step</span><span class="p">,</span> <span class="n">mag_step2</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">mag_step</span>
-
-
-<span class="k">def</span> <span class="nf">_calc_masked_histogram2d</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">ui</span><span class="p">,</span> <span class="n">thetai</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">n</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="n">counts</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span>
-        <span class="n">data</span><span class="p">[</span><span class="n">mask</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">],</span>
-        <span class="n">data</span><span class="p">[</span><span class="n">mask</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">],</span>
-        <span class="n">bins</span><span class="o">=</span><span class="p">[</span><span class="n">ui</span><span class="p">,</span> <span class="n">thetai</span><span class="p">],</span>
-    <span class="p">)</span>
-    <span class="n">counts</span> <span class="o">=</span> <span class="n">counts</span> <span class="o">/</span> <span class="n">n</span>
-    <span class="k">return</span> <span class="n">counts</span>
 
 
 <span class="k">def</span> <span class="nf">_calc_radial_ticks</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">counts</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">stop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]):</span>
@@ -682,10 +752,11 @@ document.write(`
 
 
 <span class="k">def</span> <span class="nf">_add_legend_to_ax</span><span class="p">(</span>
-    <span class="n">ax</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">ui</span><span class="p">,</span> <span class="n">calm</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">dual</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">ax</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">cmap</span><span class="p">,</span> <span class="n">vmax</span><span class="p">,</span> <span class="n">ui</span><span class="p">,</span> <span class="n">calm</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">dual</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">norm</span> <span class="o">=</span> <span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">Normalize</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">vmax</span><span class="p">)</span>
     <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">cmap</span><span class="p">(</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ui</span><span class="p">]</span>
+    <span class="n">vmin</span> <span class="o">=</span> <span class="n">ui</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="n">percentages</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
 
@@ -736,17 +807,6 @@ document.write(`
         <span class="n">ax_right</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">inset_axes</span><span class="p">([</span><span class="mf">1.15</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">box_width</span> <span class="o">*</span> <span class="mf">1.15</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
         <span class="n">ax_right</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">leg</span><span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">_add_watermark_to_ax</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">watermark</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">text</span> <span class="o">=</span> <span class="n">AnchoredText</span><span class="p">(</span>
-        <span class="n">watermark</span><span class="p">,</span>
-        <span class="s2">&quot;center right&quot;</span><span class="p">,</span>
-        <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">borderpad</span><span class="o">=-</span><span class="mf">27.5</span><span class="p">,</span>
-        <span class="n">prop</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="s2">&quot;xx-small&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">_get_cmap</span><span class="p">(</span><span class="n">cmap</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">mpl</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">ListedColormap</span><span class="p">]):</span>
