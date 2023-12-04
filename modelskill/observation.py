@@ -23,9 +23,19 @@ from .timeseries import (
 
 
 def _validate_attrs(data_attrs: dict, attrs: Optional[dict]) -> None:
-    for k in attrs or {}:
+    # See similar method in xarray https://github.com/pydata/xarray/blob/main/xarray/backends/api.py#L165
+
+    if attrs is None:
+        return
+    for k, v in attrs.items():
         if k in data_attrs:
             raise ValueError(f"attrs key {k} not allowed, conflicts with build-in key!")
+
+        # TODO: check that v is a valid type for netcdf attributes, str, int, float
+        if not isinstance(v, (str, int, float)):
+            raise ValueError(
+                f"attrs value {v} must be a valid type for netcdf attributes, str, int, float, not {type(v)}"
+            )
 
 
 class Observation(TimeSeries):
