@@ -1,0 +1,25 @@
+site_name: modelskill
+
+theme: "material"
+
+nav: 
+  - 'index.md'
+  - 'getting-started.md'
+  - 'simple-compare.md'
+  - 'vision.md'
+  - 'terminology.md'
+  - API:
+      - 'api/model.md'
+      - 'api/observation.md'
+      - 'api/compare.md'
+      - 'api/skill.md'
+      - 'api/misc.md'
+
+plugins:
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          show_source: false # change this if you prefer to be able to show the source code inside the docs
+          heading_level: 2
+          docstring_style: "numpy" # default is google
