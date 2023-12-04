@@ -35,6 +35,8 @@ class ComparerPlotter:
         self,
         title=None,
         *,
+        xlabel=None,
+        ylabel=None,
         ylim=None,
         ax=None,
         figsize=None,
@@ -47,6 +49,10 @@ class ComparerPlotter:
         ----------
         title : str, optional
             plot title, by default None
+        xlabel : str, optional
+            x-label text on plot to override default
+        ylabel : str, optional
+            y-label text on plot to override default
         ylim : tuple, optional
             plot range for the model (ymin, ymax), by default None
         ax : matplotlib.axes.Axes, optional
@@ -80,7 +86,12 @@ class ComparerPlotter:
                 marker=".",
                 color=cmp.data[cmp.obs_name].attrs["color"],
             )
-            ax.set_ylabel(cmp.unit_text)
+            if xlabel is not None:
+                ax.set_xlabel(xlabel)
+            if ylabel is not None:
+                ax.set_ylabel(ylabel)
+            else:
+                ax.set_ylabel(cmp.unit_text)
             ax.legend([*cmp.mod_names, cmp.obs_name])
             ax.set_ylim(ylim)
             if self.is_directional:
