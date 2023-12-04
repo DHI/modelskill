@@ -1,4 +1,4 @@
-LIB = modelskill
+LIB = src/modelskill
 
 check: lint typecheck test
 

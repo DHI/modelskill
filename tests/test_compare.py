@@ -354,3 +354,13 @@ def test_specifying_mod_item_not_allowed_twice(o1, mr1):
 def test_bad_model_input(o1):
     with pytest.raises(ValueError, match="mod type"):
         ms.compare(obs=o1, mod=None)
+
+
+def test_repr_includes_rmse_by_default():
+    df = pd.DataFrame(
+        {"obs": [1, 2, 3], "mod": [1, 2, 3]},
+        index=pd.date_range("2018-01-01", periods=3, freq="D"),
+    )
+    cmp = ms.from_matched(df)
+    assert "rmse" in repr(cmp)
+    cmp.plot.scatter(model="mod", skill_table=True)
