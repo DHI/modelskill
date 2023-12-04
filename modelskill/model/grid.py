@@ -72,7 +72,18 @@ class GridModelResult(SpatialField):
 
         self.data: xr.DataArray = ds[item_name]
         self.name = name
-        self.quantity = quantity or Quantity.undefined()
+
+        # use long_name and units from data if not provided
+        if quantity is None:
+            if self.data.attrs.get("long_name") and self.data.attrs.get("units"):
+                quantity = Quantity(
+                    name=self.data.attrs["long_name"],
+                    unit=self.data.attrs["units"],
+                )
+            else:
+                quantity = Quantity.undefined()
+
+        self.quantity = quantity
 
     @property
     def time(self) -> pd.DatetimeIndex:
