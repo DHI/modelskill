@@ -131,6 +131,21 @@ def test_attrs(klagshamn_filename):
     )
     assert o1.data.attrs["a1"] == "v1"
 
+    o2 = ms.PointObservation(
+        klagshamn_filename, item=0, attrs={"version": 42}, name="Klagshamn"
+    )
+    assert o2.data.attrs["version"] == 42
+
+
+def test_attrs_non_serializable(klagshamn_filename):
+    with pytest.raises(ValueError, match="type"):
+        ms.PointObservation(
+            klagshamn_filename,
+            item=0,
+            attrs={"related": {"foo": "bar"}},
+            name="Klagshamn",
+        )
+
 
 def test_attrs_not_allowed(klagshamn_filename):
     with pytest.raises(ValueError, match="attrs key gtype not allowed"):
