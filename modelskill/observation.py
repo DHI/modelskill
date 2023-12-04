@@ -108,6 +108,8 @@ class PointObservation(Observation):
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
 
@@ -129,10 +131,13 @@ class PointObservation(Observation):
         z: Optional[float] = None,
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
         attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_point_input(data, name=name, item=item, quantity=quantity)
+            data = _parse_point_input(
+                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+            )
             data.coords["x"] = x
             data.coords["y"] = y
             data.coords["z"] = z
@@ -203,6 +208,8 @@ class TrackObservation(Observation):
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
 
@@ -268,6 +275,7 @@ class TrackObservation(Observation):
         keep_duplicates: bool | str = "first",
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
         attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
@@ -285,6 +293,7 @@ class TrackObservation(Observation):
                 y_item=y_item,
                 keep_duplicates=keep_duplicates,
                 offset_duplicates=offset_duplicates,
+                aux_items=aux_items,
             )
         assert isinstance(data, xr.Dataset)
 
