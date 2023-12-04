@@ -20,12 +20,41 @@ class DirectionalHistogram:
     dir_bins: np.ndarray
     mag_bins: np.ndarray
 
+    def __post_init__(self):
+        assert self.density.ndim == 2
+        assert self.density.shape == (len(self.mag_bins) - 1, len(self.dir_bins) - 1)
+
     @property
     def dir_centers(self) -> np.ndarray:
         return (self.dir_bins[:-1] + self.dir_bins[1:]) / 2
 
+    @staticmethod
+    def create_from_data(
+        data: np.ndarray,
+        *,
+        ui: np.ndarray,
+        dir_step: float,
+    ) -> DirectionalHistogram:
+        """Create a masked 2d directional histogram.
 
-def hist2d(
+        Parameters
+        ----------
+        data : np.ndarray
+            array with 2 columns (magnitude, direction)
+        ui : np.ndarray
+            magnitude bins, values below the first bin is considered calm
+        dir_step : float
+            direction step size
+
+        Returns
+        -------
+        DirectionalHistogram
+        """
+
+        return _dirhist2d(data, ui=ui, dir_step=dir_step)
+
+
+def _dirhist2d(
     data: np.ndarray,
     *,
     ui: np.ndarray,
@@ -187,12 +216,12 @@ def wind_rose(
             # Directional labels are not identical to the number of sectors, use a sane default
             n_dir_labels = 16
 
-    dh = hist2d(data_1, ui=ui, dir_step=dir_step)
+    dh = _dirhist2d(data_1, ui=ui, dir_step=dir_step)
     calm = dh.calm
 
     if dual:
         assert len(data_1) == len(data_2), "data_1 and data_2 must have same length"
-        dh2 = hist2d(data_2, ui=ui, dir_step=dir_step)
+        dh2 = _dirhist2d(data_2, ui=ui, dir_step=dir_step)
         assert dh.density.shape == dh2.density.shape
 
     ri, rmax = _calc_radial_ticks(counts=dh.density, step=r_step, stop=r_max)
