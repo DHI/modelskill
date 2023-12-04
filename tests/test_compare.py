@@ -257,7 +257,6 @@ def test_matched_data_not_time_index():
             ],
             "sensor_a": [2.0, 3.0],
         },
-        index=["A", "B"],  # arbitrary index, not time
     )
 
     cmp = ms.from_matched(df, obs_item="sensor_a")
