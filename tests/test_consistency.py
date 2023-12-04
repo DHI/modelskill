@@ -266,7 +266,7 @@ def test_consistency_trackmodelresult_fails(fn5, data_provider):
         ms.TrackModelResult(data_provider(fn5), x_item=0, y_item=1)
 
     # same item given twice
-    with pytest.raises(ValueError, match="must be different"):
+    with pytest.raises(ValueError, match="Duplicate items"):
         ms.TrackModelResult(data_provider(fn5), item="Longitude", x_item=0, y_item=1)
 
 

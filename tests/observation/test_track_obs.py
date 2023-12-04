@@ -261,12 +261,12 @@ def test_trackobservation_x_y_item(c2):
         o2 = ms.TrackObservation(df, item="surface_elevation", x_item=2, y_item=0)
     assert o2.n_points == 1093  # 1115  # including 5 NaN
 
-    with pytest.raises(ValueError, match="must be different"):
+    with pytest.raises(ValueError, match="Duplicate items"):
         ms.TrackObservation(df, item=-1, x_item="lon", y_item="lon")
 
     cols = ["lat", "surface_elevation", "lon"]
     df = df_in[cols]
-    with pytest.raises(ValueError, match="must be different"):
+    with pytest.raises(ValueError, match="Duplicate items"):
         ms.TrackObservation(df, x_item="lon", y_item="lat")
 
 
