@@ -518,6 +518,7 @@ document.write(`
         <span class="n">end</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TimeTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">time</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TimeTypes</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">area</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ComparerCollection&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Select data based on model, time and/or area.</span>
 
@@ -537,6 +538,11 @@ document.write(`
 <span class="sd">            Time. If None, all times are selected.</span>
 <span class="sd">        area : list of float, optional</span>
 <span class="sd">            bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.</span>
+<span class="sd">        kwargs : dict, optional</span>
+<span class="sd">            Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs</span>
+<span class="sd">            e.g. `sel(gtype=&#39;track&#39;)` or `sel(obs_provider=&#39;CMEMS&#39;)` if at least</span>
+<span class="sd">            one comparer has an entry `obs_provider` with value `CMEMS` in its</span>
+<span class="sd">            attrs container. Multiple kwargs are combined with logical AND.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -581,6 +587,43 @@ document.write(`
                     <span class="c1"># TODO: check if cmpsel is empty</span>
                     <span class="k">if</span> <span class="n">cmpsel</span><span class="o">.</span><span class="n">n_points</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">cc</span><span class="o">.</span><span class="n">add_comparer</span><span class="p">(</span><span class="n">cmpsel</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">cc</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">filter_by_attrs</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cc</span></div>
+
+<div class="viewcode-block" id="ComparerCollection.filter_by_attrs"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerCollection.filter_by_attrs">[docs]</a>    <span class="k">def</span> <span class="nf">filter_by_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ComparerCollection&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter by comparer attrs similar to xarray.Dataset.filter_by_attrs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        kwargs : dict, optional</span>
+<span class="sd">            Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs</span>
+<span class="sd">            e.g. `sel(gtype=&#39;track&#39;)` or `sel(obs_provider=&#39;CMEMS&#39;)` if at least</span>
+<span class="sd">            one comparer has an entry `obs_provider` with value `CMEMS` in its</span>
+<span class="sd">            attrs container. Multiple kwargs are combined with logical AND.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ComparerCollection</span>
+<span class="sd">            New ComparerCollection with selected data.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; cc = ms.compare([HKNA, EPL, alti], mr)</span>
+<span class="sd">        &gt;&gt;&gt; cc.filter_by_attrs(gtype=&#39;track&#39;)</span>
+<span class="sd">        &lt;ComparerCollection&gt;</span>
+<span class="sd">        Comparer: alti</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cc</span> <span class="o">=</span> <span class="n">ComparerCollection</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">cmp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">comparers</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># TODO: should we also filter on cmp.data.Observation.attrs?</span>
+                <span class="k">if</span> <span class="n">cmp</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">!=</span> <span class="n">v</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cc</span><span class="o">.</span><span class="n">add_comparer</span><span class="p">(</span><span class="n">cmp</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">cc</span></div>
 
 <div class="viewcode-block" id="ComparerCollection.query"><a class="viewcode-back" href="../../../api.html#modelskill.comparison.ComparerCollection.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;ComparerCollection&quot;</span><span class="p">:</span>
