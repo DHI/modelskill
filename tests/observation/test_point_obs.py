@@ -7,7 +7,7 @@ import modelskill as ms
 
 @pytest.fixture
 def klagshamn_filename():
-    return "tests/testdata/smhi_2095_klagshamn.dfs0"
+    return "tests/testdata/smhi_2095_klagshamn_200.dfs0"
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def test_from_dfs0(klagshamn_filename):
     o1 = ms.PointObservation(
         klagshamn_filename, item=0, x=366844, y=6154291, name="Klagshamn"
     )
-    assert o1.n_points == 50328
+    assert o1.n_points == 198  # 200 including 2 NaN
 
     o2 = ms.PointObservation(
         klagshamn_filename, item="Water Level", x=366844, y=6154291
@@ -123,3 +123,30 @@ def test_point_data_can_be_persisted_as_netcdf(klagshamn_filename, tmp_path):
     p = ms.PointObservation(klagshamn_filename)
 
     p.data.to_netcdf(tmp_path / "test.nc")
+
+
+def test_attrs(klagshamn_filename):
+    o1 = ms.PointObservation(
+        klagshamn_filename, item=0, attrs={"a1": "v1"}, name="Klagshamn"
+    )
+    assert o1.data.attrs["a1"] == "v1"
+
+    o2 = ms.PointObservation(
+        klagshamn_filename, item=0, attrs={"version": 42}, name="Klagshamn"
+    )
+    assert o2.data.attrs["version"] == 42
+
+
+def test_attrs_non_serializable(klagshamn_filename):
+    with pytest.raises(ValueError, match="type"):
+        ms.PointObservation(
+            klagshamn_filename,
+            item=0,
+            attrs={"related": {"foo": "bar"}},
+            name="Klagshamn",
+        )
+
+
+def test_attrs_not_allowed(klagshamn_filename):
+    with pytest.raises(ValueError, match="attrs key gtype not allowed"):
+        ms.PointObservation(klagshamn_filename, item=0, attrs={"gtype": "v1"})
