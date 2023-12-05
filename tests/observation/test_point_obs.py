@@ -27,6 +27,19 @@ def klagshamn_ds(klagshamn_filename):
     return mikeio.read(klagshamn_filename)
 
 
+@pytest.fixture
+def df_aux():
+    df = pd.DataFrame(
+        {
+            "WL": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "aux1": [1.1, 2.1, 3.1, 4.1, 5.1, 6.1],
+            "aux2": [1.2, 2.2, 3.2, 4.2, 5.2, 6.2],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+    return df
+
+
 def test_from_dfs0(klagshamn_filename):
     o1 = ms.PointObservation(
         klagshamn_filename, item=0, x=366844, y=6154291, name="Klagshamn"
@@ -150,3 +163,13 @@ def test_attrs_non_serializable(klagshamn_filename):
 def test_attrs_not_allowed(klagshamn_filename):
     with pytest.raises(ValueError, match="attrs key gtype not allowed"):
         ms.PointObservation(klagshamn_filename, item=0, attrs={"gtype": "v1"})
+
+
+def test_track_aux_items(df_aux):
+    o = ms.PointObservation(df_aux, item="WL", aux_items=["aux1"])
+    assert "aux1" in o.data
+    assert o.data["aux1"].values[0] == 1.1
+
+    o = ms.PointObservation(df_aux, item="WL", aux_items="aux1")
+    assert "aux1" in o.data
+    assert o.data["aux1"].values[0] == 1.1
