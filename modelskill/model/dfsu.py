@@ -174,6 +174,7 @@ class DfsuModelResult(SpatialField):
 
         return PointModelResult(
             data=ds_model,
+            item=self.name,
             x=ds_model.geometry.x,
             y=ds_model.geometry.y,
             name=self.name,
