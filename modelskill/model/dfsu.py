@@ -194,6 +194,7 @@ class DfsuModelResult(SpatialField):
 
         if isinstance(self.data, mikeio.DataArray):
             ds_model = self.data.extract_track(track=track)
+            ds_model.rename({self.data.name: self.name}, inplace=True)
             aux_items = None
         else:
             if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
