@@ -200,12 +200,12 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
 
 
 def test_hist(cc):
-    ax = cc.sel(model="m1").hist()
+    ax = cc.sel(model="m1").plot.hist()
     assert ax is not None
 
 
 def test_kde(cc):
-    ax = cc.kde()
+    ax = cc.plot.kde()
     assert ax is not None
 
 
