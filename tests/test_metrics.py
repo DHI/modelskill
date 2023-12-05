@@ -1,7 +1,6 @@
 from typing import Callable
 import pytest
 import numpy as np
-import pandas as pd
 import mikeio
 
 import modelskill.metrics as mtr
