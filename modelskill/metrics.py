@@ -503,17 +503,22 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
     return nominator / denominator
 
 
-def pr(obs: np.ndarray, model: np.ndarray) -> float:
+def pr(obs: np.ndarray, model: np.ndarray, inter_event_level: float = 0.7, AAP: int = 2) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
-    return peak_ratio(obs, model)
+    return peak_ratio(obs, model, inter_event_level, AAP)
 
 
-def peak_ratio(obs: pd.Series, model: pd.Series) -> float:
+def peak_ratio(obs: pd.Series, model: pd.Series, inter_event_level: float = 0.7, AAP: int = 2) -> float:
     """Peak Ratio
 
     PR is the ratio of the mean of the identified peaks in the
     model / identified peaks in the measurements
+
+    inter_event_level (float, optional)
+        Inter-event level threshold (default: 0.7).
+    AAP (float, optional)
+        Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)
 
     .. math::
             \\frac{\\sum_{i=1}^{N_{peak}} (model_i)}{\\sum_{i=1}^{N_{peak}} (obs_i)}
@@ -533,11 +538,11 @@ def peak_ratio(obs: pd.Series, model: pd.Series) -> float:
     N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
     found_peaks = []
     for data in [obs, model]:
-        peak_index, AAP = _partial_duration_series(time, data)
+        peak_index, AAP_ = _partial_duration_series(time, data, inter_event_level=inter_event_level, AAP=AAP)
         peaks = data[peak_index]
         peaks_sorted = peaks.sort_values(ascending=False)
         found_peaks.append(
-            peaks_sorted[0 : max(1, min(round(AAP * N_years), np.sum(peaks)))]
+            peaks_sorted[0 : max(1, min(round(AAP_ * N_years), np.sum(peaks)))]
         )
     found_peaks_obs = found_peaks[0]
     found_peaks_mod = found_peaks[1]
@@ -775,6 +780,7 @@ def add_metric(metric: Callable, has_units: bool = False) -> None:
 def _partial_duration_series(
     time,
     value,
+    *,
     inter_event_time=36,
     use_inter_event_level=True,
     inter_event_level=0.7,
