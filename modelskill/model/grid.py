@@ -91,6 +91,7 @@ class GridModelResult(SpatialField):
 
         self.data: xr.Dataset = ds[sel_items.all]
         self.name = name
+        self.sel_items = sel_items
 
         # use long_name and units from data if not provided
         if quantity is None:
@@ -166,7 +167,6 @@ class GridModelResult(SpatialField):
                 f"PointObservation '{observation.name}' ({x}, {y}) is outside model domain!"
             )
 
-        # TODO add correct type hint to self.data
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
@@ -181,7 +181,7 @@ class GridModelResult(SpatialField):
             item=self.name,
             name=self.name,
             quantity=self.quantity,
-            # aux_items=self.aux_items, ?
+            aux_items=self.sel_items.aux,
         )
 
     def extract_track(self, observation: TrackObservation) -> TrackModelResult:
@@ -207,5 +207,5 @@ class GridModelResult(SpatialField):
             y_item="y",
             name=self.name,
             quantity=self.quantity,
-            # aux_items=self.aux_items, ?
+            aux_items=self.sel_items.aux,
         )
