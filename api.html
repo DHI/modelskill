@@ -2936,10 +2936,16 @@ difference between a model and an observation.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="modelskill.metrics.peak_ratio">
-<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">peak_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#peak_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.peak_ratio" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">peak_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inter_event_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">AAP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#peak_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.peak_ratio" title="Permalink to this definition">#</a></dt>
 <dd><p>Peak Ratio</p>
 <p>PR is the ratio of the mean of the identified peaks in the
 model / identified peaks in the measurements</p>
+<dl class="simple">
+<dt>inter_event_level (float, optional)</dt><dd><p>Inter-event level threshold (default: 0.7).</p>
+</dd>
+<dt>AAP (float, optional)</dt><dd><p>Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)</p>
+</dd>
+</dl>
 <div class="math notranslate nohighlight">
 \[\frac{\sum_{i=1}^{N_{peak}} (model_i)}{\sum_{i=1}^{N_{peak}} (obs_i)}\]</div>
 <p>Range: [0, inf]; Best: 1.0</p>
@@ -2947,7 +2953,7 @@ model / identified peaks in the measurements</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="modelskill.metrics.pr">
-<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">pr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#pr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.pr" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">modelskill.metrics.</span></span><span class="sig-name descname"><span class="pre">pr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inter_event_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">AAP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/modelskill/metrics.html#pr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modelskill.metrics.pr" title="Permalink to this definition">#</a></dt>
 <dd><p>alias for peak_ratio</p>
 </dd></dl>
 

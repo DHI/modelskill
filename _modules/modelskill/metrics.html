@@ -737,17 +737,22 @@ document.write(`
     <span class="k">return</span> <span class="n">nominator</span> <span class="o">/</span> <span class="n">denominator</span></div>
 
 
-<div class="viewcode-block" id="pr"><a class="viewcode-back" href="../../api.html#modelskill.metrics.pr">[docs]</a><span class="k">def</span> <span class="nf">pr</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="pr"><a class="viewcode-back" href="../../api.html#modelskill.metrics.pr">[docs]</a><span class="k">def</span> <span class="nf">pr</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">inter_event_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">AAP</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for peak_ratio&quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">obs</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">size</span>
-    <span class="k">return</span> <span class="n">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">inter_event_level</span><span class="p">,</span> <span class="n">AAP</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="peak_ratio"><a class="viewcode-back" href="../../api.html#modelskill.metrics.peak_ratio">[docs]</a><span class="k">def</span> <span class="nf">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="peak_ratio"><a class="viewcode-back" href="../../api.html#modelskill.metrics.peak_ratio">[docs]</a><span class="k">def</span> <span class="nf">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">inter_event_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span> <span class="n">AAP</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Peak Ratio</span>
 
 <span class="sd">    PR is the ratio of the mean of the identified peaks in the</span>
 <span class="sd">    model / identified peaks in the measurements</span>
+
+<span class="sd">    inter_event_level (float, optional)</span>
+<span class="sd">        Inter-event level threshold (default: 0.7).</span>
+<span class="sd">    AAP (float, optional)</span>
+<span class="sd">        Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)</span>
 
 <span class="sd">    .. math::</span>
 <span class="sd">            \\frac{\\sum_{i=1}^{N_{peak}} (model_i)}{\\sum_{i=1}^{N_{peak}} (obs_i)}</span>
@@ -767,11 +772,11 @@ document.write(`
     <span class="n">N_years</span> <span class="o">=</span> <span class="n">dt_int_mode</span> <span class="o">/</span> <span class="mi">24</span> <span class="o">/</span> <span class="mi">3600</span> <span class="o">/</span> <span class="mf">365.25</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
     <span class="n">found_peaks</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">[</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">]:</span>
-        <span class="n">peak_index</span><span class="p">,</span> <span class="n">AAP</span> <span class="o">=</span> <span class="n">_partial_duration_series</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">peak_index</span><span class="p">,</span> <span class="n">AAP_</span> <span class="o">=</span> <span class="n">_partial_duration_series</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">inter_event_level</span><span class="o">=</span><span class="n">inter_event_level</span><span class="p">,</span> <span class="n">AAP</span><span class="o">=</span><span class="n">AAP</span><span class="p">)</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">peak_index</span><span class="p">]</span>
         <span class="n">peaks_sorted</span> <span class="o">=</span> <span class="n">peaks</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">found_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">peaks_sorted</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">AAP</span> <span class="o">*</span> <span class="n">N_years</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peaks</span><span class="p">)))]</span>
+            <span class="n">peaks_sorted</span><span class="p">[</span><span class="mi">0</span> <span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">AAP_</span> <span class="o">*</span> <span class="n">N_years</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peaks</span><span class="p">)))]</span>
         <span class="p">)</span>
     <span class="n">found_peaks_obs</span> <span class="o">=</span> <span class="n">found_peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">found_peaks_mod</span> <span class="o">=</span> <span class="n">found_peaks</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -1009,6 +1014,7 @@ document.write(`
 <span class="k">def</span> <span class="nf">_partial_duration_series</span><span class="p">(</span>
     <span class="n">time</span><span class="p">,</span>
     <span class="n">value</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
     <span class="n">inter_event_time</span><span class="o">=</span><span class="mi">36</span><span class="p">,</span>
     <span class="n">use_inter_event_level</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">inter_event_level</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
