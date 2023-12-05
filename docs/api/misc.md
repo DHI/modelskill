@@ -9,11 +9,3 @@
 ## Metrics
 
 ::: modelskill.metrics
-
-## Plotting
-
-::: modelskill.plotting
-
-## Settings
-
-::: modelskill.settings

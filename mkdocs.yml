@@ -13,6 +13,8 @@ nav:
       - 'api/observation.md'
       - 'api/compare.md'
       - 'api/skill.md'
+      - 'api/plotting.md'
+      - 'api/settings.md'
       - 'api/misc.md'
 
 markdown_extensions:
