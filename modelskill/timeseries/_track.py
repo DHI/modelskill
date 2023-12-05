@@ -46,10 +46,10 @@ def _parse_track_items(
     item = _get_name(item, valid_names=items)
     x_item = _get_name(x_item, valid_names=items)
     y_item = _get_name(y_item, valid_names=items)
-    aux_items = [_get_name(i, valid_names=items) for i in aux_items or []]
+    aux_items_str = [_get_name(i, valid_names=items) for i in aux_items or []]
 
     # check that there are no duplicates
-    res = TrackItem(x=x_item, y=y_item, values=item, aux=aux_items)
+    res = TrackItem(x=x_item, y=y_item, values=item, aux=aux_items_str)
     if len(set(res.all)) != len(res.all):
         raise ValueError(f"Duplicate items! {res.all}")
 
