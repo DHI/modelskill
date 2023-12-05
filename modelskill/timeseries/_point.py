@@ -37,6 +37,8 @@ def _parse_point_items(
             )
 
     item = _get_name(item, valid_names=items)
+    if isinstance(aux_items, (str, int)):
+        aux_items = [aux_items]
     aux_items_str = [_get_name(i, valid_names=items) for i in aux_items or []]
 
     # check that there are no duplicates
