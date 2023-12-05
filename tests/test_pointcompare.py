@@ -207,3 +207,10 @@ def test_obs_attrs_carried_over(klagshamn, modelresult_oresund_WL):
     klagshamn.data.attrs["A"] = "B"  # could also have been added in constructor
     cmp = ms.compare(klagshamn, modelresult_oresund_WL)[0]
     assert cmp.data.attrs["A"] == "B"
+
+
+def test_obs_aux_carried_over(klagshamn, modelresult_oresund_WL):
+    klagshamn.data["aux"] = klagshamn.data["Klagshamn"].copy()
+    klagshamn.data["aux"].attrs["kind"] = "aux"
+    cmp = ms.compare(klagshamn, modelresult_oresund_WL)[0]
+    assert "aux" in cmp.data
