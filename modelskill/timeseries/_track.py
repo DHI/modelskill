@@ -41,7 +41,9 @@ def _parse_track_items(
         if len(items) == 3:
             item = 2
         elif len(items) > 3:
-            raise ValueError("Input has more than 3 items, but item was not given!")
+            raise ValueError(
+                f"Input has more than 3 items, but item was not given! Available items: {items}"
+            )
 
     item = _get_name(item, valid_names=items)
     x_item = _get_name(x_item, valid_names=items)

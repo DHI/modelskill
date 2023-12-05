@@ -32,7 +32,9 @@ def _parse_point_items(
         if len(items) == 1:
             item = 0
         elif len(items) > 1:
-            raise ValueError("Input has more than 1 item, but item was not given!")
+            raise ValueError(
+                f"Input has more than 1 item, but item was not given! Available items: {items}"
+            )
 
     item = _get_name(item, valid_names=items)
     aux_items_str = [_get_name(i, valid_names=items) for i in aux_items or []]
