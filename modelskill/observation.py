@@ -84,6 +84,10 @@ class Observation(TimeSeries):
             )
         return time.dt.round("100us")
 
+    @property
+    def _aux_vars(self):
+        return list(self.data.filter_by_attrs(kind="aux").data_vars)
+
 
 class PointObservation(Observation):
     """Class for observations of fixed locations
@@ -174,6 +178,8 @@ class PointObservation(Observation):
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
+        if len(self._aux_vars) > 0:
+            out += f", aux={self._aux_vars}"
         return out
 
 
@@ -308,6 +314,8 @@ class TrackObservation(Observation):
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
+        if len(self._aux_vars) > 0:
+            out += f", aux={self._aux_vars}"
         return out
 
 
