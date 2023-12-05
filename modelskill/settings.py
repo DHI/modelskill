@@ -2,12 +2,12 @@
 The settings module holds package-wide configurables and provides
 a uniform API for working with them.
 
-This module is heavily inspired by pandas config module
-https://github.com/pandas-dev/pandas/tree/main/pandas/_config 
+This module is heavily inspired by [pandas config module](https://github.com/pandas-dev/pandas/tree/main/pandas/_config)
 
 Overview
 ========
 This module supports the following requirements:
+
 - options are referenced using keys in dot.notation, e.g. "x.y.option - z".
 - keys are case-insensitive.
 - functions should accept partial/regex keys, when unambiguous.
