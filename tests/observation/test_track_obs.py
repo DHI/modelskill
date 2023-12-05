@@ -326,3 +326,13 @@ def test_track_aux_items_multiple(df_aux):
     assert o.data["aux1"].values[0] == 1.1
     assert "aux2" in o.data
     assert o.data["aux2"].values[0] == 1.2
+
+
+def test_track_aux_items_fail(df_aux):
+    with pytest.raises(KeyError):
+        ms.TrackObservation(
+            df_aux, item="WL", x_item="x", y_item="y", aux_items=["aux1", "aux3"]
+        )
+
+    with pytest.raises(ValueError):
+        ms.TrackObservation(df_aux, item="WL", x_item="x", y_item="y", aux_items=["x"])

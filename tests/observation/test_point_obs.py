@@ -165,7 +165,7 @@ def test_attrs_not_allowed(klagshamn_filename):
         ms.PointObservation(klagshamn_filename, item=0, attrs={"gtype": "v1"})
 
 
-def test_track_aux_items(df_aux):
+def test_point_aux_items(df_aux):
     o = ms.PointObservation(df_aux, item="WL", aux_items=["aux1"])
     assert "aux1" in o.data
     assert o.data["aux1"].values[0] == 1.1
@@ -173,3 +173,19 @@ def test_track_aux_items(df_aux):
     o = ms.PointObservation(df_aux, item="WL", aux_items="aux1")
     assert "aux1" in o.data
     assert o.data["aux1"].values[0] == 1.1
+
+
+def test_point_aux_items_fail(df_aux):
+    with pytest.raises(KeyError):
+        ms.PointObservation(df_aux, item="WL", aux_items=["aux1", "aux3"])
+
+    with pytest.raises(ValueError):
+        ms.PointObservation(df_aux, item="WL", aux_items="WL")
+
+
+def test_point_aux_items_multiple(df_aux):
+    o = ms.PointObservation(df_aux, item="WL", aux_items=["aux1", "aux2"])
+    assert "aux1" in o.data
+    assert "aux2" in o.data
+    assert o.data["aux1"].values[0] == 1.1
+    assert o.data["aux2"].values[0] == 1.2
