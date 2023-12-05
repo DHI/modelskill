@@ -50,8 +50,6 @@ def wind_rose(
     n_sectors: int (optional) Default= 16
     calm_threshold: float (optional) Default= None (auto calculated)
         minimum value for data being counted as valid (i.e. below this is calm)
-    resize_calm: bool or float (optional) Default: 0.05
-        resize the size of calm in plot. Useful when the calms are very large or small.
     calm_text: str (optional) Default: 'Calm'
         text to display in calm.
     r_step: float (optional) Default= 0.1
