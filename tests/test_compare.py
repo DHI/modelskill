@@ -310,11 +310,12 @@ def test_from_matched_mikeio_dataset():
 
 
 def test_trackmodelresult_and_trackobservation_uses_model_name():
-    mr = ms.TrackModelResult(
-        "tests/testdata/NorthSeaHD_extracted_track.dfs0",
-        name="MyModel",
-        item="Model_surface_elevation",
-    )
+    with pytest.warns(UserWarning, match="Removed 22 duplicate"):
+        mr = ms.TrackModelResult(
+            "tests/testdata/NorthSeaHD_extracted_track.dfs0",
+            name="MyModel",
+            item="Model_surface_elevation",
+        )
     assert mr.name == "MyModel"
 
     # reuse same data, we don't care about the data here, only the name

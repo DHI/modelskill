@@ -162,7 +162,7 @@ def test_skill(klagshamn, drogden):
     assert df.loc["Klagshamn"].n == 167
 
     # Filtered skill
-    df = cc.skill(observation="Klagshamn").df
+    df = cc.sel(observation="Klagshamn").skill().df
     assert df.loc["Klagshamn"].n == 167
 
 

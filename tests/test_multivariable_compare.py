@@ -74,7 +74,7 @@ def cc_1model(mr1Hm0, mr1WS, o1, o2, o3, wind1, wind2, wind3):
 
 
 @pytest.fixture
-def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):    
+def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):
     cc1 = ms.compare([o1, o2, o3], [mr1Hm0, mr2Hm0])
     cc2 = ms.compare([wind1, wind2, wind3], [mr1WS, mr2WS])
     return cc1 + cc2
@@ -101,14 +101,14 @@ def test_mv_mm_skill(cc):
     idx = ("SW_1", "HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.skill(model="SW_1").df
+    df = cc.sel(model="SW_1").skill().df
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
     assert pytest.approx(df.iloc[0].rmse) == 0.22359663
     idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.skill(variable="Wind speed").df
+    df = cc.sel(variable="Wind speed").skill().df
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     idx = ("SW_1", "HKNA_wind")
@@ -122,7 +122,7 @@ def test_mv_mm_mean_skill(cc):
     idx = ("SW_1", "Wind speed")
     assert pytest.approx(df.loc[idx].r2) == 0.65238805170
 
-    df = cc.mean_skill(variable="Significant wave height").df
+    df = cc.sel(variable="Significant wave height").mean_skill().df
     assert pytest.approx(df.loc["SW_1"].cc) == 0.971791458
 
 
@@ -151,12 +151,12 @@ def cm_2(obs, model):
 def test_custom_metric_skilltable_mv_mm_scatter(cc):
     mtr.add_metric(cm_1)
     mtr.add_metric(cm_2, has_units=True)
-    cc.scatter(
+    ccs = cc.sel(
         model="SW_1",
         variable="Wind speed",
         observation="F16_wind",
-        skill_table=["bias", cm_1, "si", cm_2],
     )
+    ccs.plot.scatter(skill_table=["bias", cm_1, "si", cm_2])
     assert True
     plt.close("all")
 
