@@ -6,9 +6,9 @@ import mikeio
 import numpy as np
 import pandas as pd
 
-from ._base import SpatialField, _validate_overlap_in_time, _parse_items, SelectedItems
+from ._base import SpatialField, _validate_overlap_in_time, _parse_items
 from ..types import Quantity, UnstructuredType
-from ..utils import _get_idx, _get_name
+from ..utils import _get_idx
 from .point import PointModelResult
 from .track import TrackModelResult
 from ..observation import Observation, PointObservation, TrackObservation

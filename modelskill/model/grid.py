@@ -5,8 +5,8 @@ from typing import Optional, Sequence, get_args
 import pandas as pd
 import xarray as xr
 
-from ._base import SpatialField, _validate_overlap_in_time, _parse_items, SelectedItems
-from ..utils import _get_name, rename_coords_xr, rename_coords_pd
+from ._base import SpatialField, _validate_overlap_in_time, _parse_items
+from ..utils import rename_coords_xr, rename_coords_pd
 from ..types import GridType, Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
