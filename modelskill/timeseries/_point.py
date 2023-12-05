@@ -35,10 +35,10 @@ def _parse_point_items(
             raise ValueError("Input has more than 1 item, but item was not given!")
 
     item = _get_name(item, valid_names=items)
-    aux_items = [_get_name(i, valid_names=items) for i in aux_items or []]
+    aux_items_str = [_get_name(i, valid_names=items) for i in aux_items or []]
 
     # check that there are no duplicates
-    res = PointItem(values=item, aux=aux_items)
+    res = PointItem(values=item, aux=aux_items_str)
     if len(set(res.all)) != len(res.all):
         raise ValueError(f"Duplicate items! {res.all}")
 
