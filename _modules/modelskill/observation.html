@@ -318,6 +318,10 @@ document.write(`
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="s2">&quot;100us&quot;</span><span class="p">)</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_aux_vars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">filter_by_attrs</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s2">&quot;aux&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">data_vars</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="PointObservation"><a class="viewcode-back" href="../../api.html#modelskill.observation.PointObservation">[docs]</a><span class="k">class</span> <span class="nc">PointObservation</span><span class="p">(</span><span class="n">Observation</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for observations of fixed locations</span>
@@ -342,6 +346,8 @@ document.write(`
 <span class="sd">    quantity : Quantity, optional</span>
 <span class="sd">        The quantity of the observation, for validation with model results</span>
 <span class="sd">        For MIKE dfs files this is inferred from the EUM information</span>
+<span class="sd">    aux_items : list, optional</span>
+<span class="sd">        list of names or indices of auxiliary items, by default None</span>
 <span class="sd">    attrs : dict, optional</span>
 <span class="sd">        additional attributes to be added to the data, by default None</span>
 
@@ -363,10 +369,13 @@ document.write(`
         <span class="n">z</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">aux_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">attrs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_input_validated</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">_parse_point_input</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">_parse_point_input</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="o">=</span><span class="n">quantity</span><span class="p">,</span> <span class="n">aux_items</span><span class="o">=</span><span class="n">aux_items</span>
+            <span class="p">)</span>
             <span class="n">data</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
             <span class="n">data</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
             <span class="n">data</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span>
@@ -403,6 +412,8 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;PointObservation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, x=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="s2">, y=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_aux_vars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, aux=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_aux_vars</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="n">out</span></div>
 
 
@@ -437,6 +448,8 @@ document.write(`
 <span class="sd">    quantity : Quantity, optional</span>
 <span class="sd">        The quantity of the observation, for validation with model results</span>
 <span class="sd">        For MIKE dfs files this is inferred from the EUM information</span>
+<span class="sd">    aux_items : list, optional</span>
+<span class="sd">        list of names or indices of auxiliary items, by default None</span>
 <span class="sd">    attrs : dict, optional</span>
 <span class="sd">        additional attributes to be added to the data, by default None</span>
 
@@ -502,6 +515,7 @@ document.write(`
         <span class="n">keep_duplicates</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;first&quot;</span><span class="p">,</span>
         <span class="n">offset_duplicates</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
         <span class="n">quantity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Quantity</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">aux_items</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">attrs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_input_validated</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
@@ -519,6 +533,7 @@ document.write(`
                 <span class="n">y_item</span><span class="o">=</span><span class="n">y_item</span><span class="p">,</span>
                 <span class="n">keep_duplicates</span><span class="o">=</span><span class="n">keep_duplicates</span><span class="p">,</span>
                 <span class="n">offset_duplicates</span><span class="o">=</span><span class="n">offset_duplicates</span><span class="p">,</span>
+                <span class="n">aux_items</span><span class="o">=</span><span class="n">aux_items</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span>
 
@@ -533,6 +548,8 @@ document.write(`
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;TrackObservation: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, n=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_points</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_aux_vars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, aux=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_aux_vars</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="n">out</span></div>
 
 
