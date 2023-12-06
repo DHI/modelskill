@@ -7,7 +7,7 @@ import modelskill as ms
 
 @pytest.fixture
 def hd_oresund_2d():
-    return "tests/testdata/Oresund2D.dfsu"
+    return "tests/testdata/Oresund2D_subset.dfsu"
 
 
 # TODO: replace with shorter dfs0
@@ -86,24 +86,45 @@ def test_dfsu_sw(sw_dutch_coast):
     assert isinstance(mr, ms.DfsuModelResult)
 
 
-# def test_model_dfsu(hd_oresund_2d):
-#     mr = DfsuModelResult(hd_oresund_2d, item=0, "Oresund")
-#     assert mr.n_items == 7
-#     assert isinstance(mr, DfsModelResult)
+def test_dfsu_aux_items(hd_oresund_2d):
+    mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=["U velocity"])
+    assert mr.sel_items.values == "Surface elevation"
+    assert mr.sel_items.aux == ["U velocity"]
+    assert list(mr.data.data_vars) == ["Surface elevation", "U velocity"]
 
-#     mr0 = mr[0]
-#     assert isinstance(mr0, DfsModelResultItem)
-#     assert mr.item_names[0] == mr0.item_name
+    mr = ms.DfsuModelResult(
+        hd_oresund_2d, item=0, aux_items=["U velocity", "V velocity"]
+    )
+    assert mr.sel_items.values == "Surface elevation"
+    assert mr.sel_items.aux == ["U velocity", "V velocity"]
+    assert list(mr.data.data_vars) == ["Surface elevation", "U velocity", "V velocity"]
 
-#     mr1 = mr["Surface elevation"]
-#     assert mr.item_names[0] == mr1.item_name
-#     assert mr.filename == mr1.filename
-#     assert mr.name == mr1.name
+    # accept string instead of list
+    mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items="U velocity")
+    assert mr.sel_items.values == "Surface elevation"
+    assert mr.sel_items.aux == ["U velocity"]
+    assert list(mr.data.data_vars) == ["Surface elevation", "U velocity"]
+
+    # use index instead of name
+    mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=[4, 1])
+    assert mr.sel_items.values == "Surface elevation"
+    assert mr.sel_items.aux == ["U velocity", "V velocity"]
+    assert list(mr.data.data_vars) == ["Surface elevation", "U velocity", "V velocity"]
+
+
+def test_dfsu_aux_items_fail(hd_oresund_2d):
+    with pytest.raises(ValueError, match="Duplicate items"):
+        ms.DfsuModelResult(
+            hd_oresund_2d, item=0, aux_items=["U velocity", "Surface elevation"]
+        )
+
+    with pytest.raises(ValueError, match="Duplicate items"):
+        ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=["U velocity", "swh"])
 
 
 def test_dfsu_dataarray(hd_oresund_2d):
     ds = mikeio.read(hd_oresund_2d)
-    assert ds.n_items == 7
+    assert ds.n_items == 4
     da = ds[0]
     assert isinstance(da, mikeio.DataArray)
 
