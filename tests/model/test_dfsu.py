@@ -218,6 +218,15 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
     # assert len(c1.observation.data.index.difference(Hm0_EPL.data.index)) == 0
 
 
+def test_dfsu_extract_point_aux(sw_dutch_coast, Hm0_EPL):
+    mr1 = ms.ModelResult(
+        sw_dutch_coast, item=0, aux_items=["Peak Wave Direction"], name="SW1"
+    )
+    mr_extr_1 = mr1.extract(Hm0_EPL.copy())
+    assert list(mr_extr_1.data.data_vars) == ["SW1", "Peak Wave Direction"]
+    assert mr_extr_1.n_points == 23
+
+
 def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     mr1 = ms.ModelResult(sw_dutch_coast, item=0, name="SW1")
     mr_track1 = mr1.extract(Hm0_C2)
@@ -242,3 +251,14 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     assert np.all(c1.data == c2.data)
     # c1.observation.itemInfo == Hm0_C2.itemInfo
     # assert len(c1.observation.data.index.difference(Hm0_C2.data.index)) == 0
+
+
+def test_dfsu_extract_track_aux(sw_dutch_coast, Hm0_C2):
+    mr1 = ms.ModelResult(
+        sw_dutch_coast, item=0, aux_items=["Peak Wave Direction"], name="SW1"
+    )
+    mr_track1 = mr1.extract(Hm0_C2)
+    assert list(mr_track1.data.data_vars) == ["SW1", "Peak Wave Direction"]
+    assert "x" in mr_track1.data.coords
+    assert "y" in mr_track1.data.coords
+    assert mr_track1.n_points == 70
