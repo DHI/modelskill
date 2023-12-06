@@ -11,7 +11,7 @@ mpl.use("Agg")
 @pytest.fixture
 def cc1():
     fn = "tests/testdata/NorthSeaHD_and_windspeed.dfsu"
-    mr = ms.ModelResult(fn, item=0, name="HD")
+    mr = ms.model_result(fn, item=0, name="HD")
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
@@ -40,9 +40,9 @@ def o3():
 @pytest.fixture
 def cc2(o1, o2, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    mr1 = ms.ModelResult(fn, item=0, name="SW_1")
+    mr1 = ms.model_result(fn, item=0, name="SW_1")
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    mr2 = ms.ModelResult(fn, item=0, name="SW_2")
+    mr2 = ms.model_result(fn, item=0, name="SW_2")
     return ms.compare([o1, o2, o3], [mr1, mr2])
 
 

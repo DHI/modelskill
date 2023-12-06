@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -20,31 +21,35 @@ _modelresult_lookup = {
 }
 
 
-class ModelResult:
-    """
-    ModelResult factory returning a specialized ModelResult object
-    depending on the data input.
+def model_result(
+    data: DataInputType,
+    *,
+    gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
+    **kwargs,
+) -> DfsuModelResult | GridModelResult | PointModelResult | TrackModelResult:
+    """A factory function for creating an appropriate object based on the data input.
 
-    * dfs0 or pandas.DataFrame/Series => PointModelResult
-    * dfsu file => DfsuModelResult
-    * NetCDF/Grib/xarray => GridModelResult
-
-    In some cases, the geometry type of the data can be guessed, but
-    in other cases it must be specified explicitly using the gtype argument.
-
-    Note
-    ----
-    If a data input has more than one item, the desired item **must** be
-    specified as argument on construction.
+    Parameters
+    ----------
+    data : DataInputType
+        The data to be used for creating the ModelResult object.
+    gtype : Optional[Literal["point", "track", "unstructured", "grid"]]
+        The geometry type of the data. If not specified, it will be guessed from the data.
+    **kwargs
+        Additional keyword arguments to be passed to the ModelResult constructor.
 
     Examples
     --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> mr = ModelResult("Oresund2D.dfsu", item="Surface elevation")
-    >>> mr = ModelResult(df, item="Water Level")
-    >>> mr = ModelResult("ThirdParty.nc", item="WL")
+    >>> import modelskill as ms
+    >>> ms.model_result("Oresund2D.dfsu", item=0)
+    <DfsuModelResult> 'Oresund2D'
+    >>> ms.model_result("ERA5_DutchCoast.nc", item="swh", name="ERA5")
+    <GridModelResult> 'ERA5'
     """
+    return ModelResult(data, gtype=gtype, **kwargs)  # type: ignore
 
+
+class ModelResult:
     def __new__(
         cls,
         data: DataInputType,

@@ -8,19 +8,19 @@ from modelskill.connection import SingleObsConnector
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_1")
+    return ms.model_result(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_2")
+    return ms.model_result(fn, item=0, name="SW_2")
 
 
 @pytest.fixture
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_3")
+    return ms.model_result(fn, item=0, name="SW_3")
 
 
 @pytest.fixture
@@ -64,7 +64,7 @@ def test_connector_add(o1, mr1):
 
 
 def test_connector_add_two_models(
-    o1: ms.PointObservation, mr1: ms.ModelResult, mr2: ms.ModelResult
+    o1: ms.PointObservation, mr1: ms.model_result, mr2: ms.model_result
 ):
     con = ms.Connector(o1, [mr1, mr2])
 
@@ -83,7 +83,7 @@ def test_connector_add_two_models(
 
 
 def test_connector_add_two_model_dataframes(
-    o1: ms.PointObservation, mr1: ms.ModelResult, mr2: ms.ModelResult
+    o1: ms.PointObservation, mr1: ms.model_result, mr2: ms.model_result
 ):
     mr1_extr = mr1.extract(o1)
     mr2_extr = mr2.extract(o1)

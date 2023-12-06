@@ -229,7 +229,7 @@ def observation(observation_df):
 def modelresult():
     fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
-        mr = ms.ModelResult(fn, gtype="track", item=2, name="HD")
+        mr = ms.model_result(fn, gtype="track", item=2, name="HD")
     return mr
 
 
@@ -386,7 +386,7 @@ def test_df_input(obs_tiny_df, mod_tiny3):
     assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
         cmp = ms.compare(obs_tiny_df, mod_tiny3, gtype="track")[0]
-    
+
     assert (
         cmp.data.sel(
             time=slice("2017-10-27 13:00:02", "2017-10-27 13:00:02")

@@ -63,13 +63,13 @@ def Hm0_C2():
 
 
 def test_dfsu_repr(hd_oresund_2d):
-    mr = ms.ModelResult(hd_oresund_2d, name="Oresund2D", item="Surface elevation")
+    mr = ms.model_result(hd_oresund_2d, name="Oresund2D", item="Surface elevation")
     txt = repr(mr)
     assert "Oresund2D" in txt
 
 
 def test_dfsu_properties(hd_oresund_2d):
-    mr = ms.ModelResult(hd_oresund_2d, name="Oresund2d", item="Surface elevation")
+    mr = ms.model_result(hd_oresund_2d, name="Oresund2d", item="Surface elevation")
 
     assert mr.data.is_2d
 
@@ -81,7 +81,7 @@ def test_dfsu_properties(hd_oresund_2d):
 
 
 def test_dfsu_sw(sw_dutch_coast):
-    mr = ms.ModelResult(sw_dutch_coast, name="SW", item=0)
+    mr = ms.model_result(sw_dutch_coast, name="SW", item=0)
 
     assert isinstance(mr, ms.DfsuModelResult)
 
@@ -107,7 +107,7 @@ def test_dfsu_dataarray(hd_oresund_2d):
     da = ds[0]
     assert isinstance(da, mikeio.DataArray)
 
-    mr = ms.ModelResult(da, name="Oresund")
+    mr = ms.model_result(da, name="Oresund")
     assert mr.name == "Oresund"
     assert isinstance(mr.data, mikeio.DataArray)
 
@@ -116,11 +116,11 @@ def test_dfsu_dataarray(hd_oresund_2d):
 
 
 def test_dfsu_factory(hd_oresund_2d):
-    mr1 = ms.ModelResult(hd_oresund_2d, name="myname", item=-1)
+    mr1 = ms.model_result(hd_oresund_2d, name="myname", item=-1)
     assert isinstance(mr1, ms.DfsuModelResult)
     assert mr1.name == "myname"
 
-    mr2 = ms.ModelResult(hd_oresund_2d, name="Oresund2d", item="Surface elevation")
+    mr2 = ms.model_result(hd_oresund_2d, name="Oresund2d", item="Surface elevation")
     assert isinstance(mr2, ms.DfsuModelResult)
     assert mr2.name == "Oresund2d"
 
@@ -142,7 +142,7 @@ def test_dfsu_factory(hd_oresund_2d):
 def test_extract_observation_total_windsea_swell_not_possible(
     sw_total_windsea, Hm0_HKNA
 ):
-    mr = ms.ModelResult(sw_total_windsea, name="SW", item="Sign. Wave Height, S")
+    mr = ms.model_result(sw_total_windsea, name="SW", item="Sign. Wave Height, S")
     """
     Items:
         0:  Sign. Wave Height <Significant wave height> (meter)
@@ -160,7 +160,7 @@ def test_extract_observation_total_windsea_swell_not_possible(
 
 # TODO: move this test to test_connector.py
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
-    mr = ms.ModelResult(hd_oresund_2d, item=0)
+    mr = ms.model_result(hd_oresund_2d, item=0)
     with pytest.raises(Exception):
         c = ms.Connector(klagshamn, mr, validate=True).extract()
 
@@ -171,7 +171,7 @@ def test_extract_observation_validation(hd_oresund_2d, klagshamn):
 
 # TODO: move this test to test_connector.py
 def test_extract_observation_outside(hd_oresund_2d, klagshamn):
-    mr = ms.ModelResult(hd_oresund_2d, item=0)
+    mr = ms.model_result(hd_oresund_2d, item=0)
     # correct eum, but outside domain
     klagshamn.y = -10
     with pytest.raises(ValueError):
@@ -181,14 +181,14 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
 
 
 def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
-    mr1 = ms.ModelResult(sw_dutch_coast, item=0, name="SW1")
+    mr1 = ms.model_result(sw_dutch_coast, item=0, name="SW1")
     mr_extr_1 = mr1.extract(Hm0_EPL.copy())
     # df1 = mr1._extract_point(Hm0_EPL)
     assert list(mr_extr_1.data.data_vars) == ["SW1"]
     assert mr_extr_1.n_points == 23
 
     da = mikeio.read(sw_dutch_coast)[0]
-    mr2 = ms.ModelResult(da, name="SW1")
+    mr2 = ms.model_result(da, name="SW1")
     mr_extr_2 = mr2.extract(Hm0_EPL.copy())
 
     assert list(mr_extr_1.data.data_vars) == list(mr_extr_2.data.data_vars)
@@ -204,7 +204,7 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
 
 
 def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
-    mr1 = ms.ModelResult(sw_dutch_coast, item=0, name="SW1")
+    mr1 = ms.model_result(sw_dutch_coast, item=0, name="SW1")
     mr_track1 = mr1.extract(Hm0_C2)
     ds1 = mr_track1.data
     assert "SW1" in ds1.data_vars
@@ -213,7 +213,7 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     assert mr_track1.n_points == 113
 
     da = mikeio.read(sw_dutch_coast)[0]
-    mr2 = ms.ModelResult(da, name="SW1")
+    mr2 = ms.model_result(da, name="SW1")
     mr_track2 = mr2.extract(Hm0_C2.copy())
     ds2 = mr_track2.data
 

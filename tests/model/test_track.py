@@ -80,7 +80,7 @@ def test_track_df_default_items(track_df):
     # Which columns are used for position, lon and lat?
     # will default to 0,1,2 (bad idea in this case)
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
-        mr0 = ms.ModelResult(df, gtype="track")
+        mr0 = ms.model_result(df, gtype="track")
     assert "x" in mr0.data.coords
     # assert np.all(mr0.data.values == df.dropna().values)
     # assert np.all(mr0.data["x"].values == df["surface_elevation"].values)
@@ -88,7 +88,7 @@ def test_track_df_default_items(track_df):
 
     with pytest.raises(ValueError):
         # cannot default item as x_item and y_item are not default
-        ms.ModelResult(df, gtype="track", x_item=1, y_item="lat")
+        ms.model_result(df, gtype="track", x_item=1, y_item="lat")
     # assert isinstance(mr1, protocols.ModelResult)
     # assert mr1.item_name == "surface_elevation"
 
@@ -99,10 +99,10 @@ def test_track_df_default_items(track_df):
 
     with pytest.raises(ValueError):
         # cannot default anymore - more than 3 columns
-        ms.ModelResult(df, gtype="track")
+        ms.model_result(df, gtype="track")
 
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
-        mr3 = ms.ModelResult(
+        mr3 = ms.model_result(
             df, item="wl", gtype="track", x_item="longitude", y_item="latitude"
         )
     assert isinstance(mr3, protocols.ModelResult)

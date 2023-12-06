@@ -126,7 +126,7 @@ def test_point_df_itemInfo(point_df):
     df = point_df
     df["ones"] = 1.0
     # itemInfo = mikeio.EUMType.Surface_Elevation
-    mr1 = ms.ModelResult(
+    mr1 = ms.model_result(
         df,
         item="Water Level",
         quantity=ms.Quantity(name="Surface elevation", unit="meter"),

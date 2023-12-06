@@ -6,13 +6,13 @@ import modelskill as ms
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_1")
+    return ms.model_result(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_2")
+    return ms.model_result(fn, item=0, name="SW_2")
 
 
 @pytest.fixture

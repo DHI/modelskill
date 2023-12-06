@@ -26,6 +26,7 @@ if "64" not in architecture()[0]:
 
 from .types import Quantity
 from .model.factory import ModelResult
+from .model import model_result
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .observation import PointObservation, TrackObservation
 from .matching import compare, from_matched
@@ -77,4 +78,5 @@ __all__ = [
     "load_style",
     "plotting",
     "from_config",
+    "model_result",
 ]
