@@ -158,44 +158,44 @@ def test_skill_sel_fail(cc2):
 
 def test_skill_plot_bar(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
-    s.plot.bar("bias")
+    s["bias"].plot.bar()
 
 
 def test_skill_plot_bar_multi_model(cc2):
     s = cc2.skill(metrics="rmse")
-    s.plot.bar("rmse")
+    s["rmse"].plot.bar()
 
     with pytest.raises(KeyError):
-        s.plot.bar("bad_metric")
+        s["bad_metric"].plot.bar()
 
 
 def test_skill_plot_line(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
-    s.plot.line("bias")
-    s.plot.line("bias", title="Skill")
+    s["bias"].plot.line()
+    s["bias"].plot.line(title="Skill")
 
-    with pytest.raises(KeyError, match="rmse"):
-        s.plot.line("NOT_A_METRIC")
+    with pytest.raises(KeyError):
+        s["NOT_A_METRIC"].plot.line()
 
 
 def test_skill_plot_line_multi_model(cc2):
     s = cc2.skill(metrics="rmse")
-    s.plot.line("rmse")
+    s.rmse.plot.line()
 
     with pytest.raises(KeyError):
-        s.plot.line("bad_metric")
+        s["bad_metric"]
 
 
 def test_skill_plot_grid(cc2):
     s = cc2.skill()
-    s.plot.grid("rmse")
-    s.plot.grid("bias")
-    s.plot.grid("si", fmt=".0%")
-    s.plot.grid("bias", figsize=(2, 1), show_numbers=False)
+    s["rmse"].plot.grid()
+    s["bias"].plot.grid()
+    s["si"].plot.grid(fmt=".0%")
+    s["bias"].plot.grid(figsize=(2, 1), show_numbers=False)
 
     s2 = s.sel(model="SW_1")
     with pytest.warns(UserWarning) as wn:
-        s2.plot.grid("rmse")
+        s2["rmse"].plot.grid()
     assert len(wn) == 1
     assert "only possible for MultiIndex" in str(wn[0].message)
 
