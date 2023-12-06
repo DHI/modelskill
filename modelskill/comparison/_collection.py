@@ -127,6 +127,11 @@ class ComparerCollection(Mapping):
         return "Observations"
 
     @property
+    def unit_text(self) -> str:
+        assert len(set((c.unit_text for c in self))) == 1
+        return self[0].unit_text
+
+    @property
     def n_comparers(self) -> int:
         """Number of comparers"""
         return len(self.comparers)
