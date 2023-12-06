@@ -1,24 +1,25 @@
 """The `metrics` module contains different skill metrics for evaluating the 
 difference between a model and an observation. 
 
-* bias
-* max_error
-* root_mean_squared_error (rmse)    
-* urmse
-* mean_absolute_error (mae)
-* mean_absolute_percentage_error (mape)
-* kling_gupta_efficiency (kge)
-* nash_sutcliffe_efficiency (nse)
-* r2 (r2=nse)
-* model_efficiency_factor (mef)
-* wilmott
-* scatter_index (si)
-* corrcoef (cc)
-* spearmanr (rho)
-* lin_slope
-* hit_ratio
-* explained_variance (ev)
-* peak_ratio (pr)
+* [bias][modelskill.metrics.bias]
+* [max_error][modelskill.metrics.max_error]
+* [root_mean_squared_error (rmse)][modelskill.metrics.root_mean_squared_error]    
+* [urmse][modelskill.metrics.urmse]
+* [mean_absolute_error (mae)][modelskill.metrics.mean_absolute_error]
+* [mean_absolute_percentage_error (mape)][modelskill.metrics.mean_absolute_percentage_error]
+* [kling_gupta_efficiency (kge)][modelskill.metrics.kling_gupta_efficiency]
+* [nash_sutcliffe_efficiency (nse)][modelskill.metrics.nash_sutcliffe_efficiency]
+* [r2 (r2=nse)][modelskill.metrics.r2]
+* [model_efficiency_factor (mef)][modelskill.metrics.model_efficiency_factor]
+* [wilmott][modelskill.metrics.willmott]
+* [scatter_index (si)][modelskill.metrics.scatter_index]
+* [scatter_index2][modelskill.metrics.scatter_index2]
+* [corrcoef (cc)][modelskill.metrics.corrcoef]
+* [spearmanr (rho)][modelskill.metrics.spearmanr]
+* [lin_slope][modelskill.metrics.lin_slope]
+* [hit_ratio][modelskill.metrics.hit_ratio]
+* [explained_variance (ev)][modelskill.metrics.explained_variance]
+* [peak_ratio (pr)][modelskill.metrics.peak_ratio]
 
 The names in parentheses are shorthand aliases for the different metrics.
 
@@ -449,7 +450,7 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     {\frac{1}{n} \sum_{i=1}^n | obs_i | }
     $$
 
-    Range: [0, \infty); Best: 0
+    Range: $[0, \infty)$; Best: 0
     """
     assert obs.size == model.size
     if len(obs) == 0:
@@ -521,14 +522,18 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
     return nominator / denominator
 
 
-def pr(obs: np.ndarray, model: np.ndarray, inter_event_level: float = 0.7, AAP: int = 2) -> float:
+def pr(
+    obs: np.ndarray, model: np.ndarray, inter_event_level: float = 0.7, AAP: int = 2
+) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
     return peak_ratio(obs, model, inter_event_level, AAP)
 
 
-def peak_ratio(obs: pd.Series, model: pd.Series, inter_event_level: float = 0.7, AAP: int = 2) -> float:
-    """Peak Ratio
+def peak_ratio(
+    obs: pd.Series, model: pd.Series, inter_event_level: float = 0.7, AAP: int = 2
+) -> float:
+    r"""Peak Ratio
 
     PR is the ratio of the mean of the identified peaks in the
     model / identified peaks in the measurements
@@ -545,7 +550,7 @@ def peak_ratio(obs: pd.Series, model: pd.Series, inter_event_level: float = 0.7,
     \frac{\sum_{i=1}^{N_{peak}} (model_i)}{\sum_{i=1}^{N_{peak}} (obs_i)}
     $$
 
-    Range: [0, inf]; Best: 1.0
+    Range: $[0, \infty)$; Best: 1.0
     """
 
     assert obs.size == model.size
@@ -559,7 +564,9 @@ def peak_ratio(obs: pd.Series, model: pd.Series, inter_event_level: float = 0.7,
     N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
     found_peaks = []
     for data in [obs, model]:
-        peak_index, AAP_ = _partial_duration_series(time, data, inter_event_level=inter_event_level, AAP=AAP)
+        peak_index, AAP_ = _partial_duration_series(
+            time, data, inter_event_level=inter_event_level, AAP=AAP
+        )
         peaks = data[peak_index]
         peaks_sorted = peaks.sort_values(ascending=False)
         found_peaks.append(

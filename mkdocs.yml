@@ -12,6 +12,7 @@ nav:
       - 'api/model.md'
       - 'api/observation.md'
       - 'api/compare.md'
+      - 'api/metrics.md'
       - 'api/skill.md'
       - 'api/plotting.md'
       - 'api/settings.md'
