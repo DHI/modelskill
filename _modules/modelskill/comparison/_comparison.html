@@ -282,15 +282,6 @@ document.write(`
         <span class="c1"># matched_data = self._matched_data_to_xarray(matched_data)</span>
     <span class="k">assert</span> <span class="s2">&quot;Observation&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span>
 
-    <span class="c1"># Validate time</span>
-    <span class="c1"># assert len(data.dims) == 1, &quot;Only 0-dimensional data are supported&quot;</span>
-    <span class="k">assert</span> <span class="s2">&quot;time&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">dims</span><span class="p">,</span> <span class="s2">&quot;data must have a time dimension&quot;</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">(),</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">),</span> <span class="s2">&quot;time must be datetime&quot;</span>
-    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">())</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s2">&quot;100us&quot;</span><span class="p">)</span>  <span class="c1"># 0.0001s</span>
-    <span class="k">assert</span> <span class="p">(</span>
-        <span class="n">data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">to_index</span><span class="p">()</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
-    <span class="p">),</span> <span class="s2">&quot;time must be increasing (please check for duplicate times))&quot;</span>
-
     <span class="c1"># no missing values allowed in Observation</span>
     <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Observation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isnull</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Observation data must not contain missing values.&quot;</span><span class="p">)</span>
@@ -306,8 +297,7 @@ document.write(`
     <span class="c1"># Validate data</span>
     <span class="nb">vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="p">]</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">vars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;dataset must have at least two data arrays&quot;</span>
-    <span class="n">mod_names</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">n_obs</span> <span class="o">=</span> <span class="mi">0</span>
+
     <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="p">:</span>
         <span class="n">v</span> <span class="o">=</span> <span class="n">_validate_data_var_name</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
         <span class="k">assert</span> <span class="p">(</span>
@@ -318,17 +308,16 @@ document.write(`
         <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;All data arrays must have a time dimension; </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> has dimensions </span><span class="si">{</span><span class="n">data</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="s2">&quot;kind&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
             <span class="n">data</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auxiliary&quot;</span>
-        <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;observation&quot;</span><span class="p">:</span>
-            <span class="n">n_obs</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="n">v</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;model&quot;</span><span class="p">:</span>
-            <span class="n">mod_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+    <span class="n">n_mod</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">_is_model</span><span class="p">(</span><span class="n">da</span><span class="p">)</span> <span class="k">for</span> <span class="n">da</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+    <span class="n">n_obs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">_is_observation</span><span class="p">(</span><span class="n">da</span><span class="p">)</span> <span class="k">for</span> <span class="n">da</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">data_vars</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
 
     <span class="c1"># Validate observation data array</span>
     <span class="k">if</span> <span class="n">n_obs</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;dataset must have exactly one observation array (marked by the kind attribute), this has </span><span class="si">{</span><span class="n">n_obs</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mod_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">n_mod</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">&quot;dataset must have at least one model array (marked by the kind attribute)&quot;</span>
         <span class="p">)</span>
@@ -354,6 +343,14 @@ document.write(`
 
     <span class="n">data</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;modelskill_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">__version__</span>
     <span class="k">return</span> <span class="n">data</span>
+
+
+<span class="k">def</span> <span class="nf">_is_observation</span><span class="p">(</span><span class="n">da</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;observation&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_is_model</span><span class="p">(</span><span class="n">da</span><span class="p">:</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">da</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;model&quot;</span>
 
 
 <span class="c1"># TODO remove in v1.1</span>
