@@ -199,3 +199,23 @@ def test_point_aux_items_multiple(df_aux):
     assert "aux2" in o.data
     assert o.data["aux1"].values[0] == 1.1
     assert o.data["aux2"].values[0] == 1.2
+
+
+def test_point_modelresult_must_have_unique_and_monotonically_increasing_time():
+    df_dup = pd.DataFrame(
+        {"wl": [0.0, 1.0, 2.0]},
+        index=pd.DatetimeIndex(
+            ["2015-01-01", "2015-01-01", "2015-01-02"]  # same as previous
+        ),
+    )
+
+    with pytest.raises(ValueError):
+        ms.PointModelResult(df_dup, item=0)
+
+    df_up_and_down = pd.DataFrame(
+        {"wl": [0.0, 1.0, 2.0]},
+        index=pd.DatetimeIndex(["2015-01-01", "2015-01-02", "2015-01-01"]),
+    )
+
+    with pytest.raises(ValueError):
+        ms.PointModelResult(df_up_and_down, item=0)
