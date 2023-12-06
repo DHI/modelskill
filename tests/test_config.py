@@ -12,7 +12,7 @@ def test_comparison_from_dict():
     configuration = dict(
         modelresults=dict(
             HD=dict(
-                filename="tests/testdata/Oresund2D.dfsu",
+                filename="tests/testdata/Oresund2D_subset.dfsu",
                 item=0,
             ),
         ),

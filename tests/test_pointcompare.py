@@ -28,7 +28,7 @@ def drogden():
 
 @pytest.fixture
 def modelresult_oresund_WL():
-    return ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
+    return ms.ModelResult("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 
 
 def test_misc_properties(klagshamn, drogden):
-    mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.ModelResult("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
     cc = ms.compare([klagshamn, drogden], mr)
 
@@ -136,7 +136,7 @@ def test_misc_properties(klagshamn, drogden):
     assert cc.n_comparers == 2
 
     assert cc.n_models == 1
-    assert cc.mod_names == ["Oresund2D"]
+    assert cc.mod_names == ["Oresund2D_subset"]
 
     ck = cc["Klagshamn"]
     assert ck.name == "Klagshamn"
@@ -156,20 +156,20 @@ def test_misc_properties(klagshamn, drogden):
 
 
 def test_skill(klagshamn, drogden):
-    mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.ModelResult("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
     cc = ms.compare([klagshamn, drogden], mr)
 
     df = cc.skill().df
-    assert df.loc["Klagshamn"].n == 167
+    assert df.loc["Klagshamn"].n == 71
 
     # Filtered skill
     df = cc.sel(observation="Klagshamn").skill().df
-    assert df.loc["Klagshamn"].n == 167
+    assert df.loc["Klagshamn"].n == 71
 
 
 def test_skill_choose_metrics(klagshamn, drogden):
-    mr = ms.ModelResult("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.ModelResult("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
     cc = ms.compare([klagshamn, drogden], mr)
 
@@ -218,12 +218,12 @@ def test_obs_aux_carried_over(klagshamn, modelresult_oresund_WL):
     assert "aux" in cmp.data
     assert cmp.data["aux"].values[0] == 1.0
     assert cmp.data["aux"].attrs["kind"] == "aux"
-    assert cmp.mod_names == ["Oresund2D"]
+    assert cmp.mod_names == ["Oresund2D_subset"]
 
 
 def test_obs_aux_carried_over_nan(klagshamn, modelresult_oresund_WL):
     cmp1 = ms.compare(klagshamn, modelresult_oresund_WL)[0]
-    assert cmp1.n_points == 167
+    assert cmp1.n_points == 71
     assert cmp1.time[0] == pd.Timestamp("2018-03-04 00:00:00")
     assert cmp1.data["Observation"].values[0] == pytest.approx(-0.11)
 
@@ -232,6 +232,6 @@ def test_obs_aux_carried_over_nan(klagshamn, modelresult_oresund_WL):
     klagshamn.data["aux"].attrs["kind"] = "aux"
     klagshamn.data["aux"].loc["2018-03-04 00:00:00"] = np.nan
     cmp2 = ms.compare(klagshamn, modelresult_oresund_WL)[0]
-    assert cmp2.n_points == 167
+    assert cmp2.n_points == 71
     assert cmp2.time[0] == pd.Timestamp("2018-03-04 00:00:00")
     assert cmp2.data["Observation"].values[0] == pytest.approx(-0.11)
