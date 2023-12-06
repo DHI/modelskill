@@ -47,28 +47,6 @@ def o123():
     return o1, o2, o3
 
 
-# def test_concat_time(o123, mr28, mr29, mr2days):
-#     con1 = ms.Connector(o123, mr28)
-#     with pytest.warns(UserWarning, match="No overlapping data"):
-#         cc1 = con1.extract()
-#     # cc1 = ms.compare(o123, mr28)
-#     cc2 = ms.compare(o123, mr29)
-
-#     # Note: the multi-file dataset will have interpolated values
-#     # between 23:00 the first day and 00:00 the second day
-#     # that is NOT the case with the concatenated cc12b
-#     cc12 = ms.compare(o123, mr2days)
-
-#     assert cc1.start == cc12.start
-#     assert cc2.end == cc12.end
-
-#     cc12b = cc1 + cc2
-#     assert cc1.start == cc12b.start
-#     assert cc2.end == cc12b.end
-#     assert cc12b.n_points < cc12.n_points
-#     assert cc12b.n_points == cc1.n_points + cc2.n_points
-
-
 def test_concat_model(o123, mrmike, mrmike2):
     cc1 = ms.compare(o123, mrmike)
     cc2 = ms.compare(o123, mrmike2)

@@ -43,22 +43,26 @@ def o3():
 
 @pytest.fixture
 def con31(o1, o2, o3, mr1):
-    return ms.Connector([o1, o2, o3], mr1)
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        return ms.Connector([o1, o2, o3], mr1)
 
 
 @pytest.fixture
 def con32(o1, o2, o3, mr1, mr2):
-    return ms.Connector([o1, o2, o3], [mr1, mr2])
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        return ms.Connector([o1, o2, o3], [mr1, mr2])
 
 
 def test_point_connector_repr(o1, mr1):
-    con = SingleObsConnector(o1, mr1)
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        con = SingleObsConnector(o1, mr1)
     txt = repr(con)
     assert "SingleObsConnector" in txt
 
 
 def test_connector_add(o1, mr1):
-    con = ms.Connector()
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        con = ms.Connector()
     con.add(o1, mr1, validate=False)
     assert len(con.observations) == 1
 
@@ -66,14 +70,16 @@ def test_connector_add(o1, mr1):
 def test_connector_add_two_models(
     o1: ms.PointObservation, mr1: ms.ModelResult, mr2: ms.ModelResult
 ):
-    con = ms.Connector(o1, [mr1, mr2])
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        con = ms.Connector(o1, [mr1, mr2])
 
     assert con.n_models == 2
     cc = con.extract()
     assert cc.n_models == 2
 
     # Alternative specification using .add() should be identical
-    con2 = ms.Connector()
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        con2 = ms.Connector()
     con2.add(o1, mr1)
     con2.add(o1, mr2)
 
@@ -97,25 +103,19 @@ def test_connector_add_two_model_dataframes(
     assert mr1_extr.n_points > 1  # Number of rows
     assert mr2_extr.n_points > 1  # Number of rows
 
-    con = ms.Connector(o1, [mr1_extr, mr2_extr])
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        con = ms.Connector(o1, [mr1_extr, mr2_extr])
 
     assert con.n_models == 2
     cc = con.extract()
     assert cc.n_models == 2
 
     # Alternative specification using .add() should be identical
-    con2 = ms.Connector()
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        con2 = ms.Connector()
     con2.add(o1, mr1_extr)
     con2.add(o1, mr2_extr)
 
     assert con2.n_models == 2
     cc2 = con2.extract()
     assert cc2.n_models == 2
-
-
-def test_plot_positions(con32):
-    con32.plot_observation_positions()
-
-
-def test_plot_data_coverage(con31):
-    con31.plot_temporal_coverage()
