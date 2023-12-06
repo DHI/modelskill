@@ -1,12 +1,10 @@
-Vision
-======
+# Vision
 
-[ModelSkill](https://github.com/DHI/modelskill) wishes to be your
-modelling assistant. It should be useful enough for you to use every
-time you do a MIKE 21/3 simulation.
+[ModelSkill](https://github.com/DHI/modelskill) would like to be your
+modelling companion. It should be indispensable good such that you want to use it every time you do a MIKE simulation.
 
-Objective
----------
+
+## Objective
 
 We want [ModelSkill](https://github.com/DHI/modelskill) to make it easy
 to
@@ -21,6 +19,8 @@ to
     diagrams
 -   do *aggregations* - assess for all observations, geographic areas,
     monthly, \...
+-   do *filtering* - assess for a subset of observations, geographic
+    areas, \...
 -   make *fast* comparisons (optimized code)
 
 And it should be
@@ -31,30 +31,24 @@ And it should be
 -   Easy to get started by providing many notebook examples and
     documentation
 
-Scope
------
+
+## Scope
 
 [ModelSkill](https://github.com/DHI/modelskill) wants to balance general
 and specific needs:
 
--   It should be general enough to cover \>90% of MIKE FM simulations
+- It should be general enough to cover \>90% of MIKE simulations
 
--   It should be general enough to cover generic modelling irrespective
+- It should be general enough to cover generic modelling irrespective
     of software.
 
--   
+- But specific enough to be useful
 
-    But specific enough to be useful
+    - Support dfs files (using [mikeio](https://github.com/DHI/mikeio))
+    - Handle circular variables such as wave direction
 
-    :   -   Support dfs files (using
-            [mikeio](https://github.com/DHI/mikeio))
-        -   Handle circular variables such as wave direction
-        -   Handle vector variables such as u- and v-components of
-            current
-        -   Tidal analysis
-
-Limitations
------------
+        
+## Limitations
 
 [ModelSkill](https://github.com/DHI/modelskill) does **not** wish to
 cover
@@ -66,24 +60,29 @@ cover
 -   Rare observation types
 -   Anything project specific
 
-Future
-------
 
-### Automatic reports
+## Future
 
-Both static as markdown, docx, pptx and interactive as html
+
+### Forecast skill 
+
+It should be possible to compare forecasts with observations using 
+forecast lead time as a dimension. Planned 2024. 
+
+
+### Better support for 3D data
+
+Currently 3D data is supported only as point data and only if data has 
+already been extracted from model result files. It should be possible to extract 
+date from 3D files directly. Furthermore, vertical columns data should be supported as an observation type with z as a dimension. Planned 2024.
+
 
 ### Web app
 
-Create a web app that wraps this library
+Create a web app that wraps this library. 
 
-### Interface to observation APIs
 
-Easy to get observation data from [DHI\'s altimetry
-portal](https://altimetry.dhigroup.com), CMEMS, etc. See the sister
-package [WatObs](https://github.com/DHI/WatObs) .
+### Automatic reports
 
-### Interface to alternative models
+Both static as markdown, docx, pptx and interactive as html. 
 
-Should be easy to compare your model to publically available alternative
-e.g. from CMEMS or NOAA. Or from DHI\'s DataLink.

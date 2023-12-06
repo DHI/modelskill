@@ -22,12 +22,28 @@ from .timeseries import (
 )
 
 
+def _validate_attrs(data_attrs: dict, attrs: Optional[dict]) -> None:
+    # See similar method in xarray https://github.com/pydata/xarray/blob/main/xarray/backends/api.py#L165
+
+    if attrs is None:
+        return
+    for k, v in attrs.items():
+        if k in data_attrs:
+            raise ValueError(f"attrs key {k} not allowed, conflicts with build-in key!")
+
+        # TODO: check that v is a valid type for netcdf attributes, str, int, float
+        if not isinstance(v, (str, int, float)):
+            raise ValueError(
+                f"attrs value {v} must be a valid type for netcdf attributes, str, int, float, not {type(v)}"
+            )
+
+
 class Observation(TimeSeries):
     def __init__(
         self,
         data: xr.Dataset,
-        weight: float = 1.0,
-        color: str = "#d62728",
+        weight: float = 1.0,  # TODO: cannot currently be set
+        color: str = "#d62728",  # TODO: cannot currently be set
     ) -> None:
         data["time"] = self._parse_time(data.time)
 
@@ -53,6 +69,10 @@ class Observation(TimeSeries):
             )
         return time.dt.round("100us")
 
+    @property
+    def _aux_vars(self):
+        return list(self.data.filter_by_attrs(kind="aux").data_vars)
+
 
 class PointObservation(Observation):
     """Class for observations of fixed locations
@@ -77,6 +97,10 @@ class PointObservation(Observation):
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
 
     Examples
     --------
@@ -96,9 +120,13 @@ class PointObservation(Observation):
         z: Optional[float] = None,
         name: Optional[str] = None,
         quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
+        attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_point_input(data, name=name, item=item, quantity=quantity)
+            data = _parse_point_input(
+                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+            )
             data.coords["x"] = x
             data.coords["y"] = y
             data.coords["z"] = z
@@ -107,6 +135,11 @@ class PointObservation(Observation):
 
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "observation"
+
+        # check that user-defined attrs don't overwrite existing attrs!
+        _validate_attrs(data.attrs, attrs)
+        data.attrs = {**data.attrs, **(attrs or {})}
+
         super().__init__(data=data)
 
     @property
@@ -130,6 +163,8 @@ class PointObservation(Observation):
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
+        if len(self._aux_vars) > 0:
+            out += f", aux={self._aux_vars}"
         return out
 
 
@@ -164,7 +199,10 @@ class TrackObservation(Observation):
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
-
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
 
     Examples
     --------
@@ -228,6 +266,8 @@ class TrackObservation(Observation):
         keep_duplicates: bool | str = "first",
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
+        attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
             if offset_duplicates != 0.001:
@@ -244,16 +284,23 @@ class TrackObservation(Observation):
                 y_item=y_item,
                 keep_duplicates=keep_duplicates,
                 offset_duplicates=offset_duplicates,
+                aux_items=aux_items,
             )
         assert isinstance(data, xr.Dataset)
 
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "observation"
 
+        # check that user-defined attrs don't overwrite existing attrs!
+        _validate_attrs(data.attrs, attrs)
+        data.attrs = {**data.attrs, **(attrs or {})}
+
         super().__init__(data=data)
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"
+        if len(self._aux_vars) > 0:
+            out += f", aux={self._aux_vars}"
         return out
 
 

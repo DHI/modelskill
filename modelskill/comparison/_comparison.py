@@ -741,6 +741,7 @@ class Comparer:
                 y=self.y,
                 z=self.z,
                 quantity=self.quantity,
+                # TODO: add attrs
             )
         elif self.gtype == "track":
             df = self.data.drop_vars(["z"])[[self._obs_name]].to_dataframe()
@@ -751,6 +752,7 @@ class Comparer:
                 y_item=2,
                 name=self.name,
                 quantity=self.quantity,
+                # TODO: add attrs
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
@@ -954,6 +956,7 @@ class Comparer:
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,
@@ -1022,6 +1025,7 @@ class Comparer:
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         s = self.skill(
             metrics=[metric],
@@ -1104,6 +1108,7 @@ class Comparer:
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,

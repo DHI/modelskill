@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -7,10 +8,123 @@ if TYPE_CHECKING:
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from matplotlib.collections import PatchCollection
 from matplotlib.legend import Legend
-from matplotlib.offsetbox import AnchoredText
 from matplotlib.patches import Polygon, Rectangle
+
+
+@dataclass
+class DirectionalHistogram:
+    calm: float
+    density: np.ndarray
+    dir_bins: np.ndarray
+    mag_bins: np.ndarray
+
+    def __post_init__(self):
+        assert self.density.ndim == 2
+        assert self.density.shape == (len(self.mag_bins) - 1, len(self.dir_bins) - 1)
+
+    @property
+    def dir_centers(self) -> np.ndarray:
+        return (self.dir_bins[:-1] + self.dir_bins[1:]) / 2
+
+    def __str__(self):
+        # columns are dir_bins (-45-45, 45-135, 135-225, 225-315, 315-405)
+        columns = [
+            f"({start}-{stop}]"
+            for start, stop in zip(self.dir_bins[:-1], self.dir_bins[1:])
+        ]
+        rows = [
+            f"({start}-{stop}]"
+            for start, stop in zip(self.mag_bins[:-1], self.mag_bins[1:])
+        ]
+
+        df = pd.DataFrame(self.density, index=rows, columns=columns)
+        df.index.name = "Magnitude"
+        df.columns.name = "Direction"
+        body = df.__repr__()
+        calm = f"Calm: {self.calm}"
+        return "\n".join([calm, body])
+
+    @staticmethod
+    def create_from_data(
+        data: np.ndarray,
+        *,
+        ui: np.ndarray,
+        dir_step: float,
+    ) -> DirectionalHistogram:
+        """Create a masked 2d directional histogram.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            array with 2 columns (magnitude, direction)
+        ui : np.ndarray
+            magnitude bins, values below the first bin is considered calm
+        dir_step : float
+            direction step size
+
+        Returns
+        -------
+        DirectionalHistogram
+        """
+
+        return _dirhist2d(data, ui=ui, dir_step=dir_step)
+
+
+def _dirhist2d(
+    data: np.ndarray,
+    *,
+    ui: np.ndarray,
+    dir_step: float,
+) -> DirectionalHistogram:
+    """Calculate a masked 2d histogram.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        array with 2 columns (magnitude, direction)
+    ui : np.ndarray
+        magnitude bins, values below the first bin is considered calm
+    dir_step : float
+        direction step size
+    """
+    assert data.ndim == 2, "data must be 2d"
+    assert data.shape[1] == 2, "data must have 2 columns"
+    assert data[:, 1].min() >= 0, "direction must be positive"
+    assert data[:, 1].max() <= 360, "direction must be in 0-360"
+    assert data[:, 0].min() >= 0, "magnitude must be positive"
+
+    half_dir_step = dir_step / 2
+    vmin = ui[0]
+
+    # data in the [0,half_dir_step] range is shifted 360 degrees
+    data = data.copy()
+    data[:, 1] = np.where(
+        data[:, 1] < half_dir_step,
+        data[:, 1] + 360,
+        data[:, 1],
+    )
+
+    thetai = np.linspace(
+        start=half_dir_step,
+        stop=360 + half_dir_step,
+        num=int(((360 + half_dir_step) - half_dir_step) / dir_step + 1),
+    )
+
+    mask = data[:, 0] >= vmin
+    calm = len(data[~mask]) / len(data)
+    n = len(data)
+    counts, _, _ = np.histogram2d(  # type: ignore
+        data[mask][:, 0],
+        data[mask][:, 1],
+        bins=[ui, thetai],  # type: ignore
+    )
+    density = counts / n
+    return DirectionalHistogram(
+        calm=calm, density=density, dir_bins=thetai, mag_bins=ui
+    )
 
 
 def wind_rose(
@@ -48,6 +162,7 @@ def wind_rose(
     mag_step: float, (optional) Default= None
         discretization for magnitude (delta_r, in radial direction )
     n_sectors: int (optional) Default= 16
+        number of directional sectors
     calm_threshold: float (optional) Default= None (auto calculated)
         minimum value for data being counted as valid (i.e. below this is calm)
     calm_text: str (optional) Default: 'Calm'
@@ -89,7 +204,7 @@ def wind_rose(
     assert hasattr(data, "__array__"), "data must be array_like"
 
     data_1 = data[:, 0:2]  # primary magnitude and direction
-    data_1_max = data_1[:, 0].max()
+    magmax = data_1[:, 0].max()
 
     ncols = data.shape[1]
     assert ncols in [2, 4], "data must have 2 or 4 columns"
@@ -97,16 +212,12 @@ def wind_rose(
 
     if dual:
         data_2 = data[:, 2:4]  # secondary magnitude and direction
-        data_2_max = data_2[:, 0].max()
+        magmax = max(magmax, data_2[:, 0].max())
         assert len(labels) == 2, "labels must have 2 elements"
-    else:
-        data_2 = None
-        data_2_max = None
 
     # magnitude bins
     ui, vmin, vmax = pretty_intervals(
-        data_1_max,
-        data_2_max,
+        magmax,
         mag_bins,
         mag_step,
         calm_threshold,
@@ -114,34 +225,23 @@ def wind_rose(
     )
 
     dir_step = 360 // n_sectors
-    half_dir_step = dir_step / 2
 
-    n_dir_labels = n_sectors if n_dir_labels is None else n_dir_labels
+    if n_dir_labels is None:
+        if n_sectors in (4, 8, 16):
+            n_dir_labels = n_sectors
+        else:
+            # Directional labels are not identical to the number of sectors, use a sane default
+            n_dir_labels = 16
 
-    thetai = np.linspace(
-        start=half_dir_step,
-        stop=360 + half_dir_step,
-        num=int(((360 + half_dir_step) - half_dir_step) / dir_step + 1),
-    )
-    thetac = thetai[:-1] + half_dir_step
-
-    mask_1 = data_1[:, 0] >= vmin
-
-    # compute total calms
-    n = len(data_1)
-    calm = len(data_1[~mask_1]) / n
-
-    counts = _calc_masked_histogram2d(data=data_1, mask=mask_1, ui=ui, thetai=thetai)
+    dh = _dirhist2d(data_1, ui=ui, dir_step=dir_step)
+    calm = dh.calm
 
     if dual:
-        mask_2 = data_2[:, 0] >= vmin
-        calm2 = len(data_2[~mask_2]) / n
-        counts_2 = _calc_masked_histogram2d(
-            data=data_2, mask=mask_2, ui=ui, thetai=thetai, n=len(data_1)
-        )
-        assert counts.shape == counts_2.shape
+        assert len(data_1) == len(data_2), "data_1 and data_2 must have same length"
+        dh2 = _dirhist2d(data_2, ui=ui, dir_step=dir_step)
+        assert dh.density.shape == dh2.density.shape
 
-    ri, rmax = _calc_radial_ticks(counts=counts, step=r_step, stop=r_max)
+    ri, rmax = _calc_radial_ticks(counts=dh.density, step=r_step, stop=r_max)
 
     # Resize calm
     # TODO this overwrites the calm value calculated above
@@ -174,11 +274,11 @@ def wind_rose(
 
     # primary histogram (model)
     p = _create_patch(
-        thetac=thetac,
+        thetac=dh.dir_centers,
         dir_step=dir_step,
         calm=calm,
         ui=ui,
-        counts=counts,
+        counts=dh.density,
         cmap=cmap,
         vmax=vmax,
     )
@@ -188,11 +288,10 @@ def wind_rose(
         _add_legend_to_ax(
             ax,
             cmap=cmap,
-            vmin=vmin,
             vmax=vmax,
             ui=ui,
             calm=calm,
-            counts=counts,
+            counts=dh.density,
             label=labels[0],
             primary=True,
             dual=dual,
@@ -204,11 +303,11 @@ def wind_rose(
 
         # TODO should this be calm2?
         p = _create_patch(
-            thetac=thetac,
+            thetac=dh.dir_centers,
             dir_step=dir_step,
             calm=calm,
             ui=ui,
-            counts=counts_2,
+            counts=dh2.density,
             cmap=cmap,
             vmax=vmax,
             dir_step_factor=secondary_dir_step_factor,
@@ -219,11 +318,10 @@ def wind_rose(
             _add_legend_to_ax(
                 ax,
                 cmap=cmap,
-                vmin=vmin,
                 vmax=vmax,
                 ui=ui,
-                calm=calm2,
-                counts=counts_2,
+                calm=dh2.calm,
+                counts=dh2.density,
                 label=labels[1],
                 primary=False,
                 dual=dual,
@@ -278,8 +376,7 @@ def directional_labels(n: int) -> Tuple[str, ...]:
 
 
 def pretty_intervals(
-    xmax: float,
-    ymax: Optional[float] = None,
+    magmax: float,
     mag_bins: Optional[List[float]] = None,
     mag_step: Optional[float] = None,
     vmin: Optional[float] = None,
@@ -299,18 +396,14 @@ def pretty_intervals(
 
     else:
         if mag_step is None:
-            mag_step = _calc_mag_step(xmax, ymax)
+            mag_step = _calc_mag_step(magmax)
 
         if vmin is None:
             vmin = mag_step
 
-        if ymax is None:
-            magmax = xmax
-        else:
-            magmax = max(xmax, ymax)
         # Bins
         ui = np.arange(vmin, magmax, mag_step)
-        ui = np.append(ui, xmax)
+        ui = np.append(ui, magmax)
 
         if max_bin is None:
             max_bin = magmax / 2
@@ -372,49 +465,26 @@ def _create_patch(
     return p
 
 
-def _calc_mag_step(xmax: float, ymax: Optional[float] = None, factor: float = 16.0):
+def _calc_mag_step(magmax: float) -> float:
     """
     Calculate the magnitude step size for a rose plot.
 
     Parameters
     ----------
-    x : float
+    magmax : float
         The maximum value of the histogram.
-    y : float, optional
-        The maximum value of the histogram.
-    factor : float, optional
-        The factor to use to calculate the magnitude step size, by default 16.0
 
     Returns
     -------
     float
     """
-    mag_step = np.round(xmax / factor, 1)
+    FACTOR: float = 16.0
+
+    mag_step = np.round(magmax / FACTOR, 1)
     if mag_step == 0:
-        mag_step = np.round(xmax / factor, 2)
+        mag_step = np.round(magmax / FACTOR, 2)
 
-    if ymax is None:
-        return mag_step
-
-    mag_step2 = np.round(ymax / factor, 1)
-    if mag_step2 == 0:
-        mag_step2 = np.round(ymax / factor, 2)
-    mag_step = max(mag_step, mag_step2)
     return mag_step
-
-
-def _calc_masked_histogram2d(
-    *, data, mask, ui, thetai, n: Optional[int] = None
-) -> np.ndarray:
-    if n is None:
-        n = len(data)
-    counts, _, _ = np.histogram2d(
-        data[mask][:, 0],
-        data[mask][:, 1],
-        bins=[ui, thetai],
-    )
-    counts = counts / n
-    return counts
 
 
 def _calc_radial_ticks(*, counts: np.ndarray, step: float, stop: Optional[float]):
@@ -446,10 +516,11 @@ def _add_calms_to_ax(ax, *, threshold: float, text: str) -> None:
 
 
 def _add_legend_to_ax(
-    ax, *, cmap, vmin, vmax, ui, calm, counts, label, primary: bool, dual=False
+    ax, *, cmap, vmax, ui, calm, counts, label, primary: bool, dual=False
 ) -> None:
     norm = mpl.colors.Normalize(vmin=0, vmax=vmax)
     colors = [cmap(norm(x)) for x in ui]
+    vmin = ui[0]
 
     percentages = np.sum(counts, axis=1) * 100
 
@@ -500,17 +571,6 @@ def _add_legend_to_ax(
         ax_right = ax.inset_axes([1.15, -0.05, box_width * 1.15, 0.5])
         ax_right.axis("off")
     ax.add_artist(leg)
-
-
-def _add_watermark_to_ax(ax, watermark: str) -> None:
-    text = AnchoredText(
-        watermark,
-        "center right",
-        frameon=False,
-        borderpad=-27.5,
-        prop=dict(fontsize="xx-small", alpha=0.15, rotation=90),
-    )
-    ax.add_artist(text)
 
 
 def _get_cmap(cmap: Union[str, mpl.colors.ListedColormap]):

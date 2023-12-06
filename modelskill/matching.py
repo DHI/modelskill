@@ -342,7 +342,11 @@ def match_space_time(
 
         data[name] = mri.data[name]
 
-    data = data.dropna(dim="time")
+    # drop NaNs in model and observation columns (but allow NaNs in aux columns)
+    cols = list(
+        data.filter_by_attrs(kind=lambda k: k in ["model", "observation"]).data_vars
+    )
+    data = data.dropna(dim="time", subset=cols)
 
     for n in mod_names:
         data[n].attrs["kind"] = "model"
