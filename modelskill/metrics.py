@@ -154,11 +154,14 @@ def urmse(
     r"""Unbiased Root Mean Squared Error (uRMSE)
 
     $$
-
     res_i = model_i - obs_i
+    $$
 
+    $$
     res_{u,i} = res_i - \overline {res}
+    $$
 
+    $$
     uRMSE = \sqrt{\frac{1}{n} \sum_{i=1}^n res_{u,i}^2}
     $$
 
@@ -191,18 +194,20 @@ def root_mean_squared_error(
 
     $$
     res_i = model_i - obs_i
+    $$
 
+    $$
     RMSE=\sqrt{\frac{1}{n} \sum_{i=1}^n res_i^2}
     $$
 
     Unbiased version:
 
     $$
-
     res_{u,i} = res_i - \overline {res}
+    $$
 
+    $$
     uRMSE=\sqrt{\frac{1}{n} \sum_{i=1}^n res_{u,i}^2}
-
     $$
 
     Range: $[0, \infty)$; Best: 0
@@ -227,10 +232,8 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     r"""Nash-Sutcliffe Efficiency (NSE)
 
     $$
-
     NSE = 1 - \frac {\sum _{i=1}^{n}\left(model_{i} - obs_{i}\right)^{2}}
                     {\sum_{i=1}^{n}\left(obs_{i} - {\overline{obs}}\right)^{2}}
-
     $$
 
     Range: $(-\infty, 1]$; Best: 1
@@ -241,7 +244,7 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     References
     ----------
-    Nash, J. E.; Sutcliffe, J. V. (1970). "River flow forecasting through conceptual models part I — A discussion of principles". Journal of Hydrology. 10 (3): 282–290.
+    Nash, J. E.; Sutcliffe, J. V. (1970). "River flow forecasting through conceptual models part I — A discussion of principles". Journal of Hydrology. 10 (3): 282–290. <https://doi.org/10.1016/0022-1694(70)90255-6>
     """
     assert obs.size == model.size
 
@@ -264,15 +267,15 @@ def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
                                 \left(\frac{\mu_{mod}}{\mu_{obs}} - 1\right)^2 }
     $$
 
-    where $r` is the pearson correlation coefficient, $\mu_{obs},\mu_{mod}` and $\sigma_{obs},\sigma_{mod}` is the mean and standard deviation of observations and model.
+    where $r$ is the pearson correlation coefficient, $\mu_{obs},\mu_{mod}$ and $\sigma_{obs},\sigma_{mod}$ is the mean and standard deviation of observations and model.
 
     Range: $(-\infty, 1]$; Best: 1
 
     References
     ----------
-    Gupta, H. V., Kling, H., Yilmaz, K. K. and Martinez, G. F., (2009), Decomposition of the mean squared error and NSE performance criteria: Implications for improving hydrological modelling, J. Hydrol., 377(1-2), 80-91
+    Gupta, H. V., Kling, H., Yilmaz, K. K. and Martinez, G. F., (2009), Decomposition of the mean squared error and NSE performance criteria: Implications for improving hydrological modelling, J. Hydrol., 377(1-2), 80-91 <https://doi.org/10.1016/j.jhydrol.2009.08.003>
 
-    Knoben, W. J. M., Freer, J. E., and Woods, R. A. (2019) Technical note: Inherent benchmark or not? Comparing Nash–Sutcliffe and Kling–Gupta efficiency scores, Hydrol. Earth Syst. Sci., 23, 4323-4331
+    Knoben, W. J. M., Freer, J. E., and Woods, R. A. (2019) Technical note: Inherent benchmark or not? Comparing Nash–Sutcliffe and Kling–Gupta efficiency scores, Hydrol. Earth Syst. Sci., 23, 4323-4331 <https://doi.org/10.5194/hess-23-4323-2019>
     """
     assert obs.size == model.size
 
@@ -306,7 +309,6 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     Pronounced 'R-squared'; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.
 
     $$
-
     R^2 = 1 - \frac{\sum_{i=1}^n (model_i - obs_i)^2}
                     {\sum_{i=1}^n (obs_i - \overline {obs})^2}
     $$
@@ -568,7 +570,6 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.
 
     $$
-
     willmott = 1 - \frac{\frac{1}{n} \sum_{i=1}^n(model_i - obs_i)^2}
                         {\frac{1}{n} \sum_{i=1}^n(|model_i - \overline{obs}| + |obs_i - \overline{obs}|)^2}
     $$
@@ -627,7 +628,6 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
     r"""Slope of the regression line.
 
     $$
-
     slope = \frac{\sum_{i=1}^n (model_i - \overline {model})(obs_i - \overline {obs})}
                     {\sum_{i=1}^n (obs_i - \overline {obs})^2}
     $$
@@ -721,25 +721,6 @@ defined_metrics: Set[str] = (
 
 
 def is_valid_metric(metric: Union[str, Callable]) -> bool:
-    """ "Check if a metric is defined.
-
-    Parameters
-    ----------
-    metric : str or callable
-        Metric name or function
-
-    Returns
-    -------
-    bool
-
-    Examples
-    --------
-    >>> is_valid_metric("rmse")
-    True
-    >>> is_valid_metric("foo")
-    False
-    """
-
     if hasattr(metric, "__name__"):
         name = metric.__name__
     else:
@@ -749,8 +730,6 @@ def is_valid_metric(metric: Union[str, Callable]) -> bool:
 
 
 def get_metric(metric: Union[str, Callable]) -> Callable:
-    """Get a metric function from its name."""
-
     if is_valid_metric(metric):
         if isinstance(metric, str):
             return getattr(sys.modules[__name__], metric)
