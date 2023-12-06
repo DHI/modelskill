@@ -1,0 +1,46 @@
+site_name: modelskill
+
+theme: "material"
+
+nav: 
+  - 'index.md'
+  - 'getting-started.md'
+  - 'simple-compare.md'
+  - 'vision.md'
+  - 'terminology.md'
+  - API:
+      - 'api/model.md'
+      - 'api/observation.md'
+      - 'api/compare.md'
+      - 'api/metrics.md'
+      - 'api/skill.md'
+      - 'api/plotting.md'
+      - 'api/settings.md'
+      - 'api/misc.md'
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+plugins:
+- search
+- autorefs
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          show_source: True
+          heading_level: 2
+          docstring_style: "numpy" # default is google
