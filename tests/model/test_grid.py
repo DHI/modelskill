@@ -170,6 +170,16 @@ def test_grid_extract_point_toutside(ERA5_DutchCoast_nc, pointobs_epl_hm0):
         mr.extract(pointobs_epl_hm0)
 
 
+def test_grid_extract_point_aux(ERA5_DutchCoast_nc, pointobs_epl_hm0):
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
+    pc = mr.extract(pointobs_epl_hm0)
+    assert isinstance(pc, ms.PointModelResult)
+    assert pc.start_time == datetime(2017, 10, 27, 0, 0, 0)
+    assert pc.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert pc.n_points == 67
+    assert len(pc.data.data_vars) == 2
+
+
 @pytest.mark.skip(
     reason="validation not possible at the moment, allow item mapping for ModelResult and Observation and match on item name?"
 )
@@ -186,3 +196,14 @@ def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     assert tmr.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
     assert tmr.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tmr.n_points == 99
+
+
+def test_grid_extract_track_aux(ERA5_DutchCoast_nc, trackobs_c2_hm0):
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
+    tc = mr.extract(trackobs_c2_hm0)
+    assert isinstance(tc, ms.TrackModelResult)
+    assert tc.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
+    assert tc.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
+    assert tc.n_points == 99
+    assert len(tc.data.data_vars) == 2
+    assert "swh" in tc.data.data_vars
