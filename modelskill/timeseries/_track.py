@@ -69,7 +69,7 @@ def _parse_track_input(
     y_item: str | int | None,
     keep_duplicates: bool | str,
     offset_duplicates: float = 0.001,
-    aux_items: Optional[list[int | str]] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
 ) -> xr.Dataset:
     assert isinstance(
         data, get_args(TrackType)

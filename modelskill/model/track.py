@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Sequence
 
 import xarray as xr
 
@@ -47,7 +47,7 @@ class TrackModelResult(TimeSeries):
         x_item: str | int = 0,
         y_item: str | int = 1,
         keep_duplicates: str | bool = "first",
-        aux_items: Optional[list[int | str]] = None,
+        aux_items: Optional[Sequence[int | str]] = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_track_input(

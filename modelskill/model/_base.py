@@ -22,7 +22,7 @@ class SelectedItems:
 def _parse_items(
     avail_items: Sequence[str],
     item: int | str | None,
-    aux_items: Optional[list[int | str]] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
 ) -> SelectedItems:
     """If input has exactly 1 item we accept item=None"""
     if item is None:
