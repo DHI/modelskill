@@ -63,7 +63,7 @@ def test_point_connector_repr(o1, mr1):
 def test_connector_add(o1, mr1):
     with pytest.warns(FutureWarning, match="modelskill.compare"):
         con = ms.Connector()
-    con.add(o1, mr1, validate=False)
+        con.add(o1, mr1, validate=False)
     assert len(con.observations) == 1
 
 
@@ -80,8 +80,8 @@ def test_connector_add_two_models(
     # Alternative specification using .add() should be identical
     with pytest.warns(FutureWarning, match="modelskill.compare"):
         con2 = ms.Connector()
-    con2.add(o1, mr1)
-    con2.add(o1, mr2)
+        con2.add(o1, mr1)
+        con2.add(o1, mr2)
 
     assert con2.n_models == 2
     cc2 = con2.extract()
@@ -113,8 +113,8 @@ def test_connector_add_two_model_dataframes(
     # Alternative specification using .add() should be identical
     with pytest.warns(FutureWarning, match="modelskill.compare"):
         con2 = ms.Connector()
-    con2.add(o1, mr1_extr)
-    con2.add(o1, mr2_extr)
+        con2.add(o1, mr1_extr)
+        con2.add(o1, mr2_extr)
 
     assert con2.n_models == 2
     cc2 = con2.extract()
