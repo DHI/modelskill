@@ -97,6 +97,38 @@ def test_grid_name(ERA5_DutchCoast_nc):
     assert mri1.name == mri2.name
 
 
+def test_grid_aux_items(ERA5_DutchCoast_nc):
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
+    assert mr.sel_items.values == "pp1d"
+    assert mr.sel_items.aux == ["swh"]
+    assert list(mr.data.data_vars) == ["pp1d", "swh"]
+
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh", "mwp"])
+    assert mr.sel_items.values == "pp1d"
+    assert mr.sel_items.aux == ["swh", "mwp"]
+    assert list(mr.data.data_vars) == ["pp1d", "swh", "mwp"]
+
+    # accept string instead of list
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items="swh")
+    assert mr.sel_items.values == "pp1d"
+    assert mr.sel_items.aux == ["swh"]
+    assert list(mr.data.data_vars) == ["pp1d", "swh"]
+
+    # use index instead of name
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=[4, 1])
+    assert mr.sel_items.values == "pp1d"
+    assert mr.sel_items.aux == ["swh", "mwp"]
+    assert list(mr.data.data_vars) == ["pp1d", "swh", "mwp"]
+
+
+def test_grid_aux_items_fail(ERA5_DutchCoast_nc):
+    with pytest.raises(ValueError, match="Duplicate items"):
+        ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh", "pp1d"])
+
+    with pytest.raises(ValueError, match="Duplicate items"):
+        ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh", "swh"])
+
+
 # def test_grid_itemInfo(ERA5_DutchCoast_nc):
 #     mri1 = ModelResult(ERA5_DutchCoast_nc, item="pp1d")
 #     assert mri1.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
