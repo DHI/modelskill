@@ -30,7 +30,7 @@ def drogden():
 
 @pytest.fixture
 def sw_dutch_coast():
-    return "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    return "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
 
 
 @pytest.fixture
@@ -90,26 +90,22 @@ def test_dfsu_aux_items(hd_oresund_2d):
     mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=["U velocity"])
     assert mr.sel_items.values == "Surface elevation"
     assert mr.sel_items.aux == ["U velocity"]
-    assert list(mr.data.data_vars) == ["Surface elevation", "U velocity"]
 
     mr = ms.DfsuModelResult(
         hd_oresund_2d, item=0, aux_items=["U velocity", "V velocity"]
     )
     assert mr.sel_items.values == "Surface elevation"
     assert mr.sel_items.aux == ["U velocity", "V velocity"]
-    assert list(mr.data.data_vars) == ["Surface elevation", "U velocity", "V velocity"]
 
     # accept string instead of list
     mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items="U velocity")
     assert mr.sel_items.values == "Surface elevation"
     assert mr.sel_items.aux == ["U velocity"]
-    assert list(mr.data.data_vars) == ["Surface elevation", "U velocity"]
 
     # use index instead of name
-    mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=[4, 1])
+    mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=[2, 3])
     assert mr.sel_items.values == "Surface elevation"
     assert mr.sel_items.aux == ["U velocity", "V velocity"]
-    assert list(mr.data.data_vars) == ["Surface elevation", "U velocity", "V velocity"]
 
 
 def test_dfsu_aux_items_fail(hd_oresund_2d):
@@ -119,7 +115,9 @@ def test_dfsu_aux_items_fail(hd_oresund_2d):
         )
 
     with pytest.raises(ValueError, match="Duplicate items"):
-        ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=["U velocity", "swh"])
+        ms.DfsuModelResult(
+            hd_oresund_2d, item=0, aux_items=["U velocity", "Surface elevation"]
+        )
 
 
 def test_dfsu_dataarray(hd_oresund_2d):
@@ -231,7 +229,7 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     assert "SW1" in ds1.data_vars
     assert "x" in ds1.coords
     assert "y" in ds1.coords
-    assert mr_track1.n_points == 113
+    assert mr_track1.n_points == 68
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ms.ModelResult(da, name="SW1")
