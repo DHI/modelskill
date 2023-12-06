@@ -72,7 +72,6 @@ class DfsuModelResult(SpatialField):
                 raise ValueError("aux_items must be None when data is a DataArray")
             quantity = Quantity.from_mikeio_iteminfo(data.item)
             item = data.name
-            # Quantity(name=repr(data.type), unit=data.unit.name)
         else:
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
@@ -81,15 +80,6 @@ class DfsuModelResult(SpatialField):
 
             sel_items = _parse_items(item_names, item=item, aux_items=aux_items)
             item = sel_items.values
-            # sel_items = [_get_name(x=item, valid_names=item_names)]
-            # if aux_items is not None:
-            #     sel_items.extend(
-            #         [_get_name(x=item, valid_names=item_names) for item in aux_items]
-            #     )
-            #     if len(set(sel_items)) != len(sel_items):
-            #         raise ValueError(
-            #             f"Duplicate item names in {sel_items}. Please provide unique names."
-            #         )
             self.sel_items = sel_items
 
         self.data: mikeio.dfsu.Dfsu2DH | mikeio.DataArray | mikeio.Dataset = data
@@ -205,11 +195,6 @@ class DfsuModelResult(SpatialField):
                 ds_model = self.data[self.sel_items.all].extract_track(track=track)
             ds_model.rename({self.sel_items.values: self.name}, inplace=True)
             aux_items = self.sel_items.aux
-
-        # if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-        #     ds_model = self.data.extract_track(track=track, items=[self.sel_items.all])
-        # elif isinstance(self.data, (mikeio.Dataset, mikeio.DataArray)):
-        #     ds_model = self.data.extract_track(track=track)
 
         x_name = "Longitude" if "Longitude" in ds_model else "x"
         y_name = "Latitude" if "Latitude" in ds_model else "y"

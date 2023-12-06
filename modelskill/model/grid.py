@@ -74,18 +74,6 @@ class GridModelResult(SpatialField):
             )
 
         sel_items = _parse_items(list(ds.data_vars), item=item, aux_items=aux_items)
-        # item_names = [_get_name(x=item, valid_names=list(ds.data_vars))]
-        # if aux_items is not None:
-        #     item_names.extend(
-        #         [
-        #             _get_name(x=item, valid_names=list(ds.data_vars))
-        #             for item in aux_items
-        #         ]
-        #     )
-        #     if len(set(item_names)) != len(item_names):
-        #         raise ValueError(
-        #             f"Duplicate item names in {item_names}. Please provide unique names."
-        #         )
         name = name or sel_items.values
         ds = rename_coords_xr(ds)
 
