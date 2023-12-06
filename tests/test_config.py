@@ -1,3 +1,4 @@
+import pytest
 import modelskill as ms
 
 
@@ -33,7 +34,9 @@ def test_comparison_from_dict():
         ),
     )
 
-    con = ms.from_config(configuration, validate_eum=False)
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        con = ms.from_config(configuration, validate_eum=False)
+
     cc = con.extract()
     assert len(cc) == 2
     assert cc.n_comparers == 2
@@ -41,7 +44,8 @@ def test_comparison_from_dict():
 
 
 def test_comparison_from_yml():
-    con = ms.from_config("tests/testdata/conf.yml", validate_eum=False)
+    with pytest.warns(FutureWarning, match="modelskill.compare"):
+        con = ms.from_config("tests/testdata/conf.yml", validate_eum=False)
     cc = con.extract()
 
     assert len(cc) == 2

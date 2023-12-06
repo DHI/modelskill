@@ -178,12 +178,16 @@ def test_extract_observation_total_windsea_swell_not_possible(
 
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ms.ModelResult(hd_oresund_2d, item=0)
+
     with pytest.raises(Exception):
-        c = ms.Connector(klagshamn, mr, validate=True).extract()
+        with pytest.warns(FutureWarning, match="modelskill.compare"):
+            _ = ms.Connector(klagshamn, mr, validate=True).extract()
 
     # No error if validate==False
     with pytest.warns(FutureWarning, match="modelskill.compare"):
-        c = ms.Connector(klagshamn, mr, validate=False).extract()
+        con = ms.Connector(klagshamn, mr, validate=False)
+
+    c = con.extract()
     assert c.n_points > 0
 
 
@@ -192,7 +196,8 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     # correct eum, but outside domain
     klagshamn.y = -10
     with pytest.raises(ValueError):
-        _ = ms.Connector(klagshamn, mr, validate=True).extract()
+        with pytest.warns(FutureWarning, match="modelskill.compare"):
+            _ = ms.Connector(klagshamn, mr, validate=True).extract()
 
 
 def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
