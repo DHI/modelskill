@@ -25,7 +25,7 @@ class PointItem:
 def _parse_point_items(
     items: Sequence[str],
     item: int | str | None,
-    aux_items: Optional[list[int | str]] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
 ) -> PointItem:
     """If input has exactly 1 item we accept item=None"""
     if item is None:
