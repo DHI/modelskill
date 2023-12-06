@@ -229,7 +229,7 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     assert "SW1" in ds1.data_vars
     assert "x" in ds1.coords
     assert "y" in ds1.coords
-    assert mr_track1.n_points == 68
+    assert mr_track1.n_points == 70
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ms.ModelResult(da, name="SW1")
