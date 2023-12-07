@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import Counter
 from typing import List, Optional, Protocol, Sequence
 from dataclasses import dataclass
 import warnings
@@ -17,6 +18,14 @@ class SelectedItems:
     @property
     def all(self) -> List[str]:
         return [self.values] + self.aux
+
+    @staticmethod
+    def parse(
+        avail_items: Sequence[str],
+        item: int | str | None,
+        aux_items: Optional[Sequence[int | str]] = None,
+    ) -> SelectedItems:
+        return _parse_items(avail_items, item, aux_items)
 
 
 def _parse_items(
@@ -41,7 +50,9 @@ def _parse_items(
     # check that there are no duplicates
     res = SelectedItems(values=item, aux=aux_items_str)
     if len(set(res.all)) != len(res.all):
-        raise ValueError(f"Duplicate items! {res.all}")
+        element_counts = Counter(res.all)
+        duplicates = [element for element, count in element_counts.items() if count > 1]
+        raise ValueError(f"Duplicate items! {duplicates}")
 
     return res
 

@@ -6,7 +6,7 @@ import mikeio
 import numpy as np
 import pandas as pd
 
-from ._base import SpatialField, _validate_overlap_in_time, _parse_items
+from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
 from ..types import Quantity, UnstructuredType
 from ..utils import _get_idx
 from .point import PointModelResult
@@ -78,7 +78,7 @@ class DfsuModelResult(SpatialField):
             item_info = data.items[idx]
             quantity = Quantity.from_mikeio_iteminfo(item_info)
 
-            sel_items = _parse_items(item_names, item=item, aux_items=aux_items)
+            sel_items = SelectedItems.parse(item_names, item=item, aux_items=aux_items)
             item = sel_items.values
             self.sel_items = sel_items
 

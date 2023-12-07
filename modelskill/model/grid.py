@@ -5,7 +5,7 @@ from typing import Optional, Sequence, get_args
 import pandas as pd
 import xarray as xr
 
-from ._base import SpatialField, _validate_overlap_in_time, _parse_items
+from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
 from ..utils import rename_coords_xr, rename_coords_pd
 from ..types import GridType, Quantity
 from .point import PointModelResult
@@ -73,7 +73,9 @@ class GridModelResult(SpatialField):
                 f"Could not construct GridModelResult from {type(data)}"
             )
 
-        sel_items = _parse_items(list(ds.data_vars), item=item, aux_items=aux_items)
+        sel_items = SelectedItems.parse(
+            list(ds.data_vars), item=item, aux_items=aux_items
+        )
         name = name or sel_items.values
         ds = rename_coords_xr(ds)
 
