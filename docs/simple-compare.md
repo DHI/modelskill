@@ -3,7 +3,7 @@ Simple time series comparison
 
 If all you need to do is to compare two point time series, the workflow
 is very simple and described below. The general many-to-many comparison
-is decribed in the [getting started guide](getting-started).
+is decribed in the [getting started guide](getting-started.md).
 
 Workflow
 --------
@@ -35,7 +35,7 @@ fn_obs = '../tests/testdata/SW/eur_Hm0.dfs0'
 
 ### 3. compare()
 
-The [compare()](modelskill.connection.compare) method will
+The [compare()](api/compare.md#modelskill.compare) method will
 interpolate the modelresult to the time of the observation and return an
 object that can be used for analysis and plotting
 
@@ -47,7 +47,7 @@ c = ms.compare(fn_obs, fn_mod, mod_item=0)
 ### 4. Analysis and plotting
 
 The returned
-[Comparer](modelskill.comparison.Comparer) can make
+[Comparer](api/compare.md#modelskill.comparison.Comparer) can make
 scatter plots, skill assessment, time series plots etc.
 
 ```python

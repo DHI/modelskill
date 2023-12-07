@@ -1,5 +1,6 @@
 from datetime import datetime
 import numpy as np
+import pandas as pd
 import pytest
 
 import mikeio
@@ -159,3 +160,23 @@ def test_point_model_data_can_be_persisted_as_netcdf(point_df, tmp_path):
     mr = ms.PointModelResult(point_df, item=0)
 
     mr.data.to_netcdf(tmp_path / "test.nc")
+
+
+def test_point_modelresult_must_have_unique_and_monotonically_increasing_time():
+    df_dup = pd.DataFrame(
+        {"wl": [0.0, 1.0, 2.0]},
+        index=pd.DatetimeIndex(
+            ["2015-01-01", "2015-01-01", "2015-01-02"]  # same as previous
+        ),
+    )
+
+    with pytest.raises(ValueError):
+        ms.PointModelResult(df_dup, item=0)
+
+    df_up_and_down = pd.DataFrame(
+        {"wl": [0.0, 1.0, 2.0]},
+        index=pd.DatetimeIndex(["2015-01-01", "2015-01-02", "2015-01-01"]),
+    )
+
+    with pytest.raises(ValueError):
+        ms.PointModelResult(df_up_and_down, item=0)
