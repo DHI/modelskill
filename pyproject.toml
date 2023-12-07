@@ -14,8 +14,6 @@ dependencies = [
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",
-    "markdown",
-    "jinja2",
     "scipy",
 ]
 
