@@ -281,8 +281,8 @@ class ComparerCollectionPlotter:
 
         See also
         --------
-        pandas.Series.hist
-        matplotlib.axes.Axes.hist
+        [pandas.Series.hist][]
+        [matplotlib.axes.Axes.hist][]
         """
         from ._comparison import MOD_COLORS
 

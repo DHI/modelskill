@@ -435,7 +435,7 @@ class ComparerCollection(Mapping):
 
         See also
         --------
-        sel
+        [sel][modelskill.comparison.ComparerCollection.sel]:
             a method for filtering/selecting data
 
         Examples
@@ -546,7 +546,7 @@ class ComparerCollection(Mapping):
 
         See also
         --------
-        skill
+        [skill][modelskill.comparison.ComparerCollection.skill]:
             a method for aggregated skill assessment
 
         Examples
@@ -702,9 +702,9 @@ class ComparerCollection(Mapping):
 
         See also
         --------
-        skill
+        [skill][modelskill.comparison.ComparerCollection.skill]:
             skill assessment per observation
-        mean_skill_points
+        [mean_skill_points][modelskill.comparison.ComparerCollection.mean_skill_points]:
             skill assessment pooling all observation points together
 
         Examples
@@ -800,9 +800,9 @@ class ComparerCollection(Mapping):
 
         See also
         --------
-        skill
+        [skill][modelskill.comparison.ComparerCollection.skill]:
             skill assessment per observation
-        mean_skill
+        [mean_skill][modelskill.comparison.ComparerCollection.mean_skill]:
             weighted mean of skills (not the same as this method)
 
         Examples
@@ -927,11 +927,11 @@ class ComparerCollection(Mapping):
 
         See also
         --------
-        skill
+        [skill][modelskill.comparison.ComparerCollection.skill]:
             skill assessment per observation
-        mean_skill
+        [mean_skill][modelskill.comparison.ComparerCollection.mean_skill]:
             weighted mean of skills assessment
-        mean_skill_points
+        [mean_skill_points][modelskill.comparison.ComparerCollection.mean_skill_points]:
             skill assessment pooling all observation points together
 
         Examples

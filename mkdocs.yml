@@ -44,3 +44,7 @@ plugins:
           show_source: True
           heading_level: 2
           docstring_style: "numpy" # default is google
+        import:
+          - https://docs.scipy.org/doc/numpy/objects.inv
+          - https://pandas.pydata.org/pandas-docs/stable/objects.inv
+          - https://matplotlib.org/stable/objects.inv

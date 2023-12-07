@@ -378,7 +378,7 @@ class Comparer:
 
     See Also
     --------
-    modelskill.compare, modelskill.from_matched
+    [modelskill.compare][], [modelskill.from_matched][]
     """
 
     data: xr.Dataset
@@ -931,7 +931,7 @@ class Comparer:
 
         See also
         --------
-        sel
+        [sel][modelskill.Comparer.sel]:
             a method for filtering/selecting data
 
         Examples
@@ -1003,7 +1003,7 @@ class Comparer:
 
         See also
         --------
-        skill
+        [skill][modelskill.Comparer.skill]:
             a method for skill assessment returning a pd.DataFrame
 
         Examples
@@ -1077,7 +1077,7 @@ class Comparer:
 
         See also
         --------
-        skill
+        [skill][modelskill.Comparer.skill]:
             a method for aggregated skill assessment
 
         Examples

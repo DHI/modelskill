@@ -34,7 +34,7 @@ def spatial_overview(
 
     See Also
     --------
-    temporal_coverage
+    [modelskill.plotting.temporal_coverage][]
 
     Returns
     -------

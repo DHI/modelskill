@@ -170,7 +170,7 @@ def urmse(
 
     See Also
     --------
-    root_mean_squared_error
+    [root_mean_squared_error][modelskill.metrics.root_mean_squared_error]
     """
     return root_mean_squared_error(obs, model, weights, unbiased=True)
 
@@ -357,8 +357,8 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
 
     See Also
     --------
-    nash_sutcliffe_efficiency
-    root_mean_squared_error
+    [nash_sutcliffe_efficiency][modelskill.metrics.nash_sutcliffe_efficiency]
+    [root_mean_squared_error][modelskill.metrics.root_mean_squared_error]
 
     """
     assert obs.size == model.size
@@ -384,8 +384,8 @@ def corrcoef(obs, model, weights=None) -> float:
 
     See Also
     --------
-    spearmanr
-    np.corrcoef
+    [spearmanr][modelskill.metrics.spearmanr]
+    [np.corrcoef][]
     """
     assert obs.size == model.size
     if len(obs) <= 1:
@@ -428,7 +428,7 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
 
     See Also
     --------
-    corrcoef
+    [corrcoef][modelskill.metrics.corrcoef]
     """
     import scipy.stats
 
@@ -507,7 +507,7 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
 
     See Also
     --------
-    r2
+    [r2][modelskill.metrics.r2]
     """
 
     assert obs.size == model.size

@@ -164,8 +164,8 @@ class ComparerPlotter:
 
         See also
         --------
-        pandas.Series.plot.hist
-        matplotlib.axes.Axes.hist
+        [pandas.Series.plot.hist][]
+        [matplotlib.axes.Axes.hist][]
         """
         from ._comparison import MOD_COLORS  # TODO move to here
 
@@ -231,7 +231,7 @@ class ComparerPlotter:
 
         See also
         --------
-        pandas.Series.plot.kde
+        [pandas.Series.plot.kde][]
         """
         cmp = self.comparer
 
@@ -377,8 +377,8 @@ class ComparerPlotter:
 
         See also
         --------
-        pandas.DataFrame.boxplot
-        matplotlib.pyplot.boxplot
+        [pandas.DataFrame.boxplot][]
+        [matplotlib.pyplot.boxplot][]
         """
         cmp = self.comparer
 
