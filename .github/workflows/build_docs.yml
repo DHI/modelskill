@@ -1,12 +1,12 @@
 name: Build documentation (don't publish)
 
 on:
-  push:
-    pull_request:
+  pull_request:
       branches: [ main ]
-
+  
 jobs:
   build:
+    if: '! github.event.pull_request.draft'
 
     runs-on: ubuntu-latest
 
