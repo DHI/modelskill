@@ -45,8 +45,9 @@ def cc2(o1, o2, o3):
     return ms.compare([o1, o2, o3], [mr1, mr2])
 
 
-def test_spatial_skill(cc1):
-    ss = cc1.spatial_skill()
+def test_spatial_skill_deprecated(cc1):
+    with pytest.warns(FutureWarning, match="grid_skill"):
+        ss = cc1.grid_skill()
     assert isinstance(ss.ds, xr.Dataset)
     assert len(ss.x) == 5
     assert len(ss.y) == 5
@@ -59,8 +60,8 @@ def test_spatial_skill(cc1):
     assert ss.n is not None
 
 
-def test_spatial_skill_multi_model(cc2):
-    ss = cc2.spatial_skill(bins=3, metrics=["rmse", "bias"])
+def test_grid_skill_multi_model(cc2):
+    ss = cc2.grid_skill(bins=3, metrics=["rmse", "bias"])
     assert len(ss.x) == 3
     assert len(ss.y) == 3
     assert len(ss.mod_names) == 2
@@ -68,13 +69,13 @@ def test_spatial_skill_multi_model(cc2):
     assert len(ss.field_names) == 3
 
 
-def test_spatial_skill_plot(cc1):
-    ss = cc1.spatial_skill(metrics=["rmse", "bias"])
+def test_grid_skill_plot(cc1):
+    ss = cc1.grid_skill(metrics=["rmse", "bias"])
     ss.plot("bias")
 
 
-def test_spatial_skill_plot_multi_model(cc2):
-    ss = cc2.spatial_skill(by=["model"])
+def test_grid_skill_plot_multi_model(cc2):
+    ss = cc2.grid_skill(by=["model"])
     ss.plot("bias")
 
     ss.plot("rmse", model="SW_1")

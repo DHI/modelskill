@@ -1,8 +1,7 @@
-
-
 from typing import Optional
 
-class SpatialSkill:
+
+class GridSkill:
     """
     Spatial skill object for analysis and visualization of spatially
     gridded skill assessment. The object wraps the xr.DataSet class
@@ -10,7 +9,7 @@ class SpatialSkill:
 
     Examples
     --------
-    >>> ss = comparer.spatial_skill()
+    >>> ss = comparer.grid_skill()
     >>> ss.field_names
     ['n', 'bias', 'rmse', 'urmse', 'mae', 'cc', 'si', 'r2']
 
@@ -32,7 +31,7 @@ class SpatialSkill:
 
     @property
     def coords(self):
-        """Coordinates (same as xr.DataSet.coords) """
+        """Coordinates (same as xr.DataSet.coords)"""
         return self.ds.coords
 
     @property
@@ -73,7 +72,6 @@ class SpatialSkill:
         self._set_attrs()
 
     def _set_attrs(self):
-
         # TODO: use type and unit to give better long name
         # self.ds["bias"].attrs = dict(long_name="Bias of Hm0", units="m")
 
@@ -107,7 +105,7 @@ class SpatialSkill:
 
         Examples
         --------
-        >>> ss = comparer.spatial_skill()
+        >>> ss = comparer.grid_skill()
         >>> ss.plot(field='bias')
         >>> ss.plot('rmse', model='SW_1')
         >>> ss.plot(field='r2', cmap='YlOrRd', figsize=(10,10))

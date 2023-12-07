@@ -33,7 +33,7 @@ from ._utils import (
     IdOrNameTypes,
 )
 from ..skill import AggregatedSkill
-from ..spatial import SpatialSkill
+from ..spatial import GridSkill
 from ..settings import options, register_option, reset_option
 from ..utils import _get_name
 from .. import __version__
@@ -1039,7 +1039,7 @@ class Comparer:
             values = values[0]
         return values
 
-    def spatial_skill(
+    def grid_skill(
         self,
         bins=5,
         binsize: Optional[float] = None,
@@ -1084,7 +1084,7 @@ class Comparer:
         --------
         >>> import modelskill as ms
         >>> cmp = ms.compare(c2, mod)   # satellite altimeter vs. model
-        >>> cmp.spatial_skill(metrics='bias')
+        >>> cmp.grid_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -1095,7 +1095,7 @@ class Comparer:
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.spatial_skill(binsize=0.5)
+        >>> ds = cc.grid_skill(binsize=0.5)
         >>> ds.coords
         Coordinates:
             observation   'alti'
@@ -1135,7 +1135,7 @@ class Comparer:
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SpatialSkill(res.to_xarray().squeeze())
+        return GridSkill(res.to_xarray().squeeze())
 
     @property
     def residual(self):
