@@ -682,7 +682,7 @@ class Comparer:
 
         Parameters
         ----------
-        fn : str or Path
+        filename : str or Path
             filename
 
         Returns
@@ -923,10 +923,6 @@ class Comparer:
             by default ["model"]
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
-        freq : string, optional
-            do temporal binning using pandas pd.Grouper(freq),
-            typical examples: 'M' = monthly; 'D' daily
-            by default None
 
         Returns
         -------

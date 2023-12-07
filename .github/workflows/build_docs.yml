@@ -21,13 +21,11 @@ jobs:
       run: |
         pip install .[dev]
     
-    - name: Sphinx Build
-      run: |
-        cd docs
-        make html
+    - name: Mkdocs build
+      run: mkdocs build
 
     - name: Upload documentation
       uses: actions/upload-artifact@v2
       with:
         name: html
-        path: docs/_build/html
+        path: site/

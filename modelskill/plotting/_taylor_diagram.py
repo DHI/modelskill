@@ -26,7 +26,7 @@ def taylor_diagram(
     """
     Plot a Taylor diagram using the given observations and points.
 
-    Parameters:
+    Parameters
     -----------
     obs_std : float
         Standard deviation of the observations.
@@ -40,7 +40,8 @@ def taylor_diagram(
         Whether to normalize the standard deviation of the points by the standard deviation of the observations. Default is False.
     title : str, optional
         Title of the plot. Default is "Taylor diagram".
-    Returns:
+
+    Returns
     --------
     matplotlib.figure.Figure
             The matplotlib figure object
