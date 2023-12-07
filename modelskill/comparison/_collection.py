@@ -697,7 +697,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        AggregatedSkill
+        SkillFrame
             mean skill assessment as a skill object
 
         See also
@@ -795,7 +795,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        AggregatedSkill
+        SkillFrame
             mean skill assessment as a skill object
 
         See also

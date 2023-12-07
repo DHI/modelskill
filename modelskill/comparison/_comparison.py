@@ -926,7 +926,7 @@ class Comparer:
 
         Returns
         -------
-        AggregatedSkill
+        SkillFrame
             skill assessment object
 
         See also

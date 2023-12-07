@@ -399,7 +399,7 @@ class SkillFrame:
         return df
 
     def sel(self, query=None, reduce_index=True, **kwargs):
-        """Select a subset of the AggregatedSkill by a query,
+        """Select a subset of the SkillFrame by a query,
            (part of) the index, or specific columns
 
         Parameters
@@ -416,8 +416,8 @@ class SkillFrame:
 
         Returns
         -------
-        AggregatedSkill
-            A subset of the orignal AggregatedSkill
+        SkillFrame
+            A subset of the orignal SkillFrame
 
         Examples
         --------
