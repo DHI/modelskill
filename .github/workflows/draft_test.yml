@@ -23,9 +23,8 @@ jobs:
         pip install pytest
         
     - name: Install modelskill
-      run: |
-        pip install .[test]
-        - name: Test with pytest
-        run: pytest --ignore tests/notebooks/
+      run: pip install .[test]
+    - name: Test with pytest
+      run: pytest --ignore tests/notebooks/
     - name: Static type check
       run: make typecheck
