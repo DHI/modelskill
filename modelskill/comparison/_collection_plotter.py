@@ -13,6 +13,16 @@ from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
 
 
+def _default_univarate_title(
+    kind: str, cc: ComparerCollection, max_length: int = 60
+) -> str:
+    title = f"{kind} for {', '.join(cmp.name for cmp in cc)}"
+
+    if len(title) > max_length:
+        title = title[:max_length] + "..."
+    return title
+
+
 class ComparerCollectionPlotter:
     def __init__(self, cc: ComparerCollection) -> None:
         self.cc = cc
@@ -219,7 +229,7 @@ class ComparerCollectionPlotter:
         ax.set_xlabel(f"{self.cc.unit_text}")
 
         title = (
-            f"KDE plot for {', '.join(cmp.name for cmp in self.cc)}"
+            _default_univarate_title("Density plot", self.cc)
             if title is None
             else title
         )
@@ -295,7 +305,9 @@ class ComparerCollectionPlotter:
         mod_id = _get_idx(model, self.cc.mod_names)
         mod_name = self.cc.mod_names[mod_id]
 
-        title = f"{mod_name} vs Observations" if title is None else title
+        title = (
+            _default_univarate_title("Histogram", self.cc) if title is None else title
+        )
 
         cmp = self.cc
         df = cmp.to_dataframe()
