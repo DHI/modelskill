@@ -38,7 +38,7 @@ A **model result** is the output of any type of numerical model. It is the data 
 
 
 ### Metric
-A **metric** is a quantitative measure (a mathematical expression) used to evaluate the performance of a numerical model. Metrics provide a standardized way to assess the model's accuracy, precision, and other attributes. A metric aggregates the skill of a model into a single number. See list of [metrics](api/misc.md#modelskill.metrics) supported by `ModelSkill`.
+A **metric** is a quantitative measure (a mathematical expression) used to evaluate the performance of a numerical model. Metrics provide a standardized way to assess the model's accuracy, precision, and other attributes. A metric aggregates the skill of a model into a single number. See list of [metrics](api/metrics.md#modelskill.metrics) supported by `ModelSkill`.
 
 
 ### Score
