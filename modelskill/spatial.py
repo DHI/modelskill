@@ -1,13 +1,65 @@
+from __future__ import annotations
 from typing import Optional
+import warnings
+import xarray as xr
 
 
 class GriddedSkillArray:
-    pass
+    """wrapper for xArray DataArray with spatial skill data
+
+    Examples
+    --------
+    >>> ss = comparer.grid_skill()
+    >>> ss["bias"].plot()
+    """
+
+    def __init__(self, data):
+        assert isinstance(data, xr.DataArray)
+        self.data = data
+
+    def __repr__(self):
+        return repr(self.data)
+
+    def _repr_html_(self):
+        return self.data._repr_html_()
+
+    def plot(self, model=None, **kwargs):
+        """wrapper for xArray DataArray plot function
+
+        Parameters
+        ----------
+        model : str, optional
+            Name of model to plot, by default all models
+        **kwargs : keyword arguments passed to xr.DataArray plot()
+            e.g. figsize
+
+        Examples
+        --------
+        >>> ss = comparer.grid_skill()
+        >>> ss["bias"].plot()
+        >>> ss.rmse.plot(model='SW_1')
+        >>> ss.r2.plot(cmap='YlOrRd', figsize=(10,10))
+        """
+        if model is None:
+            da = self.data
+        else:
+            if model not in self.mod_names:
+                raise ValueError(f"model {model} not in model list ({self.mod_names})")
+            da = self.data.sel({"model": model})
+
+        extra_dims = [d for d in da.coords.dims if d not in ["x", "y"]]
+        if len(extra_dims) == 2:
+            ax = da.plot(col=extra_dims[0], row=extra_dims[1], **kwargs)
+        elif len(extra_dims) == 1:
+            ax = da.plot(col=extra_dims[0], **kwargs)
+        else:
+            ax = da.plot(**kwargs)
+        return ax
 
 
 class GridSkill:
     """
-    Spatial skill object for analysis and visualization of spatially
+    Gridded skill object for analysis and visualization of spatially
     gridded skill assessment. The object wraps the xr.DataSet class
     which can be accessed from the attribute ds.
 
@@ -62,6 +114,7 @@ class GridSkill:
 
     @property
     def field_names(self):
+        # TODO: rename to metrics? (be consistent with Skill class)
         """List of field names (=data vars)"""
         return list(self.data.data_vars)
 
@@ -74,6 +127,28 @@ class GridSkill:
         """number of observations"""
         if "n" in self.data:
             return self.data.n
+
+    def __repr__(self):
+        return repr(self.data)
+
+    def _repr_html_(self):
+        return self.data._repr_html_()
+
+    def __getitem__(self, key) -> GriddedSkillArray | GridSkill:
+        result = self.data[key]
+        if isinstance(result, xr.DataArray):
+            return GriddedSkillArray(result)
+        elif isinstance(result, xr.Dataset):
+            return GridSkill(result)
+        else:
+            return result
+
+    def __getattr__(self, item):
+        if item in self.data.data_vars:
+            return self[item]  # Redirects to __getitem__
+
+        # For other attributes, return them directly
+        return getattr(self.data, item)
 
     def _set_attrs(self):
         # TODO: use type and unit to give better long name
@@ -96,46 +171,13 @@ class GridSkill:
         return is_geo
 
     def plot(self, field: str, model=None, **kwargs):
-        """wrapper for xArray DataArray plot function
-
-        Parameters
-        ----------
-        field : str
-            The field to plot, e.g. 'rmse' or 'bias'
-        model : str, optional
-            Name of model to plot, by default all models
-        **kwargs : keyword arguments passed to xr.DataArray plot()
-            e.g. figsize
-
-        Examples
-        --------
-        >>> ss = comparer.grid_skill()
-        >>> ss.plot(field='bias')
-        >>> ss.plot('rmse', model='SW_1')
-        >>> ss.plot(field='r2', cmap='YlOrRd', figsize=(10,10))
-        """
+        warnings.warn(
+            "plot() is deprecated and will be removed in a future version. ", FutureWarning
+        )
         if field not in self.field_names:
             raise ValueError(f"field {field} not found in {self.field_names}")
-
-        if model is None:
-            da = self.data[field]
-        else:
-            if model not in self.mod_names:
-                raise ValueError(f"model {model} not in model list ({self.mod_names})")
-            da = self.data[field].sel({"model": model})
-
-        extra_dims = [d for d in da.coords.dims if d not in ["x", "y"]]
-        if len(extra_dims) == 2:
-            ax = da.plot(col=extra_dims[0], row=extra_dims[1], **kwargs)
-        elif len(extra_dims) == 1:
-            ax = da.plot(col=extra_dims[0], **kwargs)
-        else:
-            ax = da.plot(**kwargs)
-        return ax
+        return self[field].plot(model=model, **kwargs)
 
     def to_dataframe(self):
         """export as pandas.DataFrame"""
         return self.data.to_dataframe()
-
-    def __repr__(self):
-        return repr(self.data)
