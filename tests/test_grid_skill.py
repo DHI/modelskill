@@ -71,17 +71,23 @@ def test_grid_skill_multi_model(cc2):
 
 def test_grid_skill_plot(cc1):
     ss = cc1.grid_skill(metrics=["rmse", "bias"])
-    ss.plot("bias")
+    ss.bias.plot()
+
+    with pytest.warns(FutureWarning, match="deprecated"):
+        ss.plot("bias")
 
 
 def test_grid_skill_plot_multi_model(cc2):
-    ss = cc2.grid_skill(by=["model"])
-    ss.plot("bias")
+    ss = cc2.grid_skill(by=["model"], metrics=["rmse", "bias"])
+    ss["bias"].plot()
 
-    ss.plot("rmse", model="SW_1")
+    ss.rmse.plot(model="SW_1")
+
+
+def test_grid_skill_plot_multi_model_fails(cc2):
+    ss = cc2.grid_skill(by=["model"], metrics=["rmse", "bias"])
+    with pytest.raises(KeyError):
+        ss["bad_metric"]
 
     with pytest.raises(ValueError):
-        ss.plot("bad_metric")
-
-    with pytest.raises(ValueError):
-        ss.plot("rmse", model="bad_model")
+        ss.rmse.plot(model="bad_model")
