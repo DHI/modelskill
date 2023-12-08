@@ -4,7 +4,44 @@ import warnings
 import xarray as xr
 
 
-class GriddedSkillArray:
+class GriddedDataMixin:
+    @property
+    def x(self):
+        """x-coordinate values"""
+        return self.data.x
+
+    @property
+    def y(self):
+        """y-coordinate values"""
+        return self.data.y
+
+    @property
+    def coords(self):
+        """Coordinates (same as xr.DataSet.coords)"""
+        return self.data.coords
+
+    @property
+    def obs_names(self):
+        """List of observation names"""
+        if "observation" in self._coords_list:
+            return list(self.coords["observation"].values)
+        else:
+            return []
+
+    @property
+    def mod_names(self):
+        """List of model names"""
+        if "model" in self._coords_list:
+            return list(self.coords["model"].values)
+        else:
+            return []
+
+    @property
+    def _coords_list(self):
+        return [d for d in self.coords.dims]
+
+
+class GriddedSkillArray(GriddedDataMixin):
     """wrapper for xArray DataArray with spatial skill data
 
     Examples
@@ -57,7 +94,7 @@ class GriddedSkillArray:
         return ax
 
 
-class GridSkill:
+class GridSkill(GriddedDataMixin):
     """
     Gridded skill object for analysis and visualization of spatially
     gridded skill assessment. The object wraps the xr.DataSet class
@@ -82,45 +119,10 @@ class GridSkill:
         self._set_attrs()
 
     @property
-    def x(self):
-        """x-coordinate values"""
-        return self.data.x
-
-    @property
-    def y(self):
-        """y-coordinate values"""
-        return self.data.y
-
-    @property
-    def coords(self):
-        """Coordinates (same as xr.DataSet.coords)"""
-        return self.data.coords
-
-    @property
-    def obs_names(self):
-        """List of observation names"""
-        if "observation" in self._coords_list:
-            return list(self.coords["observation"].values)
-        else:
-            return []
-
-    @property
-    def mod_names(self):
-        """List of model names"""
-        if "model" in self._coords_list:
-            return list(self.coords["model"].values)
-        else:
-            return []
-
-    @property
     def field_names(self):
         # TODO: rename to metrics? (be consistent with Skill class)
         """List of field names (=data vars)"""
         return list(self.data.data_vars)
-
-    @property
-    def _coords_list(self):
-        return [d for d in self.coords.dims]
 
     @property
     def n(self):
@@ -172,7 +174,8 @@ class GridSkill:
 
     def plot(self, field: str, model=None, **kwargs):
         warnings.warn(
-            "plot() is deprecated and will be removed in a future version. ", FutureWarning
+            "plot() is deprecated and will be removed in a future version. ",
+            FutureWarning,
         )
         if field not in self.field_names:
             raise ValueError(f"field {field} not found in {self.field_names}")
