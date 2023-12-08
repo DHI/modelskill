@@ -313,18 +313,22 @@ class SkillFrame:
     def _repr_html_(self):
         return self.df._repr_html_()
 
-    def __getitem__(self, x) -> SkillArray | SkillFrame:
-        if isinstance(x, int):
-            return SkillArray(self.df.iloc[x])
-        elif isinstance(x, str):
-            return SkillArray(self.df[x])
-        elif isinstance(x, Iterable):
-            return SkillFrame(self.df[x])
+    def __getitem__(self, key) -> SkillArray | SkillFrame:
+        result = self.df.iloc[key] if isinstance(key, int) else self.df[key]
+        if isinstance(result, pd.Series):
+            return SkillArray(result)
+        elif isinstance(result, pd.DataFrame):
+            return SkillFrame(result)
         else:
-            raise KeyError(f"Unknown index {x}")
+            return result
 
-    def __getattr__(self, x) -> SkillArray:
-        return SkillArray(self.df[x])
+    def __getattr__(self, item):
+        # Use __getitem__ for DataFrame column access
+        if item in self.df.columns:
+            return self[item]  # Redirects to __getitem__
+
+        # For other attributes, return them directly
+        return getattr(self.df, item)
 
     @property
     def loc(self, *args, **kwargs):
