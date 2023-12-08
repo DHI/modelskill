@@ -48,7 +48,7 @@ def cc2(o1, o2, o3):
 def test_spatial_skill_deprecated(cc1):
     with pytest.warns(FutureWarning, match="grid_skill"):
         ss = cc1.grid_skill()
-    assert isinstance(ss.ds, xr.Dataset)
+    assert isinstance(ss.data, xr.Dataset)
     assert len(ss.x) == 5
     assert len(ss.y) == 5
     assert len(ss.mod_names) == 0

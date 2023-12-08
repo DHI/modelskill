@@ -1,6 +1,10 @@
 from typing import Optional
 
 
+class GriddedSkillArray:
+    pass
+
+
 class GridSkill:
     """
     Spatial skill object for analysis and visualization of spatially
@@ -19,20 +23,26 @@ class GridSkill:
     >>> ss.plot(field='rmse', model='SW_1')
     """
 
+    def __init__(self, data, name: Optional[str] = None):
+        # TODO: add type and unit info; add domain to plot outline on map
+        self.data = data
+        self.name = name
+        self._set_attrs()
+
     @property
     def x(self):
         """x-coordinate values"""
-        return self.ds.x
+        return self.data.x
 
     @property
     def y(self):
         """y-coordinate values"""
-        return self.ds.y
+        return self.data.y
 
     @property
     def coords(self):
         """Coordinates (same as xr.DataSet.coords)"""
-        return self.ds.coords
+        return self.data.coords
 
     @property
     def obs_names(self):
@@ -53,7 +63,7 @@ class GridSkill:
     @property
     def field_names(self):
         """List of field names (=data vars)"""
-        return list(self.ds.data_vars)
+        return list(self.data.data_vars)
 
     @property
     def _coords_list(self):
@@ -62,26 +72,20 @@ class GridSkill:
     @property
     def n(self):
         """number of observations"""
-        if "n" in self.ds:
-            return self.ds.n
-
-    def __init__(self, ds, name: Optional[str] = None):
-        # TODO: add type and unit info; add domain to plot outline on map
-        self.ds = ds
-        self.name = name
-        self._set_attrs()
+        if "n" in self.data:
+            return self.data.n
 
     def _set_attrs(self):
         # TODO: use type and unit to give better long name
         # self.ds["bias"].attrs = dict(long_name="Bias of Hm0", units="m")
 
-        self.ds["n"].attrs = dict(long_name="Number of observations", units="-")
+        self.data["n"].attrs = dict(long_name="Number of observations", units="-")
         if self._has_geographical_coords():
-            self.ds["x"].attrs = dict(long_name="Longitude", units="degrees east")
-            self.ds["y"].attrs = dict(long_name="Latitude", units="degrees north")
+            self.data["x"].attrs = dict(long_name="Longitude", units="degrees east")
+            self.data["y"].attrs = dict(long_name="Latitude", units="degrees north")
         else:
-            self.ds["x"].attrs = dict(long_name="Easting", units="meter")
-            self.ds["y"].attrs = dict(long_name="Northing", units="meter")
+            self.data["x"].attrs = dict(long_name="Easting", units="meter")
+            self.data["y"].attrs = dict(long_name="Northing", units="meter")
 
     def _has_geographical_coords(self):
         is_geo = True
@@ -92,7 +96,7 @@ class GridSkill:
         return is_geo
 
     def plot(self, field: str, model=None, **kwargs):
-        """wrapper for xArray DataSet plot function
+        """wrapper for xArray DataArray plot function
 
         Parameters
         ----------
@@ -100,7 +104,7 @@ class GridSkill:
             The field to plot, e.g. 'rmse' or 'bias'
         model : str, optional
             Name of model to plot, by default all models
-        **kwargs : keyword arguments passed to xr.DataSet plot()
+        **kwargs : keyword arguments passed to xr.DataArray plot()
             e.g. figsize
 
         Examples
@@ -114,24 +118,24 @@ class GridSkill:
             raise ValueError(f"field {field} not found in {self.field_names}")
 
         if model is None:
-            ds = self.ds[field]
+            da = self.data[field]
         else:
             if model not in self.mod_names:
                 raise ValueError(f"model {model} not in model list ({self.mod_names})")
-            ds = self.ds[field].sel({"model": model})
+            da = self.data[field].sel({"model": model})
 
-        extra_dims = [d for d in ds.coords.dims if d not in ["x", "y"]]
+        extra_dims = [d for d in da.coords.dims if d not in ["x", "y"]]
         if len(extra_dims) == 2:
-            ax = ds.plot(col=extra_dims[0], row=extra_dims[1], **kwargs)
+            ax = da.plot(col=extra_dims[0], row=extra_dims[1], **kwargs)
         elif len(extra_dims) == 1:
-            ax = ds.plot(col=extra_dims[0], **kwargs)
+            ax = da.plot(col=extra_dims[0], **kwargs)
         else:
-            ax = ds.plot(**kwargs)
+            ax = da.plot(**kwargs)
         return ax
 
     def to_dataframe(self):
         """export as pandas.DataFrame"""
-        return self.ds.to_dataframe()
+        return self.data.to_dataframe()
 
     def __repr__(self):
-        return repr(self.ds)
+        return repr(self.data)
