@@ -63,20 +63,17 @@ class DfsuModelResult(SpatialField):
                 f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
             )
 
-        # TODO: user given quantity will be overwritten!
-
         if isinstance(data, mikeio.DataArray):
             if item is not None:
                 raise ValueError("item must be None when data is a DataArray")
             if aux_items is not None:
                 raise ValueError("aux_items must be None when data is a DataArray")
-            quantity = Quantity.from_mikeio_iteminfo(data.item)
+            item_info = data.item
             item = data.name
         else:
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
-            quantity = Quantity.from_mikeio_iteminfo(item_info)
 
             sel_items = SelectedItems.parse(item_names, item=item, aux_items=aux_items)
             item = sel_items.values
@@ -84,7 +81,9 @@ class DfsuModelResult(SpatialField):
 
         self.data: mikeio.dfsu.Dfsu2DH | mikeio.DataArray | mikeio.Dataset = data
         self.name = name or str(item)
-        self.quantity = Quantity.undefined() if quantity is None else quantity
+        self.quantity = (
+            Quantity.from_mikeio_iteminfo(item_info) if quantity is None else quantity
+        )
         self.filename = filename  # TODO: remove? backward compatibility
 
     def __repr__(self):
