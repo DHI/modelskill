@@ -39,9 +39,9 @@ def o3():
 
 @pytest.fixture
 def cc2(o1, o2, o3):
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
     mr1 = ms.ModelResult(fn, item=0, name="SW_1")
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    fn = "tests/testdata/SW/DutchCoast_2017_subset_v2.dfsu"
     mr2 = ms.ModelResult(fn, item=0, name="SW_2")
     return ms.compare([o1, o2, o3], [mr1, mr2])
 

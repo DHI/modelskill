@@ -5,13 +5,13 @@ import modelskill as ms
 
 @pytest.fixture
 def mrmike():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
     return ms.ModelResult(fn, name="SW_1", item=0)
 
 
 @pytest.fixture
 def mrmike2():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    fn = "tests/testdata/SW/DutchCoast_2017_subset_v2.dfsu"
     return ms.ModelResult(fn, name="SW_2", item=0)
 
 

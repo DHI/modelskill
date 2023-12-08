@@ -7,7 +7,7 @@ import modelskill as ms
 
 @pytest.fixture
 def hd_oresund_2d():
-    return "tests/testdata/Oresund2D.dfsu"
+    return "tests/testdata/Oresund2D_subset.dfsu"
 
 
 # TODO: replace with shorter dfs0
@@ -30,7 +30,7 @@ def drogden():
 
 @pytest.fixture
 def sw_dutch_coast():
-    return "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    return "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
 
 
 @pytest.fixture
@@ -86,24 +86,43 @@ def test_dfsu_sw(sw_dutch_coast):
     assert isinstance(mr, ms.DfsuModelResult)
 
 
-# def test_model_dfsu(hd_oresund_2d):
-#     mr = DfsuModelResult(hd_oresund_2d, item=0, "Oresund")
-#     assert mr.n_items == 7
-#     assert isinstance(mr, DfsModelResult)
+def test_dfsu_aux_items(hd_oresund_2d):
+    mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=["U velocity"])
+    assert mr.sel_items.values == "Surface elevation"
+    assert mr.sel_items.aux == ["U velocity"]
 
-#     mr0 = mr[0]
-#     assert isinstance(mr0, DfsModelResultItem)
-#     assert mr.item_names[0] == mr0.item_name
+    mr = ms.DfsuModelResult(
+        hd_oresund_2d, item=0, aux_items=["U velocity", "V velocity"]
+    )
+    assert mr.sel_items.values == "Surface elevation"
+    assert mr.sel_items.aux == ["U velocity", "V velocity"]
 
-#     mr1 = mr["Surface elevation"]
-#     assert mr.item_names[0] == mr1.item_name
-#     assert mr.filename == mr1.filename
-#     assert mr.name == mr1.name
+    # accept string instead of list
+    mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items="U velocity")
+    assert mr.sel_items.values == "Surface elevation"
+    assert mr.sel_items.aux == ["U velocity"]
+
+    # use index instead of name
+    mr = ms.DfsuModelResult(hd_oresund_2d, item=0, aux_items=[2, 3])
+    assert mr.sel_items.values == "Surface elevation"
+    assert mr.sel_items.aux == ["U velocity", "V velocity"]
+
+
+def test_dfsu_aux_items_fail(hd_oresund_2d):
+    with pytest.raises(ValueError, match="Duplicate items"):
+        ms.DfsuModelResult(
+            hd_oresund_2d, item=0, aux_items=["U velocity", "Surface elevation"]
+        )
+
+    with pytest.raises(ValueError, match="Duplicate items"):
+        ms.DfsuModelResult(
+            hd_oresund_2d, item=0, aux_items=["U velocity", "Surface elevation"]
+        )
 
 
 def test_dfsu_dataarray(hd_oresund_2d):
     ds = mikeio.read(hd_oresund_2d)
-    assert ds.n_items == 7
+    assert ds.n_items == 4
     da = ds[0]
     assert isinstance(da, mikeio.DataArray)
 
@@ -159,12 +178,16 @@ def test_extract_observation_total_windsea_swell_not_possible(
 
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ms.ModelResult(hd_oresund_2d, item=0)
+
     with pytest.raises(Exception):
-        c = ms.Connector(klagshamn, mr, validate=True).extract()
+        with pytest.warns(FutureWarning, match="modelskill.compare"):
+            _ = ms.Connector(klagshamn, mr, validate=True).extract()
 
     # No error if validate==False
     with pytest.warns(FutureWarning, match="modelskill.compare"):
-        c = ms.Connector(klagshamn, mr, validate=False).extract()
+        con = ms.Connector(klagshamn, mr, validate=False)
+
+    c = con.extract()
     assert c.n_points > 0
 
 
@@ -173,7 +196,8 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     # correct eum, but outside domain
     klagshamn.y = -10
     with pytest.raises(ValueError):
-        _ = ms.Connector(klagshamn, mr, validate=True).extract()
+        with pytest.warns(FutureWarning, match="modelskill.compare"):
+            _ = ms.Connector(klagshamn, mr, validate=True).extract()
 
 
 def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
@@ -199,6 +223,15 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
     # assert len(c1.observation.data.index.difference(Hm0_EPL.data.index)) == 0
 
 
+def test_dfsu_extract_point_aux(sw_dutch_coast, Hm0_EPL):
+    mr1 = ms.ModelResult(
+        sw_dutch_coast, item=0, aux_items=["Peak Wave Direction"], name="SW1"
+    )
+    mr_extr_1 = mr1.extract(Hm0_EPL.copy())
+    assert list(mr_extr_1.data.data_vars) == ["SW1", "Peak Wave Direction"]
+    assert mr_extr_1.n_points == 23
+
+
 def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     mr1 = ms.ModelResult(sw_dutch_coast, item=0, name="SW1")
     mr_track1 = mr1.extract(Hm0_C2)
@@ -206,7 +239,7 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     assert "SW1" in ds1.data_vars
     assert "x" in ds1.coords
     assert "y" in ds1.coords
-    assert mr_track1.n_points == 113
+    assert mr_track1.n_points == 70
 
     da = mikeio.read(sw_dutch_coast)[0]
     mr2 = ms.ModelResult(da, name="SW1")
@@ -223,3 +256,14 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     assert np.all(c1.data == c2.data)
     # c1.observation.itemInfo == Hm0_C2.itemInfo
     # assert len(c1.observation.data.index.difference(Hm0_C2.data.index)) == 0
+
+
+def test_dfsu_extract_track_aux(sw_dutch_coast, Hm0_C2):
+    mr1 = ms.ModelResult(
+        sw_dutch_coast, item=0, aux_items=["Peak Wave Direction"], name="SW1"
+    )
+    mr_track1 = mr1.extract(Hm0_C2)
+    assert list(mr_track1.data.data_vars) == ["SW1", "Peak Wave Direction"]
+    assert "x" in mr_track1.data.coords
+    assert "y" in mr_track1.data.coords
+    assert mr_track1.n_points == 70

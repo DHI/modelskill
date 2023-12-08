@@ -342,11 +342,12 @@ def test_trackmodelresult_and_trackobservation_uses_model_name():
     assert mr.name == "MyModel"
 
     # reuse same data, we don't care about the data here, only the name
-    o1 = ms.TrackObservation(
-        "tests/testdata/NorthSeaHD_extracted_track.dfs0",
-        item="Model_surface_elevation",
-        name="MyObs",
-    )
+    with pytest.warns(UserWarning, match="Removed 22 duplicate"):
+        o1 = ms.TrackObservation(
+            "tests/testdata/NorthSeaHD_extracted_track.dfs0",
+            item="Model_surface_elevation",
+            name="MyObs",
+        )
     cmp = ms.compare(o1, mr)
     assert cmp.mod_names == ["MyModel"]
 

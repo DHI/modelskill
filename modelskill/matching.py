@@ -323,7 +323,7 @@ def match_space_time(
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: obs_name})
 
-    for name, mr in raw_mod_data.items():
+    for _, mr in raw_mod_data.items():
         if isinstance(mr, PointModelResult):
             assert len(observation.time) > 0
             mri: TimeSeries = mr.interp_time(new_time=observation.time)
@@ -340,7 +340,9 @@ def match_space_time(
                 observation=observation, mri=mri, spatial_tolerance=spatial_tolerance
             )
 
-        data[name] = mri.data[name]
+        # TODO: is name needed?
+        for v in list(mri.data.data_vars):
+            data[v] = mri.data[v]
 
     # drop NaNs in model and observation columns (but allow NaNs in aux columns)
     cols = list(
