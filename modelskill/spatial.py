@@ -125,11 +125,11 @@ class GridSkill(GriddedDataMixin):
         """List of field names (=data vars)"""
         return list(self.data.data_vars)
 
-    @property
-    def n(self):
-        """number of observations"""
-        if "n" in self.data:
-            return self.data.n
+    # @property
+    # def n(self):
+    #     """number of observations"""
+    #     if "n" in self.data:
+    #         return self.data.n
 
     def __repr__(self):
         return repr(self.data)
