@@ -162,7 +162,7 @@ class GridModelResult(SpatialField):
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
         da = self.data.interp(coords=dict(x=x, y=y), method="nearest")  # type: ignore
         df = da.to_dataframe().drop(columns=["x", "y"])
-        df = df.rename(columns={list(da.data_vars)[0]: self.name})
+        df = df.rename(columns={self.sel_items.values: self.name})
 
         return PointModelResult(
             data=df.dropna(),
@@ -188,7 +188,7 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
         da = self.data.interp(coords=dict(time=t, x=x, y=y), method="linear")
         df = da.to_dataframe().drop(columns=["time"])
-        df = df.rename(columns={list(da.data_vars)[0]: self.name})
+        df = df.rename(columns={self.sel_items.values: self.name})
 
         return TrackModelResult(
             data=df.dropna(),
