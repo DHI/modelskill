@@ -311,7 +311,7 @@ def test_skill_vs_grid_skill(comparer):
     df = comparer.skill().df  # to compare to result of .skill()
     ds = comparer.grid_skill(bins=1)  # force 1 bin only
 
-    assert df.loc["alti"].n == ds.n.values
+    assert df.loc["alti"].n == ds.data.n.values
     assert df.loc["alti"].bias == ds.data.bias.values
     assert ds.x.size == 1
     assert ds.y.size == 1
