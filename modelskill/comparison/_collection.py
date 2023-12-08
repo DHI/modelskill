@@ -508,7 +508,7 @@ class ComparerCollection(Mapping):
                     skilldf.insert(loc=0, column=field, value=unames[0])
         return skilldf
 
-    def grid_skill(
+    def spatial_skill(
         self,
         bins=5,
         binsize=None,
@@ -517,7 +517,9 @@ class ComparerCollection(Mapping):
         n_min=None,
         **kwargs,
     ):
-        warnings.warn("grid_skill is deprecated, use grid_skill instead", FutureWarning)
+        warnings.warn(
+            "spatial_skill is deprecated, use grid_skill instead", FutureWarning
+        )
         return self.grid_skill(
             bins=bins,
             binsize=binsize,
