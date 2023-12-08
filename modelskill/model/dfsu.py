@@ -6,7 +6,7 @@ import mikeio
 import numpy as np
 import pandas as pd
 
-from ._base import SpatialField
+from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
 from ..types import Quantity, UnstructuredType
 from ..utils import _get_idx
 from .point import PointModelResult
@@ -15,7 +15,23 @@ from ..observation import Observation, PointObservation, TrackObservation
 
 
 class DfsuModelResult(SpatialField):
-    """Construct a DfsuModelResult from a dfsu file or mikeio.Dataset/DataArray."""
+    """Construct a DfsuModelResult from a dfsu file or mikeio.Dataset/DataArray.
+
+    Parameters
+    ----------
+    data : types.UnstructuredType
+        the input data or file path
+    name : Optional[str], optional
+        The name of the model result,
+        by default None (will be set to file name or item name)
+    item : str | int | None, optional
+        If multiple items/arrays are present in the input an item
+        must be given (as either an index or a string), by default None
+    quantity : Quantity, optional
+        Model quantity, for MIKE files this is inferred from the EUM information
+    aux_items : Optional[list[int | str]], optional
+        Auxiliary items, by default None
+    """
 
     def __init__(
         self,
@@ -24,6 +40,7 @@ class DfsuModelResult(SpatialField):
         name: Optional[str] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
     ) -> None:
         assert isinstance(
             data, get_args(UnstructuredType)
@@ -46,22 +63,27 @@ class DfsuModelResult(SpatialField):
                 f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
             )
 
-        # TODO: user given quantity will be overwritten!
-
         if isinstance(data, mikeio.DataArray):
-            if isinstance(item, int):
-                raise ValueError("item must be a string when data is a DataArray")
-            quantity = Quantity(name=repr(data.type), unit=data.unit.name)
+            if item is not None:
+                raise ValueError("item must be None when data is a DataArray")
+            if aux_items is not None:
+                raise ValueError("aux_items must be None when data is a DataArray")
+            item_info = data.item
+            item = data.name
         else:
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
-            quantity = Quantity.from_mikeio_iteminfo(item_info)
 
-        self.item = item
+            sel_items = SelectedItems.parse(item_names, item=item, aux_items=aux_items)
+            item = sel_items.values
+            self.sel_items = sel_items
+
         self.data: mikeio.dfsu.Dfsu2DH | mikeio.DataArray | mikeio.Dataset = data
         self.name = name or str(item)
-        self.quantity = Quantity.undefined() if quantity is None else quantity
+        self.quantity = (
+            Quantity.from_mikeio_iteminfo(item_info) if quantity is None else quantity
+        )
         self.filename = filename  # TODO: remove? backward compatibility
 
     def __repr__(self):
@@ -95,6 +117,7 @@ class DfsuModelResult(SpatialField):
         <modelskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
+        _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
             return self.extract_point(observation)
         elif isinstance(observation, TrackObservation):
@@ -122,23 +145,30 @@ class DfsuModelResult(SpatialField):
         xy = np.atleast_2d([x, y])
         elemids = self.data.geometry.find_index(coords=xy)
         if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-            ds_model = self.data.read(elements=elemids, items=[self.item])
+            ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
+            aux_items = self.sel_items.aux
         elif isinstance(self.data, mikeio.Dataset):
-            ds_model = self.data.isel(element=elemids)
+            ds_model = self.data[self.sel_items.all].isel(element=elemids)
+            aux_items = self.sel_items.aux
         elif isinstance(self.data, mikeio.DataArray):
             da = self.data.isel(element=elemids)
             ds_model = mikeio.Dataset({da.name: da})
+            aux_items = None
+
+        assert isinstance(ds_model, mikeio.Dataset)
 
         # TODO not sure why we rename here
         assert self.name is not None
         ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
 
         return PointModelResult(
-            data=ds_model,  # TODO convert to dataframe?
+            data=ds_model,
+            item=self.name,
             x=ds_model.geometry.x,
             y=ds_model.geometry.y,
             name=self.name,
             quantity=self.quantity,
+            aux_items=aux_items,
         )
 
     def extract_track(self, observation: TrackObservation) -> TrackModelResult:
@@ -149,22 +179,31 @@ class DfsuModelResult(SpatialField):
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
         )
 
-        # TODO: data could be xarray
-        track = (
-            observation.data
-            if isinstance(observation.data, pd.DataFrame)
-            else observation.data.to_dataframe()
-        )
+        track = observation.data.to_dataframe()
 
-        if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-            ds_model = self.data.extract_track(track=track, items=[self.item])
-        elif isinstance(self.data, (mikeio.Dataset, mikeio.DataArray)):
+        if isinstance(self.data, mikeio.DataArray):
             ds_model = self.data.extract_track(track=track)
-        ds_model.rename({ds_model.items[-1].name: self.name}, inplace=True)
+            ds_model.rename({self.data.name: self.name}, inplace=True)
+            aux_items = None
+        else:
+            if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
+                ds_model = self.data.extract_track(
+                    track=track, items=self.sel_items.all
+                )
+            elif isinstance(self.data, mikeio.Dataset):
+                ds_model = self.data[self.sel_items.all].extract_track(track=track)
+            ds_model.rename({self.sel_items.values: self.name}, inplace=True)
+            aux_items = self.sel_items.aux
+
+        x_name = "Longitude" if "Longitude" in ds_model else "x"
+        y_name = "Latitude" if "Latitude" in ds_model else "y"
 
         return TrackModelResult(
-            data=ds_model.dropna(),  # .to_dataframe().dropna(),
+            data=ds_model.dropna(),  # TODO: not on aux cols
             item=self.name,
+            x_item=x_name,
+            y_item=y_name,
             name=self.name,
             quantity=self.quantity,
+            aux_items=aux_items,
         )

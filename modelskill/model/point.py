@@ -1,16 +1,18 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Sequence
 
 import xarray as xr
 import pandas as pd
 
+from ..observation import PointObservation
 from ..types import Quantity, PointType
 from ..timeseries import TimeSeries, _parse_point_input
 
 
 class PointModelResult(TimeSeries):
-    """Construct a PointModelResult from a dfs0 file,
-    mikeio.Dataset/DataArray or pandas.DataFrame/Series
+    """Construct a PointModelResult from a 0d data source:
+    dfs0 file, mikeio.Dataset/DataArray, pandas.DataFrame/Series
+    or xarray.Dataset/DataArray
 
     Parameters
     ----------
@@ -28,6 +30,8 @@ class PointModelResult(TimeSeries):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
+    aux_items : Optional[list[int | str]], optional
+        Auxiliary items, by default None
     """
 
     def __init__(
@@ -39,9 +43,12 @@ class PointModelResult(TimeSeries):
         y: Optional[float] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
+        aux_items: Optional[Sequence[int | str]] = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_point_input(data, name=name, item=item, quantity=quantity)
+            data = _parse_point_input(
+                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+            )
 
             data.coords["x"] = x
             data.coords["y"] = y
@@ -54,6 +61,8 @@ class PointModelResult(TimeSeries):
         super().__init__(data=data)
 
     def extract(self, obs) -> PointModelResult:
+        if not isinstance(obs, PointObservation):
+            raise ValueError(f"obs must be a PointObservation not {type(obs)}")
         # TODO check x,y,z
         return self
 
