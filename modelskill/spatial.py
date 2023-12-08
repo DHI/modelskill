@@ -94,6 +94,7 @@ class GriddedSkillArray(GriddedDataMixin):
         return ax
 
 
+# TODO: rename to GriddedSkill?
 class GridSkill(GriddedDataMixin):
     """
     Gridded skill object for analysis and visualization of spatially
