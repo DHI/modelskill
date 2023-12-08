@@ -22,4 +22,4 @@ jobs:
         pip install .[test,notebooks]    
     - name: Test notebooks    
       run: |
-        pytest tests/notebooks/
+        pytest --durations=20 tests/notebooks/
