@@ -33,7 +33,7 @@ from ._utils import (
     IdOrNameTypes,
 )
 from ..skill import AggregatedSkill
-from ..spatial import GridSkill
+from ..spatial import GriddedSkillSet
 from ..settings import options, register_option, reset_option
 from ..utils import _get_name
 from .. import __version__
@@ -1135,7 +1135,7 @@ class Comparer:
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return GridSkill(res.to_xarray().squeeze())
+        return GriddedSkillSet(res.to_xarray().squeeze())
 
     @property
     def residual(self):

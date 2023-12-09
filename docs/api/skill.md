@@ -8,4 +8,4 @@
 
 ## Spatial Skill
 
-::: modelskill.spatial.GridSkill
+::: modelskill.spatial.GriddedSkillSet

@@ -95,7 +95,7 @@ class GriddedSkillArray(GriddedDataMixin):
 
 
 # TODO: rename to GriddedSkill?
-class GridSkill(GriddedDataMixin):
+class GriddedSkillSet(GriddedDataMixin):
     """
     Gridded skill object for analysis and visualization of spatially
     gridded skill assessment. The object wraps the xr.DataSet class
@@ -137,12 +137,12 @@ class GridSkill(GriddedDataMixin):
     def _repr_html_(self):
         return self.data._repr_html_()
 
-    def __getitem__(self, key) -> GriddedSkillArray | GridSkill:
+    def __getitem__(self, key) -> GriddedSkillArray | GriddedSkillSet:
         result = self.data[key]
         if isinstance(result, xr.DataArray):
             return GriddedSkillArray(result)
         elif isinstance(result, xr.Dataset):
-            return GridSkill(result)
+            return GriddedSkillSet(result)
         else:
             return result
 
