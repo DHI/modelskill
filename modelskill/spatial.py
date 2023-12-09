@@ -46,7 +46,7 @@ class GriddedSkillArray(GriddedDataMixin):
 
     Examples
     --------
-    >>> ss = comparer.grid_skill()
+    >>> ss = comparer.gridded_skill()
     >>> ss["bias"].plot()
     """
 
@@ -72,7 +72,7 @@ class GriddedSkillArray(GriddedDataMixin):
 
         Examples
         --------
-        >>> ss = comparer.grid_skill()
+        >>> ss = comparer.gridded_skill()
         >>> ss["bias"].plot()
         >>> ss.rmse.plot(model='SW_1')
         >>> ss.r2.plot(cmap='YlOrRd', figsize=(10,10))
@@ -103,7 +103,7 @@ class GridSkill(GriddedDataMixin):
 
     Examples
     --------
-    >>> ss = comparer.grid_skill()
+    >>> ss = comparer.gridded_skill()
     >>> ss.field_names
     ['n', 'bias', 'rmse', 'urmse', 'mae', 'cc', 'si', 'r2']
 

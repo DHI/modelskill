@@ -518,9 +518,9 @@ class ComparerCollection(Mapping):
         **kwargs,
     ):
         warnings.warn(
-            "spatial_skill is deprecated, use grid_skill instead", FutureWarning
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
         )
-        return self.grid_skill(
+        return self.gridded_skill(
             bins=bins,
             binsize=binsize,
             by=by,
@@ -529,7 +529,7 @@ class ComparerCollection(Mapping):
             **kwargs,
         )
 
-    def grid_skill(
+    def gridded_skill(
         self,
         bins=5,
         binsize: Optional[float] = None,
@@ -574,7 +574,7 @@ class ComparerCollection(Mapping):
         --------
         >>> import modelskill as ms
         >>> cc = ms.compare([HKNA,EPL,c2], mr)  # with satellite track measurements
-        >>> cc.grid_skill(metrics='bias')
+        >>> cc.gridded_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -585,7 +585,7 @@ class ComparerCollection(Mapping):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.grid_skill(binsize=0.5)
+        >>> ds = cc.gridded_skill(binsize=0.5)
         >>> ds.coords
         Coordinates:
             observation   'alti'
