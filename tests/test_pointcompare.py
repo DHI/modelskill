@@ -53,12 +53,9 @@ def test_get_comparer_by_position(cc):
     assert isinstance(cc1, Comparer)
     assert cc1.name == "dmi_30357_Drogden_Fyr"
 
-    with pytest.raises(NotImplementedError):
-        cc[0:2]
-
-    # ccs = cc[0:2]
-    # assert len(ccs) == 2
-    # assert isinstance(ccs, ComparerCollection)
+    ccs = cc[0:2]
+    assert len(ccs) == 2
+    assert "Klagshamn" in ccs
 
 
 def test_iterate_over_comparers(cc):

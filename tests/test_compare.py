@@ -379,3 +379,16 @@ def test_specifying_mod_item_not_allowed_twice(o1, mr1):
 def test_bad_model_input(o1):
     with pytest.raises(ValueError, match="mod type"):
         ms.compare(obs=o1, mod=None)
+
+
+def test_subssetting_with_slice(o1, o2, o3):
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]
+
+    cc = ms.compare([o1, o2, o3], da)
+    assert len(cc) == 3
+
+    cc2 = cc[1:]
+    assert len(cc2) == 2
+    assert "c2" in cc2
+    assert "HKNA" not in cc2

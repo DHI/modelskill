@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import tempfile
-from typing import Dict, List, Union, Optional, Mapping, Iterable
+from typing import Dict, List, Union, Optional, Mapping, Iterable, overload
 import warnings
 import zipfile
 import numpy as np
@@ -83,47 +83,23 @@ class ComparerCollection(Mapping):
     >>> cc = ms.compare(obs=[o1,o2], mod=mr)
     """
 
-    comparers: Dict[str, Comparer]
     plotter = ComparerCollectionPlotter
 
     """Collection of Comparers, indexed by name"""
 
     def __init__(self, comparers: Iterable[Comparer]) -> None:
-        self.comparers = {}
-        self._append_comparers(comparers)
+        self.comparers: Dict[str, Comparer] = {}
+        self._insert_comparers(comparers)
         self.plot = ComparerCollection.plotter(self)
 
-    def _append_comparers(
-        self, comparer: Union[Comparer, "ComparerCollection", Iterable[Comparer]]
-    ) -> None:
-        """Add another Comparer to this collection.
-
-        Parameters
-        ----------
-        comparer : (Comparer, ComparerCollection)
-            Comparer to add to this collection
-        """
-        if isinstance(comparer, (ComparerCollection, Iterable)):
+    def _insert_comparers(self, comparer: Union[Comparer, Iterable[Comparer]]) -> None:
+        if isinstance(comparer, Iterable):
             for c in comparer:
-                self._add_comparer(c)
+                self[c.name] = c
         elif isinstance(comparer, Comparer):
-            self._add_comparer(comparer)
+            self[comparer.name] = comparer
         else:
             pass
-
-    def _add_comparer(self, comparer: Union[Comparer, None]) -> None:
-        if comparer is None:  # TODO please don't pass None
-            return
-        assert isinstance(
-            comparer, Comparer
-        ), f"comparer must be a Comparer, not {type(comparer)}"
-        if comparer.name in self.comparers:
-            # comparer with this name already exists!
-            # maybe the user is trying to add a new model
-            # or a new time period
-            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer  # type: ignore
-        else:
-            self.comparers[comparer.name] = comparer
 
     @property
     def name(self) -> str:
@@ -238,17 +214,35 @@ class ComparerCollection(Mapping):
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
 
+    @overload
+    def __getitem__(self, x: slice) -> ComparerCollection:
+        ...
+
+    @overload
     def __getitem__(self, x: int | str) -> Comparer:
+        ...
+
+    def __getitem__(self, x):
         if isinstance(x, slice):
-            raise NotImplementedError("slicing not implemented")
-        #    cmps = [self[xi] for xi in range(*x.indices(len(self)))]
-        #    cc = ComparerCollection(cmps)
-        #    return cc
+            idxs = list(range(*x.indices(len(self))))
+            return ComparerCollection([self[i] for i in idxs])
 
         if isinstance(x, int):
             x = _get_name(x, self.obs_names)
 
         return self.comparers[x]
+
+    def __setitem__(self, x: str, value: Comparer) -> None:
+        assert isinstance(
+            value, Comparer
+        ), f"comparer must be a Comparer, not {type(value)}"
+        if x in self.comparers:
+            # comparer with this name already exists!
+            # maybe the user is trying to add a new model
+            # or a new time period
+            self.comparers[x] = self.comparers[x] + value  # type: ignore
+        else:
+            self.comparers[x] = value
 
     def __len__(self) -> int:
         return len(self.comparers)
