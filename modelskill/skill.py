@@ -458,48 +458,73 @@ class SkillTable:
             df = df[df.index == value]  # .copy()
         return df
 
+    def query(self, query: str) -> SkillTable:
+        """Select a subset of the SkillTable by a query string
+
+        Parameters
+        ----------
+        query : str
+            string supported by xr.Dataset.query()
+
+        Returns
+        -------
+        SkillTable
+            A subset of the original SkillTable
+
+        Examples
+        --------
+        >>> s = cc.skill()
+        >>> s_above_0p3 = s.query("rmse>0.3")
+        """
+        # dim0 = list(self.data.dims)[0]
+        # data = self.data.query({dim0: query})
+        data = self._df.query(query)
+        return self.__class__(data)
+
     def sel(self, query=None, reduce_index=True, **kwargs):
         """Select a subset of the SkillTable by a query,
            (part of) the index, or specific columns
 
         Parameters
         ----------
-        query : str, optional
-            string supported by pd.DataFrame.query(), by default None
         reduce_index : bool, optional
             Should unnecessary levels of the index be removed after subsetting?
             Removed levels will stay as columns. By default True
         **kwargs : dict, optional
-            "metrics"=... to select specific metrics (=columns),
-            "model"=... to select specific models (=rows),
-            "observation"=... to select specific observations (=rows)
+            "model"=... to select specific models,
+            "observation"=... to select specific observations
 
         Returns
         -------
         SkillTable
-            A subset of the orignal SkillTable
+            A subset of the original SkillTable
 
         Examples
         --------
-        >>> s = comparer.skill()
-        >>> s.sel(query="rmse>0.3")
-        >>> s.sel(model = "SW_1")
-        >>> s.sel(observation = ["EPL", "HKNA"])
-        >>> s.sel(metrics="rmse")
-        >>> s.sel("rmse>0.2", observation=[0, 2], metrics=["n","rmse"])
+        >>> s = cc.skill()
+        >>> s_SW1 = s.sel(model = "SW_1")
+        >>> s2 = s.sel(observation = ["EPL", "HKNA"])
         """
-        df = self._df
-
         if query is not None:
-            if isinstance(query, str):
-                df = df.query(query)
+            warnings.warn(
+                "s.sel(query=...) is deprecated, use s.query(...) instead",
+                FutureWarning,
+            )
+            return self.query(query)
+
+        for key, value in kwargs.items():
+            if key == "metrics" or key == "columns":
+                warnings.warn(
+                    f"s.sel({key}=...) is deprecated, use getitem s[...] instead",
+                    FutureWarning,
+                )
+                return self[value]
+
+        df = self._df
 
         for key, value in kwargs.items():
             if key in df.index.names:
                 df = self._sel_from_index(df, key, value)
-            elif key == "metrics" or key == "columns":
-                cols = [value] if isinstance(value, str) else value
-                df = df[cols]
             else:
                 raise KeyError(
                     f"Unknown index {key}. Valid index names are {df.index.names}"
