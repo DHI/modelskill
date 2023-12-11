@@ -56,11 +56,11 @@ The function [`match`](api/compare.md#modelskill.match) is used to match a model
 
 
 ### Comparer
-A [**Comparer**](api/compare.md#modelskill.comparison.Comparer) is an object that compares a model result with observations. It is used to calculate validation metrics and generate plots. A Comparer can be created using the [`compare`](api/compare.md#modelskill.compare) function (will return a [ComparerCollection](api/compare.md#modelskill.comparison.ComparerCollection)). 
+A [**Comparer**](api/compare.md#modelskill.comparison.Comparer) is an object that compares a model result with observations. It is used to calculate validation metrics and generate plots. A Comparer can be created using the [`compare`](api/compare.md#modelskill.match) function (will return a [ComparerCollection](api/compare.md#modelskill.comparison.ComparerCollection)). 
 
 
 ### ComparerCollection
-A [**ComparerCollection**](api/compare.md#modelskill.comparison.ComparerCollection) is a collection of Comparers. It is used to compare multiple model results with multiple observations. A ComparerCollection can be created using the [`compare`](api/compare.md#modelskill.compare) function. 
+A [**ComparerCollection**](api/compare.md#modelskill.comparison.ComparerCollection) is a collection of Comparers. It is used to compare multiple model results with multiple observations. A ComparerCollection can be created using the [`compare`](api/compare.md#modelskill.match) function. 
 
 
 ### Connector

@@ -90,7 +90,7 @@ def test_extraction_no_overlap(modelresult_oresund_WL):
     )
     mr = modelresult_oresund_WL
 
-    with pytest.warns(FutureWarning, match="modelskill.compare"):
+    with pytest.warns(FutureWarning, match="modelskill.match"):
         con = ms.Connector(o1, mr, validate=False)
     with pytest.raises(ValueError, match="No data"):
         con.extract()

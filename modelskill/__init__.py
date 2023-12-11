@@ -34,7 +34,7 @@ from .connection import Connector
 from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
-from .comparison import ComparerCollection
+from .comparison import ComparerCollection, Comparer
 
 
 def load(filename: Union[str, Path]) -> ComparerCollection:
@@ -80,4 +80,6 @@ __all__ = [
     "plotting",
     "from_config",
     "model_result",
+    "ComparerCollection",
+    "Comparer",
 ]

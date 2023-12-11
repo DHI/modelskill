@@ -378,7 +378,7 @@ class Comparer:
 
     See Also
     --------
-    modelskill.compare, modelskill.from_matched
+    modelskill.match, modelskill.from_matched
     """
 
     data: xr.Dataset
@@ -1038,6 +1038,28 @@ class Comparer:
         if len(values) == 1:
             values = values[0]
         return values
+
+    def spatial_skill(
+        self,
+        bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        # deprecated
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
 
     def gridded_skill(
         self,

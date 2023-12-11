@@ -71,7 +71,7 @@ def _all_df_template(n_variables: int = 1):
 
 class ComparerCollection(Mapping):
     """
-    Collection of comparers, constructed by calling the `modelskill.compare` method.
+    Collection of comparers, constructed by calling the `modelskill.match` method.
 
     Examples
     --------
