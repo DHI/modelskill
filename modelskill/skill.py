@@ -209,8 +209,8 @@ class SkillArrayPlotter:
 
         if figsize is None:
             figsize = (nx, ny)
-        _, ax = _get_fig_ax(ax, figsize)
-        ax.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
+        fig, ax = _get_fig_ax(ax, figsize)
+        pcm = ax.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
         ax.set_xticks(np.arange(nx) + 0.5)
         ax.set_xticklabels(xlabels, rotation=90)
         ax.set_yticks(np.arange(ny) + 0.5)
@@ -235,7 +235,7 @@ class SkillArrayPlotter:
                         color=col,
                     )
         else:
-            ax.colorbar()
+            fig.colorbar(pcm, ax=ax)
         ax.set_title(title, fontsize=14)
         return ax
 
