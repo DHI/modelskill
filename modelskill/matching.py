@@ -25,7 +25,6 @@ import mikeio
 from . import model_result
 from .timeseries import TimeSeries
 from .types import GeometryType, Quantity, Period
-from .model import protocols
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
@@ -487,7 +486,9 @@ def _parse_single_model(
     item: Optional[IdOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
 ) -> Any:  # TODO
-    if isinstance(mod, protocols.ModelResult):
+    if isinstance(
+        mod, (DfsuModelResult, GridModelResult, TrackModelResult, PointModelResult)
+    ):
         if item is not None:
             raise ValueError(
                 "mod_item argument not allowed if mod is an modelskill.ModelResult"

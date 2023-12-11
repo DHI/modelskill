@@ -115,8 +115,8 @@ class DfsuModelResult(SpatialField):
 
         Returns
         -------
-        <modelskill.protocols.Comparable>
-            A model result object with the same geometry as the observation
+        PointModelResult or TrackModelResult
+            extracted modelresult
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
