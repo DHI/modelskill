@@ -229,7 +229,7 @@ def observation(observation_df):
 def modelresult():
     fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
-        mr = ms.ModelResult(fn, gtype="track", item=2, name="HD")
+        mr = ms.model_result(fn, gtype="track", item=2, name="HD")
     return mr
 
 
