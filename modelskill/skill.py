@@ -4,7 +4,6 @@ from typing import Iterable, Collection, overload, Hashable
 import numpy as np
 import pandas as pd
 
-from matplotlib import pyplot as plt
 from .plotting._misc import _get_fig_ax
 
 
