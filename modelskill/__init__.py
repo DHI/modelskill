@@ -29,12 +29,12 @@ from .model.factory import ModelResult
 from .model import model_result
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .observation import PointObservation, TrackObservation
-from .matching import compare, from_matched
+from .matching import compare, from_matched, match
 from .connection import Connector
 from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
-from .comparison import ComparerCollection
+from .comparison import ComparerCollection, Comparer
 
 
 def load(filename: Union[str, Path]) -> ComparerCollection:
@@ -52,7 +52,7 @@ def load(filename: Union[str, Path]) -> ComparerCollection:
 
     Examples
     --------
-    >>> cc = ms.compare(obs, mod)
+    >>> cc = ms.match(obs, mod)
     >>> cc.save("my_comparer_collection.msk")
     >>> cc2 = ms.load("my_comparer_collection.msk")"""
 
@@ -69,6 +69,7 @@ __all__ = [
     "PointObservation",
     "TrackObservation",
     "compare",
+    "match",
     "Connector",
     "from_matched",
     "options",
@@ -79,4 +80,6 @@ __all__ = [
     "plotting",
     "from_config",
     "model_result",
+    "ComparerCollection",
+    "Comparer",
 ]

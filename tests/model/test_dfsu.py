@@ -172,18 +172,18 @@ def test_extract_observation_total_windsea_swell_not_possible(
     #     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
 
     # Specify Swell item explicitely
-    cc = ms.compare(Hm0_HKNA, mr)
+    cc = ms.match(Hm0_HKNA, mr)
     assert cc.n_points > 0
 
 
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
     mr = ms.ModelResult(hd_oresund_2d, item=0)
     with pytest.raises(Exception):
-        with pytest.warns(FutureWarning, match="modelskill.compare"):
+        with pytest.warns(FutureWarning, match="modelskill.match"):
             _ = ms.Connector(klagshamn, mr, validate=True).extract()
 
     # No error if validate==False
-    with pytest.warns(FutureWarning, match="modelskill.compare"):
+    with pytest.warns(FutureWarning, match="modelskill.match"):
         con = ms.Connector(klagshamn, mr, validate=False)
 
     c = con.extract()
@@ -195,7 +195,7 @@ def test_extract_observation_outside(hd_oresund_2d, klagshamn):
     # correct eum, but outside domain
     klagshamn.y = -10
     with pytest.raises(ValueError):
-        with pytest.warns(FutureWarning, match="modelskill.compare"):
+        with pytest.warns(FutureWarning, match="modelskill.match"):
             _ = ms.Connector(klagshamn, mr, validate=True).extract()
 
 

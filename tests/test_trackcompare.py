@@ -136,7 +136,7 @@ def mod_tiny_longer():
 
 
 def test_tiny_mod3(obs_tiny, mod_tiny3):
-    cmp = ms.compare(obs_tiny, mod_tiny3)[0]
+    cmp = ms.match(obs_tiny, mod_tiny3)
     assert cmp.n_points == 2
     expected_time = pd.DatetimeIndex(
         [
@@ -149,7 +149,7 @@ def test_tiny_mod3(obs_tiny, mod_tiny3):
 
 
 def test_tiny_mod_3last(obs_tiny, mod_tiny_3last):
-    cmp = ms.compare(obs_tiny, mod_tiny_3last)[0]
+    cmp = ms.match(obs_tiny, mod_tiny_3last)
     assert cmp.n_points == 2
     expected_time = pd.DatetimeIndex(
         [
@@ -162,7 +162,7 @@ def test_tiny_mod_3last(obs_tiny, mod_tiny_3last):
 
 
 def test_tiny_mod_unique(obs_tiny, mod_tiny_unique):
-    cmp = ms.compare(obs_tiny, mod_tiny_unique)[0]
+    cmp = ms.match(obs_tiny, mod_tiny_unique)
     assert cmp.n_points == 4
     expected_time = pd.DatetimeIndex(
         [
@@ -184,7 +184,7 @@ def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
         obs_tiny = ms.TrackObservation(
             obs_tiny_df, item="alti", x_item="x", y_item="y", keep_duplicates="first"
         )
-    cmp = ms.compare(obs_tiny, mod_tiny_unique)[0]
+    cmp = ms.match(obs_tiny, mod_tiny_unique)
     assert cmp.n_points == 2  # 2 points removed due to difference in x,y
     expected_time = pd.DatetimeIndex(
         [
@@ -198,7 +198,7 @@ def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
 
 def test_tiny_mod_rounding_error(obs_tiny, mod_tiny_rounding_error):
     # accepts rounding error in x, y
-    cmp = ms.compare(obs_tiny, mod_tiny_rounding_error)[0]
+    cmp = ms.match(obs_tiny, mod_tiny_rounding_error)
     assert cmp.n_points == 4
     expected_time = pd.DatetimeIndex(
         [
@@ -235,7 +235,7 @@ def modelresult():
 
 @pytest.fixture
 def comparer(observation, modelresult):
-    return ms.compare(observation, modelresult)
+    return ms.match(observation, modelresult)
 
 
 def test_skill(comparer):
@@ -356,26 +356,26 @@ def test_gridded_skill_misc(comparer):
 
 
 def test_hist(comparer):
-    cc = comparer
+    cmp = comparer
 
     with pytest.warns(FutureWarning):
-        cc.hist()
+        cmp.hist()
 
-    cc.plot.hist(bins=np.linspace(0, 7, num=15))
+    cmp.plot.hist(bins=np.linspace(0, 7, num=15))
 
-    cc[0].plot.hist(bins=10)
-    cc[0].plot.hist(density=False)
-    cc[0].plot.hist(model=0, title="new_title", alpha=0.2)
+    cmp.plot.hist(bins=10)
+    cmp.plot.hist(density=False)
+    cmp.plot.hist(model=0, title="new_title", alpha=0.2)
 
 
 def test_residual_hist(comparer):
-    cc = comparer
-    cc[0].plot.residual_hist()
-    cc[0].plot.residual_hist(bins=10, title="new_title", color="blue")
+    cmp = comparer
+    cmp.plot.residual_hist()
+    cmp.plot.residual_hist(bins=10, title="new_title", color="blue")
 
 
 def test_df_input(obs_tiny_df, mod_tiny3):
-    """A dataframe is a valid input to ms.compare, without explicitly creating a TrackObservation"""
+    """A dataframe is a valid input to ms.match, without explicitly creating a TrackObservation"""
     # excerpt from obs_tiny_df
     # time                | value
     # --------------------------
@@ -385,7 +385,7 @@ def test_df_input(obs_tiny_df, mod_tiny3):
     assert isinstance(obs_tiny_df, pd.DataFrame)
     assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
-        cmp = ms.compare(obs_tiny_df, mod_tiny3, gtype="track")[0]
+        cmp = ms.match(obs_tiny_df, mod_tiny3, gtype="track")
 
     assert (
         cmp.data.sel(

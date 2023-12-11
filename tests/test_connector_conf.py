@@ -9,7 +9,7 @@ def conf_xlsx():
 
 
 def test_from_excel_include(conf_xlsx):
-    with pytest.warns(FutureWarning, match="modelskill.compare"):
+    with pytest.warns(FutureWarning, match="modelskill.match"):
         con = ms.from_config(conf_xlsx, relative_path=True)
     assert con.n_models == 1
     assert con.n_observations == 3
