@@ -1123,7 +1123,7 @@ class ComparerCollection(Mapping):
         --------
         >>> cc = ms.match(obs, mod)
         >>> cc.save("my_comparer_collection.msk")
-        >>> cc2 = ms.matchrCollection.load("my_comparer_collection.msk")
+        >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.msk")
         """
 
         folder = tempfile.TemporaryDirectory().name
