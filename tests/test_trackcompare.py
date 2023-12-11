@@ -307,49 +307,49 @@ def test_skill(comparer):
 # def test_extract_no_spatial_overlap_dfsu(observation_df):
 
 
-def test_skill_vs_spatial_skill(comparer):
+def test_skill_vs_gridded_skill(comparer):
     df = comparer.skill().df  # to compare to result of .skill()
-    ds = comparer.spatial_skill(bins=1)  # force 1 bin only
+    ds = comparer.gridded_skill(bins=1)  # force 1 bin only
 
-    assert df.loc["alti"].n == ds.n.values
-    assert df.loc["alti"].bias == ds.ds.bias.values
+    assert df.loc["alti"].n == ds.data.n.values
+    assert df.loc["alti"].bias == ds.data.bias.values
     assert ds.x.size == 1
     assert ds.y.size == 1
     # assert ds.coords._names == {"x","y"}  # TODO: Why return "observation" as by, when n_obs==1 but not "model"?
 
 
-def test_spatial_skill_bins(comparer):
+def test_gridded_skill_bins(comparer):
     # default
-    ds = comparer.spatial_skill(metrics=["bias"])
+    ds = comparer.gridded_skill(metrics=["bias"])
     assert len(ds.x) == 5
     assert len(ds.y) == 5
 
     # float
-    ds = comparer.spatial_skill(metrics=["bias"], bins=2)
+    ds = comparer.gridded_skill(metrics=["bias"], bins=2)
     assert len(ds.x) == 2
     assert len(ds.y) == 2
 
     # float for x and range for y
-    ds = comparer.spatial_skill(metrics=["bias"], bins=(2, [50, 50.5, 51, 53]))
+    ds = comparer.gridded_skill(metrics=["bias"], bins=(2, [50, 50.5, 51, 53]))
     assert len(ds.x) == 2
     assert len(ds.y) == 3
 
     # binsize (overwrites bins)
-    ds = comparer.spatial_skill(metrics=["bias"], binsize=2.5, bins=100)
+    ds = comparer.gridded_skill(metrics=["bias"], binsize=2.5, bins=100)
     assert len(ds.x) == 4
     assert len(ds.y) == 3
     assert ds.x[0] == -0.75
 
 
-def test_spatial_skill_by(comparer):
+def test_gridded_skill_by(comparer):
     # odd order of by
-    ds = comparer.spatial_skill(metrics=["bias"], by=["y", "mod"])
+    ds = comparer.gridded_skill(metrics=["bias"], by=["y", "mod"])
     assert ds.coords._names == {"y", "model", "x"}
 
 
-def test_spatial_skill_misc(comparer):
+def test_gridded_skill_misc(comparer):
     # miniumum n
-    ds = comparer.spatial_skill(metrics=["bias", "rmse"], n_min=20)
+    ds = comparer.gridded_skill(metrics=["bias", "rmse"], n_min=20)
     df = ds.to_dataframe()
     assert df.loc[df.n < 20, ["bias", "rmse"]].size == 30
     assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
