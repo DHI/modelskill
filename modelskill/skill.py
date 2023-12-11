@@ -232,6 +232,34 @@ class SkillArrayPlotter:
         plt.title(title, fontsize=14)
 
 
+class DeprecatedSkillPlotter:
+    def __init__(self, skilltable):
+        self.skilltable = skilltable
+
+    @staticmethod
+    def _deprecated_warning(method, field):
+        warnings.warn(
+            f"Selecting metric in plot functions like modelskill.skill().plot.{method}({field}) is deprecated and will be removed in a future version. Use modelskill.skill()['{field}'].plot.{method}() instead.",
+            FutureWarning,
+        )
+
+    def line(self, field: str, **kwargs):
+        self._deprecated_warning("line", field)
+        self.skilltable[field].plot.line(**kwargs)
+
+    def bar(self, field: str, **kwargs):
+        self._deprecated_warning("bar", field)
+        self.skilltable[field].plot.bar(**kwargs)
+
+    def barh(self, field: str, **kwargs):
+        self._deprecated_warning("barh", field)
+        self.skilltable[field].plot.barh(**kwargs)
+
+    def grid(self, field: str, **kwargs):
+        self._deprecated_warning("grid", field)
+        self.skilltable[field].plot.grid(**kwargs)
+
+
 class SkillArray:
     def __init__(self, ser) -> None:
         self.ser = ser
@@ -294,6 +322,7 @@ class SkillTable:
 
     def __init__(self, df):
         self.df = df
+        self.plot = DeprecatedSkillPlotter(self)  # TODO remove in v1.1
 
     @property
     def metrics(self) -> Collection[str]:
