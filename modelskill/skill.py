@@ -1,40 +1,49 @@
 from __future__ import annotations
 import warnings
-from typing import Iterable, Collection
-
+from typing import Iterable, Collection, overload, Hashable
 import numpy as np
 import pandas as pd
 
 from matplotlib import pyplot as plt
 
 
-class AggregatedSkillPlotter:
-    def __init__(self, agg_skill):
-        self.agg_skill = agg_skill
-
-    def _field_as_title(self, field: str, kwargs):
-        if "title" not in kwargs:
-            if field is not None:
-                kwargs["title"] = field
-
-    def _get_plot_df(self, field: str, level: int | str = 0) -> pd.DataFrame:
-        s = self.agg_skill
-
-        # raise error if field is not a column in the dataframe
-        if field not in s.df.columns:
-            raise KeyError(
-                f"{field} is not a valid field. Choose from {list(s.df.columns)}"
+# TODO remove ?
+def _validate_multi_index(index, min_levels=2, max_levels=2):
+    errors = []
+    if isinstance(index, pd.MultiIndex):
+        if len(index.levels) < min_levels:
+            errors.append(
+                f"not possible for MultiIndex with fewer than {min_levels} levels"
             )
+        if len(index.levels) > max_levels:
+            errors.append(
+                f"not possible for MultiIndex with more than {max_levels} levels"
+            )
+    else:
+        errors.append("only possible for MultiIndex skill objects")
+    return errors
 
-        if isinstance(s.df.index, pd.MultiIndex):
-            df = s.df[field].unstack(level=level)
+
+class SkillArrayPlotter:
+    def __init__(self, skillarray):
+        self.skillarray = skillarray
+
+    def _name_to_title_in_kwargs(self, kwargs):
+        if "title" not in kwargs:
+            if self.skillarray.name is not None:
+                kwargs["title"] = self.skillarray.name
+
+    def _get_plot_df(self, level: int | str = 0) -> pd.DataFrame:
+        s = self.skillarray
+
+        if isinstance(s.ser.index, pd.MultiIndex):
+            df = s.ser.unstack(level=level)
         else:
-            df = s.df[field]
+            df = s.ser.to_frame()
         return df
 
     def line(
         self,
-        field: str,
         level: int | str = 0,
         **kwargs,
     ):
@@ -44,8 +53,6 @@ class AggregatedSkillPlotter:
 
         Parameters
         ----------
-        field : str
-            field (statistic) to plot e.g. "rmse"
         level : int or str, optional
             level to unstack, by default 0
         kwargs : dict, optional
@@ -54,13 +61,13 @@ class AggregatedSkillPlotter:
 
         Examples
         --------
-        >>> s = comparer.skill()
-        >>> s.plot.line("rmse")
-        >>> s.plot.line("mae", marker="o", linestyle=':')
-        >>> s.plot.line(field="bias", color=['0.2', '0.4', '0.6'])
+        >>> s = comparer.skill()["rmse"]
+        >>> s.plot.line()
+        >>> s.plot.line(marker="o", linestyle=':')
+        >>> s.plot.line(color=['0.2', '0.4', '0.6'])
         """
-        df = self._get_plot_df(field, level=level)
-        self._field_as_title(field, kwargs)
+        df = self._get_plot_df(level=level)
+        self._name_to_title_in_kwargs(kwargs)
         axes = df.plot.line(**kwargs)
 
         xlabels = list(df.index)
@@ -74,13 +81,11 @@ class AggregatedSkillPlotter:
                 ax.set_xticklabels(xlabels, rotation=90)
         return axes
 
-    def bar(self, field: str, level: int | str = 0, **kwargs):
+    def bar(self, level: int | str = 0, **kwargs):
         """plot statistic as bar chart using pd.DataFrame.plot.bar()
 
         Parameters
         ----------
-        field : str
-            field (statistic) to plot e.g. "rmse"
         level : int or str, optional
             level to unstack, by default 0
         kwargs : dict, optional
@@ -93,23 +98,21 @@ class AggregatedSkillPlotter:
 
         Examples
         --------
-        >>> s = comparer.skill()
-        >>> s.plot.bar("rmse")
-        >>> s.plot.bar("mae", level="observation")
-        >>> s.plot.bar(field="si", title="scatter index")
-        >>> s.plot.bar("si", color=["red","blue"])
+        >>> s = comparer.skill()["rmse"]
+        >>> s.plot.bar()
+        >>> s.plot.bar(level="observation")
+        >>> s.plot.bar(title="Root Mean Squared Error")
+        >>> s.plot.bar(color=["red","blue"])
         """
-        df = self._get_plot_df(field, level=level)
-        self._field_as_title(field, kwargs)
+        df = self._get_plot_df(level=level)
+        self._name_to_title_in_kwargs(kwargs)
         return df.plot.bar(**kwargs)
 
-    def barh(self, field: str, level: int | str = 0, **kwargs):
+    def barh(self, level: int | str = 0, **kwargs):
         """plot statistic as horizontal bar chart using pd.DataFrame.plot.barh()
 
         Parameters
         ----------
-        field : str
-            field (statistic) to plot e.g. "rmse"
         level : int or str, optional
             level to unstack, by default 0
         kwargs : dict, optional
@@ -122,18 +125,17 @@ class AggregatedSkillPlotter:
 
         Examples
         --------
-        >>> s = comparer.skill()
-        >>> s.plot.barh("rmse")
-        >>> s.plot.barh("mae", level="observation")
-        >>> s.plot.barh(field="si", title="scatter index")
+        >>> s = comparer.skill()["rmse"]
+        >>> s.plot.barh()
+        >>> s.plot.barh(level="observation")
+        >>> s.plot.barh(title="Root Mean Squared Error")
         """
-        df = self._get_plot_df(field, level)
-        self._field_as_title(field, kwargs)
+        df = self._get_plot_df(level)
+        self._name_to_title_in_kwargs(kwargs)
         return df.plot.barh(**kwargs)
 
     def grid(
         self,
-        field,
         show_numbers=True,
         precision=3,
         fmt=None,
@@ -147,8 +149,6 @@ class AggregatedSkillPlotter:
 
         Parameters
         ----------
-        field : str
-            field (statistic) to plot e.g. "rmse"
         show_numbers : bool, optional
             should values of the static be shown in the cells?, by default True
             if False, a colorbar will be displayed instead
@@ -165,33 +165,33 @@ class AggregatedSkillPlotter:
 
         Examples
         --------
-        >>> s = comparer.skill()
-        >>> s.plot.grid("rmse")
-        >>> s.plot.grid("n", show_numbers=False, cmap="magma")
-        >>> s.plot.grid(field="bias", precision=1)
-        >>> s.plot.grid('si', fmt=".0%", title="scatter index")
+        >>> s = comparer.skill()["rmse"]
+        >>> s.plot.grid()
+        >>> s.plot.grid(show_numbers=False, cmap="magma")
+        >>> s.plot.grid(precision=1)
+        >>> s.plot.grid(fmt=".0%", title="Root Mean Squared Error")
         """
 
-        s = self.agg_skill
+        s = self.skillarray
 
-        errors = s._validate_multi_index()
+        errors = _validate_multi_index(s.ser.index)
         if len(errors) > 0:
             warnings.warn("plot_grid: " + "\n".join(errors))
             return None
             # df = self.df[field]    TODO: at_least_2d...
-        df = s.df[field].unstack()
+        df = s.ser.unstack()
 
         vmin = None
         vmax = None
         if cmap is None:
             cmap = "OrRd"
-            if field == "bias":
+            if s.name == "bias":
                 cmap = "coolwarm"
-                mm = s.df.bias.abs().max()
+                mm = s.ser.abs().max()
                 vmin = -mm
                 vmax = mm
         if title is None:
-            title = field
+            title = s.name
         xlabels = list(df.keys())
         nx = len(xlabels)
         ylabels = list(df.index)
@@ -214,7 +214,7 @@ class AggregatedSkillPlotter:
                 for jj in range(nx):
                     val = df.iloc[ii, jj].round(precision)
                     col = "w" if val > mean_val else "k"
-                    if field == "bias":
+                    if s.name == "bias":
                         col = "w" if np.abs(val) > (0.7 * mm) else "k"
                     if fmt is not None:
                         val = fmt.format(val)
@@ -232,9 +232,56 @@ class AggregatedSkillPlotter:
         plt.title(title, fontsize=14)
 
 
-class AggregatedSkill:
+class DeprecatedSkillPlotter:
+    def __init__(self, skilltable):
+        self.skilltable = skilltable
+
+    @staticmethod
+    def _deprecated_warning(method, field):
+        warnings.warn(
+            f"Selecting metric in plot functions like modelskill.skill().plot.{method}({field}) is deprecated and will be removed in a future version. Use modelskill.skill()['{field}'].plot.{method}() instead.",
+            FutureWarning,
+        )
+
+    def line(self, field: str, **kwargs):
+        self._deprecated_warning("line", field)
+        self.skilltable[field].plot.line(**kwargs)
+
+    def bar(self, field: str, **kwargs):
+        self._deprecated_warning("bar", field)
+        self.skilltable[field].plot.bar(**kwargs)
+
+    def barh(self, field: str, **kwargs):
+        self._deprecated_warning("barh", field)
+        self.skilltable[field].plot.barh(**kwargs)
+
+    def grid(self, field: str, **kwargs):
+        self._deprecated_warning("grid", field)
+        self.skilltable[field].plot.grid(**kwargs)
+
+
+class SkillArray:
+    def __init__(self, ser) -> None:
+        self.ser = ser
+        self.plot = SkillArrayPlotter(self)
+
+    def to_dataframe(self):
+        return self.ser.to_frame()
+
+    def __repr__(self):
+        return repr(self.to_dataframe())
+
+    def _repr_html_(self):
+        return self.to_dataframe()._repr_html_()
+
+    @property
+    def name(self):
+        return self.ser.name
+
+
+class SkillTable:
     """
-    AggregatedSkill object for visualization and analysis returned by
+    SkillTable object for visualization and analysis returned by
     the comparer's skill method. The object wraps the pd.DataFrame
     class which can be accessed from the attribute df.
 
@@ -245,7 +292,7 @@ class AggregatedSkill:
     ['SW_1', 'SW_2']
     >>> s.style()
     >>> s.sel(model='SW_1').style()
-    >>> s.plot.bar(field='rmse')
+    >>> s.rmse.plot.bar()
     """
 
     large_is_best_metrics = [
@@ -275,12 +322,7 @@ class AggregatedSkill:
 
     def __init__(self, df):
         self.df = df
-        self.plot = AggregatedSkillPlotter(self)
-
-    # @property
-    # def columns(self):
-    #    """Columns of the dataframe"""
-    #    return self.df.columns
+        self.plot = DeprecatedSkillPlotter(self)  # TODO remove in v1.1
 
     @property
     def metrics(self) -> Collection[str]:
@@ -299,8 +341,30 @@ class AggregatedSkill:
     def _repr_html_(self):
         return self.df._repr_html_()
 
-    def __getitem__(self, x):
-        return self.df[x]
+    @overload
+    def __getitem__(self, key: Hashable | int) -> SkillArray:
+        ...
+
+    @overload
+    def __getitem__(self, key: Iterable[Hashable]) -> SkillTable:
+        ...
+
+    def __getitem__(self, key) -> SkillArray | SkillTable:
+        result = self.df.iloc[key] if isinstance(key, int) else self.df[key]
+        if isinstance(result, pd.Series):
+            return SkillArray(result)
+        elif isinstance(result, pd.DataFrame):
+            return SkillTable(result)
+        else:
+            return result
+
+    def __getattr__(self, item):
+        # Use __getitem__ for DataFrame column access
+        if item in self.df.columns:
+            return self[item]  # Redirects to __getitem__
+
+        # For other attributes, return them directly
+        return getattr(self.df, item)
 
     @property
     def loc(self, *args, **kwargs):
@@ -375,7 +439,7 @@ class AggregatedSkill:
         return df
 
     def sel(self, query=None, reduce_index=True, **kwargs):
-        """Select a subset of the AggregatedSkill by a query,
+        """Select a subset of the SkillTable by a query,
            (part of) the index, or specific columns
 
         Parameters
@@ -392,8 +456,8 @@ class AggregatedSkill:
 
         Returns
         -------
-        AggregatedSkill
-            A subset of the orignal AggregatedSkill
+        SkillTable
+            A subset of the orignal SkillTable
 
         Examples
         --------
@@ -422,7 +486,8 @@ class AggregatedSkill:
                 )
 
         if isinstance(df, pd.Series):
-            df = df.to_frame()
+            return SkillArray(df)
+            # df = df.to_frame()
         if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
         return self.__class__(df)
@@ -436,62 +501,45 @@ class AggregatedSkill:
                 levels_to_reset.append(j)
         return df.reset_index(level=levels_to_reset)
 
-    # TODO remove ?
-    def _validate_multi_index(self, min_levels=2, max_levels=2):
-        errors = []
-        index = self.df.index
-        if isinstance(index, pd.MultiIndex):
-            if len(index.levels) < min_levels:
-                errors.append(
-                    f"not possible for MultiIndex with fewer than {min_levels} levels"
-                )
-            if len(index.levels) > max_levels:
-                errors.append(
-                    f"not possible for MultiIndex with more than {max_levels} levels"
-                )
-        else:
-            errors.append("only possible for MultiIndex skill objects")
-        return errors
-
     # TODO remove plot_* methods in v1.1
-    def plot_line(self, field, level=0, **kwargs):
-        warnings.warn(
-            "plot_line() is deprecated, use plot.line() instead", FutureWarning
-        )
-        return self.plot.line(field, level, **kwargs)
+    # def plot_line(self, field, level=0, **kwargs):
+    #     warnings.warn(
+    #         "plot_line() is deprecated, use plot.line() instead", FutureWarning
+    #     )
+    #     return self.plot.line(field, level, **kwargs)
 
-    def plot_bar(self, field, level=0, **kwargs):
-        warnings.warn("plot_bar() is deprecated, use plot.bar() instead", FutureWarning)
-        return self.plot.bar(field, level, **kwargs)
+    # def plot_bar(self, field, level=0, **kwargs):
+    #     warnings.warn("plot_bar() is deprecated, use plot.bar() instead", FutureWarning)
+    #     return self.plot.bar(field, level, **kwargs)
 
-    def plot_barh(self, field, level=0, **kwargs):
-        warnings.warn(
-            "plot_barh() is deprecated, use plot.barh() instead", FutureWarning
-        )
-        return self.plot.barh(field, level, **kwargs)
+    # def plot_barh(self, field, level=0, **kwargs):
+    #     warnings.warn(
+    #         "plot_barh() is deprecated, use plot.barh() instead", FutureWarning
+    #     )
+    #     return self.plot.barh(field, level, **kwargs)
 
-    def plot_grid(
-        self,
-        field,
-        show_numbers=True,
-        precision=3,
-        fmt=None,
-        figsize=None,
-        title=None,
-        cmap=None,
-    ):
-        warnings.warn(
-            "plot_grid() is deprecated, use plot.grid() instead", FutureWarning
-        )
-        return self.plot.grid(
-            field=field,
-            show_numbers=show_numbers,
-            precision=precision,
-            fmt=fmt,
-            figsize=figsize,
-            title=title,
-            cmap=cmap,
-        )
+    # def plot_grid(
+    #     self,
+    #     field,
+    #     show_numbers=True,
+    #     precision=3,
+    #     fmt=None,
+    #     figsize=None,
+    #     title=None,
+    #     cmap=None,
+    # ):
+    #     warnings.warn(
+    #         "plot_grid() is deprecated, use plot.grid() instead", FutureWarning
+    #     )
+    #     return self.plot.grid(
+    #         field=field,
+    #         show_numbers=show_numbers,
+    #         precision=precision,
+    #         fmt=fmt,
+    #         figsize=figsize,
+    #         title=title,
+    #         cmap=cmap,
+    #     )
 
     def round(self, decimals=3):
         """round all values in dataframe

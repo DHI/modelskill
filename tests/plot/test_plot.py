@@ -27,14 +27,16 @@ def o3():
 
 @pytest.fixture
 def mr1():
-    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_1")
+
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    return ms.model_result(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
-    fn = "tests/testdata/SW/DutchCoast_2017_subset_v2.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_2")
+
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    return ms.model_result(fn, item=0, name="SW_2")
 
 
 def test_plot_temporal_coverage_11(o1, mr1):

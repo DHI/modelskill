@@ -12,8 +12,8 @@ from .. import metrics as mtr
 from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
-from ..skill import AggregatedSkill
-from ..spatial import SpatialSkill
+from ..skill import SkillTable
+from ..skill_grid import SkillGrid
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
@@ -71,7 +71,7 @@ def _all_df_template(n_variables: int = 1):
 
 class ComparerCollection(Mapping):
     """
-    Collection of comparers, constructed by calling the `modelskill.compare` method.
+    Collection of comparers, constructed by calling the `modelskill.match` method.
 
     Examples
     --------
@@ -79,7 +79,7 @@ class ComparerCollection(Mapping):
     >>> mr = ms.ModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
-    >>> cc = ms.compare(obs=[o1,o2], mod=mr)
+    >>> cc = ms.match(obs=[o1,o2], mod=mr)
     """
 
     comparers: Dict[str, Comparer]
@@ -377,7 +377,7 @@ class ComparerCollection(Mapping):
 
         Examples
         --------
-        >>> cc = ms.compare([HKNA, EPL, alti], mr)
+        >>> cc = ms.match([HKNA, EPL, alti], mr)
         >>> cc.filter_by_attrs(gtype='track')
         <ComparerCollection>
         Comparer: alti
@@ -415,7 +415,7 @@ class ComparerCollection(Mapping):
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
         **kwargs,
-    ) -> Optional[AggregatedSkill]:
+    ) -> Optional[SkillTable]:
         """Aggregated skill assessment of model(s)
 
         Parameters
@@ -441,7 +441,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mr)
+        >>> cc = ms.match([HKNA,EPL,c2], mr)
         >>> cc.skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -491,7 +491,7 @@ class ComparerCollection(Mapping):
 
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
-        return AggregatedSkill(res)
+        return SkillTable(res)
 
     def _add_as_col_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "variable"]
@@ -511,13 +511,34 @@ class ComparerCollection(Mapping):
     def spatial_skill(
         self,
         bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
+
+    def gridded_skill(
+        self,
+        bins=5,
         binsize: Optional[float] = None,
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[list] = None,
         n_min: Optional[int] = None,
         **kwargs,
     ):
-        """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
+        """Skill assessment of model(s) on a regular spatial grid.
 
         Parameters
         ----------
@@ -552,8 +573,8 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mr)  # with satellite track measurements
-        >>> cc.spatial_skill(metrics='bias')
+        >>> cc = ms.match([HKNA,EPL,c2], mr)  # with satellite track measurements
+        >>> cc.gridded_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -564,7 +585,7 @@ class ComparerCollection(Mapping):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.spatial_skill(binsize=0.5)
+        >>> ds = cc.gridded_skill(binsize=0.5)
         >>> ds.coords
         Coordinates:
             observation   'alti'
@@ -603,7 +624,7 @@ class ComparerCollection(Mapping):
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SpatialSkill(res.to_xarray().squeeze())
+        return SkillGrid(res.to_xarray().squeeze())
 
     def scatter(
         self,
@@ -674,7 +695,7 @@ class ComparerCollection(Mapping):
         weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[AggregatedSkill]:  # TODO raise error if no data?
+    ) -> Optional[SkillTable]:  # TODO raise error if no data?
         """Weighted mean of skills
 
         First, the skill is calculated per observation,
@@ -697,7 +718,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        AggregatedSkill
+        SkillTable
             mean skill assessment as a skill object
 
         See also
@@ -710,7 +731,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mod=HKZN_local)
+        >>> cc = ms.match([HKNA,EPL,c2], mod=HKZN_local)
         >>> cc.mean_skill().round(2)
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
@@ -768,14 +789,14 @@ class ComparerCollection(Mapping):
 
         # output
         res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
-        return AggregatedSkill(res.astype({"n": int}))
+        return SkillTable(res.astype({"n": int}))
 
     def mean_skill_points(
         self,
         *,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[AggregatedSkill]:  # TODO raise error if no data?
+    ) -> Optional[SkillTable]:  # TODO raise error if no data?
         """Mean skill of all observational points
 
         All data points are pooled (disregarding which observation they belong to),
@@ -795,7 +816,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        AggregatedSkill
+        SkillTable
             mean skill assessment as a skill object
 
         See also
@@ -808,7 +829,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.mean_skill_points()
         """
 
@@ -937,7 +958,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.score()
         0.30681206
         >>> cc.score(weights=[0.1,0.1,0.8])
@@ -1065,7 +1086,7 @@ class ComparerCollection(Mapping):
 
         Examples
         --------
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.save("my_comparer_collection.msk")
 
         Notes
@@ -1100,7 +1121,7 @@ class ComparerCollection(Mapping):
 
         Examples
         --------
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.save("my_comparer_collection.msk")
         >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.msk")
         """
