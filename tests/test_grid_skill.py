@@ -45,9 +45,10 @@ def cc2(o1, o2, o3):
     return ms.compare([o1, o2, o3], [mr1, mr2])
 
 
-def test_spatial_skill(cc1):
-    ss = cc1.spatial_skill()
-    assert isinstance(ss.ds, xr.Dataset)
+def test_spatial_skill_deprecated(cc1):
+    with pytest.warns(FutureWarning, match="gridded_skill"):
+        ss = cc1.spatial_skill()
+    assert isinstance(ss.data, xr.Dataset)
     assert len(ss.x) == 5
     assert len(ss.y) == 5
     assert len(ss.mod_names) == 0
@@ -59,8 +60,8 @@ def test_spatial_skill(cc1):
     assert ss.n is not None
 
 
-def test_spatial_skill_multi_model(cc2):
-    ss = cc2.spatial_skill(bins=3, metrics=["rmse", "bias"])
+def test_gridded_skill_multi_model(cc2):
+    ss = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
     assert len(ss.x) == 3
     assert len(ss.y) == 3
     assert len(ss.mod_names) == 2
@@ -68,19 +69,25 @@ def test_spatial_skill_multi_model(cc2):
     assert len(ss.field_names) == 3
 
 
-def test_spatial_skill_plot(cc1):
-    ss = cc1.spatial_skill(metrics=["rmse", "bias"])
-    ss.plot("bias")
+def test_gridded_skill_plot(cc1):
+    ss = cc1.gridded_skill(metrics=["rmse", "bias"])
+    ss.bias.plot()
+
+    with pytest.warns(FutureWarning, match="deprecated"):
+        ss.plot("bias")
 
 
-def test_spatial_skill_plot_multi_model(cc2):
-    ss = cc2.spatial_skill(by=["model"])
-    ss.plot("bias")
+def test_gridded_skill_plot_multi_model(cc2):
+    ss = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
+    ss["bias"].plot()
 
-    ss.plot("rmse", model="SW_1")
+    ss.rmse.plot(model="SW_1")
+
+
+def test_gridded_skill_plot_multi_model_fails(cc2):
+    ss = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
+    with pytest.raises(KeyError):
+        ss["bad_metric"]
 
     with pytest.raises(ValueError):
-        ss.plot("bad_metric")
-
-    with pytest.raises(ValueError):
-        ss.plot("rmse", model="bad_model")
+        ss.rmse.plot(model="bad_model")

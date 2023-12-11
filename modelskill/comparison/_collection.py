@@ -13,7 +13,7 @@ from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import AggregatedSkill
-from ..spatial import SpatialSkill
+from ..skill_grid import SkillGrid
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
@@ -511,13 +511,34 @@ class ComparerCollection(Mapping):
     def spatial_skill(
         self,
         bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
+
+    def gridded_skill(
+        self,
+        bins=5,
         binsize: Optional[float] = None,
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[list] = None,
         n_min: Optional[int] = None,
         **kwargs,
     ):
-        """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
+        """Skill assessment of model(s) on a regular spatial grid.
 
         Parameters
         ----------
@@ -553,7 +574,7 @@ class ComparerCollection(Mapping):
         --------
         >>> import modelskill as ms
         >>> cc = ms.compare([HKNA,EPL,c2], mr)  # with satellite track measurements
-        >>> cc.spatial_skill(metrics='bias')
+        >>> cc.gridded_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -564,7 +585,7 @@ class ComparerCollection(Mapping):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.spatial_skill(binsize=0.5)
+        >>> ds = cc.gridded_skill(binsize=0.5)
         >>> ds.coords
         Coordinates:
             observation   'alti'
@@ -603,7 +624,7 @@ class ComparerCollection(Mapping):
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SpatialSkill(res.to_xarray().squeeze())
+        return SkillGrid(res.to_xarray().squeeze())
 
     def scatter(
         self,
