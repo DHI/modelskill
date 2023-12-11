@@ -62,7 +62,7 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = comparer.skill()["rmse"]
+        >>> s = cc.skill()["rmse"]
         >>> s.plot.line()
         >>> s.plot.line(marker="o", linestyle=':')
         >>> s.plot.line(color=['0.2', '0.4', '0.6'])
@@ -99,7 +99,7 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = comparer.skill()["rmse"]
+        >>> s = cc.skill()["rmse"]
         >>> s.plot.bar()
         >>> s.plot.bar(level="observation")
         >>> s.plot.bar(title="Root Mean Squared Error")
@@ -126,7 +126,7 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = comparer.skill()["rmse"]
+        >>> s = cc.skill()["rmse"]
         >>> s.plot.barh()
         >>> s.plot.barh(level="observation")
         >>> s.plot.barh(title="Root Mean Squared Error")
@@ -173,7 +173,7 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = comparer.skill()["rmse"]
+        >>> s = cc.skill()["rmse"]
         >>> s.plot.grid()
         >>> s.plot.grid(show_numbers=False, cmap="magma")
         >>> s.plot.grid(precision=1)
@@ -271,6 +271,16 @@ class DeprecatedSkillPlotter:
 
 
 class SkillArray:
+    """SkillArray object for visualization and analysis obtained by
+    selecting a single metric from a SkillTable. The object wraps the xr.DataArray
+
+    Examples
+    --------
+    >>> s = cc.skill()   # SkillTable
+    >>> s.rmse           # SkillArray
+
+    """
+
     def __init__(self, data: xr.DataArray) -> None:
         assert isinstance(data, xr.DataArray)
         self.data = data
@@ -532,7 +542,6 @@ class SkillTable:
 
         if isinstance(df, pd.Series):
             return SkillArray(df)
-            # df = df.to_frame()
         if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
         return self.__class__(df)
@@ -546,45 +555,22 @@ class SkillTable:
                 levels_to_reset.append(j)
         return df.reset_index(level=levels_to_reset)
 
-    # TODO remove plot_* methods in v1.1
-    # def plot_line(self, field, level=0, **kwargs):
-    #     warnings.warn(
-    #         "plot_line() is deprecated, use plot.line() instead", FutureWarning
-    #     )
-    #     return self.plot.line(field, level, **kwargs)
+    # TODO: remove plot_* methods in v1.1; warnings are not needed
+    # as the refering method is also deprecated
+    def plot_line(self, **kwargs):
+        return self.plot.line(**kwargs)
 
-    # def plot_bar(self, field, level=0, **kwargs):
-    #     warnings.warn("plot_bar() is deprecated, use plot.bar() instead", FutureWarning)
-    #     return self.plot.bar(field, level, **kwargs)
+    def plot_bar(self, **kwargs):
+        return self.plot.bar(**kwargs)
 
-    # def plot_barh(self, field, level=0, **kwargs):
-    #     warnings.warn(
-    #         "plot_barh() is deprecated, use plot.barh() instead", FutureWarning
-    #     )
-    #     return self.plot.barh(field, level, **kwargs)
+    def plot_barh(self, **kwargs):
+        return self.plot.barh(**kwargs)
 
-    # def plot_grid(
-    #     self,
-    #     field,
-    #     show_numbers=True,
-    #     precision=3,
-    #     fmt=None,
-    #     figsize=None,
-    #     title=None,
-    #     cmap=None,
-    # ):
-    #     warnings.warn(
-    #         "plot_grid() is deprecated, use plot.grid() instead", FutureWarning
-    #     )
-    #     return self.plot.grid(
-    #         field=field,
-    #         show_numbers=show_numbers,
-    #         precision=precision,
-    #         fmt=fmt,
-    #         figsize=figsize,
-    #         title=title,
-    #         cmap=cmap,
-    #     )
+    def plot_grid(
+        self,
+        **kwargs,
+    ):
+        return self.plot.grid(**kwargs)
 
     def round(self, decimals=3):
         """round all values in dataframe
