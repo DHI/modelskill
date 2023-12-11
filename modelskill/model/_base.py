@@ -77,7 +77,7 @@ class SpatialField(Protocol):
     extract_track(observation: TrackObservation)
     """
 
-    def extract(self, observation: Observation):
+    def extract(self, observation: PointObservation | TrackObservation):
         ...
 
     def extract_point(self, observation: PointObservation):

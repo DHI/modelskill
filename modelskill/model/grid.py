@@ -10,7 +10,7 @@ from ..utils import rename_coords_xr, rename_coords_pd
 from ..types import GridType, Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
-from ..observation import Observation, PointObservation, TrackObservation
+from ..observation import PointObservation, TrackObservation
 
 
 class GridModelResult(SpatialField):
@@ -122,7 +122,9 @@ class GridModelResult(SpatialField):
         ymax = self.data.y.values.max()
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
-    def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
+    def extract(
+        self, observation: PointObservation | TrackObservation
+    ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
         Parameters
@@ -132,8 +134,8 @@ class GridModelResult(SpatialField):
 
         Returns
         -------
-        <modelskill.protocols.Comparable>
-            A model result object with the same geometry as the observation
+        PointModelResult or TrackModelResult
+            extracted modelresult
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):

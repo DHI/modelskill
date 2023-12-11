@@ -3,7 +3,6 @@ import pytest
 import mikeio
 
 import modelskill as ms
-from modelskill.model import protocols
 
 
 @pytest.fixture
@@ -37,17 +36,11 @@ def test_track_df(track_df):
     df = track_df
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr1 = ms.TrackModelResult(df, item=2)
-    assert isinstance(mr1, protocols.ModelResult)
-    # assert "Item: surface_elevation" in repr(mr1)
 
     # item as string
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr2 = ms.TrackModelResult(df, item="surface_elevation")
     assert len(mr2.data) == len(mr1.data)
-
-    # mr3 = DataFramePointModelResultItem(df[["surface_elevation"]])
-    # assert len(mr3.data) == len(mr1.data)
-    # assert mr3.itemInfo == mikeio.ItemInfo(mikeio.EUMType.Undefined)
 
 
 def test_track_df_iteminfo(track_df):
@@ -64,20 +57,17 @@ def test_track_df_modelresult(track_df):
     df = track_df
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr1 = ms.TrackModelResult(df, item=2)
-    assert isinstance(mr1, protocols.ModelResult)
     assert len(mr1.data) == 1
 
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr3 = ms.TrackModelResult(df, item=2)
     assert len(mr3.data) == len(mr1.data)
-    assert isinstance(mr3, protocols.ModelResult)
 
 
 def test_track_from_dfs0_df_modelresult(track_from_dfs0):
     df = track_from_dfs0
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr1 = ms.TrackModelResult(df, item=-1)
-    assert isinstance(mr1, protocols.ModelResult)
     assert len(mr1.data) == 1
 
 
@@ -97,15 +87,11 @@ def test_track_df_default_items(track_df):
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         mr0 = ms.model_result(df, gtype="track")
     assert "x" in mr0.data.coords
-    # assert np.all(mr0.data.values == df.dropna().values)
-    # assert np.all(mr0.data["x"].values == df["surface_elevation"].values)
-    # assert np.all(mr0.data["lat"].values == df["lat"].values)
 
-    with pytest.raises(ValueError):
-        # cannot default item as x_item and y_item are not default
-        ms.model_result(df, gtype="track", x_item=1, y_item="lat")
-    # assert isinstance(mr1, protocols.ModelResult)
-    # assert mr1.item_name == "surface_elevation"
+    mr = ms.model_result(
+        df, gtype="track", x_item=1, y_item="lat", item="surface_elevation"
+    )
+    assert "x" in mr.data.coords
 
     # Rename
     df = df.copy()
@@ -120,20 +106,8 @@ def test_track_df_default_items(track_df):
         mr3 = ms.model_result(
             df, item="wl", gtype="track", x_item="longitude", y_item="latitude"
         )
-    assert isinstance(mr3, protocols.ModelResult)
-
-
-# TODO:
-# def test_track_df_compare(track_df):
-#     df = track_df
-#     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-#         mr1 = ModelResult(df, item=2)
-#     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-#         o1 = TrackObservation(df, item=2)
-#     c = mr1.compare(o1)
-#     assert c.score() == 0.0  # o1=mr1
-#     assert len(o1.data.dropna()) == 1110
-#     assert c.n_points == 1110
+    assert "x" in mr3.data.coords
+    assert "y" in mr3.data.coords
 
 
 def test_track_aux_items(df_aux):
