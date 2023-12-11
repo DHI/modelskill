@@ -2,7 +2,16 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import tempfile
-from typing import Dict, List, Union, Optional, Mapping, Iterable, overload
+from typing import (
+    Dict,
+    List,
+    Union,
+    Optional,
+    Mapping,
+    Iterable,
+    overload,
+    Hashable,
+)
 import warnings
 import zipfile
 import numpy as np
@@ -215,22 +224,28 @@ class ComparerCollection(Mapping):
         return str.join("\n", out)
 
     @overload
-    def __getitem__(self, x: slice) -> ComparerCollection:
+    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection:
         ...
 
     @overload
-    def __getitem__(self, x: int | str) -> Comparer:
+    def __getitem__(self, x: int | Hashable) -> Comparer:
         ...
 
     def __getitem__(self, x):
+        if isinstance(x, str):
+            return self.comparers[x]
+
         if isinstance(x, slice):
             idxs = list(range(*x.indices(len(self))))
             return ComparerCollection([self[i] for i in idxs])
 
         if isinstance(x, int):
-            x = _get_name(x, self.obs_names)
+            name = _get_name(x, self.obs_names)
+            return self.comparers[name]
 
-        return self.comparers[x]
+        if isinstance(x, Iterable):
+            cmps = [self[i] for i in x]
+            return ComparerCollection(cmps)
 
     def __setitem__(self, x: str, value: Comparer) -> None:
         assert isinstance(

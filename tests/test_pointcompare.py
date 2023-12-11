@@ -58,6 +58,28 @@ def test_get_comparer_by_position(cc):
     assert "Klagshamn" in ccs
 
 
+def test_subset_cc_for_named_comparers(cc):
+    cmp = cc["Klagshamn"]
+    assert cmp.name == "Klagshamn"
+
+    cmp2 = cc[0]
+    assert cmp2.name == "Klagshamn"
+
+    ccs = cc[("Klagshamn", "dmi_30357_Drogden_Fyr")]
+    assert len(ccs) == 2
+    assert (
+        repr(ccs)
+        == "<ComparerCollection>\nComparer: Klagshamn\nComparer: dmi_30357_Drogden_Fyr"
+    )
+
+    ccs2 = cc[["dmi_30357_Drogden_Fyr", "Klagshamn"]]
+    assert len(ccs2)
+    assert (
+        repr(ccs2)
+        == "<ComparerCollection>\nComparer: dmi_30357_Drogden_Fyr\nComparer: Klagshamn"
+    )
+
+
 def test_iterate_over_comparers(cc):
     assert len(cc) == 2
     for c in cc:
