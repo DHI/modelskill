@@ -245,19 +245,19 @@ class DeprecatedSkillPlotter:
 
     def line(self, field: str, **kwargs):
         self._deprecated_warning("line", field)
-        self.skilltable[field].plot.line(**kwargs)
+        return self.skilltable[field].plot.line(**kwargs)
 
     def bar(self, field: str, **kwargs):
         self._deprecated_warning("bar", field)
-        self.skilltable[field].plot.bar(**kwargs)
+        return self.skilltable[field].plot.bar(**kwargs)
 
     def barh(self, field: str, **kwargs):
         self._deprecated_warning("barh", field)
-        self.skilltable[field].plot.barh(**kwargs)
+        return self.skilltable[field].plot.barh(**kwargs)
 
     def grid(self, field: str, **kwargs):
         self._deprecated_warning("grid", field)
-        self.skilltable[field].plot.grid(**kwargs)
+        return self.skilltable[field].plot.grid(**kwargs)
 
 
 class SkillArray:
@@ -265,7 +265,7 @@ class SkillArray:
         self.ser = ser
         self.plot = SkillArrayPlotter(self)
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         return self.ser.to_frame()
 
     def __repr__(self):
@@ -332,7 +332,7 @@ class SkillTable:
     def __len__(self):
         return len(self.df)
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         return self.df
 
     def __repr__(self):
