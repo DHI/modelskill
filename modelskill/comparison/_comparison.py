@@ -33,7 +33,7 @@ from ._utils import (
     IdOrNameTypes,
 )
 from ..skill import AggregatedSkill
-from ..spatial import SkillGrid
+from ..skill_grid import SkillGrid
 from ..settings import options, register_option, reset_option
 from ..utils import _get_name
 from .. import __version__

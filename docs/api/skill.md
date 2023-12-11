@@ -8,6 +8,6 @@
 
 ## Gridded Skill
 
-::: modelskill.spatial.SkillGrid
+::: modelskill.skill_grid.SkillGrid
 
-::: modelskill.spatial.SkillGridArray
+::: modelskill.skill_grid.SkillGridArray

@@ -13,7 +13,7 @@ from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import AggregatedSkill
-from ..spatial import SkillGrid
+from ..skill_grid import SkillGrid
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
@@ -538,7 +538,7 @@ class ComparerCollection(Mapping):
         n_min: Optional[int] = None,
         **kwargs,
     ):
-        """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
+        """Skill assessment of model(s) on a regular spatial grid.
 
         Parameters
         ----------
