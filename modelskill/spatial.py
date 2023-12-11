@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Iterable, Optional, overload
 import warnings
 import xarray as xr
 
@@ -135,6 +135,14 @@ class SkillGrid(SkillGridMixin):
 
     def _repr_html_(self):
         return self.data._repr_html_()
+
+    @overload
+    def __getitem__(self, key: str | int) -> SkillGridArray:
+        ...
+
+    @overload
+    def __getitem__(self, key: Iterable[str]) -> SkillGrid:
+        ...
 
     def __getitem__(self, key) -> SkillGridArray | SkillGrid:
         result = self.data[key]
