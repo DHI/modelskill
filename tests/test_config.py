@@ -34,7 +34,7 @@ def test_comparison_from_dict():
         ),
     )
 
-    with pytest.warns(FutureWarning, match="modelskill.compare"):
+    with pytest.warns(FutureWarning, match="modelskill.match"):
         con = ms.from_config(configuration, validate_eum=False)
 
     cc = con.extract()
@@ -44,7 +44,7 @@ def test_comparison_from_dict():
 
 
 def test_comparison_from_yml():
-    with pytest.warns(FutureWarning, match="modelskill.compare"):
+    with pytest.warns(FutureWarning, match="modelskill.match"):
         con = ms.from_config("tests/testdata/conf.yml", validate_eum=False)
     cc = con.extract()
 

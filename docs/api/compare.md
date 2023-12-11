@@ -1,6 +1,6 @@
 # Compare
 
-::: modelskill.compare
+::: modelskill.match
 
 ::: modelskill.from_matched
 

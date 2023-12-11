@@ -51,16 +51,16 @@ A **score** is a numerical value that summarizes the model's performance based o
 In ModelSkill, observations and model results are *matched* when they refer to the same positions in space and time. If the [observations](#observation) and [model results](#model-result) are already matched, the [`from_matched`](api/compare.md#modelskill.from_matched) function can be used to create a [Comparer](#comparer) directly. Otherwise, the [compare](#compare) function can be used to match the observations and model results in space and time. 
 
 
-### compare
-The function [`compare`](api/compare.md#modelskill.compare) is used to compare a model result with observations. It returns a [`Comparer`](api/compare.md#modelskill.comparison.Comparer) object.
+### match
+The function [`match`](api/compare.md#modelskill.match) is used to match a model result with observations. It returns a [`Comparer`](api/compare.md#modelskill.comparison.Comparer) object or a [`ComparerCollection`](api/compare.md#modelskill.comparison.ComparerCollection) object.
 
 
 ### Comparer
-A [**Comparer**](api/compare.md#modelskill.comparison.Comparer) is an object that compares a model result with observations. It is used to calculate validation metrics and generate plots. A Comparer can be created using the [`compare`](api/compare.md#modelskill.compare) function (will return a [ComparerCollection](api/compare.md#modelskill.comparison.ComparerCollection)). 
+A [**Comparer**](api/compare.md#modelskill.comparison.Comparer) is an object that compares a model result with observations. It is used to calculate validation metrics and generate plots. A Comparer can be created using the [`compare`](api/compare.md#modelskill.match) function (will return a [ComparerCollection](api/compare.md#modelskill.comparison.ComparerCollection)). 
 
 
 ### ComparerCollection
-A [**ComparerCollection**](api/compare.md#modelskill.comparison.ComparerCollection) is a collection of Comparers. It is used to compare multiple model results with multiple observations. A ComparerCollection can be created using the [`compare`](api/compare.md#modelskill.compare) function. 
+A [**ComparerCollection**](api/compare.md#modelskill.comparison.ComparerCollection) is a collection of Comparers. It is used to compare multiple model results with multiple observations. A ComparerCollection can be created using the [`compare`](api/compare.md#modelskill.match) function. 
 
 
 ### Connector
