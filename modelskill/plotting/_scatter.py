@@ -326,7 +326,7 @@ def _scatter_matplotlib(
     ax.set_title(title)
     # Add skill table
     if skill_df is not None:
-        df = skill_df.df
+        df = skill_df.to_dataframe()
         assert isinstance(df, pd.DataFrame)
         _plot_summary_table(df, units, max_cbar=max_cbar)
     return ax
