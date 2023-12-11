@@ -1,6 +1,6 @@
 from __future__ import annotations
 import warnings
-from typing import Iterable, Collection, Optional, overload, Hashable
+from typing import Iterable, Collection, overload, Hashable
 import numpy as np
 import pandas as pd
 
