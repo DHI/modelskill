@@ -1,13 +1,12 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Optional, Sequence, get_args
-import warnings
 
 import pandas as pd
 import xarray as xr
 
-from ._base import SpatialField
-from ..utils import _get_name, rename_coords_xr, rename_coords_pd
+from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
+from ..utils import rename_coords_xr, rename_coords_pd
 from ..types import GridType, Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
@@ -29,6 +28,8 @@ class GridModelResult(SpatialField):
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
         Model quantity, for MIKE files this is inferred from the EUM information
+    aux_items : Optional[list[int | str]], optional
+        Auxiliary items, by default None
     """
 
     def __init__(
@@ -38,6 +39,7 @@ class GridModelResult(SpatialField):
         name: Optional[str] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
     ) -> None:
         assert isinstance(
             data, get_args(GridType)
@@ -56,7 +58,12 @@ class GridModelResult(SpatialField):
             ds = xr.open_mfdataset(data)
 
         elif isinstance(data, xr.DataArray):
-            assert data.ndim >= 2, "DataArray must at least 2D."
+            if item is not None:
+                raise ValueError(f"item must be None when data is a {type(data)}")
+            if aux_items is not None:
+                raise ValueError(f"aux_items must be None when data is a {type(data)}")
+            if data.ndim < 2:
+                raise ValueError(f"DataArray must at least 2D. Got {list(data.dims)}.")
             ds = data.to_dataset(name=name, promote_attrs=True)
         elif isinstance(data, xr.Dataset):
             assert len(data.coords) >= 2, "Dataset must have at least 2 dimensions."
@@ -66,15 +73,19 @@ class GridModelResult(SpatialField):
                 f"Could not construct GridModelResult from {type(data)}"
             )
 
-        item_name = _get_name(x=item, valid_names=list(ds.data_vars))
-        name = name or item_name
+        sel_items = SelectedItems.parse(
+            list(ds.data_vars), item=item, aux_items=aux_items
+        )
+        name = name or sel_items.values
         ds = rename_coords_xr(ds)
 
-        self.data: xr.DataArray = ds[item_name]
+        self.data: xr.Dataset = ds[sel_items.all]
         self.name = name
+        self.sel_items = sel_items
 
         # use long_name and units from data if not provided
         if quantity is None:
+            # TODO: should this be on the DataArray instead?
             if self.data.attrs.get("long_name") and self.data.attrs.get("units"):
                 quantity = Quantity(
                     name=self.data.attrs["long_name"],
@@ -84,6 +95,10 @@ class GridModelResult(SpatialField):
                 quantity = Quantity.undefined()
 
         self.quantity = quantity
+
+    def __repr__(self) -> str:
+        # TODO add item name
+        return f"<GridModelResult> '{self.name}'"
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -120,14 +135,7 @@ class GridModelResult(SpatialField):
         <modelskill.protocols.Comparable>
             A model result object with the same geometry as the observation
         """
-        overlap_in_time = (
-            self.time[0] <= observation.time[-1]
-            and self.time[-1] >= observation.time[0]
-        )
-        if not overlap_in_time:
-            warnings.warn(
-                f"No time overlap. Observation '{observation.name}' outside model time range! "
-            )
+        _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
             return self.extract_point(observation)
         elif isinstance(observation, TrackObservation):
@@ -153,13 +161,12 @@ class GridModelResult(SpatialField):
                 f"PointObservation '{observation.name}' ({x}, {y}) is outside model domain!"
             )
 
-        # TODO add correct type hint to self.data
-        assert isinstance(self.data, xr.DataArray)
+        assert isinstance(self.data, xr.Dataset)
 
-        # TODO self.item is None, ☹️
+        # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
         da = self.data.interp(coords=dict(x=x, y=y), method="nearest")  # type: ignore
         df = da.to_dataframe().drop(columns=["x", "y"])
-        df = df.rename(columns={df.columns[-1]: self.name})
+        df = df.rename(columns={self.sel_items.values: self.name})
 
         return PointModelResult(
             data=df.dropna(),
@@ -168,32 +175,31 @@ class GridModelResult(SpatialField):
             item=self.name,
             name=self.name,
             quantity=self.quantity,
+            aux_items=self.sel_items.aux,
         )
 
     def extract_track(self, observation: TrackObservation) -> TrackModelResult:
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
 
-        # TODO
-        obs_df = (
-            observation.data
-            if isinstance(observation.data, pd.DataFrame)
-            else observation.data.to_dataframe()
-        )
+        obs_df = observation.data.to_dataframe()
 
         renamed_obs_data = rename_coords_pd(obs_df)
         t = xr.DataArray(renamed_obs_data.index, dims="track")
         x = xr.DataArray(renamed_obs_data.x, dims="track")
         y = xr.DataArray(renamed_obs_data.y, dims="track")
 
-        assert isinstance(self.data, xr.DataArray)
+        assert isinstance(self.data, xr.Dataset)
         da = self.data.interp(coords=dict(time=t, x=x, y=y), method="linear")
         df = da.to_dataframe().drop(columns=["time"])
-        df = df.rename(columns={df.columns[-1]: self.name})
+        df = df.rename(columns={self.sel_items.values: self.name})
 
         return TrackModelResult(
             data=df.dropna(),
             item=self.name,
+            x_item="x",
+            y_item="y",
             name=self.name,
             quantity=self.quantity,
+            aux_items=self.sel_items.aux,
         )

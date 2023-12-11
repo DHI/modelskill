@@ -13,18 +13,18 @@ def ERA5_DutchCoast_nc():
 
 @pytest.fixture
 def mr_ERA5_pp1d(ERA5_DutchCoast_nc):
-    return ms.ModelResult(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="pp1d")
+    return ms.model_result(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="pp1d")
 
 
 @pytest.fixture
 def mr_ERA5_swh(ERA5_DutchCoast_nc):
-    return ms.ModelResult(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="swh")
+    return ms.model_result(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="swh")
 
 
 @pytest.fixture
 def mf_modelresult():
     fn = "tests/testdata/SW/CMEMS_DutchCoast_*.nc"
-    return ms.ModelResult(fn, item="VHM0", name="CMEMS")
+    return ms.model_result(fn, item="VHM0", name="CMEMS")
 
 
 @pytest.fixture
@@ -66,13 +66,13 @@ def test_dataset_with_missing_coordinates(ERA5_DutchCoast_nc):
     ds = ds.drop_vars(["longitude"])  # remove one of the coordinates
 
     with pytest.raises(ValueError, match="gtype"):
-        ms.ModelResult(ds["swh"])
+        ms.model_result(ds["swh"])
 
 
 def test_grid_from_da(ERA5_DutchCoast_nc):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     da = ds["swh"]
-    mr = ms.ModelResult(da)
+    mr = ms.model_result(da)
 
     assert isinstance(mr, ms.GridModelResult)
     # assert not mr.filename
@@ -88,13 +88,45 @@ def test_grid_from_multifile(mf_modelresult):
 
 # should be supported
 def test_grid_name(ERA5_DutchCoast_nc):
-    mri1 = ms.ModelResult(ERA5_DutchCoast_nc, item="pp1d")
+    mri1 = ms.model_result(ERA5_DutchCoast_nc, item="pp1d")
     assert isinstance(mri1, ms.GridModelResult)
 
-    mri2 = ms.ModelResult(ERA5_DutchCoast_nc, item=3)
+    mri2 = ms.model_result(ERA5_DutchCoast_nc, item=3)
     assert isinstance(mri2, ms.GridModelResult)
 
     assert mri1.name == mri2.name
+
+
+def test_grid_aux_items(ERA5_DutchCoast_nc):
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
+    assert mr.sel_items.values == "pp1d"
+    assert mr.sel_items.aux == ["swh"]
+    assert list(mr.data.data_vars) == ["pp1d", "swh"]
+
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh", "mwp"])
+    assert mr.sel_items.values == "pp1d"
+    assert mr.sel_items.aux == ["swh", "mwp"]
+    assert list(mr.data.data_vars) == ["pp1d", "swh", "mwp"]
+
+    # accept string instead of list
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items="swh")
+    assert mr.sel_items.values == "pp1d"
+    assert mr.sel_items.aux == ["swh"]
+    assert list(mr.data.data_vars) == ["pp1d", "swh"]
+
+    # use index instead of name
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=[4, 1])
+    assert mr.sel_items.values == "pp1d"
+    assert mr.sel_items.aux == ["swh", "mwp"]
+    assert list(mr.data.data_vars) == ["pp1d", "swh", "mwp"]
+
+
+def test_grid_aux_items_fail(ERA5_DutchCoast_nc):
+    with pytest.raises(ValueError, match="Duplicate items"):
+        ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh", "pp1d"])
+
+    with pytest.raises(ValueError, match="Duplicate items"):
+        ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh", "swh"])
 
 
 # def test_grid_itemInfo(ERA5_DutchCoast_nc):
@@ -138,6 +170,16 @@ def test_grid_extract_point_toutside(ERA5_DutchCoast_nc, pointobs_epl_hm0):
         mr.extract(pointobs_epl_hm0)
 
 
+def test_grid_extract_point_aux(ERA5_DutchCoast_nc, pointobs_epl_hm0):
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
+    pc = mr.extract(pointobs_epl_hm0)
+    assert isinstance(pc, ms.PointModelResult)
+    assert pc.start_time == datetime(2017, 10, 27, 0, 0, 0)
+    assert pc.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert pc.n_points == 67
+    assert len(pc.data.data_vars) == 2
+
+
 @pytest.mark.skip(
     reason="validation not possible at the moment, allow item mapping for ModelResult and Observation and match on item name?"
 )
@@ -154,3 +196,14 @@ def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     assert tmr.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
     assert tmr.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tmr.n_points == 99
+
+
+def test_grid_extract_track_aux(ERA5_DutchCoast_nc, trackobs_c2_hm0):
+    mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
+    tc = mr.extract(trackobs_c2_hm0)
+    assert isinstance(tc, ms.TrackModelResult)
+    assert tc.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
+    assert tc.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
+    assert tc.n_points == 99
+    assert len(tc.data.data_vars) == 2
+    assert "swh" in tc.data.data_vars

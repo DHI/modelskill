@@ -8,26 +8,26 @@ import modelskill.metrics as mtr
 
 @pytest.fixture
 def mr1Hm0():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ms.ModelResult(fn, item="Sign. Wave Height", name="SW_1")
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
+    return ms.model_result(fn, item="Sign. Wave Height", name="SW_1")
 
 
 @pytest.fixture
 def mr1WS():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ms.ModelResult(fn, item="Wind speed", name="SW_1")
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
+    return ms.model_result(fn, item="Wind speed", name="SW_1")
 
 
 @pytest.fixture
 def mr2Hm0():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ms.ModelResult(fn, item="Sign. Wave Height", name="SW_2")
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
+    return ms.model_result(fn, item="Sign. Wave Height", name="SW_2")
 
 
 @pytest.fixture
 def mr2WS():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ms.ModelResult(fn, item="Wind speed", name="SW_2")
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
+    return ms.model_result(fn, item="Wind speed", name="SW_2")
 
 
 @pytest.fixture
@@ -120,10 +120,10 @@ def test_mv_mm_mean_skill(cc):
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "variable"
     idx = ("SW_1", "Wind speed")
-    assert pytest.approx(df.loc[idx].r2) == 0.65238805170
+    assert pytest.approx(df.loc[idx].r2) == 0.63344531
 
     df = cc.sel(variable="Significant wave height").mean_skill().df
-    assert pytest.approx(df.loc["SW_1"].cc) == 0.971791458
+    assert pytest.approx(df.loc["SW_1"].cc) == 0.963095
 
 
 def test_mv_mm_scatter(cc):

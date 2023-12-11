@@ -46,27 +46,27 @@ def mr12_gaps():
     # keep 2017-10-28 00:00 and 2017-10-29 00:00
     # but remove the 11 steps in between
     df2.loc["2017-10-28 01:00":"2017-10-28 23:00"] = np.nan
-    mr1 = ms.ModelResult(df1, name="mr1")
-    mr2 = ms.ModelResult(df2, name="mr2")
+    mr1 = ms.model_result(df1, name="mr1")
+    mr2 = ms.model_result(df2, name="mr2")
     return mr1, mr2
 
 
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_1")
+    return ms.model_result(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_2")
+    return ms.model_result(fn, item=0, name="SW_2")
 
 
 @pytest.fixture
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_3")
+    return ms.model_result(fn, item=0, name="SW_3")
 
 
 def test_compare_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
@@ -342,11 +342,12 @@ def test_trackmodelresult_and_trackobservation_uses_model_name():
     assert mr.name == "MyModel"
 
     # reuse same data, we don't care about the data here, only the name
-    o1 = ms.TrackObservation(
-        "tests/testdata/NorthSeaHD_extracted_track.dfs0",
-        item="Model_surface_elevation",
-        name="MyObs",
-    )
+    with pytest.warns(UserWarning, match="Removed 22 duplicate"):
+        o1 = ms.TrackObservation(
+            "tests/testdata/NorthSeaHD_extracted_track.dfs0",
+            item="Model_surface_elevation",
+            name="MyObs",
+        )
     cmp = ms.compare(o1, mr)
     assert cmp.mod_names == ["MyModel"]
 

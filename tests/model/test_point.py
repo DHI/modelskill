@@ -30,6 +30,19 @@ def point_df(fn_point_noneq):
     return mikeio.open(fn_point_noneq).to_dataframe()
 
 
+@pytest.fixture
+def df_aux():
+    df = pd.DataFrame(
+        {
+            "WL": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "aux1": [1.1, 2.1, 3.1, 4.1, 5.1, 6.1],
+            "aux2": [1.2, 2.2, 3.2, 4.2, 5.2, 6.2],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+    return df
+
+
 def test_point_dfs0(fn_point_eq):
     fn = fn_point_eq
 
@@ -127,7 +140,7 @@ def test_point_df_itemInfo(point_df):
     df = point_df
     df["ones"] = 1.0
     # itemInfo = mikeio.EUMType.Surface_Elevation
-    mr1 = ms.ModelResult(
+    mr1 = ms.model_result(
         df,
         item="Water Level",
         quantity=ms.Quantity(name="Surface elevation", unit="meter"),
@@ -160,6 +173,32 @@ def test_point_model_data_can_be_persisted_as_netcdf(point_df, tmp_path):
     mr = ms.PointModelResult(point_df, item=0)
 
     mr.data.to_netcdf(tmp_path / "test.nc")
+
+
+def test_point_aux_items(df_aux):
+    o = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1"])
+    assert "aux1" in o.data
+    assert o.data["aux1"].values[0] == 1.1
+
+    o = ms.PointModelResult(df_aux, item="WL", aux_items="aux1")
+    assert "aux1" in o.data
+    assert o.data["aux1"].values[0] == 1.1
+
+
+def test_point_aux_items_fail(df_aux):
+    with pytest.raises(KeyError):
+        ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux3"])
+
+    with pytest.raises(ValueError):
+        ms.PointModelResult(df_aux, item="WL", aux_items="WL")
+
+
+def test_point_aux_items_multiple(df_aux):
+    o = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux2"])
+    assert "aux1" in o.data
+    assert "aux2" in o.data
+    assert o.data["aux1"].values[0] == 1.1
+    assert o.data["aux2"].values[0] == 1.2
 
 
 def test_point_modelresult_must_have_unique_and_monotonically_increasing_time():

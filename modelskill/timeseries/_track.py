@@ -30,7 +30,7 @@ def _parse_track_items(
     x_item: int | str | None,
     y_item: int | str | None,
     item: int | str | None,
-    aux_items: Optional[list[int | str]] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
 ) -> TrackItem:
     """If input has exactly 3 items we accept item=None"""
     if len(items) < 3:
@@ -69,7 +69,7 @@ def _parse_track_input(
     y_item: str | int | None,
     keep_duplicates: bool | str,
     offset_duplicates: float = 0.001,
-    aux_items: Optional[list[int | str]] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
 ) -> xr.Dataset:
     assert isinstance(
         data, get_args(TrackType)
