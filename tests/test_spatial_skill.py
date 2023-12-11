@@ -14,7 +14,7 @@ def cc1():
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         o1 = ms.TrackObservation(df, item=2, name="alti")
 
-    return ms.compare(o1, mr)
+    return ms.match(o1, mr)
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ def cc2(o1, o2, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     mr2 = ms.model_result(fn, item=0, name="SW_2")
 
-    return ms.compare([o1, o2, o3], [mr1, mr2])
+    return ms.match([o1, o2, o3], [mr1, mr2])
 
 
 def test_spatial_skill(cc1):

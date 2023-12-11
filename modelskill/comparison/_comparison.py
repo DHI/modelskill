@@ -373,7 +373,7 @@ class Comparer:
     Examples
     --------
     >>> import modelskill as ms
-    >>> cc = ms.compare(observation, modeldata)
+    >>> cc = ms.match(observation, modeldata)
     >>> cmp2 = ms.from_matched(matched_data)
 
     See Also
@@ -637,7 +637,7 @@ class Comparer:
 
         Examples
         --------
-        >>> cmp = ms.compare(observation, modeldata)
+        >>> cmp = ms.match(observation, modeldata)
         >>> cmp.mod_names
         ['model1']
         >>> cmp2 = cmp.rename({'model1': 'model2'})
@@ -937,7 +937,7 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(c2, mod)
+        >>> cc = ms.match(c2, mod)
         >>> cc['c2'].skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -1009,7 +1009,7 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cmp = ms.compare(c2, mod)
+        >>> cmp = ms.match(c2, mod)
         >>> cmp.score()
         0.3517964910888918
 
@@ -1083,7 +1083,7 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cmp = ms.compare(c2, mod)   # satellite altimeter vs. model
+        >>> cmp = ms.match(c2, mod)   # satellite altimeter vs. model
         >>> cmp.spatial_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)

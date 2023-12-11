@@ -172,7 +172,7 @@ def test_extract_observation_total_windsea_swell_not_possible(
     #     c = mr.extract_observation(Hm0_HKNA)  # infer item by EUM is ambigous
 
     # Specify Swell item explicitely
-    cc = ms.compare(Hm0_HKNA, mr)
+    cc = ms.match(Hm0_HKNA, mr)
     assert cc.n_points > 0
 
 

@@ -69,21 +69,31 @@ def mr3():
     return ms.model_result(fn, item=0, name="SW_3")
 
 
-def test_compare_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
-    cc = ms.compare([o1, o2, o3], [mr1, mr2])
+# TODO remove in v1.1
+def test_compare_multi_obs_multi_model_is_deprecated(o1, o2, o3, mr1, mr2):
+    with pytest.warns(FutureWarning, match="match"):
+        cc = ms.match([o1, o2, o3], [mr1, mr2])
     assert cc.n_models == 2
     assert cc.n_observations == 3
     assert cc["c2"].n_points == 113
     assert cc["HKNA"].name == "HKNA"
 
 
-def test_compare_dataarray(o1, o3):
+def test_match_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
+    cc = ms.match([o1, o2, o3], [mr1, mr2])
+    assert cc.n_models == 2
+    assert cc.n_observations == 3
+    assert cc["c2"].n_points == 113
+    assert cc["HKNA"].name == "HKNA"
+
+
+def test_match_dataarray(o1, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]  # Skip warm-up period
 
     # Using a mikeio.DataArray instead of a Dfs file, makes it possible to select a subset of data
 
-    cc = ms.compare([o1, o3], da)
+    cc = ms.match([o1, o3], da)
     assert cc.n_models == 1
     assert cc["c2"].n_points == 41
 
@@ -91,7 +101,7 @@ def test_compare_dataarray(o1, o3):
         0
     ]  # Spatio/temporal subset
 
-    cc2 = ms.compare([o1, o3], da2)
+    cc2 = ms.match([o1, o3], da2)
     assert cc2["c2"].n_points == 19
 
 
@@ -104,22 +114,22 @@ def test_extract_gaps1(o1, mr3):
     # 2017-10-28 03:00:00  2.119306
     # 2017-10-29 18:00:00  3.249600
 
-    cmp = ms.compare(o1, mr3)
+    cmp = ms.match(o1, mr3)
     assert cmp.n_points == 278
 
     # accept only 1 hour gaps (even though the model has 3 hour timesteps)
     # expect only exact matches (4 of 5 model timesteps are in obs)
-    cmp = ms.compare(o1, mr3, max_model_gap=3600)
+    cmp = ms.match(o1, mr3, max_model_gap=3600)
     assert cmp.n_points == 4
 
     # accept only 3 hour gaps
     # should disregard everything after 2017-10-28 03:00
     # except a single point 2017-10-29 18:00 (which is hit spot on)
-    cmp = ms.compare(o1, mr3, max_model_gap=10800)
+    cmp = ms.match(o1, mr3, max_model_gap=10800)
     assert cmp.n_points == 48 + 1
 
     # accept gaps up to 2 days (all points should be included)
-    cmp = ms.compare(o1, mr3, max_model_gap=2 * 24 * 60 * 60)
+    cmp = ms.match(o1, mr3, max_model_gap=2 * 24 * 60 * 60)
     assert cmp.n_points == 278
 
 
@@ -128,53 +138,53 @@ def test_extract_gaps2(o2_gaps, mr12_gaps):
     # we therefore expect the the 24 observations in this interval to be removed
     mr1, mr2 = mr12_gaps
 
-    cmp = ms.compare(o2_gaps, [mr1, mr2])[0]  # con12.extract()  # no max gap argument
+    cmp = ms.match(o2_gaps, [mr1, mr2])
     assert cmp.data["mr1"].count() == 66
     assert cmp.data["mr2"].count() == 66
 
     # no gap in mr1
-    cmp = ms.compare(o2_gaps, mr1, max_model_gap=7200)[0]
+    cmp = ms.match(o2_gaps, mr1, max_model_gap=7200)
     assert cmp.data["mr1"].count() == 66
 
     # one day gap in mr2
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=7200)[0]
+    cmp = ms.match(o2_gaps, mr2, max_model_gap=7200)
     assert cmp.data["mr2"].count() == 42  # 66 - 24
     assert cmp.data["mr2"].sel(time="2017-10-28").count() == 0
 
     # will syncronize the two models,
     # so gap in one will remove points from the other
-    cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=7200)[0]
+    cmp = ms.match(o2_gaps, [mr1, mr2], max_model_gap=7200)
     assert cmp.data["mr1"].count() == 42
     assert cmp.data["mr2"].count() == 42
 
     # the 24 hour gap (86400 seconds) in the file cannot be filled
     # with the max_model_gap=27200
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=27200)[0]
+    cmp = ms.match(o2_gaps, mr2, max_model_gap=27200)
     assert cmp.data["mr2"].count() == 42
     assert cmp.data["mr2"].sel(time="2017-10-28").count() == 0
 
 
 def test_extract_gaps_big(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=86401)[0]  # 24 hours + 1 second
+    cmp = ms.match(o2_gaps, mr2, max_model_gap=86401)  # 24 hours + 1 second
     assert cmp.data["mr2"].count() == 66  # no data removed
 
 
 def test_extract_gaps_small(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
     # with pytest.warns(UserWarning, match="No overlapping data"):
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=10)[0]  # no data with that small gap
+    cmp = ms.match(o2_gaps, mr2, max_model_gap=10)  # no data with that small gap
     assert cmp.n_points == 0
 
 
 def test_extract_gaps_negative(o2_gaps, mr12_gaps):
     _, mr2 = mr12_gaps
     # with pytest.warns(UserWarning, match="No overlapping data"):
-    cmp = ms.compare(o2_gaps, mr2, max_model_gap=-10)
+    cmp = ms.match(o2_gaps, mr2, max_model_gap=-10)
     assert cmp.n_points == 0
 
 
-def test_compare_gaps_types(o2_gaps, mr12_gaps):
+def test_match_gaps_types(o2_gaps, mr12_gaps):
     mr1, mr2 = mr12_gaps
 
     gap_seconds = 7200
@@ -184,11 +194,11 @@ def test_compare_gaps_types(o2_gaps, mr12_gaps):
         timedelta(seconds=gap_seconds),
     ]
     for gap in gaps:
-        cmp = ms.compare(o2_gaps, [mr1, mr2], max_model_gap=gap)[0]
+        cmp = ms.match(o2_gaps, [mr1, mr2], max_model_gap=gap)
         assert cmp.data["mr1"].count() == 42
 
 
-def test_small_multi_model_shifted_time_compare():
+def test_small_multi_model_shifted_time_match():
     obs = pd.DataFrame(
         {"HKNA": [1.1, 2.0, 3.0, 4.0]}, index=pd.date_range("2017-01-01", periods=4)
     )
@@ -203,13 +213,13 @@ def test_small_multi_model_shifted_time_compare():
     # observation has four timesteps, but only three of them are in the Simple model and three in the NotSimple model
     # the number of overlapping points for all three datasets are 2, but three if we look at the models individually
 
-    cmp1 = ms.compare(obs=obs, mod=mod)
+    cmp1 = ms.match(obs=obs, mod=mod)
     assert cmp1.n_points == 3
 
-    cmp2 = ms.compare(obs=obs, mod=mod2)
+    cmp2 = ms.match(obs=obs, mod=mod2)
     assert cmp2.n_points == 3
 
-    mcmp = ms.compare(obs=obs, mod=[mod, mod2])
+    mcmp = ms.match(obs=obs, mod=[mod, mod2])
     assert mcmp.n_points == 2
 
 
@@ -348,7 +358,7 @@ def test_trackmodelresult_and_trackobservation_uses_model_name():
             item="Model_surface_elevation",
             name="MyObs",
         )
-    cmp = ms.compare(o1, mr)
+    cmp = ms.match(o1, mr)
     assert cmp.mod_names == ["MyModel"]
 
 
@@ -361,7 +371,7 @@ def test_save_comparercollection(o1, o3, tmp_path):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]
 
-    cc = ms.compare([o1, o3], da)
+    cc = ms.match([o1, o3], da)
 
     fn = tmp_path / "cc.msk"
     cc.save(fn)
@@ -373,9 +383,9 @@ def test_specifying_mod_item_not_allowed_twice(o1, mr1):
     # item was already specified in the construction of the DfsuModelResult
 
     with pytest.raises(ValueError, match="item"):
-        ms.compare(obs=o1, mod=mr1, mod_item=1)
+        ms.match(obs=o1, mod=mr1, mod_item=1)
 
 
 def test_bad_model_input(o1):
     with pytest.raises(ValueError, match="mod type"):
-        ms.compare(obs=o1, mod=None)
+        ms.match(obs=o1, mod=None)

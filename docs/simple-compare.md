@@ -12,7 +12,7 @@ The simplified modelskill workflow consists of these four steps:
 
 1.  Specify **model result**
 2.  Specify **observation**
-3.  **compare()**
+3.  **match()**
 4.  Analysis and plotting
 
 ### 1. Specify model result
@@ -33,15 +33,15 @@ object.
 fn_obs = '../tests/testdata/SW/eur_Hm0.dfs0'
 ```
 
-### 3. compare()
+### 3. match()
 
-The [compare()](api/compare.md#modelskill.compare) method will
+The [match()](api/compare.md#modelskill.match) method will
 interpolate the modelresult to the time of the observation and return an
 object that can be used for analysis and plotting
 
 ```python
 import modelskill as ms
-c = ms.compare(fn_obs, fn_mod, mod_item=0)
+c = ms.match(fn_obs, fn_mod, mod_item=0)
 ```
 
 ### 4. Analysis and plotting

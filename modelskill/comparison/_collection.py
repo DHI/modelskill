@@ -79,7 +79,7 @@ class ComparerCollection(Mapping):
     >>> mr = ms.ModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
-    >>> cc = ms.compare(obs=[o1,o2], mod=mr)
+    >>> cc = ms.match(obs=[o1,o2], mod=mr)
     """
 
     comparers: Dict[str, Comparer]
@@ -377,7 +377,7 @@ class ComparerCollection(Mapping):
 
         Examples
         --------
-        >>> cc = ms.compare([HKNA, EPL, alti], mr)
+        >>> cc = ms.match([HKNA, EPL, alti], mr)
         >>> cc.filter_by_attrs(gtype='track')
         <ComparerCollection>
         Comparer: alti
@@ -441,7 +441,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mr)
+        >>> cc = ms.match([HKNA,EPL,c2], mr)
         >>> cc.skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -552,7 +552,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mr)  # with satellite track measurements
+        >>> cc = ms.match([HKNA,EPL,c2], mr)  # with satellite track measurements
         >>> cc.spatial_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
@@ -710,7 +710,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mod=HKZN_local)
+        >>> cc = ms.match([HKNA,EPL,c2], mod=HKZN_local)
         >>> cc.mean_skill().round(2)
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
@@ -808,7 +808,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.mean_skill_points()
         """
 
@@ -937,7 +937,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.score()
         0.30681206
         >>> cc.score(weights=[0.1,0.1,0.8])
@@ -1065,7 +1065,7 @@ class ComparerCollection(Mapping):
 
         Examples
         --------
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.save("my_comparer_collection.msk")
 
         Notes
@@ -1100,9 +1100,9 @@ class ComparerCollection(Mapping):
 
         Examples
         --------
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.save("my_comparer_collection.msk")
-        >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.msk")
+        >>> cc2 = ms.matchrCollection.load("my_comparer_collection.msk")
         """
 
         folder = tempfile.TemporaryDirectory().name

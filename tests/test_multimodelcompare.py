@@ -40,11 +40,11 @@ def o3():
 
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3):
-    return ms.compare([o1, o2, o3], [mr1, mr2])
+    return ms.match([o1, o2, o3], [mr1, mr2])
 
 
 def test_compare(mr1, mr2, o1, o2, o3):
-    cc = ms.compare([o1, o2, o3], [mr1, mr2])
+    cc = ms.match([o1, o2, o3], [mr1, mr2])
 
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
@@ -53,8 +53,8 @@ def test_compare(mr1, mr2, o1, o2, o3):
 
 
 def test_add_comparer(mr1, mr2, o1, o2):
-    cc1 = ms.compare(o1, mr1)
-    cc2 = ms.compare(o2, mr2)
+    cc1 = ms.match(o1, mr1)
+    cc2 = ms.match(o2, mr2)
     cc = cc1 + cc2
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
@@ -63,8 +63,8 @@ def test_add_comparer(mr1, mr2, o1, o2):
 
 
 def test_add_same_comparer_twice(mr1, mr2, o1, o2):
-    cc1 = ms.compare(o1, mr1)
-    cc2 = ms.compare(o2, mr2)
+    cc1 = ms.match(o1, mr1)
+    cc2 = ms.match(o2, mr2)
     cc = cc1 + cc2
     assert len(cc) == 2
     cc = cc + cc2
