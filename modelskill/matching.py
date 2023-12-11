@@ -405,6 +405,14 @@ def match_space_time(
                 observation=observation, mri=mri, spatial_tolerance=spatial_tolerance
             )
 
+        # check that model and observation have non-overlapping variables
+        if overlapping_names := set(mri.data.data_vars).intersection(
+            set(data.data_vars)
+        ):
+            raise ValueError(
+                f"Model: '{mr.name}' and observation have overlapping variables: {overlapping_names}"
+            )
+
         # TODO: is name needed?
         for v in list(mri.data.data_vars):
             data[v] = mri.data[v]
