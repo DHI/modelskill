@@ -5,32 +5,32 @@ import modelskill as ms
 
 @pytest.fixture
 def mrmike():
-    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
-    return ms.ModelResult(fn, name="SW_1", item=0)
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    return ms.model_result(fn, name="SW_1", item=0)
 
 
 @pytest.fixture
 def mrmike2():
-    fn = "tests/testdata/SW/DutchCoast_2017_subset_v2.dfsu"
-    return ms.ModelResult(fn, name="SW_2", item=0)
+    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    return ms.model_result(fn, name="SW_2", item=0)
 
 
 @pytest.fixture
 def mr2days():
     fn = "tests/testdata/SW/CMEMS_DutchCoast_*.nc"
-    return ms.ModelResult(fn, name="CMEMS", item="VHM0")
+    return ms.model_result(fn, name="CMEMS", item="VHM0")
 
 
 @pytest.fixture
 def mr28():
     fn = "tests/testdata/SW/CMEMS_DutchCoast_2017-10-28.nc"
-    return ms.ModelResult(fn, name="CMEMS", item="VHM0")
+    return ms.model_result(fn, name="CMEMS", item="VHM0")
 
 
 @pytest.fixture
 def mr29():
     fn = "tests/testdata/SW/CMEMS_DutchCoast_2017-10-29.nc"
-    return ms.ModelResult(fn, name="CMEMS", item="VHM0")
+    return ms.model_result(fn, name="CMEMS", item="VHM0")
 
 
 @pytest.fixture
