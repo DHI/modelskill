@@ -443,9 +443,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#compare" class="md-nav__link">
+  <a href="#match" class="md-nav__link">
     <span class="md-ellipsis">
-      compare
+      match
     </span>
   </a>
   
@@ -854,9 +854,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#compare" class="md-nav__link">
+  <a href="#match" class="md-nav__link">
     <span class="md-ellipsis">
-      compare
+      match
     </span>
   </a>
   
@@ -935,12 +935,12 @@
 <h2 id="modelskill-specific-terminology">ModelSkill-specific terminology</h2>
 <h3 id="matched-data">matched data</h3>
 <p>In ModelSkill, observations and model results are <em>matched</em> when they refer to the same positions in space and time. If the <a href="#observation">observations</a> and <a href="#model-result">model results</a> are already matched, the <a href="../api/compare/#modelskill.from_matched"><code>from_matched</code></a> function can be used to create a <a href="#comparer">Comparer</a> directly. Otherwise, the <a href="#compare">compare</a> function can be used to match the observations and model results in space and time. </p>
-<h3 id="compare">compare</h3>
-<p>The function <a href="../api/compare/#modelskill.compare"><code>compare</code></a> is used to compare a model result with observations. It returns a <a href="../api/compare/#modelskill.comparison.Comparer"><code>Comparer</code></a> object.</p>
+<h3 id="match">match</h3>
+<p>The function <a href="../api/compare/#modelskill.match"><code>match</code></a> is used to match a model result with observations. It returns a <a href="../api/compare/#modelskill.comparison.Comparer"><code>Comparer</code></a> object or a <a href="../api/compare/#modelskill.comparison.ComparerCollection"><code>ComparerCollection</code></a> object.</p>
 <h3 id="comparer">Comparer</h3>
-<p>A <a href="../api/compare/#modelskill.comparison.Comparer"><strong>Comparer</strong></a> is an object that compares a model result with observations. It is used to calculate validation metrics and generate plots. A Comparer can be created using the <a href="../api/compare/#modelskill.compare"><code>compare</code></a> function (will return a <a href="../api/compare/#modelskill.comparison.ComparerCollection">ComparerCollection</a>). </p>
+<p>A <a href="../api/compare/#modelskill.comparison.Comparer"><strong>Comparer</strong></a> is an object that compares a model result with observations. It is used to calculate validation metrics and generate plots. A Comparer can be created using the <a href="../api/compare/#modelskill.match"><code>compare</code></a> function (will return a <a href="../api/compare/#modelskill.comparison.ComparerCollection">ComparerCollection</a>). </p>
 <h3 id="comparercollection">ComparerCollection</h3>
-<p>A <a href="../api/compare/#modelskill.comparison.ComparerCollection"><strong>ComparerCollection</strong></a> is a collection of Comparers. It is used to compare multiple model results with multiple observations. A ComparerCollection can be created using the <a href="../api/compare/#modelskill.compare"><code>compare</code></a> function. </p>
+<p>A <a href="../api/compare/#modelskill.comparison.ComparerCollection"><strong>ComparerCollection</strong></a> is a collection of Comparers. It is used to compare multiple model results with multiple observations. A ComparerCollection can be created using the <a href="../api/compare/#modelskill.match"><code>compare</code></a> function. </p>
 <h3 id="connector">Connector</h3>
 <p>In past versions of FMSkill/ModelSkill, the Connector class was used to connect observations and model results. This class has been deprecated and is no longer in use. </p>
 

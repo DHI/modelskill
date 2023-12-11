@@ -774,14 +774,13 @@ format.</p>
 file, the item number (or item name) and a name. A PointObservation
 further needs to be initialized with it\'s x-, y-position.</p>
 <h3 id="3-connect-observations-and-modelresults">3. Connect observations and ModelResults</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cc</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">compare</span><span class="p">([</span><span class="n">hkna</span><span class="p">,</span> <span class="n">c2</span><span class="p">],</span> <span class="n">mr</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cc</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">match</span><span class="p">([</span><span class="n">hkna</span><span class="p">,</span> <span class="n">c2</span><span class="p">],</span> <span class="n">mr</span><span class="p">)</span>
 </span></code></pre></div>
 <p>This method returns a
 <a href="../api/compare/#modelskill.comparison.ComparerCollection">ComparerCollection</a>
 for further analysis and plotting.</p>
 <h3 id="4-do-analysis-plotting-etc-with-a-comparer">4. Do analysis, plotting, etc with a Comparer</h3>
-<p>The object returned by the <code>compare()</code> method is a <em>ComparerCollection</em>. It holds
-the matched observation and model data and has methods for plotting and
+<p>The object returned by the <code>match()</code> method is a <em>Comparer</em>/<em>ComparerCollection</em>. It holds the matched observation and model data and has methods for plotting and
 skill assessment.</p>
 <p>The primary comparer methods are:</p>
 <ul>
