@@ -32,8 +32,8 @@ from ._utils import (
     TimeTypes,
     IdOrNameTypes,
 )
-from ..skill import AggregatedSkill
-from ..spatial import SpatialSkill
+from ..skill import SkillTable
+from ..skill_grid import SkillGrid
 from ..settings import options, register_option, reset_option
 from ..utils import _get_name
 from .. import __version__
@@ -373,12 +373,12 @@ class Comparer:
     Examples
     --------
     >>> import modelskill as ms
-    >>> cc = ms.compare(observation, modeldata)
+    >>> cc = ms.match(observation, modeldata)
     >>> cmp2 = ms.from_matched(matched_data)
 
     See Also
     --------
-    modelskill.compare, modelskill.from_matched
+    modelskill.match, modelskill.from_matched
     """
 
     data: xr.Dataset
@@ -637,7 +637,7 @@ class Comparer:
 
         Examples
         --------
-        >>> cmp = ms.compare(observation, modeldata)
+        >>> cmp = ms.match(observation, modeldata)
         >>> cmp.mod_names
         ['model1']
         >>> cmp2 = cmp.rename({'model1': 'model2'})
@@ -911,7 +911,7 @@ class Comparer:
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> AggregatedSkill:
+    ) -> SkillTable:
         """Skill assessment of model(s)
 
         Parameters
@@ -926,7 +926,7 @@ class Comparer:
 
         Returns
         -------
-        AggregatedSkill
+        SkillTable
             skill assessment object
 
         See also
@@ -937,7 +937,7 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(c2, mod)
+        >>> cc = ms.match(c2, mod)
         >>> cc['c2'].skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -969,7 +969,7 @@ class Comparer:
         df = cmp.to_dataframe()  # TODO: avoid df if possible?
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
-        return AggregatedSkill(res)
+        return SkillTable(res)
 
     def _add_as_col_if_not_in_index(self, df, skilldf):
         """Add a field to skilldf if unique in df"""
@@ -1009,7 +1009,7 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cmp = ms.compare(c2, mod)
+        >>> cmp = ms.match(c2, mod)
         >>> cmp.score()
         0.3517964910888918
 
@@ -1040,6 +1040,28 @@ class Comparer:
         return values
 
     def spatial_skill(
+        self,
+        bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        # deprecated
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
+
+    def gridded_skill(
         self,
         bins=5,
         binsize: Optional[float] = None,
@@ -1083,8 +1105,8 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cmp = ms.compare(c2, mod)   # satellite altimeter vs. model
-        >>> cmp.spatial_skill(metrics='bias')
+        >>> cmp = ms.match(c2, mod)   # satellite altimeter vs. model
+        >>> cmp.gridded_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -1095,7 +1117,7 @@ class Comparer:
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.spatial_skill(binsize=0.5)
+        >>> ds = cc.gridded_skill(binsize=0.5)
         >>> ds.coords
         Coordinates:
             observation   'alti'
@@ -1135,7 +1157,7 @@ class Comparer:
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SpatialSkill(res.to_xarray().squeeze())
+        return SkillGrid(res.to_xarray().squeeze())
 
     @property
     def residual(self):

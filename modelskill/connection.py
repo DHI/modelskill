@@ -88,7 +88,7 @@ class SingleObsConnector:
         # deprecated
         warnings.warn(
             FutureWarning(
-                "SingleObsConnector is deprecated! Use `modelskill.compare` instead"
+                "SingleObsConnector is deprecated! Use `modelskill.match` instead"
             )
         )
         self.obs = None
@@ -228,7 +228,7 @@ class Connector(Sequence):
 
     def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
         warnings.warn(
-            FutureWarning("Connector is deprecated! Use `modelskill.compare` instead")
+            FutureWarning("Connector is deprecated! Use `modelskill.match` instead")
         )
 
         self.name = None
