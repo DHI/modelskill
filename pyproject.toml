@@ -15,6 +15,7 @@ dependencies = [
     "matplotlib",
     "xarray",
     "scipy",
+    "jinja2",
 ]
 
 authors = [
