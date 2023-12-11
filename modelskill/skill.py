@@ -253,7 +253,7 @@ class SkillArray:
 
 class SkillTable:
     """
-    SkillFrame object for visualization and analysis returned by
+    SkillTable object for visualization and analysis returned by
     the comparer's skill method. The object wraps the pd.DataFrame
     class which can be accessed from the attribute df.
 
@@ -410,7 +410,7 @@ class SkillTable:
         return df
 
     def sel(self, query=None, reduce_index=True, **kwargs):
-        """Select a subset of the SkillFrame by a query,
+        """Select a subset of the SkillTable by a query,
            (part of) the index, or specific columns
 
         Parameters
@@ -427,8 +427,8 @@ class SkillTable:
 
         Returns
         -------
-        SkillFrame
-            A subset of the orignal SkillFrame
+        SkillTable
+            A subset of the orignal SkillTable
 
         Examples
         --------

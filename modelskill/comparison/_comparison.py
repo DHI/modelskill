@@ -926,7 +926,7 @@ class Comparer:
 
         Returns
         -------
-        SkillFrame
+        SkillTable
             skill assessment object
 
         See also

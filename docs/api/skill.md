@@ -2,7 +2,7 @@
 
 ## Aggregated Skill
 
-::: modelskill.skill.SkillFrame
+::: modelskill.skill.SkillTable
 
 ::: modelskill.skill.SkillArray
 

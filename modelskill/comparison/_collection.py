@@ -718,7 +718,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        SkillFrame
+        SkillTable
             mean skill assessment as a skill object
 
         See also
@@ -816,7 +816,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        SkillFrame
+        SkillTable
             mean skill assessment as a skill object
 
         See also
