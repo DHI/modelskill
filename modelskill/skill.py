@@ -1,7 +1,6 @@
 from __future__ import annotations
 import warnings
-from typing import Iterable, Collection
-
+from typing import Iterable, Collection, Optional, overload, Hashable
 import numpy as np
 import pandas as pd
 
@@ -312,6 +311,14 @@ class SkillFrame:
 
     def _repr_html_(self):
         return self.df._repr_html_()
+
+    @overload
+    def __getitem__(self, key: Hashable | int) -> SkillArray:
+        ...
+
+    @overload
+    def __getitem__(self, key: Iterable[Hashable]) -> SkillFrame:
+        ...
 
     def __getitem__(self, key) -> SkillArray | SkillFrame:
         result = self.df.iloc[key] if isinstance(key, int) else self.df[key]
