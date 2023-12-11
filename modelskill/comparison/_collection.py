@@ -13,7 +13,7 @@ from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import AggregatedSkill
-from ..spatial import GriddedSkillSet
+from ..spatial import SkillGrid
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
@@ -624,7 +624,7 @@ class ComparerCollection(Mapping):
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return GriddedSkillSet(res.to_xarray().squeeze())
+        return SkillGrid(res.to_xarray().squeeze())
 
     def scatter(
         self,

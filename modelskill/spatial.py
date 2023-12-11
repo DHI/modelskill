@@ -4,7 +4,7 @@ import warnings
 import xarray as xr
 
 
-class GriddedDataMixin:
+class SkillGridMixin:
     @property
     def x(self):
         """x-coordinate values"""
@@ -41,12 +41,14 @@ class GriddedDataMixin:
         return [d for d in self.coords.dims]
 
 
-class GriddedSkillArray(GriddedDataMixin):
-    """wrapper for xArray DataArray with spatial skill data
+class SkillGridArray(SkillGridMixin):
+    """A SkillGridArray is a single metric-SkillGrid, corresponding to a "column" in a SkillGrid
+
+    Typically created by indexing a SkillGrid object, e.g. `ss["bias"]`.
 
     Examples
     --------
-    >>> ss = comparer.gridded_skill()
+    >>> ss = cc.gridded_skill()
     >>> ss["bias"].plot()
     """
 
@@ -72,7 +74,7 @@ class GriddedSkillArray(GriddedDataMixin):
 
         Examples
         --------
-        >>> ss = comparer.gridded_skill()
+        >>> ss = cc.gridded_skill()
         >>> ss["bias"].plot()
         >>> ss.rmse.plot(model='SW_1')
         >>> ss.r2.plot(cmap='YlOrRd', figsize=(10,10))
@@ -94,23 +96,26 @@ class GriddedSkillArray(GriddedDataMixin):
         return ax
 
 
-# TODO: rename to GriddedSkill?
-class GriddedSkillSet(GriddedDataMixin):
+class SkillGrid(SkillGridMixin):
     """
     Gridded skill object for analysis and visualization of spatially
-    gridded skill assessment. The object wraps the xr.DataSet class
-    which can be accessed from the attribute ds.
+    gridded skill data. The object wraps the xr.DataSet class
+    which can be accessed from the attribute data.
+
+    The object contains one or more "arrays" of skill metrics, each
+    corresponding to a single metric (e.g. bias, rmse, r2). The arrays
+    are indexed by the metric name, e.g. `ss["bias"]` or `ss.bias`.
 
     Examples
     --------
-    >>> ss = comparer.gridded_skill()
+    >>> ss = cc.gridded_skill()
     >>> ss.field_names
     ['n', 'bias', 'rmse', 'urmse', 'mae', 'cc', 'si', 'r2']
 
     >>> ss.mod_names
     ['SW_1', 'SW_2']
 
-    >>> ss.plot(field='rmse', model='SW_1')
+    >>> ss.rmse.plot(model='SW_1')
     """
 
     def __init__(self, data, name: Optional[str] = None):
@@ -125,24 +130,18 @@ class GriddedSkillSet(GriddedDataMixin):
         """List of field names (=data vars)"""
         return list(self.data.data_vars)
 
-    # @property
-    # def n(self):
-    #     """number of observations"""
-    #     if "n" in self.data:
-    #         return self.data.n
-
     def __repr__(self):
         return repr(self.data)
 
     def _repr_html_(self):
         return self.data._repr_html_()
 
-    def __getitem__(self, key) -> GriddedSkillArray | GriddedSkillSet:
+    def __getitem__(self, key) -> SkillGridArray | SkillGrid:
         result = self.data[key]
         if isinstance(result, xr.DataArray):
-            return GriddedSkillArray(result)
+            return SkillGridArray(result)
         elif isinstance(result, xr.Dataset):
-            return GriddedSkillSet(result)
+            return SkillGrid(result)
         else:
             return result
 
