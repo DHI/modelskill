@@ -8,25 +8,25 @@ import modelskill.metrics as mtr
 
 @pytest.fixture
 def mr1Hm0():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
     return ms.model_result(fn, item="Sign. Wave Height", name="SW_1")
 
 
 @pytest.fixture
 def mr1WS():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
     return ms.model_result(fn, item="Wind speed", name="SW_1")
 
 
 @pytest.fixture
 def mr2Hm0():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
     return ms.model_result(fn, item="Sign. Wave Height", name="SW_2")
 
 
 @pytest.fixture
 def mr2WS():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
     return ms.model_result(fn, item="Wind speed", name="SW_2")
 
 

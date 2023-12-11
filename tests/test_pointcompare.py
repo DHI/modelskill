@@ -28,7 +28,7 @@ def drogden():
 
 @pytest.fixture
 def modelresult_oresund_WL():
-    return ms.model_result("tests/testdata/Oresund2D.dfsu", item=0)
+    return ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
 
 @pytest.fixture
@@ -129,7 +129,7 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 
 
 def test_misc_properties(klagshamn, drogden):
-    mr = ms.model_result("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
     cc = ms.compare([klagshamn, drogden], mr)
 
@@ -157,7 +157,7 @@ def test_misc_properties(klagshamn, drogden):
 
 
 def test_skill(klagshamn, drogden):
-    mr = ms.model_result("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
     cc = ms.compare([klagshamn, drogden], mr)
 
@@ -170,7 +170,7 @@ def test_skill(klagshamn, drogden):
 
 
 def test_skill_choose_metrics(klagshamn, drogden):
-    mr = ms.model_result("tests/testdata/Oresund2D.dfsu", item=0)
+    mr = ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
     cc = ms.compare([klagshamn, drogden], mr)
 
