@@ -39,21 +39,6 @@ def _validate_attrs(data_attrs: dict, attrs: Optional[dict]) -> None:
 
 
 class Observation(TimeSeries):
-    """Base class for observations
-
-    Parameters
-    ----------
-    data : xr.Dataset
-    name : str, optional
-        user-defined name, e.g. "Station A", by default "Observation"
-    quantity : Optional[Quantity], optional
-        The quantity of the observation, for validation with model results
-    weight : float, optional
-        weighting factor, to be used in weighted skill scores, by default 1.0
-    color : str, optional
-        color of the observation in plots, by default "#d62728"
-    """
-
     def __init__(
         self,
         data: xr.Dataset,

@@ -19,36 +19,36 @@ def spatial_overview(
 ) -> matplotlib.axes.Axes:
     """Plot observation points on a map showing the model domain
 
-        Parameters
-        ----------
-        obs: list[Observation]
-            List of observations to be shown on map
-        mod : Union[ModelResult, mikeio.GeometryFM], optional
-            Model domain to be shown as outline
-        ax: matplotlib.axes, optional
-            Adding to existing axis, instead of creating new fig
-        figsize : (float, float), optional
-            figure size, by default None
-        title: str, optional
-            plot title, default empty
+    Parameters
+    ----------
+    obs: list[Observation]
+        List of observations to be shown on map
+    mod : Union[ModelResult, mikeio.GeometryFM], optional
+        Model domain to be shown as outline
+    ax: matplotlib.axes, optional
+        Adding to existing axis, instead of creating new fig
+    figsize : (float, float), optional
+        figure size, by default None
+    title: str, optional
+        plot title, default empty
 
-        See Also
-        --------
-        temporal_coverage
+    See Also
+    --------
+    temporal_coverage
 
-        Returns
-        -------
-        matplotlib.axes.Axes
-            The matplotlib axes object
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The matplotlib axes object
 
-        Examples
-        --------
+    Examples
+    --------
     >>> import modelskill as ms
-        >>> o1 = ms.PointObservation('HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
-        >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
-        >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
-        >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
-        >>> ms.plotting.spatial_overview([o1, o2], [mr1, mr2])
+    >>> o1 = ms.PointObservation('HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
+    >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+    >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
+    >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
+    >>> ms.plotting.spatial_overview([o1, o2], [mr1, mr2])
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]  # type: ignore
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]  # type: ignore

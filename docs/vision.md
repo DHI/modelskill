@@ -27,7 +27,7 @@ And it should be
 
 -   Difficult to make mistakes by verifying input
 -   Trustworthy by having \>95% test coverage
--   Easy to install ([pip install modelskill]{.title-ref})
+-   Easy to install (`$ pip install modelskill`)
 -   Easy to get started by providing many notebook examples and
     documentation
 

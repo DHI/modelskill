@@ -48,15 +48,6 @@ def _parse_dataset(data) -> xr.Dataset:
         # matched_data = self._matched_data_to_xarray(matched_data)
     assert "Observation" in data.data_vars
 
-    # Validate time
-    # assert len(data.dims) == 1, "Only 0-dimensional data are supported"
-    assert "time" in data.dims, "data must have a time dimension"
-    assert isinstance(data.time.to_index(), pd.DatetimeIndex), "time must be datetime"
-    data["time"] = pd.DatetimeIndex(data.time.to_index()).round(freq="100us")  # 0.0001s
-    assert (
-        data.time.to_index().is_monotonic_increasing
-    ), "time must be increasing (please check for duplicate times))"
-
     # no missing values allowed in Observation
     if data["Observation"].isnull().any():
         raise ValueError("Observation data must not contain missing values.")
@@ -72,8 +63,7 @@ def _parse_dataset(data) -> xr.Dataset:
     # Validate data
     vars = [v for v in data.data_vars]
     assert len(vars) > 1, "dataset must have at least two data arrays"
-    mod_names = []
-    n_obs = 0
+
     for v in data.data_vars:
         v = _validate_data_var_name(str(v))
         assert (
@@ -84,17 +74,16 @@ def _parse_dataset(data) -> xr.Dataset:
         ), f"All data arrays must have a time dimension; {v} has dimensions {data[v].dims}"
         if "kind" not in data[v].attrs:
             data[v].attrs["kind"] = "auxiliary"
-        if data[v].attrs["kind"] == "observation":
-            n_obs += 1
-        if data[v].attrs["kind"] == "model":
-            mod_names.append(v)
+
+    n_mod = sum([_is_model(da) for da in data.data_vars.values()])
+    n_obs = sum([_is_observation(da) for da in data.data_vars.values()])
 
     # Validate observation data array
     if n_obs != 1:
         raise ValueError(
             f"dataset must have exactly one observation array (marked by the kind attribute), this has {n_obs}"
         )
-    if len(mod_names) == 0:
+    if n_mod == 0:
         raise ValueError(
             "dataset must have at least one model array (marked by the kind attribute)"
         )
@@ -120,6 +109,14 @@ def _parse_dataset(data) -> xr.Dataset:
 
     data.attrs["modelskill_version"] = __version__
     return data
+
+
+def _is_observation(da: xr.DataArray) -> bool:
+    return da.attrs["kind"] == "observation"
+
+
+def _is_model(da: xr.DataArray) -> bool:
+    return da.attrs["kind"] == "model"
 
 
 # TODO remove in v1.1
@@ -685,7 +682,7 @@ class Comparer:
 
         Parameters
         ----------
-        fn : str or Path
+        filename : str or Path
             filename
 
         Returns
@@ -926,10 +923,6 @@ class Comparer:
             by default ["model"]
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
-        freq : string, optional
-            do temporal binning using pandas pd.Grouper(freq),
-            typical examples: 'M' = monthly; 'D' daily
-            by default None
 
         Returns
         -------

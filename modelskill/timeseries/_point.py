@@ -25,7 +25,7 @@ class PointItem:
 def _parse_point_items(
     items: Sequence[str],
     item: int | str | None,
-    aux_items: Optional[list[int | str]] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
 ) -> PointItem:
     """If input has exactly 1 item we accept item=None"""
     if item is None:
@@ -54,7 +54,7 @@ def _parse_point_input(
     name: Optional[str],
     item: str | int | None,
     quantity: Optional[Quantity],
-    aux_items: Optional[list[int | str]] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset"""
     assert isinstance(
@@ -122,6 +122,13 @@ def _parse_point_input(
 
     name = name or item_name
     name = _validate_data_var_name(name)
+
+    n_unique_times = len(ds.time.to_index().unique())
+    if n_unique_times < len(ds.time):
+        raise ValueError("time must be unique (please check for duplicate times))")
+
+    if not ds.time.to_index().is_monotonic_increasing:
+        raise ValueError("time must be increasing (please check for duplicate times))")
 
     # basic processing
     ds = ds.dropna(dim="time")
