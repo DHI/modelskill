@@ -8,6 +8,8 @@
 
 ::: modelskill.skill.SkillArrayPlotter
 
-## Spatial Skill
+## Gridded Skill
 
-::: modelskill.spatial.SpatialSkill
+::: modelskill.skill_grid.SkillGrid
+
+::: modelskill.skill_grid.SkillGridArray
