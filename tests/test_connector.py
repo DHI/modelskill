@@ -67,9 +67,7 @@ def test_connector_add(o1, mr1):
     assert len(con.observations) == 1
 
 
-def test_connector_add_two_models(
-    o1: ms.PointObservation, mr1: ms.model_result, mr2: ms.model_result
-):
+def test_connector_add_two_models(o1, mr1, mr2):
     with pytest.warns(FutureWarning, match="modelskill.match"):
         con = ms.Connector(o1, [mr1, mr2])
 
@@ -88,9 +86,7 @@ def test_connector_add_two_models(
     assert cc2.n_models == 2
 
 
-def test_connector_add_two_model_dataframes(
-    o1: ms.PointObservation, mr1: ms.model_result, mr2: ms.model_result
-):
+def test_connector_add_two_model_dataframes(o1, mr1, mr2):
     mr1_extr = mr1.extract(o1)
     mr2_extr = mr2.extract(o1)
 
