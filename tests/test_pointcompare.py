@@ -77,7 +77,7 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
     )
     mr = modelresult_oresund_WL
     cmp = ms.match(o1, mr)
-    df = cmp.skill().df
+    df = cmp.skill().to_dataframe()
     assert not np.any(np.isnan(df))
 
 
@@ -161,11 +161,11 @@ def test_skill(klagshamn, drogden):
 
     cc = ms.match([klagshamn, drogden], mr)
 
-    df = cc.skill().df
+    df = cc.skill().to_dataframe()
     assert df.loc["Klagshamn"].n == 71
 
     # Filtered skill
-    df = cc.sel(observation="Klagshamn").skill().df
+    df = cc.sel(observation="Klagshamn").skill().to_dataframe()
     assert df.loc["Klagshamn"].n == 71
 
 
@@ -176,7 +176,7 @@ def test_skill_choose_metrics(klagshamn, drogden):
 
     cc.metrics = ["mae", "si"]
 
-    df = cc.skill().df
+    df = cc.skill().to_dataframe()
 
     assert "mae" in df.columns
     assert "rmse" not in df.columns
@@ -191,17 +191,17 @@ def test_skill_choose_metrics(klagshamn, drogden):
 def test_skill_choose_metrics_back_defaults(cc):
     cc.metrics = ["kge", "nse", "max_error"]
 
-    df = cc.skill().df
+    df = cc.skill().to_dataframe()
     assert "kge" in df.columns
     assert "rmse" not in df.columns
 
-    df = cc.mean_skill().df
+    df = cc.mean_skill().to_dataframe()
     assert "kge" in df.columns
     assert "rmse" not in df.columns
 
     cc.metrics = None  # go back to defaults
 
-    df = cc.mean_skill().df
+    df = cc.mean_skill().to_dataframe()
     assert "kge" not in df.columns
     assert "rmse" in df.columns
 

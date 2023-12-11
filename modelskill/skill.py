@@ -4,7 +4,7 @@ from typing import Iterable, Collection, overload, Hashable
 import numpy as np
 import pandas as pd
 
-from matplotlib import pyplot as plt
+from .plotting._misc import _get_fig_ax
 
 
 # TODO remove ?
@@ -139,6 +139,7 @@ class SkillArrayPlotter:
         show_numbers=True,
         precision=3,
         fmt=None,
+        ax=None,
         figsize=None,
         title=None,
         cmap=None,
@@ -156,12 +157,18 @@ class SkillArrayPlotter:
             number of decimals if show_numbers, by default 3
         fmt : str, optional
             format string, e.g. ".0%" to show value as percentage
+        ax : Axes, optional
+            matplotlib axes, by default None
         figsize : Tuple(float, float), optional
             figure size, by default None
         title : str, optional
             plot title, by default name of statistic
         cmap : str, optional
             colormap, by default "OrRd" ("coolwarm" if bias)
+
+        Returns
+        -------
+        AxesSubplot
 
         Examples
         --------
@@ -202,12 +209,12 @@ class SkillArrayPlotter:
 
         if figsize is None:
             figsize = (nx, ny)
-        plt.figure(figsize=figsize)
-        plt.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
-        plt.gca().set_xticks(np.arange(nx) + 0.5)
-        plt.gca().set_xticklabels(xlabels, rotation=90)
-        plt.gca().set_yticks(np.arange(ny) + 0.5)
-        plt.gca().set_yticklabels(ylabels)
+        fig, ax = _get_fig_ax(ax, figsize)
+        pcm = ax.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
+        ax.set_xticks(np.arange(nx) + 0.5)
+        ax.set_xticklabels(xlabels, rotation=90)
+        ax.set_yticks(np.arange(ny) + 0.5)
+        ax.set_yticklabels(ylabels)
         if show_numbers:
             mean_val = df.to_numpy().mean()
             for ii in range(ny):
@@ -218,7 +225,7 @@ class SkillArrayPlotter:
                         col = "w" if np.abs(val) > (0.7 * mm) else "k"
                     if fmt is not None:
                         val = fmt.format(val)
-                    plt.text(
+                    ax.text(
                         jj + 0.5,
                         ii + 0.5,
                         val,
@@ -228,8 +235,9 @@ class SkillArrayPlotter:
                         color=col,
                     )
         else:
-            plt.colorbar()
-        plt.title(title, fontsize=14)
+            fig.colorbar(pcm, ax=ax)
+        ax.set_title(title, fontsize=14)
+        return ax
 
 
 class DeprecatedSkillPlotter:
@@ -245,19 +253,19 @@ class DeprecatedSkillPlotter:
 
     def line(self, field: str, **kwargs):
         self._deprecated_warning("line", field)
-        self.skilltable[field].plot.line(**kwargs)
+        return self.skilltable[field].plot.line(**kwargs)
 
     def bar(self, field: str, **kwargs):
         self._deprecated_warning("bar", field)
-        self.skilltable[field].plot.bar(**kwargs)
+        return self.skilltable[field].plot.bar(**kwargs)
 
     def barh(self, field: str, **kwargs):
         self._deprecated_warning("barh", field)
-        self.skilltable[field].plot.barh(**kwargs)
+        return self.skilltable[field].plot.barh(**kwargs)
 
     def grid(self, field: str, **kwargs):
         self._deprecated_warning("grid", field)
-        self.skilltable[field].plot.grid(**kwargs)
+        return self.skilltable[field].plot.grid(**kwargs)
 
 
 class SkillArray:
@@ -265,7 +273,7 @@ class SkillArray:
         self.ser = ser
         self.plot = SkillArrayPlotter(self)
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         return self.ser.to_frame()
 
     def __repr__(self):
@@ -332,7 +340,7 @@ class SkillTable:
     def __len__(self):
         return len(self.df)
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         return self.df
 
     def __repr__(self):

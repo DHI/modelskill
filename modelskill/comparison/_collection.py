@@ -769,7 +769,7 @@ class ComparerCollection(Mapping):
         s = cmp.skill(metrics=metrics)
         if s is None:
             return None
-        skilldf = s.df
+        skilldf = s.to_dataframe()
 
         # weights
         weights = cmp._parse_weights(weights, s.obs_names)

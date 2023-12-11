@@ -1033,7 +1033,7 @@ class Comparer:
         )
         # if s is None:
         #    return
-        df = s.df
+        df = s.to_dataframe()
         values = df[metric.__name__].values
         if len(values) == 1:
             values = values[0]
