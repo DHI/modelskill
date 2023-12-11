@@ -232,7 +232,7 @@ class SkillArrayPlotter:
         plt.title(title, fontsize=14)
 
 
-class SkillArray:  # or SkillSeries?
+class SkillArray:
     def __init__(self, ser) -> None:
         self.ser = ser
         self.plot = SkillArrayPlotter(self)
@@ -251,7 +251,7 @@ class SkillArray:  # or SkillSeries?
         return self.ser.name
 
 
-class SkillFrame:
+class SkillTable:
     """
     SkillFrame object for visualization and analysis returned by
     the comparer's skill method. The object wraps the pd.DataFrame
@@ -317,15 +317,15 @@ class SkillFrame:
         ...
 
     @overload
-    def __getitem__(self, key: Iterable[Hashable]) -> SkillFrame:
+    def __getitem__(self, key: Iterable[Hashable]) -> SkillTable:
         ...
 
-    def __getitem__(self, key) -> SkillArray | SkillFrame:
+    def __getitem__(self, key) -> SkillArray | SkillTable:
         result = self.df.iloc[key] if isinstance(key, int) else self.df[key]
         if isinstance(result, pd.Series):
             return SkillArray(result)
         elif isinstance(result, pd.DataFrame):
-            return SkillFrame(result)
+            return SkillTable(result)
         else:
             return result
 

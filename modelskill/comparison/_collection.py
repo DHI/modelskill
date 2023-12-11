@@ -12,7 +12,7 @@ from .. import metrics as mtr
 from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
-from ..skill import SkillFrame
+from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 from ..settings import options, reset_option
 
@@ -415,7 +415,7 @@ class ComparerCollection(Mapping):
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
         **kwargs,
-    ) -> Optional[SkillFrame]:
+    ) -> Optional[SkillTable]:
         """Aggregated skill assessment of model(s)
 
         Parameters
@@ -491,7 +491,7 @@ class ComparerCollection(Mapping):
 
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
-        return SkillFrame(res)
+        return SkillTable(res)
 
     def _add_as_col_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "variable"]
@@ -695,7 +695,7 @@ class ComparerCollection(Mapping):
         weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[SkillFrame]:  # TODO raise error if no data?
+    ) -> Optional[SkillTable]:  # TODO raise error if no data?
         """Weighted mean of skills
 
         First, the skill is calculated per observation,
@@ -789,14 +789,14 @@ class ComparerCollection(Mapping):
 
         # output
         res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
-        return SkillFrame(res.astype({"n": int}))
+        return SkillTable(res.astype({"n": int}))
 
     def mean_skill_points(
         self,
         *,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[SkillFrame]:  # TODO raise error if no data?
+    ) -> Optional[SkillTable]:  # TODO raise error if no data?
         """Mean skill of all observational points
 
         All data points are pooled (disregarding which observation they belong to),
