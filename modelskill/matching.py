@@ -410,7 +410,7 @@ def match_space_time(
             set(data.data_vars)
         ):
             raise ValueError(
-                f"Model and observation have overlapping variables: {overlapping_names}"
+                f"Model: '{mr.name}' and observation have overlapping variables: {overlapping_names}"
             )
 
         # TODO: is name needed?
