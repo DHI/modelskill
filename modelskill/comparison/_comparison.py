@@ -32,7 +32,7 @@ from ._utils import (
     TimeTypes,
     IdOrNameTypes,
 )
-from ..skill import AggregatedSkill
+from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 from ..settings import options, register_option, reset_option
 from ..utils import _get_name
@@ -911,7 +911,7 @@ class Comparer:
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> AggregatedSkill:
+    ) -> SkillTable:
         """Skill assessment of model(s)
 
         Parameters
@@ -926,7 +926,7 @@ class Comparer:
 
         Returns
         -------
-        AggregatedSkill
+        SkillTable
             skill assessment object
 
         See also
@@ -969,7 +969,7 @@ class Comparer:
         df = cmp.to_dataframe()  # TODO: avoid df if possible?
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
-        return AggregatedSkill(res)
+        return SkillTable(res)
 
     def _add_as_col_if_not_in_index(self, df, skilldf):
         """Add a field to skilldf if unique in df"""

@@ -2,9 +2,11 @@
 
 ## Aggregated Skill
 
-::: modelskill.skill.AggregatedSkill
+::: modelskill.skill.SkillTable
 
-::: modelskill.skill.AggregatedSkillPlotter
+::: modelskill.skill.SkillArray
+
+::: modelskill.skill.SkillArrayPlotter
 
 ## Gridded Skill
 
