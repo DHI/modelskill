@@ -316,7 +316,7 @@ class SkillTable:
     >>> s.rmse.plot.bar()
     """
 
-    large_is_best_metrics = [
+    _large_is_best_metrics = [
         "cc",
         "corrcoef",
         "r2",
@@ -325,7 +325,7 @@ class SkillTable:
         "nash_sutcliffe_efficiency",
         "nse",
     ]
-    small_is_best_metrics = [
+    _small_is_best_metrics = [
         "mae",
         "mape",
         "mean_absolute_error",
@@ -338,8 +338,8 @@ class SkillTable:
         "mef",
         "model_efficiency_factor",
     ]
-    one_is_best_metrics = ["lin_slope"]
-    zero_is_best_metrics = ["bias"]
+    _one_is_best_metrics = ["lin_slope"]
+    _zero_is_best_metrics = ["bias"]
 
     def __init__(self, data: xr.Dataset | pd.DataFrame):
         self.data: xr.Dataset = (
@@ -566,22 +566,21 @@ class SkillTable:
     def plot_barh(self, **kwargs):
         return self.plot.barh(**kwargs)
 
-    def plot_grid(
-        self,
-        **kwargs,
-    ):
+    def plot_grid(self, **kwargs):
         return self.plot.grid(**kwargs)
 
     def round(self, decimals=3):
-        """round all values in dataframe
+        """Round all values in SkillTable
 
         Parameters
         ----------
         decimals : int, optional
-            Number of decimal places to round to (default: 3). If decimals is negative, it specifies the number of positions to the left of the decimal point.
+            Number of decimal places to round to (default: 3). 
+            If decimals is negative, it specifies the number of 
+            positions to the left of the decimal point.
         """
 
-        return self.__class__(self._df.round(decimals=decimals))
+        return self.__class__(self.data.round(decimals=decimals))
 
     def style(
         self,
@@ -591,7 +590,7 @@ class SkillTable:
         show_best=True,
         **kwargs,
     ):
-        """style dataframe with colors using pandas style
+        """Style SkillTable with colors using pandas style
 
         Parameters
         ----------
@@ -661,19 +660,19 @@ class SkillTable:
             )
             bg_cols.remove("lin_slope")
         if len(bg_cols) > 0:
-            cols = list(set(self.small_is_best_metrics) & set(bg_cols))
+            cols = list(set(self._small_is_best_metrics) & set(bg_cols))
             sdf = sdf.background_gradient(subset=cols, cmap=cmap)
 
-            cols = list(set(self.large_is_best_metrics) & set(bg_cols))
+            cols = list(set(self._large_is_best_metrics) & set(bg_cols))
             cmap_r = self._reverse_colormap(cmap)
             sdf = sdf.background_gradient(subset=cols, cmap=cmap_r)
 
         if show_best:
-            cols = list(set(self.large_is_best_metrics) & set(float_cols))
+            cols = list(set(self._large_is_best_metrics) & set(float_cols))
             sdf = sdf.apply(self._style_max, subset=cols)
-            cols = list(set(self.small_is_best_metrics) & set(float_cols))
+            cols = list(set(self._small_is_best_metrics) & set(float_cols))
             sdf = sdf.apply(self._style_min, subset=cols)
-            cols = list(set(self.one_is_best_metrics) & set(float_cols))
+            cols = list(set(self._one_is_best_metrics) & set(float_cols))
             sdf = sdf.apply(self._style_one_best, subset=cols)
             if "bias" in float_cols:
                 sdf = sdf.apply(self._style_abs_min, subset=["bias"])
