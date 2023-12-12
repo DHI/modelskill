@@ -69,6 +69,16 @@ def test_gridded_skill_multi_model(cc2) -> None:
     assert len(ss.field_names) == 3
 
 
+def test_gridded_skill_is_subsettable(cc2) -> None:
+    ss = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
+    ss.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
+
+    cmp = cc2[0]
+
+    ss2 = cmp.gridded_skill(bins=3, metrics=["rmse", "bias"])
+    ss2.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
+
+
 def test_gridded_skill_plot(cmp1) -> None:
     ss = cmp1.gridded_skill(metrics=["rmse", "bias"])
     ss.bias.plot()
