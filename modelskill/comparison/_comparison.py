@@ -786,10 +786,10 @@ class Comparer:
 
             return cmp
         else:
-            cc = ComparerCollection()
-            cc.add_comparer(self)
-            cc.add_comparer(other)
-            return cc
+            if isinstance(other, Comparer):
+                return ComparerCollection([self, other])
+            elif isinstance(other, ComparerCollection):
+                return ComparerCollection([self, *other])
 
     def sel(
         self,

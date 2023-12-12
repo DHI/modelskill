@@ -1,7 +1,17 @@
+from __future__ import annotations
 import os
 from pathlib import Path
 import tempfile
-from typing import Dict, List, Union, Optional, Mapping, Sequence, Iterable
+from typing import (
+    Dict,
+    List,
+    Union,
+    Optional,
+    Mapping,
+    Iterable,
+    overload,
+    Hashable,
+)
 import warnings
 import zipfile
 import numpy as np
@@ -82,45 +92,23 @@ class ComparerCollection(Mapping):
     >>> cc = ms.match(obs=[o1,o2], mod=mr)
     """
 
-    comparers: Dict[str, Comparer]
     plotter = ComparerCollectionPlotter
 
     """Collection of Comparers, indexed by name"""
 
-    def __init__(self, comparers=None) -> None:
-        self.comparers = {}
-        self.add_comparer(comparers)
+    def __init__(self, comparers: Iterable[Comparer]) -> None:
+        self.comparers: Dict[str, Comparer] = {}
+        self._insert_comparers(comparers)
         self.plot = ComparerCollection.plotter(self)
 
-    def add_comparer(self, comparer: Union["Comparer", "ComparerCollection"]) -> None:
-        """Add another Comparer to this collection.
-
-        Parameters
-        ----------
-        comparer : (Comparer, ComparerCollection)
-            Comparer to add to this collection
-        """
-        if isinstance(comparer, (ComparerCollection, Sequence)):
+    def _insert_comparers(self, comparer: Union[Comparer, Iterable[Comparer]]) -> None:
+        if isinstance(comparer, Iterable):
             for c in comparer:
-                self._add_comparer(c)
+                self[c.name] = c
         elif isinstance(comparer, Comparer):
-            self._add_comparer(comparer)
+            self[comparer.name] = comparer
         else:
             pass
-
-    def _add_comparer(self, comparer: Union[Comparer, None]) -> None:
-        if comparer is None:  # TODO please don't pass None
-            return
-        assert isinstance(
-            comparer, Comparer
-        ), f"comparer must be a Comparer, not {type(comparer)}"
-        if comparer.name in self.comparers:
-            # comparer with this name already exists!
-            # maybe the user is trying to add a new model
-            # or a new time period
-            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer  # type: ignore
-        else:
-            self.comparers[comparer.name] = comparer
 
     @property
     def name(self) -> str:
@@ -235,17 +223,41 @@ class ComparerCollection(Mapping):
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
 
-    def __getitem__(self, x) -> Comparer:
+    @overload
+    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection:
+        ...
+
+    @overload
+    def __getitem__(self, x: int | Hashable) -> Comparer:
+        ...
+
+    def __getitem__(self, x):
+        if isinstance(x, str):
+            return self.comparers[x]
+
         if isinstance(x, slice):
-            raise NotImplementedError("slicing not implemented")
-        #    cmps = [self[xi] for xi in range(*x.indices(len(self)))]
-        #    cc = ComparerCollection(cmps)
-        #    return cc
+            idxs = list(range(*x.indices(len(self))))
+            return ComparerCollection([self[i] for i in idxs])
 
         if isinstance(x, int):
-            x = _get_name(x, self.obs_names)
+            name = _get_name(x, self.obs_names)
+            return self.comparers[name]
 
-        return self.comparers[x]
+        if isinstance(x, Iterable):
+            cmps = [self[i] for i in x]
+            return ComparerCollection(cmps)
+
+    def __setitem__(self, x: str, value: Comparer) -> None:
+        assert isinstance(
+            value, Comparer
+        ), f"comparer must be a Comparer, not {type(value)}"
+        if x in self.comparers:
+            # comparer with this name already exists!
+            # maybe the user is trying to add a new model
+            # or a new time period
+            self.comparers[x] = self.comparers[x] + value  # type: ignore
+        else:
+            self.comparers[x] = value
 
     def __len__(self) -> int:
         return len(self.comparers)
@@ -256,9 +268,7 @@ class ComparerCollection(Mapping):
     def __copy__(self):
         cls = self.__class__
         cp = cls.__new__(cls)
-        cp.__init__()
-        for c in self.comparers.values():
-            cp.add_comparer(c)
+        cp.__init__(list(self.comparers))  # TODO should this use deepcopy?
         return cp
 
     def copy(self):
@@ -270,10 +280,10 @@ class ComparerCollection(Mapping):
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        cc = ComparerCollection()
-        cc.add_comparer(self)
-        cc.add_comparer(other)
-        return cc
+        if isinstance(other, Comparer):
+            return ComparerCollection([*self, other])
+        elif isinstance(other, ComparerCollection):
+            return ComparerCollection([*self, *other])
 
     def sel(
         self,
@@ -334,7 +344,7 @@ class ComparerCollection(Mapping):
         else:
             variable = self.var_names
 
-        cc = ComparerCollection()
+        cmps = []
         for cmp in self.comparers.values():
             if cmp.name in observation and cmp.quantity.name in variable:
                 thismodel = (
@@ -352,7 +362,8 @@ class ComparerCollection(Mapping):
                 if cmpsel is not None:
                     # TODO: check if cmpsel is empty
                     if cmpsel.n_points > 0:
-                        cc.add_comparer(cmpsel)
+                        cmps.append(cmpsel)
+        cc = ComparerCollection(cmps)
 
         if kwargs:
             cc = cc.filter_by_attrs(**kwargs)
@@ -382,15 +393,15 @@ class ComparerCollection(Mapping):
         <ComparerCollection>
         Comparer: alti
         """
-        cc = ComparerCollection()
+        cmps = []
         for cmp in self.comparers.values():
             for k, v in kwargs.items():
                 # TODO: should we also filter on cmp.data.Observation.attrs?
                 if cmp.data.attrs.get(k) != v:
                     break
             else:
-                cc.add_comparer(cmp)
-        return cc
+                cmps.append(cmp)
+        return ComparerCollection(cmps)
 
     def query(self, query: str) -> "ComparerCollection":
         """Select data based on a query.
