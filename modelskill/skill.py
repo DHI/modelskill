@@ -287,7 +287,7 @@ class SkillArray:
         self.plot = SkillArrayPlotter(self)
 
     def to_dataframe(self) -> pd.DataFrame:
-        return self.data.to_dataframe()
+        return self.data.to_dataframe().dropna(how="all")
 
     def __repr__(self):
         return repr(self.to_dataframe())
