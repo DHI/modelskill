@@ -111,7 +111,7 @@ class Quantity:
         Name of the quantity
     unit : str
         Unit of the quantity
-    circular : bool, optional
+    is_directional : bool, optional
 
     Examples
     --------
@@ -128,7 +128,7 @@ class Quantity:
 
     name: str
     unit: str
-    circular: bool = False
+    is_directional: bool = False
 
     def __str__(self):
         return f"{self.name} [{self.unit}]"
@@ -164,7 +164,12 @@ class Quantity:
 
     @staticmethod
     def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo) -> "Quantity":
-        return Quantity(name=repr(iteminfo.type), unit=iteminfo.unit.name)
+        unit = iteminfo.unit.name
+
+        is_directional = unit == "degree"
+        return Quantity(
+            name=repr(iteminfo.type), unit=unit, is_directional=is_directional
+        )
 
     @staticmethod
     def from_mikeio_eum_name(type_name: str) -> "Quantity":

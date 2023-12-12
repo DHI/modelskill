@@ -355,7 +355,7 @@ def _matched_data_to_xarray(
 
     ds["Observation"].attrs["long_name"] = q.name
     ds["Observation"].attrs["units"] = q.unit
-    ds["Observation"].attrs["circular"] = q.circular
+    ds["Observation"].attrs["is_directional"] = int(q.is_directional)
 
     return ds
 
@@ -483,15 +483,12 @@ class Comparer:
     @property
     def quantity(self) -> Quantity:
         """Quantity object"""
-
-        circular = False
-        if "circular" in self.data[self._obs_name].attrs:
-            circular = self.data[self._obs_name].attrs["circular"]
-
         return Quantity(
             name=self.data[self._obs_name].attrs["long_name"],
             unit=self.data[self._obs_name].attrs["units"],
-            circular=circular,
+            is_directional=bool(
+                self.data[self._obs_name].attrs.get("is_directional", False)
+            ),
         )
 
     @quantity.setter
@@ -499,7 +496,7 @@ class Comparer:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
         self.data[self._obs_name].attrs["long_name"] = quantity.name
         self.data[self._obs_name].attrs["units"] = quantity.unit
-        self.data[self._obs_name].attrs["circular"] = quantity.circular
+        self.data[self._obs_name].attrs["is_directional"] = int(quantity.is_directional)
 
     @property
     def n_points(self) -> int:
@@ -597,7 +594,7 @@ class Comparer:
 
     @property
     def metrics(self):
-        if self.quantity.circular:
+        if self.quantity.is_directional:
             # TODO define default circular metrics elsewhere
             return [mtr.c_bias, mtr.c_rmse, mtr.c_urmse, mtr.c_max_error]
         else:

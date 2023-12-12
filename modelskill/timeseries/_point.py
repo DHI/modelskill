@@ -85,6 +85,7 @@ def _parse_point_input(
 
     ds[name].attrs["long_name"] = model_quantity.name
     ds[name].attrs["units"] = model_quantity.unit
+    ds[name].attrs["is_directional"] = int(model_quantity.is_directional)
 
     ds.attrs["gtype"] = str(GeometryType.POINT)
     assert isinstance(ds, xr.Dataset)

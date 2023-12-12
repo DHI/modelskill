@@ -159,3 +159,10 @@ def test_point_model_data_can_be_persisted_as_netcdf(point_df, tmp_path):
     mr = ms.PointModelResult(point_df, item=0)
 
     mr.data.to_netcdf(tmp_path / "test.nc")
+
+
+def test_wave_directional_data_is_directional_by_default():
+    mr = ms.PointModelResult(
+        "tests/testdata/wave_dir.dfs0", item="China_Model: Mean Wave Direction"
+    )
+    assert mr.quantity.is_directional

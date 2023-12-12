@@ -164,6 +164,7 @@ class TimeSeries:
         return Quantity(
             name=self.data[self.name].attrs["long_name"],
             unit=self.data[self.name].attrs["units"],
+            is_directional=self.data[self.name].attrs.get("is_directional", False),
         )
 
     @quantity.setter
@@ -171,6 +172,7 @@ class TimeSeries:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
         self.data[self.name].attrs["long_name"] = quantity.name
         self.data[self.name].attrs["units"] = quantity.unit
+        self.data[self.name].attrs["is_directional"] = quantity.is_directional
 
     @property
     def color(self) -> str:

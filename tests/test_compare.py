@@ -356,7 +356,7 @@ def test_wind_directions():
     cc = ms.from_matched(
         df,
         obs_item="obs",
-        quantity=ms.Quantity("Wind direction", unit="degree", circular=True),
+        quantity=ms.Quantity("Wind direction", unit="degree", is_directional=True),
     )
     s = cc.skill()
     assert s.df.loc["obs", "c_max_error"] == pytest.approx(2.0)
