@@ -118,7 +118,7 @@ class Quantity:
     --------
     >>> wl = Quantity(name="Water Level", unit="meter")
     >>> wl
-    Quantity(name='Water Level', unit='meter', is_directional=False)
+    Quantity(name='Water Level', unit='meter')
     >>> wl.name
     'Water Level'
     >>> wl.unit
@@ -136,6 +136,13 @@ class Quantity:
 
     def __str__(self):
         return f"{self.name} [{self.unit}]"
+
+    def __repr__(self):
+        if self.is_directional:
+            return super().__repr__()
+        else:
+            # hide is_directional if False to avoid clutter
+            return f"Quantity(name='{self.name}', unit='{self.unit}')"
 
     def is_compatible(self, other) -> bool:
         """Check if the quantity is compatible with another quantity
