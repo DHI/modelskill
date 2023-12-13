@@ -966,9 +966,20 @@ class Comparer:
 
         by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
 
+        # TODO refactor common functionality Comparer and ComparerCollection
         df = cmp.to_dataframe()  # TODO: avoid df if possible?
-        # res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = _groupby_df(df, by, metrics)
+        res["x"] = df.groupby(by=by, observed=False).x.first()
+        res["y"] = df.groupby(by=by, observed=False).y.first()
+
+        # set "x" and "y" to np.nan if they are not the same for all rows in group
+        res.loc[
+            res.groupby(by=by, observed=False).x.transform("nunique") > 1, "x"
+        ] = np.nan
+        res.loc[
+            res.groupby(by=by, observed=False).y.transform("nunique") > 1, "y"
+        ] = np.nan
+
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res, metrics=metrics)
 

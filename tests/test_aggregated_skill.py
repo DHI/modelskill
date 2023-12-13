@@ -215,7 +215,14 @@ def test_skill_to_geo_dataframe(o1, o2, o3):
     mr1 = ms.DfsuModelResult(
         "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu", item=0, name="SW_1"
     )
-    cmp = ms.compare([o1, o2, o3], mr1)
+    cc = ms.compare([o1, o2, o3], mr1)
+    s = cc.skill()
+    gdf = s.to_geodataframe()
+
+    # assert that the geometry is a point
+    assert gdf.geometry.geom_type[0] == "Point"
+
+    cmp = cc[0]
     s = cmp.skill()
     gdf = s.to_geodataframe()
 
