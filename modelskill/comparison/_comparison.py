@@ -2,12 +2,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Callable,
     Dict,
     List,
     Mapping,
     Optional,
     Union,
     Iterable,
+    Protocol,
     Sequence,
     TYPE_CHECKING,
 )
@@ -40,6 +42,12 @@ from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+
+class Scoreable(Protocol):
+    # TODO should this be able to return None?
+    def score(self, metric: str | Callable, **kwargs) -> Dict[str, float] | None:
+        ...
 
 
 def _parse_dataset(data) -> xr.Dataset:
@@ -358,7 +366,7 @@ def _matched_data_to_xarray(
     return ds
 
 
-class Comparer:
+class Comparer(Scoreable):
     """
     Comparer class for comparing model and observation data.
 
@@ -458,7 +466,8 @@ class Comparer:
             f"Observation: {self.name}, n_points={self.n_points}",
         ]
         for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.sel(model=model).score():.3f}")
+            out.append(f" Model: {model}, rmse={self.score()[model]:.3f}")
+
         for var in self.aux_names:
             out.append(f" Auxiliary: {var}")
         return str.join("\n", out)
@@ -996,9 +1005,9 @@ class Comparer:
 
     def score(
         self,
-        metric=mtr.rmse,
+        metric: str | Callable = mtr.rmse,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Model skill score
 
         Parameters
@@ -1044,10 +1053,17 @@ class Comparer:
         # if s is None:
         #    return
         df = s.to_dataframe()
-        values = df[metric.__name__].values
+
+        # TODO clean up
+        metric_name = metric if isinstance(metric, str) else metric.__name__
+
+        values = df[metric_name].values
         if len(values) == 1:
-            values = values[0]
-        return values
+            value = values[0]
+            return {self.mod_names[0]: value}
+        else:
+            # TODO check if this is correct
+            return {m: v for m, v in zip(self.mod_names, values)}
 
     def spatial_skill(
         self,

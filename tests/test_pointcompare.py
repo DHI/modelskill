@@ -120,8 +120,11 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 
     cc = ms.match([klagshamn, drogden], mr)
 
-    assert cc.score(metric=root_mean_squared_error) > 0.0
-    cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
+    assert cc.score(metric=root_mean_squared_error)[
+        "Oresund2D_subset"
+    ] == pytest.approx(0.1986296276629835)
+    s = cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
+    s.root_mean_squared_error.data.mean() == pytest.approx(0.1986296276629835)
 
 
 # def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):

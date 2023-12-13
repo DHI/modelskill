@@ -419,7 +419,8 @@ def test_multiple_forecasts_matched_data():
     f_s = cmp.score("rmse")
     a_s = analysis.score("rmse")
 
-    assert a_s < f_s
+    assert a_s["m1"] == pytest.approx(0.09999999999999998)
+    assert f_s["m1"] == pytest.approx(1.3114877048604001)
 
 
 def test_matched_aux_variables(pt_df):

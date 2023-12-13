@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import tempfile
 from typing import (
+    Callable,
     Dict,
     List,
     Union,
@@ -27,7 +28,7 @@ from ..skill_grid import SkillGrid
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
-from ._comparison import Comparer
+from ._comparison import Comparer, Scoreable
 from ._utils import (
     _parse_metric,
     _add_spatial_grid_to_df,
@@ -79,7 +80,7 @@ def _all_df_template(n_variables: int = 1):
     return res
 
 
-class ComparerCollection(Mapping):
+class ComparerCollection(Mapping, Scoreable):
     """
     Collection of comparers, constructed by calling the `modelskill.match` method.
 
@@ -944,11 +945,9 @@ class ComparerCollection(Mapping):
 
     def score(
         self,
-        *,
-        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
-        metric=mtr.rmse,
+        metric: str | Callable = mtr.rmse,
         **kwargs,
-    ) -> Optional[float]:  # TODO raise error if no data?
+    ) -> Dict[str, float] | None:
         """Weighted mean score of model(s) over all observations
 
         Wrapping mean_skill() with a single metric.
@@ -993,6 +992,8 @@ class ComparerCollection(Mapping):
         >>> cc.score(weights='points', metric="mape")
         8.414442957854142
         """
+
+        weights = kwargs.pop("weights", None)
         metric = _parse_metric(metric, self.metrics)
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
@@ -1007,7 +1008,6 @@ class ComparerCollection(Mapping):
             # TODO: these two lines looks familiar, extract to function
             models = [model] if np.isscalar(model) else model  # type: ignore
             models = [_get_name(m, self.mod_names) for m in models]  # type: ignore
-        n_models = len(models)
 
         cmp = self.sel(
             model=models,
@@ -1028,16 +1028,16 @@ class ComparerCollection(Mapping):
 
         df = skill.to_dataframe()
 
-        if n_models == 1:
-            score = df[metric.__name__].values.mean()
-        else:
-            score = {}
-            for model in models:
-                mtr_val = df.loc[model][metric.__name__]
-                if not np.isscalar(mtr_val):
-                    # e.g. mean over different variables!
-                    mtr_val = mtr_val.values.mean()
-                score[model] = mtr_val
+        metric_name = metric if isinstance(metric, str) else metric.__name__
+
+        # TODO dict comprehension?
+        score = {}
+        for model in models:
+            mtr_val = df.loc[model][metric_name]
+            if not np.isscalar(mtr_val):
+                # e.g. mean over different variables!
+                mtr_val = mtr_val.values.mean()
+            score[model] = mtr_val
 
         return score
 
