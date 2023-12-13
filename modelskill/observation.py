@@ -29,6 +29,27 @@ def observation(
     gtype: Optional[Literal["point", "track"]] = None,
     **kwargs,
 ):
+    """A factory function for creating an appropriate observation object
+    based on the data and args.
+
+    If 'x' or 'y' is given, a PointObservation is created.
+    If 'x_item' or 'y_item' is given, a TrackObservation is created.
+
+    Parameters
+    ----------
+    data : DataInputType
+        The data to be used for creating the Observation object.
+    gtype : Optional[Literal["point", "track"]]
+        The geometry type of the data. If not specified, it will be guessed from the data.
+    **kwargs
+        Additional keyword arguments to be passed to the Observation constructor.
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
+    """
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
     else:
@@ -136,10 +157,11 @@ class PointObservation(Observation):
 
     Examples
     --------
-    >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
-    >>> o1 = PointObservation("klagshamn.dfs0", item="Water Level", x=366844, y=6154291)
-    >>> o1 = PointObservation(df, item=0, x=366844, y=6154291, name="Klagshamn")
-    >>> o1 = PointObservation(df["Water Level"], x=366844, y=6154291)
+    >>> import modelskill as ms
+    >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o2 = ms.PointObservation("klagshamn.dfs0", item="Water Level", x=366844, y=6154291)
+    >>> o3 = ms.PointObservation(df, item=0, x=366844, y=6154291, name="Klagshamn")
+    >>> o4 = ms.PointObservation(df["Water Level"], x=366844, y=6154291)
     """
 
     def __init__(
@@ -238,13 +260,14 @@ class TrackObservation(Observation):
 
     Examples
     --------
-    >>> o1 = TrackObservation("track.dfs0", item=2, name="c2")
+    >>> import modelskill as ms
+    >>> o1 = ms.TrackObservation("track.dfs0", item=2, name="c2")
 
-    >>> o1 = TrackObservation("track.dfs0", item="wind_speed", name="c2")
+    >>> o1 = ms.TrackObservation("track.dfs0", item="wind_speed", name="c2")
 
-    >>> o1 = TrackObservation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
+    >>> o1 = ms.TrackObservation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
 
-    >>> o1 = TrackObservation("track_wl.dfs0", item="wl", x_item="lon", y_item="lat")
+    >>> o1 = ms.TrackObservation("track_wl.dfs0", item="wl", x_item="lon", y_item="lat")
 
     >>> df = pd.DataFrame(
     ...         {
