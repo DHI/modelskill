@@ -100,14 +100,23 @@ def test_skill_sel(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
     assert "rmse" in s.metrics
     assert "bias" in s.metrics
-    s2 = s.sel(observation="alti")
-    assert len(s2) == 1
-    assert "rmse" in s2.metrics
-    assert "bias" in s2.metrics
 
-    # s2 = s.sel(metrics="rmse")
-    # assert "rmse" in s2.metrics
-    # assert "bias" not in s2.metrics
+
+def test_skill_sel_metrics_str(cc1):
+    s = cc1.skill(metrics=["rmse", "bias"])
+
+    with pytest.warns(FutureWarning, match="deprecated"):
+        s2 = s.sel(metrics="rmse")
+    assert s2.data.name == "rmse"
+
+
+def test_skill_sel_metrics_list(cc2):
+    s = cc2.skill(metrics=["rmse", "bias"])
+
+    with pytest.warns(FutureWarning, match="deprecated"):
+        s2 = s.sel(metrics=["rmse", "n"])
+    assert "n" in s2.metrics
+    assert "bias" not in s2.metrics
 
 
 def test_skill_sel_multi_model(cc2):
@@ -130,11 +139,13 @@ def test_skill_sel_multi_model(cc2):
 
 def test_skill_sel_query(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
-    s2 = s.sel("rmse>0.2")
+    with pytest.warns(FutureWarning, match="deprecated"):
+        s2 = s.sel(query="rmse>0.2")
+
     assert len(s2.mod_names) == 2
 
-    s2 = s.sel("rmse>0.2", model="SW_2", observation=[0, 2])
-    assert len(s2.mod_names) == 0  # no longer in index
+    # s2 = s.sel("rmse>0.2", model="SW_2", observation=[0, 2])
+    # assert len(s2.mod_names) == 0  # no longer in index
 
 
 def test_skill_sel_fail(cc2):

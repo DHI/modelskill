@@ -7,7 +7,8 @@ import xarray as xr
 
 import mikeio
 
-from ..types import GeometryType, PointType, Quantity
+from ..types import GeometryType, PointType
+from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
 
@@ -103,6 +104,11 @@ def _parse_point_input(
     if isinstance(data, mikeio.Dataset):
         if quantity is None:
             quantity = Quantity.from_mikeio_iteminfo(data[0].item)
+
+    if isinstance(data, xr.Dataset):
+        if quantity is None:
+            da = data[sel_items.values]
+            quantity = Quantity.from_cf_attrs(da.attrs)
     model_quantity = Quantity.undefined() if quantity is None else quantity
 
     # convert to xr.Dataset
@@ -139,6 +145,7 @@ def _parse_point_input(
 
     ds[name].attrs["long_name"] = model_quantity.name
     ds[name].attrs["units"] = model_quantity.unit
+    ds[name].attrs["is_directional"] = int(model_quantity.is_directional)
 
     for aux_item in sel_items.aux:
         ds[aux_item].attrs["kind"] = "aux"

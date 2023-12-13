@@ -4,4 +4,4 @@
 
 ## Quantity
 
-::: modelskill.types.Quantity
+::: modelskill.quantity.Quantity

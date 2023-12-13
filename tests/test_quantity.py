@@ -25,3 +25,23 @@ def test_from_EUMType_string():
 def test_unknown_quantity_raises_error():
     with pytest.raises(ValueError):
         ms.Quantity.from_mikeio_eum_name("foo")
+
+
+def test_from_cf_attrs():
+    q = ms.Quantity.from_cf_attrs({"long_name": "Wind speed", "units": "meter"})
+    assert q.name == "Wind speed"
+    assert q.unit == "meter"
+    assert not q.is_directional
+
+
+def test_from_cf_attrs_directional():
+    q = ms.Quantity.from_cf_attrs({"long_name": "Wind direction", "units": "degree"})
+    assert q.name == "Wind direction"
+    assert q.unit == "degree"
+    assert q.is_directional
+
+
+def test_from_cf_attrs_incomplete():
+    q = ms.Quantity.from_cf_attrs({"long_name": "Wind speed"})
+    assert q.name == ""
+    assert q.unit == ""

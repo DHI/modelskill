@@ -201,7 +201,7 @@ def test_skill_choose_metrics(klagshamn, drogden):
     assert "rmse" not in df.columns
 
     # Override defaults
-    df = cc.skill(metrics=["urmse", "r2"]).df
+    df = cc.skill(metrics=["urmse", "r2"]).to_dataframe()
 
     assert "r2" in df.columns
     assert "rmse" not in df.columns

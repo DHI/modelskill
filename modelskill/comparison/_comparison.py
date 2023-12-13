@@ -89,7 +89,6 @@ def _parse_dataset(data) -> xr.Dataset:
         )
 
     # Validate attrs
-    # TODO: should we
     if "gtype" not in data.attrs:
         data.attrs["gtype"] = str(GeometryType.POINT)
     # assert "gtype" in data.attrs, "data must have a gtype attribute"
@@ -166,12 +165,14 @@ def _validate_metrics(metrics) -> None:
     for m in metrics:
         if isinstance(m, str):
             if not mtr.is_valid_metric(m):
-                raise ValueError(f"Unknown metric '{m}'")
+                raise ValueError(
+                    f"Unknown metric '{m}'! Supported metrics are: {mtr.defined_metrics}"
+                )
 
 
 register_option(
     key="metrics.list",
-    defval=[mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    defval=mtr.default_metrics,
     validator=_validate_metrics,
     doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
 )
@@ -352,6 +353,7 @@ def _matched_data_to_xarray(
 
     ds["Observation"].attrs["long_name"] = q.name
     ds["Observation"].attrs["units"] = q.unit
+    ds["Observation"].attrs["is_directional"] = int(q.is_directional)
 
     return ds
 
@@ -391,8 +393,6 @@ class Comparer:
         matched_data: xr.Dataset,
         raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
     ) -> None:
-        self.plot = Comparer.plotter(self)
-
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
             raw_mod_data
@@ -419,6 +419,8 @@ class Comparer:
                 assert isinstance(
                     v, TimeSeries
                 ), f"raw_mod_data[{k}] must be a TimeSeries object"
+
+        self.plot = Comparer.plotter(self)
 
     @staticmethod
     def from_matched_data(
@@ -482,6 +484,9 @@ class Comparer:
         return Quantity(
             name=self.data[self._obs_name].attrs["long_name"],
             unit=self.data[self._obs_name].attrs["units"],
+            is_directional=bool(
+                self.data[self._obs_name].attrs.get("is_directional", False)
+            ),
         )
 
     @quantity.setter
@@ -489,6 +494,7 @@ class Comparer:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
         self.data[self._obs_name].attrs["long_name"] = quantity.name
         self.data[self._obs_name].attrs["units"] = quantity.unit
+        self.data[self._obs_name].attrs["is_directional"] = int(quantity.is_directional)
 
     @property
     def n_points(self) -> int:
@@ -586,7 +592,11 @@ class Comparer:
 
     @property
     def metrics(self):
-        return options.metrics.list
+        if self.quantity.is_directional:
+            # TODO define default circular metrics elsewhere
+            return [mtr.c_bias, mtr.c_rmse, mtr.c_urmse, mtr.c_max_error]
+        else:
+            return options.metrics.list
 
     @metrics.setter
     def metrics(self, values) -> None:
@@ -1169,7 +1179,13 @@ class Comparer:
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SkillGrid(res.to_xarray().squeeze())
+        ds = res.to_xarray().squeeze()
+
+        # change categorial index to coordinates
+        for dim in ("x", "y"):
+            ds[dim] = ds[dim].astype(float)
+
+        return SkillGrid(ds)
 
     @property
     def residual(self):

@@ -8,7 +8,8 @@ import xarray as xr
 
 import mikeio
 
-from ..types import GeometryType, Quantity, TrackType
+from ..types import GeometryType, TrackType
+from ..quantity import Quantity
 from ..utils import _get_name, make_unique_index
 from ._timeseries import _validate_data_var_name
 

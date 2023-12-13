@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 
 from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
-from ..types import Quantity, UnstructuredType
+from ..types import UnstructuredType
+from ..quantity import Quantity
 from ..utils import _get_idx
 from .point import PointModelResult
 from .track import TrackModelResult
