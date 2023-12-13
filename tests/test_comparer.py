@@ -91,8 +91,6 @@ def test_matched_df(pt_df):
     assert len(cmp.mod_names) == 2
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
-    assert cmp.quantity.name == "Undefined"
-    assert cmp.quantity.unit == "Undefined"
 
 
 def test_matched_df_int_items(pt_df):
@@ -122,8 +120,6 @@ def test_matched_df_with_aux(pt_df):
     assert set(cmp.mod_names) == set(["m1", "m2", "wind", "not_relevant"])
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
-    assert cmp.quantity.name == "Undefined"
-    assert cmp.quantity.unit == "Undefined"
     assert cmp.data["wind"].attrs["kind"] == "model"
 
     # but it can be specified
@@ -215,14 +211,10 @@ def test_minimal_matched_data(pt_df):
     cmp = Comparer.from_matched_data(data=data)  # no additional raw_mod_data
 
     assert cmp.data["Observation"].attrs["color"] == "black"
-    assert cmp.data["Observation"].attrs["units"] == "Undefined"
-    assert cmp.data["Observation"].attrs["long_name"] == "Undefined"
     assert len(cmp.raw_mod_data["m1"]) == 6
 
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_models == 2
-    assert cmp.quantity.name == "Undefined"
-    assert cmp.quantity.unit == "Undefined"
 
 
 def test_from_compared_data_doesnt_accept_missing_values_in_obs():

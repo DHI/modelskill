@@ -157,7 +157,7 @@ class Quantity:
 
     @staticmethod
     def undefined() -> "Quantity":
-        return Quantity(name="Undefined", unit="Undefined")
+        return Quantity(name="", unit="")
 
     def to_dict(self) -> Dict[str, str]:
         return {"name": self.name, "unit": self.unit}

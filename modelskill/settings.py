@@ -2,12 +2,12 @@
 The settings module holds package-wide configurables and provides
 a uniform API for working with them.
 
-This module is heavily inspired by pandas config module
-https://github.com/pandas-dev/pandas/tree/main/pandas/_config 
+This module is heavily inspired by [pandas config module](https://github.com/pandas-dev/pandas/tree/main/pandas/_config)
 
 Overview
 ========
 This module supports the following requirements:
+
 - options are referenced using keys in dot.notation, e.g. "x.y.option - z".
 - keys are case-insensitive.
 - functions should accept partial/regex keys, when unambiguous.
@@ -120,7 +120,6 @@ def _set_option(*args, **kwargs) -> None:
 
     if len(args) > 1 and len(args) % 2 != 0:
         raise ValueError("Must provide a value for each key, i.e. even number of args")
-
 
     # default to false
     kwargs.pop("silent", False)
@@ -320,10 +319,6 @@ def register_option(
     validator : Callable, optional
         Function of a single argument, should raise `ValueError` if
         called with a value which is not a legal value for the option.
-    disabled: cb
-        a function of a single argument "key", which is called
-        immediately after an option value is set/reset. key is
-        the full name of the option.
 
     Raises
     ------
@@ -374,17 +369,6 @@ def register_option(
 
 
 def is_type_factory(_type: Type[Any]) -> Callable[[Any], None]:
-    """
-    Parameters
-    ----------
-    `_type` - a type to be compared against (e.g. type(x) == `_type`)
-
-    Returns
-    -------
-    validator - a function of a single argument x , which raises
-                ValueError if type(x) is not equal to `_type`
-    """
-
     def inner(x) -> None:
         if type(x) != _type:
             raise ValueError(f"Value must have type '{_type}'")
@@ -393,16 +377,6 @@ def is_type_factory(_type: Type[Any]) -> Callable[[Any], None]:
 
 
 def is_instance_factory(_type) -> Callable[[Any], None]:
-    """
-    Parameters
-    ----------
-    `_type` - the type to be checked against
-
-    Returns
-    -------
-    validator - a function of a single argument x , which raises
-                ValueError if x is not an instance of `_type`
-    """
     if isinstance(_type, (tuple, list)):
         _type = tuple(_type)
         type_repr = "|".join(map(str, _type))
@@ -430,16 +404,6 @@ is_tuple_list_or_str = is_instance_factory(
 
 
 def is_callable(obj) -> bool:
-    """
-    Parameters
-    ----------
-    `obj` - the object to be checked
-
-    Returns
-    -------
-    validator - returns True if object is callable
-        raises ValueError otherwise.
-    """
     if not callable(obj):
         raise ValueError("Value must be a callable")
     return True

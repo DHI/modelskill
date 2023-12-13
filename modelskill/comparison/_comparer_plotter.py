@@ -503,12 +503,12 @@ class ComparerPlotter:
         ylabel = ylabel or f"Model, {unit_text}"
         title = title or f"{mod_name} vs {cmp.name}"
 
-        skill_df = None
+        skill = None
         units = None
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
-            skill_df = cmp.skill(metrics=metrics)
+            skill = cmp.skill(metrics=metrics)
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:
@@ -537,7 +537,7 @@ class ComparerPlotter:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
-            skill_df=skill_df,
+            skill_df=skill,
             units=units,
             **kwargs,
         )
@@ -598,7 +598,7 @@ class ComparerPlotter:
 
         if s is None:  # TODO
             return
-        df = s.df
+        df = s.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
