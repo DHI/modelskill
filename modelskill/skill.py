@@ -332,7 +332,7 @@ class SkillArray:
 
         gdf = gpd.GeoDataFrame(
             self.data.drop(columns=["x", "y"]),
-            geometry=gpd.points_from_xy(self._df.x, self._df.y),
+            geometry=gpd.points_from_xy(self.data.x, self.data.y),
             crs=crs,
         )
 
@@ -432,10 +432,10 @@ class SkillTable:
         return gdf
 
     def __repr__(self):
-        return repr(self.data.drop(columns=["x", "y"]))
+        return repr(self.data.drop(columns=["x", "y"], errors="ignore"))
 
     def _repr_html_(self):
-        return self.data.drop(columns=["x", "y"])._repr_html_()
+        return self.data.drop(columns=["x", "y"], errors="ignore")._repr_html_()
 
     @overload
     def __getitem__(self, key: Hashable | int) -> SkillArray:
@@ -450,8 +450,12 @@ class SkillTable:
             key = list(self.data.columns)[key]
         result = self.data[key]
         if isinstance(result, pd.Series):
-            cols = ["x", "y", key]
-            return SkillArray(self.data[cols])
+            # I don't think this should be necessary, but in some cases the input doesn't contain x and y
+            if "x" in self.data.columns and "y" in self.data.columns:
+                cols = ["x", "y", key]
+                return SkillArray(self.data[cols])
+            else:
+                return SkillArray(result.to_frame())
         elif isinstance(result, pd.DataFrame):
             return SkillTable(result)
         else:
@@ -473,7 +477,7 @@ class SkillTable:
     def sort_index(self, *args, **kwargs):
         """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
         return self.__class__(
-            self.df.sort_index(*args, **kwargs), metrics=self._metrics
+            self.data.sort_index(*args, **kwargs), metrics=self._metrics
         )
 
     # TODO: remove?
