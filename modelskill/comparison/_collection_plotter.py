@@ -13,13 +13,8 @@ from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
 
 
-def _default_univarate_title(
-    kind: str, cc: ComparerCollection, max_length: int = 60
-) -> str:
-    # title = f"{kind} for {', '.join(cmp.name for cmp in cc)}"
-    title = f"{kind} for {cc.n_observations} observations"
-
-    return title
+def _default_univarate_title(kind: str, cc: ComparerCollection) -> str:
+    return f"{kind} for {cc.n_observations} observations"
 
 
 class ComparerCollectionPlotter:
