@@ -49,6 +49,25 @@ class Scoreable(Protocol):
     def score(self, metric: str | Callable, **kwargs) -> Dict[str, float] | None:
         ...
 
+    def skill(
+        self,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[List[str]] = None,
+        **kwargs,
+    ) -> Optional[SkillTable]:
+        ...
+
+    def gridded_skill(
+        self,
+        bins=5,
+        binsize: Optional[float] = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
+        n_min: Optional[int] = None,
+        **kwargs,
+    ) -> Optional[SkillGrid]:
+        ...
+
 
 def _parse_dataset(data) -> xr.Dataset:
     if not isinstance(data, xr.Dataset):
