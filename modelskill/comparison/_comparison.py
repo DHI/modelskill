@@ -89,7 +89,6 @@ def _parse_dataset(data) -> xr.Dataset:
         )
 
     # Validate attrs
-    # TODO: should we
     if "gtype" not in data.attrs:
         data.attrs["gtype"] = str(GeometryType.POINT)
     # assert "gtype" in data.attrs, "data must have a gtype attribute"
@@ -166,7 +165,9 @@ def _validate_metrics(metrics) -> None:
     for m in metrics:
         if isinstance(m, str):
             if not mtr.is_valid_metric(m):
-                raise ValueError(f"Unknown metric '{m}'")
+                raise ValueError(
+                    f"Unknown metric '{m}'! Supported metrics are: {mtr.defined_metrics}"
+                )
 
 
 register_option(
