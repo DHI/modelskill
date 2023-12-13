@@ -21,6 +21,13 @@ difference between a model and an observation.
 * [explained_variance (ev)][modelskill.metrics.explained_variance]
 * [peak_ratio (pr)][modelskill.metrics.peak_ratio]
 
+Circular metrics (for directional data with units in degrees):
+* [c_bias][modelskill.metrics.c_bias]
+* [c_max_error][modelskill.metrics.c_max_error]
+* [c_mean_absolute_error (c_mae)][modelskill.metrics.c_mean_absolute_error]
+* [c_root_mean_squared_error (c_rmse)][modelskill.metrics.c_root_mean_squared_error]
+* [c_unbiased_root_mean_squared_error (c_urmse)][modelskill.metrics.c_unbiased_root_mean_squared_error]
+
 The names in parentheses are shorthand aliases for the different metrics.
 
 Examples
@@ -685,99 +692,6 @@ def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
     return model.std()
 
 
-METRICS_WITH_DIMENSION = set(
-    ["urmse", "rmse", "bias", "mae", "c_rmse", "c_mae"]
-)  # TODO is this complete?
-
-default_metrics = [bias, rmse, urmse, mae, cc, si, r2]
-
-
-def metric_has_units(metric: Union[str, Callable]) -> bool:
-    """Check if a metric has units (dimension).
-
-    Some metrics are dimensionless, others have the same dimension as the observations.
-
-    Parameters
-    ----------
-    metric : str or callable
-        Metric name or function
-
-    Returns
-    -------
-    bool
-        True if metric has a dimension, False otherwise
-
-    Examples
-    --------
-    >>> metric_has_units("rmse")
-    True
-    >>> metric_has_units("kge")
-    False
-    """
-    if hasattr(metric, "__name__"):
-        name = metric.__name__
-    else:
-        name = metric
-
-    if name not in defined_metrics:
-        raise ValueError(f"Metric {name} not defined. Choose from {defined_metrics}")
-
-    return name in METRICS_WITH_DIMENSION
-
-
-NON_METRICS = set(["metric_has_units", "get_metric", "is_valid_metric", "add_metric"])
-
-
-def is_valid_metric(metric: Union[str, Callable]) -> bool:
-    if hasattr(metric, "__name__"):
-        name = metric.__name__
-    else:
-        name = metric
-
-    return name in defined_metrics
-
-
-def get_metric(metric: Union[str, Callable]) -> Callable:
-    if is_valid_metric(metric):
-        if isinstance(metric, str):
-            return getattr(sys.modules[__name__], metric)
-        else:
-            return metric
-    else:
-        raise ValueError(
-            f"Metric {metric} not defined. Choose from {defined_metrics} or use `add_metric` to add a custom metric."
-        )
-
-
-def add_metric(metric: Callable, has_units: bool = False) -> None:
-    """Adds a metric to the metric list. Useful for custom metrics.
-
-    Some metrics are dimensionless, others have the same dimension as the observations.
-
-    Parameters
-    ----------
-    metric : str or callable
-        Metric name or function
-    has_units : bool
-        True if metric has a dimension, False otherwise. Default:False
-
-    Returns
-    -------
-    None
-
-    Examples
-    --------
-    >>> add_metric(hit_ratio)
-    >>> add_metric(rmse,True)
-    """
-    defined_metrics.add(metric.__name__)
-    if has_units:
-        METRICS_WITH_DIMENSION.add(metric.__name__)
-
-    # add the function to the module
-    setattr(sys.modules[__name__], metric.__name__, metric)
-
-
 def _partial_duration_series(
     time,
     value,
@@ -1104,7 +1018,130 @@ def c_urmse(
     return c_unbiased_root_mean_squared_error(obs, model, weights)
 
 
+METRICS_WITH_DIMENSION = set(
+    [
+        "bias",
+        "max_error",
+        "mae",
+        "rmse",
+        "urmse",
+        "c_bias",
+        "c_max_error",
+        "c_mae",
+        "c_rmse",
+        "c_urmse",
+    ]
+)
+
+default_metrics = [bias, rmse, urmse, mae, cc, si, r2]
+
+
+def metric_has_units(metric: Union[str, Callable]) -> bool:
+    """Check if a metric has units (dimension).
+
+    Some metrics are dimensionless, others have the same dimension as the observations.
+
+    Parameters
+    ----------
+    metric : str or callable
+        Metric name or function
+
+    Returns
+    -------
+    bool
+        True if metric has a dimension, False otherwise
+
+    Examples
+    --------
+    >>> metric_has_units("rmse")
+    True
+    >>> metric_has_units("kge")
+    False
+    """
+    if hasattr(metric, "__name__"):
+        name = metric.__name__
+    else:
+        name = metric
+
+    if name not in defined_metrics:
+        raise ValueError(f"Metric {name} not defined. Choose from {defined_metrics}")
+
+    return name in METRICS_WITH_DIMENSION
+
+
+NON_METRICS = set(
+    [
+        "metric_has_units",
+        "get_metric",
+        "is_valid_metric",
+        "add_metric",
+        "Callable",
+        "Optional",
+        "Set",
+        "Tuple",
+        "Union",
+        "_c_residual",
+        "_linear_regression",
+        "_partial_duration_series",
+        "_std_mod",
+        "_std_obs",
+    ]
+)
+
+
+def is_valid_metric(metric: Union[str, Callable]) -> bool:
+    if hasattr(metric, "__name__"):
+        name = metric.__name__
+    else:
+        name = metric
+
+    return name in defined_metrics
+
+
+def get_metric(metric: Union[str, Callable]) -> Callable:
+    if is_valid_metric(metric):
+        if isinstance(metric, str):
+            return getattr(sys.modules[__name__], metric)
+        else:
+            return metric
+    else:
+        raise ValueError(
+            f"Metric {metric} not defined. Choose from {defined_metrics} or use `add_metric` to add a custom metric."
+        )
+
+
+def add_metric(metric: Callable, has_units: bool = False) -> None:
+    """Adds a metric to the metric list. Useful for custom metrics.
+
+    Some metrics are dimensionless, others have the same dimension as the observations.
+
+    Parameters
+    ----------
+    metric : str or callable
+        Metric name or function
+    has_units : bool
+        True if metric has a dimension, False otherwise. Default:False
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> add_metric(hit_ratio)
+    >>> add_metric(rmse,True)
+    """
+    defined_metrics.add(metric.__name__)
+    if has_units:
+        METRICS_WITH_DIMENSION.add(metric.__name__)
+
+    # add the function to the module
+    setattr(sys.modules[__name__], metric.__name__, metric)
+
+
 defined_metrics: Set[str] = (
     set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
     - NON_METRICS
 )
+
+__all__ = list(defined_metrics)
