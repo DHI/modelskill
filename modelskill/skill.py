@@ -3,7 +3,6 @@ import warnings
 from typing import Iterable, Collection, overload, Hashable
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 from .plotting._misc import _get_fig_ax
 
@@ -35,8 +34,7 @@ class SkillArrayPlotter:
                 kwargs["title"] = self.skillarray.name
 
     def _get_plot_df(self, level: int | str = 0) -> pd.DataFrame:
-        s = self.skillarray.data.to_series()
-
+        s = self.skillarray.data
         if isinstance(s.index, pd.MultiIndex):
             df = s.unstack(level=level)
         else:
@@ -181,7 +179,7 @@ class SkillArrayPlotter:
         """
 
         s = self.skillarray
-        ser = s.data.to_series()
+        ser = s.data
 
         errors = _validate_multi_index(ser.index)
         if len(errors) > 0:
@@ -272,7 +270,7 @@ class DeprecatedSkillPlotter:
 
 class SkillArray:
     """SkillArray object for visualization and analysis obtained by
-    selecting a single metric from a SkillTable. The object wraps the xr.DataArray
+    selecting a single metric from a SkillTable. The object wraps pd.Series
 
     Examples
     --------
@@ -281,13 +279,13 @@ class SkillArray:
 
     """
 
-    def __init__(self, data: xr.DataArray) -> None:
-        assert isinstance(data, xr.DataArray)
+    def __init__(self, data: pd.Series) -> None:
+        assert isinstance(data, pd.Series)
         self.data = data
         self.plot = SkillArrayPlotter(self)
 
     def to_dataframe(self) -> pd.DataFrame:
-        return self.data.to_dataframe().dropna(how="all")
+        return self.data.to_dataframe()
 
     def __repr__(self):
         return repr(self.to_dataframe())
@@ -303,8 +301,8 @@ class SkillArray:
 class SkillTable:
     """
     SkillTable object for visualization and analysis returned by
-    the comparer's skill method. The object wraps the xr.Dataset
-    class which can be accessed from the attribute data.
+    the comparer's skill method. The object wraps the pd.Dataframe
+    class which can be accessed from the attribute `data`.
 
     Examples
     --------
@@ -341,27 +339,28 @@ class SkillTable:
     _one_is_best_metrics = ["lin_slope"]
     _zero_is_best_metrics = ["bias"]
 
-    def __init__(self, data: xr.Dataset | pd.DataFrame):
-        self.data: xr.Dataset = (
-            data if isinstance(data, xr.Dataset) else data.to_xarray()
+    def __init__(self, data: pd.DataFrame):
+        self.data: pd.DataFrame = (
+            data if isinstance(data, pd.DataFrame) else data.to_dataframe()
         )
         self.plot = DeprecatedSkillPlotter(self)  # TODO remove in v1.1
 
+    # TODO: remove?
     @property
     def _df(self) -> pd.DataFrame:
-        return self.to_dataframe()
+        return self.data
 
     @property
     def metrics(self) -> Collection[str]:
         """List of metrics (columns) in the SkillTable"""
-        return list(self.data.data_vars)
+        return list(self.data.columns)
 
     # TODO: remove?
     def __len__(self) -> int:
         return len(self._df)
 
     def to_dataframe(self) -> pd.DataFrame:
-        return self.data.to_dataframe().dropna(how="all")
+        return self._df.copy()
 
     def __repr__(self):
         return repr(self._df)
@@ -379,17 +378,17 @@ class SkillTable:
 
     def __getitem__(self, key) -> SkillArray | SkillTable:
         if isinstance(key, int):
-            key = list(self.data.data_vars)[key]
+            key = list(self.data.columns)[key]
         result = self.data[key]
-        if isinstance(result, xr.DataArray):
+        if isinstance(result, pd.Series):
             return SkillArray(result)
-        elif isinstance(result, xr.Dataset):
+        elif isinstance(result, pd.DataFrame):
             return SkillTable(result)
         else:
             return result
 
     def __getattr__(self, item):
-        if item in self.data.data_vars:
+        if item in self.data.columns:
             return self[item]  # Redirects to __getitem__
 
         # For other attributes, return them directly
@@ -437,12 +436,6 @@ class SkillTable:
 
     def _idx_to_name(self, index, idx) -> str:
         """Assumes that index is valid and idx is int"""
-        # if isinstance(idx, Iterable):
-        #     name_list = []
-        #     for i in idx:
-        #         name_list.append(self._idx_to_name(index, i))
-        #     # print(name_list)
-        #     return name_list
         names = self._get_index_level_by_name(index)
         n = len(names)
         if (idx < 0) or (idx >= n):
@@ -470,11 +463,12 @@ class SkillTable:
 
     def query(self, query: str) -> SkillTable:
         """Select a subset of the SkillTable by a query string
+        wrapping pd.DataFrame.query()
 
         Parameters
         ----------
         query : str
-            string supported by xr.Dataset.query()
+            string supported by pd.DataFrame.query()
 
         Returns
         -------
@@ -486,10 +480,7 @@ class SkillTable:
         >>> s = cc.skill()
         >>> s_above_0p3 = s.query("rmse>0.3")
         """
-        # dim0 = list(self.data.dims)[0]
-        # data = self.data.query({dim0: query})
-        data = self._df.query(query)
-        return self.__class__(data)
+        return self.__class__(self._df.query(query))
 
     def sel(self, query=None, reduce_index=True, **kwargs):
         """Select a subset of the SkillTable by a query,
@@ -501,6 +492,8 @@ class SkillTable:
             Should unnecessary levels of the index be removed after subsetting?
             Removed levels will stay as columns. By default True
         **kwargs : dict, optional
+            Concrete keys depend on the index names of the SkillTable
+            (from the "by" argument in cc.skill() method)
             "model"=... to select specific models,
             "observation"=... to select specific observations
 
@@ -575,8 +568,8 @@ class SkillTable:
         Parameters
         ----------
         decimals : int, optional
-            Number of decimal places to round to (default: 3). 
-            If decimals is negative, it specifies the number of 
+            Number of decimal places to round to (default: 3).
+            If decimals is negative, it specifies the number of
             positions to the left of the decimal point.
         """
 
