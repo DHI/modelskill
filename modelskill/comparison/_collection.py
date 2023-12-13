@@ -618,6 +618,7 @@ class ComparerCollection(Mapping):
             end=end,
             area=area,
         )
+
         if cmp.n_points == 0:
             warnings.warn("No data!")
             return
@@ -635,7 +636,12 @@ class ComparerCollection(Mapping):
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SkillGrid(res.to_xarray().squeeze())
+        ds = res.to_xarray().squeeze()
+
+        # change categorial index to coordinates
+        for dim in ("x", "y"):
+            ds[dim] = ds[dim].astype(float)
+        return SkillGrid(ds)
 
     def scatter(
         self,
