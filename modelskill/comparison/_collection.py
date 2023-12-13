@@ -815,9 +815,6 @@ class ComparerCollection(Mapping):
         for metric in metrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
         res = skilldf.groupby(by).agg(agg)
-        res["x"] = df.groupby(by=by, observed=False).x.first()
-        res["y"] = df.groupby(by=by, observed=False).y.first()
-        # TODO: set x,y to NaN if TrackObservation
 
         # output
         res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
