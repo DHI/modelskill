@@ -135,7 +135,7 @@ def test_matched_df_with_aux(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_points == 6
-    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+    assert "wind" not in cmp.data.data_vars
 
 
 def test_rename_model(pt_df):
