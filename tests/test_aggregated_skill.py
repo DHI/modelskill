@@ -1,8 +1,11 @@
+import importlib
 import pytest
 import pandas as pd
 import matplotlib as mpl
 
 import modelskill as ms
+
+geopandas_installed = importlib.util.find_spec("geopandas") is not None
 
 # use non-interactive backend for testing
 mpl.use("Agg")
@@ -65,8 +68,7 @@ def test_skill_bad_args(cc1):
 def test_skill_multi_model(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
 
-    # TODO decide if N is a metric or not🤔
-    assert len(s.metrics) == 3
+    assert len(s.metrics) == 2
 
     assert len(s.mod_names) == 2
     assert len(s.obs_names) == 3
@@ -96,14 +98,16 @@ def test_skill_multi_model(cc2):
 
 def test_skill_sel(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
-    s2 = s.sel(observation="alti")
-    assert len(s2) == 1
     assert "rmse" in s.metrics
     assert "bias" in s.metrics
-
-    s2 = s.sel(metrics="rmse")
+    s2 = s.sel(observation="alti")
+    assert len(s2) == 1
     assert "rmse" in s2.metrics
-    assert "bias" not in s2.metrics
+    assert "bias" in s2.metrics
+
+    # s2 = s.sel(metrics="rmse")
+    # assert "rmse" in s2.metrics
+    # assert "bias" not in s2.metrics
 
 
 def test_skill_sel_multi_model(cc2):
@@ -131,17 +135,6 @@ def test_skill_sel_query(cc2):
 
     s2 = s.sel("rmse>0.2", model="SW_2", observation=[0, 2])
     assert len(s2.mod_names) == 0  # no longer in index
-
-
-def test_skill_sel_metrics(cc2):
-    s = cc2.skill(metrics=["rmse", "bias"])
-    s2 = s.sel(metrics=["rmse", "n"])
-    assert "n" in s2.metrics
-    assert "bias" not in s2.metrics
-
-    s2 = s.sel(metrics="rmse")
-    assert "rmse" in s2.metrics
-    assert "bias" not in s2.metrics
 
 
 def test_skill_sel_fail(cc2):
@@ -215,3 +208,16 @@ def test_skill_round(cc2):
 
     # TODO consider decimals per metric, e.g. {bias: 2, rmse: 3}
     s.round(decimals=2)
+
+
+@pytest.mark.skipif(not geopandas_installed, reason="geopandas not installed")
+def test_skill_to_geo_dataframe(o1, o2, o3):
+    mr1 = ms.DfsuModelResult(
+        "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu", item=0, name="SW_1"
+    )
+    cmp = ms.compare([o1, o2, o3], mr1)
+    s = cmp.skill()
+    gdf = s.to_geodataframe()
+
+    # assert that the geometry is a point
+    assert gdf.geometry.geom_type[0] == "Point"

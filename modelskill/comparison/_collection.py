@@ -500,9 +500,29 @@ class ComparerCollection(Mapping):
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
 
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        # res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = _groupby_df(df, by, metrics)
+        res["x"] = df.groupby(by=by, observed=False).x.first()
+        res["y"] = df.groupby(by=by, observed=False).y.first()
+
+        # set "x" and "y" to np.nan if they are not the same for all rows in group
+        res.loc[
+            res.groupby(by=by, observed=False).x.transform("nunique") > 1, "x"
+        ] = np.nan
+        res.loc[
+            res.groupby(by=by, observed=False).y.transform("nunique") > 1, "y"
+        ] = np.nan
+
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
-        return SkillTable(res)
+
+        # point_obs_names = [o.name for o in cmp if o.gtype == "point"]
+        # point_x = [o.x for o in cmp if o.gtype == "point"]
+        # point_y = [o.y for o in cmp if o.gtype == "point"]
+        # obs_coords = pd.DataFrame({"x": point_x, "y": point_y}, index=point_obs_names)
+        # res["x"] = obs_coords["x"]
+        # res["y"] = obs_coords["y"]
+
+        return SkillTable(res, metrics=metrics)
 
     def _add_as_col_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "variable"]

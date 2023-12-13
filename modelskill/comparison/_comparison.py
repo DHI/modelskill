@@ -967,9 +967,10 @@ class Comparer:
         by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
 
         df = cmp.to_dataframe()  # TODO: avoid df if possible?
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        # res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = _groupby_df(df, by, metrics)
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
-        return SkillTable(res)
+        return SkillTable(res, metrics=metrics)
 
     def _add_as_col_if_not_in_index(self, df, skilldf):
         """Add a field to skilldf if unique in df"""

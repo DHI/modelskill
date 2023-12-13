@@ -1,8 +1,11 @@
 from __future__ import annotations
 import warnings
-from typing import Iterable, Collection, overload, Hashable
+from typing import Iterable, Collection, overload, Hashable, TYPE_CHECKING
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    import geopandas as gpd
 
 from .plotting._misc import _get_fig_ax
 
@@ -328,20 +331,42 @@ class SkillTable:
     one_is_best_metrics = ["lin_slope"]
     zero_is_best_metrics = ["bias"]
 
-    def __init__(self, df):
+    def __init__(self, df, metrics: Iterable[str] | None = None):
+        if metrics is None:
+            self._metrics = list(df.columns)
+        else:
+            self._metrics = []
+            for metric in metrics:
+                if isinstance(metric, str):
+                    self._metrics.append(metric)
+                elif callable(metric):
+                    self._metrics.append(metric.__name__)
+
         self.df = df
         self.plot = DeprecatedSkillPlotter(self)  # TODO remove in v1.1
 
     @property
     def metrics(self) -> Collection[str]:
         """List of metrics (columns) in the dataframe"""
-        return list(self.df.columns)
+        return self._metrics
 
     def __len__(self):
         return len(self.df)
 
     def to_dataframe(self) -> pd.DataFrame:
         return self.df
+
+    def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
+        import geopandas as gpd
+
+        assert "x" in self.df.columns
+        assert "y" in self.df.columns
+
+        gdf = gpd.GeoDataFrame(
+            self.df, geometry=gpd.points_from_xy(self.df.x, self.df.y), crs=crs
+        )
+
+        return gdf
 
     def __repr__(self):
         return repr(self.df)
@@ -381,12 +406,14 @@ class SkillTable:
     # TODO: remove?
     def sort_index(self, *args, **kwargs):
         """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
-        return self.__class__(self.df.sort_index(*args, **kwargs))
+        return self.__class__(
+            self.df.sort_index(*args, **kwargs), metrics=self._metrics
+        )
 
     # TODO: remove?
     def swaplevel(self, *args, **kwargs):
         """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
-        return self.__class__(self.df.swaplevel(*args, **kwargs))
+        return self.__class__(self.df.swaplevel(*args, **kwargs), metrics=self._metrics)
 
     @property
     def mod_names(self):
@@ -498,7 +525,7 @@ class SkillTable:
             # df = df.to_frame()
         if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
-        return self.__class__(df)
+        return self.__class__(df, metrics=self._metrics)
 
     def _reduce_index(self, df):
         """Remove unnecessary levels of MultiIndex"""
@@ -558,7 +585,7 @@ class SkillTable:
             Number of decimal places to round to (default: 3). If decimals is negative, it specifies the number of positions to the left of the decimal point.
         """
 
-        return self.__class__(self.df.round(decimals=decimals))
+        return self.__class__(self.df.round(decimals=decimals), metrics=self._metrics)
 
     def style(
         self,
