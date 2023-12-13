@@ -115,7 +115,8 @@ class Quantity:
     def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo) -> "Quantity":
         """Create a Quantity from mikeio ItemInfo
 
-        If the unit is "degree", the quantity is assumed to be directional."""
+        If the unit is "degree", the quantity is assumed to be directional.
+        """
 
         unit = iteminfo.unit.name
         is_directional = unit == "degree"
