@@ -26,7 +26,7 @@ class ComparerPlotter:
 
     def __init__(self, comparer: Comparer):
         self.comparer = comparer
-        self.is_directional = False
+        self.is_directional = comparer.quantity.is_directional
 
     def __call__(self, *args, **kwargs):
         """Plot scatter plot of modelled vs observed data"""

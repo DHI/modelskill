@@ -207,3 +207,10 @@ def test_grid_extract_track_aux(ERA5_DutchCoast_nc, trackobs_c2_hm0):
     assert tc.n_points == 99
     assert len(tc.data.data_vars) == 2
     assert "swh" in tc.data.data_vars
+
+
+def test_grid_with_directional_data_with_cf_metadata_is_directional_by_default():
+    mr = ms.GridModelResult(
+        "tests/testdata/SW/CMEMS_DutchCoast_2017-10-28.nc", item="VMDR"
+    )
+    assert mr.quantity.is_directional
