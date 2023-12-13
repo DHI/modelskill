@@ -510,7 +510,7 @@ class ComparerPlotter:
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
-            skill = cmp.skill(metrics=metrics)
+            skill = cmp.skill(metrics=metrics)  # type: ignore
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:

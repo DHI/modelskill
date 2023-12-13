@@ -145,9 +145,9 @@ class ComparerCollectionPlotter:
 
             # TODO why is this here?
             if isinstance(self, ComparerCollectionPlotter) and cmp.n_observations == 1:
-                skill = cmp.skill(metrics=metrics)
+                skill = cmp.skill(metrics=metrics)  # type: ignore
             else:
-                skill = cmp.mean_skill(metrics=metrics)
+                skill = cmp.mean_skill(metrics=metrics)  # type: ignore
             # TODO improve this
             try:
                 units = unit_text.split("[")[1].split("]")[0]
