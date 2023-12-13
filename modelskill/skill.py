@@ -36,7 +36,7 @@ class SkillArrayPlotter:
     plot.grid() : colored grid
     """
 
-    def __init__(self, skillarray):
+    def __init__(self, skillarray: SkillArray):
         self.skillarray = skillarray
 
     def _name_to_title_in_kwargs(self, kwargs):
@@ -51,6 +51,20 @@ class SkillArrayPlotter:
         else:
             df = ser.to_frame()
         return df
+
+    def map(self, **kwargs):
+        if "model" in self.skillarray.data.index.names:
+            n_models = len(self.skillarray.data.reset_index().model.unique())
+            if n_models > 1:
+                raise ValueError(
+                    f"map() is only possible for single model skill. Use .sel(model=...) to select a single model."
+                )
+
+        gdf = self.skillarray.to_geodataframe()
+        column = self.skillarray.name
+        kwargs = {"marker_kwds": {"radius": 10}} | kwargs
+
+        return gdf.explore(column=column, **kwargs)
 
     def line(
         self,
@@ -290,9 +304,9 @@ class SkillArray:
     >>> s.rmse.plot.line()
     """
 
-    def __init__(self, data: pd.Series) -> None:
-        assert isinstance(data, pd.Series)
-        self.data = data
+    def __init__(self, data: pd.DataFrame) -> None:
+        self._df = data
+        self.data = data.iloc[:, -1]  # last column is the metric
         self.plot = SkillArrayPlotter(self)
 
     def to_dataframe(self) -> pd.DataFrame:
@@ -309,6 +323,20 @@ class SkillArray:
     def name(self):
         """Name of the metric"""
         return self.data.name
+
+    def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
+        import geopandas as gpd
+
+        assert "x" in self._df.columns
+        assert "y" in self._df.columns
+
+        gdf = gpd.GeoDataFrame(
+            self.data.drop(columns=["x", "y"]),
+            geometry=gpd.points_from_xy(self._df.x, self._df.y),
+            crs=crs,
+        )
+
+        return gdf
 
 
 class SkillTable:
@@ -358,7 +386,7 @@ class SkillTable:
 
     def __init__(self, data: pd.DataFrame, metrics: Iterable[str] | None = None):
         if metrics is None:
-            self._metrics = list(df.columns)
+            self._metrics = list(data.columns)
         else:
             self._metrics = []
             for metric in metrics:
@@ -387,37 +415,27 @@ class SkillTable:
         return len(self._df)
 
     def to_dataframe(self) -> pd.DataFrame:
-        return self._df.copy()
+        return self.data.copy().drop(columns=["x", "y"])
 
     def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
         import geopandas as gpd
 
-        assert "x" in self.df.columns
-        assert "y" in self.df.columns
+        assert "x" in self.data.columns
+        assert "y" in self.data.columns
 
         gdf = gpd.GeoDataFrame(
-            self.df, geometry=gpd.points_from_xy(self.df.x, self.df.y), crs=crs
-        )
-
-        return gdf
-
-    def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
-        import geopandas as gpd
-
-        assert "x" in self.df.columns
-        assert "y" in self.df.columns
-
-        gdf = gpd.GeoDataFrame(
-            self.df, geometry=gpd.points_from_xy(self.df.x, self.df.y), crs=crs
+            self.data.drop(columns=["x", "y"]),
+            geometry=gpd.points_from_xy(self.data.x, self.data.y),
+            crs=crs,
         )
 
         return gdf
 
     def __repr__(self):
-        return repr(self._df)
+        return repr(self.data.drop(columns=["x", "y"]))
 
     def _repr_html_(self):
-        return self._df._repr_html_()
+        return self.data.drop(columns=["x", "y"])._repr_html_()
 
     @overload
     def __getitem__(self, key: Hashable | int) -> SkillArray:
@@ -432,7 +450,8 @@ class SkillTable:
             key = list(self.data.columns)[key]
         result = self.data[key]
         if isinstance(result, pd.Series):
-            return SkillArray(result)
+            cols = ["x", "y", key]
+            return SkillArray(self.data[cols])
         elif isinstance(result, pd.DataFrame):
             return SkillTable(result)
         else:
@@ -567,33 +586,6 @@ class SkillTable:
         if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
         return self.__class__(df, metrics=self._metrics)
-
-    def _sel_from_index(self, df, key, value):
-        if (not isinstance(value, str)) and isinstance(value, Iterable):
-            for i, v in enumerate(value):
-                dfi = self._sel_from_index(df, key, v)
-                if i == 0:
-                    dfout = dfi
-                else:
-                    dfout = pd.concat([dfout, dfi])
-            return dfout
-
-        if isinstance(value, int):
-            value = self._idx_to_name(key, value)
-
-        if isinstance(df.index, pd.MultiIndex):
-            df = df.xs(value, level=key, drop_level=False)
-        else:
-            df = df[df.index == value]  # .copy()
-        return df
-
-    def _idx_to_name(self, index, idx) -> str:
-        """Assumes that index is valid and idx is int"""
-        names = self._get_index_level_by_name(index)
-        n = len(names)
-        if (idx < 0) or (idx >= n):
-            raise KeyError(f"Id {idx} is out of bounds for index {index} (0, {n})")
-        return names[idx]
 
     def _sel_from_index(self, df, key, value):
         if (not isinstance(value, str)) and isinstance(value, Iterable):
