@@ -101,6 +101,10 @@ def test_matched_df_int_items(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=[-1])
     assert cmp.mod_names == ["m2"]
 
+    # int mod_items (not list)
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=2)
+    assert cmp.mod_names == ["m2"]
+
     # will fall because two items will have the same name "Observation"
     # cmp = Comparer.from_matched_data(data=pt_df, obs_item=1)
 
@@ -131,7 +135,13 @@ def test_matched_df_with_aux(pt_df):
     assert cmp.data["wind"].attrs["kind"] == "auxiliary"
     assert "not_relevant" not in cmp.data.data_vars
 
-    # or if models are specified, it is automatically considered an aux variable
+    # if aux_items is a string, it is automatically converted to a list
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items="wind"
+    )
+    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+
+    # if models are specified, it is NOT automatically considered an aux variable
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_points == 6
