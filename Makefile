@@ -18,6 +18,6 @@ coverage:
 	pytest --cov-report html --cov=$(LIB) tests/
 
 docs: FORCE
-	cd docs; make html ;cd -
+	mkdocs build
 
 FORCE:

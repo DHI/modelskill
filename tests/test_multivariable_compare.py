@@ -8,26 +8,26 @@ import modelskill.metrics as mtr
 
 @pytest.fixture
 def mr1Hm0():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ms.ModelResult(fn, item="Sign. Wave Height", name="SW_1")
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
+    return ms.model_result(fn, item="Sign. Wave Height", name="SW_1")
 
 
 @pytest.fixture
 def mr1WS():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ms.ModelResult(fn, item="Wind speed", name="SW_1")
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
+    return ms.model_result(fn, item="Wind speed", name="SW_1")
 
 
 @pytest.fixture
 def mr2Hm0():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ms.ModelResult(fn, item="Sign. Wave Height", name="SW_2")
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
+    return ms.model_result(fn, item="Sign. Wave Height", name="SW_2")
 
 
 @pytest.fixture
 def mr2WS():
-    fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ms.ModelResult(fn, item="Wind speed", name="SW_2")
+    fn = "tests/testdata/SW/DutchCoast_2017_subset.dfsu"
+    return ms.model_result(fn, item="Wind speed", name="SW_2")
 
 
 @pytest.fixture
@@ -68,15 +68,15 @@ def wind3():
 
 @pytest.fixture
 def cc_1model(mr1Hm0, mr1WS, o1, o2, o3, wind1, wind2, wind3):
-    cc1 = ms.compare([o1, o2, o3], mr1Hm0)
-    cc2 = ms.compare([wind1, wind2, wind3], mr1WS)
+    cc1 = ms.match([o1, o2, o3], mr1Hm0)
+    cc2 = ms.match([wind1, wind2, wind3], mr1WS)
     return cc1 + cc2
 
 
 @pytest.fixture
 def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):
-    cc1 = ms.compare([o1, o2, o3], [mr1Hm0, mr2Hm0])
-    cc2 = ms.compare([wind1, wind2, wind3], [mr1WS, mr2WS])
+    cc1 = ms.match([o1, o2, o3], [mr1Hm0, mr2Hm0])
+    cc2 = ms.match([wind1, wind2, wind3], [mr1WS, mr2WS])
     return cc1 + cc2
 
 
@@ -85,7 +85,7 @@ def test_n_variables(cc):
 
 
 def test_mv_skill(cc_1model):
-    df = cc_1model.skill().df
+    df = cc_1model.skill().to_dataframe()
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
     assert pytest.approx(df.iloc[0].rmse) == 0.22359663
@@ -94,21 +94,21 @@ def test_mv_skill(cc_1model):
 
 
 def test_mv_mm_skill(cc):
-    df = cc.skill().df
+    df = cc.skill().to_dataframe()
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     assert df.index.names[2] == "variable"
     idx = ("SW_1", "HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.sel(model="SW_1").skill().df
+    df = cc.sel(model="SW_1").skill().to_dataframe()
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "variable"
     assert pytest.approx(df.iloc[0].rmse) == 0.22359663
     idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.sel(variable="Wind speed").skill().df
+    df = cc.sel(variable="Wind speed").skill().to_dataframe()
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     idx = ("SW_1", "HKNA_wind")
@@ -116,14 +116,14 @@ def test_mv_mm_skill(cc):
 
 
 def test_mv_mm_mean_skill(cc):
-    df = cc.mean_skill().df
+    df = cc.mean_skill().to_dataframe()
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "variable"
     idx = ("SW_1", "Wind speed")
-    assert pytest.approx(df.loc[idx].r2) == 0.65238805170
+    assert pytest.approx(df.loc[idx].r2) == 0.63344531
 
-    df = cc.sel(variable="Significant wave height").mean_skill().df
-    assert pytest.approx(df.loc["SW_1"].cc) == 0.971791458
+    df = cc.sel(variable="Significant wave height").mean_skill().to_dataframe()
+    assert pytest.approx(df.loc["SW_1"].cc) == 0.963095
 
 
 def test_mv_mm_scatter(cc):

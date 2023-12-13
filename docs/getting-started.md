@@ -61,7 +61,7 @@ further needs to be initialized with it\'s x-, y-position.
 ### 3. Connect observations and ModelResults
 
 ```python
-cc = ms.compare([hkna, c2], mr)
+cc = ms.match([hkna, c2], mr)
 ```
 
 This method returns a
@@ -70,8 +70,7 @@ for further analysis and plotting.
 
 ### 4. Do analysis, plotting, etc with a Comparer
 
-The object returned by the `compare()` method is a *ComparerCollection*. It holds
-the matched observation and model data and has methods for plotting and
+The object returned by the `match()` method is a *Comparer*/*ComparerCollection*. It holds the matched observation and model data and has methods for plotting and
 skill assessment.
 
 The primary comparer methods are:

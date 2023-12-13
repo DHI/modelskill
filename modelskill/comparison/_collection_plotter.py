@@ -138,16 +138,16 @@ class ComparerCollectionPlotter:
         ylabel = ylabel or f"Model, {unit_text}"
         title = title or f"{mod_name} vs {cmp.name}"
 
-        skill_df = None
+        skill = None
         units = None
         if skill_table:
             metrics = None if skill_table is True else skill_table
 
             # TODO why is this here?
             if isinstance(self, ComparerCollectionPlotter) and cmp.n_observations == 1:
-                skill_df = cmp.skill(metrics=metrics)  # type: ignore
+                skill = cmp.skill(metrics=metrics)
             else:
-                skill_df = cmp.mean_skill(metrics=metrics)  # type: ignore
+                skill = cmp.mean_skill(metrics=metrics)
             # TODO improve this
             try:
                 units = unit_text.split("[")[1].split("]")[0]
@@ -176,7 +176,7 @@ class ComparerCollectionPlotter:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
-            skill_df=skill_df,
+            skill_df=skill,
             units=units,
             ax=ax,
             **kwargs,
@@ -404,7 +404,7 @@ class ComparerCollectionPlotter:
         if s is None:
             return
 
-        df = s.df
+        df = s.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):

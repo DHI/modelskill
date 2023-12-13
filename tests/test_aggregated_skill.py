@@ -11,12 +11,12 @@ mpl.use("Agg")
 @pytest.fixture
 def cc1():
     fn = "tests/testdata/NorthSeaHD_and_windspeed.dfsu"
-    mr = ms.ModelResult(fn, item=0, name="HD")
+    mr = ms.model_result(fn, item=0, name="HD")
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
         o1 = ms.TrackObservation(df, item=2, name="alti")
-    return ms.compare(o1, mr)
+    return ms.match(o1, mr)
 
 
 @pytest.fixture
@@ -40,10 +40,10 @@ def o3():
 @pytest.fixture
 def cc2(o1, o2, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    mr1 = ms.ModelResult(fn, item=0, name="SW_1")
+    mr1 = ms.model_result(fn, item=0, name="SW_1")
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    mr2 = ms.ModelResult(fn, item=0, name="SW_2")
-    return ms.compare([o1, o2, o3], [mr1, mr2])
+    mr2 = ms.model_result(fn, item=0, name="SW_2")
+    return ms.match([o1, o2, o3], [mr1, mr2])
 
 
 def test_skill(cc1):
@@ -158,44 +158,44 @@ def test_skill_sel_fail(cc2):
 
 def test_skill_plot_bar(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
-    s.plot.bar("bias")
+    s["bias"].plot.bar()
 
 
 def test_skill_plot_bar_multi_model(cc2):
     s = cc2.skill(metrics="rmse")
-    s.plot.bar("rmse")
+    s["rmse"].plot.bar()
 
     with pytest.raises(KeyError):
-        s.plot.bar("bad_metric")
+        s["bad_metric"].plot.bar()
 
 
 def test_skill_plot_line(cc1):
     s = cc1.skill(metrics=["rmse", "bias"])
-    s.plot.line("bias")
-    s.plot.line("bias", title="Skill")
+    s["bias"].plot.line()
+    s["bias"].plot.line(title="Skill")
 
-    with pytest.raises(KeyError, match="rmse"):
-        s.plot.line("NOT_A_METRIC")
+    with pytest.raises(KeyError):
+        s["NOT_A_METRIC"].plot.line()
 
 
 def test_skill_plot_line_multi_model(cc2):
     s = cc2.skill(metrics="rmse")
-    s.plot.line("rmse")
+    s.rmse.plot.line()
 
     with pytest.raises(KeyError):
-        s.plot.line("bad_metric")
+        s["bad_metric"]
 
 
 def test_skill_plot_grid(cc2):
     s = cc2.skill()
-    s.plot.grid("rmse")
-    s.plot.grid("bias")
-    s.plot.grid("si", fmt=".0%")
-    s.plot.grid("bias", figsize=(2, 1), show_numbers=False)
+    s["rmse"].plot.grid()
+    s["bias"].plot.grid()
+    s["si"].plot.grid(fmt=".0%")
+    s["bias"].plot.grid(figsize=(2, 1), show_numbers=False)
 
     s2 = s.sel(model="SW_1")
     with pytest.warns(UserWarning) as wn:
-        s2.plot.grid("rmse")
+        s2["rmse"].plot.grid()
     assert len(wn) == 1
     assert "only possible for MultiIndex" in str(wn[0].message)
 
