@@ -239,8 +239,12 @@ class ItemSelection:
 
         # Check existance of items and convert to names
         if mod_items is not None:
+            if isinstance(mod_items, (str, int)):
+                mod_items = [mod_items]
             mod_names = [_get_name(m, items) for m in mod_items]
         if aux_items is not None:
+            if isinstance(aux_items, (str, int)):
+                aux_items = [aux_items]
             aux_names = [_get_name(a, items) for a in aux_items]
         else:
             aux_names = []
@@ -249,8 +253,8 @@ class ItemSelection:
 
         if mod_items is None:
             mod_names = list(set(items) - set(aux_names))
-        if aux_items is None:
-            aux_names = list(set(items) - set(mod_names))
+        # if aux_items is None:
+        #     aux_names = list(set(items) - set(mod_names))
 
         assert len(mod_names) > 0, "no model items were found! Must be at least one"
         assert obs_name not in mod_names, "observation item must not be a model item"
@@ -324,7 +328,7 @@ def _matched_data_to_xarray(
     items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
     df = df[items.all]
     df.index.name = "time"
-    df.rename(columns={items.obs: "Observation"}, inplace=True)
+    df = df.rename(columns={items.obs: "Observation"})
     ds = df.to_xarray()
 
     ds.attrs["name"] = name if name is not None else items.obs
