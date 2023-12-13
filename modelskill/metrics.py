@@ -1082,9 +1082,7 @@ NON_METRICS = set(
         "Union",
         "_c_residual",
         "_linear_regression",
-        "_partial_duration_series",
-        "_std_mod",
-        "_std_obs",
+        "_partial_duration_series",        
     ]
 )
 
