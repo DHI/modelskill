@@ -28,7 +28,7 @@ from .quantity import Quantity
 from .model.factory import ModelResult
 from .model import model_result
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
-from .observation import PointObservation, TrackObservation
+from .observation import observation, PointObservation, TrackObservation
 from .matching import compare, from_matched, match
 from .connection import Connector
 from .configuration import from_config
@@ -61,17 +61,18 @@ def load(filename: Union[str, Path]) -> ComparerCollection:
 
 __all__ = [
     "Quantity",
-    "ModelResult",
+    "model_result",
     "PointModelResult",
     "TrackModelResult",
     "GridModelResult",
     "DfsuModelResult",
+    "observation",
     "PointObservation",
     "TrackObservation",
-    "compare",
     "match",
-    "Connector",
     "from_matched",
+    "Comparer",
+    "ComparerCollection",
     "options",
     "get_option",
     "set_option",
@@ -79,7 +80,7 @@ __all__ = [
     "load_style",
     "plotting",
     "from_config",
-    "model_result",
-    "ComparerCollection",
-    "Comparer",
+    "compare",  # deprecated
+    "ModelResult",  # deprecated
+    "Connector",  # deprecated
 ]
