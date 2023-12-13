@@ -57,7 +57,7 @@ class SkillArrayPlotter:
             n_models = len(self.skillarray.data.reset_index().model.unique())
             if n_models > 1:
                 raise ValueError(
-                    f"map() is only possible for single model skill. Use .sel(model=...) to select a single model."
+                    "map() is only possible for single model skill. Use .sel(model=...) to select a single model."
                 )
 
         gdf = self.skillarray.to_geodataframe()
