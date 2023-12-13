@@ -45,7 +45,9 @@ class Quantity:
 
     def __repr__(self):
         if self.is_directional:
-            return super().__repr__()
+            return (
+                f"Quantity(name='{self.name}', unit='{self.unit}', is_directional=True)"
+            )
         else:
             # hide is_directional if False to avoid clutter
             return f"Quantity(name='{self.name}', unit='{self.unit}')"
