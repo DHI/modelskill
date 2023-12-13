@@ -415,7 +415,7 @@ class SkillTable:
         return len(self._df)
 
     def to_dataframe(self) -> pd.DataFrame:
-        return self.data.copy().drop(columns=["x", "y"])
+        return self.data.copy().drop(columns=["x", "y"], errors="ignore")
 
     def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
         import geopandas as gpd
