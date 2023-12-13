@@ -8,19 +8,50 @@ Examples
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
 
-from .types import PointType, TrackType
+from .types import PointType, TrackType, GeometryType, DataInputType
 from . import Quantity
 from .timeseries import (
     TimeSeries,
     _parse_point_input,
     _parse_track_input,
 )
+
+
+def observation(
+    data: DataInputType,
+    *,
+    gtype: Optional[Literal["point", "track"]] = None,
+    **kwargs,
+):
+    if gtype is None:
+        geometry = _guess_gtype(**kwargs)
+    else:
+        geometry = GeometryType.from_string(gtype)
+
+    return _obs_class_lookup[geometry](
+        data=data,
+        **kwargs,
+    )
+
+
+def _guess_gtype(**kwargs) -> GeometryType:
+    """Guess geometry type from data"""
+
+    if "x" in kwargs and "y" in kwargs:
+        return GeometryType.POINT
+    elif "x_item" in kwargs or "y_item" in kwargs:
+        return GeometryType.TRACK
+    else:
+        warnings.warn(
+            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation or TrackObservation to be explicit."
+        )
+        return GeometryType.POINT
 
 
 def _validate_attrs(data_attrs: dict, attrs: Optional[dict]) -> None:
@@ -324,3 +355,9 @@ def unit_display_name(name: str) -> str:
     )
 
     return res
+
+
+_obs_class_lookup = {
+    GeometryType.POINT: PointObservation,
+    GeometryType.TRACK: TrackObservation,
+}
