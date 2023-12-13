@@ -153,7 +153,6 @@ class TimeSeries:
         """Name of time series (value item name)"""
         return self._val_item
 
-    # setter
     @name.setter
     def name(self, name: str) -> None:
         name = _validate_data_var_name(name)
