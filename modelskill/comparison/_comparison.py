@@ -227,7 +227,7 @@ class ItemSelection:
         Default behaviour:
         - obs_item is first item
         - mod_items are all but obs_item and aux_items
-        - aux_items are all but obs_item and mod_items
+        - aux_items are None
 
         Both integer and str are accepted as items. If str, it must be a key in data.
         """
@@ -253,8 +253,6 @@ class ItemSelection:
 
         if mod_items is None:
             mod_names = list(set(items) - set(aux_names))
-        # if aux_items is None:
-        #     aux_names = list(set(items) - set(mod_names))
 
         assert len(mod_names) > 0, "no model items were found! Must be at least one"
         assert obs_name not in mod_names, "observation item must not be a model item"
