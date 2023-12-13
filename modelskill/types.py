@@ -167,9 +167,23 @@ class Quantity:
         return {"name": self.name, "unit": self.unit}
 
     @staticmethod
-    def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo) -> "Quantity":
-        unit = iteminfo.unit.name
+    def from_xarray_attrs(long_name: str, units: str) -> "Quantity":
+        """Create a Quantity from xarray attributes (e.g. CF standard names)
 
+        If units is "degree", "degrees" or "Degree true", the quantity is assumed
+        to be directional. Based on https://codes.ecmwf.int/grib/param-db/ and
+        https://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html
+        """
+        is_directional = units in ["degree", "degrees", "Degree true"]
+        return Quantity(name=long_name, unit=units, is_directional=is_directional)
+
+    @staticmethod
+    def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo) -> "Quantity":
+        """Create a Quantity from mikeio ItemInfo
+
+        If the unit is "degree", the quantity is assumed to be directional."""
+
+        unit = iteminfo.unit.name
         is_directional = unit == "degree"
         return Quantity(
             name=repr(iteminfo.type), unit=unit, is_directional=is_directional
@@ -200,5 +214,6 @@ class Quantity:
                     f"{type_name=} is not recognized as a known type. Please create a Quantity(name='{type_name}' unit='<FILL IN UNIT>')"
                 )
         unit = etype.units[0].name
+        is_directional = unit == "degree"
         warnings.warn(f"{unit=} was automatically set for {type_name=}")
-        return Quantity(name=type_name, unit=unit)
+        return Quantity(name=type_name, unit=unit, is_directional=is_directional)
