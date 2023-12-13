@@ -3,7 +3,7 @@ import pandas as pd
 import yaml
 from typing import Union
 
-from . import ModelResult
+from . import model_result
 from .observation import PointObservation, TrackObservation
 from .connection import Connector
 
@@ -55,7 +55,7 @@ def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True
         else:
             filename = mr_dict["filename"]
         item = mr_dict.get("item")
-        mr = ModelResult(filename, name=name, item=item)
+        mr = model_result(filename, name=name, item=item)
         modelresults[name] = mr
     mr_list = list(modelresults.values())
 

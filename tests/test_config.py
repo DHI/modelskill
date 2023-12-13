@@ -1,3 +1,4 @@
+import pytest
 import modelskill as ms
 
 
@@ -12,7 +13,7 @@ def test_comparison_from_dict():
     configuration = dict(
         modelresults=dict(
             HD=dict(
-                filename="tests/testdata/Oresund2D.dfsu",
+                filename="tests/testdata/Oresund2D_subset.dfsu",
                 item=0,
             ),
         ),
@@ -33,7 +34,9 @@ def test_comparison_from_dict():
         ),
     )
 
-    con = ms.from_config(configuration, validate_eum=False)
+    with pytest.warns(FutureWarning, match="modelskill.match"):
+        con = ms.from_config(configuration, validate_eum=False)
+
     cc = con.extract()
     assert len(cc) == 2
     assert cc.n_comparers == 2
@@ -41,7 +44,8 @@ def test_comparison_from_dict():
 
 
 def test_comparison_from_yml():
-    con = ms.from_config("tests/testdata/conf.yml", validate_eum=False)
+    with pytest.warns(FutureWarning, match="modelskill.match"):
+        con = ms.from_config("tests/testdata/conf.yml", validate_eum=False)
     cc = con.extract()
 
     assert len(cc) == 2

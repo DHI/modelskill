@@ -69,8 +69,6 @@ def _config_to_yml(filename, conf):
 
 
 class SingleObsConnector:
-    """A connection between a single observation and model(s)"""
-
     def __repr__(self):
         if self.n_models > 0:
             obs_txt = f"obs={self.name}(n={self.obs.n_points})"
@@ -87,6 +85,12 @@ class SingleObsConnector:
         return f"<{self.__class__.__name__}> {txt}"
 
     def __init__(self, obs, mod, weight=1.0, validate=True):
+        # deprecated
+        warnings.warn(
+            FutureWarning(
+                "SingleObsConnector is deprecated! Use `modelskill.match` instead"
+            )
+        )
         self.obs = None
         obs = self._parse_observation(obs)
         self.name = obs.name
@@ -198,36 +202,6 @@ class SingleObsConnector:
 
 
 class Connector(Sequence):
-    """The Connector is used for matching Observations and ModelResults
-
-    It is one of the most important classes in modelskill. The connections are
-    added either at construction of the Connector or by using the add()
-    method.
-
-    When observations and modelResults are added the connection is
-    validated (inside domain? overlapping time? eum match?).
-
-    The extract() method are then called to extract ModelResult data at
-    the time and positions of each observation.
-
-    Note
-    ----
-    Only ModelResults with a single item can be added to the Connector.
-    From a multi-item ModelResult 'mr' an item must selected e.g. with
-    'mr[0]' before adding
-
-    Examples
-    --------
-    >>> mr = ModelResult("Oresund2D.dfsu", item=0)
-    >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
-    >>> o2 = TrackObservation(df, item=2, name="altimeter")
-    >>> conA = Connector([o1, o2], mr)
-    >>> conB = Connector()
-    >>> conB.add(o1, mr)
-    >>> conB.add(o2, mr)    # conA = conB
-    >>> cc = conB.extract()
-    """
-
     @property
     def n_observations(self):
         """Number of (unique) observations in Connector."""
@@ -253,6 +227,10 @@ class Connector(Sequence):
         return txt + "\n".join(" -" + repr(c) for c in self.connections.values())
 
     def __init__(self, obs=None, mod=None, weight=1.0, validate=True):
+        warnings.warn(
+            FutureWarning("Connector is deprecated! Use `modelskill.match` instead")
+        )
+
         self.name = None
         self.connections = {}
         self.observations = {}

@@ -11,13 +11,13 @@ plt.rcParams.update({"figure.max_open_warning": 0})
 @pytest.fixture
 def mr1():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_1")
+    return ms.model_result(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
-    return ms.ModelResult(fn, item=0, name="SW_2")
+    return ms.model_result(fn, item=0, name="SW_2")
 
 
 @pytest.fixture
@@ -40,11 +40,11 @@ def o3():
 
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3):
-    return ms.compare([o1, o2, o3], [mr1, mr2])
+    return ms.match([o1, o2, o3], [mr1, mr2])
 
 
 def test_compare(mr1, mr2, o1, o2, o3):
-    cc = ms.compare([o1, o2, o3], [mr1, mr2])
+    cc = ms.match([o1, o2, o3], [mr1, mr2])
 
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
@@ -53,8 +53,8 @@ def test_compare(mr1, mr2, o1, o2, o3):
 
 
 def test_add_comparer(mr1, mr2, o1, o2):
-    cc1 = ms.compare(o1, mr1)
-    cc2 = ms.compare(o2, mr2)
+    cc1 = ms.match(o1, mr1)
+    cc2 = ms.match(o2, mr2)
     cc = cc1 + cc2
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
@@ -63,8 +63,8 @@ def test_add_comparer(mr1, mr2, o1, o2):
 
 
 def test_add_same_comparer_twice(mr1, mr2, o1, o2):
-    cc1 = ms.compare(o1, mr1)
-    cc2 = ms.compare(o2, mr2)
+    cc1 = ms.match(o1, mr1)
+    cc2 = ms.match(o2, mr2)
     cc = cc1 + cc2
     assert len(cc) == 2
     cc = cc + cc2
@@ -92,23 +92,23 @@ def test_mm_skill(cc):
 
 
 def test_mm_skill_model(cc):
-    df = cc.skill(model="SW_1").to_dataframe()
+    df = cc.sel(model="SW_1").skill().to_dataframe()
     assert df.loc["EPL"].n == 67
     assert df.loc["c2"].n == 113
 
-    df2 = cc.skill(model=-2).to_dataframe()
+    df2 = cc.sel(model=-2).skill().to_dataframe()
     assert df2.loc["c2"].rmse == df.loc["c2"].rmse
 
 
-def test_mm_skill_missing_model(cc):
+def test_mm_sel_missing_model(cc):
     with pytest.raises(KeyError):
-        cc.skill(model="SW_3")
+        cc.sel(model="SW_3")
     with pytest.raises(IndexError):
-        cc.skill(model=999)
+        cc.sel(model=999)
     with pytest.raises((KeyError, IndexError)):
-        cc.skill(model=[999, "SW_2"])
+        cc.sel(model=[999, "SW_2"])
     with pytest.raises(TypeError):
-        cc.skill(model=[0.1])
+        cc.sel(model=[0.1])
 
 
 def test_mm_skill_obs(cc):
@@ -127,18 +127,18 @@ def test_mm_skill_obs(cc):
 
 def test_mm_mean_skill_obs(cc):
     df = cc.sel(model=0, observation=[0, "c2"]).mean_skill().to_dataframe()
-    assert pytest.approx(df.si[0]) == 0.11113215
+    assert pytest.approx(df.iloc[0].si) == 0.11113215
 
 
-def test_mm_skill_missing_obs(cc, o1):
+def test_mm_sel_missing_obs(cc, o1):
     with pytest.raises(KeyError):
-        cc.skill(observation="imaginary_obs")
+        cc.sel(observation="imaginary_obs")
     with pytest.raises(IndexError):
-        cc.skill(observation=999)
+        cc.sel(observation=999)
     with pytest.raises((KeyError, IndexError)):
-        cc.skill(observation=["c2", 999])
+        cc.sel(observation=["c2", 999])
     with pytest.raises(TypeError):
-        cc.skill(observation=[o1])
+        cc.sel(observation=[o1])
 
 
 def test_mm_skill_start_end(cc):
@@ -164,7 +164,7 @@ def test_mm_skill_area_polygon(cc):
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
     s = cc.sel(model="SW_2", area=polygon).skill()
     assert "HKNA" not in s.obs_names
-    assert s.to_dataframe().n[1] == 66
+    assert s.to_dataframe().iloc[1].n == 66
 
     # "this is not the indexing you want..."
     # assert pytest.approx(s.iloc[0].r2) == 0.9271339372
@@ -200,19 +200,19 @@ def test_mm_mean_skill_area_polygon(cc):
     # TODO support for polygons with holes
 
 
-def test_mm_skill_area_error(cc):
+def test_mm_sel_area_error(cc):
     with pytest.raises(ValueError):
-        cc.skill(area=[0.1, 0.2])
+        cc.sel(area=[0.1, 0.2])
     with pytest.raises(ValueError):
-        cc.skill(area="polygon")
+        cc.sel(area="polygon")
     with pytest.raises(ValueError):
-        cc.skill(area=[0.1, 0.2, 0.3, 0.6, "string"])
+        cc.sel(area=[0.1, 0.2, 0.3, 0.6, "string"])
     with pytest.raises(ValueError):
         # uneven number of elements
-        cc.skill(area=[0.1, 0.2, 0.3, 0.6, 5.6, 5.9, 5.0])
+        cc.sel(area=[0.1, 0.2, 0.3, 0.6, 5.6, 5.9, 5.0])
     with pytest.raises(ValueError):
         polygon = np.array([[6, 51, 4], [0, 55, 4], [0, 51, 4], [6, 51, 4]])
-        cc.skill(area=polygon)
+        cc.sel(area=polygon)
 
 
 def test_mm_skill_metrics(cc):
@@ -224,11 +224,11 @@ def test_mm_skill_metrics(cc):
     assert pytest.approx(s.loc["EPL"].rmse) == 0.22359664
 
     with pytest.raises(ValueError):
-        cc.skill(model="SW_1", metrics=["mean_se"])
+        cc.sel(model="SW_1").skill(metrics=["mean_se"])
     with pytest.raises(AttributeError):
-        cc.skill(model="SW_1", metrics=[mtr.fake])
+        cc.sel(model="SW_1").skill(metrics=[mtr.fake])
     with pytest.raises(TypeError):
-        cc.skill(model="SW_1", metrics=[47])
+        cc.sel(model="SW_1").skill(metrics=[47])
 
 
 def test_mm_mean_skill(cc):
@@ -343,7 +343,8 @@ def cm_3(obs, model):
 def test_custom_metric_skilltable_mm_scatter(cc):
     mtr.add_metric(cm_1)
     mtr.add_metric(cm_2, has_units=True)
-    cc.scatter(model="SW_2", observation="HKNA", skill_table=["bias", cm_1, "si", cm_2])
+    ccs = cc.sel(model="SW_2", observation="HKNA")
+    ccs.plot.scatter(skill_table=["bias", cm_1, "si", cm_2])
     assert True
     plt.close("all")
 
@@ -399,12 +400,12 @@ def test_mm_taylor(cc):
 
 
 def test_mm_plot_timeseries(cc):
-    cc["EPL"].plot_timeseries()
-    cc["EPL"].plot_timeseries(title="t", figsize=(3, 3))
+    cc["EPL"].plot.timeseries()
+    cc["EPL"].plot.timeseries(title="t", figsize=(3, 3))
 
     # cc["EPL"].plot_timeseries(backend="plotly")
     with pytest.raises(ValueError):
-        cc["EPL"].plot_timeseries(backend="mpl")
+        cc["EPL"].plot.timeseries(backend="mpl")
 
     ax = cc["EPL"].plot.timeseries()
     assert "EPL" in ax.get_title()

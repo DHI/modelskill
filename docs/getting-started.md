@@ -4,7 +4,7 @@ Getting started
 This page describes the typical ModelSkill workflow for comparing model
 results and observations. If you just need a simple one-to-one time
 series comparison, see the [simple time series
-comparison](simple-compare).
+comparison](simple-compare.md).
 
 Workflow
 --------
@@ -22,7 +22,7 @@ The typical ModelSkill workflow consists of these five steps:
 The result of a MIKE 21/3 simulation is stored in one or more dfs files.
 The most common formats are .dfsu for distributed data and .dfs0 for
 time series point data. A ModelSkill
-[ModelResult](modelskill.model.PointModelResult) is defined by the
+[ModelResult](api/model.md#modelskill.model.PointModelResult) is defined by the
 result file path and a name:
 
 ```python
@@ -39,8 +39,8 @@ created. The data will be read later.
 The next step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
 
--   [PointObservation](PointObservation)
--   [TrackObservation](TrackObservation)
+-   [PointObservation](api/observation.md#modelskill.observation.PointObservation)
+-   [TrackObservation](api/observation.md#modelskill.observation.TrackObservation)
 
 Let\'s assume that we have one PointObservation and one
 TrackObservation:
@@ -61,22 +61,21 @@ further needs to be initialized with it\'s x-, y-position.
 ### 3. Connect observations and ModelResults
 
 ```python
-cc = ms.compare([hkna, c2], mr)
+cc = ms.match([hkna, c2], mr)
 ```
 
 This method returns a
-[ComparerCollection](modelskill.comparison.ComparerCollection)
+[ComparerCollection](api/compare.md#modelskill.comparison.ComparerCollection)
 for further analysis and plotting.
 
 ### 4. Do analysis, plotting, etc with a Comparer
 
-The object returned by the `compare()` method is a *ComparerCollection*. It holds
-the matched observation and model data and has methods for plotting and
+The object returned by the `match()` method is a *Comparer*/*ComparerCollection*. It holds the matched observation and model data and has methods for plotting and
 skill assessment.
 
 The primary comparer methods are:
 
-- [skill()](ComparerCollection.skill)
+- [skill()](api/compare.md#modelskill.comparison.ComparerCollection.skill)
   which returns a table with the skill scores
 - various plot methods of the comparer objects
     * `plot.scatter()`

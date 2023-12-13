@@ -35,7 +35,6 @@ Or the development version:
 * [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Multi_model_comparison.ipynb)
 * [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
 * [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Track_comparison.ipynb) (including global wave model example)
-* [Spatial_skill.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Spatial_skill.ipynb) (satellite tracks, skill aggregated on spatial bins)
 * [NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/NetCDF_ModelResult.ipynb)
 * [Combine_comparers.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Combine_comparers.ipynb)
 
@@ -65,7 +64,7 @@ Start by defining model results and observations:
 Then, connect observations and model results, and extract data at observation points:
 
 ```python
->>> cc = ms.compare([HKNA, EPL, c2], mr)
+>>> cc = ms.match([HKNA, EPL, c2], mr)
 ```
 
 With the comparer object, cc, all sorts of skill assessments and plots can be made:

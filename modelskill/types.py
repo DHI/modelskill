@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Dict, Union, List, Optional
+from typing import Dict, Union, List, Optional, Mapping
 
 from dataclasses import dataclass
 import warnings
@@ -161,21 +161,42 @@ class Quantity:
 
     @staticmethod
     def undefined() -> "Quantity":
-        return Quantity(name="Undefined", unit="Undefined")
+        return Quantity(name="", unit="")
 
     def to_dict(self) -> Dict[str, str]:
         return {"name": self.name, "unit": self.unit}
 
     @staticmethod
-    def from_xarray_attrs(long_name: str, units: str) -> "Quantity":
-        """Create a Quantity from xarray attributes (e.g. CF standard names)
+    def from_cf_attrs(attrs: Mapping[str, str]) -> "Quantity":
+        """Create a Quantity from a CF compliant attributes dictionary
 
         If units is "degree", "degrees" or "Degree true", the quantity is assumed
         to be directional. Based on https://codes.ecmwf.int/grib/param-db/ and
         https://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html
+
+        Parameters
+        ----------
+        attrs : Mapping[str, str]
+            Attributes dictionary
+
+        Examples
+        --------
+        >>> Quantity.from_cf_attrs({'long_name': 'Water Level', 'units': 'meter'})
+        Quantity(name='Water Level', unit='meter', is_directional=False)
+        >>> Quantity.from_cf_attrs({'long_name': 'Wind direction', 'units': 'degree'})
+        Quantity(name='Wind direction', unit='degree', is_directional=True)
+
         """
-        is_directional = units in ["degree", "degrees", "Degree true"]
-        return Quantity(name=long_name, unit=units, is_directional=is_directional)
+        quantity = Quantity.undefined()
+        if long_name := attrs.get("long_name"):
+            if units := attrs.get("units"):
+                is_directional = units in ["degree", "degrees", "Degree true"]
+                quantity = Quantity(
+                    name=long_name,
+                    unit=units,
+                    is_directional=is_directional,
+                )
+        return quantity
 
     @staticmethod
     def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo) -> "Quantity":

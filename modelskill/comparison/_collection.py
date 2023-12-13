@@ -1,7 +1,17 @@
+from __future__ import annotations
 import os
 from pathlib import Path
 import tempfile
-from typing import Dict, List, Union, Optional, Mapping, Sequence, Iterable
+from typing import (
+    Dict,
+    List,
+    Union,
+    Optional,
+    Mapping,
+    Iterable,
+    overload,
+    Hashable,
+)
 import warnings
 import zipfile
 import numpy as np
@@ -12,8 +22,8 @@ from .. import metrics as mtr
 from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
-from ..skill import AggregatedSkill
-from ..spatial import SpatialSkill
+from ..skill import SkillTable
+from ..skill_grid import SkillGrid
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
@@ -71,7 +81,7 @@ def _all_df_template(n_variables: int = 1):
 
 class ComparerCollection(Mapping):
     """
-    Collection of comparers, constructed by calling the `modelskill.compare` method.
+    Collection of comparers, constructed by calling the `modelskill.match` method.
 
     Examples
     --------
@@ -79,48 +89,26 @@ class ComparerCollection(Mapping):
     >>> mr = ms.ModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
-    >>> cc = ms.compare(obs=[o1,o2], mod=mr)
+    >>> cc = ms.match(obs=[o1,o2], mod=mr)
     """
 
-    comparers: Dict[str, Comparer]
     plotter = ComparerCollectionPlotter
 
     """Collection of Comparers, indexed by name"""
 
-    def __init__(self, comparers=None) -> None:
-        self.comparers = {}
-        self.add_comparer(comparers)
+    def __init__(self, comparers: Iterable[Comparer]) -> None:
+        self.comparers: Dict[str, Comparer] = {}
+        self._insert_comparers(comparers)
         self.plot = ComparerCollection.plotter(self)
 
-    def add_comparer(self, comparer: Union["Comparer", "ComparerCollection"]) -> None:
-        """Add another Comparer to this collection.
-
-        Parameters
-        ----------
-        comparer : (Comparer, ComparerCollection)
-            Comparer to add to this collection
-        """
-        if isinstance(comparer, (ComparerCollection, Sequence)):
+    def _insert_comparers(self, comparer: Union[Comparer, Iterable[Comparer]]) -> None:
+        if isinstance(comparer, Iterable):
             for c in comparer:
-                self._add_comparer(c)
+                self[c.name] = c
         elif isinstance(comparer, Comparer):
-            self._add_comparer(comparer)
+            self[comparer.name] = comparer
         else:
             pass
-
-    def _add_comparer(self, comparer: Union[Comparer, None]) -> None:
-        if comparer is None:  # TODO please don't pass None
-            return
-        assert isinstance(
-            comparer, Comparer
-        ), f"comparer must be a Comparer, not {type(comparer)}"
-        if comparer.name in self.comparers:
-            # comparer with this name already exists!
-            # maybe the user is trying to add a new model
-            # or a new time period
-            self.comparers[comparer.name] = self.comparers[comparer.name] + comparer  # type: ignore
-        else:
-            self.comparers[comparer.name] = comparer
 
     @property
     def name(self) -> str:
@@ -235,17 +223,41 @@ class ComparerCollection(Mapping):
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
 
-    def __getitem__(self, x) -> Comparer:
+    @overload
+    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection:
+        ...
+
+    @overload
+    def __getitem__(self, x: int | Hashable) -> Comparer:
+        ...
+
+    def __getitem__(self, x):
+        if isinstance(x, str):
+            return self.comparers[x]
+
         if isinstance(x, slice):
-            raise NotImplementedError("slicing not implemented")
-        #    cmps = [self[xi] for xi in range(*x.indices(len(self)))]
-        #    cc = ComparerCollection(cmps)
-        #    return cc
+            idxs = list(range(*x.indices(len(self))))
+            return ComparerCollection([self[i] for i in idxs])
 
         if isinstance(x, int):
-            x = _get_name(x, self.obs_names)
+            name = _get_name(x, self.obs_names)
+            return self.comparers[name]
 
-        return self.comparers[x]
+        if isinstance(x, Iterable):
+            cmps = [self[i] for i in x]
+            return ComparerCollection(cmps)
+
+    def __setitem__(self, x: str, value: Comparer) -> None:
+        assert isinstance(
+            value, Comparer
+        ), f"comparer must be a Comparer, not {type(value)}"
+        if x in self.comparers:
+            # comparer with this name already exists!
+            # maybe the user is trying to add a new model
+            # or a new time period
+            self.comparers[x] = self.comparers[x] + value  # type: ignore
+        else:
+            self.comparers[x] = value
 
     def __len__(self) -> int:
         return len(self.comparers)
@@ -256,9 +268,7 @@ class ComparerCollection(Mapping):
     def __copy__(self):
         cls = self.__class__
         cp = cls.__new__(cls)
-        cp.__init__()
-        for c in self.comparers.values():
-            cp.add_comparer(c)
+        cp.__init__(list(self.comparers))  # TODO should this use deepcopy?
         return cp
 
     def copy(self):
@@ -270,10 +280,10 @@ class ComparerCollection(Mapping):
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        cc = ComparerCollection()
-        cc.add_comparer(self)
-        cc.add_comparer(other)
-        return cc
+        if isinstance(other, Comparer):
+            return ComparerCollection([*self, other])
+        elif isinstance(other, ComparerCollection):
+            return ComparerCollection([*self, *other])
 
     def sel(
         self,
@@ -284,6 +294,7 @@ class ComparerCollection(Mapping):
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
+        **kwargs,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
 
@@ -303,6 +314,11 @@ class ComparerCollection(Mapping):
             Time. If None, all times are selected.
         area : list of float, optional
             bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+        kwargs : dict, optional
+            Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs
+            e.g. `sel(gtype='track')` or `sel(obs_provider='CMEMS')` if at least
+            one comparer has an entry `obs_provider` with value `CMEMS` in its
+            attrs container. Multiple kwargs are combined with logical AND.
 
         Returns
         -------
@@ -328,7 +344,7 @@ class ComparerCollection(Mapping):
         else:
             variable = self.var_names
 
-        cc = ComparerCollection()
+        cmps = []
         for cmp in self.comparers.values():
             if cmp.name in observation and cmp.quantity.name in variable:
                 thismodel = (
@@ -346,8 +362,46 @@ class ComparerCollection(Mapping):
                 if cmpsel is not None:
                     # TODO: check if cmpsel is empty
                     if cmpsel.n_points > 0:
-                        cc.add_comparer(cmpsel)
+                        cmps.append(cmpsel)
+        cc = ComparerCollection(cmps)
+
+        if kwargs:
+            cc = cc.filter_by_attrs(**kwargs)
+
         return cc
+
+    def filter_by_attrs(self, **kwargs) -> "ComparerCollection":
+        """Filter by comparer attrs similar to xarray.Dataset.filter_by_attrs
+
+        Parameters
+        ----------
+        kwargs : dict, optional
+            Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs
+            e.g. `sel(gtype='track')` or `sel(obs_provider='CMEMS')` if at least
+            one comparer has an entry `obs_provider` with value `CMEMS` in its
+            attrs container. Multiple kwargs are combined with logical AND.
+
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with selected data.
+
+        Examples
+        --------
+        >>> cc = ms.match([HKNA, EPL, alti], mr)
+        >>> cc.filter_by_attrs(gtype='track')
+        <ComparerCollection>
+        Comparer: alti
+        """
+        cmps = []
+        for cmp in self.comparers.values():
+            for k, v in kwargs.items():
+                # TODO: should we also filter on cmp.data.Observation.attrs?
+                if cmp.data.attrs.get(k) != v:
+                    break
+            else:
+                cmps.append(cmp)
+        return ComparerCollection(cmps)
 
     def query(self, query: str) -> "ComparerCollection":
         """Select data based on a query.
@@ -372,7 +426,7 @@ class ComparerCollection(Mapping):
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
         **kwargs,
-    ) -> Optional[AggregatedSkill]:
+    ) -> Optional[SkillTable]:
         """Aggregated skill assessment of model(s)
 
         Parameters
@@ -398,7 +452,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mr)
+        >>> cc = ms.match([HKNA,EPL,c2], mr)
         >>> cc.skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -422,6 +476,7 @@ class ComparerCollection(Mapping):
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,
@@ -447,7 +502,7 @@ class ComparerCollection(Mapping):
 
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
-        return AggregatedSkill(res)
+        return SkillTable(res)
 
     def _add_as_col_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "variable"]
@@ -467,13 +522,34 @@ class ComparerCollection(Mapping):
     def spatial_skill(
         self,
         bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
+
+    def gridded_skill(
+        self,
+        bins=5,
         binsize: Optional[float] = None,
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[list] = None,
         n_min: Optional[int] = None,
         **kwargs,
     ):
-        """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
+        """Skill assessment of model(s) on a regular spatial grid.
 
         Parameters
         ----------
@@ -508,8 +584,8 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mr)  # with satellite track measurements
-        >>> cc.spatial_skill(metrics='bias')
+        >>> cc = ms.match([HKNA,EPL,c2], mr)  # with satellite track measurements
+        >>> cc.gridded_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -520,7 +596,7 @@ class ComparerCollection(Mapping):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.spatial_skill(binsize=0.5)
+        >>> ds = cc.gridded_skill(binsize=0.5)
         >>> ds.coords
         Coordinates:
             observation   'alti'
@@ -530,6 +606,7 @@ class ComparerCollection(Mapping):
 
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
 
@@ -558,7 +635,7 @@ class ComparerCollection(Mapping):
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SpatialSkill(res.to_xarray().squeeze())
+        return SkillGrid(res.to_xarray().squeeze())
 
     def scatter(
         self,
@@ -629,7 +706,7 @@ class ComparerCollection(Mapping):
         weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[AggregatedSkill]:  # TODO raise error if no data?
+    ) -> Optional[SkillTable]:  # TODO raise error if no data?
         """Weighted mean of skills
 
         First, the skill is calculated per observation,
@@ -652,7 +729,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        AggregatedSkill
+        SkillTable
             mean skill assessment as a skill object
 
         See also
@@ -665,7 +742,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare([HKNA,EPL,c2], mod=HKZN_local)
+        >>> cc = ms.match([HKNA,EPL,c2], mod=HKZN_local)
         >>> cc.mean_skill().round(2)
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
@@ -677,6 +754,7 @@ class ComparerCollection(Mapping):
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         # filter data
         cmp = self.sel(
@@ -702,7 +780,7 @@ class ComparerCollection(Mapping):
         s = cmp.skill(metrics=metrics)
         if s is None:
             return None
-        skilldf = s.df
+        skilldf = s.to_dataframe()
 
         # weights
         weights = cmp._parse_weights(weights, s.obs_names)
@@ -722,14 +800,14 @@ class ComparerCollection(Mapping):
 
         # output
         res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
-        return AggregatedSkill(res.astype({"n": int}))
+        return SkillTable(res.astype({"n": int}))
 
     def mean_skill_points(
         self,
         *,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[AggregatedSkill]:  # TODO raise error if no data?
+    ) -> Optional[SkillTable]:  # TODO raise error if no data?
         """Mean skill of all observational points
 
         All data points are pooled (disregarding which observation they belong to),
@@ -749,7 +827,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        AggregatedSkill
+        SkillTable
             mean skill assessment as a skill object
 
         See also
@@ -762,13 +840,14 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.mean_skill_points()
         """
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         # filter data
         cmp = self.sel(
@@ -890,7 +969,7 @@ class ComparerCollection(Mapping):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.score()
         0.30681206
         >>> cc.score(weights=[0.1,0.1,0.8])
@@ -905,6 +984,7 @@ class ComparerCollection(Mapping):
 
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         if model is None:
             models = self.mod_names
@@ -960,6 +1040,7 @@ class ComparerCollection(Mapping):
 
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
             model=model,
@@ -1016,7 +1097,7 @@ class ComparerCollection(Mapping):
 
         Examples
         --------
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.save("my_comparer_collection.msk")
 
         Notes
@@ -1051,7 +1132,7 @@ class ComparerCollection(Mapping):
 
         Examples
         --------
-        >>> cc = ms.compare(obs, mod)
+        >>> cc = ms.match(obs, mod)
         >>> cc.save("my_comparer_collection.msk")
         >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.msk")
         """
