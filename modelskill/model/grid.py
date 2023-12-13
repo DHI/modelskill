@@ -7,7 +7,8 @@ import xarray as xr
 
 from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
 from ..utils import rename_coords_xr, rename_coords_pd
-from ..types import GridType, Quantity
+from ..types import GridType
+from ..quantity import Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
 from ..observation import PointObservation, TrackObservation
@@ -85,14 +86,8 @@ class GridModelResult(SpatialField):
 
         # use long_name and units from data if not provided
         if quantity is None:
-            # TODO: should this be on the DataArray instead?
-            if self.data.attrs.get("long_name") and self.data.attrs.get("units"):
-                quantity = Quantity(
-                    name=self.data.attrs["long_name"],
-                    unit=self.data.attrs["units"],
-                )
-            else:
-                quantity = Quantity.undefined()
+            da = self.data[sel_items.values]
+            quantity = Quantity.from_cf_attrs(da.attrs)
 
         self.quantity = quantity
 

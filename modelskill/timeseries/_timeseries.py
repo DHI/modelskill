@@ -7,7 +7,8 @@ from numpy.typing import NDArray
 import pandas as pd
 import xarray as xr
 
-from ..types import GeometryType, Quantity
+from ..types import GeometryType
+from ..quantity import Quantity
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
 
@@ -152,7 +153,6 @@ class TimeSeries:
         """Name of time series (value item name)"""
         return self._val_item
 
-    # setter
     @name.setter
     def name(self, name: str) -> None:
         name = _validate_data_var_name(name)
@@ -164,6 +164,9 @@ class TimeSeries:
         return Quantity(
             name=self.data[self.name].attrs["long_name"],
             unit=self.data[self.name].attrs["units"],
+            is_directional=bool(
+                self.data[self.name].attrs.get("is_directional", False)
+            ),
         )
 
     @quantity.setter
@@ -171,6 +174,7 @@ class TimeSeries:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
         self.data[self.name].attrs["long_name"] = quantity.name
         self.data[self.name].attrs["units"] = quantity.unit
+        self.data[self.name].attrs["is_directional"] = int(quantity.is_directional)
 
     @property
     def color(self) -> str:
