@@ -1,8 +1,11 @@
 from __future__ import annotations
 import warnings
-from typing import Iterable, Collection, overload, Hashable
+from typing import Iterable, Collection, overload, Hashable, TYPE_CHECKING
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    import geopandas as gpd
 
 from .plotting._misc import _get_fig_ax
 
@@ -42,12 +45,26 @@ class SkillArrayPlotter:
                 kwargs["title"] = self.skillarray.name
 
     def _get_plot_df(self, level: int | str = 0) -> pd.DataFrame:
-        ser = self.skillarray.data
+        ser = self.skillarray._ser
         if isinstance(ser.index, pd.MultiIndex):
             df = ser.unstack(level=level)
         else:
             df = ser.to_frame()
         return df
+
+    def map(self, **kwargs):
+        if "model" in self.skillarray.data.index.names:
+            n_models = len(self.skillarray.data.reset_index().model.unique())
+            if n_models > 1:
+                raise ValueError(
+                    "map() is only possible for single model skill. Use .sel(model=...) to select a single model."
+                )
+
+        gdf = self.skillarray.to_geodataframe()
+        column = self.skillarray.name
+        kwargs = {"marker_kwds": {"radius": 10}} | kwargs
+
+        return gdf.explore(column=column, **kwargs)
 
     def line(
         self,
@@ -187,7 +204,7 @@ class SkillArrayPlotter:
         """
 
         s = self.skillarray
-        ser = s.data
+        ser = s._ser
 
         errors = _validate_multi_index(ser.index)
         if len(errors) > 0:
@@ -287,14 +304,14 @@ class SkillArray:
     >>> s.rmse.plot.line()
     """
 
-    def __init__(self, data: pd.Series) -> None:
-        assert isinstance(data, pd.Series)
+    def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
+        self._ser = data.iloc[:, -1]  # last column is the metric
         self.plot = SkillArrayPlotter(self)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Output as pd.DataFrame"""
-        return self.data.to_dataframe()
+        return self._ser.to_frame()
 
     def __repr__(self):
         return repr(self.to_dataframe())
@@ -305,7 +322,21 @@ class SkillArray:
     @property
     def name(self):
         """Name of the metric"""
-        return self.data.name
+        return self._ser.name
+
+    def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
+        import geopandas as gpd
+
+        assert "x" in self.data.columns
+        assert "y" in self.data.columns
+
+        gdf = gpd.GeoDataFrame(
+            self._ser,
+            geometry=gpd.points_from_xy(self.data.x, self.data.y),
+            crs=crs,
+        )
+
+        return gdf
 
 
 class SkillTable:
@@ -360,21 +391,25 @@ class SkillTable:
         self.plot = DeprecatedSkillPlotter(self)  # TODO remove in v1.1
 
     # TODO: remove?
+    # data without xy columns
     @property
     def _df(self) -> pd.DataFrame:
-        return self.data
+        return self.data.drop(columns=["x", "y"], errors="ignore")
 
     @property
     def metrics(self) -> Collection[str]:
         """List of metrics (columns) in the SkillTable"""
-        return list(self.data.columns)
+        return list(self._df.columns)
 
     # TODO: remove?
     def __len__(self) -> int:
         return len(self._df)
 
-    def to_dataframe(self) -> pd.DataFrame:
-        return self._df.copy()
+    def to_dataframe(self, drop_xy=True) -> pd.DataFrame:
+        if drop_xy:
+            return self.data.drop(columns=["x", "y"], errors="ignore")
+        else:
+            return self.data.copy()
 
     def __repr__(self):
         return repr(self._df)
@@ -395,7 +430,12 @@ class SkillTable:
             key = list(self.data.columns)[key]
         result = self.data[key]
         if isinstance(result, pd.Series):
-            return SkillArray(result)
+            # I don't think this should be necessary, but in some cases the input doesn't contain x and y
+            if "x" in self.data.columns and "y" in self.data.columns:
+                cols = ["x", "y", key]
+                return SkillArray(self.data[cols])
+            else:
+                return SkillArray(result.to_frame())
         elif isinstance(result, pd.DataFrame):
             return SkillTable(result)
         else:
