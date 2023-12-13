@@ -7,7 +7,8 @@ from numpy.typing import NDArray
 import pandas as pd
 import xarray as xr
 
-from ..types import GeometryType, Quantity
+from ..types import GeometryType
+from ..quantity import Quantity
 from ._plotter import TimeSeriesPlotter, MatplotlibTimeSeriesPlotter
 from .. import __version__
 

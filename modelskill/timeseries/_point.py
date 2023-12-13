@@ -7,7 +7,8 @@ import xarray as xr
 
 import mikeio
 
-from ..types import GeometryType, PointType, Quantity
+from ..types import GeometryType, PointType
+from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
 
