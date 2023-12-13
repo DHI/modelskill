@@ -205,6 +205,15 @@ def test_from_df():
     assert t1.n_points == n
 
 
+def test_observation_factory(obs_tiny_df4):
+    o = ms.observation(obs_tiny_df4, x_item="x", y_item="y", item="alti")
+    assert isinstance(o, ms.TrackObservation)
+
+    with pytest.warns(UserWarning, match="Could not guess geometry"):
+        o = ms.observation(obs_tiny_df4, item="alti", name="Klagshamn")
+        assert not isinstance(o, ms.TrackObservation)  # ! defaults to PointObservation
+
+
 def test_non_unique_index():
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
     df = pd.read_csv(fn, index_col=0, parse_dates=True)
