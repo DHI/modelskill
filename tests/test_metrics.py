@@ -1,13 +1,14 @@
 from typing import Callable
 import pytest
 import numpy as np
+import pandas as pd
 import mikeio
 
 import modelskill.metrics as mtr
 
 
 @pytest.fixture
-def obs_series():
+def obs_series() -> pd.Series:
     return (
         mikeio.Dfs0("./tests/testdata/wave_dir.dfs0")
         .read(items=0)
@@ -17,10 +18,12 @@ def obs_series():
 
 
 @pytest.fixture
-def mod_series():
-    return pd.Series(
-        data=np.arange(24 * 365 * 4) / 1000 + 5,
-        index=pd.date_range(start="2100-01-01", periods=24 * 365 * 4, freq="H"),
+def mod_series() -> pd.Series:
+    return (
+        mikeio.Dfs0("./tests/testdata/wave_dir.dfs0")
+        .read(items=1)
+        .to_dataframe()
+        .iloc[:, 0]
     )
 
 

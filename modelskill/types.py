@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Dict, Union, List, Optional
+from typing import Dict, Union, List, Optional, Mapping
 
 from dataclasses import dataclass
 import warnings
@@ -161,6 +161,34 @@ class Quantity:
 
     def to_dict(self) -> Dict[str, str]:
         return {"name": self.name, "unit": self.unit}
+
+    @staticmethod
+    def from_cf_attrs(attrs: Mapping[str, str]) -> "Quantity":
+        """Create a Quantity from a CF compliant attributes dictionary
+
+        Parameters
+        ----------
+        attrs : Mapping[str, str]
+            Attributes dictionary
+
+        Examples
+        --------
+        >>> Quantity.from_cf_attrs({'long_name': 'Water Level', 'units': 'meter'})
+        Quantity(name='Water Level', unit='meter', is_directional=False)
+        >>> Quantity.from_cf_attrs({'long_name': 'Wind direction', 'units': 'degree'})
+        Quantity(name='Wind direction', unit='degree', is_directional=True)
+
+        """
+        quantity = Quantity.undefined()
+        if long_name := attrs.get("long_name"):
+            if units := attrs.get("units"):
+                is_directional = units == "degree"
+                quantity = Quantity(
+                    name=long_name,
+                    unit=units,
+                    is_directional=is_directional,
+                )
+        return quantity
 
     @staticmethod
     def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo) -> "Quantity":

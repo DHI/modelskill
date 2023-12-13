@@ -103,6 +103,11 @@ def _parse_point_input(
     if isinstance(data, mikeio.Dataset):
         if quantity is None:
             quantity = Quantity.from_mikeio_iteminfo(data[0].item)
+
+    if isinstance(data, xr.Dataset):
+        if quantity is None:
+            da = data[sel_items.values]
+            quantity = Quantity.from_cf_attrs(da.attrs)
     model_quantity = Quantity.undefined() if quantity is None else quantity
 
     # convert to xr.Dataset
