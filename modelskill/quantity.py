@@ -97,7 +97,7 @@ class Quantity:
         Examples
         --------
         >>> Quantity.from_cf_attrs({'long_name': 'Water Level', 'units': 'meter'})
-        Quantity(name='Water Level', unit='meter', is_directional=False)
+        Quantity(name='Water Level', unit='meter')
         >>> Quantity.from_cf_attrs({'long_name': 'Wind direction', 'units': 'degree'})
         Quantity(name='Wind direction', unit='degree', is_directional=True)
 
