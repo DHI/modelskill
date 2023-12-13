@@ -4,6 +4,7 @@ from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
 if TYPE_CHECKING:
     import matplotlib.figure
     import matplotlib.axes
+    from ._comparison import Comparer
 
 import numpy as np  # type: ignore
 
@@ -23,7 +24,7 @@ from ..settings import options
 class ComparerPlotter:
     """Plotter class for Comparer"""
 
-    def __init__(self, comparer):
+    def __init__(self, comparer: Comparer):
         self.comparer = comparer
         self.is_directional = comparer.quantity.is_directional
 
@@ -252,7 +253,8 @@ class ComparerPlotter:
         ax.yaxis.set_visible(False)
         ax.tick_params(axis="y", which="both", length=0)
         ax.set_ylabel("")
-        ax.set_title(title or f"KDE plot for {cmp.name}")
+        title = f"KDE plot for {cmp.name}" if title is None else title
+        ax.set_title(title)
 
         # remove box around plot
         ax.spines["top"].set_visible(False)
@@ -508,7 +510,7 @@ class ComparerPlotter:
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
-            skill = cmp.skill(metrics=metrics)
+            skill = cmp.skill(metrics=metrics)  # type: ignore
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:

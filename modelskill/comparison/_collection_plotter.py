@@ -1,6 +1,9 @@
 from __future__ import annotations
-from typing import Any, List, Union, Optional, Tuple, Sequence
+from typing import Any, List, Union, Optional, Tuple, Sequence, TYPE_CHECKING
 from matplotlib.axes import Axes  # type: ignore
+
+if TYPE_CHECKING:
+    from ._collection import ComparerCollection
 
 import pandas as pd
 
@@ -10,8 +13,12 @@ from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
 
 
+def _default_univarate_title(kind: str, cc: ComparerCollection) -> str:
+    return f"{kind} for {cc.n_observations} observations"
+
+
 class ComparerCollectionPlotter:
-    def __init__(self, cc) -> None:
+    def __init__(self, cc: ComparerCollection) -> None:
         self.cc = cc
         self.is_directional = False
 
@@ -133,9 +140,9 @@ class ComparerCollectionPlotter:
 
             # TODO why is this here?
             if isinstance(self, ComparerCollectionPlotter) and cmp.n_observations == 1:
-                skill = cmp.skill(metrics=metrics)
+                skill = cmp.skill(metrics=metrics)  # type: ignore
             else:
-                skill = cmp.mean_skill(metrics=metrics)
+                skill = cmp.mean_skill(metrics=metrics)  # type: ignore
             # TODO improve this
             try:
                 units = unit_text.split("[")[1].split("]")[0]
@@ -213,13 +220,14 @@ class ComparerCollectionPlotter:
             df_model = df[df.model == model]
             df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
 
-        # TODO use unit_text from the first comparer
-        # TODO make sure they are conistent
-        # then it should be a property of the collection, not only the comparer
-        ax.set_xlabel(f"{self.cc[0].unit_text}")
+        ax.set_xlabel(f"{self.cc.unit_text}")
 
-        default_title = f"KDE plot for {', '.join(cmp.name for cmp in self.cc)}"
-        ax.set_title(title or default_title)
+        title = (
+            _default_univarate_title("Density plot", self.cc)
+            if title is None
+            else title
+        )
+        ax.set_title(title)
         ax.legend()
 
         # remove y-axis, ticks and label
@@ -291,7 +299,9 @@ class ComparerCollectionPlotter:
         mod_id = _get_idx(model, self.cc.mod_names)
         mod_name = self.cc.mod_names[mod_id]
 
-        title = f"{mod_name} vs Observations" if title is None else title
+        title = (
+            _default_univarate_title("Histogram", self.cc) if title is None else title
+        )
 
         cmp = self.cc
         df = cmp.to_dataframe()
@@ -384,7 +394,7 @@ class ComparerCollectionPlotter:
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
         skill_func = self.cc.mean_skill if aggregate_observations else self.cc.skill
         s = skill_func(
-            metrics=metrics,
+            metrics=metrics,  # type: ignore
         )
         if s is None:
             return

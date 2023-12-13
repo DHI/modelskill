@@ -115,6 +115,15 @@ class ComparerCollection(Mapping):
         return "Observations"
 
     @property
+    def unit_text(self) -> str:
+        # Picking the first one is arbitrary, but it should be the same for all
+        # we could check that they are all the same, but let's assume that they are
+        # for cmp in self:
+        #     if cmp.unit_text != text:
+        #         warnings.warn(f"Unit text is inconsistent: {text} vs {cmp.unit_text}")
+        return self[0].unit_text
+
+    @property
     def n_comparers(self) -> int:
         """Number of comparers"""
         return len(self.comparers)
