@@ -309,9 +309,12 @@ class SkillArray:
         self._ser = data.iloc[:, -1]  # last column is the metric
         self.plot = SkillArrayPlotter(self)
 
-    def to_dataframe(self) -> pd.DataFrame:
+    def to_dataframe(self, drop_xy=True) -> pd.DataFrame:
         """Output as pd.DataFrame"""
-        return self._ser.to_frame()
+        if drop_xy:
+            return self._ser.to_frame()
+        else:
+            return self.data.copy()
 
     def __repr__(self):
         return repr(self.to_dataframe())
@@ -410,6 +413,20 @@ class SkillTable:
             return self.data.drop(columns=["x", "y"], errors="ignore")
         else:
             return self.data.copy()
+
+    def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
+        import geopandas as gpd
+
+        assert "x" in self.data.columns
+        assert "y" in self.data.columns
+
+        gdf = gpd.GeoDataFrame(
+            self._df,
+            geometry=gpd.points_from_xy(self.data.x, self.data.y),
+            crs=crs,
+        )
+
+        return gdf
 
     def __repr__(self):
         return repr(self._df)
