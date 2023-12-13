@@ -152,3 +152,10 @@ def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     assert tmr.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
     assert tmr.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tmr.n_points == 99
+
+
+def test_grid_with_directional_data_with_cf_metadata_is_directional_by_default():
+    mr = ms.GridModelResult(
+        "tests/testdata/SW/CMEMS_DutchCoast_2017-10-28.nc", item="VMDR"
+    )
+    assert mr.quantity.is_directional
