@@ -523,7 +523,11 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def pr(
-    obs: np.ndarray, model: np.ndarray, inter_event_level: float = 0.7, AAP: int = 2 , inter_event_time='36h' ,
+    obs: np.ndarray,
+    model: np.ndarray,
+    inter_event_level: float = 0.7,
+    AAP: int = 2,
+    inter_event_time="36h",
 ) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
@@ -531,12 +535,16 @@ def pr(
 
 
 def peak_ratio(
-    obs: pd.Series, model: pd.Series, inter_event_level: float = 0.7, AAP: int = 2 , inter_event_time='36h' ,
+    obs: pd.Series,
+    model: pd.Series,
+    inter_event_level: float = 0.7,
+    AAP: int = 2,
+    inter_event_time="36h",
 ) -> float:
     r"""Peak Ratio
 
     PR is the mean of the individual ratios of identified peaks in the
-    model / identified peaks in the measurements. PR is calculated only for the joint-events, 
+    model / identified peaks in the measurements. PR is calculated only for the joint-events,
     ie, events that ocurr simulateneously within a window +/- 0.5*inter_event_time.
 
     Parameters
@@ -567,7 +575,11 @@ def peak_ratio(
     found_peaks = []
     for data in [obs, model]:
         peak_index, AAP_ = _partial_duration_series(
-            time, data, inter_event_level=inter_event_level, AAP=AAP, inter_event_time=inter_event_time,
+            time,
+            data,
+            inter_event_level=inter_event_level,
+            AAP=AAP,
+            inter_event_time=inter_event_time,
         )
         peaks = data[peak_index]
         peaks_sorted = peaks.sort_values(ascending=False)
@@ -577,17 +589,24 @@ def peak_ratio(
     found_peaks_obs = found_peaks[0]
     found_peaks_mod = found_peaks[1]
 
-    #Resample~ish, find peaks spread maximum Half the inter event time (if inter event =36, select data paired +/- 18h) (or inter_event) and then select
-    indices_mod = (abs(found_peaks_obs.index.values[:, None] - found_peaks_mod.index.values) < pd.Timedelta(inter_event_time)/2).any(axis=0)
-    indices_obs = (abs(found_peaks_mod.index.values[:, None] - found_peaks_obs.index.values) < pd.Timedelta(inter_event_time)/2).any(axis=0)
-    obs_joint=found_peaks_obs.loc[indices_obs]
-    mod_joint=found_peaks_mod.loc[indices_mod]
+    # Resample~ish, find peaks spread maximum Half the inter event time (if inter event =36, select data paired +/- 18h) (or inter_event) and then select
+    indices_mod = (
+        abs(found_peaks_obs.index.values[:, None] - found_peaks_mod.index.values)
+        < pd.Timedelta(inter_event_time) / 2
+    ).any(axis=0)
+    indices_obs = (
+        abs(found_peaks_mod.index.values[:, None] - found_peaks_obs.index.values)
+        < pd.Timedelta(inter_event_time) / 2
+    ).any(axis=0)
+    obs_joint = found_peaks_obs.loc[indices_obs]
+    mod_joint = found_peaks_mod.loc[indices_mod]
 
-    if len(obs_joint)==0 or len(mod_joint)==0:
-        warnings.warn(f'Combination of Model/Measurements does not have overlapping peaks within inter_event_time={inter_event_time}')
-        return None
-    PR=np.mean(mod_joint.values/obs_joint.values)
-    return PR
+    if len(obs_joint) == 0 or len(mod_joint) == 0:
+        raise ValueError(
+            f"Combination of Model/Measurements does not have overlapping peaks within inter_event_time={inter_event_time}"
+        )
+    res = np.mean(mod_joint.values / obs_joint.values)
+    return res
 
 
 def willmott(obs: np.ndarray, model: np.ndarray) -> float:
@@ -800,7 +819,7 @@ def _partial_duration_series(
     time,
     value,
     *,
-    inter_event_time='36h',
+    inter_event_time="36h",
     use_inter_event_level=True,
     inter_event_level=0.7,
     AAP=2,
@@ -838,7 +857,7 @@ def _partial_duration_series(
 
     old_peak = -1
     n = len(time)
-    inter_time = pd.Timedelta(inter_event_time)/np.timedelta64(1, 'h')
+    inter_time = pd.Timedelta(inter_event_time) / np.timedelta64(1, "h")
     inter_level = 1.0
     time = np.asarray(time)
     value = np.asarray(value)
