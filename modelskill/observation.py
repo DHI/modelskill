@@ -14,7 +14,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from .types import PointType, TrackType, Quantity
+from .types import PointType, TrackType
+from . import Quantity
 from .timeseries import (
     TimeSeries,
     _parse_point_input,

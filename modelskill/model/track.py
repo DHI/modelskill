@@ -4,7 +4,8 @@ from typing import Optional, Sequence
 import xarray as xr
 
 from ..observation import TrackObservation
-from ..types import TrackType, Quantity
+from ..types import TrackType
+from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_track_input
 
 

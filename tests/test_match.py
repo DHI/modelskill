@@ -379,6 +379,25 @@ def test_save_comparercollection(o1, o3, tmp_path):
     assert fn.exists()
 
 
+def test_wind_directions():
+    df = pd.DataFrame(
+        {
+            "obs": [359, 91, 181, 268],
+            "mod": [0, 90, 180, 270],
+        },
+        index=pd.date_range("2017-01-01", periods=4, freq="H"),
+    )
+
+    cc = ms.from_matched(
+        df,
+        obs_item="obs",
+        quantity=ms.Quantity("Wind direction", unit="degree", is_directional=True),
+    )
+    df = cc.skill().to_dataframe()
+    assert df.loc["obs", "c_max_error"] == pytest.approx(2.0)
+    assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
+
+
 def test_specifying_mod_item_not_allowed_twice(o1, mr1):
     # item was already specified in the construction of the DfsuModelResult
 

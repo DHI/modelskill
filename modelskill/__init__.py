@@ -24,7 +24,7 @@ __version__ = "1.0.a2"
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
 
-from .types import Quantity
+from .quantity import Quantity
 from .model.factory import ModelResult
 from .model import model_result
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult

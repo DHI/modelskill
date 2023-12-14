@@ -115,6 +115,15 @@ class ComparerCollection(Mapping):
         return "Observations"
 
     @property
+    def unit_text(self) -> str:
+        # Picking the first one is arbitrary, but it should be the same for all
+        # we could check that they are all the same, but let's assume that they are
+        # for cmp in self:
+        #     if cmp.unit_text != text:
+        #         warnings.warn(f"Unit text is inconsistent: {text} vs {cmp.unit_text}")
+        return self[0].unit_text
+
+    @property
     def n_comparers(self) -> int:
         """Number of comparers"""
         return len(self.comparers)
@@ -618,6 +627,7 @@ class ComparerCollection(Mapping):
             end=end,
             area=area,
         )
+
         if cmp.n_points == 0:
             warnings.warn("No data!")
             return
@@ -635,7 +645,12 @@ class ComparerCollection(Mapping):
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SkillGrid(res.to_xarray().squeeze())
+        ds = res.to_xarray().squeeze()
+
+        # change categorial index to coordinates
+        for dim in ("x", "y"):
+            ds[dim] = ds[dim].astype(float)
+        return SkillGrid(ds)
 
     def scatter(
         self,
@@ -1011,7 +1026,7 @@ class ComparerCollection(Mapping):
         if skill is None:
             return None
 
-        df = skill.df
+        df = skill.to_dataframe()
 
         if n_models == 1:
             score = df[metric.__name__].values.mean()
@@ -1064,7 +1079,7 @@ class ComparerCollection(Mapping):
         skill_func = cmp.mean_skill if aggregate_observations else cmp.skill
         s = skill_func(metrics=metrics)
 
-        df = s.df
+        df = s.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
