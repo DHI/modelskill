@@ -91,6 +91,17 @@ def test_matched_df(pt_df):
     assert len(cmp.mod_names) == 2
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
+    assert cmp.score()["m1"] == pytest.approx(0.5916079783099617)
+    assert cmp.score()["m2"] == pytest.approx(0.15811388300841905)
+
+
+def test_df_score():
+    df = pd.DataFrame(
+        {"obs": [1.0, 2.0], "not_so_good": [0.9, 2.1], "perfect": [1.0, 2.0]}
+    )
+    cmp = Comparer.from_matched_data(data=df, mod_items=["not_so_good", "perfect"])
+    assert cmp.score("mae")["not_so_good"] == pytest.approx(0.1)
+    assert cmp.score("mae")["perfect"] == pytest.approx(0.0)
 
 
 def test_matched_df_int_items(pt_df):
