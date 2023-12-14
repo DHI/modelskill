@@ -2,16 +2,26 @@ from typing import Callable
 import pytest
 import numpy as np
 import mikeio
-
+import pandas as pd
 import modelskill.metrics as mtr
 
 @pytest.fixture
-def obs_series():
-    return mikeio.Dfs0('./tests/testdata/PR_test_data.dfs0').read(items=0).to_dataframe().iloc[:,0]
+def obs_series() -> pd.Series:
+    return (
+        mikeio.Dfs0('./tests/testdata/PR_test_data.dfs0')
+        .read(items=0)
+        .to_dataframe()
+        .iloc[:,0]
+        )
 
 @pytest.fixture
-def mod_series():
-    return mikeio.Dfs0('./tests/testdata/PR_test_data.dfs0').read(items=1).to_dataframe().iloc[:,0]
+def mod_series() -> pd.Series:
+    return (
+        mikeio.Dfs0('./tests/testdata/PR_test_data.dfs0')
+        .read(items=1)
+        .to_dataframe()
+        .iloc[:,0]
+        )
 
 def test_nse_optimal():
 
