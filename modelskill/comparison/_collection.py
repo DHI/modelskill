@@ -529,6 +529,7 @@ class ComparerCollection(Mapping):
 
     @staticmethod
     def _attrs_keys_in_by(by):
+        """Check if 'attrs:' is in by and return attrs_keys"""
         attrs_keys = []
         by = [by] if isinstance(by, str) else by
         for j, b in enumerate(by):
