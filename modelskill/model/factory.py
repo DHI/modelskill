@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Literal, Optional, Any, Dict
+from typing import Literal, Optional, Any
 import warnings
 
 import pandas as pd
