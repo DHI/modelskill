@@ -111,12 +111,10 @@ class GridModelResult(SpatialField):
         assert hasattr(self.data, "x") and hasattr(
             self.data, "y"
         ), "Data has no x and/or y coordinates."
-        xmin = self.data.x.values.min()
-        xmax = self.data.x.values.max()
-        ymin = self.data.y.values.min()
-        ymax = self.data.y.values.max()
-        assert isinstance(xmin, float) and isinstance(xmax, float)
-        assert isinstance(ymin, float) and isinstance(ymax, float)
+        xmin = float(self.data.x.values.min())
+        xmax = float(self.data.x.values.max())
+        ymin = float(self.data.y.values.min())
+        ymax = float(self.data.y.values.max())
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def extract(
