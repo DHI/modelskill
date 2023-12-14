@@ -436,7 +436,7 @@ class ComparerCollection(Mapping, Scoreable):
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
         **kwargs,
-    ) -> Optional[SkillTable]:
+    ) -> SkillTable:
         """Aggregated skill assessment of model(s)
 
         Parameters
@@ -497,8 +497,9 @@ class ComparerCollection(Mapping, Scoreable):
             area=area,
         )
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         n_models = cmp.n_models  # len(df.model.unique())
@@ -558,7 +559,7 @@ class ComparerCollection(Mapping, Scoreable):
         metrics: Optional[list] = None,
         n_min: Optional[int] = None,
         **kwargs,
-    ):
+    ) -> SkillGrid:
         """Skill assessment of model(s) on a regular spatial grid.
 
         Parameters
@@ -630,8 +631,9 @@ class ComparerCollection(Mapping, Scoreable):
         )
 
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
@@ -722,7 +724,7 @@ class ComparerCollection(Mapping, Scoreable):
         weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[SkillTable]:  # TODO raise error if no data?
+    ) -> SkillTable:
         """Weighted mean of skills
 
         First, the skill is calculated per observation,
@@ -774,16 +776,17 @@ class ComparerCollection(Mapping, Scoreable):
 
         # filter data
         cmp = self.sel(
-            model=model,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
+            model=model,  # deprecated
+            observation=observation,  # deprecated
+            variable=variable,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
@@ -947,7 +950,7 @@ class ComparerCollection(Mapping, Scoreable):
         self,
         metric: str | Callable = mtr.rmse,
         **kwargs,
-    ) -> Dict[str, float] | None:
+    ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
 
         Wrapping mean_skill() with a single metric.
@@ -968,7 +971,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         Returns
         -------
-        float
+        Dict[str, float]
             mean of skills score as a single number (for each model)
 
         See also
@@ -1010,22 +1013,20 @@ class ComparerCollection(Mapping, Scoreable):
             models = [_get_name(m, self.mod_names) for m in models]  # type: ignore
 
         cmp = self.sel(
-            model=models,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
+            model=models,  # deprecated
+            observation=observation,  # deprecated
+            variable=variable,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
 
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         skill = cmp.mean_skill(weights=weights, metrics=[metric])
-        if skill is None:
-            return None
-
         df = skill.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__

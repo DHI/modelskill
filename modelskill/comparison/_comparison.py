@@ -45,8 +45,7 @@ if TYPE_CHECKING:
 
 
 class Scoreable(Protocol):
-    # TODO should this be able to return None?
-    def score(self, metric: str | Callable, **kwargs) -> Dict[str, float] | None:
+    def score(self, metric: str | Callable, **kwargs) -> Dict[str, float]:
         ...
 
     def skill(
@@ -54,7 +53,7 @@ class Scoreable(Protocol):
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
         **kwargs,
-    ) -> Optional[SkillTable]:
+    ) -> SkillTable:
         ...
 
     def gridded_skill(
@@ -65,7 +64,7 @@ class Scoreable(Protocol):
         metrics: Optional[list] = None,
         n_min: Optional[int] = None,
         **kwargs,
-    ) -> Optional[SkillGrid]:
+    ) -> SkillGrid:
         ...
 
 
@@ -1063,26 +1062,18 @@ class Comparer(Scoreable):
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         s = self.skill(
+            by=["model", "observation"],
             metrics=[metric],
-            model=model,
-            start=start,
-            end=end,
-            area=area,
+            model=model,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
-        # if s is None:
-        #    return
         df = s.to_dataframe()
 
-        # TODO clean up
         metric_name = metric if isinstance(metric, str) else metric.__name__
 
-        values = df[metric_name].values
-        if len(values) == 1:
-            value = values[0]
-            return {self.mod_names[0]: value}
-        else:
-            # TODO check if this is correct
-            return {m: v for m, v in zip(self.mod_names, values)}
+        return df.reset_index().groupby("model")[metric_name].mean().to_dict()
 
     def spatial_skill(
         self,
