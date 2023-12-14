@@ -324,6 +324,18 @@ def _matched_data_to_xarray(
     assert isinstance(df, pd.DataFrame)
     cols = list(df.columns)
     items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
+
+    # check that items.obs and items.model are numeric
+    if not np.issubdtype(df[items.obs].dtype, np.number):
+        raise ValueError(
+            "Observation data is of type {df[items.obs].dtype}, it must be numeric"
+        )
+    for m in items.model:
+        if not np.issubdtype(df[m].dtype, np.number):
+            raise ValueError(
+                f"Model data: {m} is of type {df[m].dtype}, it must be numeric"
+            )
+
     df = df[items.all]
     df.index.name = "time"
     df = df.rename(columns={items.obs: "Observation"})

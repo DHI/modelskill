@@ -148,6 +148,25 @@ def test_matched_df_with_aux(pt_df):
     assert "wind" not in cmp.data.data_vars
 
 
+def test_aux_can_str_(pt_df):
+    pt_df["area"] = ["a", "b", "c", "d", "e", "f"]
+
+    cmp = Comparer.from_matched_data(pt_df, aux_items="area")
+    assert cmp.data["area"].attrs["kind"] == "auxiliary"
+
+
+def test_mod_and_obs_must_be_numeric():
+    df = pd.DataFrame({"obs": ["a", "b"], "m1": [1, 2]})
+
+    with pytest.raises(ValueError, match="numeric"):
+        Comparer.from_matched_data(df)
+
+    df2 = pd.DataFrame({"obs": [1, 2], "m1": ["c", "d"]})
+
+    with pytest.raises(ValueError, match="numeric"):
+        Comparer.from_matched_data(df2)
+
+
 def test_rename_model(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
     assert "m1" in cmp.mod_names
