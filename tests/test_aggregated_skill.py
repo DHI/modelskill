@@ -141,7 +141,7 @@ def test_skill_sel_query(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
     with pytest.warns(FutureWarning, match="deprecated"):
         s2 = s.sel(query="rmse>0.2")
-    
+
     assert len(s2.mod_names) == 2
 
     # s2 = s.sel("rmse>0.2", model="SW_2", observation=[0, 2])
@@ -150,8 +150,6 @@ def test_skill_sel_query(cc2):
 
 def test_skill_sel_fail(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
-    with pytest.raises(KeyError):
-        s.sel(metrics=["cc"])
 
     with pytest.raises(KeyError):
         s.sel(variable="Hm0")

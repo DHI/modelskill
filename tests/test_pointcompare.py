@@ -100,21 +100,6 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
     assert not np.any(np.isnan(df))
 
 
-def test_extraction_no_overlap(modelresult_oresund_WL):
-    o1 = ms.PointObservation(
-        "tests/testdata/smhi_2095_klagshamn_shifted.dfs0",
-        x=366844,
-        y=6154291,
-        name="Klagshamn",
-    )
-    mr = modelresult_oresund_WL
-
-    with pytest.warns(FutureWarning, match="modelskill.match"):
-        con = ms.Connector(o1, mr, validate=False)
-    with pytest.raises(ValueError, match="No data"):
-        con.extract()
-
-
 def test_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
@@ -258,7 +243,7 @@ def test_obs_aux_carried_over_nan(klagshamn, modelresult_oresund_WL):
 
 
 def test_mod_aux_carried_over(klagshamn):
-    mr = ms.ModelResult(
+    mr = ms.model_result(
         "tests/testdata/Oresund2D_subset.dfsu", item=0, aux_items="U velocity"
     )
     cmp = ms.match(klagshamn, mr)

@@ -324,7 +324,7 @@ def _matched_data_to_xarray(
     items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
     df = df[items.all]
     df.index.name = "time"
-    df.rename(columns={items.obs: "Observation"}, inplace=True)
+    df = df.rename(columns={items.obs: "Observation"})
     ds = df.to_xarray()
 
     ds.attrs["name"] = name if name is not None else items.obs
