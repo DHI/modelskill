@@ -93,6 +93,7 @@ def _dt_in_by(by):
         return True
     return False
 
+
 ALLOWED_DT = [
     "year",
     "quarter",
@@ -109,6 +110,7 @@ ALLOWED_DT = [
     "weekday",
 ]
 
+
 def _add_dt_to_df(df, by):
     ser = df.index.to_series()
     by = [by] if isinstance(by, str) else by
@@ -118,7 +120,7 @@ def _add_dt_to_df(df, by):
             dt_str = b.split(":")[1].lower()
             if dt_str not in ALLOWED_DT:
                 raise ValueError(
-                    f"Invalid Pandas datetime attribute: {dt_str}. Allowed values are: {ALLOWED_DT}"
+                    f"Invalid Pandas dt accessor: {dt_str}. Allowed values are: {ALLOWED_DT}"
                 )
             ser = ser.dt.__getattribute__(dt_str)
             if dt_str in df.columns:
