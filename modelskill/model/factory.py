@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Any, Dict
 import warnings
 
 import pandas as pd
@@ -26,8 +26,8 @@ def model_result(
     data: DataInputType,
     *,
     gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
-    **kwargs,
-) -> DfsuModelResult | GridModelResult | PointModelResult | TrackModelResult:
+    **kwargs: Any,
+) -> Any:
     """A factory function for creating an appropriate object based on the data input.
 
     Parameters
@@ -64,8 +64,8 @@ class ModelResult:
         data: DataInputType,
         *,
         gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> Any:
         # deprecated
         warnings.warn(
             FutureWarning(
@@ -83,7 +83,7 @@ class ModelResult:
         )
 
 
-def _guess_gtype(data) -> GeometryType:
+def _guess_gtype(data: Any) -> GeometryType:
     if hasattr(data, "geometry"):
         geom_str = repr(data.geometry).lower()
         if "flex" in geom_str:

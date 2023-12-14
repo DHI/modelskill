@@ -115,6 +115,8 @@ class GridModelResult(SpatialField):
         xmax = self.data.x.values.max()
         ymin = self.data.y.values.min()
         ymax = self.data.y.values.max()
+        assert isinstance(xmin, float) and isinstance(xmax, float)
+        assert isinstance(ymin, float) and isinstance(ymax, float)
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def extract(
@@ -161,7 +163,7 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")  # type: ignore
+        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={self.sel_items.values: self.name})
 
