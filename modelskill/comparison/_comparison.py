@@ -2,12 +2,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Callable,
     Dict,
     List,
     Mapping,
     Optional,
     Union,
     Iterable,
+    Protocol,
     Sequence,
     TYPE_CHECKING,
 )
@@ -40,6 +42,30 @@ from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+
+class Scoreable(Protocol):
+    def score(self, metric: str | Callable, **kwargs) -> Dict[str, float]:
+        ...
+
+    def skill(
+        self,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[List[str]] = None,
+        **kwargs,
+    ) -> SkillTable:
+        ...
+
+    def gridded_skill(
+        self,
+        bins=5,
+        binsize: Optional[float] = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
+        n_min: Optional[int] = None,
+        **kwargs,
+    ) -> SkillGrid:
+        ...
 
 
 def _parse_dataset(data) -> xr.Dataset:
@@ -372,7 +398,7 @@ def _matched_data_to_xarray(
     return ds
 
 
-class Comparer:
+class Comparer(Scoreable):
     """
     Comparer class for comparing model and observation data.
 
@@ -472,7 +498,8 @@ class Comparer:
             f"Observation: {self.name}, n_points={self.n_points}",
         ]
         for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.sel(model=model).score():.3f}")
+            out.append(f" Model: {model}, rmse={self.score()[model]:.3f}")
+
         for var in self.aux_names:
             out.append(f" Auxiliary: {var}")
         return str.join("\n", out)
@@ -1010,9 +1037,9 @@ class Comparer:
 
     def score(
         self,
-        metric=mtr.rmse,
+        metric: str | Callable = mtr.rmse,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Model skill score
 
         Parameters
@@ -1049,19 +1076,18 @@ class Comparer:
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         s = self.skill(
+            by=["model", "observation"],
             metrics=[metric],
-            model=model,
-            start=start,
-            end=end,
-            area=area,
+            model=model,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
-        # if s is None:
-        #    return
         df = s.to_dataframe()
-        values = df[metric.__name__].values
-        if len(values) == 1:
-            values = values[0]
-        return values
+
+        metric_name = metric if isinstance(metric, str) else metric.__name__
+
+        return df.reset_index().groupby("model")[metric_name].mean().to_dict()
 
     def spatial_skill(
         self,

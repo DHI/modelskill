@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import tempfile
 from typing import (
+    Callable,
     Dict,
     List,
     Union,
@@ -27,7 +28,7 @@ from ..skill_grid import SkillGrid
 from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
-from ._comparison import Comparer
+from ._comparison import Comparer, Scoreable
 from ._utils import (
     _parse_metric,
     _add_spatial_grid_to_df,
@@ -79,7 +80,7 @@ def _all_df_template(n_variables: int = 1):
     return res
 
 
-class ComparerCollection(Mapping):
+class ComparerCollection(Mapping, Scoreable):
     """
     Collection of comparers, constructed by calling the `modelskill.match` method.
 
@@ -435,7 +436,7 @@ class ComparerCollection(Mapping):
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
         **kwargs,
-    ) -> Optional[SkillTable]:
+    ) -> SkillTable:
         """Aggregated skill assessment of model(s)
 
         Parameters
@@ -496,8 +497,9 @@ class ComparerCollection(Mapping):
             area=area,
         )
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         n_models = cmp.n_models  # len(df.model.unique())
@@ -557,7 +559,7 @@ class ComparerCollection(Mapping):
         metrics: Optional[list] = None,
         n_min: Optional[int] = None,
         **kwargs,
-    ):
+    ) -> SkillGrid:
         """Skill assessment of model(s) on a regular spatial grid.
 
         Parameters
@@ -629,8 +631,9 @@ class ComparerCollection(Mapping):
         )
 
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
@@ -721,7 +724,7 @@ class ComparerCollection(Mapping):
         weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[SkillTable]:  # TODO raise error if no data?
+    ) -> SkillTable:
         """Weighted mean of skills
 
         First, the skill is calculated per observation,
@@ -773,16 +776,17 @@ class ComparerCollection(Mapping):
 
         # filter data
         cmp = self.sel(
-            model=model,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
+            model=model,  # deprecated
+            observation=observation,  # deprecated
+            variable=variable,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
@@ -812,6 +816,9 @@ class ComparerCollection(Mapping):
         for metric in metrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
         res = skilldf.groupby(by).agg(agg)
+
+        # TODO is this correct?
+        res.index.name = "model"
 
         # output
         res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
@@ -944,11 +951,9 @@ class ComparerCollection(Mapping):
 
     def score(
         self,
-        *,
-        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
-        metric=mtr.rmse,
+        metric: str | Callable = mtr.rmse,
         **kwargs,
-    ) -> Optional[float]:  # TODO raise error if no data?
+    ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
 
         Wrapping mean_skill() with a single metric.
@@ -969,7 +974,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        float
+        Dict[str, float]
             mean of skills score as a single number (for each model)
 
         See also
@@ -993,6 +998,8 @@ class ComparerCollection(Mapping):
         >>> cc.score(weights='points', metric="mape")
         8.414442957854142
         """
+
+        weights = kwargs.pop("weights", None)
         metric = _parse_metric(metric, self.metrics)
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
@@ -1007,37 +1014,27 @@ class ComparerCollection(Mapping):
             # TODO: these two lines looks familiar, extract to function
             models = [model] if np.isscalar(model) else model  # type: ignore
             models = [_get_name(m, self.mod_names) for m in models]  # type: ignore
-        n_models = len(models)
 
         cmp = self.sel(
-            model=models,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
+            model=models,  # deprecated
+            observation=observation,  # deprecated
+            variable=variable,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
 
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         skill = cmp.mean_skill(weights=weights, metrics=[metric])
-        if skill is None:
-            return None
-
         df = skill.to_dataframe()
 
-        if n_models == 1:
-            score = df[metric.__name__].values.mean()
-        else:
-            score = {}
-            for model in models:
-                mtr_val = df.loc[model][metric.__name__]
-                if not np.isscalar(mtr_val):
-                    # e.g. mean over different variables!
-                    mtr_val = mtr_val.values.mean()
-                score[model] = mtr_val
+        metric_name = metric if isinstance(metric, str) else metric.__name__
+
+        score = df[metric_name].to_dict()
 
         return score
 
