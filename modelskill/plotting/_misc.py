@@ -16,7 +16,7 @@ def _get_ax(ax=None, figsize=None):
     return ax
 
 
-def _get_fig_ax(ax=None, figsize=None):
+def _get_fig_ax(ax: plt.Axes | None = None, figsize=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     else:
