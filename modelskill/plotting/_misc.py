@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from ..metrics import metric_has_units
+from ..metrics import metric_has_units, defined_metrics
 from ..observation import unit_display_name
 
 
@@ -16,7 +16,7 @@ def _get_ax(ax=None, figsize=None):
     return ax
 
 
-def _get_fig_ax(ax=None, figsize=None):
+def _get_fig_ax(ax: plt.Axes | None = None, figsize=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     else:
@@ -149,8 +149,10 @@ def quantiles_xy(
 
 
 def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2):
-    # remove model and variable columns if present, i.e. keep all other columns
-    df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
+    # select metrics columns
+    accepted_columns = defined_metrics | {"n"}
+
+    df = df.loc[:, df.columns.isin(accepted_columns)]
 
     # loop over series in dataframe, (columns)
     lines = [_format_skill_line(df[col], units, precision) for col in list(df.columns)]
