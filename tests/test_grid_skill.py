@@ -69,6 +69,15 @@ def test_gridded_skill_multi_model(cc2) -> None:
     assert len(ss.field_names) == 3
 
 
+def test_gridded_skill_sel_model(cc2) -> None:
+    ss = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
+    ss2 = ss.sel(model="SW_1")
+    ss2.rmse.plot()
+
+    with pytest.raises(KeyError):
+        ss.sel(model="bad_model")
+
+
 def test_gridded_skill_is_subsettable(cc2) -> None:
     ss = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
     ss.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
@@ -91,7 +100,8 @@ def test_gridded_skill_plot_multi_model(cc2) -> None:
     ss = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
     ss["bias"].plot()
 
-    ss.rmse.plot(model="SW_1")
+    with pytest.warns(FutureWarning, match="deprecated"):
+        ss["rmse"].plot(model="SW_1")
 
 
 def test_gridded_skill_plot_multi_model_fails(cc2) -> None:
@@ -100,4 +110,5 @@ def test_gridded_skill_plot_multi_model_fails(cc2) -> None:
         ss["bad_metric"]
 
     with pytest.raises(ValueError):
-        ss.rmse.plot(model="bad_model")
+        with pytest.warns(FutureWarning, match="deprecated"):
+            ss.rmse.plot(model="bad_model")
