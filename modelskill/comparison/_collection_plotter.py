@@ -179,7 +179,7 @@ class ComparerCollectionPlotter:
             mod_name in self.cc.mod_names
         ), f"Model {mod_name} not found in collection {self.cc.mod_names}"
 
-        cmp = self.cc
+        cmp = self.cc.sel(model=mod_name)
 
         if cmp.n_points == 0:
             raise ValueError("No data found in selection")
