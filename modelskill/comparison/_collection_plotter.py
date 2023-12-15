@@ -1,12 +1,10 @@
 from __future__ import annotations
 from typing import Any, List, Union, Optional, Tuple, Sequence, TYPE_CHECKING
-import matplotlib
 from matplotlib.axes import Axes  # type: ignore
 import warnings
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
-    import matplotlib.axes
 
 import pandas as pd
 
