@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
+import warnings
 
 if TYPE_CHECKING:
     import matplotlib.figure
@@ -491,6 +492,10 @@ class ComparerPlotter:
         if model is None:
             mod_names = cmp.mod_names
         else:
+            warnings.warn(
+                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.scatter()",
+                FutureWarning,
+            )
             if isinstance(model, (str, int)):
                 model = [model]
             mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model]
@@ -524,22 +529,22 @@ class ComparerPlotter:
         self,
         *,
         mod_name: str,
-        bins: int | float = 120,
-        quantiles: int | Sequence[float] | None = None,
-        fit_to_quantiles: bool = False,
-        show_points: bool | int | float | None = None,
-        show_hist: Optional[bool] = None,
-        show_density: Optional[bool] = None,
-        norm: Optional[colors.Normalize] = None,
-        backend: str = "matplotlib",
-        figsize: Tuple[float, float] = (8, 8),
-        xlim: Optional[Tuple[float, float]] = None,
-        ylim: Optional[Tuple[float, float]] = None,
-        reg_method: str | bool = "ols",
-        title: Optional[str] = None,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
-        skill_table: Optional[Union[str, List[str], bool]] = None,
+        bins: int | float,
+        quantiles: int | Sequence[float] | None,
+        fit_to_quantiles: bool,
+        show_points: bool | int | float | None,
+        show_hist: Optional[bool],
+        show_density: Optional[bool],
+        norm: Optional[colors.Normalize],
+        backend: str,
+        figsize: Tuple[float, float],
+        xlim: Optional[Tuple[float, float]],
+        ylim: Optional[Tuple[float, float]],
+        reg_method: str | bool,
+        title: Optional[str],
+        xlabel: Optional[str],
+        ylabel: Optional[str],
+        skill_table: Optional[Union[str, List[str], bool]],
         **kwargs,
     ):
         """Scatter plot for one model only"""
