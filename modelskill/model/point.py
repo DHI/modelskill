@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Any
 
 import xarray as xr
 import pandas as pd
@@ -61,14 +61,17 @@ class PointModelResult(TimeSeries):
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
-    def extract(self, obs) -> PointModelResult:
+    def extract(self, obs: PointObservation) -> PointModelResult:
         if not isinstance(obs, PointObservation):
             raise ValueError(f"obs must be a PointObservation not {type(obs)}")
         # TODO check x,y,z
         return self
 
     def interp_time(
-        self, new_time: pd.DatetimeIndex, dropna=True, **kwargs
+        self,
+        new_time: pd.DatetimeIndex,
+        dropna: bool = True,
+        **kwargs: Any,
     ) -> PointModelResult:
         """Interpolate time series to new time index
 

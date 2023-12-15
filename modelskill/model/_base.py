@@ -1,10 +1,14 @@
 from __future__ import annotations
 from collections import Counter
-from typing import List, Optional, Protocol, Sequence
+from typing import List, Optional, Protocol, Sequence, TYPE_CHECKING
 from dataclasses import dataclass
 import warnings
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from .point import PointModelResult
+    from .track import TrackModelResult
 
 from ..utils import _get_name
 from ..observation import Observation, PointObservation, TrackObservation
@@ -68,20 +72,13 @@ def _validate_overlap_in_time(time: pd.DatetimeIndex, observation: Observation) 
 
 
 class SpatialField(Protocol):
-    """Protocol for 2d spatial fields (grids and unstructured meshes)
-
-    Methods
-    -------
-    extract(observation: Observation)
-    extract_point(observation: PointObservation)
-    extract_track(observation: TrackObservation)
-    """
-
-    def extract(self, observation: PointObservation | TrackObservation):
+    def extract(
+        self, observation: PointObservation | TrackObservation
+    ) -> PointModelResult | TrackModelResult:
         ...
 
-    def extract_point(self, observation: PointObservation):
+    def extract_point(self, observation: PointObservation) -> PointModelResult:
         ...
 
-    def extract_track(self, observation: TrackObservation):
+    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
         ...
