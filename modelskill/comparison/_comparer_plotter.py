@@ -523,7 +523,7 @@ class ComparerPlotter:
     def _scatter_one_model(
         self,
         *,
-        mod_name: str = None,
+        mod_name: str,
         bins: int | float = 120,
         quantiles: int | Sequence[float] | None = None,
         fit_to_quantiles: bool = False,
