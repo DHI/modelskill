@@ -113,9 +113,64 @@ class ComparerCollectionPlotter:
         >>> cc.plot.scatter(observations=['c2','HKNA'])
         """
 
-        # select model
-        mod_id = _get_idx(model, self.cc.mod_names)
-        mod_name = self.cc.mod_names[mod_id]
+        cc = self.cc
+        if model is None:
+            mod_names = cc.mod_names
+        else:
+            if isinstance(model, (str, int)):
+                model = [model]
+            mod_names = [cc.mod_names[_get_idx(m, cc.mod_names)] for m in model]
+
+        axes = []
+        for mod_name in mod_names:
+            ax_mod = self._scatter_one_model(
+                mod_name=mod_name,
+                bins=bins,
+                quantiles=quantiles,
+                fit_to_quantiles=fit_to_quantiles,
+                show_points=show_points,
+                show_hist=show_hist,
+                show_density=show_density,
+                backend=backend,
+                figsize=figsize,
+                xlim=xlim,
+                ylim=ylim,
+                reg_method=reg_method,
+                title=title,
+                xlabel=xlabel,
+                ylabel=ylabel,
+                skill_table=skill_table,
+                ax=ax,
+                **kwargs,
+            )
+            axes.append(ax_mod)
+        return axes[0] if len(axes) == 1 else axes
+
+    def _scatter_one_model(
+        self,
+        *,
+        mod_name: str,
+        bins: int | float = 120,
+        quantiles: int | Sequence[float] | None = None,
+        fit_to_quantiles: bool = False,
+        show_points: bool | int | float | None = None,
+        show_hist: Optional[bool] = None,
+        show_density: Optional[bool] = None,
+        backend: str = "matplotlib",
+        figsize: Tuple[float, float] = (8, 8),
+        xlim: Optional[Tuple[float, float]] = None,
+        ylim: Optional[Tuple[float, float]] = None,
+        reg_method: str | bool = "ols",
+        title: Optional[str] = None,
+        xlabel: Optional[str] = None,
+        ylabel: Optional[str] = None,
+        skill_table: Optional[Union[str, List[str], bool]] = None,
+        ax: Optional[Axes] = None,
+        **kwargs,
+    ):
+        assert (
+            mod_name in self.cc.mod_names
+        ), f"Model {mod_name} not found in collection {self.cc.mod_names}"
 
         cmp = self.cc
 
