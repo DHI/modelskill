@@ -1087,7 +1087,12 @@ class Comparer(Scoreable):
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
 
-        return df.reset_index().groupby("model")[metric_name].mean().to_dict()
+        return (
+            df.reset_index()
+            .groupby("model", observed=True)[metric_name]
+            .mean()
+            .to_dict()
+        )
 
     def spatial_skill(
         self,
@@ -1219,27 +1224,26 @@ class Comparer(Scoreable):
     def residual(self):
         return self.mod - np.vstack(self.obs)
 
-    def remove_bias(self, correct="Model"):
-        # TODO: return a new Comparer object instead of modifying self
-        bias = self.residual.mean(axis=0)
+    def remove_bias(self, correct="Model") -> Comparer:
+        cmp = self.copy()
+
+        bias = cmp.residual.mean(axis=0)
         if correct == "Model":
-            for j in range(self.n_models):
-                mod_name = self.mod_names[j]
-                mod_ts = self.raw_mod_data[mod_name]
+            for j in range(cmp.n_models):
+                mod_name = cmp.mod_names[j]
+                mod_ts = cmp.raw_mod_data[mod_name]
                 with xr.set_options(keep_attrs=True):
                     mod_ts.data[mod_name].values = mod_ts.values - bias[j]
-                    self.data[mod_name].values = self.data[mod_name].values - bias[j]
+                    cmp.data[mod_name].values = cmp.data[mod_name].values - bias[j]
         elif correct == "Observation":
             # what if multiple models?
             with xr.set_options(keep_attrs=True):
-                self.data[self._obs_name].values = (
-                    self.data[self._obs_name].values + bias
-                )
+                cmp.data[cmp._obs_name].values = cmp.data[cmp._obs_name].values + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
             )
-        return bias
+        return cmp
 
     # TODO remove plotting methods in v1.1
     def scatter(

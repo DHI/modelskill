@@ -684,3 +684,11 @@ def test_pc_to_dataframe_add_col(pc):
     assert df.shape == (10, 7)
     assert "derived" in df.columns
     assert df.derived.dtype == "float64"
+
+
+def test_remove_bias():
+    df = pd.DataFrame({"obs": [1.0, 2.0], "mod": [1.1, 2.1]})
+    cmp = Comparer.from_matched_data(data=df)
+    assert cmp.score("bias")["mod"] == pytest.approx(0.1)
+    ub_cmp = cmp.remove_bias()
+    assert ub_cmp.score("bias")["mod"] == pytest.approx(0.0)
