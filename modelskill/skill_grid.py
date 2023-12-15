@@ -82,6 +82,10 @@ class SkillGridArray(SkillGridMixin):
         if model is None:
             da = self.data
         else:
+            warnings.warn(
+                "model argument is deprecated, use sel(model=...)",
+                FutureWarning,
+            )
             if model not in self.mod_names:
                 raise ValueError(f"model {model} not in model list ({self.mod_names})")
             da = self.data.sel({"model": model})
@@ -179,6 +183,21 @@ class SkillGrid(SkillGridMixin):
         if (self.y.min() < -90.0) or (self.y.max() > 90.0):
             is_geo = False
         return is_geo
+
+    def sel(self, model: str) -> SkillGrid:
+        """Select a model from the SkillGrid
+
+        Parameters
+        ----------
+        model : str
+            Name of model to select
+
+        Returns
+        -------
+        SkillGrid
+            SkillGrid with only the selected model
+        """
+        return SkillGrid(self.data.sel(model=model))
 
     def plot(self, field: str, model=None, **kwargs):
         warnings.warn(
