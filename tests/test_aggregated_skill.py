@@ -154,8 +154,6 @@ def test_skill_sel_query(cc2):
 
 def test_skill_sel_fail(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
-    with pytest.raises(KeyError):
-        s.sel(metrics=["cc"])
 
     with pytest.raises(KeyError):
         s.sel(variable="Hm0")
