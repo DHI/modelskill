@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
+import warnings
 
 if TYPE_CHECKING:
     import matplotlib.figure
@@ -34,12 +35,12 @@ class ComparerPlotter:
 
     def timeseries(
         self,
-        title=None,
         *,
-        ylim=None,
+        title: str | None = None,
+        ylim: Tuple[float, float] | None = None,
         ax=None,
-        figsize=None,
-        backend="matplotlib",
+        figsize: Tuple[float, float] | None = None,
+        backend: str = "matplotlib",
         **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
@@ -48,7 +49,7 @@ class ComparerPlotter:
         ----------
         title : str, optional
             plot title, by default None
-        ylim : tuple, optional
+        ylim : (float, float), optional
             plot range for the model (ymin, ymax), by default None
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
@@ -127,14 +128,14 @@ class ComparerPlotter:
 
     def hist(
         self,
+        bins: int | Sequence = 100,
         *,
-        model=None,
-        bins=100,
-        title=None,
+        model: str | int | None = None,
+        title: str | None = None,
         ax=None,
-        figsize=None,
-        density=True,
-        alpha=0.5,
+        figsize: Tuple[float, float] | None = None,
+        density: bool = True,
+        alpha: float = 0.5,
         **kwargs,
     ):
         """Plot histogram of model data and observations.
@@ -143,8 +144,6 @@ class ComparerPlotter:
 
         Parameters
         ----------
-        model : (str, int), optional
-            name or id of model to be plotted, by default 0
         bins : int, optional
             number of bins, by default 100
         title : str, optional
@@ -168,11 +167,51 @@ class ComparerPlotter:
         pandas.Series.plot.hist
         matplotlib.axes.Axes.hist
         """
+        cmp = self.comparer
+
+        if model is None:
+            mod_names = cmp.mod_names
+        else:
+            warnings.warn(
+                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.hist()",
+                FutureWarning,
+            )
+            model_list = [model] if isinstance(model, (str, int)) else model
+            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+
+        axes = []
+        for mod_name in mod_names:
+            ax_mod = self._hist_one_model(
+                mod_name=mod_name,
+                bins=bins,
+                title=title,
+                ax=ax,
+                figsize=figsize,
+                density=density,
+                alpha=alpha,
+                **kwargs,
+            )
+            axes.append(ax_mod)
+
+        return axes[0] if len(axes) == 1 else axes
+
+    def _hist_one_model(
+        self,
+        *,
+        mod_name: str,
+        bins: int | Sequence | None,
+        title: str | None,
+        ax,
+        figsize: Tuple[float, float] | None,
+        density: bool | None,
+        alpha: float | None,
+        **kwargs,
+    ):
         from ._comparison import MOD_COLORS  # TODO move to here
 
         cmp = self.comparer
-        mod_id = _get_idx(model, cmp.mod_names)
-        mod_name = cmp.mod_names[mod_id]
+        assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
+        mod_id = _get_idx(mod_name, cmp.mod_names)
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
 
@@ -269,6 +308,7 @@ class ComparerPlotter:
     def qq(
         self,
         quantiles: int | Sequence[float] | None = None,
+        *,
         title=None,
         ax=None,
         figsize=None,
@@ -352,7 +392,7 @@ class ComparerPlotter:
 
         return ax
 
-    def box(self, ax=None, title=None, figsize=None, **kwargs):
+    def box(self, *, ax=None, title=None, figsize=None, **kwargs):
         """Make a box plot of model data and observations.
 
         Wraps pandas.DataFrame boxplot() method.
@@ -424,7 +464,7 @@ class ComparerPlotter:
 
         Parameters
         ----------
-        model : (str, int), optional
+        model : (str, int), optional, DEPRECATED
             name or id of model to be plotted, by default 0
         bins: (int, float, sequence), optional
             bins for the 2D histogram on the background. By default 20 bins.
@@ -488,8 +528,67 @@ class ComparerPlotter:
         """
 
         cmp = self.comparer
-        mod_id = _get_idx(model, cmp.mod_names)
-        mod_name = cmp.mod_names[mod_id]
+        if model is None:
+            mod_names = cmp.mod_names
+        else:
+            warnings.warn(
+                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.scatter()",
+                FutureWarning,
+            )
+            model_list = [model] if isinstance(model, (str, int)) else model
+            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+
+        axes = []
+        for mod_name in mod_names:
+            ax_mod = self._scatter_one_model(
+                mod_name=mod_name,
+                bins=bins,
+                quantiles=quantiles,
+                fit_to_quantiles=fit_to_quantiles,
+                show_points=show_points,
+                show_hist=show_hist,
+                show_density=show_density,
+                norm=norm,
+                backend=backend,
+                figsize=figsize,
+                xlim=xlim,
+                ylim=ylim,
+                reg_method=reg_method,
+                title=title,
+                xlabel=xlabel,
+                ylabel=ylabel,
+                skill_table=skill_table,
+                **kwargs,
+            )
+            axes.append(ax_mod)
+        return axes[0] if len(axes) == 1 else axes
+
+    def _scatter_one_model(
+        self,
+        *,
+        mod_name: str,
+        bins: int | float,
+        quantiles: int | Sequence[float] | None,
+        fit_to_quantiles: bool,
+        show_points: bool | int | float | None,
+        show_hist: Optional[bool],
+        show_density: Optional[bool],
+        norm: Optional[colors.Normalize],
+        backend: str,
+        figsize: Tuple[float, float],
+        xlim: Optional[Tuple[float, float]],
+        ylim: Optional[Tuple[float, float]],
+        reg_method: str | bool,
+        title: Optional[str],
+        xlabel: Optional[str],
+        ylabel: Optional[str],
+        skill_table: Optional[Union[str, List[str], bool]],
+        **kwargs,
+    ):
+        """Scatter plot for one model only"""
+
+        cmp = self.comparer
+        assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
 
         if cmp.n_points == 0:
             raise ValueError("No data found in selection")
@@ -552,6 +651,7 @@ class ComparerPlotter:
 
     def taylor(
         self,
+        *,
         normalize_std: bool = False,
         figsize: Tuple[float, float] = (7, 7),
         marker: str = "o",
