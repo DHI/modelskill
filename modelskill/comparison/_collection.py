@@ -824,72 +824,72 @@ class ComparerCollection(Mapping, Scoreable):
         res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
         return SkillTable(res.astype({"n": int}))
 
-    def mean_skill_points(
-        self,
-        *,
-        metrics: Optional[list] = None,
-        **kwargs,
-    ) -> Optional[SkillTable]:  # TODO raise error if no data?
-        """Mean skill of all observational points
+    # def mean_skill_points(
+    #     self,
+    #     *,
+    #     metrics: Optional[list] = None,
+    #     **kwargs,
+    # ) -> Optional[SkillTable]:  # TODO raise error if no data?
+    #     """Mean skill of all observational points
 
-        All data points are pooled (disregarding which observation they belong to),
-        the skill is then found (for each model).
+    #     All data points are pooled (disregarding which observation they belong to),
+    #     the skill is then found (for each model).
 
-        .. note::
-            No weighting can be applied with this method,
-            use mean_skill() if you need to apply weighting
+    #     .. note::
+    #         No weighting can be applied with this method,
+    #         use mean_skill() if you need to apply weighting
 
-        .. warning::
-            This method is NOT the mean of skills (mean_skill)
+    #     .. warning::
+    #         This method is NOT the mean of skills (mean_skill)
 
-        Parameters
-        ----------
-        metrics : list, optional
-            list of modelskill.metrics, by default modelskill.options.metrics.list
+    #     Parameters
+    #     ----------
+    #     metrics : list, optional
+    #         list of modelskill.metrics, by default modelskill.options.metrics.list
 
-        Returns
-        -------
-        SkillTable
-            mean skill assessment as a skill object
+    #     Returns
+    #     -------
+    #     SkillTable
+    #         mean skill assessment as a skill object
 
-        See also
-        --------
-        skill
-            skill assessment per observation
-        mean_skill
-            weighted mean of skills (not the same as this method)
+    #     See also
+    #     --------
+    #     skill
+    #         skill assessment per observation
+    #     mean_skill
+    #         weighted mean of skills (not the same as this method)
 
-        Examples
-        --------
-        >>> import modelskill as ms
-        >>> cc = ms.match(obs, mod)
-        >>> cc.mean_skill_points()
-        """
+    #     Examples
+    #     --------
+    #     >>> import modelskill as ms
+    #     >>> cc = ms.match(obs, mod)
+    #     >>> cc.mean_skill_points()
+    #     """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
+    #     # TODO remove in v1.1
+    #     model, start, end, area = _get_deprecated_args(kwargs)
+    #     observation, variable = _get_deprecated_obs_var_args(kwargs)
+    #     assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        # filter data
-        cmp = self.sel(
-            model=model,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-        if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+    #     # filter data
+    #     cmp = self.sel(
+    #         model=model,
+    #         observation=observation,
+    #         variable=variable,
+    #         start=start,
+    #         end=end,
+    #         area=area,
+    #     )
+    #     if cmp.n_points == 0:
+    #         warnings.warn("No data!")
+    #         return None
 
-        dfall = cmp.to_dataframe()
-        dfall["observation"] = "all"
+    #     dfall = cmp.to_dataframe()
+    #     dfall["observation"] = "all"
 
-        # TODO: no longer possible to do this way
-        # return self.skill(df=dfall, metrics=metrics)
-        return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
+    #     # TODO: no longer possible to do this way
+    #     # return self.skill(df=dfall, metrics=metrics)
+    #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
     def _mean_skill_by(self, skilldf, mod_names, var_names):
         by = []
