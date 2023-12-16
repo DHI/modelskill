@@ -8,6 +8,10 @@ nav:
   - 'simple-compare.md'
   - 'vision.md'
   - 'terminology.md'
+  - Examples:
+    - 'examples/Simple_MIKE21HD_dfsu.ipynb'
+    - 'examples/Hydrology_Vistula_Catchment.ipynb'
+    - 'examples/Metocean_track_comparison.ipynb'
   - API:
       - 'api/model.md'
       - 'api/observation.md'
@@ -37,6 +41,7 @@ extra_javascript:
 plugins:
 - search
 - autorefs
+- mkdocs-jupyter
 - mkdocstrings:
     handlers:
       python:

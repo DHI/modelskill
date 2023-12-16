@@ -46,6 +46,7 @@ dev = ["pytest",
         "mkdocs-material==9.4.14",
         "mkdocstrings==0.24.0",
         "mkdocstrings-python==1.7.5",
+        "mkdocs-jupyter==0.24.6",
         "black==22.3.0",
         "plotly >= 4.5",
         "ruff",]
