@@ -1118,10 +1118,12 @@ class ComparerCollection(Mapping, Scoreable):
         """
 
         files = []
+        no = 0
         for name, cmp in self.comparers.items():
-            cmp_fn = f"{name}.nc"
+            cmp_fn = f"{no}_{name}.nc"
             cmp.save(cmp_fn)
             files.append(cmp_fn)
+            no += 1
 
         with zipfile.ZipFile(filename, "w") as zip:
             for f in files:
@@ -1157,7 +1159,8 @@ class ComparerCollection(Mapping, Scoreable):
                     zip.extract(f, path=folder)
 
         comparers = [
-            ComparerCollection._load_comparer(folder, f) for f in os.listdir(folder)
+            ComparerCollection._load_comparer(folder, f)
+            for f in sorted(os.listdir(folder))
         ]
         return ComparerCollection(comparers)
 
