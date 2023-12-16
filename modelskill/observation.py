@@ -95,7 +95,7 @@ class Observation(TimeSeries):
     def __init__(
         self,
         data: xr.Dataset,
-        weight: float = 1.0,  # TODO: cannot currently be set
+        weight: float,
         color: str = "#d62728",  # TODO: cannot currently be set
     ) -> None:
         data["time"] = self._parse_time(data.time)
@@ -173,6 +173,7 @@ class PointObservation(Observation):
         y: Optional[float] = None,
         z: Optional[float] = None,
         name: Optional[str] = None,
+        weight: float = 1.0,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,
         attrs: Optional[dict] = None,
@@ -194,7 +195,7 @@ class PointObservation(Observation):
         _validate_attrs(data.attrs, attrs)
         data.attrs = {**data.attrs, **(attrs or {})}
 
-        super().__init__(data=data)
+        super().__init__(data=data, weight=weight)
 
     @property
     def geometry(self):
@@ -316,6 +317,7 @@ class TrackObservation(Observation):
         *,
         item: Optional[int | str] = None,
         name: Optional[str] = None,
+        weight: float = 1.0,
         x_item: Optional[int | str] = 0,
         y_item: Optional[int | str] = 1,
         keep_duplicates: bool | str = "first",
@@ -350,7 +352,7 @@ class TrackObservation(Observation):
         _validate_attrs(data.attrs, attrs)
         data.attrs = {**data.attrs, **(attrs or {})}
 
-        super().__init__(data=data)
+        super().__init__(data=data, weight=weight)
 
     def __repr__(self):
         out = f"TrackObservation: {self.name}, n={self.n_points}"

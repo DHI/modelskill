@@ -74,6 +74,7 @@ def from_matched(
     aux_items: Optional[Iterable[str | int]] = None,
     quantity: Optional[Quantity] = None,
     name: Optional[str] = None,
+    weight: float = 1.0,
     x: Optional[float] = None,
     y: Optional[float] = None,
     z: Optional[float] = None,
@@ -139,6 +140,7 @@ def from_matched(
         mod_items=mod_items,
         aux_items=aux_items,
         name=name,
+        weight=weight,
         x=x,
         y=y,
         z=z,
@@ -275,6 +277,7 @@ def _single_obs_compare(
 
     raw_mod_data = {m.name: m.extract(obs) for m in mods}
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
+    matched_data.attrs["weight"] = obs.weight
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
