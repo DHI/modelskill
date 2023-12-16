@@ -420,9 +420,11 @@ class SkillTable:
         assert "x" in self.data.columns
         assert "y" in self.data.columns
 
+        df = self.to_dataframe(drop_xy=False)
+
         gdf = gpd.GeoDataFrame(
-            self._df,
-            geometry=gpd.points_from_xy(self.data.x, self.data.y),
+            df,
+            geometry=gpd.points_from_xy(df.x, df.y),
             crs=crs,
         )
 
@@ -568,7 +570,8 @@ class SkillTable:
                 )
                 return self[value]
 
-        df = self._df
+        # df = self._df
+        df = self.to_dataframe(drop_xy=False)
 
         for key, value in kwargs.items():
             if key in df.index.names:
