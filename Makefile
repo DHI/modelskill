@@ -1,6 +1,6 @@
 LIB = modelskill
 
-check: lint typecheck test
+check: lint typecheck test doctest
 
 build: typecheck test
 	python -m build
@@ -14,10 +14,13 @@ test:
 typecheck:
 	mypy $(LIB)/ --config-file pyproject.toml
 
+doctest:
+	pytest ./modelskill/metrics.py --doctest-modules
+
 coverage: 
 	pytest --cov-report html --cov=$(LIB) tests/
 
 docs: FORCE
-	cd docs; make html ;cd -
+	mkdocs build
 
 FORCE:

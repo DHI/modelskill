@@ -1,13 +1,10 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Dict, Union, List, Optional
-
+from typing import Union, List, Optional
 from dataclasses import dataclass
-import warnings
-
-import mikeio
 import pandas as pd
 import xarray as xr
+import mikeio
 
 
 class GeometryType(Enum):
@@ -96,98 +93,3 @@ class Period:
 
     start: Optional[pd.Timestamp] = None
     end: Optional[pd.Timestamp] = None
-
-
-# TODO change name of fields to match CF conventions?
-# https://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/build/ch03s03.html
-# long_name, standard_name & units
-@dataclass(frozen=True)
-class Quantity:
-    """Quantity of data
-
-    Parameters
-    ----------
-    name : str
-        Name of the quantity
-    unit : str
-        Unit of the quantity
-
-    Examples
-    --------
-    >>> wl = Quantity(name="Water Level", unit="meter")
-    >>> wl
-    Quantity(name='Water Level', unit='meter')
-    >>> wl.name
-    'Water Level'
-    >>> wl.unit
-    'meter'
-    >>> wl.is_compatible(wl)
-    True
-    """
-
-    name: str
-    unit: str
-
-    def __str__(self):
-        return f"{self.name} [{self.unit}]"
-
-    def is_compatible(self, other) -> bool:
-        """Check if the quantity is compatible with another quantity
-
-        Examples
-        --------
-        >>> wl = Quantity(name="Water Level", unit="meter")
-        >>> ws = Quantity(name="Wind Speed", unit="meter per second")
-        >>> wl.is_compatible(ws)
-        False
-        >>> uq = Quantity(name="Undefined", unit="Undefined")
-        >>> wl.is_compatible(uq)
-        True
-        """
-
-        if self == other:
-            return True
-
-        if (self.name == "Undefined") or (other.name == "Undefined"):
-            return True
-
-        return False
-
-    @staticmethod
-    def undefined() -> "Quantity":
-        return Quantity(name="", unit="")
-
-    def to_dict(self) -> Dict[str, str]:
-        return {"name": self.name, "unit": self.unit}
-
-    @staticmethod
-    def from_mikeio_iteminfo(iteminfo: mikeio.ItemInfo) -> "Quantity":
-        return Quantity(name=repr(iteminfo.type), unit=iteminfo.unit.name)
-
-    @staticmethod
-    def from_mikeio_eum_name(type_name: str) -> "Quantity":
-        """Create a Quantity from a name recognized by mikeio
-
-        Parameters
-        ----------
-        type_name : str
-            Name of the quantity
-
-        Examples
-        --------
-        >>> Quantity.from_mikeio_eum_name("Water Level")
-        Quantity(name='Water Level', unit='meter')
-        """
-        try:
-            etype = mikeio.EUMType[type_name]
-        except KeyError:
-            name_underscore = type_name.replace(" ", "_")
-            try:
-                etype = mikeio.EUMType[name_underscore]
-            except KeyError:
-                raise ValueError(
-                    f"{type_name=} is not recognized as a known type. Please create a Quantity(name='{type_name}' unit='<FILL IN UNIT>')"
-                )
-        unit = etype.units[0].name
-        warnings.warn(f"{unit=} was automatically set for {type_name=}")
-        return Quantity(name=type_name, unit=unit)

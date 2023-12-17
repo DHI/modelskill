@@ -140,7 +140,7 @@ def test_point_df_itemInfo(point_df):
     df = point_df
     df["ones"] = 1.0
     # itemInfo = mikeio.EUMType.Surface_Elevation
-    mr1 = ms.ModelResult(
+    mr1 = ms.model_result(
         df,
         item="Water Level",
         quantity=ms.Quantity(name="Surface elevation", unit="meter"),
@@ -173,6 +173,13 @@ def test_point_model_data_can_be_persisted_as_netcdf(point_df, tmp_path):
     mr = ms.PointModelResult(point_df, item=0)
 
     mr.data.to_netcdf(tmp_path / "test.nc")
+
+
+def test_wave_directional_data_is_directional_by_default():
+    mr = ms.PointModelResult(
+        "tests/testdata/wave_dir.dfs0", item="China_Model: Mean Wave Direction"
+    )
+    assert mr.quantity.is_directional
 
 
 def test_point_aux_items(df_aux):

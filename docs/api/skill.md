@@ -2,10 +2,14 @@
 
 ## Aggregated Skill
 
-::: modelskill.skill.AggregatedSkill
+::: modelskill.skill.SkillTable
 
-::: modelskill.skill.AggregatedSkillPlotter
+::: modelskill.skill.SkillArray
 
-## Spatial Skill
+::: modelskill.skill.SkillArrayPlotter
 
-::: modelskill.spatial.SpatialSkill
+## Gridded Skill
+
+::: modelskill.skill_grid.SkillGrid
+
+::: modelskill.skill_grid.SkillGridArray

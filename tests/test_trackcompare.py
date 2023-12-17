@@ -136,7 +136,7 @@ def mod_tiny_longer():
 
 
 def test_tiny_mod3(obs_tiny, mod_tiny3):
-    cmp = ms.compare(obs_tiny, mod_tiny3)[0]
+    cmp = ms.match(obs_tiny, mod_tiny3)
     assert cmp.n_points == 2
     expected_time = pd.DatetimeIndex(
         [
@@ -149,7 +149,7 @@ def test_tiny_mod3(obs_tiny, mod_tiny3):
 
 
 def test_tiny_mod_3last(obs_tiny, mod_tiny_3last):
-    cmp = ms.compare(obs_tiny, mod_tiny_3last)[0]
+    cmp = ms.match(obs_tiny, mod_tiny_3last)
     assert cmp.n_points == 2
     expected_time = pd.DatetimeIndex(
         [
@@ -162,7 +162,7 @@ def test_tiny_mod_3last(obs_tiny, mod_tiny_3last):
 
 
 def test_tiny_mod_unique(obs_tiny, mod_tiny_unique):
-    cmp = ms.compare(obs_tiny, mod_tiny_unique)[0]
+    cmp = ms.match(obs_tiny, mod_tiny_unique)
     assert cmp.n_points == 4
     expected_time = pd.DatetimeIndex(
         [
@@ -184,7 +184,7 @@ def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
         obs_tiny = ms.TrackObservation(
             obs_tiny_df, item="alti", x_item="x", y_item="y", keep_duplicates="first"
         )
-    cmp = ms.compare(obs_tiny, mod_tiny_unique)[0]
+    cmp = ms.match(obs_tiny, mod_tiny_unique)
     assert cmp.n_points == 2  # 2 points removed due to difference in x,y
     expected_time = pd.DatetimeIndex(
         [
@@ -198,7 +198,7 @@ def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
 
 def test_tiny_mod_rounding_error(obs_tiny, mod_tiny_rounding_error):
     # accepts rounding error in x, y
-    cmp = ms.compare(obs_tiny, mod_tiny_rounding_error)[0]
+    cmp = ms.match(obs_tiny, mod_tiny_rounding_error)
     assert cmp.n_points == 4
     expected_time = pd.DatetimeIndex(
         [
@@ -229,18 +229,18 @@ def observation(observation_df):
 def modelresult():
     fn = "tests/testdata/NorthSeaHD_extracted_track.dfs0"
     with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
-        mr = ms.ModelResult(fn, gtype="track", item=2, name="HD")
+        mr = ms.model_result(fn, gtype="track", item=2, name="HD")
     return mr
 
 
 @pytest.fixture
 def comparer(observation, modelresult):
-    return ms.compare(observation, modelresult)
+    return ms.match(observation, modelresult)
 
 
 def test_skill(comparer):
     c = comparer
-    df = c.skill().df
+    df = c.skill().to_dataframe()
 
     assert df.loc["alti"].n == 532  # 544
 
@@ -307,75 +307,75 @@ def test_skill(comparer):
 # def test_extract_no_spatial_overlap_dfsu(observation_df):
 
 
-def test_skill_vs_spatial_skill(comparer):
-    df = comparer.skill().df  # to compare to result of .skill()
-    ds = comparer.spatial_skill(bins=1)  # force 1 bin only
+def test_skill_vs_gridded_skill(comparer):
+    df = comparer.skill().to_dataframe()  # to compare to result of .skill()
+    ds = comparer.gridded_skill(bins=1)  # force 1 bin only
 
-    assert df.loc["alti"].n == ds.n.values
-    assert df.loc["alti"].bias == ds.ds.bias.values
+    assert df.loc["alti"].n == ds.data.n.values
+    assert df.loc["alti"].bias == ds.data.bias.values
     assert ds.x.size == 1
     assert ds.y.size == 1
     # assert ds.coords._names == {"x","y"}  # TODO: Why return "observation" as by, when n_obs==1 but not "model"?
 
 
-def test_spatial_skill_bins(comparer):
+def test_gridded_skill_bins(comparer):
     # default
-    ds = comparer.spatial_skill(metrics=["bias"])
+    ds = comparer.gridded_skill(metrics=["bias"])
     assert len(ds.x) == 5
     assert len(ds.y) == 5
 
     # float
-    ds = comparer.spatial_skill(metrics=["bias"], bins=2)
+    ds = comparer.gridded_skill(metrics=["bias"], bins=2)
     assert len(ds.x) == 2
     assert len(ds.y) == 2
 
     # float for x and range for y
-    ds = comparer.spatial_skill(metrics=["bias"], bins=(2, [50, 50.5, 51, 53]))
+    ds = comparer.gridded_skill(metrics=["bias"], bins=(2, [50, 50.5, 51, 53]))
     assert len(ds.x) == 2
     assert len(ds.y) == 3
 
     # binsize (overwrites bins)
-    ds = comparer.spatial_skill(metrics=["bias"], binsize=2.5, bins=100)
+    ds = comparer.gridded_skill(metrics=["bias"], binsize=2.5, bins=100)
     assert len(ds.x) == 4
     assert len(ds.y) == 3
     assert ds.x[0] == -0.75
 
 
-def test_spatial_skill_by(comparer):
+def test_gridded_skill_by(comparer):
     # odd order of by
-    ds = comparer.spatial_skill(metrics=["bias"], by=["y", "mod"])
+    ds = comparer.gridded_skill(metrics=["bias"], by=["y", "mod"])
     assert ds.coords._names == {"y", "model", "x"}
 
 
-def test_spatial_skill_misc(comparer):
+def test_gridded_skill_misc(comparer):
     # miniumum n
-    ds = comparer.spatial_skill(metrics=["bias", "rmse"], n_min=20)
+    ds = comparer.gridded_skill(metrics=["bias", "rmse"], n_min=20)
     df = ds.to_dataframe()
     assert df.loc[df.n < 20, ["bias", "rmse"]].size == 30
     assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
 
 
 def test_hist(comparer):
-    cc = comparer
+    cmp = comparer
 
     with pytest.warns(FutureWarning):
-        cc.hist()
+        cmp.hist()
 
-    cc.plot.hist(bins=np.linspace(0, 7, num=15))
+    cmp.plot.hist(bins=np.linspace(0, 7, num=15))
 
-    cc[0].plot.hist(bins=10)
-    cc[0].plot.hist(density=False)
-    cc[0].plot.hist(model=0, title="new_title", alpha=0.2)
+    cmp.plot.hist(bins=10)
+    cmp.plot.hist(density=False)
+    cmp.plot.hist(model=0, title="new_title", alpha=0.2)
 
 
 def test_residual_hist(comparer):
-    cc = comparer
-    cc[0].plot.residual_hist()
-    cc[0].plot.residual_hist(bins=10, title="new_title", color="blue")
+    cmp = comparer
+    cmp.plot.residual_hist()
+    cmp.plot.residual_hist(bins=10, title="new_title", color="blue")
 
 
 def test_df_input(obs_tiny_df, mod_tiny3):
-    """A dataframe is a valid input to ms.compare, without explicitly creating a TrackObservation"""
+    """A dataframe is a valid input to ms.match, without explicitly creating a TrackObservation"""
     # excerpt from obs_tiny_df
     # time                | value
     # --------------------------
@@ -385,7 +385,7 @@ def test_df_input(obs_tiny_df, mod_tiny3):
     assert isinstance(obs_tiny_df, pd.DataFrame)
     assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
-        cmp = ms.compare(obs_tiny_df, mod_tiny3, gtype="track")[0]
+        cmp = ms.match(obs_tiny_df, mod_tiny3, gtype="track")
 
     assert (
         cmp.data.sel(

@@ -7,10 +7,11 @@ import xarray as xr
 
 from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
 from ..utils import rename_coords_xr, rename_coords_pd
-from ..types import GridType, Quantity
+from ..types import GridType
+from ..quantity import Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
-from ..observation import Observation, PointObservation, TrackObservation
+from ..observation import PointObservation, TrackObservation
 
 
 class GridModelResult(SpatialField):
@@ -85,16 +86,14 @@ class GridModelResult(SpatialField):
 
         # use long_name and units from data if not provided
         if quantity is None:
-            # TODO: should this be on the DataArray instead?
-            if self.data.attrs.get("long_name") and self.data.attrs.get("units"):
-                quantity = Quantity(
-                    name=self.data.attrs["long_name"],
-                    unit=self.data.attrs["units"],
-                )
-            else:
-                quantity = Quantity.undefined()
+            da = self.data[sel_items.values]
+            quantity = Quantity.from_cf_attrs(da.attrs)
 
         self.quantity = quantity
+
+    def __repr__(self) -> str:
+        # TODO add item name
+        return f"<GridModelResult> '{self.name}'"
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -112,13 +111,15 @@ class GridModelResult(SpatialField):
         assert hasattr(self.data, "x") and hasattr(
             self.data, "y"
         ), "Data has no x and/or y coordinates."
-        xmin = self.data.x.values.min()
-        xmax = self.data.x.values.max()
-        ymin = self.data.y.values.min()
-        ymax = self.data.y.values.max()
+        xmin = float(self.data.x.values.min())
+        xmax = float(self.data.x.values.max())
+        ymin = float(self.data.y.values.min())
+        ymax = float(self.data.y.values.max())
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
-    def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
+    def extract(
+        self, observation: PointObservation | TrackObservation
+    ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
         Parameters
@@ -128,8 +129,8 @@ class GridModelResult(SpatialField):
 
         Returns
         -------
-        <modelskill.protocols.Comparable>
-            A model result object with the same geometry as the observation
+        PointModelResult or TrackModelResult
+            extracted modelresult
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
@@ -160,7 +161,7 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")  # type: ignore
+        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={self.sel_items.values: self.name})
 

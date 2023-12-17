@@ -13,18 +13,18 @@ def ERA5_DutchCoast_nc():
 
 @pytest.fixture
 def mr_ERA5_pp1d(ERA5_DutchCoast_nc):
-    return ms.ModelResult(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="pp1d")
+    return ms.model_result(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="pp1d")
 
 
 @pytest.fixture
 def mr_ERA5_swh(ERA5_DutchCoast_nc):
-    return ms.ModelResult(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="swh")
+    return ms.model_result(ERA5_DutchCoast_nc, name="ERA5_DutchCoast", item="swh")
 
 
 @pytest.fixture
 def mf_modelresult():
     fn = "tests/testdata/SW/CMEMS_DutchCoast_*.nc"
-    return ms.ModelResult(fn, item="VHM0", name="CMEMS")
+    return ms.model_result(fn, item="VHM0", name="CMEMS")
 
 
 @pytest.fixture
@@ -66,13 +66,13 @@ def test_dataset_with_missing_coordinates(ERA5_DutchCoast_nc):
     ds = ds.drop_vars(["longitude"])  # remove one of the coordinates
 
     with pytest.raises(ValueError, match="gtype"):
-        ms.ModelResult(ds["swh"])
+        ms.model_result(ds["swh"])
 
 
 def test_grid_from_da(ERA5_DutchCoast_nc):
     ds = xr.open_dataset(ERA5_DutchCoast_nc)
     da = ds["swh"]
-    mr = ms.ModelResult(da)
+    mr = ms.model_result(da)
 
     assert isinstance(mr, ms.GridModelResult)
     # assert not mr.filename
@@ -88,10 +88,10 @@ def test_grid_from_multifile(mf_modelresult):
 
 # should be supported
 def test_grid_name(ERA5_DutchCoast_nc):
-    mri1 = ms.ModelResult(ERA5_DutchCoast_nc, item="pp1d")
+    mri1 = ms.model_result(ERA5_DutchCoast_nc, item="pp1d")
     assert isinstance(mri1, ms.GridModelResult)
 
-    mri2 = ms.ModelResult(ERA5_DutchCoast_nc, item=3)
+    mri2 = ms.model_result(ERA5_DutchCoast_nc, item=3)
     assert isinstance(mri2, ms.GridModelResult)
 
     assert mri1.name == mri2.name
@@ -207,3 +207,10 @@ def test_grid_extract_track_aux(ERA5_DutchCoast_nc, trackobs_c2_hm0):
     assert tc.n_points == 99
     assert len(tc.data.data_vars) == 2
     assert "swh" in tc.data.data_vars
+
+
+def test_grid_with_directional_data_with_cf_metadata_is_directional_by_default():
+    mr = ms.GridModelResult(
+        "tests/testdata/SW/CMEMS_DutchCoast_2017-10-28.nc", item="VMDR"
+    )
+    assert mr.quantity.is_directional

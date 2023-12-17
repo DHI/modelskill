@@ -19,21 +19,22 @@ from typing import Union
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = "1.0.a2"
+__version__ = "1.0.b0"
 
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
 
-from .types import Quantity
+from .quantity import Quantity
 from .model.factory import ModelResult
+from .model import model_result
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
-from .observation import PointObservation, TrackObservation
-from .matching import compare, from_matched
+from .observation import observation, PointObservation, TrackObservation
+from .matching import compare, from_matched, match
 from .connection import Connector
 from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
-from .comparison import ComparerCollection
+from .comparison import ComparerCollection, Comparer
 
 
 def load(filename: Union[str, Path]) -> ComparerCollection:
@@ -51,7 +52,7 @@ def load(filename: Union[str, Path]) -> ComparerCollection:
 
     Examples
     --------
-    >>> cc = ms.compare(obs, mod)
+    >>> cc = ms.match(obs, mod)
     >>> cc.save("my_comparer_collection.msk")
     >>> cc2 = ms.load("my_comparer_collection.msk")"""
 
@@ -60,16 +61,18 @@ def load(filename: Union[str, Path]) -> ComparerCollection:
 
 __all__ = [
     "Quantity",
-    "ModelResult",
+    "model_result",
     "PointModelResult",
     "TrackModelResult",
     "GridModelResult",
     "DfsuModelResult",
+    "observation",
     "PointObservation",
     "TrackObservation",
-    "compare",
-    "Connector",
+    "match",
     "from_matched",
+    "Comparer",
+    "ComparerCollection",
     "options",
     "get_option",
     "set_option",
@@ -77,4 +80,7 @@ __all__ = [
     "load_style",
     "plotting",
     "from_config",
+    "compare",  # deprecated
+    "ModelResult",  # deprecated
+    "Connector",  # deprecated
 ]

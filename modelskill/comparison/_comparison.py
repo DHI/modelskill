@@ -2,12 +2,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Callable,
     Dict,
     List,
     Mapping,
     Optional,
     Union,
     Iterable,
+    Protocol,
     Sequence,
     TYPE_CHECKING,
 )
@@ -32,14 +34,38 @@ from ._utils import (
     TimeTypes,
     IdOrNameTypes,
 )
-from ..skill import AggregatedSkill
-from ..spatial import SpatialSkill
+from ..skill import SkillTable
+from ..skill_grid import SkillGrid
 from ..settings import options, register_option, reset_option
 from ..utils import _get_name
 from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+
+class Scoreable(Protocol):
+    def score(self, metric: str | Callable, **kwargs) -> Dict[str, float]:
+        ...
+
+    def skill(
+        self,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[List[str]] = None,
+        **kwargs,
+    ) -> SkillTable:
+        ...
+
+    def gridded_skill(
+        self,
+        bins=5,
+        binsize: Optional[float] = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
+        n_min: Optional[int] = None,
+        **kwargs,
+    ) -> SkillGrid:
+        ...
 
 
 def _parse_dataset(data) -> xr.Dataset:
@@ -89,7 +115,6 @@ def _parse_dataset(data) -> xr.Dataset:
         )
 
     # Validate attrs
-    # TODO: should we
     if "gtype" not in data.attrs:
         data.attrs["gtype"] = str(GeometryType.POINT)
     # assert "gtype" in data.attrs, "data must have a gtype attribute"
@@ -166,12 +191,14 @@ def _validate_metrics(metrics) -> None:
     for m in metrics:
         if isinstance(m, str):
             if not mtr.is_valid_metric(m):
-                raise ValueError(f"Unknown metric '{m}'")
+                raise ValueError(
+                    f"Unknown metric '{m}'! Supported metrics are: {mtr.defined_metrics}"
+                )
 
 
 register_option(
     key="metrics.list",
-    defval=[mtr.bias, mtr.rmse, mtr.urmse, mtr.mae, mtr.cc, mtr.si, mtr.r2],
+    defval=mtr.default_metrics,
     validator=_validate_metrics,
     doc="Default metrics list to be used in skill tables if specific metrics are not provided.",
 )
@@ -226,7 +253,7 @@ class ItemSelection:
         Default behaviour:
         - obs_item is first item
         - mod_items are all but obs_item and aux_items
-        - aux_items are all but obs_item and mod_items
+        - aux_items are None
 
         Both integer and str are accepted as items. If str, it must be a key in data.
         """
@@ -238,8 +265,12 @@ class ItemSelection:
 
         # Check existance of items and convert to names
         if mod_items is not None:
+            if isinstance(mod_items, (str, int)):
+                mod_items = [mod_items]
             mod_names = [_get_name(m, items) for m in mod_items]
         if aux_items is not None:
+            if isinstance(aux_items, (str, int)):
+                aux_items = [aux_items]
             aux_names = [_get_name(a, items) for a in aux_items]
         else:
             aux_names = []
@@ -248,8 +279,6 @@ class ItemSelection:
 
         if mod_items is None:
             mod_names = list(set(items) - set(aux_names))
-        if aux_items is None:
-            aux_names = list(set(items) - set(mod_names))
 
         assert len(mod_names) > 0, "no model items were found! Must be at least one"
         assert obs_name not in mod_names, "observation item must not be a model item"
@@ -321,9 +350,21 @@ def _matched_data_to_xarray(
     assert isinstance(df, pd.DataFrame)
     cols = list(df.columns)
     items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
+
+    # check that items.obs and items.model are numeric
+    if not np.issubdtype(df[items.obs].dtype, np.number):
+        raise ValueError(
+            "Observation data is of type {df[items.obs].dtype}, it must be numeric"
+        )
+    for m in items.model:
+        if not np.issubdtype(df[m].dtype, np.number):
+            raise ValueError(
+                f"Model data: {m} is of type {df[m].dtype}, it must be numeric"
+            )
+
     df = df[items.all]
     df.index.name = "time"
-    df.rename(columns={items.obs: "Observation"}, inplace=True)
+    df = df.rename(columns={items.obs: "Observation"})
     ds = df.to_xarray()
 
     ds.attrs["name"] = name if name is not None else items.obs
@@ -352,11 +393,12 @@ def _matched_data_to_xarray(
 
     ds["Observation"].attrs["long_name"] = q.name
     ds["Observation"].attrs["units"] = q.unit
+    ds["Observation"].attrs["is_directional"] = int(q.is_directional)
 
     return ds
 
 
-class Comparer:
+class Comparer(Scoreable):
     """
     Comparer class for comparing model and observation data.
 
@@ -373,12 +415,12 @@ class Comparer:
     Examples
     --------
     >>> import modelskill as ms
-    >>> cc = ms.compare(observation, modeldata)
+    >>> cc = ms.match(observation, modeldata)
     >>> cmp2 = ms.from_matched(matched_data)
 
     See Also
     --------
-    modelskill.compare, modelskill.from_matched
+    modelskill.match, modelskill.from_matched
     """
 
     data: xr.Dataset
@@ -391,8 +433,6 @@ class Comparer:
         matched_data: xr.Dataset,
         raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
     ) -> None:
-        self.plot = Comparer.plotter(self)
-
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
             raw_mod_data
@@ -419,6 +459,8 @@ class Comparer:
                 assert isinstance(
                     v, TimeSeries
                 ), f"raw_mod_data[{k}] must be a TimeSeries object"
+
+        self.plot = Comparer.plotter(self)
 
     @staticmethod
     def from_matched_data(
@@ -456,7 +498,8 @@ class Comparer:
             f"Observation: {self.name}, n_points={self.n_points}",
         ]
         for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.sel(model=model).score():.3f}")
+            out.append(f" Model: {model}, rmse={self.score()[model]:.3f}")
+
         for var in self.aux_names:
             out.append(f" Auxiliary: {var}")
         return str.join("\n", out)
@@ -482,6 +525,9 @@ class Comparer:
         return Quantity(
             name=self.data[self._obs_name].attrs["long_name"],
             unit=self.data[self._obs_name].attrs["units"],
+            is_directional=bool(
+                self.data[self._obs_name].attrs.get("is_directional", False)
+            ),
         )
 
     @quantity.setter
@@ -489,6 +535,7 @@ class Comparer:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
         self.data[self._obs_name].attrs["long_name"] = quantity.name
         self.data[self._obs_name].attrs["units"] = quantity.unit
+        self.data[self._obs_name].attrs["is_directional"] = int(quantity.is_directional)
 
     @property
     def n_points(self) -> int:
@@ -586,7 +633,11 @@ class Comparer:
 
     @property
     def metrics(self):
-        return options.metrics.list
+        if self.quantity.is_directional:
+            # TODO define default circular metrics elsewhere
+            return [mtr.c_bias, mtr.c_rmse, mtr.c_urmse, mtr.c_max_error]
+        else:
+            return options.metrics.list
 
     @metrics.setter
     def metrics(self, values) -> None:
@@ -637,7 +688,7 @@ class Comparer:
 
         Examples
         --------
-        >>> cmp = ms.compare(observation, modeldata)
+        >>> cmp = ms.match(observation, modeldata)
         >>> cmp.mod_names
         ['model1']
         >>> cmp2 = cmp.rename({'model1': 'model2'})
@@ -786,10 +837,10 @@ class Comparer:
 
             return cmp
         else:
-            cc = ComparerCollection()
-            cc.add_comparer(self)
-            cc.add_comparer(other)
-            return cc
+            if isinstance(other, Comparer):
+                return ComparerCollection([self, other])
+            elif isinstance(other, ComparerCollection):
+                return ComparerCollection([self, *other])
 
     def sel(
         self,
@@ -911,7 +962,7 @@ class Comparer:
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> AggregatedSkill:
+    ) -> SkillTable:
         """Skill assessment of model(s)
 
         Parameters
@@ -926,7 +977,7 @@ class Comparer:
 
         Returns
         -------
-        AggregatedSkill
+        SkillTable
             skill assessment object
 
         See also
@@ -937,7 +988,7 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.compare(c2, mod)
+        >>> cc = ms.match(c2, mod)
         >>> cc['c2'].skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
@@ -969,7 +1020,7 @@ class Comparer:
         df = cmp.to_dataframe()  # TODO: avoid df if possible?
         res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
-        return AggregatedSkill(res)
+        return SkillTable(res)
 
     def _add_as_col_if_not_in_index(self, df, skilldf):
         """Add a field to skilldf if unique in df"""
@@ -986,9 +1037,9 @@ class Comparer:
 
     def score(
         self,
-        metric=mtr.rmse,
+        metric: str | Callable = mtr.rmse,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Model skill score
 
         Parameters
@@ -1009,7 +1060,7 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cmp = ms.compare(c2, mod)
+        >>> cmp = ms.match(c2, mod)
         >>> cmp.score()
         0.3517964910888918
 
@@ -1025,21 +1076,47 @@ class Comparer:
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         s = self.skill(
+            by=["model", "observation"],
             metrics=[metric],
-            model=model,
-            start=start,
-            end=end,
-            area=area,
+            model=model,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
-        # if s is None:
-        #    return
-        df = s.df
-        values = df[metric.__name__].values
-        if len(values) == 1:
-            values = values[0]
-        return values
+        df = s.to_dataframe()
+
+        metric_name = metric if isinstance(metric, str) else metric.__name__
+
+        return (
+            df.reset_index()
+            .groupby("model", observed=True)[metric_name]
+            .mean()
+            .to_dict()
+        )
 
     def spatial_skill(
+        self,
+        bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        # deprecated
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
+
+    def gridded_skill(
         self,
         bins=5,
         binsize: Optional[float] = None,
@@ -1083,8 +1160,8 @@ class Comparer:
         Examples
         --------
         >>> import modelskill as ms
-        >>> cmp = ms.compare(c2, mod)   # satellite altimeter vs. model
-        >>> cmp.spatial_skill(metrics='bias')
+        >>> cmp = ms.match(c2, mod)   # satellite altimeter vs. model
+        >>> cmp.gridded_skill(metrics='bias')
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -1095,7 +1172,7 @@ class Comparer:
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.spatial_skill(binsize=0.5)
+        >>> ds = cc.gridded_skill(binsize=0.5)
         >>> ds.coords
         Coordinates:
             observation   'alti'
@@ -1135,33 +1212,38 @@ class Comparer:
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
-        return SpatialSkill(res.to_xarray().squeeze())
+        ds = res.to_xarray().squeeze()
+
+        # change categorial index to coordinates
+        for dim in ("x", "y"):
+            ds[dim] = ds[dim].astype(float)
+
+        return SkillGrid(ds)
 
     @property
     def residual(self):
         return self.mod - np.vstack(self.obs)
 
-    def remove_bias(self, correct="Model"):
-        # TODO: return a new Comparer object instead of modifying self
-        bias = self.residual.mean(axis=0)
+    def remove_bias(self, correct="Model") -> Comparer:
+        cmp = self.copy()
+
+        bias = cmp.residual.mean(axis=0)
         if correct == "Model":
-            for j in range(self.n_models):
-                mod_name = self.mod_names[j]
-                mod_ts = self.raw_mod_data[mod_name]
+            for j in range(cmp.n_models):
+                mod_name = cmp.mod_names[j]
+                mod_ts = cmp.raw_mod_data[mod_name]
                 with xr.set_options(keep_attrs=True):
                     mod_ts.data[mod_name].values = mod_ts.values - bias[j]
-                    self.data[mod_name].values = self.data[mod_name].values - bias[j]
+                    cmp.data[mod_name].values = cmp.data[mod_name].values - bias[j]
         elif correct == "Observation":
             # what if multiple models?
             with xr.set_options(keep_attrs=True):
-                self.data[self._obs_name].values = (
-                    self.data[self._obs_name].values + bias
-                )
+                cmp.data[cmp._obs_name].values = cmp.data[cmp._obs_name].values + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
             )
-        return bias
+        return cmp
 
     # TODO remove plotting methods in v1.1
     def scatter(

@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 
 from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
-from ..types import Quantity, UnstructuredType
+from ..types import UnstructuredType
+from ..quantity import Quantity
 from ..utils import _get_idx
 from .point import PointModelResult
 from .track import TrackModelResult
@@ -86,7 +87,8 @@ class DfsuModelResult(SpatialField):
         )
         self.filename = filename  # TODO: remove? backward compatibility
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        # TODO add item name
         return f"<{self.__class__.__name__}> '{self.name}'"
 
     @property
@@ -101,7 +103,7 @@ class DfsuModelResult(SpatialField):
     def end_time(self) -> pd.Timestamp:
         return self.time[-1]
 
-    def _in_domain(self, x, y) -> bool:
+    def _in_domain(self, x: float, y: float) -> bool:
         return self.data.geometry.contains([x, y])  # type: ignore
 
     def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
@@ -114,8 +116,8 @@ class DfsuModelResult(SpatialField):
 
         Returns
         -------
-        <modelskill.protocols.Comparable>
-            A model result object with the same geometry as the observation
+        PointModelResult or TrackModelResult
+            extracted modelresult
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
