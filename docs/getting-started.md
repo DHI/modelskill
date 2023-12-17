@@ -1,13 +1,14 @@
-Getting started
-===============
+# Getting started
+
 
 This page describes the typical ModelSkill workflow for comparing model
 results and observations. If you just need a simple one-to-one time
 series comparison, see the [simple time series
 comparison](simple-compare.md).
 
-Workflow
---------
+
+## Workflow
+
 
 The typical ModelSkill workflow consists of these five steps:
 
@@ -16,6 +17,7 @@ The typical ModelSkill workflow consists of these five steps:
 3.  **Connect** observations and ModelResults
 4.  **Extract** ModelResults at observation positions
 5.  Do analysis, plotting, etc with a **Comparer**
+
 
 ### 1. Define ModelResults
 
@@ -58,6 +60,7 @@ Both PointObservation and TrackObservation need the path of the data
 file, the item number (or item name) and a name. A PointObservation
 further needs to be initialized with it\'s x-, y-position.
 
+
 ### 3. Connect observations and ModelResults
 
 ```python
@@ -67,6 +70,7 @@ cc = ms.match([hkna, c2], mr)
 This method returns a
 [ComparerCollection](api/compare.md#modelskill.comparison.ComparerCollection)
 for further analysis and plotting.
+
 
 ### 4. Do analysis, plotting, etc with a Comparer
 
@@ -83,6 +87,7 @@ The primary comparer methods are:
     * `plot.kde()`
     * `plot.qq()`
     * `plot.hist()`
+
 
 ### 5. Save / load the ComparerCollection
 
