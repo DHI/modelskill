@@ -38,7 +38,7 @@ Or do you need to match the observations and results first?
 >>> import modelskill as ms
 >>> o = ms.PointObservation("obs.dfs0", item="obs_WL")
 >>> mr = ms.PointModelResult("model.dfs0", item="WL")
->>> cmp = ms.compare(o, mr)[0]
+>>> cmp = ms.match(o, mr)[0]
 >>> cmp.skill()
 ...
 ```

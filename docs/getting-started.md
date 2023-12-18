@@ -2,9 +2,7 @@
 
 
 This page describes the typical ModelSkill workflow for comparing model
-results and observations. If you just need a simple one-to-one time
-series comparison, see the [simple time series
-comparison](simple-compare.md).
+results and observations. 
 
 
 ## Workflow
@@ -14,9 +12,8 @@ The typical ModelSkill workflow consists of these five steps:
 
 1.  Define **ModelResults**
 2.  Define **Observations**
-3.  **Connect** observations and ModelResults
-4.  **Extract** ModelResults at observation positions
-5.  Do analysis, plotting, etc with a **Comparer**
+3.  **Match** observations and ModelResults in space and time
+4.  Do analysis, plotting, etc with a **Comparer**
 
 
 ### 1. Define ModelResults
@@ -29,7 +26,7 @@ result file path and a name:
 
 ```python
 import modelskill as ms
-mr = ms.ModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", name='HKZN_local', item="Sign. Wave Height")
+mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", name='HKZN_local', item="Sign. Wave Height")
 ```
 
 Currently, ModelResult supports .dfs0 and .dfsu files and pandas
@@ -68,7 +65,7 @@ cc = ms.match([hkna, c2], mr)
 ```
 
 This method returns a
-[ComparerCollection](api/compare.md#modelskill.comparison.ComparerCollection)
+[ComparerCollection](api/comparer.md#modelskill.comparison.ComparerCollection)
 for further analysis and plotting.
 
 
@@ -79,7 +76,7 @@ skill assessment.
 
 The primary comparer methods are:
 
-- [skill()](api/compare.md#modelskill.comparison.ComparerCollection.skill)
+- [skill()](api/comparercollection.md#modelskill.comparison.ComparerCollection.skill)
   which returns a table with the skill scores
 - various plot methods of the comparer objects
     * `plot.scatter()`
@@ -89,7 +86,7 @@ The primary comparer methods are:
     * `plot.hist()`
 
 
-### 5. Save / load the ComparerCollection
+### Save / load the ComparerCollection
 
 It can be useful to save the comparer collection for later use. This can be done using the `save()` method:
 
@@ -104,7 +101,7 @@ cc = ms.load("my_comparer_collection.msk")
 ```
 
 
-#### Filtering
+### Filtering
 
 In order to select only a subset of the data for analysis, the comparer has a `sel()` method which returns a new comparer with the selected data. 
 
@@ -113,6 +110,6 @@ This method allow filtering of the data in several ways:
 -   on `observation` by specifying name or id of one or more
     observations
 -   on `model` (if more than one is compared) by giving name or id
--   temporal using the `start` and `end` arguments
+-   temporal using the `time` (or `start` and `end`) arguments
 -   spatial using the `area` argument given as a bounding box or a
     polygon

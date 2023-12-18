@@ -7,18 +7,18 @@ ModelSkill compares model results with observations. The workflow can be split i
 
 If the observations and model results are already matched (i.e. are stored in the same data source), 
 the `from_matched()` function can be used to go directly to the analysis phase. 
-If not, the `compare()` function can be used to match the observations and model results in space and time.
+If not, the `match()` function can be used to match the observations and model results in space and time.
 
 
 ## Matching
 
 If the observations and model results are not in the same data source (e.g. dfs0 file), 
-they will need to be defined and then matched in space and time with the `compare()` function. 
-In simple cases, observations and model results can be defined directly in the `compare()` function: 
+they will need to be defined and then matched in space and time with the `match()` function. 
+In simple cases, observations and model results can be defined directly in the `match()` function: 
 
 ```python
 import modelskill as ms
-cmp = ms.compare("obs.dfs0", "model.dfs0", obs_item="obs_WL", mod_item="WL")
+cmp = ms.match("obs.dfs0", "model.dfs0", obs_item="obs_WL", mod_item="WL")
 ```
 
 But in most cases, the observations and model results will need to be defined separately first.
@@ -52,11 +52,11 @@ mr2 = ms.PointModelResult("model.dfs0", item="WL_stn2")
 
 ### Match observations and model results
 
-The `compare()` function will interpolate the model results to the time (and space) of the observations and return a collection of `Comparer` objects that can be used for analysis. 
+The `match()` function will interpolate the model results to the time (and space) of the observations and return a collection of `Comparer` objects that can be used for analysis. 
 
 ```python
-cc1 = ms.compare(o1, mr1)
-cc2 = ms.compare(o2, mr2)
+cc1 = ms.match(o1, mr1)
+cc2 = ms.match(o2, mr2)
 cc = cc1 + cc2
 ```
 
