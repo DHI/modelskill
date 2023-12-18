@@ -18,7 +18,9 @@ def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True
     validate_eum : bool, optional
         require eum to match, by default True
     relative_path: bool, optional
-            file path are relative to configuration file, and not current directory
+        True: file paths are relative to configuration file,
+        False: file paths are absolute (relative to the current directory),
+        by default True
 
     Returns
     -------
