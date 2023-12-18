@@ -23,7 +23,7 @@ from copy import deepcopy
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
-from ..observation import PointObservation, TrackObservation
+from ..obs import PointObservation, TrackObservation
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
 from ._utils import (

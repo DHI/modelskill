@@ -4,7 +4,7 @@ import yaml
 from typing import Union
 
 from . import model_result
-from .observation import PointObservation, TrackObservation
+from .obs import PointObservation, TrackObservation
 from .connection import Connector
 
 

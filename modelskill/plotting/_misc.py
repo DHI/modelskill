@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from ..metrics import metric_has_units, defined_metrics
-from ..observation import unit_display_name
+from ..obs import unit_display_name
 
 
 def _get_ax(ax=None, figsize=None):

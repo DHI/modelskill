@@ -4,7 +4,7 @@ from typing import Optional, Sequence, Any
 import xarray as xr
 import pandas as pd
 
-from ..observation import PointObservation
+from ..obs import PointObservation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
