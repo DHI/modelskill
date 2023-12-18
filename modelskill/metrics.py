@@ -22,6 +22,7 @@ difference between a model and an observation.
 * [peak_ratio (pr)][modelskill.metrics.peak_ratio]
 
 Circular metrics (for directional data with units in degrees):
+
 * [c_bias][modelskill.metrics.c_bias]
 * [c_max_error][modelskill.metrics.c_max_error]
 * [c_mean_absolute_error (c_mae)][modelskill.metrics.c_mean_absolute_error]
@@ -1113,7 +1114,7 @@ NON_METRICS = set(
         "Union",
         "_c_residual",
         "_linear_regression",
-        "_partial_duration_series",        
+        "_partial_duration_series",
     ]
 )
 
