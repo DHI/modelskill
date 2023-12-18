@@ -113,7 +113,7 @@ class SkillGrid(SkillGridMixin):
     Examples
     --------
     >>> ss = cc.gridded_skill()
-    >>> ss.field_names
+    >>> ss.metrics
     ['n', 'bias', 'rmse', 'urmse', 'mae', 'cc', 'si', 'r2']
 
     >>> ss.mod_names
@@ -198,14 +198,14 @@ class SkillGrid(SkillGridMixin):
         """
         return SkillGrid(self.data.sel(model=model))
 
-    def plot(self, field: str, model=None, **kwargs):
+    def plot(self, metric: str, model=None, **kwargs):
         warnings.warn(
             "plot() is deprecated and will be removed in a future version. ",
             FutureWarning,
         )
-        if field not in self.field_names:
-            raise ValueError(f"field {field} not found in {self.field_names}")
-        return self[field].plot(model=model, **kwargs)
+        if metric not in self.metrics:
+            raise ValueError(f"metric {metric} not found in {self.metrics}")
+        return self[metric].plot(model=model, **kwargs)
 
     def to_dataframe(self):
         """export as pandas.DataFrame"""
