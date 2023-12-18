@@ -9,7 +9,7 @@ Obtain a comparer object in one of the following ways:
 Do analysis and plotting with the returned [Comparer](comparer.md#modelskill.Comparer) (a single observation) or [ComparerCollection](comparercollection.md#modelskill.comparison.ComparerCollection) (multiple observations):
 
 - [skill()](comparercollection.md#modelskill.comparison.ComparerCollection.skill) - returns a [SkillTable](skill.md) with the skill scores
-- use the various plot methods of the comparer objects
+- plot using the various plot methods of the comparer objects
     * `plot.scatter()`
     * `plot.timeseries()`
     * `plot.kde()`
