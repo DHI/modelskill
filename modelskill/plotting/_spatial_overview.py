@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 from ..model.point import PointModelResult
 from ..model.track import TrackModelResult
-from ..observation import Observation, PointObservation, TrackObservation
+from ..obs import Observation, PointObservation, TrackObservation
 from ._misc import _get_ax
 
 

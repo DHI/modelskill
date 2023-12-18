@@ -11,7 +11,7 @@ import yaml
 
 from . import ModelResult, plotting
 from .matching import _single_obs_compare
-from .observation import Observation, PointObservation
+from .obs import Observation, PointObservation
 from .utils import is_iterable_not_str
 from .comparison import Comparer, ComparerCollection
 

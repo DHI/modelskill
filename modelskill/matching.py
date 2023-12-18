@@ -29,7 +29,7 @@ from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
 from .model.point import PointModelResult
-from .observation import Observation, PointObservation, TrackObservation
+from .obs import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
 
