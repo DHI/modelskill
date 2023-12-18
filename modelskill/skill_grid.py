@@ -129,9 +129,8 @@ class SkillGrid(SkillGridMixin):
         self._set_attrs()
 
     @property
-    def field_names(self):
-        # TODO: rename to metrics? (be consistent with Skill class)
-        """List of field names (=data vars)"""
+    def metrics(self):
+        """List of metrics (=data vars)"""
         return list(self.data.data_vars)
 
     def __repr__(self):
