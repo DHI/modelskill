@@ -87,7 +87,7 @@ class ComparerCollection(Mapping, Scoreable):
     Examples
     --------
     >>> import modelskill as ms
-    >>> mr = ms.ModelResult("Oresund2D.dfsu", item=0)
+    >>> mr = ms.DfsuModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
     >>> cc = ms.match(obs=[o1,o2], mod=mr)

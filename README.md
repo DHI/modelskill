@@ -55,7 +55,7 @@ Start by defining model results and observations:
 
 ```python
 >>> import modelskill as ms
->>> mr = ms.ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
+>>> mr = ms.DfsuModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
 >>> HKNA = ms.PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 >>> EPL = ms.PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
 >>> c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")

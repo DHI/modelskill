@@ -46,8 +46,8 @@ def spatial_overview(
     >>> import modelskill as ms
     >>> o1 = ms.PointObservation('HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
     >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
-    >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
-    >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
+    >>> mr1 = ms.DfsuModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
+    >>> mr2 = ms.DfsuModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
     >>> ms.plotting.spatial_overview([o1, o2], [mr1, mr2])
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]  # type: ignore
