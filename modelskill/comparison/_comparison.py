@@ -1017,8 +1017,11 @@ class Comparer(Scoreable):
 
         by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
 
-        df = cmp.to_dataframe()  # TODO: avoid df if possible?
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        df = cmp.to_dataframe()
+        res = _groupby_df(df, by, metrics)
+        res["x"] = df.groupby(by=by, observed=False).x.first()
+        res["y"] = df.groupby(by=by, observed=False).y.first()
+        # TODO: set x,y to NaN if TrackObservation
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 

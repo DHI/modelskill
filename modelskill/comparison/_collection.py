@@ -511,7 +511,10 @@ class ComparerCollection(Mapping, Scoreable):
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
 
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = _groupby_df(df, by, metrics)
+        res["x"] = df.groupby(by=by, observed=False).x.first()
+        res["y"] = df.groupby(by=by, observed=False).y.first()
+        # TODO: set x,y to NaN if TrackObservation
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
