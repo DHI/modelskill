@@ -76,7 +76,7 @@ def test_from_dfs0(klagshamn_filename):
 def test_from_mikeio_dataarray(klagshamn_da):
     o = ms.PointObservation(klagshamn_da, x=366844, y=6154291, name="Klagshamn")
     assert o.quantity.name == "Water Level"
-    assert o.quantity.unit == "meter"
+    assert o.quantity.unit == "m"
 
 
 def test_from_mikeio_dataarray_with_quantity(klagshamn_da):
@@ -96,7 +96,7 @@ def test_from_mikeio_dataset(klagshamn_ds):
         klagshamn_ds, item="Water Level", x=366844, y=6154291, name="Klagshamn"
     )
     assert o.quantity.name == "Water Level"
-    assert o.quantity.unit == "meter"
+    assert o.quantity.unit == "m"
 
 
 def test_from_df(klagshamn_filename, klagshamn_df):
