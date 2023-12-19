@@ -130,7 +130,7 @@ def from_matched(
     if isinstance(data, mikeio.Dataset):
         assert len(data.shape) == 1, "Only 0-dimensional data are supported"
         if quantity is None:
-            quantity = Quantity.from_mikeio_iteminfo(data.items[obs_item])
+            quantity = Quantity.from_mikeio_iteminfo(data[obs_item].item)
         data = data.to_dataframe()
 
     cmp = Comparer.from_matched_data(
