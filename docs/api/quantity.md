@@ -1,7 +1,3 @@
-
-# Miscellaneous
-
-
-## Quantity
+# Quantity
 
 ::: modelskill.quantity.Quantity

@@ -118,6 +118,15 @@ def test_from_df(klagshamn_filename, klagshamn_df):
     assert o1.n_points == o3.n_points
 
 
+def test_observation_factory(klagshamn_da):
+    o = ms.observation(klagshamn_da, x=366844, y=6154291, name="Klagshamn")
+    assert isinstance(o, ms.PointObservation)
+
+    with pytest.warns(UserWarning, match="Could not guess geometry"):
+        o = ms.observation(klagshamn_da, name="Klagshamn")
+        assert isinstance(o, ms.PointObservation)
+
+
 def test_hist(klagshamn_filename):
     o1 = ms.PointObservation(
         klagshamn_filename, item=0, x=366844, y=6154291, name="Klagshamn1"

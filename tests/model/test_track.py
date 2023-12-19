@@ -88,9 +88,10 @@ def test_track_df_default_items(track_df):
         mr0 = ms.model_result(df, gtype="track")
     assert "x" in mr0.data.coords
 
-    mr = ms.model_result(
-        df, gtype="track", x_item=1, y_item="lat", item="surface_elevation"
-    )
+    with pytest.warns(UserWarning, match="Removed 22 duplicate timestamps"):
+        mr = ms.model_result(
+            df, gtype="track", x_item=1, y_item="lat", item="surface_elevation"
+        )
     assert "x" in mr.data.coords
 
     # Rename

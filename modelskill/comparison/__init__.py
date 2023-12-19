@@ -4,4 +4,5 @@ observation comparison (Comparer), and collections of Comparers (ComparerCollect
 from ._comparison import Comparer
 from ._collection import ComparerCollection
 
+
 __all__ = ["Comparer", "ComparerCollection"]

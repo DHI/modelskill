@@ -6,7 +6,7 @@
 
 [ModelSkill](https://github.com/DHI/modelskill) is a python package for scoring [MIKE](https://www.mikepoweredbydhi.com) models (other models can be evaluated as well). 
 
-Read more about the [vision and scope](https://dhi.github.io/modelskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/modelskill/discussions), report an [issue](https://github.com/DHI/modelskill/issues) or browse the [API documentation](https://dhi.github.io/modelskill/api.html). Access observational data (e.g. altimetry data) from the sister library [WatObs](https://github.com/DHI/watobs). 
+Read more about the [vision and scope](https://dhi.github.io/modelskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/modelskill/discussions), report an [issue](https://github.com/DHI/modelskill/issues) or browse the [documentation](https://dhi.github.io/modelskill/). Access observational data (e.g. altimetry data) from the sister library [WatObs](https://github.com/DHI/watobs). 
 
 
 ## Use cases
@@ -55,7 +55,7 @@ Start by defining model results and observations:
 
 ```python
 >>> import modelskill as ms
->>> mr = ms.ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
+>>> mr = ms.DfsuModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
 >>> HKNA = ms.PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 >>> EPL = ms.PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
 >>> c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")

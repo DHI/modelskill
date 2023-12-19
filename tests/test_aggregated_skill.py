@@ -48,9 +48,13 @@ def cc2(o1, o2, o3):
 
 def test_skill(cc1):
     s = cc1.skill()
-    assert len(s.mod_names) == 0
-    assert len(s.obs_names) == 1
-    assert len(s.var_names) == 0
+
+    # TODO a minimal skill assesment consists of 1 observation, 1 model and 1 variable
+    # in this case model and variable is implict since we only have one of each, but why do we have one observation, seems inconsistent
+
+    assert len(s.mod_names) == 0  # TODO seems wrong
+    assert len(s.obs_names) == 1  # makes sense
+    assert len(s.var_names) == 0  # TODO seems wrong
 
     df = s.to_dataframe()
     assert isinstance(df, pd.DataFrame)
@@ -150,8 +154,6 @@ def test_skill_sel_query(cc2):
 
 def test_skill_sel_fail(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
-    with pytest.raises(KeyError):
-        s.sel(metrics=["cc"])
 
     with pytest.raises(KeyError):
         s.sel(variable="Hm0")

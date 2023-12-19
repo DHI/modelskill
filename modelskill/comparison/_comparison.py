@@ -2,12 +2,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Callable,
     Dict,
     List,
     Mapping,
     Optional,
     Union,
     Iterable,
+    Protocol,
     Sequence,
     TYPE_CHECKING,
 )
@@ -21,7 +23,7 @@ from copy import deepcopy
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
-from ..observation import PointObservation, TrackObservation
+from ..obs import PointObservation, TrackObservation
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
 from ._utils import (
@@ -40,6 +42,30 @@ from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+
+class Scoreable(Protocol):
+    def score(self, metric: str | Callable, **kwargs) -> Dict[str, float]:
+        ...
+
+    def skill(
+        self,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[List[str]] = None,
+        **kwargs,
+    ) -> SkillTable:
+        ...
+
+    def gridded_skill(
+        self,
+        bins=5,
+        binsize: Optional[float] = None,
+        by: Optional[Union[str, List[str]]] = None,
+        metrics: Optional[list] = None,
+        n_min: Optional[int] = None,
+        **kwargs,
+    ) -> SkillGrid:
+        ...
 
 
 def _parse_dataset(data) -> xr.Dataset:
@@ -227,7 +253,7 @@ class ItemSelection:
         Default behaviour:
         - obs_item is first item
         - mod_items are all but obs_item and aux_items
-        - aux_items are all but obs_item and mod_items
+        - aux_items are None
 
         Both integer and str are accepted as items. If str, it must be a key in data.
         """
@@ -239,8 +265,12 @@ class ItemSelection:
 
         # Check existance of items and convert to names
         if mod_items is not None:
+            if isinstance(mod_items, (str, int)):
+                mod_items = [mod_items]
             mod_names = [_get_name(m, items) for m in mod_items]
         if aux_items is not None:
+            if isinstance(aux_items, (str, int)):
+                aux_items = [aux_items]
             aux_names = [_get_name(a, items) for a in aux_items]
         else:
             aux_names = []
@@ -249,8 +279,6 @@ class ItemSelection:
 
         if mod_items is None:
             mod_names = list(set(items) - set(aux_names))
-        if aux_items is None:
-            aux_names = list(set(items) - set(mod_names))
 
         assert len(mod_names) > 0, "no model items were found! Must be at least one"
         assert obs_name not in mod_names, "observation item must not be a model item"
@@ -322,9 +350,21 @@ def _matched_data_to_xarray(
     assert isinstance(df, pd.DataFrame)
     cols = list(df.columns)
     items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
+
+    # check that items.obs and items.model are numeric
+    if not np.issubdtype(df[items.obs].dtype, np.number):
+        raise ValueError(
+            "Observation data is of type {df[items.obs].dtype}, it must be numeric"
+        )
+    for m in items.model:
+        if not np.issubdtype(df[m].dtype, np.number):
+            raise ValueError(
+                f"Model data: {m} is of type {df[m].dtype}, it must be numeric"
+            )
+
     df = df[items.all]
     df.index.name = "time"
-    df.rename(columns={items.obs: "Observation"}, inplace=True)
+    df = df.rename(columns={items.obs: "Observation"})
     ds = df.to_xarray()
 
     ds.attrs["name"] = name if name is not None else items.obs
@@ -358,7 +398,7 @@ def _matched_data_to_xarray(
     return ds
 
 
-class Comparer:
+class Comparer(Scoreable):
     """
     Comparer class for comparing model and observation data.
 
@@ -458,7 +498,8 @@ class Comparer:
             f"Observation: {self.name}, n_points={self.n_points}",
         ]
         for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.sel(model=model).score():.3f}")
+            out.append(f" Model: {model}, rmse={self.score()[model]:.3f}")
+
         for var in self.aux_names:
             out.append(f" Auxiliary: {var}")
         return str.join("\n", out)
@@ -999,9 +1040,9 @@ class Comparer:
 
     def score(
         self,
-        metric=mtr.rmse,
+        metric: str | Callable = mtr.rmse,
         **kwargs,
-    ) -> float:
+    ) -> Dict[str, float]:
         """Model skill score
 
         Parameters
@@ -1038,19 +1079,23 @@ class Comparer:
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         s = self.skill(
+            by=["model", "observation"],
             metrics=[metric],
-            model=model,
-            start=start,
-            end=end,
-            area=area,
+            model=model,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
-        # if s is None:
-        #    return
         df = s.to_dataframe()
-        values = df[metric.__name__].values
-        if len(values) == 1:
-            values = values[0]
-        return values
+
+        metric_name = metric if isinstance(metric, str) else metric.__name__
+
+        return (
+            df.reset_index()
+            .groupby("model", observed=True)[metric_name]
+            .mean()
+            .to_dict()
+        )
 
     def spatial_skill(
         self,
@@ -1182,27 +1227,26 @@ class Comparer:
     def residual(self):
         return self.mod - np.vstack(self.obs)
 
-    def remove_bias(self, correct="Model"):
-        # TODO: return a new Comparer object instead of modifying self
-        bias = self.residual.mean(axis=0)
+    def remove_bias(self, correct="Model") -> Comparer:
+        cmp = self.copy()
+
+        bias = cmp.residual.mean(axis=0)
         if correct == "Model":
-            for j in range(self.n_models):
-                mod_name = self.mod_names[j]
-                mod_ts = self.raw_mod_data[mod_name]
+            for j in range(cmp.n_models):
+                mod_name = cmp.mod_names[j]
+                mod_ts = cmp.raw_mod_data[mod_name]
                 with xr.set_options(keep_attrs=True):
                     mod_ts.data[mod_name].values = mod_ts.values - bias[j]
-                    self.data[mod_name].values = self.data[mod_name].values - bias[j]
+                    cmp.data[mod_name].values = cmp.data[mod_name].values - bias[j]
         elif correct == "Observation":
             # what if multiple models?
             with xr.set_options(keep_attrs=True):
-                self.data[self._obs_name].values = (
-                    self.data[self._obs_name].values + bias
-                )
+                cmp.data[cmp._obs_name].values = cmp.data[cmp._obs_name].values + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
             )
-        return bias
+        return cmp
 
     # TODO remove plotting methods in v1.1
     def scatter(
