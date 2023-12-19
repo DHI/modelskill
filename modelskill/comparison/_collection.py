@@ -199,13 +199,14 @@ class ComparerCollection(Mapping, Scoreable):
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
-    def to_dataframe(self) -> pd.DataFrame:
+    def to_dataframe(self, attrs_keys=None) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
         # TODO delegate to each comparer
+        attrs_keys = attrs_keys or []
         res = _all_df_template(self.n_variables)
         frames = []
-        cols = res.keys()
+        cols = list(res.keys()) + attrs_keys
         for cmp in self.comparers.values():
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
@@ -219,9 +220,20 @@ class ComparerCollection(Mapping, Scoreable):
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.obs
+                # if attrs_keys is not None:
+                for key in attrs_keys:
+                    # assert (
+                    #     key in cmp.data.attrs
+                    # ), f"key {key} not in attrs, valid keys: {cmp.data.attrs.keys()}"
+                    if key in cmp.data.attrs:
+                        df[key] = cmp.data.attrs[key]
+                    else:
+                        df[key] = False
                 frames.append(df[cols])
         if len(frames) > 0:
             res = pd.concat(frames)
+        cat_cols = ["model", "observation"] + attrs_keys
+        res[cat_cols] = res[cat_cols].astype("category")
         res = res.sort_index()
         res.index.name = "time"
         return res
@@ -488,7 +500,7 @@ class ComparerCollection(Mapping, Scoreable):
         observation, variable = _get_deprecated_obs_var_args(kwargs)
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        cmp = self.sel(
+        cc = self.sel(
             model=model,
             observation=observation,
             variable=variable,
@@ -496,27 +508,42 @@ class ComparerCollection(Mapping, Scoreable):
             end=end,
             area=area,
         )
-        if cmp.n_points == 0:
+        if cc.n_points == 0:
             raise ValueError("Dataset is empty, no data to compare.")
 
         ## ---- end of deprecated code ----
 
-        df = cmp.to_dataframe()
-        n_models = cmp.n_models  # len(df.model.unique())
-        n_obs = cmp.n_observations  # len(df.observation.unique())
+        n_models = cc.n_models  # len(df.model.unique())
+        n_obs = cc.n_observations  # len(df.observation.unique())
 
         # TODO: FIX
         n_var = (
-            cmp.n_variables
+            cc.n_variables
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
+
+        by, attrs_keys = self._attrs_keys_in_by(by)
+        df = cc.to_dataframe(attrs_keys=attrs_keys)
 
         res = _groupby_df(df, by, metrics)
         res["x"] = df.groupby(by=by, observed=False).x.first()
         res["y"] = df.groupby(by=by, observed=False).y.first()
-        # TODO: set x,y to NaN if TrackObservation
-        res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
+        # TODO: set x,y to NaN if TrackObservation, x.nunique() > 1
+        res = cc._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
+
+    @staticmethod
+    def _attrs_keys_in_by(by):
+        """Check if 'attrs:' is in by and return attrs_keys"""
+        attrs_keys = []
+        by = [by] if isinstance(by, str) else by
+        for j, b in enumerate(by):
+            if b.startswith("attrs:"):
+                key = b.split(":")[1]
+                attrs_keys.append(key)
+                by[j] = key  # remove 'attrs:' prefix
+        attrs_keys = None if len(attrs_keys) == 0 else attrs_keys
+        return by, attrs_keys
 
     def _add_as_col_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "variable"]
