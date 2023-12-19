@@ -99,8 +99,8 @@ def test_timeseries_point_properties(ds_point):
     assert ts.x == 0
     assert ts.y == 3
     assert list(ts.time) == list(pd.date_range("2000-01-01", periods=3))
-    assert ts.start_time == pd.Timestamp("2000-01-01")
-    assert ts.end_time == pd.Timestamp("2000-01-03")
+    assert ts.time[0] == pd.Timestamp("2000-01-01")
+    assert ts.time[-1] == pd.Timestamp("2000-01-03")
     assert ts.n_points == 3
     assert len(ts) == 3
     assert len(ts.color) == 7
@@ -112,8 +112,8 @@ def test_timeseries_track_properties(ds_track):
     assert list(ts.x) == [0, 1, 2]
     assert list(ts.y) == [3, 4, 5]
     assert list(ts.time) == list(pd.date_range("2000-01-01", periods=3))
-    assert ts.start_time == pd.Timestamp("2000-01-01")
-    assert ts.end_time == pd.Timestamp("2000-01-03")
+    assert ts.time[0] == pd.Timestamp("2000-01-01")
+    assert ts.time[-1] == pd.Timestamp("2000-01-03")
     assert ts.n_points == 3
     assert len(ts) == 3
     assert len(ts.color) == 7

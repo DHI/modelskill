@@ -44,8 +44,8 @@ def trackobs_c2_hm0():
 def test_grid_from_nc(mr_ERA5_pp1d):
     mr = mr_ERA5_pp1d
     assert mr.name == "ERA5_DutchCoast"
-    assert mr.start_time == datetime(2017, 10, 27, 0, 0, 0)
-    assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert mr.time[0] == datetime(2017, 10, 27, 0, 0, 0)
+    assert mr.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
 
 
 def test_grid_from_DataArray(ERA5_DutchCoast_nc):
@@ -82,8 +82,8 @@ def test_grid_from_multifile(mf_modelresult):
     mr = mf_modelresult
 
     assert mr.name == "CMEMS"
-    assert mr.start_time == datetime(2017, 10, 28, 0, 0, 0)
-    assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert mr.time[0] == datetime(2017, 10, 28, 0, 0, 0)
+    assert mr.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
 
 
 # should be supported
@@ -147,8 +147,8 @@ def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     ds = pmr.data
 
     assert isinstance(pmr, ms.PointModelResult)
-    assert pmr.start_time == datetime(2017, 10, 27, 0, 0, 0)
-    assert pmr.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert pmr.time[0] == datetime(2017, 10, 27, 0, 0, 0)
+    assert pmr.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
     assert pmr.n_points == 67
     assert len(ds.data_vars) == 1
     assert pytest.approx(ds.to_pandas().iloc[0, 0]) == 0.875528
@@ -174,8 +174,8 @@ def test_grid_extract_point_aux(ERA5_DutchCoast_nc, pointobs_epl_hm0):
     mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
     pc = mr.extract(pointobs_epl_hm0)
     assert isinstance(pc, ms.PointModelResult)
-    assert pc.start_time == datetime(2017, 10, 27, 0, 0, 0)
-    assert pc.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert pc.time[0] == datetime(2017, 10, 27, 0, 0, 0)
+    assert pc.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
     assert pc.n_points == 67
     assert len(pc.data.data_vars) == 2
 
@@ -193,8 +193,8 @@ def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     mri = mr_ERA5_pp1d
     tmr = mri.extract(trackobs_c2_hm0)
     assert isinstance(tmr, ms.TrackModelResult)
-    assert tmr.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
-    assert tmr.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
+    assert tmr.time[0].replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
+    assert tmr.time[-1].replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tmr.n_points == 99
 
 
@@ -202,8 +202,8 @@ def test_grid_extract_track_aux(ERA5_DutchCoast_nc, trackobs_c2_hm0):
     mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
     tc = mr.extract(trackobs_c2_hm0)
     assert isinstance(tc, ms.TrackModelResult)
-    assert tc.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
-    assert tc.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
+    assert tc.time[0].replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
+    assert tc.time[-1].replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
     assert tc.n_points == 99
     assert len(tc.data.data_vars) == 2
     assert "swh" in tc.data.data_vars
