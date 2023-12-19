@@ -10,4 +10,4 @@ An observation can be created by explicitly invoking one of the above classes or
 
 ## observation()
 
-::: modelskill.observation.observation
+::: modelskill.observation
