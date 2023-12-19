@@ -232,8 +232,8 @@ class ComparerCollection(Mapping, Scoreable):
                 frames.append(df[cols])
         if len(frames) > 0:
             res = pd.concat(frames)
-        # cat_cols = res.select_dtypes(include=["object"]).columns
-        # res[cat_cols] = res[cat_cols].astype("category") # TODO
+        cat_cols = res.select_dtypes(include=["object"]).columns
+        res[cat_cols] = res[cat_cols].astype("category")  # TODO
         # res = res.sort_index()
         res.index.name = "time"
         return res
@@ -457,6 +457,9 @@ class ComparerCollection(Mapping, Scoreable):
             group by column name or by temporal bin via the freq-argument
             (using pandas pd.Grouper(freq)),
             e.g.: 'freq:M' = monthly; 'freq:D' daily
+            or by attributes, stored in the cc.data.attrs container,
+            e.g.: 'attrs:obs_provider' = group by observation provider or
+            'attrs:gtype' = group by geometry type (track or point)
             by default ["model","observation"]
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
@@ -526,6 +529,8 @@ class ComparerCollection(Mapping, Scoreable):
         df = cc.to_dataframe(attrs_keys=attrs_keys)
 
         res = _groupby_df(df, by, metrics)
+        mtr_cols = [m.__name__ for m in metrics]
+        res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
         res["x"] = df.groupby(by=by, observed=False).x.first()
         res["y"] = df.groupby(by=by, observed=False).y.first()
         # TODO: set x,y to NaN if TrackObservation, x.nunique() > 1
