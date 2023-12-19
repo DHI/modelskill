@@ -529,7 +529,7 @@ class ComparerCollection(Mapping, Scoreable):
         df = cc.to_dataframe(attrs_keys=attrs_keys)
 
         res = _groupby_df(df, by, metrics)
-        mtr_cols = [m.__name__ for m in metrics]
+        mtr_cols = [m.__name__ for m in metrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
         res["x"] = df.groupby(by=by, observed=False).x.first()
         res["y"] = df.groupby(by=by, observed=False).y.first()
