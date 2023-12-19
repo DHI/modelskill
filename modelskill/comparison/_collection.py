@@ -538,7 +538,7 @@ class ComparerCollection(Mapping, Scoreable):
         attrs_keys = []
         by = [by] if isinstance(by, str) else by
         for j, b in enumerate(by):
-            if b.startswith("attrs:"):
+            if isinstance(b, str) and b.startswith("attrs:"):
                 key = b.split(":")[1]
                 attrs_keys.append(key)
                 by[j] = key  # remove 'attrs:' prefix
