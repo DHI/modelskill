@@ -28,7 +28,7 @@ from .quantity import Quantity
 from .model.factory import ModelResult
 from .model import model_result
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
-from .observation import observation, PointObservation, TrackObservation
+from .obs import observation, PointObservation, TrackObservation
 from .matching import compare, from_matched, match
 from .connection import Connector
 from .configuration import from_config

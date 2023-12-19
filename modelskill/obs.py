@@ -116,11 +116,10 @@ class Observation(TimeSeries):
     # TODO: move this to TimeSeries?
     @staticmethod
     def _parse_time(time):
-        if not isinstance(time.to_index(), pd.DatetimeIndex):
-            raise TypeError(
-                f"Input must have a datetime index! Provided index was {type(time.to_index())}"
-            )
-        return time.dt.round("100us")
+        if isinstance(time, pd.DatetimeIndex):
+            return time.dt.round("100us")
+        else:
+            return time  # can be RangeIndex
 
     @property
     def _aux_vars(self):

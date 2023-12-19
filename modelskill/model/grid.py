@@ -11,7 +11,7 @@ from ..types import GridType
 from ..quantity import Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
-from ..observation import PointObservation, TrackObservation
+from ..obs import PointObservation, TrackObservation
 
 
 class GridModelResult(SpatialField):

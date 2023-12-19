@@ -66,7 +66,7 @@ def test_gridded_skill_multi_model(cc2) -> None:
     assert len(ss.y) == 3
     assert len(ss.mod_names) == 2
     assert len(ss.obs_names) == 3
-    assert len(ss.field_names) == 3
+    assert len(ss.metrics) == 3
 
 
 def test_gridded_skill_sel_model(cc2) -> None:

@@ -87,7 +87,7 @@ class ComparerCollection(Mapping, Scoreable):
     Examples
     --------
     >>> import modelskill as ms
-    >>> mr = ms.ModelResult("Oresund2D.dfsu", item=0)
+    >>> mr = ms.DfsuModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
     >>> cc = ms.match(obs=[o1,o2], mod=mr)
@@ -511,7 +511,10 @@ class ComparerCollection(Mapping, Scoreable):
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
 
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = _groupby_df(df, by, metrics)
+        res["x"] = df.groupby(by=by, observed=False).x.first()
+        res["y"] = df.groupby(by=by, observed=False).y.first()
+        # TODO: set x,y to NaN if TrackObservation
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -1121,10 +1124,12 @@ class ComparerCollection(Mapping, Scoreable):
         """
 
         files = []
+        no = 0
         for name, cmp in self.comparers.items():
-            cmp_fn = f"{name}.nc"
+            cmp_fn = f"{no}_{name}.nc"
             cmp.save(cmp_fn)
             files.append(cmp_fn)
+            no += 1
 
         with zipfile.ZipFile(filename, "w") as zip:
             for f in files:
@@ -1160,7 +1165,8 @@ class ComparerCollection(Mapping, Scoreable):
                     zip.extract(f, path=folder)
 
         comparers = [
-            ComparerCollection._load_comparer(folder, f) for f in os.listdir(folder)
+            ComparerCollection._load_comparer(folder, f)
+            for f in sorted(os.listdir(folder))
         ]
         return ComparerCollection(comparers)
 

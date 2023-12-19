@@ -318,7 +318,7 @@ def test_from_matched_dfs0():
     assert cmp.n_points == 397
     assert cmp.n_models == 5
     assert cmp.quantity.name == "Significant wave height"
-    assert cmp.quantity.unit == "meter"
+    assert cmp.quantity.unit == "m"
 
 
 def test_from_matched_Dfs0():
@@ -329,7 +329,7 @@ def test_from_matched_Dfs0():
     assert cmp.n_points == 397
     assert cmp.n_models == 5
     assert cmp.quantity.name == "Significant wave height"
-    assert cmp.quantity.unit == "meter"
+    assert cmp.quantity.unit == "m"
 
 
 def test_from_matched_mikeio_dataset():
@@ -339,7 +339,7 @@ def test_from_matched_mikeio_dataset():
     assert cmp.n_points == 145
     assert cmp.n_models == 5
     assert cmp.quantity.name == "Significant wave height"
-    assert cmp.quantity.unit == "meter"
+    assert cmp.quantity.unit == "m"
 
 
 def test_trackmodelresult_and_trackobservation_uses_model_name():

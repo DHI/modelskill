@@ -111,7 +111,7 @@ def test_skill_sel_metrics_str(cc1):
 
     with pytest.warns(FutureWarning, match="deprecated"):
         s2 = s.sel(metrics="rmse")
-    assert s2.data.name == "rmse"
+    assert s2.name == "rmse"
 
 
 def test_skill_sel_metrics_list(cc2):

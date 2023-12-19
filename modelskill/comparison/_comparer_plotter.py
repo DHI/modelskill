@@ -427,7 +427,7 @@ class ComparerPlotter:
         _, ax = _get_fig_ax(ax, figsize)
 
         cols = ["Observation"] + cmp.mod_names
-        df = cmp.data[cols].to_dataframe()
+        df = cmp.data[cols].to_dataframe()[cols]
         df.boxplot(ax=ax, **kwargs)
         ax.set_ylabel(cmp.unit_text)
         ax.set_title(title or cmp.name)

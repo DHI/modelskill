@@ -3,6 +3,7 @@ import pytest
 import pandas as pd
 import xarray as xr
 import modelskill.comparison
+import modelskill as ms
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -163,6 +164,29 @@ def test_cc_query(cc):
     assert cc2.n_comparers == 1
     assert cc2.n_models == 2
     assert cc2.n_points == 2
+
+
+def test_save_and_load_preserves_order_of_comparers(tmp_path):
+    data = pd.DataFrame(
+        {"zulu": [1, 2, 3], "alpha": [4, 5, 6], "bravo": [7, 8, 9], "m1": [10, 11, 12]}
+    )
+
+    cmp1 = ms.from_matched(data, obs_item="zulu", mod_items="m1")
+    cmp2 = ms.from_matched(data, obs_item="alpha", mod_items="m1")
+    cmp3 = ms.from_matched(data, obs_item="bravo", mod_items="m1")
+
+    cc = ms.ComparerCollection([cmp1, cmp2, cmp3])
+    assert cc[0].name == "zulu"
+    assert cc[1].name == "alpha"
+    assert cc[2].name == "bravo"
+
+    fn = tmp_path / "test_cc.msk"
+    cc.save(fn)
+
+    cc2 = modelskill.load(fn)
+    assert cc2[0].name == "zulu"
+    assert cc2[1].name == "alpha"
+    assert cc2[2].name == "bravo"
 
 
 def test_save(cc: modelskill.ComparerCollection, tmp_path):
