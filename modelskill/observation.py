@@ -101,17 +101,17 @@ class Observation(TimeSeries):
         data["time"] = self._parse_time(data.time)
 
         super().__init__(data=data)
-        self.data[self.name].attrs["weight"] = weight
-        self.data[self.name].attrs["color"] = color
+        self.data.attrs["weight"] = weight
+        self.data.attrs["color"] = color
 
     @property
     def weight(self) -> float:
         """Weighting factor for skill scores"""
-        return self.data[self.name].attrs["weight"]
+        return self.data.attrs["weight"]
 
     @weight.setter
     def weight(self, value: float) -> None:
-        self.data[self.name].attrs["weight"] = value
+        self.data.attrs["weight"] = value
 
     # TODO: move this to TimeSeries?
     @staticmethod
