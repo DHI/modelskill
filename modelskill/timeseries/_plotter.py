@@ -1,4 +1,6 @@
 from typing import Protocol
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 
 class TimeSeriesPlotter(Protocol):
@@ -32,8 +34,6 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
     ):
         """plot timeseries
 
-        Wraps pandas.DataFrame plot() method.
-
         Parameters
         ----------
         title : str, optional
@@ -46,9 +46,25 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
             line style, by default None
         kwargs: other keyword arguments to df.plot()
         """
-        return self.plot(
-            title=title, color=color, marker=marker, linestyle=linestyle, **kwargs
+        t = self._ts._values_as_series.index
+        y = self._ts._values_as_series.values
+        plt.plot(
+            t,
+            y,
+            self._ts._values_as_series,
+            marker=marker,
+            linestyle=linestyle,
+            color=self._ts.color if color is None else color,
         )
+        ax = plt.gca()
+        locator = mdates.AutoDateLocator(minticks=3, maxticks=12)
+        formatter = mdates.ConciseDateFormatter(locator)
+        ax.xaxis.set_major_locator(locator)
+        ax.xaxis.set_major_formatter(formatter)
+
+        if title:
+            ax.set_title(title)
+        return ax
 
     def plot(self, title=None, color=None, marker=".", linestyle="None", **kwargs):
         """plot timeseries
