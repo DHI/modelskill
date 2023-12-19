@@ -120,7 +120,7 @@ class Quantity:
         If the unit is "degree", the quantity is assumed to be directional.
         """
 
-        unit = iteminfo.unit.name
+        unit = iteminfo.unit.short_name
         is_directional = unit == "degree"
         return Quantity(
             name=repr(iteminfo.type), unit=unit, is_directional=is_directional

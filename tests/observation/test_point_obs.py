@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 import mikeio
@@ -198,3 +199,15 @@ def test_point_aux_items_multiple(df_aux):
     assert "aux2" in o.data
     assert o.data["aux1"].values[0] == 1.1
     assert o.data["aux2"].values[0] == 1.2
+
+
+def test_mikeio_iteminfo_pretty_units():
+    da = mikeio.DataArray(
+        data=np.array([1, 2, 3]),
+        item=mikeio.ItemInfo("Q", mikeio.EUMType.Discharge),
+        time=pd.date_range("2019-01-01", periods=3, freq="D"),
+    )
+    assert da.unit.short_name == "m^3/s"
+
+    obs = ms.PointObservation(da, x=0, y=0)
+    assert obs.quantity.unit == "m^3/s"
