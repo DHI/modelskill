@@ -549,7 +549,7 @@ def _plot_summary_table(
     for ti in text_:
         text_col_i = fig.text(x + dx, 0.6, ti, **txt_settings)
         ## Render, and get width
-        plt.draw()
+        # plt.draw() # TOOO this causes an error and I have no idea why it is here
         dx = (
             dx
             + figure_transform.inverted().transform(
