@@ -62,14 +62,14 @@ def _add_spatial_grid_to_df(
 
 
 def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
-    def calc_metrics(x):
+    def calc_metrics(group):
         row = {}
-        row["n"] = len(x)
+        # row["x"] = group.x.first() if group.x.nunique() == 1 else np.nan
+        # row["y"] = group.y.first() if group.y.nunique() == 1 else np.nan
+        row["n"] = len(group)
         for metric in metrics:
-            row[metric.__name__] = metric(x.obs_val, x.mod_val)
+            row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
-
-    # .drop(columns=["x", "y"])
 
     res = df.groupby(by=by, observed=False).apply(calc_metrics)
 
