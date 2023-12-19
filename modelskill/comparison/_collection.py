@@ -232,9 +232,9 @@ class ComparerCollection(Mapping, Scoreable):
                 frames.append(df[cols])
         if len(frames) > 0:
             res = pd.concat(frames)
-        cat_cols = ["model", "observation"] + attrs_keys
-        res[cat_cols] = res[cat_cols].astype("category")
-        res = res.sort_index()
+        # cat_cols = res.select_dtypes(include=["object"]).columns
+        # res[cat_cols] = res[cat_cols].astype("category") # TODO
+        # res = res.sort_index()
         res.index.name = "time"
         return res
 
@@ -805,7 +805,7 @@ class ComparerCollection(Mapping, Scoreable):
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         # filter data
-        cmp = self.sel(
+        cc = self.sel(
             model=model,  # deprecated
             observation=observation,  # deprecated
             variable=variable,  # deprecated
@@ -813,26 +813,26 @@ class ComparerCollection(Mapping, Scoreable):
             end=end,  # deprecated
             area=area,  # deprecated
         )
-        if cmp.n_points == 0:
+        if cc.n_points == 0:
             raise ValueError("Dataset is empty, no data to compare.")
 
         ## ---- end of deprecated code ----
 
-        df = cmp.to_dataframe()
-        mod_names = cmp.mod_names  # df.model.unique()
+        df = cc.to_dataframe()  # TODO: remove
+        mod_names = cc.mod_names  # df.model.unique()
         # obs_names = cmp.obs_names  # df.observation.unique()
-        var_names = cmp.var_names  # self.var_names
+        var_names = cc.var_names  # self.var_names
 
         # skill assessment
         metrics = _parse_metric(metrics, self.metrics, return_list=True)
         # s = self.skill(df=df, metrics=metrics)
-        s = cmp.skill(metrics=metrics)
+        s = cc.skill(metrics=metrics)
         if s is None:
             return None
         skilldf = s.to_dataframe()
 
         # weights
-        weights = cmp._parse_weights(weights, s.obs_names)
+        weights = cc._parse_weights(weights, s.obs_names)
         skilldf["weights"] = (
             skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
         )
@@ -841,7 +841,7 @@ class ComparerCollection(Mapping, Scoreable):
             return np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
-        by = cmp._mean_skill_by(skilldf, mod_names, var_names)
+        by = cc._mean_skill_by(skilldf, mod_names, var_names)
         agg = {"n": "sum"}
         for metric in metrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
@@ -851,7 +851,7 @@ class ComparerCollection(Mapping, Scoreable):
         res.index.name = "model"
 
         # output
-        res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
+        res = cc._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
         return SkillTable(res.astype({"n": int}))
 
     # def mean_skill_points(
