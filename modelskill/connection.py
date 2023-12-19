@@ -9,7 +9,7 @@ import pandas as pd
 import mikeio
 import yaml
 
-from . import ModelResult, plotting
+from . import model_result, plotting
 from .matching import _single_obs_compare
 from .obs import Observation, PointObservation
 from .utils import is_iterable_not_str
@@ -122,7 +122,7 @@ class SingleObsConnector:
 
     def _parse_single_model(self, mod):
         if isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
-            return ModelResult(mod)
+            return model_result(mod)
         else:
             return mod
 
@@ -267,7 +267,7 @@ class Connector(Sequence):
 
         Examples
         --------
-        >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+        >>> mr = DfsuModelResult("Oresund2D.dfsu", item=0)
         >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
         >>> o2 = TrackObservation(df, item=2, name="altimeter")
         >>> conA = Connector()
