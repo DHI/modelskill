@@ -216,6 +216,12 @@ def match(
 
     assert isinstance(obs, Iterable)
 
+    if len(obs) > 1 and isinstance(mod, Iterable) and len(mod) > 1:
+        if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
+            raise ValueError(
+                "Multiple models can only be compared if they are the the observation can be extracted, e.g. DfsuModelResult or GridModelResult"
+            )
+
     clist = [
         _single_obs_compare(
             o,

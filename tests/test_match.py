@@ -457,3 +457,55 @@ def test_mod_aux_items_must_be_unique():
 
     assert "wind_speed" in str(e.value)
     assert "remote" in str(e.value)
+
+
+def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
+    o1 = ms.PointObservation(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+        ),
+        name="o1",
+        x=1,
+        y=2,
+    )
+    o2 = ms.PointObservation(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+        ),
+        name="o2",
+        x=2,
+        y=3,
+    )
+    m1 = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+        ),
+        name="m1",
+        x=1,
+        y=2,
+    )
+    m2 = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+        ),
+        name="m2",
+        x=2,
+        y=3,
+    )
+    m3 = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+        ),
+        name="m3",
+        x=3,
+        y=4,
+    )
+
+    # a single observation and model is ok
+    cmp = ms.match(obs=o1, mod=[m1, m2])
+    assert "m1" in cmp.mod_names
+    assert "m2" in cmp.mod_names
+
+    # but this is not allowed
+    with pytest.raises(ValueError, match="extracted"):
+        ms.match(obs=[o1, o2], mod=[m1, m2, m3])
