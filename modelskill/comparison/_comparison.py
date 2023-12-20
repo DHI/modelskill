@@ -425,7 +425,7 @@ class Comparer(Scoreable):
 
     data: xr.Dataset
     raw_mod_data: Dict[str, TimeSeries]
-    _obs_name = "Observation"
+    _obs_str = "Observation"
     plotter = ComparerPlotter
 
     def __init__(
@@ -506,41 +506,36 @@ class Comparer(Scoreable):
 
     @property
     def name(self) -> str:
-        """name of comparer (=observation)"""
+        """Name of comparer (=observation)"""
         return self.data.attrs["name"]
 
     @property
-    def gtype(self):
+    def gtype(self) -> str:
+        """Geometry type"""
         return self.data.attrs["gtype"]
-
-    # TODO: remove
-    @property
-    def quantity_name(self) -> str:
-        warnings.warn("Use quantity.name instead of quantity_name", FutureWarning)
-        return self.quantity.name
 
     @property
     def quantity(self) -> Quantity:
         """Quantity object"""
         return Quantity(
-            name=self.data[self._obs_name].attrs["long_name"],
-            unit=self.data[self._obs_name].attrs["units"],
+            name=self.data[self._obs_str].attrs["long_name"],
+            unit=self.data[self._obs_str].attrs["units"],
             is_directional=bool(
-                self.data[self._obs_name].attrs.get("is_directional", False)
+                self.data[self._obs_str].attrs.get("is_directional", False)
             ),
         )
 
     @quantity.setter
     def quantity(self, quantity: Quantity) -> None:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
-        self.data[self._obs_name].attrs["long_name"] = quantity.name
-        self.data[self._obs_name].attrs["units"] = quantity.unit
-        self.data[self._obs_name].attrs["is_directional"] = int(quantity.is_directional)
+        self.data[self._obs_str].attrs["long_name"] = quantity.name
+        self.data[self._obs_str].attrs["units"] = quantity.unit
+        self.data[self._obs_str].attrs["is_directional"] = int(quantity.is_directional)
 
     @property
     def n_points(self) -> int:
         """number of compared points"""
-        return len(self.data[self._obs_name]) if self.data else 0
+        return len(self.data[self._obs_str]) if self.data else 0
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -579,9 +574,7 @@ class Comparer(Scoreable):
     @property
     def obs(self) -> np.ndarray:
         """Observation data as 1d numpy array"""
-        return (
-            self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe().values
-        )
+        return self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe().values
 
     @property
     def mod(self) -> np.ndarray:
@@ -596,7 +589,7 @@ class Comparer(Scoreable):
 
     @property
     def mod_names(self) -> Sequence[str]:
-        return list(self.raw_mod_data.keys())  # TODO replace with tuple
+        return list(self.raw_mod_data.keys())
 
     @property
     def aux_names(self) -> Sequence[str]:
@@ -608,27 +601,27 @@ class Comparer(Scoreable):
             ]
         )
 
+    # TODO: always "Observation", necessary to have this property?
     @property
-    def obs_name(self) -> str:
-        """Name of observation (e.g. station name)"""
-        return self._obs_name
+    def _obs_name(self) -> str:
+        return self._obs_str
 
     @property
     def weight(self) -> float:
-        return self.data[self._obs_name].attrs["weight"]
+        return self.data[self._obs_str].attrs["weight"]
 
     @weight.setter
     def weight(self, value: float) -> None:
-        self.data[self._obs_name].attrs["weight"] = value
+        self.data[self._obs_str].attrs["weight"] = value
 
-    @property
-    def _unit_text(self):
-        warnings.warn("Use unit_text instead of _unit_text", FutureWarning)
-        return self.unit_text
+    # @property
+    # def _unit_text(self):
+    #     warnings.warn("Use unit_text instead of _unit_text", FutureWarning)
+    #     return self.unit_text
 
     @property
     def unit_text(self) -> str:
-        """Variable name and unit as text suitable for plot labels"""
+        """Quantity name and unit as text suitable for plot labels"""
         return f"{self.quantity.name} [{self.quantity.unit}]"
 
     @property
@@ -652,7 +645,7 @@ class Comparer(Scoreable):
         df = self.data.drop_vars(["z"]).to_dataframe().copy()
         other_models = [m for m in self.mod_names if m is not mod_name]
         df = df.drop(columns=other_models)
-        df = df.rename(columns={mod_name: "mod_val", self._obs_name: "obs_val"})
+        df = df.rename(columns={mod_name: "mod_val", self._obs_str: "obs_val"})
         df["model"] = mod_name
         df["observation"] = self.name
 
@@ -668,6 +661,7 @@ class Comparer(Scoreable):
         df["observation"] = df["observation"].astype("category")
         return df
 
+    # TODO: is this the best way to copy (self.data.copy.. )
     def __copy__(self):
         return deepcopy(self)
 
@@ -781,7 +775,7 @@ class Comparer(Scoreable):
     def _to_observation(self) -> PointObservation | TrackObservation:
         """Convert to Observation"""
         if self.gtype == "point":
-            df = self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe()
+            df = self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe()
             return PointObservation(
                 data=df,
                 name=self.name,
@@ -792,7 +786,7 @@ class Comparer(Scoreable):
                 # TODO: add attrs
             )
         elif self.gtype == "track":
-            df = self.data.drop_vars(["z"])[[self._obs_name]].to_dataframe()
+            df = self.data.drop_vars(["z"])[[self._obs_str]].to_dataframe()
             return TrackObservation(
                 data=df,
                 item=0,
@@ -1241,7 +1235,7 @@ class Comparer(Scoreable):
         elif correct == "Observation":
             # what if multiple models?
             with xr.set_options(keep_attrs=True):
-                cmp.data[cmp._obs_name].values = cmp.data[cmp._obs_name].values + bias
+                cmp.data[cmp._obs_str].values = cmp.data[cmp._obs_str].values + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"

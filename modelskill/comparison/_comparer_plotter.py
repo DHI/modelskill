@@ -78,12 +78,12 @@ class ComparerPlotter:
 
             ax.scatter(
                 cmp.time,
-                cmp.data[cmp.obs_name].values,
+                cmp.data[cmp._obs_name].values,
                 marker=".",
-                color=cmp.data[cmp.obs_name].attrs["color"],
+                color=cmp.data[cmp._obs_name].attrs["color"],
             )
             ax.set_ylabel(cmp.unit_text)
-            ax.legend([*cmp.mod_names, cmp.obs_name])
+            ax.legend([*cmp.mod_names, cmp._obs_name])
             ax.set_ylim(ylim)
             if self.is_directional:
                 _ytick_directional(ax, ylim)
@@ -111,10 +111,10 @@ class ComparerPlotter:
                     *mod_scatter_list,
                     go.Scatter(
                         x=cmp.time,
-                        y=cmp.data[cmp.obs_name].values,
-                        name=cmp.obs_name,
+                        y=cmp.data[cmp._obs_name].values,
+                        name=cmp._obs_name,
                         mode="markers",
-                        marker=dict(color=cmp.data[cmp.obs_name].attrs["color"]),
+                        marker=dict(color=cmp.data[cmp._obs_name].attrs["color"]),
                     ),
                 ]
             )
@@ -227,10 +227,10 @@ class ComparerPlotter:
             .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
 
-        cmp.data[cmp.obs_name].to_series().hist(
-            bins=bins, color=cmp.data[cmp.obs_name].attrs["color"], **kwargs
+        cmp.data[cmp._obs_name].to_series().hist(
+            bins=bins, color=cmp.data[cmp._obs_name].attrs["color"], **kwargs
         )
-        ax.legend([mod_name, cmp.obs_name])
+        ax.legend([mod_name, cmp._obs_name])
         ax.set_title(title)
         ax.set_xlabel(f"{cmp.unit_text}")
         if density:
