@@ -13,7 +13,7 @@ def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True
 
     Parameters
     ----------
-    configuration : Union[str, dict]
+    conf : Union[str, dict]
         path to config file or dict with configuration
     validate_eum : bool, optional
         require eum to match, by default True

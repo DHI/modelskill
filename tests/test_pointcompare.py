@@ -239,9 +239,7 @@ def test_skill_choose_metrics(klagshamn, drogden):
 
     cc = ms.match([klagshamn, drogden], mr)
 
-    cc.metrics = ["mae", "si"]
-
-    df = cc.skill().to_dataframe()
+    df = cc.skill(metrics=["mae", "si"]).to_dataframe()
 
     assert "mae" in df.columns
     assert "rmse" not in df.columns
@@ -254,17 +252,13 @@ def test_skill_choose_metrics(klagshamn, drogden):
 
 
 def test_skill_choose_metrics_back_defaults(cc):
-    cc.metrics = ["kge", "nse", "max_error"]
-
-    df = cc.skill().to_dataframe()
+    df = cc.skill(metrics=["kge", "nse", "max_error"]).to_dataframe()
     assert "kge" in df.columns
     assert "rmse" not in df.columns
 
-    df = cc.mean_skill().to_dataframe()
+    df = cc.mean_skill(metrics=["kge", "nse", "max_error"]).to_dataframe()
     assert "kge" in df.columns
     assert "rmse" not in df.columns
-
-    cc.metrics = None  # go back to defaults
 
     df = cc.mean_skill().to_dataframe()
     assert "kge" not in df.columns

@@ -32,7 +32,7 @@ def _obs_mod_equal(obs, mod):
     Observation have weight and color (and z)"""
 
     # overwrite the known differences
-    mod.data[mod.name].attrs["color"] = obs.color
+    mod.data[mod.name].attrs["color"] = obs._color
     mod.data[mod.name].attrs["kind"] = "observation"
     assert obs == mod
 

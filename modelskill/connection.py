@@ -47,7 +47,6 @@ def _observation_to_dict(obs, folder):
     if isinstance(obs, PointObservation):
         d["x"] = obs.x
         d["y"] = obs.y
-    # d["quantity_name"] = obs.quantity.name
     return d
 
 

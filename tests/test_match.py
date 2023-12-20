@@ -393,8 +393,8 @@ def test_wind_directions():
         obs_item="obs",
         quantity=ms.Quantity("Wind direction", unit="degree", is_directional=True),
     )
+    # default metrics *are* directional
     df = cc.skill().to_dataframe()
-    assert df.loc["obs", "c_max_error"] == pytest.approx(2.0)
     assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
 
 

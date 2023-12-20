@@ -20,8 +20,7 @@ The typical ModelSkill workflow consists of these five steps:
 
 The result of a MIKE 21/3 simulation is stored in one or more dfs files.
 The most common formats are .dfsu for distributed data and .dfs0 for
-time series point data. A ModelSkill
-[ModelResult](api/model.md#modelskill.model.PointModelResult) is defined by the
+time series point data. A ModelSkill ModelResult is defined by the
 result file path and a name:
 
 ```python
@@ -38,8 +37,8 @@ created. The data will be read later.
 The next step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
 
--   [PointObservation](api/observation.md#modelskill.observation.PointObservation)
--   [TrackObservation](api/observation.md#modelskill.observation.TrackObservation)
+-   [PointObservation](api/observation/point.md)
+-   [TrackObservation](api/observation/track.md)
 
 Let\'s assume that we have one PointObservation and one
 TrackObservation:
@@ -65,7 +64,7 @@ cc = ms.match([hkna, c2], mr)
 ```
 
 This method returns a
-[ComparerCollection](api/comparer.md#modelskill.comparison.ComparerCollection)
+[ComparerCollection](api/comparercollection.md#modelskill.ComparerCollection)
 for further analysis and plotting.
 
 
@@ -76,7 +75,7 @@ skill assessment.
 
 The primary comparer methods are:
 
-- [skill()](api/comparercollection.md#modelskill.comparison.ComparerCollection.skill)
+- [skill()](api/comparercollection.md#modelskill.ComparerCollection.skill)
   which returns a table with the skill scores
 - various plot methods of the comparer objects
     * `plot.scatter()`
