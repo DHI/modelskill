@@ -37,7 +37,6 @@ def _get_track_df() -> pd.DataFrame:
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["weight"] = 1.0
     data["Observation"].attrs["units"] = "m"
     data["Observation"].attrs["long_name"] = "fake var"
     data["m1"].attrs["kind"] = "model"
