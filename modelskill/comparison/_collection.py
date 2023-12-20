@@ -140,7 +140,7 @@ class ComparerCollection(Mapping, Scoreable):
             "start is deprecated, use start_time instead",
             FutureWarning,
         )
-        return self.time[0]
+        return self.start_time
 
     @property
     def start_time(self) -> pd.Timestamp:
