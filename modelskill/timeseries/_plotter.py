@@ -8,13 +8,10 @@ class TimeSeriesPlotter(Protocol):
     def __call__(self):
         pass
 
-    def plot(self):
+    def timeseries(self):
         pass
 
     def hist(self):
-        pass
-
-    def timeseries(self):
         pass
 
 
@@ -22,36 +19,14 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
     def __init__(self, ts) -> None:
         self._ts = ts
 
-    def __call__(self, title=None, color=None, marker=".", linestyle="None", **kwargs):
-        self.plot(
-            title=title, color=color, marker=marker, linestyle=linestyle, **kwargs
-        )
+    def __call__(self, **kwargs):
+        # default to timeseries plot
+        self.timeseries(**kwargs)
 
     def timeseries(
         self, title=None, color=None, marker=".", linestyle="None", **kwargs
     ):
-        """plot timeseries
-
-        Wraps pandas.DataFrame plot() method.
-
-        Parameters
-        ----------
-        title : str, optional
-            plot title, default: [name]
-        color : str, optional
-            plot color, by default '#d62728'
-        marker : str, optional
-            plot marker, by default '.'
-        linestyle : str, optional
-            line style, by default None
-        kwargs: other keyword arguments to df.plot()
-        """
-        return self.plot(
-            title=title, color=color, marker=marker, linestyle=linestyle, **kwargs
-        )
-
-    def plot(self, title=None, color=None, marker=".", linestyle="None", **kwargs):
-        """plot timeseries
+        """Plot timeseries
 
         Wraps pandas.DataFrame plot() method.
 
@@ -79,7 +54,7 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
         return ax
 
     def hist(self, bins=100, title=None, color=None, **kwargs):
-        """plot histogram of timeseries values
+        """Plot histogram of timeseries values
 
         Wraps pandas.DataFrame hist() method.
 
@@ -112,12 +87,14 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
         self._ts = ts
 
     def __call__(self):
-        self.plot()
+        # default to timeseries plot
+        self.timeseries()
 
     def timeseries(self):
-        self.plot()
+        """Plot timeseries
 
-    def plot(self):
+        Wraps plotly.express.line() function.
+        """
         import plotly.express as px  # type: ignore
 
         fig = px.line(
@@ -126,6 +103,16 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
         fig.show()
 
     def hist(self, bins=100, **kwargs):
+        """Plot histogram of timeseries values
+
+        Wraps plotly.express.histogram() function.
+
+        Parameters
+        ----------
+        bins : int, optional
+            specification of bins, by default 100
+        kwargs : other keyword arguments to df.hist()
+        """
         import plotly.express as px  # type: ignore
 
         fig = px.histogram(
