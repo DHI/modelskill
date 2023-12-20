@@ -560,7 +560,7 @@ def peak_ratio(
             Maximum time interval between peaks (default: 36 hours).
 
     $$
-    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_model_i}{Peak_obs_i} )}{N_{joint-peaks}}
+    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}
     $$
 
     Range: $[0, \infty)$; Best: 1.0
