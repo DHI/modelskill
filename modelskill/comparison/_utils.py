@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Iterable, List, Tuple, Union
+from typing import Callable, Optional, Iterable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -46,7 +46,7 @@ def _add_spatial_grid_to_df(
 def _groupby_df(
     df: pd.DataFrame,
     by: List[str],
-    metrics,
+    metrics: List[Callable],
     n_min: Optional[int] = None,
 ) -> pd.DataFrame:
     def calc_metrics(x):
