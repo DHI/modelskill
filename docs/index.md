@@ -26,21 +26,19 @@ ModelSkill is compatible with Python 3.8 and later versions on Windows and Linux
 Are your observations and model results already matched? 
 
 ```python
->>> import modelskill as ms
->>> cmp = ms.from_matched("matched_data.dfs0", obs_item="obs_WL", mod_item="WL")
->>> cmp.skill()
-...
+import modelskill as ms
+cmp = ms.from_matched("matched_data.dfs0", obs_item="obs_WL", mod_item="WL")
+cmp.skill()
 ```
 
 Or do you need to match the observations and results first?
 
 ```python
->>> import modelskill as ms
->>> o = ms.PointObservation("obs.dfs0", item="obs_WL")
->>> mr = ms.PointModelResult("model.dfs0", item="WL")
->>> cmp = ms.match(o, mr)[0]
->>> cmp.skill()
-...
+import modelskill as ms
+o = ms.PointObservation("obs.dfs0", item="obs_WL")
+mr = ms.PointModelResult("model.dfs0", item="WL")
+cmp = ms.match(o, mr)[0]
+cmp.skill()
 ```
 
 Read more in the [Getting started guide](getting-started.md) or in the [overview](overview.md) of the package.
