@@ -18,19 +18,16 @@ The typical ModelSkill workflow consists of these five steps:
 
 ### 1. Define ModelResults
 
-The result of a MIKE 21/3 simulation is stored in one or more dfs files.
-The most common formats are .dfsu for distributed data and .dfs0 for
-time series point data. A ModelSkill ModelResult is defined by the
-result file path and a name:
+The result of a simulation is stored in one or more result files, e.g. dfsu, dfs0, nc, csv.
 
-```python
+The name is used to identify the model result in the plots and tables.
+
+```python hl_lines="4"
 import modelskill as ms
-mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", name='HKZN_local', item="Sign. Wave Height")
+mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", 
+                         item="Sign. Wave Height",
+                         name='HKZN_local')
 ```
-
-Currently, ModelResult supports .dfs0 and .dfsu files and pandas
-DataFrame. Only the file header is read when the ModelResult object is
-created. The data will be read later.
 
 ### 2. Define Observations
 
@@ -40,12 +37,15 @@ assessment. Two types of observation are available:
 -   [PointObservation](api/observation/point.md)
 -   [TrackObservation](api/observation/track.md)
 
-Let\'s assume that we have one PointObservation and one
-TrackObservation:
+Let's assume that we have one PointObservation and one
+TrackObservation (`name` is used to identify the observation, similar to the `name` of the model above). 
 
-```python
-hkna = ms.PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
-c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+```python hl_lines="3 5"
+hkna = ms.PointObservation("HKNA_Hm0.dfs0", item=0,
+                            x=4.2420, y=52.6887,
+                            name="HKNA")
+c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3,
+                          name="c2")
 ```
 
 In this case both observations are provided as .dfs0 files but pandas
@@ -57,7 +57,7 @@ file, the item number (or item name) and a name. A PointObservation
 further needs to be initialized with it\'s x-, y-position.
 
 
-### 3. Connect observations and ModelResults
+### 3. Match observations and ModelResults
 
 ```python
 cc = ms.match([hkna, c2], mr)
