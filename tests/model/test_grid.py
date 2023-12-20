@@ -193,8 +193,8 @@ def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     mri = mr_ERA5_pp1d
     tmr = mri.extract(trackobs_c2_hm0)
     assert isinstance(tmr, ms.TrackModelResult)
-    assert tmr.time[0].replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
-    assert tmr.time[-1].replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
+    assert tmr.time[0].strftime("%Y-%m-%dT%H:%M:%S") == "2017-10-27T12:52:52"
+    assert tmr.time[-1].strftime("%Y-%m-%dT%H:%M:%S") == "2017-10-29T12:51:28"
     assert tmr.n_points == 99
 
 
@@ -202,8 +202,8 @@ def test_grid_extract_track_aux(ERA5_DutchCoast_nc, trackobs_c2_hm0):
     mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
     tc = mr.extract(trackobs_c2_hm0)
     assert isinstance(tc, ms.TrackModelResult)
-    assert tc.time[0].replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
-    assert tc.time[-1].replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
+    assert tc.time[0].strftime("%Y-%m-%dT%H:%M:%S") == "2017-10-27T12:52:52"
+    assert tc.time[-1].strftime("%Y-%m-%dT%H:%M:%S") == "2017-10-29T12:51:28"
     assert tc.n_points == 99
     assert len(tc.data.data_vars) == 2
     assert "swh" in tc.data.data_vars
