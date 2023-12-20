@@ -313,9 +313,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-connect-observations-and-modelresults" class="md-nav__link">
+  <a href="#3-match-observations-and-modelresults" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Connect observations and ModelResults
+      3. Match observations and ModelResults
     </span>
   </a>
   
@@ -1016,9 +1016,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-connect-observations-and-modelresults" class="md-nav__link">
+  <a href="#3-match-observations-and-modelresults" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Connect observations and ModelResults
+      3. Match observations and ModelResults
     </span>
   </a>
   
@@ -1086,16 +1086,13 @@ results and observations. </p>
 <li>Do analysis, plotting, etc with a <strong>Comparer</strong></li>
 </ol>
 <h3 id="1-define-modelresults">1. Define ModelResults</h3>
-<p>The result of a MIKE 21/3 simulation is stored in one or more dfs files.
-The most common formats are .dfsu for distributed data and .dfs0 for
-time series point data. A ModelSkill ModelResult is defined by the
-result file path and a name:</p>
+<p>The result of a simulation is stored in one or more result files, e.g. dfsu, dfs0, nc, csv.</p>
+<p>The name is used to identify the model result in the plots and tables.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">modelskill</span> <span class="k">as</span> <span class="nn">ms</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">mr</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">DfsuModelResult</span><span class="p">(</span><span class="s2">&quot;SW/HKZN_local_2017_DutchCoast.dfsu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;HKZN_local&#39;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="s2">&quot;Sign. Wave Height&quot;</span><span class="p">)</span>
-</span></code></pre></div>
-<p>Currently, ModelResult supports .dfs0 and .dfsu files and pandas
-DataFrame. Only the file header is read when the ModelResult object is
-created. The data will be read later.</p>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">mr</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">DfsuModelResult</span><span class="p">(</span><span class="s2">&quot;SW/HKZN_local_2017_DutchCoast.dfsu&quot;</span><span class="p">,</span> 
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                         <span class="n">item</span><span class="o">=</span><span class="s2">&quot;Sign. Wave Height&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="hll">                         <span class="n">name</span><span class="o">=</span><span class="s1">&#39;HKZN_local&#39;</span><span class="p">)</span>
+</span></span></code></pre></div>
 <h3 id="2-define-observations">2. Define Observations</h3>
 <p>The next step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:</p>
@@ -1103,18 +1100,21 @@ assessment. Two types of observation are available:</p>
 <li><a href="../api/observation/point/">PointObservation</a></li>
 <li><a href="../api/observation/track/">TrackObservation</a></li>
 </ul>
-<p>Let\'s assume that we have one PointObservation and one
-TrackObservation:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">hkna</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;HKNA_Hm0.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">4.2420</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">52.6887</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKNA&quot;</span><span class="p">)</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">c2</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">TrackObservation</span><span class="p">(</span><span class="s2">&quot;Alti_c2_Dutch.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
-</span></code></pre></div>
+<p>Let's assume that we have one PointObservation and one
+TrackObservation (<code>name</code> is used to identify the observation, similar to the <code>name</code> of the model above). </p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">hkna</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">PointObservation</span><span class="p">(</span><span class="s2">&quot;HKNA_Hm0.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>                            <span class="n">x</span><span class="o">=</span><span class="mf">4.2420</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">52.6887</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="hll">                            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;HKNA&quot;</span><span class="p">)</span>
+</span></span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">c2</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">TrackObservation</span><span class="p">(</span><span class="s2">&quot;Alti_c2_Dutch.dfs0&quot;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="hll">                          <span class="n">name</span><span class="o">=</span><span class="s2">&quot;c2&quot;</span><span class="p">)</span>
+</span></span></code></pre></div>
 <p>In this case both observations are provided as .dfs0 files but pandas
 dataframes are also supported in case data are stored in another file
 format.</p>
 <p>Both PointObservation and TrackObservation need the path of the data
 file, the item number (or item name) and a name. A PointObservation
 further needs to be initialized with it\'s x-, y-position.</p>
-<h3 id="3-connect-observations-and-modelresults">3. Connect observations and ModelResults</h3>
+<h3 id="3-match-observations-and-modelresults">3. Match observations and ModelResults</h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cc</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">match</span><span class="p">([</span><span class="n">hkna</span><span class="p">,</span> <span class="n">c2</span><span class="p">],</span> <span class="n">mr</span><span class="p">)</span>
 </span></code></pre></div>
 <p>This method returns a
