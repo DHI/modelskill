@@ -65,9 +65,10 @@ Examples
 0.39614855570839064
 """
 from __future__ import annotations
+
 import sys
-from typing import Optional, Callable, Union, Tuple, Set, Iterable, List
 import warnings
+from typing import Callable, Iterable, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -1188,7 +1189,8 @@ def _parse_metric(
         if directional:
             return default_circular_metrics
         else:
-            return options.metrics.list
+            # could be a list of str!
+            return [get_metric(m) for m in options.metrics.list]
 
     if isinstance(metric, str):
         metrics: list = [metric]
