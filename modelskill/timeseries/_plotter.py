@@ -67,7 +67,7 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
             line style, by default None
         kwargs: other keyword arguments to df.plot()
         """
-        kwargs["color"] = self._ts.color if color is None else color
+        kwargs["color"] = self._ts._color if color is None else color
         ax = self._ts._values_as_series.plot(
             marker=marker, linestyle=linestyle, **kwargs
         )
@@ -99,7 +99,7 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
         """
         title = self._ts.name if title is None else title
 
-        kwargs["color"] = self._ts.color if color is None else color
+        kwargs["color"] = self._ts._color if color is None else color
 
         ax = self._ts._values_as_series.hist(bins=bins, **kwargs)
         ax.set_title(title)
@@ -121,7 +121,7 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
         import plotly.express as px  # type: ignore
 
         fig = px.line(
-            self._ts._values_as_series, color_discrete_sequence=[self._ts.color]
+            self._ts._values_as_series, color_discrete_sequence=[self._ts._color]
         )
         fig.show()
 
@@ -131,7 +131,7 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
         fig = px.histogram(
             self._ts._values_as_series,
             nbins=bins,
-            color_discrete_sequence=[self._ts.color],
+            color_discrete_sequence=[self._ts._color],
             **kwargs,
         )
         fig.show()
