@@ -740,7 +740,7 @@ class ComparerCollection(Mapping, Scoreable):
     def mean_skill(
         self,
         *,
-        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
+        weights: Optional[Union[str, Mapping[str, float]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
     ) -> SkillTable:
@@ -971,6 +971,7 @@ class ComparerCollection(Mapping, Scoreable):
     def score(
         self,
         metric: str | Callable = mtr.rmse,
+        weights: str | Mapping[str, float] | None = None,
         **kwargs,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
@@ -981,11 +982,10 @@ class ComparerCollection(Mapping, Scoreable):
 
         Parameters
         ----------
-        weights : (str, List(float), Dict(str, float)), optional
+        weights : optional
             None: use observations weight attribute
             "equal": giving all observations equal weight,
             "points": giving all points equal weight,
-            list of weights e.g. [0.3, 0.3, 0.4] per observation,
             dictionary of observations with special weigths, others will be set to 1.0
             by default None (i.e. observations weight attribute if assigned else "equal")
         metric : list, optional
@@ -1017,8 +1017,6 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.score(weights='points', metric="mape")
         8.414442957854142
         """
-
-        weights = kwargs.pop("weights", None)
         if weights is None:
             weights = {c.name: c.weight for c in self.comparers.values()}
 

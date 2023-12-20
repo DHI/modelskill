@@ -74,7 +74,7 @@ class ComparerCollectionPlotter:
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
             show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
-        are None, then `show_density` is used by default.
+            are None, then `show_density` is used by default.
             for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
@@ -446,20 +446,6 @@ class ComparerCollectionPlotter:
 
         Parameters
         ----------
-        model : (int, str), optional
-            name or id of model to be compared, by default all
-        observation : (int, str, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int), optional
-            name or id of variable to be compared, by default first
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         aggregate_observations : bool, optional

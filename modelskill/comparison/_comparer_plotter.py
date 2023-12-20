@@ -489,8 +489,7 @@ class ComparerPlotter:
             show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
         norm : matplotlib.colors norm
             colormap normalization
-            If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
-        are None, then `show_density` is used by default.
+            If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5) are None, then `show_density` is used by default.
             for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
@@ -516,7 +515,8 @@ class ComparerPlotter:
             list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
             by default False
-        kwargs
+        kwargs: other keyword arguments to plt.scatter()
+
 
         Examples
         ------
