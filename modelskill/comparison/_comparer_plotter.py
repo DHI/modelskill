@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
+from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING, Callable
 import warnings
 
 if TYPE_CHECKING:
@@ -688,7 +688,7 @@ class ComparerPlotter:
         cmp = self.comparer
 
         # TODO consider if this round-trip  via mtr is necessary to get the std:s
-        metrics = [
+        metrics: List[Callable] = [
             mtr._std_obs,
             mtr._std_mod,
             mtr.cc,

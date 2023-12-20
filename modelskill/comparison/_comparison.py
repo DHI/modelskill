@@ -26,8 +26,9 @@ from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
+from ..metrics import _parse_metric
+
 from ._utils import (
-    _parse_metric,
     _add_spatial_grid_to_df,
     _groupby_df,
     _parse_groupby,
@@ -36,7 +37,7 @@ from ._utils import (
 )
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
-from ..settings import options, register_option, reset_option
+from ..settings import register_option
 from ..utils import _get_name
 from .. import __version__
 
@@ -50,19 +51,19 @@ class Scoreable(Protocol):
 
     def skill(
         self,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[List[str]] = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs,
     ) -> SkillTable:
         ...
 
     def gridded_skill(
         self,
-        bins=5,
-        binsize: Optional[float] = None,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
-        n_min: Optional[int] = None,
+        bins: int = 5,
+        binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        n_min: int | None = None,
         **kwargs,
     ) -> SkillGrid:
         ...
@@ -617,21 +618,6 @@ class Comparer(Scoreable):
         """Quantity name and unit as text suitable for plot labels"""
         return f"{self.quantity.name} [{self.quantity.unit}]"
 
-    @property
-    def metrics(self):
-        if self.quantity.is_directional:
-            # TODO define default circular metrics elsewhere
-            return [mtr.c_bias, mtr.c_rmse, mtr.c_urmse, mtr.c_max_error]
-        else:
-            return options.metrics.list
-
-    @metrics.setter
-    def metrics(self, values) -> None:
-        if values is None:
-            reset_option("metrics.list")
-        else:
-            options.metrics.list = _parse_metric(values, self.metrics)
-
     def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
 
@@ -946,8 +932,8 @@ class Comparer(Scoreable):
 
     def skill(
         self,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs,
     ) -> SkillTable:
         """Skill assessment of model(s)
@@ -987,7 +973,7 @@ class Comparer(Scoreable):
         2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
@@ -1057,7 +1043,7 @@ class Comparer(Scoreable):
         >>> cmp.score(metric=ms.metrics.mape)
         11.567399646108198
         """
-        metric = _parse_metric(metric, self.metrics)
+        metric = _parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1108,11 +1094,11 @@ class Comparer(Scoreable):
 
     def gridded_skill(
         self,
-        bins=5,
-        binsize: Optional[float] = None,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
-        n_min: Optional[int] = None,
+        bins: int = 5,
+        binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        n_min: int | None = None,
         **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
@@ -1181,7 +1167,7 @@ class Comparer(Scoreable):
             area=area,
         )
 
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        metrics = _parse_metric(metrics)
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 

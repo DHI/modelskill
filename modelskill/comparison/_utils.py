@@ -1,30 +1,12 @@
 from __future__ import annotations
-from typing import Optional, Iterable, Callable, List, Union
+from typing import Optional, Iterable, List, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from .. import metrics as mtr
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
 IdOrNameTypes = Union[int, str, List[int], List[str]]
-
-
-def _parse_metric(metric, default_metrics, return_list=False):
-    if metric is None:
-        metric = default_metrics
-
-    if isinstance(metric, (str, Callable)):
-        metric = mtr.get_metric(metric)
-    elif isinstance(metric, Iterable):
-        metrics = [_parse_metric(m, default_metrics) for m in metric]
-        return metrics
-    elif not callable(metric):
-        raise TypeError(f"Invalid metric: {metric}. Must be either string or callable.")
-    if return_list:
-        if callable(metric) or isinstance(metric, str):
-            metric = [metric]
-    return metric
 
 
 def _add_spatial_grid_to_df(
