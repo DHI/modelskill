@@ -206,10 +206,10 @@ def test_rename_aux(pt_df):
     cmp = Comparer.from_matched_data(
         data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
     )
-    assert cmp.aux_names == ("wind",)
+    assert cmp.aux_names == ["wind"]
     cmp2 = cmp.rename({"wind": "wind_speed"})
-    assert cmp.aux_names == ("wind",)
-    assert cmp2.aux_names == ("wind_speed",)
+    assert cmp.aux_names == ["wind"]
+    assert cmp2.aux_names == ["wind_speed"]
 
 
 def test_rename_model_and_aux(pt_df):

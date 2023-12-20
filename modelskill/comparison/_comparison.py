@@ -594,15 +594,17 @@ class Comparer(Scoreable):
 
     @property
     def mod_names(self) -> Sequence[str]:
+        """List of model names"""
         return list(self.raw_mod_data.keys())
 
     @property
     def aux_names(self) -> Sequence[str]:
-        return tuple(
+        """List of auxiliary data names"""
+        return list(
             [
                 k
                 for k, v in self.data.data_vars.items()
-                if v.attrs["kind"] == "auxiliary"
+                if v.attrs["kind"] not in ["observation", "model"]
             ]
         )
 
