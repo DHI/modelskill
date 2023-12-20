@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Iterable, Callable, List, Sequence, Tuple, Union
+from typing import Optional, Iterable, Callable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
