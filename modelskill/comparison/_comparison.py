@@ -552,15 +552,16 @@ class Comparer(Scoreable):
         """time of compared data as pandas DatetimeIndex"""
         return self.data.time.to_index()
 
-    @property
-    def start(self) -> pd.Timestamp:
-        """start pd.Timestamp of compared data"""
-        return self.time[0]
+    # TODO: Should we keep these? (renamed to start_time and end_time)
+    # @property
+    # def start(self) -> pd.Timestamp:
+    #     """start pd.Timestamp of compared data"""
+    #     return self.time[0]
 
-    @property
-    def end(self) -> pd.Timestamp:
-        """end pd.Timestamp of compared data"""
-        return self.time[-1]
+    # @property
+    # def end(self) -> pd.Timestamp:
+    #     """end pd.Timestamp of compared data"""
+    #     return self.time[-1]
 
     @property
     def x(self):

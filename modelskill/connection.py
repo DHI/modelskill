@@ -138,13 +138,13 @@ class SingleObsConnector:
 
     @staticmethod
     def _validate_start_end(obs, mod):
-        if obs.end_time < mod.start_time:
+        if obs.time[-1] < mod.time[0]:
             warnings.warn(
                 f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
             )
             return False
 
-        if obs.start_time > mod.end_time:
+        if obs.time[0] > mod.time[-1]:
             warnings.warn(
                 f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
             )

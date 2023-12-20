@@ -76,7 +76,7 @@ def temporal_coverage(
     if len(mod) > 0:
         for mr in mod:
             y += 1.0
-            plt.plot([mr.start_time, mr.end_time], y)
+            plt.plot([mr.time[0], mr.time[-1]], y)
             labels.append(mr.name)
 
     for o in obs:
@@ -86,7 +86,7 @@ def temporal_coverage(
 
     if len(mod) > 0 and limit_to_model_period:
         mr = mod[0]  # take first model
-        plt.xlim([mr.start_time, mr.end_time])
+        plt.xlim([mr.time[0], mr.time[-1]])
 
     plt.yticks(np.arange(n_lines) + 1, labels)
     if len(mod) > 0:

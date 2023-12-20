@@ -482,8 +482,8 @@ def test_pc_properties(pc):
     assert pc.y == 55.0
     assert pc.name == "fake point obs"
     assert pc.quantity.name == "fake var"
-    assert pc.start == pd.Timestamp("2019-01-01")
-    assert pc.end == pd.Timestamp("2019-01-05")
+    assert pc.time[0] == pd.Timestamp("2019-01-01")
+    assert pc.time[-1] == pd.Timestamp("2019-01-05")
     assert pc.mod_names == ["m1", "m2"]
     assert pc.obs[-1] == 5.0
     assert pc.mod[-1, 1] == 4.9
@@ -500,8 +500,8 @@ def test_tc_properties(tc):
     assert np.all(tc.y == [55.1, 55.2, 55.3, 55.4, 55.5])
     assert tc.name == "fake track obs"
     assert tc.quantity.name == "fake var"
-    assert tc.start == pd.Timestamp("2019-01-01")
-    assert tc.end == pd.Timestamp("2019-01-05")
+    assert tc.time[0] == pd.Timestamp("2019-01-01")
+    assert tc.time[-1] == pd.Timestamp("2019-01-05")
     assert tc.mod_names == ["m1", "m2"]
     assert tc.obs[-1] == 5.0
     assert tc.mod[-1, 1] == 4.9
