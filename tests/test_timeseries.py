@@ -103,7 +103,7 @@ def test_timeseries_point_properties(ds_point):
     assert ts.time[-1] == pd.Timestamp("2000-01-03")
     assert ts.n_points == 3
     assert len(ts) == 3
-    assert len(ts.color) == 7
+    assert len(ts._color) == 7
 
 
 def test_timeseries_track_properties(ds_track):
@@ -116,7 +116,7 @@ def test_timeseries_track_properties(ds_track):
     assert ts.time[-1] == pd.Timestamp("2000-01-03")
     assert ts.n_points == 3
     assert len(ts) == 3
-    assert len(ts.color) == 7
+    assert len(ts._color) == 7
 
 
 def test_timeseries_set_name(ds_track):
@@ -149,23 +149,23 @@ def test_timeseries_set_quantity(ds_track):
 
 def test_timeseries_set_color(ds_track):
     ts = TimeSeries(ds_track)
-    orig_color = ts.color
-    assert isinstance(ts.color, str)
+    orig_color = ts._color
+    assert isinstance(ts._color, str)
 
-    ts.color = "red"
-    assert ts.color == "red"
+    ts._color = "red"
+    assert ts._color == "red"
 
-    ts.color = None
-    assert ts.color == orig_color
+    ts._color = None
+    assert ts._color == orig_color
 
-    ts.color = "0.6"
-    assert ts.color == "0.6"
-
-    with pytest.raises(ValueError, match="color"):
-        ts.color = "fakeblue"
+    ts._color = "0.6"
+    assert ts._color == "0.6"
 
     with pytest.raises(ValueError, match="color"):
-        ts.color = 1
+        ts._color = "fakeblue"
+
+    with pytest.raises(ValueError, match="color"):
+        ts._color = 1
 
 
 def test_timeseries_point_set_xy(ds_point):

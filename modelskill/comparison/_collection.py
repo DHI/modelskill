@@ -234,7 +234,7 @@ class ComparerCollection(Mapping, Scoreable):
                     df["variable"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
-                df["obs_val"] = cmp.obs
+                df["obs_val"] = cmp.data["Observation"].values
                 frames.append(df[cols])
         if len(frames) > 0:
             res = pd.concat(frames)
