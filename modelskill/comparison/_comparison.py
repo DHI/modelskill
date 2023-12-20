@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -51,19 +52,19 @@ class Scoreable(Protocol):
 
     def skill(
         self,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[List[str]] = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs,
     ) -> SkillTable:
         ...
 
     def gridded_skill(
         self,
-        bins=5,
-        binsize: Optional[float] = None,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
-        n_min: Optional[int] = None,
+        bins: int = 5,
+        binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        n_min: int | None = None,
         **kwargs,
     ) -> SkillGrid:
         ...
@@ -950,8 +951,8 @@ class Comparer(Scoreable):
 
     def skill(
         self,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs,
     ) -> SkillTable:
         """Skill assessment of model(s)
@@ -991,7 +992,7 @@ class Comparer(Scoreable):
         2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
-        metrics = _parse_metric(metrics, return_list=True)
+        metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
@@ -1061,7 +1062,7 @@ class Comparer(Scoreable):
         >>> cmp.score(metric=ms.metrics.mape)
         11.567399646108198
         """
-        metric = _parse_metric(metric)
+        metric = _parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1112,11 +1113,11 @@ class Comparer(Scoreable):
 
     def gridded_skill(
         self,
-        bins=5,
-        binsize: Optional[float] = None,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
-        n_min: Optional[int] = None,
+        bins: int = 5,
+        binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        n_min: int | None = None,
         **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
@@ -1185,7 +1186,7 @@ class Comparer(Scoreable):
             area=area,
         )
 
-        metrics = _parse_metric(metrics, return_list=True)
+        metrics = _parse_metric(metrics)
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 
