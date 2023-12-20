@@ -64,8 +64,9 @@ Examples
 >>> ev(obs, mod)
 0.39614855570839064
 """
+from __future__ import annotations
 import sys
-from typing import Optional, Callable, Union, Tuple, Set, Iterable
+from typing import Optional, Callable, Union, Tuple, Set, Iterable, List
 import warnings
 
 import numpy as np
@@ -1067,7 +1068,8 @@ METRICS_WITH_DIMENSION = set(
     ]
 )
 
-default_metrics = [bias, rmse, urmse, mae, cc, si, r2]
+default_metrics: List[Callable] = [bias, rmse, urmse, mae, cc, si, r2]
+default_circular_metrics: List[Callable] = [c_bias, c_rmse, c_urmse, c_mae]
 
 
 def metric_has_units(metric: Union[str, Callable]) -> bool:
@@ -1177,24 +1179,29 @@ defined_metrics: Set[str] = (
 )
 
 
-def _parse_metric(metric, default_metrics=None, return_list=False):
-    if default_metrics is None:
-        default_metrics = options.metrics.list
-
+def _parse_metric(
+    metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
+    *,
+    directional: bool = False,
+) -> List[Callable]:
     if metric is None:
-        metric = default_metrics
+        if directional:
+            return default_circular_metrics
+        else:
+            return options.metrics.list
 
-    if isinstance(metric, (str, Callable)):
-        metric = get_metric(metric)
+    if isinstance(metric, str):
+        metrics: list = [metric]
+    elif callable(metric):
+        metrics = [metric]
     elif isinstance(metric, Iterable):
-        metrics = [_parse_metric(m, default_metrics) for m in metric]
-        return metrics
-    elif not callable(metric):
-        raise TypeError(f"Invalid metric: {metric}. Must be either string or callable.")
-    if return_list:
-        if callable(metric) or isinstance(metric, str):
-            metric = [metric]
-    return metric
+        metrics = list(metric)
+
+    for metric in metrics:
+        if not isinstance(metric, str) and not callable(metric):
+            raise TypeError(f"metric {metric} must be a string or callable")
+
+    return [get_metric(m) for m in metrics]
 
 
 __all__ = list(defined_metrics)
