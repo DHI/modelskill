@@ -612,11 +612,6 @@ class Comparer(Scoreable):
     def weight(self, value: float) -> None:
         self.data.attrs["weight"] = value
 
-    # @property
-    # def _unit_text(self):
-    #     warnings.warn("Use unit_text instead of _unit_text", FutureWarning)
-    #     return self.unit_text
-
     @property
     def unit_text(self) -> str:
         """Quantity name and unit as text suitable for plot labels"""
