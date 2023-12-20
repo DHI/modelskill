@@ -464,8 +464,6 @@ class ComparerPlotter:
 
         Parameters
         ----------
-        model : (str, int), optional, DEPRECATED
-            name or id of model to be plotted, by default 0
         bins: (int, float, sequence), optional
             bins for the 2D histogram on the background. By default 20 bins.
             if int, represents the number of bins of 2D
@@ -486,12 +484,12 @@ class ComparerPlotter:
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
-            show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
+            show the data density as a colormap of the scatter, by default None. 
+            If both `show_density` and `show_hist` are None, then `show_density` 
+            is used by default. For binning the data, the kword `bins=Float` is used. 
         norm : matplotlib.colors norm
             colormap normalization
             If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
-        are None, then `show_density` is used by default.
-            for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
         figsize : tuple, optional

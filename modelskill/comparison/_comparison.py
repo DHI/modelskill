@@ -406,7 +406,7 @@ class Comparer(Scoreable):
     Comparer class for comparing model and observation data.
 
     Typically, the Comparer is part of a ComparerCollection,
-    created with the `compare` function.
+    created with the `match` function.
 
     Parameters
     ----------
@@ -418,7 +418,7 @@ class Comparer(Scoreable):
     Examples
     --------
     >>> import modelskill as ms
-    >>> cc = ms.match(observation, modeldata)
+    >>> cmp1 = ms.match(observation, modeldata)
     >>> cmp2 = ms.from_matched(matched_data)
 
     See Also
@@ -511,7 +511,7 @@ class Comparer(Scoreable):
 
     @property
     def name(self) -> str:
-        """Name of comparer (=observation)"""
+        """Name of comparer (=name of observation)"""
         return self.data.attrs["name"]
 
     @property
@@ -577,26 +577,14 @@ class Comparer(Scoreable):
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
-    # @property
-    # def obs(self) -> np.ndarray:
-    #     """Observation data as 1d numpy array"""
-    #     return self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe().values
-
-    # @property
-    # def mod(self) -> np.ndarray:
-    #     """Model data as 2d numpy array. Each column is a model"""
-    #     return (
-    #         self.data.drop_vars(["x", "y", "z"])[self.mod_names].to_dataframe().values
-    #     )
-
     @property
     def n_models(self) -> int:
-        """Number of models"""
+        """Number of model results"""
         return len(self.mod_names)
 
     @property
     def mod_names(self) -> Sequence[str]:
-        """List of model names"""
+        """List of model result names"""
         return list(self.raw_mod_data.keys())
 
     @property
