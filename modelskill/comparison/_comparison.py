@@ -576,20 +576,21 @@ class Comparer(Scoreable):
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
-    @property
-    def obs(self) -> np.ndarray:
-        """Observation data as 1d numpy array"""
-        return self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe().values
+    # @property
+    # def obs(self) -> np.ndarray:
+    #     """Observation data as 1d numpy array"""
+    #     return self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe().values
 
-    @property
-    def mod(self) -> np.ndarray:
-        """Model data as 2d numpy array. Each column is a model"""
-        return (
-            self.data.drop_vars(["x", "y", "z"])[self.mod_names].to_dataframe().values
-        )
+    # @property
+    # def mod(self) -> np.ndarray:
+    #     """Model data as 2d numpy array. Each column is a model"""
+    #     return (
+    #         self.data.drop_vars(["x", "y", "z"])[self.mod_names].to_dataframe().values
+    #     )
 
     @property
     def n_models(self) -> int:
+        """Number of models"""
         return len(self.mod_names)
 
     @property
@@ -1227,7 +1228,10 @@ class Comparer(Scoreable):
 
     @property
     def residual(self):
-        return self.mod - np.vstack(self.obs)
+        df = self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        obs = df[self._obs_str].values
+        mod = df[self.mod_names].values
+        return mod - np.vstack(obs)
 
     def remove_bias(self, correct="Model") -> Comparer:
         cmp = self.copy()
