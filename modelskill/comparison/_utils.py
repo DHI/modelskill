@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Iterable, List, Union
+from typing import Callable, Optional, Iterable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -43,7 +43,12 @@ def _add_spatial_grid_to_df(
     return df
 
 
-def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
+def _groupby_df(
+    df: pd.DataFrame,
+    by: List[str],
+    metrics: List[Callable],
+    n_min: Optional[int] = None,
+) -> pd.DataFrame:
     def calc_metrics(x):
         row = {}
         row["n"] = len(x)
@@ -52,6 +57,8 @@ def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
         return pd.Series(row)
 
     # .drop(columns=["x", "y"])
+    if _dt_in_by(by):
+        df, by = _add_dt_to_df(df, by)
 
     res = df.groupby(by=by, observed=False).apply(calc_metrics)
 
@@ -66,7 +73,55 @@ def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
     return res
 
 
-def _parse_groupby(by, n_models, n_obs, n_var=1):
+def _dt_in_by(by):
+    by = [by] if isinstance(by, str) else by
+    if any(str(by).startswith("dt:") for by in by):
+        return True
+    return False
+
+
+ALLOWED_DT = [
+    "year",
+    "quarter",
+    "month",
+    "month_name",
+    "day",
+    "day_of_year",
+    "dayofyear",
+    "day_of_week",
+    "dayofweek",
+    "hour",
+    "minute",
+    "second",
+    "weekday",
+]
+
+
+def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+    ser = df.index.to_series()
+    assert isinstance(by, list)
+    # by = [by] if isinstance(by, str) else by
+
+    for j, b in enumerate(by):
+        assert isinstance(b, str)
+        if str(b).startswith("dt:"):
+            dt_str = b.split(":")[1].lower()
+            if dt_str not in ALLOWED_DT:
+                raise ValueError(
+                    f"Invalid Pandas dt accessor: {dt_str}. Allowed values are: {ALLOWED_DT}"
+                )
+            ser = ser.dt.__getattribute__(dt_str)
+            if dt_str in df.columns:
+                raise ValueError(
+                    f"Cannot use datetime attribute {dt_str} as it already exists in the dataframe."
+                )
+            df[dt_str] = ser
+            by[j] = dt_str  # remove 'dt:' prefix
+    # by = by[0] if len(by) == 1 else by
+    return df, by
+
+
+def _parse_groupby(by, n_models: int, n_obs: int, n_var: int = 1) -> List[str]:
     if by is None:
         by = []
         if n_models > 1:
@@ -90,8 +145,9 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
         if by[:5] == "freq:":
             freq = by.split(":")[1]
             by = pd.Grouper(freq=freq)
+        by = [by]
     elif isinstance(by, Iterable):
-        by = [_parse_groupby(b, n_models, n_obs, n_var) for b in by]
+        by = [_parse_groupby(b, n_models, n_obs, n_var)[0] for b in by]
         return by
     else:
         raise ValueError("Invalid by argument. Must be string or list of strings.")

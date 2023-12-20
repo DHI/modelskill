@@ -514,6 +514,7 @@ class ComparerCollection(Mapping, Scoreable):
             cmp.n_variables
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
+        assert isinstance(by, list)
 
         res = _groupby_df(df, by, pmetrics)
         res["x"] = df.groupby(by=by, observed=False).x.first()
@@ -652,6 +653,7 @@ class ComparerCollection(Mapping, Scoreable):
             by.insert(0, "x")  # type: ignore
         if "y" not in by:  # type: ignore
             by.insert(0, "y")  # type: ignore
+        assert isinstance(by, list)
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
