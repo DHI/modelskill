@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Iterable, Callable, List, Union
+from typing import Optional, Iterable, Callable, List, Sequence, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -110,9 +110,10 @@ ALLOWED_DT = [
 ]
 
 
-def _add_dt_to_df(df, by):
+def _add_dt_to_df(df: pd.DataFrame, by: Sequence[str]) -> pd.DataFrame:
     ser = df.index.to_series()
-    by = [by] if isinstance(by, str) else by
+    assert isinstance(by, Sequence)
+    # by = [by] if isinstance(by, str) else by
 
     for j, b in enumerate(by):
         if str(b).startswith("dt:"):
