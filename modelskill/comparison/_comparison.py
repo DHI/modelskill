@@ -1218,6 +1218,7 @@ class Comparer(Scoreable):
             by.insert(0, "x")  # type: ignore
         if "y" not in by:  # type: ignore
             by.insert(0, "y")  # type: ignore
+        assert isinstance(by, list)
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)

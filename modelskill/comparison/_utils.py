@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Iterable, Callable, List, Sequence, Union
+from typing import Optional, Iterable, Callable, List, Sequence, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -61,7 +61,12 @@ def _add_spatial_grid_to_df(
     return df
 
 
-def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
+def _groupby_df(
+    df: pd.DataFrame,
+    by: List[str],
+    metrics,
+    n_min: Optional[int] = None,
+) -> pd.DataFrame:
     def calc_metrics(x):
         row = {}
         row["n"] = len(x)
@@ -110,12 +115,13 @@ ALLOWED_DT = [
 ]
 
 
-def _add_dt_to_df(df: pd.DataFrame, by: Sequence[str]) -> pd.DataFrame:
+def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
     ser = df.index.to_series()
-    assert isinstance(by, Sequence)
+    assert isinstance(by, list)
     # by = [by] if isinstance(by, str) else by
 
     for j, b in enumerate(by):
+        assert isinstance(b, str)
         if str(b).startswith("dt:"):
             dt_str = b.split(":")[1].lower()
             if dt_str not in ALLOWED_DT:
@@ -129,11 +135,11 @@ def _add_dt_to_df(df: pd.DataFrame, by: Sequence[str]) -> pd.DataFrame:
                 )
             df[dt_str] = ser
             by[j] = dt_str  # remove 'dt:' prefix
-    by = by[0] if len(by) == 1 else by
+    # by = by[0] if len(by) == 1 else by
     return df, by
 
 
-def _parse_groupby(by, n_models, n_obs, n_var=1):
+def _parse_groupby(by, n_models: int, n_obs: int, n_var: int = 1) -> List[str]:
     if by is None:
         by = []
         if n_models > 1:
@@ -157,8 +163,9 @@ def _parse_groupby(by, n_models, n_obs, n_var=1):
         if by[:5] == "freq:":
             freq = by.split(":")[1]
             by = pd.Grouper(freq=freq)
+        by = [by]
     elif isinstance(by, Iterable):
-        by = [_parse_groupby(b, n_models, n_obs, n_var) for b in by]
+        by = [_parse_groupby(b, n_models, n_obs, n_var)[0] for b in by]
         return by
     else:
         raise ValueError("Invalid by argument. Must be string or list of strings.")
