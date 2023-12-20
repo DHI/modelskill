@@ -561,7 +561,7 @@ def peak_ratio(
             Maximum time interval between peaks (default: 36 hours).
 
     $$
-    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_model_i}{Peak_obs_i} )}{N_{joint-peaks}}
+    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}
     $$
 
     Range: $[0, \infty)$; Best: 1.0
@@ -606,9 +606,7 @@ def peak_ratio(
     mod_joint = found_peaks_mod.loc[indices_mod]
 
     if len(obs_joint) == 0 or len(mod_joint) == 0:
-        raise ValueError(
-            f"Combination of Model/Measurements does not have overlapping peaks within inter_event_time={inter_event_time}"
-        )
+        return np.nan
     res = np.mean(mod_joint.values / obs_joint.values)
     return res
 

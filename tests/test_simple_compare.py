@@ -18,8 +18,8 @@ def test_compare(fn_obs, fn_mod):
     df_mod = mikeio.open(fn_mod).read(items=0).to_dataframe()
     c = ms.match(fn_obs, df_mod)
     assert c.n_points == 67
-    assert c.start == datetime(2017, 10, 27, 0, 0, 0)
-    assert c.end == datetime(2017, 10, 29, 18, 0, 0)
+    assert c.time[0] == datetime(2017, 10, 27, 0, 0, 0)
+    assert c.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
 
 
 def test_compare_mod_item(fn_obs, fn_mod):
@@ -45,8 +45,8 @@ def test_compare_df(fn_obs, fn_mod):
     df_mod = mikeio.open(fn_mod).read(items=0).to_dataframe()
     c = ms.match(df_obs, df_mod)
     assert c.n_points == 67
-    assert c.start == datetime(2017, 10, 27, 0, 0, 0)
-    assert c.end == datetime(2017, 10, 29, 18, 0, 0)
+    assert c.time[0] == datetime(2017, 10, 27, 0, 0, 0)
+    assert c.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
 
 
 def test_compare_point_obs(fn_obs, fn_mod):
