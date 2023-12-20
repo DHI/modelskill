@@ -1,4 +1,6 @@
 site_name: modelskill
+repo_url: https://github.com/DHI/modelskill
+repo_name: DHI/modelskill
 
 theme: 
   name: material
