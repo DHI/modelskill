@@ -1059,8 +1059,7 @@ results and observations. </p>
 <h3 id="1-define-modelresults">1. Define ModelResults</h3>
 <p>The result of a MIKE 21/3 simulation is stored in one or more dfs files.
 The most common formats are .dfsu for distributed data and .dfs0 for
-time series point data. A ModelSkill
-<a href="api/model.md#modelskill.model.PointModelResult">ModelResult</a> is defined by the
+time series point data. A ModelSkill ModelResult is defined by the
 result file path and a name:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">modelskill</span> <span class="k">as</span> <span class="nn">ms</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">mr</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">DfsuModelResult</span><span class="p">(</span><span class="s2">&quot;SW/HKZN_local_2017_DutchCoast.dfsu&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;HKZN_local&#39;</span><span class="p">,</span> <span class="n">item</span><span class="o">=</span><span class="s2">&quot;Sign. Wave Height&quot;</span><span class="p">)</span>
@@ -1072,8 +1071,8 @@ created. The data will be read later.</p>
 <p>The next step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:</p>
 <ul>
-<li><a href="api/observation.md#modelskill.observation.PointObservation">PointObservation</a></li>
-<li><a href="api/observation.md#modelskill.observation.TrackObservation">TrackObservation</a></li>
+<li><a href="../api/observation/point/">PointObservation</a></li>
+<li><a href="../api/observation/track/">TrackObservation</a></li>
 </ul>
 <p>Let\'s assume that we have one PointObservation and one
 TrackObservation:</p>
@@ -1090,14 +1089,14 @@ further needs to be initialized with it\'s x-, y-position.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cc</span> <span class="o">=</span> <span class="n">ms</span><span class="o">.</span><span class="n">match</span><span class="p">([</span><span class="n">hkna</span><span class="p">,</span> <span class="n">c2</span><span class="p">],</span> <span class="n">mr</span><span class="p">)</span>
 </span></code></pre></div>
 <p>This method returns a
-<a href="../api/comparer/#modelskill.comparison.ComparerCollection">ComparerCollection</a>
+<a href="../api/comparercollection/#modelskill.ComparerCollection">ComparerCollection</a>
 for further analysis and plotting.</p>
 <h3 id="4-do-analysis-plotting-etc-with-a-comparer">4. Do analysis, plotting, etc with a Comparer</h3>
 <p>The object returned by the <code>match()</code> method is a <em>Comparer</em>/<em>ComparerCollection</em>. It holds the matched observation and model data and has methods for plotting and
 skill assessment.</p>
 <p>The primary comparer methods are:</p>
 <ul>
-<li><a href="../api/comparercollection/#modelskill.comparison.ComparerCollection.skill">skill()</a>
+<li><a href="../api/comparercollection/#modelskill.ComparerCollection.skill">skill()</a>
   which returns a table with the skill scores</li>
 <li>various plot methods of the comparer objects<ul>
 <li><code>plot.scatter()</code></li>
