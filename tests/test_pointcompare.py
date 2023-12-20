@@ -209,8 +209,8 @@ def test_misc_properties(klagshamn, drogden):
 
     assert ck.n_points > 0
 
-    assert ck.start.year == 2018  # intersection of observation and model times
-    assert ck.end.year == 2018
+    assert ck.time[0].year == 2018  # intersection of observation and model times
+    assert ck.time[-1].year == 2018
 
     assert ck.x == 366844
 

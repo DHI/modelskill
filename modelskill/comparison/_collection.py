@@ -136,6 +136,14 @@ class ComparerCollection(Mapping, Scoreable):
 
     @property
     def start(self) -> pd.Timestamp:
+        warnings.warn(
+            "start is deprecated, use start_time instead",
+            FutureWarning,
+        )
+        return self.start_time
+
+    @property
+    def start_time(self) -> pd.Timestamp:
         """start timestamp of compared data"""
         starts = [pd.Timestamp.max]
         for cmp in self.comparers.values():
@@ -144,6 +152,14 @@ class ComparerCollection(Mapping, Scoreable):
 
     @property
     def end(self) -> pd.Timestamp:
+        warnings.warn(
+            "end is deprecated, use end_time instead",
+            FutureWarning,
+        )
+        return self.end_time
+
+    @property
+    def end_time(self) -> pd.Timestamp:
         """end timestamp of compared data"""
         ends = [pd.Timestamp.min]
         for cmp in self.comparers.values():

@@ -231,16 +231,6 @@ class TimeSeries:
         """Values to series (for plotting)"""
         return self.data[self.name].to_series()
 
-    @property
-    def start_time(self) -> pd.Timestamp:
-        """Start time of time series data"""
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        """End time of time series data"""
-        return self.time[-1]
-
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"
 
