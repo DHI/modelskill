@@ -112,27 +112,85 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
     s.root_mean_squared_error.data.mean() == pytest.approx(0.1986296276629835)
 
 
-# def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
-#     mr = modelresult_oresund_WL
+def test_weighted_score(modelresult_oresund_WL):
+    o1 = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.dfs0",
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn",
+    )
+    o2 = ms.PointObservation(
+        "tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+        item=0,
+        x=355568.0,
+        y=6156863.0,
+        quantity=ms.Quantity(
+            "Water Level", unit="meter"
+        ),  # not sure if this is relevant in this test
+    )
 
-#     cc = ms.match([klagshamn, drogden], mr)
-#     unweighted_skill = cc.score()
+    mr = ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0, name="Oresund")
 
-#     con = ms.Connector()
+    cc = ms.match(obs=[o1, o2], mod=mr)
+    unweighted = cc.score()
+    assert unweighted["Oresund"] == pytest.approx(0.1986296276629835)
 
-#     con.add(klagshamn, mr, weight=0.9, validate=False)
-#     con.add(drogden, mr, weight=0.1, validate=False)
-#     cc = con.extract()
-#     weighted_skill = cc.score()
-#     assert unweighted_skill != weighted_skill
+    # Weighted
 
-#     obs = [klagshamn, drogden]
+    o1_w = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.dfs0",
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn",
+        weight=10.0,
+    )
 
-#     con = ms.Connector(obs, mr, weight=[0.9, 0.1], validate=False)
-#     cc = con.extract()
-#     weighted_skill2 = cc.score()
+    o2_w = ms.PointObservation(
+        "tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+        item=0,
+        x=355568.0,
+        y=6156863.0,
+        quantity=ms.Quantity(
+            "Water Level", unit="meter"
+        ),  # not sure if this is relevant in this test
+        weight=0.1,
+    )
 
-#     assert weighted_skill == weighted_skill2
+    cc_w = ms.match(obs=[o1_w, o2_w], mod=mr)
+    weighted = cc_w.score()
+
+    assert weighted["Oresund"] == pytest.approx(0.1666888485806514)
+
+
+def test_weighted_score_from_prematched():
+    df = pd.DataFrame(
+        {"Oresund": [0.0, 1.0], "klagshamn": [0.0, 1.0], "drogden": [-1.0, 2.0]}
+    )
+
+    cmp1 = ms.from_matched(
+        df[["Oresund", "klagshamn"]],
+        mod_items=["Oresund"],
+        obs_item="klagshamn",
+        weight=100.0,
+    )
+    cmp2 = ms.from_matched(
+        df[["Oresund", "drogden"]],
+        mod_items=["Oresund"],
+        obs_item="drogden",
+        weight=0.0,
+    )
+    assert cmp1.weight == 100.0
+    assert cmp2.weight == 0.0
+    assert cmp1.score()["Oresund"] == pytest.approx(0.0)
+    assert cmp2.score()["Oresund"] == pytest.approx(1.0)
+
+    cc = ms.ComparerCollection([cmp1, cmp2])
+    assert cc["klagshamn"].weight == 100.0
+    assert cc["drogden"].weight == 0.0
+
+    assert cc.score()["Oresund"] == pytest.approx(1.0)
 
 
 def test_misc_properties(klagshamn, drogden):

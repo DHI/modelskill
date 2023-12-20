@@ -134,6 +134,9 @@ def _parse_dataset(data) -> xr.Dataset:
         data["Observation"].attrs["units"] = Quantity.undefined().unit
 
     data.attrs["modelskill_version"] = __version__
+
+    if "weight" not in data.attrs:
+        data.attrs["weight"] = 1.0
     return data
 
 
@@ -471,6 +474,7 @@ class Comparer(Scoreable):
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
         name: Optional[str] = None,
+        weight: float = 1.0,
         x: Optional[float] = None,
         y: Optional[float] = None,
         z: Optional[float] = None,
@@ -490,6 +494,7 @@ class Comparer(Scoreable):
                 z=z,
                 quantity=quantity,
             )
+            data.attrs["weight"] = weight
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
@@ -616,11 +621,11 @@ class Comparer(Scoreable):
 
     @property
     def weight(self) -> float:
-        return self.data[self._obs_name].attrs["weight"]
+        return self.data.attrs["weight"]
 
     @weight.setter
     def weight(self, value: float) -> None:
-        self.data[self._obs_name].attrs["weight"] = value
+        self.data.attrs["weight"] = value
 
     @property
     def _unit_text(self):
@@ -819,7 +824,7 @@ class Comparer(Scoreable):
                 matched = match_space_time(
                     observation=self._to_observation(), raw_mod_data=raw_mod_data  # type: ignore
                 )
-                cmp = self.__class__(matched_data=matched, raw_mod_data=raw_mod_data)
+                cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp
         else:

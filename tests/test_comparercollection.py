@@ -223,6 +223,11 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
     assert len(cc2["fake point obs"].raw_mod_data["m1"]) == 6
 
 
+def test_scatter(cc):
+    ax = cc.plot.scatter(skill_table=True)
+    assert ax is not None
+
+
 def test_hist(cc):
     ax = cc.sel(model="m1").plot.hist()
     assert ax is not None

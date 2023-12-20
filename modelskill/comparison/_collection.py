@@ -991,7 +991,12 @@ class ComparerCollection(Mapping, Scoreable):
         """
 
         weights = kwargs.pop("weights", None)
+
         metric = _parse_metric(metric)
+
+        if weights is None:
+            weights = {c.name: c.weight for c in self.comparers.values()}
+
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
