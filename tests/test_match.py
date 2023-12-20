@@ -507,5 +507,5 @@ def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
     assert "m2" in cmp.mod_names
 
     # but this is not allowed
-    with pytest.raises(ValueError, match="extracted"):
+    with pytest.raises(ValueError, match="SpatialField type"):
         ms.match(obs=[o1, o2], mod=[m1, m2, m3])
