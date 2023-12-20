@@ -65,12 +65,14 @@ Examples
 0.39614855570839064
 """
 import sys
-from typing import Optional, Callable, Union, Tuple, Set
+from typing import Optional, Callable, Union, Tuple, Set, Iterable
 import warnings
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+from .settings import options
 
 
 def bias(obs, model) -> float:
@@ -1173,5 +1175,26 @@ defined_metrics: Set[str] = (
     set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
     - NON_METRICS
 )
+
+
+def _parse_metric(metric, default_metrics=None, return_list=False):
+    if default_metrics is None:
+        default_metrics = options.metrics.list
+
+    if metric is None:
+        metric = default_metrics
+
+    if isinstance(metric, (str, Callable)):
+        metric = get_metric(metric)
+    elif isinstance(metric, Iterable):
+        metrics = [_parse_metric(m, default_metrics) for m in metric]
+        return metrics
+    elif not callable(metric):
+        raise TypeError(f"Invalid metric: {metric}. Must be either string or callable.")
+    if return_list:
+        if callable(metric) or isinstance(metric, str):
+            metric = [metric]
+    return metric
+
 
 __all__ = list(defined_metrics)
