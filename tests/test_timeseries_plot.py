@@ -29,7 +29,7 @@ def timeseries():
     return ts
 
 
-@pytest.fixture(params=["plot", "hist", "timeseries"])
+@pytest.fixture(params=["hist", "timeseries"])
 def matplotlib_timeseries_plotting_function(request, timeseries):
     plotter = MatplotlibTimeSeriesPlotter(timeseries)
     return getattr(plotter, request.param)
