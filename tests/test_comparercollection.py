@@ -14,7 +14,6 @@ mpl.use("Agg")
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["weight"] = 1.0
     data["Observation"].attrs["long_name"] = "fake var"
     data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
