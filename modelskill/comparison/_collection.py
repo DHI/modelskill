@@ -236,7 +236,7 @@ class ComparerCollection(Mapping, Scoreable):
         res[cat_cols] = res[cat_cols].astype("category")  # TODO
 
         if not observed:
-            res = res.loc[~(res == False).any(axis=1)]
+            res = res.loc[~(res == False).any(axis=1)]  # noqa
         # res = res.sort_index()
         res.index.name = "time"
         return res
