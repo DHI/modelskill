@@ -27,14 +27,12 @@ def o3():
 
 @pytest.fixture
 def mr1():
-
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     return ms.model_result(fn, item=0, name="SW_1")
 
 
 @pytest.fixture
 def mr2():
-
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     return ms.model_result(fn, item=0, name="SW_2")
 
@@ -77,7 +75,7 @@ def test_format_skill_df():
     # observation
     # smhi_2095_klagshamn	167	1.033099e-09	0.040645	0.040645	0.033226	0.841135	0.376413	0.706335
 
-    df = pd.DataFrame(
+    skill_df = pd.DataFrame(
         {
             "n": [167],
             "bias": [1.033099e-09],
@@ -91,34 +89,34 @@ def test_format_skill_df():
         index=["smhi_2095_klagshamn"],
     )
 
-    lines = format_skill_df(df, units="degC")
-    assert "N" in lines[0, 0]
-    assert "167" in lines[0, 2]
-    assert "BIAS" in lines[1, 0]
-    assert "0.00 degC" in lines[1, 2]
-    assert "RMSE" in lines[2, 0]
-    assert "0.04 degC" in lines[2, 2]
-    assert "URMSE" in lines[3, 0]
-    assert "0.04 degC" in lines[3, 2]
-    assert "MAE" in lines[4, 0]
-    assert "0.03 degC" in lines[4, 2]
-    assert "CC" in lines[5, 0]
-    assert "0.84" in lines[5, 2]
+    df = format_skill_df(skill_df, units="degC")
+    assert "N" in df.iloc[0, 0]
+    assert "167" in df.iloc[0, 2]
+    assert "BIAS" in df.iloc[1, 0]
+    assert "0.00 degC" in df.iloc[1, 2]
+    assert "RMSE" in df.iloc[2, 0]
+    assert "0.04 degC" in df.iloc[2, 2]
+    assert "URMSE" in df.iloc[3, 0]
+    assert "0.04 degC" in df.iloc[3, 2]
+    assert "MAE" in df.iloc[4, 0]
+    assert "0.03 degC" in df.iloc[4, 2]
+    assert "CC" in df.iloc[5, 0]
+    assert "0.84" in df.iloc[5, 2]
 
-    lines_with_short_units = format_skill_df(df, units="meter")
+    df_short = format_skill_df(skill_df, units="meter")
 
-    assert "N" in lines_with_short_units[0, 0]
-    assert "167" in lines_with_short_units[0, 2]
-    assert "BIAS" in lines_with_short_units[1, 0]
-    assert "0.00 m" in lines_with_short_units[1, 2]
-    assert "RMSE" in lines_with_short_units[2, 0]
-    assert "0.04 m" in lines_with_short_units[2, 2]
-    assert "URMSE" in lines_with_short_units[3, 0]
-    assert "0.04 m" in lines_with_short_units[3, 2]
-    assert "MAE" in lines_with_short_units[4, 0]
-    assert "0.03" in lines_with_short_units[4, 2]
-    assert "CC" in lines_with_short_units[5, 0]
-    assert "0.84" in lines_with_short_units[5, 2]
+    assert "N" in df_short.iloc[0, 0]
+    assert "167" in df_short.iloc[0, 2]
+    assert "BIAS" in df_short.iloc[1, 0]
+    assert "0.00 m" in df_short.iloc[1, 2]
+    assert "RMSE" in df_short.iloc[2, 0]
+    assert "0.04 m" in df_short.iloc[2, 2]
+    assert "URMSE" in df_short.iloc[3, 0]
+    assert "0.04 m" in df_short.iloc[3, 2]
+    assert "MAE" in df_short.iloc[4, 0]
+    assert "0.03" in df_short.iloc[4, 2]
+    assert "CC" in df_short.iloc[5, 0]
+    assert "0.84" in df_short.iloc[5, 2]
 
 
 @pytest.fixture
