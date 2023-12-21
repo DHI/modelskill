@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
+from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING, Callable
 import warnings
 
 if TYPE_CHECKING:
@@ -78,12 +78,12 @@ class ComparerPlotter:
 
             ax.scatter(
                 cmp.time,
-                cmp.data[cmp.obs_name].values,
+                cmp.data[cmp._obs_name].values,
                 marker=".",
-                color=cmp.data[cmp.obs_name].attrs["color"],
+                color=cmp.data[cmp._obs_name].attrs["color"],
             )
             ax.set_ylabel(cmp.unit_text)
-            ax.legend([*cmp.mod_names, cmp.obs_name])
+            ax.legend([*cmp.mod_names, cmp._obs_name])
             ax.set_ylim(ylim)
             if self.is_directional:
                 _ytick_directional(ax, ylim)
@@ -111,10 +111,10 @@ class ComparerPlotter:
                     *mod_scatter_list,
                     go.Scatter(
                         x=cmp.time,
-                        y=cmp.data[cmp.obs_name].values,
-                        name=cmp.obs_name,
+                        y=cmp.data[cmp._obs_name].values,
+                        name=cmp._obs_name,
                         mode="markers",
-                        marker=dict(color=cmp.data[cmp.obs_name].attrs["color"]),
+                        marker=dict(color=cmp.data[cmp._obs_name].attrs["color"]),
                     ),
                 ]
             )
@@ -227,10 +227,10 @@ class ComparerPlotter:
             .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
 
-        cmp.data[cmp.obs_name].to_series().hist(
-            bins=bins, color=cmp.data[cmp.obs_name].attrs["color"], **kwargs
+        cmp.data[cmp._obs_name].to_series().hist(
+            bins=bins, color=cmp.data[cmp._obs_name].attrs["color"], **kwargs
         )
-        ax.legend([mod_name, cmp.obs_name])
+        ax.legend([mod_name, cmp._obs_name])
         ax.set_title(title)
         ax.set_xlabel(f"{cmp.unit_text}")
         if density:
@@ -464,8 +464,6 @@ class ComparerPlotter:
 
         Parameters
         ----------
-        model : (str, int), optional, DEPRECATED
-            name or id of model to be plotted, by default 0
         bins: (int, float, sequence), optional
             bins for the 2D histogram on the background. By default 20 bins.
             if int, represents the number of bins of 2D
@@ -486,12 +484,12 @@ class ComparerPlotter:
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
-            show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
+            show the data density as a colormap of the scatter, by default None.
+            If both `show_density` and `show_hist` are None, then `show_density`
+            is used by default. For binning the data, the kword `bins=Float` is used.
         norm : matplotlib.colors norm
             colormap normalization
             If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
-        are None, then `show_density` is used by default.
-            for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
         figsize : tuple, optional
@@ -588,13 +586,14 @@ class ComparerPlotter:
         """Scatter plot for one model only"""
 
         cmp = self.comparer
+        cmp_sel_mod = cmp.sel(model=mod_name)
         assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
 
-        if cmp.n_points == 0:
+        if cmp_sel_mod.n_points == 0:
             raise ValueError("No data found in selection")
 
-        x = cmp.data.Observation.values
-        y = cmp.data[mod_name].values
+        x = cmp_sel_mod.data.Observation.values
+        y = cmp_sel_mod.data[mod_name].values
 
         assert x.ndim == y.ndim == 1, "x and y must be 1D arrays"
         assert x.shape == y.shape, "x and y must have the same shape"
@@ -609,7 +608,7 @@ class ComparerPlotter:
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
-            skill = cmp.skill(metrics=metrics)  # type: ignore
+            skill = cmp_sel_mod.skill(metrics=metrics)  # type: ignore
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:
@@ -690,7 +689,7 @@ class ComparerPlotter:
         cmp = self.comparer
 
         # TODO consider if this round-trip  via mtr is necessary to get the std:s
-        metrics = [
+        metrics: List[Callable] = [
             mtr._std_obs,
             mtr._std_mod,
             mtr.cc,

@@ -14,7 +14,6 @@ mpl.use("Agg")
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["weight"] = 1.0
     data["Observation"].attrs["long_name"] = "fake var"
     data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
@@ -95,8 +94,8 @@ def test_cc_properties(cc):
     assert len(cc) == 2
     assert cc.n_models == 3  # first:2, second:3
     assert cc.n_points == 10  # 5 + 5
-    assert cc.start == pd.Timestamp("2019-01-01")
-    assert cc.end == pd.Timestamp("2019-01-07")
+    assert cc.start_time == pd.Timestamp("2019-01-01")
+    assert cc.end_time == pd.Timestamp("2019-01-07")
     assert cc.obs_names == ["fake point obs", "fake track obs"]
     assert cc.mod_names == ["m1", "m2", "m3"]
 
@@ -106,8 +105,8 @@ def test_cc_sel_model(cc):
     assert cc2.n_comparers == 2
     assert cc2.n_models == 1
     assert cc2.n_points == 10
-    assert cc2.start == pd.Timestamp("2019-01-01")
-    assert cc2.end == pd.Timestamp("2019-01-07")
+    assert cc2.start_time == pd.Timestamp("2019-01-01")
+    assert cc2.end_time == pd.Timestamp("2019-01-07")
     assert cc2.obs_names == ["fake point obs", "fake track obs"]
     assert cc2.mod_names == ["m1"]
 
@@ -124,8 +123,8 @@ def test_cc_sel_model_last(cc):
     assert cc2.n_comparers == 1
     assert cc2.n_models == 1
     assert cc2.n_points == 5
-    assert cc2.start == pd.Timestamp("2019-01-03")
-    assert cc2.end == pd.Timestamp("2019-01-07")
+    assert cc2.start_time == pd.Timestamp("2019-01-03")
+    assert cc2.end_time == pd.Timestamp("2019-01-07")
     assert cc2.obs_names == ["fake track obs"]
     assert cc2.mod_names == ["m3"]
 
@@ -147,8 +146,8 @@ def test_cc_sel_time(cc):
     assert cc2.n_comparers == 2
     assert cc2.n_models == 3
     assert cc2.n_points == 6
-    assert cc2.start == pd.Timestamp("2019-01-03")
-    assert cc2.end == pd.Timestamp("2019-01-05")
+    assert cc2.start_time == pd.Timestamp("2019-01-03")
+    assert cc2.end_time == pd.Timestamp("2019-01-05")
     assert cc2.obs_names == ["fake point obs", "fake track obs"]
     assert cc2.mod_names == ["m1", "m2", "m3"]
 
@@ -221,6 +220,11 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
 
     # for now, we just test if the raw_mod_data is full length
     assert len(cc2["fake point obs"].raw_mod_data["m1"]) == 6
+
+
+def test_scatter(cc):
+    ax = cc.plot.scatter(skill_table=True)
+    assert ax is not None
 
 
 def test_hist(cc):

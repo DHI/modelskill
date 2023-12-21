@@ -176,13 +176,13 @@ class TimeSeries:
         self.data[self.name].attrs["units"] = quantity.unit
         self.data[self.name].attrs["is_directional"] = int(quantity.is_directional)
 
+    # TODO: """Color of time series"""; Hide until used
     @property
-    def color(self) -> str:
-        """Color of time series"""
+    def _color(self) -> str:        
         return str(self.data[self.name].attrs["color"])
 
-    @color.setter
-    def color(self, color: str | None) -> None:
+    @_color.setter
+    def _color(self, color: str | None) -> None:
         self.data[self.name].attrs["color"] = _parse_color(self.name, color)
 
     @property
@@ -230,16 +230,6 @@ class TimeSeries:
     def _values_as_series(self) -> pd.Series:
         """Values to series (for plotting)"""
         return self.data[self.name].to_series()
-
-    @property
-    def start_time(self) -> pd.Timestamp:
-        """Start time of time series data"""
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        """End time of time series data"""
-        return self.time[-1]
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"

@@ -99,14 +99,6 @@ class GridModelResult(SpatialField):
     def time(self) -> pd.DatetimeIndex:
         return pd.DatetimeIndex(self.data.time)
 
-    @property
-    def start_time(self) -> pd.Timestamp:
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        return self.time[-1]
-
     def _in_domain(self, x: float, y: float) -> bool:
         assert hasattr(self.data, "x") and hasattr(
             self.data, "y"

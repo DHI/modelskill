@@ -73,9 +73,10 @@ class ComparerCollectionPlotter:
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
-            show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
-        are None, then `show_density` is used by default.
-            for binning the data, the previous kword `bins=Float` is used
+            show the data density as a colormap of the scatter, by default None.
+            If both `show_density` and `show_hist` are None, then `show_density`
+            is used by default.
+            for binning the data, the kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
         figsize : tuple, optional
@@ -102,7 +103,8 @@ class ComparerCollectionPlotter:
             by default False
         ax : matplotlib axes, optional
             axes to plot on, by default None
-        kwargs
+        **kwargs :
+            other keyword arguments to matplotlib.pyplot.scatter()
 
         Examples
         ------
@@ -179,12 +181,12 @@ class ComparerCollectionPlotter:
             mod_name in self.cc.mod_names
         ), f"Model {mod_name} not found in collection {self.cc.mod_names}"
 
-        cmp = self.cc.sel(model=mod_name)
+        cc_sel_mod = self.cc.sel(model=mod_name)
 
-        if cmp.n_points == 0:
+        if cc_sel_mod.n_points == 0:
             raise ValueError("No data found in selection")
 
-        df = cmp.to_dataframe()
+        df = cc_sel_mod.to_dataframe()
         x = df.obs_val.values
         y = df.mod_val.values
 
@@ -193,7 +195,7 @@ class ComparerCollectionPlotter:
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{mod_name} vs {cmp.name}"
+        title = title or f"{mod_name} vs {cc_sel_mod.name}"
 
         skill = None
         units = None
@@ -201,10 +203,13 @@ class ComparerCollectionPlotter:
             metrics = None if skill_table is True else skill_table
 
             # TODO why is this here?
-            if isinstance(self, ComparerCollectionPlotter) and cmp.n_observations == 1:
-                skill = cmp.skill(metrics=metrics)  # type: ignore
+            if (
+                isinstance(self, ComparerCollectionPlotter)
+                and cc_sel_mod.n_observations == 1
+            ):
+                skill = cc_sel_mod.skill(metrics=metrics)  # type: ignore
             else:
-                skill = cmp.mean_skill(metrics=metrics)  # type: ignore
+                skill = cc_sel_mod.mean_skill(metrics=metrics)  # type: ignore
             # TODO improve this
             try:
                 units = unit_text.split("[")[1].split("]")[0]
@@ -446,20 +451,6 @@ class ComparerCollectionPlotter:
 
         Parameters
         ----------
-        model : (int, str), optional
-            name or id of model to be compared, by default all
-        observation : (int, str, List[str], List[int])), optional
-            name or ids of observations to be compared, by default all
-        variable : (str, int), optional
-            name or id of variable to be compared, by default first
-        start : (str, datetime), optional
-            start time of comparison, by default None
-        end : (str, datetime), optional
-            end time of comparison, by default None
-        area : list(float), optional
-            bbox coordinates [x0, y0, x1, y1],
-            or polygon coordinates[x0, y0, x1, y1, ..., xn, yn],
-            by default None
         normalize_std : bool, optional
             plot model std normalized with observation std, default False
         aggregate_observations : bool, optional

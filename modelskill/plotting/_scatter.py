@@ -40,11 +40,11 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_df: Optional[pd.DataFrame] = None,
+    skill_df: pd.DataFrame | None = None,
     units: Optional[str] = "",
     ax: Optional[Axes] = None,
     **kwargs,
-):
+) -> Axes:
     """Scatter plot showing compared data: observation vs modelled
     Optionally, with density histogram.
 
@@ -518,8 +518,9 @@ def _plot_summary_border(
 def _plot_summary_table(
     df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
 ) -> None:
-    lines = format_skill_df(df, units)
-    text_ = ["\n".join(lines[:, i]) for i in range(lines.shape[1])]
+    table = format_skill_df(df, units)
+    cols = ["name", "sep", "value"]
+    text_cols = ["\n".join(table[col]) for col in cols]
 
     if max_cbar is None:
         x = 0.93
@@ -546,10 +547,10 @@ def _plot_summary_table(
     # Column 1
     text_columns = []
     dx = 0
-    for ti in text_:
+    for ti in text_cols:
         text_col_i = fig.text(x + dx, 0.6, ti, **txt_settings)
         ## Render, and get width
-        plt.draw()
+        # plt.draw() # TOOO this causes an error and I have no idea why it is here
         dx = (
             dx
             + figure_transform.inverted().transform(
