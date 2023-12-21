@@ -199,7 +199,7 @@ class ComparerCollection(Mapping, Scoreable):
         else:
             options.metrics.list = _parse_metric(values, self.metrics)
 
-    def to_dataframe(self, attrs_keys=None) -> pd.DataFrame:
+    def to_dataframe(self, attrs_keys=None, observed=False) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
         # TODO delegate to each comparer
@@ -234,6 +234,9 @@ class ComparerCollection(Mapping, Scoreable):
             res = pd.concat(frames)
         cat_cols = res.select_dtypes(include=["object"]).columns
         res[cat_cols] = res[cat_cols].astype("category")  # TODO
+
+        if not observed:
+            res = res.loc[~(res == False).any(axis=1)]
         # res = res.sort_index()
         res.index.name = "time"
         return res
@@ -447,6 +450,7 @@ class ComparerCollection(Mapping, Scoreable):
         self,
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
+        observed=False,
         **kwargs,
     ) -> SkillTable:
         """Aggregated skill assessment of model(s)
@@ -526,7 +530,7 @@ class ComparerCollection(Mapping, Scoreable):
         by = _parse_groupby(by, n_models, n_obs, n_var)
 
         by, attrs_keys = self._attrs_keys_in_by(by)
-        df = cc.to_dataframe(attrs_keys=attrs_keys)
+        df = cc.to_dataframe(attrs_keys=attrs_keys, observed=observed)
 
         res = _groupby_df(df, by, metrics)
         mtr_cols = [m.__name__ for m in metrics]  # type: ignore

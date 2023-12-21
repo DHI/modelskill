@@ -71,7 +71,7 @@ def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
             row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
 
-    res = df.groupby(by=by, observed=False).apply(calc_metrics)
+    res = df.groupby(by=by, observed=True).apply(calc_metrics)
 
     if n_min:
         # nan for all cols but n
