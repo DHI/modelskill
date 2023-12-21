@@ -235,7 +235,7 @@ class ComparerCollection(Mapping, Scoreable):
         cat_cols = res.select_dtypes(include=["object"]).columns
         res[cat_cols] = res[cat_cols].astype("category")  # TODO
 
-        if not observed:
+        if observed:
             res = res.loc[~(res == False).any(axis=1)]
         # res = res.sort_index()
         res.index.name = "time"
@@ -450,7 +450,7 @@ class ComparerCollection(Mapping, Scoreable):
         self,
         by: Optional[Union[str, List[str]]] = None,
         metrics: Optional[List[str]] = None,
-        observed=False,
+        observed=True,
         **kwargs,
     ) -> SkillTable:
         """Aggregated skill assessment of model(s)
@@ -467,6 +467,8 @@ class ComparerCollection(Mapping, Scoreable):
             by default ["model","observation"]
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
+        observed: bool, optional
+            This only applies if any of the groupers are Categoricals. If True: only show observed values for categorical groupers. If False: show all values for categorical groupers.
 
         Returns
         -------
