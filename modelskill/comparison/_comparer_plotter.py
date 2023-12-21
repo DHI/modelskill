@@ -484,9 +484,9 @@ class ComparerPlotter:
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
-            show the data density as a colormap of the scatter, by default None. 
-            If both `show_density` and `show_hist` are None, then `show_density` 
-            is used by default. For binning the data, the kword `bins=Float` is used. 
+            show the data density as a colormap of the scatter, by default None.
+            If both `show_density` and `show_hist` are None, then `show_density`
+            is used by default. For binning the data, the kword `bins=Float` is used.
         norm : matplotlib.colors norm
             colormap normalization
             If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
@@ -586,13 +586,14 @@ class ComparerPlotter:
         """Scatter plot for one model only"""
 
         cmp = self.comparer
+        cmp_sel_mod = cmp.sel(model=mod_name)
         assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
 
-        if cmp.n_points == 0:
+        if cmp_sel_mod.n_points == 0:
             raise ValueError("No data found in selection")
 
-        x = cmp.data.Observation.values
-        y = cmp.data[mod_name].values
+        x = cmp_sel_mod.data.Observation.values
+        y = cmp_sel_mod.data[mod_name].values
 
         assert x.ndim == y.ndim == 1, "x and y must be 1D arrays"
         assert x.shape == y.shape, "x and y must have the same shape"
@@ -607,7 +608,7 @@ class ComparerPlotter:
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
-            skill = cmp.skill(metrics=metrics)  # type: ignore
+            skill = cmp_sel_mod.skill(metrics=metrics)  # type: ignore
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:

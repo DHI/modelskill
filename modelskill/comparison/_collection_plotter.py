@@ -181,12 +181,12 @@ class ComparerCollectionPlotter:
             mod_name in self.cc.mod_names
         ), f"Model {mod_name} not found in collection {self.cc.mod_names}"
 
-        cmp = self.cc.sel(model=mod_name)
+        cc_sel_mod = self.cc.sel(model=mod_name)
 
-        if cmp.n_points == 0:
+        if cc_sel_mod.n_points == 0:
             raise ValueError("No data found in selection")
 
-        df = cmp.to_dataframe()
+        df = cc_sel_mod.to_dataframe()
         x = df.obs_val.values
         y = df.mod_val.values
 
@@ -195,7 +195,7 @@ class ComparerCollectionPlotter:
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{mod_name} vs {cmp.name}"
+        title = title or f"{mod_name} vs {cc_sel_mod.name}"
 
         skill = None
         units = None
@@ -203,10 +203,13 @@ class ComparerCollectionPlotter:
             metrics = None if skill_table is True else skill_table
 
             # TODO why is this here?
-            if isinstance(self, ComparerCollectionPlotter) and cmp.n_observations == 1:
-                skill = cmp.skill(metrics=metrics)  # type: ignore
+            if (
+                isinstance(self, ComparerCollectionPlotter)
+                and cc_sel_mod.n_observations == 1
+            ):
+                skill = cc_sel_mod.skill(metrics=metrics)  # type: ignore
             else:
-                skill = cmp.mean_skill(metrics=metrics)  # type: ignore
+                skill = cc_sel_mod.mean_skill(metrics=metrics)  # type: ignore
             # TODO improve this
             try:
                 units = unit_text.split("[")[1].split("]")[0]
