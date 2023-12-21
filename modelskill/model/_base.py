@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .track import TrackModelResult
 
 from ..utils import _get_name
-from ..observation import Observation, PointObservation, TrackObservation
+from ..obs import Observation, PointObservation, TrackObservation
 
 
 @dataclass

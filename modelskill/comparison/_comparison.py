@@ -23,11 +23,12 @@ from copy import deepcopy
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
-from ..observation import PointObservation, TrackObservation
+from ..obs import PointObservation, TrackObservation
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
+from ..metrics import _parse_metric
+
 from ._utils import (
-    _parse_metric,
     _add_spatial_grid_to_df,
     _groupby_df,
     _parse_groupby,
@@ -36,7 +37,7 @@ from ._utils import (
 )
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
-from ..settings import options, register_option, reset_option
+from ..settings import register_option
 from ..utils import _get_name
 from .. import __version__
 
@@ -50,19 +51,19 @@ class Scoreable(Protocol):
 
     def skill(
         self,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[List[str]] = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs,
     ) -> SkillTable:
         ...
 
     def gridded_skill(
         self,
-        bins=5,
-        binsize: Optional[float] = None,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
-        n_min: Optional[int] = None,
+        bins: int = 5,
+        binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        n_min: int | None = None,
         **kwargs,
     ) -> SkillGrid:
         ...
@@ -133,6 +134,9 @@ def _parse_dataset(data) -> xr.Dataset:
         data["Observation"].attrs["units"] = Quantity.undefined().unit
 
     data.attrs["modelskill_version"] = __version__
+
+    if "weight" not in data.attrs:
+        data.attrs["weight"] = 1.0
     return data
 
 
@@ -403,7 +407,7 @@ class Comparer(Scoreable):
     Comparer class for comparing model and observation data.
 
     Typically, the Comparer is part of a ComparerCollection,
-    created with the `compare` function.
+    created with the `match` function.
 
     Parameters
     ----------
@@ -415,7 +419,7 @@ class Comparer(Scoreable):
     Examples
     --------
     >>> import modelskill as ms
-    >>> cc = ms.match(observation, modeldata)
+    >>> cmp1 = ms.match(observation, modeldata)
     >>> cmp2 = ms.from_matched(matched_data)
 
     See Also
@@ -425,7 +429,7 @@ class Comparer(Scoreable):
 
     data: xr.Dataset
     raw_mod_data: Dict[str, TimeSeries]
-    _obs_name = "Observation"
+    _obs_str = "Observation"
     plotter = ComparerPlotter
 
     def __init__(
@@ -470,6 +474,7 @@ class Comparer(Scoreable):
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
         name: Optional[str] = None,
+        weight: float = 1.0,
         x: Optional[float] = None,
         y: Optional[float] = None,
         z: Optional[float] = None,
@@ -489,6 +494,7 @@ class Comparer(Scoreable):
                 z=z,
                 quantity=quantity,
             )
+            data.attrs["weight"] = weight
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
@@ -506,56 +512,52 @@ class Comparer(Scoreable):
 
     @property
     def name(self) -> str:
-        """name of comparer (=observation)"""
+        """Name of comparer (=name of observation)"""
         return self.data.attrs["name"]
 
     @property
-    def gtype(self):
+    def gtype(self) -> str:
+        """Geometry type"""
         return self.data.attrs["gtype"]
-
-    # TODO: remove
-    @property
-    def quantity_name(self) -> str:
-        warnings.warn("Use quantity.name instead of quantity_name", FutureWarning)
-        return self.quantity.name
 
     @property
     def quantity(self) -> Quantity:
         """Quantity object"""
         return Quantity(
-            name=self.data[self._obs_name].attrs["long_name"],
-            unit=self.data[self._obs_name].attrs["units"],
+            name=self.data[self._obs_str].attrs["long_name"],
+            unit=self.data[self._obs_str].attrs["units"],
             is_directional=bool(
-                self.data[self._obs_name].attrs.get("is_directional", False)
+                self.data[self._obs_str].attrs.get("is_directional", False)
             ),
         )
 
     @quantity.setter
     def quantity(self, quantity: Quantity) -> None:
         assert isinstance(quantity, Quantity), "value must be a Quantity object"
-        self.data[self._obs_name].attrs["long_name"] = quantity.name
-        self.data[self._obs_name].attrs["units"] = quantity.unit
-        self.data[self._obs_name].attrs["is_directional"] = int(quantity.is_directional)
+        self.data[self._obs_str].attrs["long_name"] = quantity.name
+        self.data[self._obs_str].attrs["units"] = quantity.unit
+        self.data[self._obs_str].attrs["is_directional"] = int(quantity.is_directional)
 
     @property
     def n_points(self) -> int:
         """number of compared points"""
-        return len(self.data[self._obs_name]) if self.data else 0
+        return len(self.data[self._obs_str]) if self.data else 0
 
     @property
     def time(self) -> pd.DatetimeIndex:
         """time of compared data as pandas DatetimeIndex"""
         return self.data.time.to_index()
 
-    @property
-    def start(self) -> pd.Timestamp:
-        """start pd.Timestamp of compared data"""
-        return self.time[0]
+    # TODO: Should we keep these? (renamed to start_time and end_time)
+    # @property
+    # def start(self) -> pd.Timestamp:
+    #     """start pd.Timestamp of compared data"""
+    #     return self.time[0]
 
-    @property
-    def end(self) -> pd.Timestamp:
-        """end pd.Timestamp of compared data"""
-        return self.time[-1]
+    # @property
+    # def end(self) -> pd.Timestamp:
+    #     """end pd.Timestamp of compared data"""
+    #     return self.time[-1]
 
     @property
     def x(self):
@@ -577,74 +579,44 @@ class Comparer(Scoreable):
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
     @property
-    def obs(self) -> np.ndarray:
-        """Observation data as 1d numpy array"""
-        return (
-            self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe().values
-        )
-
-    @property
-    def mod(self) -> np.ndarray:
-        """Model data as 2d numpy array. Each column is a model"""
-        return (
-            self.data.drop_vars(["x", "y", "z"])[self.mod_names].to_dataframe().values
-        )
-
-    @property
     def n_models(self) -> int:
+        """Number of model results"""
         return len(self.mod_names)
 
     @property
     def mod_names(self) -> Sequence[str]:
-        return list(self.raw_mod_data.keys())  # TODO replace with tuple
+        """List of model result names"""
+        return list(self.raw_mod_data.keys())
 
     @property
     def aux_names(self) -> Sequence[str]:
-        return tuple(
+        """List of auxiliary data names"""
+        return list(
             [
                 k
                 for k, v in self.data.data_vars.items()
-                if v.attrs["kind"] == "auxiliary"
+                if v.attrs["kind"] not in ["observation", "model"]
             ]
         )
 
+    # TODO: always "Observation", necessary to have this property?
     @property
-    def obs_name(self) -> str:
-        """Name of observation (e.g. station name)"""
-        return self._obs_name
+    def _obs_name(self) -> str:
+        return self._obs_str
 
     @property
     def weight(self) -> float:
-        return self.data[self._obs_name].attrs["weight"]
+        """Weight of observation (used in ComparerCollection score() and mean_skill())"""
+        return self.data.attrs["weight"]
 
     @weight.setter
     def weight(self, value: float) -> None:
-        self.data[self._obs_name].attrs["weight"] = value
-
-    @property
-    def _unit_text(self):
-        warnings.warn("Use unit_text instead of _unit_text", FutureWarning)
-        return self.unit_text
+        self.data.attrs["weight"] = value
 
     @property
     def unit_text(self) -> str:
-        """Variable name and unit as text suitable for plot labels"""
+        """Quantity name and unit as text suitable for plot labels"""
         return f"{self.quantity.name} [{self.quantity.unit}]"
-
-    @property
-    def metrics(self):
-        if self.quantity.is_directional:
-            # TODO define default circular metrics elsewhere
-            return [mtr.c_bias, mtr.c_rmse, mtr.c_urmse, mtr.c_max_error]
-        else:
-            return options.metrics.list
-
-    @metrics.setter
-    def metrics(self, values) -> None:
-        if values is None:
-            reset_option("metrics.list")
-        else:
-            options.metrics.list = _parse_metric(values, self.metrics)
 
     def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
@@ -652,7 +624,7 @@ class Comparer(Scoreable):
         df = self.data.drop_vars(["z"]).to_dataframe().copy()
         other_models = [m for m in self.mod_names if m is not mod_name]
         df = df.drop(columns=other_models)
-        df = df.rename(columns={mod_name: "mod_val", self._obs_name: "obs_val"})
+        df = df.rename(columns={mod_name: "mod_val", self._obs_str: "obs_val"})
         df["model"] = mod_name
         df["observation"] = self.name
 
@@ -668,6 +640,7 @@ class Comparer(Scoreable):
         df["observation"] = df["observation"].astype("category")
         return df
 
+    # TODO: is this the best way to copy (self.data.copy.. )
     def __copy__(self):
         return deepcopy(self)
 
@@ -781,7 +754,7 @@ class Comparer(Scoreable):
     def _to_observation(self) -> PointObservation | TrackObservation:
         """Convert to Observation"""
         if self.gtype == "point":
-            df = self.data.drop_vars(["x", "y", "z"])[self._obs_name].to_dataframe()
+            df = self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe()
             return PointObservation(
                 data=df,
                 name=self.name,
@@ -792,7 +765,7 @@ class Comparer(Scoreable):
                 # TODO: add attrs
             )
         elif self.gtype == "track":
-            df = self.data.drop_vars(["z"])[[self._obs_name]].to_dataframe()
+            df = self.data.drop_vars(["z"])[[self._obs_str]].to_dataframe()
             return TrackObservation(
                 data=df,
                 item=0,
@@ -833,7 +806,7 @@ class Comparer(Scoreable):
                 matched = match_space_time(
                     observation=self._to_observation(), raw_mod_data=raw_mod_data  # type: ignore
                 )
-                cmp = self.__class__(matched_data=matched, raw_mod_data=raw_mod_data)
+                cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp
         else:
@@ -959,8 +932,8 @@ class Comparer(Scoreable):
 
     def skill(
         self,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs,
     ) -> SkillTable:
         """Skill assessment of model(s)
@@ -1000,7 +973,7 @@ class Comparer(Scoreable):
         2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
@@ -1017,8 +990,11 @@ class Comparer(Scoreable):
 
         by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
 
-        df = cmp.to_dataframe()  # TODO: avoid df if possible?
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        df = cmp.to_dataframe()
+        res = _groupby_df(df, by, metrics)
+        res["x"] = df.groupby(by=by, observed=False).x.first()
+        res["y"] = df.groupby(by=by, observed=False).y.first()
+        # TODO: set x,y to NaN if TrackObservation
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -1067,7 +1043,7 @@ class Comparer(Scoreable):
         >>> cmp.score(metric=ms.metrics.mape)
         11.567399646108198
         """
-        metric = _parse_metric(metric, self.metrics)
+        metric = _parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1118,11 +1094,11 @@ class Comparer(Scoreable):
 
     def gridded_skill(
         self,
-        bins=5,
-        binsize: Optional[float] = None,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
-        n_min: Optional[int] = None,
+        bins: int = 5,
+        binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        n_min: int | None = None,
         **kwargs,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
@@ -1191,7 +1167,7 @@ class Comparer(Scoreable):
             area=area,
         )
 
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        metrics = _parse_metric(metrics)
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 
@@ -1209,6 +1185,7 @@ class Comparer(Scoreable):
             by.insert(0, "x")  # type: ignore
         if "y" not in by:  # type: ignore
             by.insert(0, "y")  # type: ignore
+        assert isinstance(by, list)
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
@@ -1222,7 +1199,10 @@ class Comparer(Scoreable):
 
     @property
     def residual(self):
-        return self.mod - np.vstack(self.obs)
+        df = self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        obs = df[self._obs_str].values
+        mod = df[self.mod_names].values
+        return mod - np.vstack(obs)
 
     def remove_bias(self, correct="Model") -> Comparer:
         cmp = self.copy()
@@ -1238,7 +1218,7 @@ class Comparer(Scoreable):
         elif correct == "Observation":
             # what if multiple models?
             with xr.set_options(keep_attrs=True):
-                cmp.data[cmp._obs_name].values = cmp.data[cmp._obs_name].values + bias
+                cmp.data[cmp._obs_str].values = cmp.data[cmp._obs_str].values + bias
         else:
             raise ValueError(
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"

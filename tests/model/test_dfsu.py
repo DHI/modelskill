@@ -75,9 +75,7 @@ def test_dfsu_properties(hd_oresund_2d):
 
     # Note != name of item
     assert mr.quantity.name == "Surface Elevation"
-
-    # this is the unit, shortening it is a presentation concern
-    assert mr.quantity.unit == "meter"
+    assert mr.quantity.unit == "m"
 
 
 def test_dfsu_sw(sw_dutch_coast):

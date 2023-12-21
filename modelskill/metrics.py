@@ -22,6 +22,7 @@ difference between a model and an observation.
 * [peak_ratio (pr)][modelskill.metrics.peak_ratio]
 
 Circular metrics (for directional data with units in degrees):
+
 * [c_bias][modelskill.metrics.c_bias]
 * [c_max_error][modelskill.metrics.c_max_error]
 * [c_mean_absolute_error (c_mae)][modelskill.metrics.c_mean_absolute_error]
@@ -63,13 +64,17 @@ Examples
 >>> ev(obs, mod)
 0.39614855570839064
 """
+from __future__ import annotations
+
 import sys
-from typing import Optional, Callable, Union, Tuple, Set
 import warnings
+from typing import Callable, Iterable, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+from .settings import options
 
 
 def bias(obs, model) -> float:
@@ -560,7 +565,7 @@ def peak_ratio(
             Maximum time interval between peaks (default: 36 hours).
 
     $$
-    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_model_i}{Peak_obs_i} )}{N_{joint-peaks}}
+    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}
     $$
 
     Range: $[0, \infty)$; Best: 1.0
@@ -605,9 +610,7 @@ def peak_ratio(
     mod_joint = found_peaks_mod.loc[indices_mod]
 
     if len(obs_joint) == 0 or len(mod_joint) == 0:
-        raise ValueError(
-            f"Combination of Model/Measurements does not have overlapping peaks within inter_event_time={inter_event_time}"
-        )
+        return np.nan
     res = np.mean(mod_joint.values / obs_joint.values)
     return res
 
@@ -1064,7 +1067,8 @@ METRICS_WITH_DIMENSION = set(
     ]
 )
 
-default_metrics = [bias, rmse, urmse, mae, cc, si, r2]
+default_metrics: List[Callable] = [bias, rmse, urmse, mae, cc, si, r2]
+default_circular_metrics: List[Callable] = [c_bias, c_rmse, c_urmse, c_mae]
 
 
 def metric_has_units(metric: Union[str, Callable]) -> bool:
@@ -1113,7 +1117,7 @@ NON_METRICS = set(
         "Union",
         "_c_residual",
         "_linear_regression",
-        "_partial_duration_series",        
+        "_partial_duration_series",
     ]
 )
 
@@ -1172,5 +1176,32 @@ defined_metrics: Set[str] = (
     set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
     - NON_METRICS
 )
+
+
+def _parse_metric(
+    metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
+    *,
+    directional: bool = False,
+) -> List[Callable]:
+    if metric is None:
+        if directional:
+            return default_circular_metrics
+        else:
+            # could be a list of str!
+            return [get_metric(m) for m in options.metrics.list]
+
+    if isinstance(metric, str):
+        metrics: list = [metric]
+    elif callable(metric):
+        metrics = [metric]
+    elif isinstance(metric, Iterable):
+        metrics = list(metric)
+
+    for metric in metrics:
+        if not isinstance(metric, str) and not callable(metric):
+            raise TypeError(f"metric {metric} must be a string or callable")
+
+    return [get_metric(m) for m in metrics]
+
 
 __all__ = list(defined_metrics)

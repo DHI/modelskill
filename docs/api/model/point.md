@@ -1,0 +1,3 @@
+# PointModelResult
+
+::: modelskill.PointModelResult

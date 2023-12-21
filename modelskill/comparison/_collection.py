@@ -25,12 +25,11 @@ from ..plotting import taylor_diagram, TaylorPoint
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
-from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
 from ._comparison import Comparer, Scoreable
+from ..metrics import _parse_metric
 from ._utils import (
-    _parse_metric,
     _add_spatial_grid_to_df,
     _groupby_df,
     _parse_groupby,
@@ -87,7 +86,7 @@ class ComparerCollection(Mapping, Scoreable):
     Examples
     --------
     >>> import modelskill as ms
-    >>> mr = ms.ModelResult("Oresund2D.dfsu", item=0)
+    >>> mr = ms.DfsuModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
     >>> cc = ms.match(obs=[o1,o2], mod=mr)
@@ -136,6 +135,14 @@ class ComparerCollection(Mapping, Scoreable):
 
     @property
     def start(self) -> pd.Timestamp:
+        warnings.warn(
+            "start is deprecated, use start_time instead",
+            FutureWarning,
+        )
+        return self.start_time
+
+    @property
+    def start_time(self) -> pd.Timestamp:
         """start timestamp of compared data"""
         starts = [pd.Timestamp.max]
         for cmp in self.comparers.values():
@@ -144,6 +151,14 @@ class ComparerCollection(Mapping, Scoreable):
 
     @property
     def end(self) -> pd.Timestamp:
+        warnings.warn(
+            "end is deprecated, use end_time instead",
+            FutureWarning,
+        )
+        return self.end_time
+
+    @property
+    def end_time(self) -> pd.Timestamp:
         """end timestamp of compared data"""
         ends = [pd.Timestamp.min]
         for cmp in self.comparers.values():
@@ -188,17 +203,6 @@ class ComparerCollection(Mapping, Scoreable):
     def n_variables(self) -> int:
         return len(self.var_names)
 
-    @property
-    def metrics(self):
-        return options.metrics.list
-
-    @metrics.setter
-    def metrics(self, values) -> None:
-        if values is None:
-            reset_option("metrics.list")
-        else:
-            options.metrics.list = _parse_metric(values, self.metrics)
-
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
@@ -218,7 +222,7 @@ class ComparerCollection(Mapping, Scoreable):
                     df["variable"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
-                df["obs_val"] = cmp.obs
+                df["obs_val"] = cmp.data["Observation"].values
                 frames.append(df[cols])
         if len(frames) > 0:
             res = pd.concat(frames)
@@ -433,8 +437,8 @@ class ComparerCollection(Mapping, Scoreable):
 
     def skill(
         self,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[List[str]] = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs,
     ) -> SkillTable:
         """Aggregated skill assessment of model(s)
@@ -481,7 +485,7 @@ class ComparerCollection(Mapping, Scoreable):
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
         """
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        pmetrics = _parse_metric(metrics)
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
@@ -510,8 +514,12 @@ class ComparerCollection(Mapping, Scoreable):
             cmp.n_variables
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
+        assert isinstance(by, list)
 
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = _groupby_df(df, by, pmetrics)
+        res["x"] = df.groupby(by=by, observed=False).x.first()
+        res["y"] = df.groupby(by=by, observed=False).y.first()
+        # TODO: set x,y to NaN if TrackObservation
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -554,9 +562,9 @@ class ComparerCollection(Mapping, Scoreable):
     def gridded_skill(
         self,
         bins=5,
-        binsize: Optional[float] = None,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
+        binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: Optional[int] = None,
         **kwargs,
     ) -> SkillGrid:
@@ -619,7 +627,7 @@ class ComparerCollection(Mapping, Scoreable):
         observation, variable = _get_deprecated_obs_var_args(kwargs)
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        metrics = _parse_metric(metrics)
 
         cmp = self.sel(
             model=model,
@@ -645,6 +653,7 @@ class ComparerCollection(Mapping, Scoreable):
             by.insert(0, "x")  # type: ignore
         if "y" not in by:  # type: ignore
             by.insert(0, "y")  # type: ignore
+        assert isinstance(by, list)
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
@@ -794,9 +803,9 @@ class ComparerCollection(Mapping, Scoreable):
         var_names = cmp.var_names  # self.var_names
 
         # skill assessment
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        pmetrics = _parse_metric(metrics)
         # s = self.skill(df=df, metrics=metrics)
-        s = cmp.skill(metrics=metrics)
+        s = cmp.skill(metrics=pmetrics)
         if s is None:
             return None
         skilldf = s.to_dataframe()
@@ -813,7 +822,7 @@ class ComparerCollection(Mapping, Scoreable):
         # group by
         by = cmp._mean_skill_by(skilldf, mod_names, var_names)
         agg = {"n": "sum"}
-        for metric in metrics:  # type: ignore
+        for metric in pmetrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
         res = skilldf.groupby(by).agg(agg)
 
@@ -1000,7 +1009,12 @@ class ComparerCollection(Mapping, Scoreable):
         """
 
         weights = kwargs.pop("weights", None)
-        metric = _parse_metric(metric, self.metrics)
+
+        metric = _parse_metric(metric)[0]
+
+        if weights is None:
+            weights = {c.name: c.weight for c in self.comparers.values()}
+
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1118,10 +1132,12 @@ class ComparerCollection(Mapping, Scoreable):
         """
 
         files = []
+        no = 0
         for name, cmp in self.comparers.items():
-            cmp_fn = f"{name}.nc"
+            cmp_fn = f"{no}_{name}.nc"
             cmp.save(cmp_fn)
             files.append(cmp_fn)
+            no += 1
 
         with zipfile.ZipFile(filename, "w") as zip:
             for f in files:
@@ -1157,7 +1173,8 @@ class ComparerCollection(Mapping, Scoreable):
                     zip.extract(f, path=folder)
 
         comparers = [
-            ComparerCollection._load_comparer(folder, f) for f in os.listdir(folder)
+            ComparerCollection._load_comparer(folder, f)
+            for f in sorted(os.listdir(folder))
         ]
         return ComparerCollection(comparers)
 
