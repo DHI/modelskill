@@ -22,6 +22,7 @@ difference between a model and an observation.
 * [peak_ratio (pr)][modelskill.metrics.peak_ratio]
 
 Circular metrics (for directional data with units in degrees):
+
 * [c_bias][modelskill.metrics.c_bias]
 * [c_max_error][modelskill.metrics.c_max_error]
 * [c_mean_absolute_error (c_mae)][modelskill.metrics.c_mean_absolute_error]
@@ -63,13 +64,17 @@ Examples
 >>> ev(obs, mod)
 0.39614855570839064
 """
+from __future__ import annotations
+
 import sys
-from typing import Optional, Callable, Union, Tuple, Set
 import warnings
+from typing import Callable, Iterable, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+from .settings import options
 
 
 def bias(obs, model) -> float:
@@ -526,20 +531,29 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def pr(
-    obs: np.ndarray, model: np.ndarray, inter_event_level: float = 0.7, AAP: int = 2
+    obs: np.ndarray,
+    model: np.ndarray,
+    inter_event_level: float = 0.7,
+    AAP: int = 2,
+    inter_event_time="36h",
 ) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
-    return peak_ratio(obs, model, inter_event_level, AAP)
+    return peak_ratio(obs, model, inter_event_level, AAP, inter_event_time)
 
 
 def peak_ratio(
-    obs: pd.Series, model: pd.Series, inter_event_level: float = 0.7, AAP: int = 2
+    obs: pd.Series,
+    model: pd.Series,
+    inter_event_level: float = 0.7,
+    AAP: int = 2,
+    inter_event_time="36h",
 ) -> float:
     r"""Peak Ratio
 
-    PR is the ratio of the mean of the identified peaks in the
-    model / identified peaks in the measurements
+    PR is the mean of the individual ratios of identified peaks in the
+    model / identified peaks in the measurements. PR is calculated only for the joint-events,
+    ie, events that ocurr simulateneously within a window +/- 0.5*inter_event_time.
 
     Parameters
     ----------
@@ -547,10 +561,11 @@ def peak_ratio(
         Inter-event level threshold (default: 0.7).
     AAP (float, optional)
         Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)
-
+    inter_event_time (str, optional)
+            Maximum time interval between peaks (default: 36 hours).
 
     $$
-    \frac{\sum_{i=1}^{N_{peak}} (model_i)}{\sum_{i=1}^{N_{peak}} (obs_i)}
+    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}
     $$
 
     Range: $[0, \infty)$; Best: 1.0
@@ -568,7 +583,11 @@ def peak_ratio(
     found_peaks = []
     for data in [obs, model]:
         peak_index, AAP_ = _partial_duration_series(
-            time, data, inter_event_level=inter_event_level, AAP=AAP
+            time,
+            data,
+            inter_event_level=inter_event_level,
+            AAP=AAP,
+            inter_event_time=inter_event_time,
         )
         peaks = data[peak_index]
         peaks_sorted = peaks.sort_values(ascending=False)
@@ -578,7 +597,22 @@ def peak_ratio(
     found_peaks_obs = found_peaks[0]
     found_peaks_mod = found_peaks[1]
 
-    return np.mean(found_peaks_mod) / np.mean(found_peaks_obs)
+    # Resample~ish, find peaks spread maximum Half the inter event time (if inter event =36, select data paired +/- 18h) (or inter_event) and then select
+    indices_mod = (
+        abs(found_peaks_obs.index.values[:, None] - found_peaks_mod.index.values)
+        < pd.Timedelta(inter_event_time) / 2
+    ).any(axis=0)
+    indices_obs = (
+        abs(found_peaks_mod.index.values[:, None] - found_peaks_obs.index.values)
+        < pd.Timedelta(inter_event_time) / 2
+    ).any(axis=0)
+    obs_joint = found_peaks_obs.loc[indices_obs]
+    mod_joint = found_peaks_mod.loc[indices_mod]
+
+    if len(obs_joint) == 0 or len(mod_joint) == 0:
+        return np.nan
+    res = np.mean(mod_joint.values / obs_joint.values)
+    return res
 
 
 def willmott(obs: np.ndarray, model: np.ndarray) -> float:
@@ -696,7 +730,7 @@ def _partial_duration_series(
     time,
     value,
     *,
-    inter_event_time=36,
+    inter_event_time="36h",
     use_inter_event_level=True,
     inter_event_level=0.7,
     AAP=2,
@@ -709,7 +743,7 @@ def _partial_duration_series(
             Array of time values.
         value (array-like)
             Array of corresponding values.
-        inter_event_time (float, optional)
+        inter_event_time (str, optional)
             Maximum time interval between peaks (default: 36 hours).
         use_inter_event_level (bool, optional)
             Flag indicating whether to consider inter-event level (default: True).
@@ -734,7 +768,7 @@ def _partial_duration_series(
 
     old_peak = -1
     n = len(time)
-    inter_time = inter_event_time
+    inter_time = pd.Timedelta(inter_event_time) / np.timedelta64(1, "h")
     inter_level = 1.0
     time = np.asarray(time)
     value = np.asarray(value)
@@ -1033,7 +1067,8 @@ METRICS_WITH_DIMENSION = set(
     ]
 )
 
-default_metrics = [bias, rmse, urmse, mae, cc, si, r2]
+default_metrics: List[Callable] = [bias, rmse, urmse, mae, cc, si, r2]
+default_circular_metrics: List[Callable] = [c_bias, c_rmse, c_urmse, c_mae]
 
 
 def metric_has_units(metric: Union[str, Callable]) -> bool:
@@ -1082,7 +1117,7 @@ NON_METRICS = set(
         "Union",
         "_c_residual",
         "_linear_regression",
-        "_partial_duration_series",        
+        "_partial_duration_series",
     ]
 )
 
@@ -1141,5 +1176,32 @@ defined_metrics: Set[str] = (
     set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
     - NON_METRICS
 )
+
+
+def _parse_metric(
+    metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
+    *,
+    directional: bool = False,
+) -> List[Callable]:
+    if metric is None:
+        if directional:
+            return default_circular_metrics
+        else:
+            # could be a list of str!
+            return [get_metric(m) for m in options.metrics.list]
+
+    if isinstance(metric, str):
+        metrics: list = [metric]
+    elif callable(metric):
+        metrics = [metric]
+    elif isinstance(metric, Iterable):
+        metrics = list(metric)
+
+    for metric in metrics:
+        if not isinstance(metric, str) and not callable(metric):
+            raise TypeError(f"metric {metric} must be a string or callable")
+
+    return [get_metric(m) for m in metrics]
+
 
 __all__ = list(defined_metrics)

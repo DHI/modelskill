@@ -54,8 +54,8 @@ def temporal_coverage(
     >>> import modelskill as ms
     >>> o1 = ms.PointObservation('HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
     >>> o2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
-    >>> mr1 = ModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
-    >>> mr2 = ModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
+    >>> mr1 = ms.DfsuModelResult('HKZN_local_2017_DutchCoast.dfsu', name='SW_1', item=0)
+    >>> mr2 = ms.DfsuModelResult('HKZN_local_2017_DutchCoast_v2.dfsu', name='SW_2', item=0)
     >>> ms.plotting.temporal_coverage([o1, o2], [mr1, mr2])
     >>> ms.plotting.temporal_coverage([o1, o2], mr2, limit_to_model_period=False)
     >>> ms.plotting.temporal_coverage(o2, [mr1, mr2], marker=".")
@@ -76,7 +76,7 @@ def temporal_coverage(
     if len(mod) > 0:
         for mr in mod:
             y += 1.0
-            plt.plot([mr.start_time, mr.end_time], y)
+            plt.plot([mr.time[0], mr.time[-1]], y)
             labels.append(mr.name)
 
     for o in obs:
@@ -86,7 +86,7 @@ def temporal_coverage(
 
     if len(mod) > 0 and limit_to_model_period:
         mr = mod[0]  # take first model
-        plt.xlim([mr.start_time, mr.end_time])
+        plt.xlim([mr.time[0], mr.time[-1]])
 
     plt.yticks(np.arange(n_lines) + 1, labels)
     if len(mod) > 0:

@@ -9,9 +9,9 @@ import pandas as pd
 import mikeio
 import yaml
 
-from . import ModelResult, plotting
+from . import model_result, plotting
 from .matching import _single_obs_compare
-from .observation import Observation, PointObservation
+from .obs import Observation, PointObservation
 from .utils import is_iterable_not_str
 from .comparison import Comparer, ComparerCollection
 
@@ -47,7 +47,6 @@ def _observation_to_dict(obs, folder):
     if isinstance(obs, PointObservation):
         d["x"] = obs.x
         d["y"] = obs.y
-    # d["quantity_name"] = obs.quantity.name
     return d
 
 
@@ -122,7 +121,7 @@ class SingleObsConnector:
 
     def _parse_single_model(self, mod):
         if isinstance(mod, (pd.Series, pd.DataFrame, mikeio.DataArray)):
-            return ModelResult(mod)
+            return model_result(mod)
         else:
             return mod
 
@@ -138,13 +137,13 @@ class SingleObsConnector:
 
     @staticmethod
     def _validate_start_end(obs, mod):
-        if obs.end_time < mod.start_time:
+        if obs.time[-1] < mod.time[0]:
             warnings.warn(
                 f"No time overlap! Obs '{obs.name}' end is before model '{mod.name}' start"
             )
             return False
 
-        if obs.start_time > mod.end_time:
+        if obs.time[0] > mod.time[-1]:
             warnings.warn(
                 f"No time overlap! Obs '{obs.name}' start is after model '{mod.name}' end"
             )
@@ -267,7 +266,7 @@ class Connector(Sequence):
 
         Examples
         --------
-        >>> mr = ModelResult("Oresund2D.dfsu", item=0)
+        >>> mr = DfsuModelResult("Oresund2D.dfsu", item=0)
         >>> o1 = PointObservation("Drogden_Fyr.dfs0", item=0, x=355568., y=6156863.)
         >>> o2 = TrackObservation(df, item=2, name="altimeter")
         >>> conA = Connector()

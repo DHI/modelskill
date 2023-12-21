@@ -29,7 +29,7 @@ from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
 from .model.point import PointModelResult
-from .observation import Observation, PointObservation, TrackObservation
+from .obs import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
 
@@ -74,6 +74,7 @@ def from_matched(
     aux_items: Optional[Iterable[str | int]] = None,
     quantity: Optional[Quantity] = None,
     name: Optional[str] = None,
+    weight: float = 1.0,
     x: Optional[float] = None,
     y: Optional[float] = None,
     z: Optional[float] = None,
@@ -130,7 +131,7 @@ def from_matched(
     if isinstance(data, mikeio.Dataset):
         assert len(data.shape) == 1, "Only 0-dimensional data are supported"
         if quantity is None:
-            quantity = Quantity.from_mikeio_iteminfo(data.items[obs_item])
+            quantity = Quantity.from_mikeio_iteminfo(data[obs_item].item)
         data = data.to_dataframe()
 
     cmp = Comparer.from_matched_data(
@@ -139,6 +140,7 @@ def from_matched(
         mod_items=mod_items,
         aux_items=aux_items,
         name=name,
+        weight=weight,
         x=x,
         y=y,
         z=z,
@@ -216,6 +218,20 @@ def match(
 
     assert isinstance(obs, Iterable)
 
+    if len(obs) > 1 and isinstance(mod, Iterable) and len(mod) > 1:
+        if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
+            raise ValueError(
+                """
+                In case of multiple observations, multiple models can _only_ 
+                be matched if they are _all_ of SpatialField type, e.g. DfsuModelResult 
+                or GridModelResult. 
+                
+                If you want match multiple point observations with multiple point model results, 
+                please match one observation at a time and then create a collection of these 
+                using modelskill.ComparerCollection(cmp_list) afterwards. The same applies to track data.
+                """
+            )
+
     clist = [
         _single_obs_compare(
             o,
@@ -275,6 +291,7 @@ def _single_obs_compare(
 
     raw_mod_data = {m.name: m.extract(obs) for m in mods}
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
+    matched_data.attrs["weight"] = obs.weight
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 

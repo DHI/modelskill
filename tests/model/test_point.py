@@ -49,16 +49,16 @@ def test_point_dfs0(fn_point_eq):
     ds = mikeio.read(fn)
     assert len(ds.items) == 1
     assert ds[0].shape[0] == 2017
-    assert ds[0].start_time == datetime(2019, 4, 8, 0, 0, 0)
-    assert ds[0].end_time == datetime(2019, 4, 15, 0, 0, 0)
+    assert ds[0].time[0] == datetime(2019, 4, 8, 0, 0, 0)
+    assert ds[0].time[-1] == datetime(2019, 4, 15, 0, 0, 0)
     assert ds[0].dropna().shape[0] == 1875
 
     mr1 = ms.PointModelResult(fn, item=0)
     assert mr1.name == "smhi_2095_klagshamn_shifted"
 
     assert isinstance(mr1, ms.PointModelResult)
-    assert mr1.start_time == datetime(2019, 4, 8, 0, 10, 0)  # first non-NaN
-    assert mr1.end_time == datetime(2019, 4, 14, 23, 35, 0)  # last non-NaN
+    assert mr1.time[0] == datetime(2019, 4, 8, 0, 10, 0)  # first non-NaN
+    assert mr1.time[-1] == datetime(2019, 4, 14, 23, 35, 0)  # last non-NaN
     assert mr1.n_points == 1875
 
     mr2 = ms.PointModelResult(fn, item="Viken: Surface elevation")
@@ -78,8 +78,8 @@ def test_point_dfs0_noneq(fn_point_noneq):
     mr1 = ms.PointModelResult(fn, item=0, name="test")
     assert isinstance(mr1, ms.PointModelResult)
     assert mr1.name == "test"
-    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
-    assert mr1.end_time == datetime(2015, 1, 9, 8, 0, 0)
+    assert mr1.time[0] == datetime(2015, 1, 1, 1, 0, 0)
+    assert mr1.time[-1] == datetime(2015, 1, 9, 8, 0, 0)
     assert mr1.n_points == 198  # 200 - 2 NaNs
 
 
@@ -92,8 +92,8 @@ def test_point_dfs0_multi_item(fn_point_eq2):
     mr1 = ms.PointModelResult(fn, item=2, name="test")
     assert isinstance(mr1, ms.PointModelResult)
     assert mr1.name == "test"
-    assert mr1.start_time == datetime(2018, 3, 4, 0, 0, 0)
-    assert mr1.end_time == datetime(2018, 3, 11, 0, 0, 0)
+    assert mr1.time[0] == datetime(2018, 3, 4, 0, 0, 0)
+    assert mr1.time[-1] == datetime(2018, 3, 11, 0, 0, 0)
     assert mr1.n_points == 2017
 
     item_name = "Drogden: Surface elevation"
@@ -119,8 +119,8 @@ def test_point_df_item(point_df):
 
     mr1 = ms.PointModelResult(df, item=0)
     assert isinstance(mr1, ms.PointModelResult)
-    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
-    assert mr1.end_time == datetime(2015, 1, 9, 8, 0, 0)
+    assert mr1.time[0] == datetime(2015, 1, 1, 1, 0, 0)
+    assert mr1.time[-1] == datetime(2015, 1, 9, 8, 0, 0)
     assert mr1.name == "Water Level"
 
     # item as string
@@ -154,8 +154,8 @@ def test_point_df(point_df):
 
     mr1 = ms.PointModelResult(df, item=0)
     assert isinstance(mr1, ms.PointModelResult)
-    assert mr1.start_time == datetime(2015, 1, 1, 1, 0, 0)
-    assert mr1.end_time == datetime(2015, 1, 9, 8, 0, 0)
+    assert mr1.time[0] == datetime(2015, 1, 1, 1, 0, 0)
+    assert mr1.time[-1] == datetime(2015, 1, 9, 8, 0, 0)
     assert mr1.name == "Water Level"
 
 

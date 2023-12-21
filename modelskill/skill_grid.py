@@ -82,6 +82,10 @@ class SkillGridArray(SkillGridMixin):
         if model is None:
             da = self.data
         else:
+            warnings.warn(
+                "model argument is deprecated, use sel(model=...)",
+                FutureWarning,
+            )
             if model not in self.mod_names:
                 raise ValueError(f"model {model} not in model list ({self.mod_names})")
             da = self.data.sel({"model": model})
@@ -109,7 +113,7 @@ class SkillGrid(SkillGridMixin):
     Examples
     --------
     >>> ss = cc.gridded_skill()
-    >>> ss.field_names
+    >>> ss.metrics
     ['n', 'bias', 'rmse', 'urmse', 'mae', 'cc', 'si', 'r2']
 
     >>> ss.mod_names
@@ -125,9 +129,8 @@ class SkillGrid(SkillGridMixin):
         self._set_attrs()
 
     @property
-    def field_names(self):
-        # TODO: rename to metrics? (be consistent with Skill class)
-        """List of field names (=data vars)"""
+    def metrics(self):
+        """List of metrics (=data vars)"""
         return list(self.data.data_vars)
 
     def __repr__(self):
@@ -180,14 +183,29 @@ class SkillGrid(SkillGridMixin):
             is_geo = False
         return is_geo
 
-    def plot(self, field: str, model=None, **kwargs):
+    def sel(self, model: str) -> SkillGrid:
+        """Select a model from the SkillGrid
+
+        Parameters
+        ----------
+        model : str
+            Name of model to select
+
+        Returns
+        -------
+        SkillGrid
+            SkillGrid with only the selected model
+        """
+        return SkillGrid(self.data.sel(model=model))
+
+    def plot(self, metric: str, model=None, **kwargs):
         warnings.warn(
             "plot() is deprecated and will be removed in a future version. ",
             FutureWarning,
         )
-        if field not in self.field_names:
-            raise ValueError(f"field {field} not found in {self.field_names}")
-        return self[field].plot(model=model, **kwargs)
+        if metric not in self.metrics:
+            raise ValueError(f"metric {metric} not found in {self.metrics}")
+        return self[metric].plot(model=model, **kwargs)
 
     def to_dataframe(self):
         """export as pandas.DataFrame"""

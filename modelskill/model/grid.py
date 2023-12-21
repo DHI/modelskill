@@ -11,7 +11,7 @@ from ..types import GridType
 from ..quantity import Quantity
 from .point import PointModelResult
 from .track import TrackModelResult
-from ..observation import PointObservation, TrackObservation
+from ..obs import PointObservation, TrackObservation
 
 
 class GridModelResult(SpatialField):
@@ -99,22 +99,14 @@ class GridModelResult(SpatialField):
     def time(self) -> pd.DatetimeIndex:
         return pd.DatetimeIndex(self.data.time)
 
-    @property
-    def start_time(self) -> pd.Timestamp:
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        return self.time[-1]
-
     def _in_domain(self, x: float, y: float) -> bool:
         assert hasattr(self.data, "x") and hasattr(
             self.data, "y"
         ), "Data has no x and/or y coordinates."
-        xmin = self.data.x.values.min()
-        xmax = self.data.x.values.max()
-        ymin = self.data.y.values.min()
-        ymax = self.data.y.values.max()
+        xmin = float(self.data.x.values.min())
+        xmax = float(self.data.x.values.max())
+        ymin = float(self.data.y.values.min())
+        ymax = float(self.data.y.values.max())
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def extract(
@@ -161,7 +153,7 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")  # type: ignore
+        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={self.sel_items.values: self.name})
 

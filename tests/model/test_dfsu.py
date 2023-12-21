@@ -75,9 +75,7 @@ def test_dfsu_properties(hd_oresund_2d):
 
     # Note != name of item
     assert mr.quantity.name == "Surface Elevation"
-
-    # this is the unit, shortening it is a presentation concern
-    assert mr.quantity.unit == "meter"
+    assert mr.quantity.unit == "m"
 
 
 def test_dfsu_sw(sw_dutch_coast):
@@ -177,7 +175,7 @@ def test_extract_observation_total_windsea_swell_not_possible(
 
 
 def test_extract_observation_validation(hd_oresund_2d, klagshamn):
-    mr = ms.ModelResult(hd_oresund_2d, item=0)
+    mr = ms.model_result(hd_oresund_2d, item=0)
     with pytest.raises(Exception):
         with pytest.warns(FutureWarning, match="modelskill.match"):
             _ = ms.Connector(klagshamn, mr, validate=True).extract()
@@ -223,7 +221,7 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
 
 
 def test_dfsu_extract_point_aux(sw_dutch_coast, Hm0_EPL):
-    mr1 = ms.ModelResult(
+    mr1 = ms.model_result(
         sw_dutch_coast, item=0, aux_items=["Peak Wave Direction"], name="SW1"
     )
     mr_extr_1 = mr1.extract(Hm0_EPL.copy())
@@ -258,7 +256,7 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
 
 
 def test_dfsu_extract_track_aux(sw_dutch_coast, Hm0_C2):
-    mr1 = ms.ModelResult(
+    mr1 = ms.model_result(
         sw_dutch_coast, item=0, aux_items=["Peak Wave Direction"], name="SW1"
     )
     mr_track1 = mr1.extract(Hm0_C2)

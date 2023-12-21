@@ -12,7 +12,7 @@ from ..quantity import Quantity
 from ..utils import _get_idx
 from .point import PointModelResult
 from .track import TrackModelResult
-from ..observation import Observation, PointObservation, TrackObservation
+from ..obs import Observation, PointObservation, TrackObservation
 
 
 class DfsuModelResult(SpatialField):
@@ -87,7 +87,7 @@ class DfsuModelResult(SpatialField):
         )
         self.filename = filename  # TODO: remove? backward compatibility
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # TODO add item name
         return f"<{self.__class__.__name__}> '{self.name}'"
 
@@ -95,15 +95,7 @@ class DfsuModelResult(SpatialField):
     def time(self) -> pd.DatetimeIndex:
         return pd.DatetimeIndex(self.data.time)
 
-    @property
-    def start_time(self) -> pd.Timestamp:
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        return self.time[-1]
-
-    def _in_domain(self, x, y) -> bool:
+    def _in_domain(self, x: float, y: float) -> bool:
         return self.data.geometry.contains([x, y])  # type: ignore
 
     def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:

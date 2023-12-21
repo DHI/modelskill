@@ -1,17 +1,15 @@
 from typing import Callable
 import pytest
 import numpy as np
-import pandas as pd
 import mikeio
-
+import pandas as pd
 import modelskill.metrics as mtr
 
 
 @pytest.fixture
 def obs_series() -> pd.Series:
     return (
-        mikeio.Dfs0("./tests/testdata/wave_dir.dfs0")
-        .read(items=0)
+        mikeio.read("./tests/testdata/PR_test_data.dfs0", items=0)
         .to_dataframe()
         .iloc[:, 0]
     )
@@ -20,8 +18,7 @@ def obs_series() -> pd.Series:
 @pytest.fixture
 def mod_series() -> pd.Series:
     return (
-        mikeio.Dfs0("./tests/testdata/wave_dir.dfs0")
-        .read(items=1)
+        mikeio.read("./tests/testdata/PR_test_data.dfs0", items=1)
         .to_dataframe()
         .iloc[:, 0]
     )
@@ -178,7 +175,7 @@ def test_max_error():
     obs = np.array([1.0, 0.5, 0])
     mod = np.array([1.0, 0.0, 0.5])
 
-    assert mtr.c_max_error(obs, mod) == 0.5
+    assert mtr.max_error(obs, mod) == 0.5
 
 
 def test_willmott():
@@ -204,7 +201,7 @@ def test_pr(obs_series, mod_series):
 
     pr = mtr.pr(obs, mod)
 
-    assert pr == pytest.approx(0.730928683656)
+    assert pr == pytest.approx(1.0799999095653732)
 
 
 def test_pr_2(obs_series, mod_series):
@@ -213,9 +210,9 @@ def test_pr_2(obs_series, mod_series):
     obs = obs_series
     mod = mod_series
 
-    pr = mtr.pr(obs, mod, AAP=6, inter_event_level=0.1)
+    pr = mtr.pr(obs, mod, AAP=8, inter_event_level=0.2)
 
-    assert pr == pytest.approx(0.719003840045)
+    assert pr == pytest.approx(1.0949999434255118)
 
 
 def test_metric_has_dimension():

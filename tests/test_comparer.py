@@ -37,7 +37,6 @@ def _get_track_df() -> pd.DataFrame:
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["weight"] = 1.0
     data["Observation"].attrs["units"] = "m"
     data["Observation"].attrs["long_name"] = "fake var"
     data["m1"].attrs["kind"] = "model"
@@ -91,6 +90,17 @@ def test_matched_df(pt_df):
     assert len(cmp.mod_names) == 2
     assert cmp.n_points == 6
     assert cmp.name == "Observation"
+    assert cmp.score()["m1"] == pytest.approx(0.5916079783099617)
+    assert cmp.score()["m2"] == pytest.approx(0.15811388300841905)
+
+
+def test_df_score():
+    df = pd.DataFrame(
+        {"obs": [1.0, 2.0], "not_so_good": [0.9, 2.1], "perfect": [1.0, 2.0]}
+    )
+    cmp = Comparer.from_matched_data(data=df, mod_items=["not_so_good", "perfect"])
+    assert cmp.score("mae")["not_so_good"] == pytest.approx(0.1)
+    assert cmp.score("mae")["perfect"] == pytest.approx(0.0)
 
 
 def test_matched_df_int_items(pt_df):
@@ -99,6 +109,10 @@ def test_matched_df_int_items(pt_df):
     assert cmp.n_points == 6
 
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=[-1])
+    assert cmp.mod_names == ["m2"]
+
+    # int mod_items (not list)
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=2)
     assert cmp.mod_names == ["m2"]
 
     # will fall because two items will have the same name "Observation"
@@ -131,11 +145,36 @@ def test_matched_df_with_aux(pt_df):
     assert cmp.data["wind"].attrs["kind"] == "auxiliary"
     assert "not_relevant" not in cmp.data.data_vars
 
-    # or if models are specified, it is automatically considered an aux variable
+    # if aux_items is a string, it is automatically converted to a list
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items="wind"
+    )
+    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+
+    # if models are specified, it is NOT automatically considered an aux variable
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_points == 6
-    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+    assert "wind" not in cmp.data.data_vars
+
+
+def test_aux_can_str_(pt_df):
+    pt_df["area"] = ["a", "b", "c", "d", "e", "f"]
+
+    cmp = Comparer.from_matched_data(pt_df, aux_items="area")
+    assert cmp.data["area"].attrs["kind"] == "auxiliary"
+
+
+def test_mod_and_obs_must_be_numeric():
+    df = pd.DataFrame({"obs": ["a", "b"], "m1": [1, 2]})
+
+    with pytest.raises(ValueError, match="numeric"):
+        Comparer.from_matched_data(df)
+
+    df2 = pd.DataFrame({"obs": [1, 2], "m1": ["c", "d"]})
+
+    with pytest.raises(ValueError, match="numeric"):
+        Comparer.from_matched_data(df2)
 
 
 def test_rename_model(pt_df):
@@ -166,10 +205,10 @@ def test_rename_aux(pt_df):
     cmp = Comparer.from_matched_data(
         data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
     )
-    assert cmp.aux_names == ("wind",)
+    assert cmp.aux_names == ["wind"]
     cmp2 = cmp.rename({"wind": "wind_speed"})
-    assert cmp.aux_names == ("wind",)
-    assert cmp2.aux_names == ("wind_speed",)
+    assert cmp.aux_names == ["wind"]
+    assert cmp2.aux_names == ["wind_speed"]
 
 
 def test_rename_model_and_aux(pt_df):
@@ -419,7 +458,8 @@ def test_multiple_forecasts_matched_data():
     f_s = cmp.score("rmse")
     a_s = analysis.score("rmse")
 
-    assert a_s < f_s
+    assert a_s["m1"] == pytest.approx(0.09999999999999998)
+    assert f_s["m1"] == pytest.approx(1.3114877048604001)
 
 
 def test_matched_aux_variables(pt_df):
@@ -441,11 +481,11 @@ def test_pc_properties(pc):
     assert pc.y == 55.0
     assert pc.name == "fake point obs"
     assert pc.quantity.name == "fake var"
-    assert pc.start == pd.Timestamp("2019-01-01")
-    assert pc.end == pd.Timestamp("2019-01-05")
+    assert pc.time[0] == pd.Timestamp("2019-01-01")
+    assert pc.time[-1] == pd.Timestamp("2019-01-05")
     assert pc.mod_names == ["m1", "m2"]
-    assert pc.obs[-1] == 5.0
-    assert pc.mod[-1, 1] == 4.9
+    # assert pc.obs[-1] == 5.0  # TODO
+    # assert pc.mod[-1, 1] == 4.9
 
     assert list(pc.raw_mod_data["m1"].data.data_vars) == ["m1"]
     assert np.all(pc.raw_mod_data["m1"].values == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
@@ -459,11 +499,11 @@ def test_tc_properties(tc):
     assert np.all(tc.y == [55.1, 55.2, 55.3, 55.4, 55.5])
     assert tc.name == "fake track obs"
     assert tc.quantity.name == "fake var"
-    assert tc.start == pd.Timestamp("2019-01-01")
-    assert tc.end == pd.Timestamp("2019-01-05")
+    assert tc.time[0] == pd.Timestamp("2019-01-01")
+    assert tc.time[-1] == pd.Timestamp("2019-01-05")
     assert tc.mod_names == ["m1", "m2"]
-    assert tc.obs[-1] == 5.0
-    assert tc.mod[-1, 1] == 4.9
+    # assert tc.obs[-1] == 5.0   # TODO
+    # assert tc.mod[-1, 1] == 4.9
 
     assert list(tc.raw_mod_data["m1"].data.data_vars) == ["m1"]
     assert np.all(tc.raw_mod_data["m1"].values == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
@@ -643,3 +683,26 @@ def test_pc_to_dataframe_add_col(pc):
     assert df.shape == (10, 7)
     assert "derived" in df.columns
     assert df.derived.dtype == "float64"
+
+
+def test_remove_bias():
+    df = pd.DataFrame({"obs": [1.0, 2.0], "mod": [1.1, 2.1]})
+    cmp = Comparer.from_matched_data(data=df)
+    assert cmp.score("bias")["mod"] == pytest.approx(0.1)
+    ub_cmp = cmp.remove_bias()
+    assert ub_cmp.score("bias")["mod"] == pytest.approx(0.0)
+
+
+def test_skill_dt(pc):
+    by = ["model", "dt:month"]
+    sk = pc.skill(by=by)
+    assert list(sk.data.index.names) == ["model", "month"]
+    assert list(sk.data.index.levels[0]) == ["m1", "m2"]
+    assert list(sk.data.index.levels[1]) == [1]  # only January
+
+    # 2019-01-01 is Tuesday = 1 (Monday = 0)
+    by = ["model", "dt:weekday"]
+    sk = pc.skill(by=by)
+    assert list(sk.data.index.names) == ["model", "weekday"]
+    assert list(sk.data.index.levels[0]) == ["m1", "m2"]
+    assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday

@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 
 import xarray as xr
 
-from ..observation import TrackObservation
+from ..obs import TrackObservation
 from ..types import TrackType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_track_input
@@ -67,7 +67,7 @@ class TrackModelResult(TimeSeries):
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
-    def extract(self, obs) -> TrackModelResult:
+    def extract(self, obs: TrackObservation) -> TrackModelResult:
         if not isinstance(obs, TrackObservation):
             raise ValueError(f"obs must be a TrackObservation not {type(obs)}")
         # TODO check x,y,z

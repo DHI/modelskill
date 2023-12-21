@@ -3,11 +3,12 @@ import warnings
 from typing import Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 
-from ..metrics import metric_has_units
-from ..observation import unit_display_name
+from ..metrics import metric_has_units, defined_metrics
+from ..obs import unit_display_name
 
 
 def _get_ax(ax=None, figsize=None):
@@ -16,7 +17,7 @@ def _get_ax(ax=None, figsize=None):
     return ax
 
 
-def _get_fig_ax(ax=None, figsize=None):
+def _get_fig_ax(ax: Axes | None = None, figsize=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     else:
@@ -148,36 +149,38 @@ def quantiles_xy(
     return np.quantile(x, q=q), np.quantile(y, q=q)
 
 
-def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2):
-    # remove model and variable columns if present, i.e. keep all other columns
-    df.drop(["model", "variable"], axis=1, errors="ignore", inplace=True)
+def format_skill_df(df: pd.DataFrame, units: str) -> pd.DataFrame:
+    # select metrics columns
+    accepted_columns = defined_metrics | {"n"}
 
-    # loop over series in dataframe, (columns)
-    lines = [_format_skill_line(df[col], units, precision) for col in list(df.columns)]
+    df = df.loc[:, df.columns.isin(accepted_columns)]
 
-    return np.array(lines)
+    kv = df.iloc[0].to_dict()
+
+    lines = [_format_skill_line(key, value, units) for key, value in kv.items()]
+
+    df = pd.DataFrame(lines, columns=["name", "sep", "value"])
+    return df
 
 
 def _format_skill_line(
-    series: pd.Series,
+    name: str,
+    value: float | int,
     units: str,
-    precision: int,
 ) -> Tuple[str, str, str]:
-    name = series.name
-
+    precision: int = 2
     item_unit = " "
+    fvalue = str(value)
 
-    if name == "n":
-        fvalue = series.values[0]
-    else:
+    if name != "n":
         if metric_has_units(metric=name):
             # if statistic has dimensions, then add units
             item_unit = unit_display_name(units)
 
-        rounded_value = np.round(series.values[0], precision)
+        rounded_value = np.round(value, precision)
         fmt = f".{precision}f"
         fvalue = f"{rounded_value:{fmt}}"
 
-    name = series.name.upper()
+    name = name.upper()
 
     return f"{name}", " =  ", f"{fvalue} {item_unit}"

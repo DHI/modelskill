@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import tempfile
 from typing import (
+    Callable,
     Dict,
     List,
     Union,
@@ -24,12 +25,11 @@ from ..plotting import taylor_diagram, TaylorPoint
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
-from ..settings import options, reset_option
 
 from ..utils import _get_idx, _get_name
-from ._comparison import Comparer
+from ._comparison import Comparer, Scoreable
+from ..metrics import _parse_metric
 from ._utils import (
-    _parse_metric,
     _add_spatial_grid_to_df,
     _groupby_df,
     _parse_groupby,
@@ -79,14 +79,14 @@ def _all_df_template(n_variables: int = 1):
     return res
 
 
-class ComparerCollection(Mapping):
+class ComparerCollection(Mapping, Scoreable):
     """
     Collection of comparers, constructed by calling the `modelskill.match` method.
 
     Examples
     --------
     >>> import modelskill as ms
-    >>> mr = ms.ModelResult("Oresund2D.dfsu", item=0)
+    >>> mr = ms.DfsuModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
     >>> cc = ms.match(obs=[o1,o2], mod=mr)
@@ -135,6 +135,14 @@ class ComparerCollection(Mapping):
 
     @property
     def start(self) -> pd.Timestamp:
+        warnings.warn(
+            "start is deprecated, use start_time instead",
+            FutureWarning,
+        )
+        return self.start_time
+
+    @property
+    def start_time(self) -> pd.Timestamp:
         """start timestamp of compared data"""
         starts = [pd.Timestamp.max]
         for cmp in self.comparers.values():
@@ -143,6 +151,14 @@ class ComparerCollection(Mapping):
 
     @property
     def end(self) -> pd.Timestamp:
+        warnings.warn(
+            "end is deprecated, use end_time instead",
+            FutureWarning,
+        )
+        return self.end_time
+
+    @property
+    def end_time(self) -> pd.Timestamp:
         """end timestamp of compared data"""
         ends = [pd.Timestamp.min]
         for cmp in self.comparers.values():
@@ -187,17 +203,6 @@ class ComparerCollection(Mapping):
     def n_variables(self) -> int:
         return len(self.var_names)
 
-    @property
-    def metrics(self):
-        return options.metrics.list
-
-    @metrics.setter
-    def metrics(self, values) -> None:
-        if values is None:
-            reset_option("metrics.list")
-        else:
-            options.metrics.list = _parse_metric(values, self.metrics)
-
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
@@ -217,7 +222,7 @@ class ComparerCollection(Mapping):
                     df["variable"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
-                df["obs_val"] = cmp.obs
+                df["obs_val"] = cmp.data["Observation"].values
                 frames.append(df[cols])
         if len(frames) > 0:
             res = pd.concat(frames)
@@ -432,10 +437,10 @@ class ComparerCollection(Mapping):
 
     def skill(
         self,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[List[str]] = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs,
-    ) -> Optional[SkillTable]:
+    ) -> SkillTable:
         """Aggregated skill assessment of model(s)
 
         Parameters
@@ -480,7 +485,7 @@ class ComparerCollection(Mapping):
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
         """
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        pmetrics = _parse_metric(metrics)
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)
@@ -496,8 +501,9 @@ class ComparerCollection(Mapping):
             area=area,
         )
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         n_models = cmp.n_models  # len(df.model.unique())
@@ -508,8 +514,12 @@ class ComparerCollection(Mapping):
             cmp.n_variables
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
+        assert isinstance(by, list)
 
-        res = _groupby_df(df.drop(columns=["x", "y"]), by, metrics)
+        res = _groupby_df(df, by, pmetrics)
+        res["x"] = df.groupby(by=by, observed=False).x.first()
+        res["y"] = df.groupby(by=by, observed=False).y.first()
+        # TODO: set x,y to NaN if TrackObservation
         res = cmp._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -552,12 +562,12 @@ class ComparerCollection(Mapping):
     def gridded_skill(
         self,
         bins=5,
-        binsize: Optional[float] = None,
-        by: Optional[Union[str, List[str]]] = None,
-        metrics: Optional[list] = None,
+        binsize: float | None = None,
+        by: str | Iterable[str] | None = None,
+        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: Optional[int] = None,
         **kwargs,
-    ):
+    ) -> SkillGrid:
         """Skill assessment of model(s) on a regular spatial grid.
 
         Parameters
@@ -617,7 +627,7 @@ class ComparerCollection(Mapping):
         observation, variable = _get_deprecated_obs_var_args(kwargs)
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        metrics = _parse_metric(metrics)
 
         cmp = self.sel(
             model=model,
@@ -629,8 +639,9 @@ class ComparerCollection(Mapping):
         )
 
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
@@ -642,6 +653,7 @@ class ComparerCollection(Mapping):
             by.insert(0, "x")  # type: ignore
         if "y" not in by:  # type: ignore
             by.insert(0, "y")  # type: ignore
+        assert isinstance(by, list)
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by, metrics, n_min)
@@ -721,7 +733,7 @@ class ComparerCollection(Mapping):
         weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         metrics: Optional[list] = None,
         **kwargs,
-    ) -> Optional[SkillTable]:  # TODO raise error if no data?
+    ) -> SkillTable:
         """Weighted mean of skills
 
         First, the skill is calculated per observation,
@@ -773,16 +785,17 @@ class ComparerCollection(Mapping):
 
         # filter data
         cmp = self.sel(
-            model=model,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
+            model=model,  # deprecated
+            observation=observation,  # deprecated
+            variable=variable,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
@@ -790,9 +803,9 @@ class ComparerCollection(Mapping):
         var_names = cmp.var_names  # self.var_names
 
         # skill assessment
-        metrics = _parse_metric(metrics, self.metrics, return_list=True)
+        pmetrics = _parse_metric(metrics)
         # s = self.skill(df=df, metrics=metrics)
-        s = cmp.skill(metrics=metrics)
+        s = cmp.skill(metrics=pmetrics)
         if s is None:
             return None
         skilldf = s.to_dataframe()
@@ -809,80 +822,83 @@ class ComparerCollection(Mapping):
         # group by
         by = cmp._mean_skill_by(skilldf, mod_names, var_names)
         agg = {"n": "sum"}
-        for metric in metrics:  # type: ignore
+        for metric in pmetrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
         res = skilldf.groupby(by).agg(agg)
+
+        # TODO is this correct?
+        res.index.name = "model"
 
         # output
         res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
         return SkillTable(res.astype({"n": int}))
 
-    def mean_skill_points(
-        self,
-        *,
-        metrics: Optional[list] = None,
-        **kwargs,
-    ) -> Optional[SkillTable]:  # TODO raise error if no data?
-        """Mean skill of all observational points
+    # def mean_skill_points(
+    #     self,
+    #     *,
+    #     metrics: Optional[list] = None,
+    #     **kwargs,
+    # ) -> Optional[SkillTable]:  # TODO raise error if no data?
+    #     """Mean skill of all observational points
 
-        All data points are pooled (disregarding which observation they belong to),
-        the skill is then found (for each model).
+    #     All data points are pooled (disregarding which observation they belong to),
+    #     the skill is then found (for each model).
 
-        .. note::
-            No weighting can be applied with this method,
-            use mean_skill() if you need to apply weighting
+    #     .. note::
+    #         No weighting can be applied with this method,
+    #         use mean_skill() if you need to apply weighting
 
-        .. warning::
-            This method is NOT the mean of skills (mean_skill)
+    #     .. warning::
+    #         This method is NOT the mean of skills (mean_skill)
 
-        Parameters
-        ----------
-        metrics : list, optional
-            list of modelskill.metrics, by default modelskill.options.metrics.list
+    #     Parameters
+    #     ----------
+    #     metrics : list, optional
+    #         list of modelskill.metrics, by default modelskill.options.metrics.list
 
-        Returns
-        -------
-        SkillTable
-            mean skill assessment as a skill object
+    #     Returns
+    #     -------
+    #     SkillTable
+    #         mean skill assessment as a skill object
 
-        See also
-        --------
-        skill
-            skill assessment per observation
-        mean_skill
-            weighted mean of skills (not the same as this method)
+    #     See also
+    #     --------
+    #     skill
+    #         skill assessment per observation
+    #     mean_skill
+    #         weighted mean of skills (not the same as this method)
 
-        Examples
-        --------
-        >>> import modelskill as ms
-        >>> cc = ms.match(obs, mod)
-        >>> cc.mean_skill_points()
-        """
+    #     Examples
+    #     --------
+    #     >>> import modelskill as ms
+    #     >>> cc = ms.match(obs, mod)
+    #     >>> cc.mean_skill_points()
+    #     """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
+    #     # TODO remove in v1.1
+    #     model, start, end, area = _get_deprecated_args(kwargs)
+    #     observation, variable = _get_deprecated_obs_var_args(kwargs)
+    #     assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        # filter data
-        cmp = self.sel(
-            model=model,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-        if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+    #     # filter data
+    #     cmp = self.sel(
+    #         model=model,
+    #         observation=observation,
+    #         variable=variable,
+    #         start=start,
+    #         end=end,
+    #         area=area,
+    #     )
+    #     if cmp.n_points == 0:
+    #         warnings.warn("No data!")
+    #         return None
 
-        dfall = cmp.to_dataframe()
-        dfall["observation"] = "all"
+    #     dfall = cmp.to_dataframe()
+    #     dfall["observation"] = "all"
 
-        # TODO: no longer possible to do this way
-        # return self.skill(df=dfall, metrics=metrics)
-        return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
+    #     # TODO: no longer possible to do this way
+    #     # return self.skill(df=dfall, metrics=metrics)
+    #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
     def _mean_skill_by(self, skilldf, mod_names, var_names):
         by = []
@@ -944,11 +960,9 @@ class ComparerCollection(Mapping):
 
     def score(
         self,
-        *,
-        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
-        metric=mtr.rmse,
+        metric: str | Callable = mtr.rmse,
         **kwargs,
-    ) -> Optional[float]:  # TODO raise error if no data?
+    ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
 
         Wrapping mean_skill() with a single metric.
@@ -969,7 +983,7 @@ class ComparerCollection(Mapping):
 
         Returns
         -------
-        float
+        Dict[str, float]
             mean of skills score as a single number (for each model)
 
         See also
@@ -993,7 +1007,14 @@ class ComparerCollection(Mapping):
         >>> cc.score(weights='points', metric="mape")
         8.414442957854142
         """
-        metric = _parse_metric(metric, self.metrics)
+
+        weights = kwargs.pop("weights", None)
+
+        metric = _parse_metric(metric)[0]
+
+        if weights is None:
+            weights = {c.name: c.weight for c in self.comparers.values()}
+
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1007,37 +1028,27 @@ class ComparerCollection(Mapping):
             # TODO: these two lines looks familiar, extract to function
             models = [model] if np.isscalar(model) else model  # type: ignore
             models = [_get_name(m, self.mod_names) for m in models]  # type: ignore
-        n_models = len(models)
 
         cmp = self.sel(
-            model=models,
-            observation=observation,
-            variable=variable,
-            start=start,
-            end=end,
-            area=area,
+            model=models,  # deprecated
+            observation=observation,  # deprecated
+            variable=variable,  # deprecated
+            start=start,  # deprecated
+            end=end,  # deprecated
+            area=area,  # deprecated
         )
 
         if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return None
+            raise ValueError("Dataset is empty, no data to compare.")
+
+        ## ---- end of deprecated code ----
 
         skill = cmp.mean_skill(weights=weights, metrics=[metric])
-        if skill is None:
-            return None
-
         df = skill.to_dataframe()
 
-        if n_models == 1:
-            score = df[metric.__name__].values.mean()
-        else:
-            score = {}
-            for model in models:
-                mtr_val = df.loc[model][metric.__name__]
-                if not np.isscalar(mtr_val):
-                    # e.g. mean over different variables!
-                    mtr_val = mtr_val.values.mean()
-                score[model] = mtr_val
+        metric_name = metric if isinstance(metric, str) else metric.__name__
+
+        score = df[metric_name].to_dict()
 
         return score
 
@@ -1121,10 +1132,12 @@ class ComparerCollection(Mapping):
         """
 
         files = []
+        no = 0
         for name, cmp in self.comparers.items():
-            cmp_fn = f"{name}.nc"
+            cmp_fn = f"{no}_{name}.nc"
             cmp.save(cmp_fn)
             files.append(cmp_fn)
+            no += 1
 
         with zipfile.ZipFile(filename, "w") as zip:
             for f in files:
@@ -1160,7 +1173,8 @@ class ComparerCollection(Mapping):
                     zip.extract(f, path=folder)
 
         comparers = [
-            ComparerCollection._load_comparer(folder, f) for f in os.listdir(folder)
+            ComparerCollection._load_comparer(folder, f)
+            for f in sorted(os.listdir(folder))
         ]
         return ComparerCollection(comparers)
 

@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 import mikeio
@@ -75,7 +76,7 @@ def test_from_dfs0(klagshamn_filename):
 def test_from_mikeio_dataarray(klagshamn_da):
     o = ms.PointObservation(klagshamn_da, x=366844, y=6154291, name="Klagshamn")
     assert o.quantity.name == "Water Level"
-    assert o.quantity.unit == "meter"
+    assert o.quantity.unit == "m"
 
 
 def test_from_mikeio_dataarray_with_quantity(klagshamn_da):
@@ -95,7 +96,7 @@ def test_from_mikeio_dataset(klagshamn_ds):
         klagshamn_ds, item="Water Level", x=366844, y=6154291, name="Klagshamn"
     )
     assert o.quantity.name == "Water Level"
-    assert o.quantity.unit == "meter"
+    assert o.quantity.unit == "m"
 
 
 def test_from_df(klagshamn_filename, klagshamn_df):
@@ -116,6 +117,15 @@ def test_from_df(klagshamn_filename, klagshamn_df):
     # assert isinstance(s, pd.Series)
     o3 = ms.PointObservation(s, x=366844, y=6154291, name="Klagshamn3")
     assert o1.n_points == o3.n_points
+
+
+def test_observation_factory(klagshamn_da):
+    o = ms.observation(klagshamn_da, x=366844, y=6154291, name="Klagshamn")
+    assert isinstance(o, ms.PointObservation)
+
+    with pytest.warns(UserWarning, match="Could not guess geometry"):
+        o = ms.observation(klagshamn_da, name="Klagshamn")
+        assert isinstance(o, ms.PointObservation)
 
 
 def test_hist(klagshamn_filename):
@@ -189,3 +199,15 @@ def test_point_aux_items_multiple(df_aux):
     assert "aux2" in o.data
     assert o.data["aux1"].values[0] == 1.1
     assert o.data["aux2"].values[0] == 1.2
+
+
+def test_mikeio_iteminfo_pretty_units():
+    da = mikeio.DataArray(
+        data=np.array([1, 2, 3]),
+        item=mikeio.ItemInfo("Q", mikeio.EUMType.Discharge),
+        time=pd.date_range("2019-01-01", periods=3, freq="D"),
+    )
+    assert da.unit.short_name == "m^3/s"
+
+    obs = ms.PointObservation(da, x=0, y=0)
+    assert obs.quantity.unit == "m^3/s"

@@ -6,7 +6,7 @@
 
 [ModelSkill](https://github.com/DHI/modelskill) is a python package for scoring [MIKE](https://www.mikepoweredbydhi.com) models (other models can be evaluated as well). 
 
-Read more about the [vision and scope](https://dhi.github.io/modelskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/modelskill/discussions), report an [issue](https://github.com/DHI/modelskill/issues) or browse the [API documentation](https://dhi.github.io/modelskill/api.html). Access observational data (e.g. altimetry data) from the sister library [WatObs](https://github.com/DHI/watobs). 
+Contribute with new ideas in the [discussion](https://github.com/DHI/modelskill/discussions), report an [issue](https://github.com/DHI/modelskill/issues) or browse the [documentation](https://dhi.github.io/modelskill/). Access observational data (e.g. altimetry data) from the sister library [WatObs](https://github.com/DHI/watobs). 
 
 
 ## Use cases
@@ -30,12 +30,13 @@ Or the development version:
 
 ## Example notebooks
 
-* [Quick_and_dirty_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Quick_and_dirty_compare.ipynb)
-* [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/SW_DutchCoast.ipynb)
-* [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Multi_model_comparison.ipynb)
+
+* [Hydrology_Vistula_Catchment.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Hydrology_Vistula_Catchment.ipynb)
+* [Metocean_multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Metocean_multi_model_comparison.ipynb)
 * [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
-* [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Track_comparison.ipynb) (including global wave model example)
-* [NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/NetCDF_ModelResult.ipynb)
+* [Metocean_track_comparison_global.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Metocean_track_comparison_global.ipynb) 
+* [Gridded_NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Gridded_NetCDF_ModelResult.ipynb)
+* [Directional_data_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Directional_data_comparison.ipynb)
 * [Combine_comparers.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Combine_comparers.ipynb)
 
 
@@ -43,7 +44,7 @@ Or the development version:
 
 1. Define **ModelResults**
 2. Define **Observations**
-3. **Compare** Observations and ModelResults
+3. **Match** Observations and ModelResults
 4. Do plotting, statistics, reporting using the **Comparer**
 
 Read more about the workflow in the [getting started guide](https://dhi.github.io/modelskill/getting-started.html).
@@ -55,7 +56,7 @@ Start by defining model results and observations:
 
 ```python
 >>> import modelskill as ms
->>> mr = ms.ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
+>>> mr = ms.DfsuModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
 >>> HKNA = ms.PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 >>> EPL = ms.PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
 >>> c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")

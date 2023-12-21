@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING
+from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING, Callable
+import warnings
 
 if TYPE_CHECKING:
     import matplotlib.figure
@@ -34,12 +35,12 @@ class ComparerPlotter:
 
     def timeseries(
         self,
-        title=None,
         *,
-        ylim=None,
+        title: str | None = None,
+        ylim: Tuple[float, float] | None = None,
         ax=None,
-        figsize=None,
-        backend="matplotlib",
+        figsize: Tuple[float, float] | None = None,
+        backend: str = "matplotlib",
         **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
@@ -48,7 +49,7 @@ class ComparerPlotter:
         ----------
         title : str, optional
             plot title, by default None
-        ylim : tuple, optional
+        ylim : (float, float), optional
             plot range for the model (ymin, ymax), by default None
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
@@ -77,12 +78,12 @@ class ComparerPlotter:
 
             ax.scatter(
                 cmp.time,
-                cmp.data[cmp.obs_name].values,
+                cmp.data[cmp._obs_name].values,
                 marker=".",
-                color=cmp.data[cmp.obs_name].attrs["color"],
+                color=cmp.data[cmp._obs_name].attrs["color"],
             )
             ax.set_ylabel(cmp.unit_text)
-            ax.legend([*cmp.mod_names, cmp.obs_name])
+            ax.legend([*cmp.mod_names, cmp._obs_name])
             ax.set_ylim(ylim)
             if self.is_directional:
                 _ytick_directional(ax, ylim)
@@ -110,10 +111,10 @@ class ComparerPlotter:
                     *mod_scatter_list,
                     go.Scatter(
                         x=cmp.time,
-                        y=cmp.data[cmp.obs_name].values,
-                        name=cmp.obs_name,
+                        y=cmp.data[cmp._obs_name].values,
+                        name=cmp._obs_name,
                         mode="markers",
-                        marker=dict(color=cmp.data[cmp.obs_name].attrs["color"]),
+                        marker=dict(color=cmp.data[cmp._obs_name].attrs["color"]),
                     ),
                 ]
             )
@@ -127,14 +128,14 @@ class ComparerPlotter:
 
     def hist(
         self,
+        bins: int | Sequence = 100,
         *,
-        model=None,
-        bins=100,
-        title=None,
+        model: str | int | None = None,
+        title: str | None = None,
         ax=None,
-        figsize=None,
-        density=True,
-        alpha=0.5,
+        figsize: Tuple[float, float] | None = None,
+        density: bool = True,
+        alpha: float = 0.5,
         **kwargs,
     ):
         """Plot histogram of model data and observations.
@@ -143,8 +144,6 @@ class ComparerPlotter:
 
         Parameters
         ----------
-        model : (str, int), optional
-            name or id of model to be plotted, by default 0
         bins : int, optional
             number of bins, by default 100
         title : str, optional
@@ -168,11 +167,51 @@ class ComparerPlotter:
         pandas.Series.plot.hist
         matplotlib.axes.Axes.hist
         """
+        cmp = self.comparer
+
+        if model is None:
+            mod_names = cmp.mod_names
+        else:
+            warnings.warn(
+                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.hist()",
+                FutureWarning,
+            )
+            model_list = [model] if isinstance(model, (str, int)) else model
+            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+
+        axes = []
+        for mod_name in mod_names:
+            ax_mod = self._hist_one_model(
+                mod_name=mod_name,
+                bins=bins,
+                title=title,
+                ax=ax,
+                figsize=figsize,
+                density=density,
+                alpha=alpha,
+                **kwargs,
+            )
+            axes.append(ax_mod)
+
+        return axes[0] if len(axes) == 1 else axes
+
+    def _hist_one_model(
+        self,
+        *,
+        mod_name: str,
+        bins: int | Sequence | None,
+        title: str | None,
+        ax,
+        figsize: Tuple[float, float] | None,
+        density: bool | None,
+        alpha: float | None,
+        **kwargs,
+    ):
         from ._comparison import MOD_COLORS  # TODO move to here
 
         cmp = self.comparer
-        mod_id = _get_idx(model, cmp.mod_names)
-        mod_name = cmp.mod_names[mod_id]
+        assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
+        mod_id = _get_idx(mod_name, cmp.mod_names)
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
 
@@ -188,10 +227,10 @@ class ComparerPlotter:
             .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
         )
 
-        cmp.data[cmp.obs_name].to_series().hist(
-            bins=bins, color=cmp.data[cmp.obs_name].attrs["color"], **kwargs
+        cmp.data[cmp._obs_name].to_series().hist(
+            bins=bins, color=cmp.data[cmp._obs_name].attrs["color"], **kwargs
         )
-        ax.legend([mod_name, cmp.obs_name])
+        ax.legend([mod_name, cmp._obs_name])
         ax.set_title(title)
         ax.set_xlabel(f"{cmp.unit_text}")
         if density:
@@ -269,6 +308,7 @@ class ComparerPlotter:
     def qq(
         self,
         quantiles: int | Sequence[float] | None = None,
+        *,
         title=None,
         ax=None,
         figsize=None,
@@ -352,7 +392,7 @@ class ComparerPlotter:
 
         return ax
 
-    def box(self, ax=None, title=None, figsize=None, **kwargs):
+    def box(self, *, ax=None, title=None, figsize=None, **kwargs):
         """Make a box plot of model data and observations.
 
         Wraps pandas.DataFrame boxplot() method.
@@ -387,7 +427,7 @@ class ComparerPlotter:
         _, ax = _get_fig_ax(ax, figsize)
 
         cols = ["Observation"] + cmp.mod_names
-        df = cmp.data[cols].to_dataframe()
+        df = cmp.data[cols].to_dataframe()[cols]
         df.boxplot(ax=ax, **kwargs)
         ax.set_ylabel(cmp.unit_text)
         ax.set_title(title or cmp.name)
@@ -424,8 +464,6 @@ class ComparerPlotter:
 
         Parameters
         ----------
-        model : (str, int), optional
-            name or id of model to be plotted, by default 0
         bins: (int, float, sequence), optional
             bins for the 2D histogram on the background. By default 20 bins.
             if int, represents the number of bins of 2D
@@ -446,12 +484,12 @@ class ComparerPlotter:
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
-            show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
+            show the data density as a colormap of the scatter, by default None.
+            If both `show_density` and `show_hist` are None, then `show_density`
+            is used by default. For binning the data, the kword `bins=Float` is used.
         norm : matplotlib.colors norm
             colormap normalization
             If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
-        are None, then `show_density` is used by default.
-            for binning the data, the previous kword `bins=Float` is used
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
         figsize : tuple, optional
@@ -488,14 +526,74 @@ class ComparerPlotter:
         """
 
         cmp = self.comparer
-        mod_id = _get_idx(model, cmp.mod_names)
-        mod_name = cmp.mod_names[mod_id]
+        if model is None:
+            mod_names = cmp.mod_names
+        else:
+            warnings.warn(
+                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.scatter()",
+                FutureWarning,
+            )
+            model_list = [model] if isinstance(model, (str, int)) else model
+            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
 
-        if cmp.n_points == 0:
+        axes = []
+        for mod_name in mod_names:
+            ax_mod = self._scatter_one_model(
+                mod_name=mod_name,
+                bins=bins,
+                quantiles=quantiles,
+                fit_to_quantiles=fit_to_quantiles,
+                show_points=show_points,
+                show_hist=show_hist,
+                show_density=show_density,
+                norm=norm,
+                backend=backend,
+                figsize=figsize,
+                xlim=xlim,
+                ylim=ylim,
+                reg_method=reg_method,
+                title=title,
+                xlabel=xlabel,
+                ylabel=ylabel,
+                skill_table=skill_table,
+                **kwargs,
+            )
+            axes.append(ax_mod)
+        return axes[0] if len(axes) == 1 else axes
+
+    def _scatter_one_model(
+        self,
+        *,
+        mod_name: str,
+        bins: int | float,
+        quantiles: int | Sequence[float] | None,
+        fit_to_quantiles: bool,
+        show_points: bool | int | float | None,
+        show_hist: Optional[bool],
+        show_density: Optional[bool],
+        norm: Optional[colors.Normalize],
+        backend: str,
+        figsize: Tuple[float, float],
+        xlim: Optional[Tuple[float, float]],
+        ylim: Optional[Tuple[float, float]],
+        reg_method: str | bool,
+        title: Optional[str],
+        xlabel: Optional[str],
+        ylabel: Optional[str],
+        skill_table: Optional[Union[str, List[str], bool]],
+        **kwargs,
+    ):
+        """Scatter plot for one model only"""
+
+        cmp = self.comparer
+        cmp_sel_mod = cmp.sel(model=mod_name)
+        assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
+
+        if cmp_sel_mod.n_points == 0:
             raise ValueError("No data found in selection")
 
-        x = cmp.data.Observation.values
-        y = cmp.data[mod_name].values
+        x = cmp_sel_mod.data.Observation.values
+        y = cmp_sel_mod.data[mod_name].values
 
         assert x.ndim == y.ndim == 1, "x and y must be 1D arrays"
         assert x.shape == y.shape, "x and y must have the same shape"
@@ -510,7 +608,7 @@ class ComparerPlotter:
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
-            skill = cmp.skill(metrics=metrics)  # type: ignore
+            skill = cmp_sel_mod.skill(metrics=metrics)  # type: ignore
             try:
                 units = unit_text.split("[")[1].split("]")[0]
             except IndexError:
@@ -552,6 +650,7 @@ class ComparerPlotter:
 
     def taylor(
         self,
+        *,
         normalize_std: bool = False,
         figsize: Tuple[float, float] = (7, 7),
         marker: str = "o",
@@ -590,7 +689,7 @@ class ComparerPlotter:
         cmp = self.comparer
 
         # TODO consider if this round-trip  via mtr is necessary to get the std:s
-        metrics = [
+        metrics: List[Callable] = [
             mtr._std_obs,
             mtr._std_mod,
             mtr.cc,
