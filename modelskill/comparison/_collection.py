@@ -239,7 +239,7 @@ class ComparerCollection(Mapping, Scoreable):
         cat_cols = res.select_dtypes(include=["object"]).columns
         res[cat_cols] = res[cat_cols].astype("category")  # TODO
 
-        if not observed:
+        if observed:
             res = res.loc[~(res == False).any(axis=1)]  # noqa
         # res = res.sort_index()
         res.index.name = "time"
