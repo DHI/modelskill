@@ -3,7 +3,7 @@ site_url: https://dhi.github.io/modelskill/
 theme: 
   name: material
   features:
-    # - navigation.tabs
+    - navigation.tabs
     # - navigation.instant
     - navigation.expand
     - navigation.sections
@@ -12,18 +12,21 @@ theme:
 
 nav: 
   - 'index.md'
-  - 'getting-started.md'
-  - 'overview.md'
-  - 'vision.md'
-  - 'terminology.md'
-  - API:
+  - User Guide:
+    - 'user-guide/index.md'
+    - 'getting-started.md'
+    - 'overview.md'
+    - 'user-guide/terminology.md'  
+  - API Reference:
     - 'api/index.md'
     - Observation:
       - 'api/observation/index.md'
+      - observation(): 'api/observation/observation.md'
       - PointObservation: 'api/observation/point.md'
       - TrackObservation: 'api/observation/track.md'        
     - Model Result:
       - 'api/model/index.md'
+      - model_result(): 'api/model/model_result.md'
       - PointModelResult: 'api/model/point.md'
       - TrackModelResult: 'api/model/track.md'
       - DfsuModelResult: 'api/model/dfsu.md'
