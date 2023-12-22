@@ -7,7 +7,3 @@ ModelSkill supports two types of observations:
 
 An observation can be created by explicitly invoking one of the above classes or using the `observation()` function which will return the appropriate type based on the input data (if possible).
 
-
-## observation()
-
-::: modelskill.observation
