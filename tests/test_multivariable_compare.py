@@ -80,8 +80,8 @@ def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):
     return cc1 + cc2
 
 
-def test_n_variables(cc):
-    assert cc.n_variables == 2
+def test_n_quantities(cc):
+    assert cc.n_quantities == 2
 
 
 def test_mv_skill(cc_1model):

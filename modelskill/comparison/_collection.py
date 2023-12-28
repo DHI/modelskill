@@ -190,8 +190,8 @@ class ComparerCollection(Mapping, Scoreable):
         return len(self.mod_names)
 
     @property
-    def var_names(self) -> List[str]:
-        """List of unique variable names"""
+    def qnt_names(self) -> List[str]:
+        """List of unique quantity names"""
         unique_names = []
         for cmp in self.comparers.values():
             n = cmp.quantity.name
@@ -200,14 +200,14 @@ class ComparerCollection(Mapping, Scoreable):
         return unique_names
 
     @property
-    def n_variables(self) -> int:
-        return len(self.var_names)
+    def n_quantities(self) -> int:
+        return len(self.qnt_names)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
         # TODO: var_name
         # TODO delegate to each comparer
-        res = _all_df_template(self.n_variables)
+        res = _all_df_template(self.n_quantities)
         frames = []
         cols = res.keys()
         for cmp in self.comparers.values():
@@ -218,7 +218,7 @@ class ComparerCollection(Mapping, Scoreable):
                 df = df.rename(columns={mod_name: "mod_val"})
                 df["model"] = mod_name
                 df["observation"] = cmp.name
-                if self.n_variables > 1:
+                if self.n_quantities > 1:
                     df["variable"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
@@ -303,11 +303,12 @@ class ComparerCollection(Mapping, Scoreable):
         self,
         model: Optional[IdOrNameTypes] = None,
         observation: Optional[IdOrNameTypes] = None,
-        variable: Optional[IdOrNameTypes] = None,
+        quantity: Optional[IdOrNameTypes] = None,
         start: Optional[TimeTypes] = None,
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
+        variable: Optional[IdOrNameTypes] = None,  # obsolete
         **kwargs,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
@@ -318,8 +319,8 @@ class ComparerCollection(Mapping, Scoreable):
             Model name or index. If None, all models are selected.
         observation : str or int or list of str or list of int, optional
             Observation name or index. If None, all observations are selected.
-        variable : str or int or list of str or list of int, optional
-            Variable name or index. If None, all variables are selected.
+        quantity : str or int or list of str or list of int, optional
+            Quantity name or index. If None, all quantities are selected.
         start : str or datetime, optional
             Start time. If None, all times are selected.
         end : str or datetime, optional
@@ -339,6 +340,12 @@ class ComparerCollection(Mapping, Scoreable):
         ComparerCollection
             New ComparerCollection with selected data.
         """
+        if variable is not None:
+            warnings.warn(
+                "variable is deprecated, use quantity instead",
+                FutureWarning,
+            )
+            quantity = variable
         # TODO is this really necessary to do both in ComparerCollection and Comparer?
         if model is not None:
             if isinstance(model, (str, int)):
@@ -352,15 +359,15 @@ class ComparerCollection(Mapping, Scoreable):
             observation = [observation] if np.isscalar(observation) else observation  # type: ignore
             observation = [_get_name(o, self.obs_names) for o in observation]  # type: ignore
 
-        if (variable is not None) and (self.n_variables > 1):
-            variable = [variable] if np.isscalar(variable) else variable  # type: ignore
-            variable = [_get_name(v, self.var_names) for v in variable]  # type: ignore
+        if (quantity is not None) and (self.n_quantities > 1):
+            quantity = [quantity] if np.isscalar(quantity) else quantity  # type: ignore
+            quantity = [_get_name(v, self.qnt_names) for v in quantity]  # type: ignore
         else:
-            variable = self.var_names
+            quantity = self.qnt_names
 
         cmps = []
         for cmp in self.comparers.values():
-            if cmp.name in observation and cmp.quantity.name in variable:
+            if cmp.name in observation and cmp.quantity.name in quantity:
                 thismodel = (
                     [m for m in mod_names if m in cmp.mod_names] if model else None
                 )
@@ -495,7 +502,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=model,
             observation=observation,
-            variable=variable,
+            quantity=variable,
             start=start,
             end=end,
             area=area,
@@ -511,7 +518,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         # TODO: FIX
         n_var = (
-            cmp.n_variables
+            cmp.n_quantities
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
         assert isinstance(by, list)
@@ -530,7 +537,7 @@ class ComparerCollection(Mapping, Scoreable):
         for field in reversed(fields):
             if (field == "model") and (self.n_models <= 1):
                 continue
-            if (field == "variable") and (self.n_variables <= 1):
+            if (field == "variable") and (self.n_quantities <= 1):
                 continue
             if field not in skilldf.index.names:
                 unames = df[field].unique()
@@ -632,7 +639,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=model,
             observation=observation,
-            variable=variable,
+            quantity=variable,
             start=start,
             end=end,
             area=area,
@@ -695,14 +702,14 @@ class ComparerCollection(Mapping, Scoreable):
         mod_name = self.mod_names[mod_id]
 
         # select variable
-        var_id = _get_idx(variable, self.var_names)
-        var_name = self.var_names[var_id]
+        var_id = _get_idx(variable, self.qnt_names)
+        var_name = self.qnt_names[var_id]
 
         # filter data
         cmp = self.sel(
             model=mod_name,
             observation=observation,
-            variable=var_name,
+            quantity=var_name,
             start=start,
             end=end,
             area=area,
@@ -787,7 +794,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=model,  # deprecated
             observation=observation,  # deprecated
-            variable=variable,  # deprecated
+            quantity=variable,  # deprecated
             start=start,  # deprecated
             end=end,  # deprecated
             area=area,  # deprecated
@@ -800,7 +807,7 @@ class ComparerCollection(Mapping, Scoreable):
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
         # obs_names = cmp.obs_names  # df.observation.unique()
-        var_names = cmp.var_names  # self.var_names
+        var_names = cmp.qnt_names  # self.var_names
 
         # skill assessment
         pmetrics = _parse_metric(metrics)
@@ -907,7 +914,7 @@ class ComparerCollection(Mapping, Scoreable):
         if len(var_names) > 1:
             by.append("variable")
         if len(by) == 0:
-            if (self.n_variables > 1) and ("variable" in skilldf):
+            if (self.n_quantities > 1) and ("variable" in skilldf):
                 by.append("variable")
             elif "model" in skilldf:
                 by.append("model")
@@ -1032,7 +1039,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=models,  # deprecated
             observation=observation,  # deprecated
-            variable=variable,  # deprecated
+            quantity=variable,  # deprecated
             start=start,  # deprecated
             end=end,  # deprecated
             area=area,  # deprecated
@@ -1071,7 +1078,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=model,
             observation=observation,
-            variable=variable,
+            quantity=variable,
             start=start,
             end=end,
             area=area,
