@@ -108,7 +108,7 @@ def test_mv_mm_skill(cc):
     idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
-    df = cc.sel(variable="Wind speed").skill().to_dataframe()
+    df = cc.sel(quantity="Wind speed").skill().to_dataframe()
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     idx = ("SW_1", "HKNA_wind")
@@ -122,18 +122,18 @@ def test_mv_mm_mean_skill(cc):
     idx = ("SW_1", "Wind speed")
     assert pytest.approx(df.loc[idx].r2) == 0.63344531
 
-    df = cc.sel(variable="Significant wave height").mean_skill().to_dataframe()
+    df = cc.sel(quantity="Significant wave height").mean_skill().to_dataframe()
     assert pytest.approx(df.loc["SW_1"].cc) == 0.963095
 
 
 def test_mv_mm_scatter(cc):
-    cc.sel(model="SW_1", variable="Wind speed").plot.scatter()
-    cc.sel(model="SW_1", variable="Wind speed").plot.scatter(show_density=True)
-    cc.sel(model="SW_1", variable="Wind speed", observation="F16_wind").plot.scatter(
+    cc.sel(model="SW_1", quantity="Wind speed").plot.scatter()
+    cc.sel(model="SW_1", quantity="Wind speed").plot.scatter(show_density=True)
+    cc.sel(model="SW_1", quantity="Wind speed", observation="F16_wind").plot.scatter(
         skill_table=True
     )
-    cc.sel(model="SW_1", variable="Wind speed").plot.scatter(show_density=True, bins=19)
-    cc.sel(model="SW_1", variable="Wind speed").plot.scatter(show_density=True, bins=21)
+    cc.sel(model="SW_1", quantity="Wind speed").plot.scatter(show_density=True, bins=19)
+    cc.sel(model="SW_1", quantity="Wind speed").plot.scatter(show_density=True, bins=21)
     assert True
     plt.close("all")
 
@@ -153,7 +153,7 @@ def test_custom_metric_skilltable_mv_mm_scatter(cc):
     mtr.add_metric(cm_2, has_units=True)
     ccs = cc.sel(
         model="SW_1",
-        variable="Wind speed",
+        quantity="Wind speed",
         observation="F16_wind",
     )
     ccs.plot.scatter(skill_table=["bias", cm_1, "si", cm_2])
@@ -162,7 +162,7 @@ def test_custom_metric_skilltable_mv_mm_scatter(cc):
 
 
 def test_mv_mm_taylor(cc):
-    cc.sel(variable="Wind speed").plot.taylor()
+    cc.sel(quantity="Wind speed").plot.taylor()
     cc.plot.taylor(figsize=(4, 4))
     cc.sel(model="SW_2", start="2017-10-28").plot.taylor()
     assert True

@@ -54,7 +54,7 @@ def test_skill(cc1):
 
     assert len(s.mod_names) == 0  # TODO seems wrong
     assert len(s.obs_names) == 1  # makes sense
-    assert len(s.var_names) == 0  # TODO seems wrong
+    assert len(s.qnt_names) == 0  # TODO seems wrong
 
     df = s.to_dataframe()
     assert isinstance(df, pd.DataFrame)
@@ -156,7 +156,7 @@ def test_skill_sel_fail(cc2):
     s = cc2.skill(metrics=["rmse", "bias"])
 
     with pytest.raises(KeyError):
-        s.sel(variable="Hm0")
+        s.sel(quantity="Hm0")
 
     with pytest.raises(KeyError):
         s.sel(model=99)
