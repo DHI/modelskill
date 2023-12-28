@@ -205,7 +205,6 @@ class ComparerCollection(Mapping, Scoreable):
 
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
-        # TODO: var_name
         # TODO delegate to each comparer
         res = _all_df_template(self.n_quantities)
         frames = []
@@ -807,7 +806,7 @@ class ComparerCollection(Mapping, Scoreable):
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
         # obs_names = cmp.obs_names  # df.observation.unique()
-        var_names = cmp.qnt_names  # self.var_names
+        qnt_names = cmp.qnt_names  # self.qnt_names
 
         # skill assessment
         pmetrics = _parse_metric(metrics)
@@ -827,7 +826,7 @@ class ComparerCollection(Mapping, Scoreable):
             return np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
-        by = cmp._mean_skill_by(skilldf, mod_names, var_names)
+        by = cmp._mean_skill_by(skilldf, mod_names, qnt_names)
         agg = {"n": "sum"}
         for metric in pmetrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
@@ -907,11 +906,11 @@ class ComparerCollection(Mapping, Scoreable):
     #     # return self.skill(df=dfall, metrics=metrics)
     #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
-    def _mean_skill_by(self, skilldf, mod_names, var_names):
+    def _mean_skill_by(self, skilldf, mod_names, qnt_names):
         by = []
         if len(mod_names) > 1:
             by.append("model")
-        if len(var_names) > 1:
+        if len(qnt_names) > 1:
             by.append("quantity")
         if len(by) == 0:
             if (self.n_quantities > 1) and ("quantity" in skilldf):
