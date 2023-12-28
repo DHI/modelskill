@@ -129,7 +129,7 @@ def _parse_groupby(by, n_models: int, n_obs: int, n_var: int = 1) -> List[str]:
         if n_obs > 1:  # or ((n_models == 1) and (n_obs == 1)):
             by.append("observation")
         if n_var > 1:
-            by.append("variable")
+            by.append("quantity")
         if len(by) == 0:
             # default value
             by.append("observation")
@@ -140,8 +140,8 @@ def _parse_groupby(by, n_models: int, n_obs: int, n_var: int = 1) -> List[str]:
             by = "model"
         if by in {"obs", "observations"}:
             by = "observation"
-        if by in {"var", "variables", "item"}:
-            by = "variable"
+        if by in {"var", "quantities", "item"}:
+            by = "quantity"
         if by[:5] == "freq:":
             freq = by.split(":")[1]
             by = pd.Grouper(freq=freq)

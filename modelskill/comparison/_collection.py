@@ -63,13 +63,13 @@ def _get_deprecated_obs_var_args(kwargs):
     return observation, variable
 
 
-def _all_df_template(n_variables: int = 1):
+def _all_df_template(n_quantities: int = 1):
     template = {
         "model": pd.Series([], dtype="category"),
         "observation": pd.Series([], dtype="category"),
     }
-    if n_variables > 1:
-        template["variable"] = pd.Series([], dtype="category")
+    if n_quantities > 1:
+        template["quantity"] = pd.Series([], dtype="category")
 
     template["x"] = pd.Series([], dtype="float")
     template["y"] = pd.Series([], dtype="float")
@@ -219,7 +219,7 @@ class ComparerCollection(Mapping, Scoreable):
                 df["model"] = mod_name
                 df["observation"] = cmp.name
                 if self.n_quantities > 1:
-                    df["variable"] = cmp.quantity.name
+                    df["quantity"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.data["Observation"].values
@@ -531,13 +531,13 @@ class ComparerCollection(Mapping, Scoreable):
         return SkillTable(res)
 
     def _add_as_col_if_not_in_index(
-        self, df, skilldf, fields=["model", "observation", "variable"]
+        self, df, skilldf, fields=["model", "observation", "quantity"]
     ):
         """Add a field to skilldf if unique in df"""
         for field in reversed(fields):
             if (field == "model") and (self.n_models <= 1):
                 continue
-            if (field == "variable") and (self.n_quantities <= 1):
+            if (field == "quantity") and (self.n_quantities <= 1):
                 continue
             if field not in skilldf.index.names:
                 unames = df[field].unique()
@@ -702,14 +702,14 @@ class ComparerCollection(Mapping, Scoreable):
         mod_name = self.mod_names[mod_id]
 
         # select variable
-        var_id = _get_idx(variable, self.qnt_names)
-        var_name = self.qnt_names[var_id]
+        qnt_id = _get_idx(variable, self.qnt_names)
+        qnt_name = self.qnt_names[qnt_id]
 
         # filter data
         cmp = self.sel(
             model=mod_name,
             observation=observation,
-            quantity=var_name,
+            quantity=qnt_name,
             start=start,
             end=end,
             area=area,
@@ -837,7 +837,7 @@ class ComparerCollection(Mapping, Scoreable):
         res.index.name = "model"
 
         # output
-        res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
+        res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])
         return SkillTable(res.astype({"n": int}))
 
     # def mean_skill_points(
@@ -912,10 +912,10 @@ class ComparerCollection(Mapping, Scoreable):
         if len(mod_names) > 1:
             by.append("model")
         if len(var_names) > 1:
-            by.append("variable")
+            by.append("quantity")
         if len(by) == 0:
-            if (self.n_quantities > 1) and ("variable" in skilldf):
-                by.append("variable")
+            if (self.n_quantities > 1) and ("quantity" in skilldf):
+                by.append("quantity")
             elif "model" in skilldf:
                 by.append("model")
             else:
@@ -974,7 +974,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         Wrapping mean_skill() with a single metric.
 
-        NOTE: will take simple mean over different variables
+        NOTE: will take simple mean over different quantities!
 
         Parameters
         ----------

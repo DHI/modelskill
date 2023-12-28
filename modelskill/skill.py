@@ -494,9 +494,9 @@ class SkillTable:
         return self._get_index_level_by_name("observation")
 
     @property
-    def var_names(self) -> list[str]:
-        """List of variable names (in index)"""
-        return self._get_index_level_by_name("variable")
+    def qnt_names(self) -> list[str]:
+        """List of quantity names (in index)"""
+        return self._get_index_level_by_name("quantity")
 
     # TODO what does this method actually do?
     def _get_index_level_by_name(self, name):

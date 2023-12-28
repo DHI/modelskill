@@ -87,7 +87,7 @@ def test_n_quantities(cc):
 def test_mv_skill(cc_1model):
     df = cc_1model.skill().to_dataframe()
     assert df.index.names[0] == "observation"
-    assert df.index.names[1] == "variable"
+    assert df.index.names[1] == "quantity"
     assert pytest.approx(df.iloc[0].rmse) == 0.22359663
     idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
@@ -97,13 +97,13 @@ def test_mv_mm_skill(cc):
     df = cc.skill().to_dataframe()
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
-    assert df.index.names[2] == "variable"
+    assert df.index.names[2] == "quantity"
     idx = ("SW_1", "HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
     df = cc.sel(model="SW_1").skill().to_dataframe()
     assert df.index.names[0] == "observation"
-    assert df.index.names[1] == "variable"
+    assert df.index.names[1] == "quantity"
     assert pytest.approx(df.iloc[0].rmse) == 0.22359663
     idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
@@ -118,7 +118,7 @@ def test_mv_mm_skill(cc):
 def test_mv_mm_mean_skill(cc):
     df = cc.mean_skill().to_dataframe()
     assert df.index.names[0] == "model"
-    assert df.index.names[1] == "variable"
+    assert df.index.names[1] == "quantity"
     idx = ("SW_1", "Wind speed")
     assert pytest.approx(df.loc[idx].r2) == 0.63344531
 
