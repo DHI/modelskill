@@ -515,6 +515,10 @@ class Comparer(Scoreable):
         """Name of comparer (=name of observation)"""
         return self.data.attrs["name"]
 
+    @name.setter
+    def name(self, name: str) -> None:
+        self.data.attrs["name"] = name
+
     @property
     def gtype(self) -> str:
         """Geometry type"""
@@ -648,7 +652,7 @@ class Comparer(Scoreable):
         return self.__copy__()
 
     def rename(self, mapping: Mapping[str, str]) -> "Comparer":
-        """Rename model or auxiliary data
+        """Rename observation, model or auxiliary data variables
 
         Parameters
         ----------
@@ -668,6 +672,12 @@ class Comparer(Scoreable):
         >>> cmp2.mod_names
         ['model2']
         """
+        for k in mapping.keys():
+            if k == self.name:
+                self.name = mapping[k]
+                mapping.pop(k)
+                break
+
         data = self.data.rename(mapping)
         raw_mod_data = {mapping.get(k, k): v for k, v in self.raw_mod_data.items()}
 
