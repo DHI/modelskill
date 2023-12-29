@@ -3,20 +3,17 @@ import pandas as pd
 import yaml
 from typing import Union
 
-from . import model_result
+from . import model_result, match
 from .obs import PointObservation, TrackObservation
-from .connection import Connector
 
 
-def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True):
-    """Load Connector from a config file (or dict)
+def from_config(conf: Union[dict, str], *, relative_path=True):
+    """Load ComparerCollection from a config file (or dict)
 
     Parameters
     ----------
     conf : Union[str, dict]
         path to config file or dict with configuration
-    validate_eum : bool, optional
-        require eum to match, by default True
     relative_path: bool, optional
         True: file paths are relative to configuration file,
         False: file paths are absolute (relative to the current directory),
@@ -24,14 +21,13 @@ def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True
 
     Returns
     -------
-    Connector
-        A Connector object with the given configuration
+    ComparerCollection
+        A ComparerCollection object from the given configuration
 
     Examples
     --------
     >>> import modelskill as ms
-    >>> con = ms.from_config('Oresund.yml')
-    >>> cc = con.extract()
+    >>> cc = ms.from_config('Oresund.yml')
     """
     if isinstance(conf, str):
         filename = conf
@@ -82,11 +78,9 @@ def from_config(conf: Union[dict, str], *, validate_eum=True, relative_path=True
         observations[name] = obs
     obs_list = list(observations.values())
 
-    if "connections" in conf:
-        raise NotImplementedError()
-    else:
-        con = Connector(obs_list, mr_list, validate=validate_eum)
-    return con
+    # if "connections" in conf:
+    #     raise NotImplementedError()
+    return match(obs_list, mr_list)
 
 
 def _yaml_to_dict(filename):
