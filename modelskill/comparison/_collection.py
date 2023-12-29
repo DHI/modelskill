@@ -237,6 +237,32 @@ class ComparerCollection(Mapping, Scoreable):
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
 
+    def rename(self, mapping: Mapping[str, str]) -> "Comparer":
+        """Rename observation, model or auxiliary data variables
+
+        Parameters
+        ----------
+        mapping : dict
+            mapping of old names to new names
+
+        Returns
+        -------
+        ComparerCollection
+
+        Examples
+        --------
+        >>> cc = ms.match([o1, o2], [mr1, mr2])
+        >>> cc.mod_names
+        ['mr1', 'mr2']
+        >>> cc2 = cc.rename({'mr1': 'model1'})
+        >>> cc2.mod_names
+        ['model1', 'mr2']
+        """
+        cmps = []
+        for cmp in self.comparers.values():
+            cmps.append(cmp.rename(mapping))
+        return ComparerCollection(cmps)
+
     @overload
     def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection:
         ...
