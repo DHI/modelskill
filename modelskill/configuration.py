@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import pandas as pd
 import yaml
 from typing import Union
@@ -8,12 +9,14 @@ from .obs import PointObservation, TrackObservation
 from .comparison import ComparerCollection
 
 
-def from_config(conf: Union[dict, str], *, relative_path=True) -> ComparerCollection:
+def from_config(
+    conf: Union[dict, str, Path], *, relative_path=True
+) -> ComparerCollection:
     """Load ComparerCollection from a config file (or dict)
 
     Parameters
     ----------
-    conf : Union[str, dict]
+    conf : Union[str, Path, dict]
         path to config file or dict with configuration
     relative_path: bool, optional
         True: file paths are relative to configuration file,
@@ -30,10 +33,11 @@ def from_config(conf: Union[dict, str], *, relative_path=True) -> ComparerCollec
     >>> import modelskill as ms
     >>> cc = ms.from_config('Oresund.yml')
     """
-    if isinstance(conf, str):
-        filename = conf
-        ext = os.path.splitext(filename)[-1]
-        dirname = os.path.dirname(filename)
+    if isinstance(conf, (str, Path)):
+        filename = str(conf)
+        p = Path(conf)
+        ext = p.suffix
+        dirname = str(p.parents[0])
         if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
             conf = _yaml_to_dict(filename)
         elif "xls" in ext:
@@ -84,14 +88,14 @@ def from_config(conf: Union[dict, str], *, relative_path=True) -> ComparerCollec
     return match(obs_list, mr_list)
 
 
-def _yaml_to_dict(filename):
+def _yaml_to_dict(filename: str) -> dict:
     with open(filename) as f:
         contents = f.read()
     conf = yaml.load(contents, Loader=yaml.FullLoader)
     return conf
 
 
-def _excel_to_dict(filename):
+def _excel_to_dict(filename: str) -> dict:
     with pd.ExcelFile(filename, engine="openpyxl") as xls:
         dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
         dfo = pd.read_excel(xls, "observations", index_col=0).T
@@ -102,7 +106,7 @@ def _excel_to_dict(filename):
     return conf
 
 
-def _remove_keys_w_nan_value(d):
+def _remove_keys_w_nan_value(d: dict) -> dict:
     """Loops through dicts in dict and removes all entries where value is NaN
     e.g. x,y values of TrackObservations
     """
