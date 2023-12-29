@@ -100,9 +100,10 @@ class Observation(TimeSeries):
     ) -> None:
         data["time"] = self._parse_time(data.time)
 
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["color"] = color
         super().__init__(data=data)
         self.data.attrs["weight"] = weight
-        self.data.attrs["color"] = color
 
     @property
     def weight(self) -> float:
