@@ -96,7 +96,7 @@ class Observation(TimeSeries):
         self,
         data: xr.Dataset,
         weight: float,
-        color: str = "#d62728",  # TODO: cannot currently be set
+        color: str = "#d62728",  # TODO: cannot currently be set by user
     ) -> None:
         data["time"] = self._parse_time(data.time)
 
@@ -154,6 +154,8 @@ class PointObservation(Observation):
         list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
 
     Examples
     --------
@@ -248,9 +250,6 @@ class TrackObservation(Observation):
         "first" to keep first occurrence, "last" to keep last occurrence,
         False to drop all duplicates, "offset" to add milliseconds to
         consecutive duplicates, by default "first"
-    offset_duplicates : float, optional
-        DEPRECATED! in case of duplicate timestamps and keep_duplicates="offset",
-        add this many seconds to consecutive duplicate entries, by default 0.001
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
@@ -258,6 +257,8 @@ class TrackObservation(Observation):
         list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
 
     Examples
     --------
