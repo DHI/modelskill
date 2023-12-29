@@ -5,9 +5,10 @@ from typing import Union
 
 from . import model_result, match
 from .obs import PointObservation, TrackObservation
+from .comparison import ComparerCollection
 
 
-def from_config(conf: Union[dict, str], *, relative_path=True):
+def from_config(conf: Union[dict, str], *, relative_path=True) -> ComparerCollection:
     """Load ComparerCollection from a config file (or dict)
 
     Parameters
