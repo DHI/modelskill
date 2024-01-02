@@ -675,27 +675,30 @@ class Comparer(Scoreable):
         >>> cmp2.mod_names
         ['model2']
         """
+        if "Observation" in mapping.keys():
+            raise ValueError("Cannot rename 'Observation'")
+
+        for k in mapping.keys():
+            allowed_keys = [self.name] + self.mod_names + self.aux_names
+            if k not in allowed_keys:
+                raise KeyError(f"Unknown key: {k}; must be one of {allowed_keys}")
+
         if any([k in _RESERVED_NAMES for k in mapping.values()]):
             # TODO: also check for duplicates
             raise ValueError(
                 f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
             )
-        if "Observation" in mapping.keys():
-            raise ValueError("Cannot rename Observation")
 
+        obs_name = self.name
         for k in mapping.keys():
             # rename observation
             if k == self.name:
-                self.name = mapping[k]
+                obs_name = mapping[k]
                 mapping.pop(k)
                 break
 
-        for k in mapping.keys():
-            if k not in self.mod_names + self.aux_names:
-                allowed = [self.name] + self.mod_names + self.aux_names
-                raise KeyError(f"Unknown key: {k}; must be one of {allowed}")
-
         data = self.data.rename(mapping)
+        data.attrs["name"] = obs_name
         raw_mod_data = {mapping.get(k, k): v for k, v in self.raw_mod_data.items()}
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
