@@ -198,7 +198,7 @@ class ComparerCollectionPlotter:
         title = title or f"{mod_name} vs {cc_sel_mod.name}"
 
         skill = None
-        units = None
+        skill_score_unit = None
         if skill_table:
             metrics = None if skill_table is True else skill_table
 
@@ -212,14 +212,16 @@ class ComparerCollectionPlotter:
                 skill = cc_sel_mod.mean_skill(metrics=metrics)  # type: ignore
             # TODO improve this
             try:
-                units = unit_text.split("[")[1].split("]")[0]
+                skill_score_unit = unit_text.split("[")[1].split("]")[0]
             except IndexError:
-                units = ""  # Dimensionless
+                skill_score_unit = ""  # Dimensionless
 
         if self.is_directional:
             # hide quantiles and regression line
             quantiles = 0
             reg_method = False
+
+        skill_scores = skill.iloc[0].to_dict() if skill is not None else None
 
         ax = scatter(
             x=x,
@@ -238,8 +240,8 @@ class ComparerCollectionPlotter:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
-            skill_df=skill,
-            units=units,
+            skill_scores=skill_scores,
+            skill_score_unit=skill_score_unit,
             ax=ax,
             **kwargs,
         )
