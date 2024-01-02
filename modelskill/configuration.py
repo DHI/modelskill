@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import pandas as pd
 import yaml
@@ -34,68 +33,64 @@ def from_config(
     >>> cc = ms.from_config('Oresund.yml')
     """
     if isinstance(conf, (str, Path)):
-        filename = str(conf)
         p = Path(conf)
         ext = p.suffix
-        dirname = str(p.parents[0])
+        dirname = Path(str(p.parents[0]))
         if (ext == ".yml") or (ext == ".yaml") or (ext == ".conf"):
-            conf = _yaml_to_dict(filename)
+            conf = _yaml_to_dict(p)
         elif "xls" in ext:
-            conf = _excel_to_dict(filename)
+            conf = _excel_to_dict(p)
         else:
             raise ValueError("Filename extension not supported! Use .yml or .xlsx")
     else:
-        dirname = ""
-
-    modelresults = {}
+        dirname = Path(".")
 
     assert isinstance(conf, dict)
+    modelresults = []
     for name, mr_dict in conf["modelresults"].items():
         if not mr_dict.get("include", True):
             continue
+        fp = Path(mr_dict["filename"])
         if relative_path:
-            filename = os.path.join(dirname, mr_dict["filename"])
-        else:
-            filename = mr_dict["filename"]
-        item = mr_dict.get("item")
-        mr = model_result(filename, name=name, item=item)
-        modelresults[name] = mr
-    mr_list = list(modelresults.values())
+            fp = dirname / fp
 
-    observations = {}
+        item = mr_dict.get("item")
+        mr = model_result(fp, name=name, item=item)
+        modelresults.append(mr)
+
+    observations = []
     for name, obs_dict in conf["observations"].items():
         if not obs_dict.get("include", True):
             continue
+        fp = Path(obs_dict["filename"])
         if relative_path:
-            filename = os.path.join(dirname, obs_dict["filename"])
-        else:
-            filename = obs_dict["filename"]
+            fp = dirname / fp
+
         item = obs_dict.get("item")
         alt_name = obs_dict.get("name")
         name = name if alt_name is None else alt_name
 
         otype = obs_dict.get("type")
         if (otype is not None) and ("track" in otype.lower()):
-            obs = TrackObservation(filename, item=item, name=name)  # type: ignore
+            obs = TrackObservation(fp, item=item, name=name)  # type: ignore
         else:
             x, y = obs_dict.get("x"), obs_dict.get("y")
-            obs = PointObservation(filename, item=item, x=x, y=y, name=name)  # type: ignore
-        observations[name] = obs
-    obs_list = list(observations.values())
+            obs = PointObservation(fp, item=item, x=x, y=y, name=name)  # type: ignore
+        observations.append(obs)
 
     # if "connections" in conf:
     #     raise NotImplementedError()
-    return match(obs_list, mr_list)
+    return match(obs=observations, mod=modelresults)
 
 
-def _yaml_to_dict(filename: str) -> dict:
+def _yaml_to_dict(filename: Path) -> dict:
     with open(filename) as f:
         contents = f.read()
     conf = yaml.load(contents, Loader=yaml.FullLoader)
     return conf
 
 
-def _excel_to_dict(filename: str) -> dict:
+def _excel_to_dict(filename: Path) -> dict:
     with pd.ExcelFile(filename, engine="openpyxl") as xls:
         dfmr = pd.read_excel(xls, "modelresults", index_col=0).T
         dfo = pd.read_excel(xls, "observations", index_col=0).T
