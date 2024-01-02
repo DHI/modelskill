@@ -1114,6 +1114,8 @@ NON_METRICS = set(
         "Optional",
         "Set",
         "Tuple",
+        "List",
+        "Iterable",
         "Union",
         "_c_residual",
         "_linear_regression",
