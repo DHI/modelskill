@@ -54,7 +54,7 @@ def test_skill(cc1):
 
     assert len(s.mod_names) == 0  # TODO seems wrong
     assert len(s.obs_names) == 1  # makes sense
-    assert len(s.qnt_names) == 0  # TODO seems wrong
+    assert len(s.quantity_names) == 0  # TODO seems wrong
 
     df = s.to_dataframe()
     assert isinstance(df, pd.DataFrame)

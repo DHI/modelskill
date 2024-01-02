@@ -494,7 +494,7 @@ class SkillTable:
         return self._get_index_level_by_name("observation")
 
     @property
-    def qnt_names(self) -> list[str]:
+    def quantity_names(self) -> list[str]:
         """List of quantity names (in index)"""
         return self._get_index_level_by_name("quantity")
 

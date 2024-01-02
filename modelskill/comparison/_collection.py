@@ -190,7 +190,7 @@ class ComparerCollection(Mapping, Scoreable):
         return len(self.mod_names)
 
     @property
-    def qnt_names(self) -> List[str]:
+    def quantity_names(self) -> List[str]:
         """List of unique quantity names"""
         unique_names = []
         for cmp in self.comparers.values():
@@ -201,7 +201,7 @@ class ComparerCollection(Mapping, Scoreable):
 
     @property
     def n_quantities(self) -> int:
-        return len(self.qnt_names)
+        return len(self.quantity_names)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
@@ -360,9 +360,9 @@ class ComparerCollection(Mapping, Scoreable):
 
         if (quantity is not None) and (self.n_quantities > 1):
             quantity = [quantity] if np.isscalar(quantity) else quantity  # type: ignore
-            quantity = [_get_name(v, self.qnt_names) for v in quantity]  # type: ignore
+            quantity = [_get_name(v, self.quantity_names) for v in quantity]  # type: ignore
         else:
-            quantity = self.qnt_names
+            quantity = self.quantity_names
 
         cmps = []
         for cmp in self.comparers.values():
@@ -701,8 +701,8 @@ class ComparerCollection(Mapping, Scoreable):
         mod_name = self.mod_names[mod_id]
 
         # select variable
-        qnt_id = _get_idx(variable, self.qnt_names)
-        qnt_name = self.qnt_names[qnt_id]
+        qnt_id = _get_idx(variable, self.quantity_names)
+        qnt_name = self.quantity_names[qnt_id]
 
         # filter data
         cmp = self.sel(
@@ -806,7 +806,7 @@ class ComparerCollection(Mapping, Scoreable):
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
         # obs_names = cmp.obs_names  # df.observation.unique()
-        qnt_names = cmp.qnt_names  # self.qnt_names
+        qnt_names = cmp.quantity_names  # self.qnt_names
 
         # skill assessment
         pmetrics = _parse_metric(metrics)
