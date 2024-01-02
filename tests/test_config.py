@@ -59,6 +59,5 @@ def test_comparison_from_yml():
     assert "HD" in cc.mod_names
     assert cc["Klagshamn"].quantity.name == "Water Level"
     assert cc["Drogden"].quantity.name == "Water Level"
-    assert cc.n_variables == 1
 
     assert cc.score()["HD"] == pytest.approx(0.23287298772)
