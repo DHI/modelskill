@@ -591,12 +591,12 @@ class Comparer(Scoreable):
         return len(self.mod_names)
 
     @property
-    def mod_names(self) -> Sequence[str]:
+    def mod_names(self) -> List[str]:
         """List of model result names"""
         return list(self.raw_mod_data.keys())
 
     @property
-    def aux_names(self) -> Sequence[str]:
+    def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
         return list(
             [
