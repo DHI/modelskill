@@ -380,8 +380,8 @@ def _scatter_plotly(
     xlim,
     ylim,
     title,
-    skill_scores,  # TODO implement
-    skill_score_unit,  # TODO implement
+    skill_scores,
+    skill_score_unit,
     fit_to_quantiles,
     **kwargs,
 ):
