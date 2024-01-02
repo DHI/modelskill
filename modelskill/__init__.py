@@ -36,8 +36,6 @@ from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
 from .comparison import ComparerCollection, Comparer
 
-__RESERVED_NAMES = ["Observation", "time", "x", "y", "z"]
-
 
 def load(filename: Union[str, Path]) -> ComparerCollection:
     """Load a ComparerCollection from a zip file.

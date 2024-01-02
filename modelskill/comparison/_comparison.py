@@ -20,7 +20,7 @@ import xarray as xr
 from copy import deepcopy
 
 from .. import metrics as mtr
-from .. import Quantity, __RESERVED_NAMES
+from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
@@ -37,7 +37,7 @@ from ._utils import (
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 from ..settings import register_option
-from ..utils import _get_name
+from ..utils import _get_name, _RESERVED_NAMES
 from .. import __version__
 
 if TYPE_CHECKING:
@@ -516,9 +516,9 @@ class Comparer(Scoreable):
 
     @name.setter
     def name(self, name: str) -> None:
-        if name in __RESERVED_NAMES:
+        if name in _RESERVED_NAMES:
             raise ValueError(
-                f"Cannot rename to any of {__RESERVED_NAMES}, these are reserved names!"
+                f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
             )
         self.data.attrs["name"] = name
 
@@ -675,10 +675,10 @@ class Comparer(Scoreable):
         >>> cmp2.mod_names
         ['model2']
         """
-        if any([k in __RESERVED_NAMES for k in mapping.values()]):
+        if any([k in _RESERVED_NAMES for k in mapping.values()]):
             # TODO: also check for duplicates
             raise ValueError(
-                f"Cannot rename to any of {__RESERVED_NAMES}, these are reserved names!"
+                f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
             )
 
         for k in mapping.keys():
