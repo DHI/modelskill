@@ -6,6 +6,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    Mapping,
     Optional,
     Union,
     Iterable,
@@ -656,7 +657,7 @@ class Comparer(Scoreable):
         return self.__copy__()
 
     def rename(
-        self, mapping: Dict[str, str], errors: Literal["raise", "ignore"] = "raise"
+        self, mapping: Mapping[str, str], errors: Literal["raise", "ignore"] = "raise"
     ) -> "Comparer":
         """Rename observation, model or auxiliary data variables
 
@@ -700,23 +701,19 @@ class Comparer(Scoreable):
             )
 
         # rename observation
-        obs_name = self.name
-        for k in mapping.keys():
-            if k == self.name:
-                obs_name = mapping[k]
-                mapping.pop(k)
-                break
+        obs_name = mapping.get(self.name, self.name)
+        ma_mapping = {k: v for k, v in mapping.items() if k != self.name}
 
-        data = self.data.rename(mapping)
+        data = self.data.rename(ma_mapping)
         data.attrs["name"] = obs_name
         raw_mod_data = dict()
         for k, v in self.raw_mod_data.items():
-            if k in mapping:
-                # copy is needed here as the same raw data could be 
+            if k in ma_mapping:
+                # copy is needed here as the same raw data could be
                 # used for multiple Comparers!
                 v2 = v.copy()
-                v2.data = v2.data.rename({k: mapping[k]})
-                raw_mod_data[mapping[k]] = v2
+                v2.data = v2.data.rename({k: ma_mapping[k]})
+                raw_mod_data[ma_mapping[k]] = v2
             else:
                 raw_mod_data[k] = v
 
