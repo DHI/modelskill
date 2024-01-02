@@ -121,14 +121,14 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
     return df, by
 
 
-def _parse_groupby(by, n_models: int, n_obs: int, n_var: int = 1) -> List[str]:
+def _parse_groupby(by, n_models: int, n_obs: int, n_qnt: int = 1) -> List[str]:
     if by is None:
         by = []
         if n_models > 1:
             by.append("model")
         if n_obs > 1:  # or ((n_models == 1) and (n_obs == 1)):
             by.append("observation")
-        if n_var > 1:
+        if n_qnt > 1:
             by.append("quantity")
         if len(by) == 0:
             # default value
@@ -147,7 +147,7 @@ def _parse_groupby(by, n_models: int, n_obs: int, n_var: int = 1) -> List[str]:
             by = pd.Grouper(freq=freq)
         by = [by]
     elif isinstance(by, Iterable):
-        by = [_parse_groupby(b, n_models, n_obs, n_var)[0] for b in by]
+        by = [_parse_groupby(b, n_models, n_obs, n_qnt)[0] for b in by]
         return by
     else:
         raise ValueError("Invalid by argument. Must be string or list of strings.")
