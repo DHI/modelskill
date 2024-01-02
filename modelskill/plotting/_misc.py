@@ -156,6 +156,7 @@ def format_skill_table(skill_scores: Mapping[str, float], unit: str) -> pd.DataF
 
     lines = [_format_skill_line(key, value, unit) for key, value in kv.items()]
 
+    # TODO add sign and unit columns
     df = pd.DataFrame(lines, columns=["name", "sep", "value"])
     return df
 
