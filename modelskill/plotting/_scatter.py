@@ -127,7 +127,7 @@ def scatter(
             "The `skill_df` keyword argument is deprecated. Use `skill_scores` instead.",
             FutureWarning,
         )
-        skill_scores = kwargs.pop("skill_df").iloc[0].to_dict()
+        skill_scores = kwargs.pop("skill_df").to_dict("records")[0]
 
     if show_hist is None and show_density is None:
         # Default: points density
@@ -196,7 +196,7 @@ def scatter(
         cmp = from_matched(df)
         metrics = None if skill_table is True else skill_table
         skill = cmp.skill(metrics=metrics)
-        skill_scores = skill.iloc[0].to_dict()
+        skill_scores = skill.to_dict("records")[0]
 
     return PLOTTING_BACKENDS[backend](
         x=x,
