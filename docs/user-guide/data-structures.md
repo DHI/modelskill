@@ -9,7 +9,7 @@ The main data structures in ModelSkill can be grouped into three categories:
 All objects share some common principles:
 
 * The data container is accesssible via the `data` attribute. 
-* The data container is a `xarray` object (except for the `SkillTable` object, which is a `pandas` object).
+* The data container is an `xarray` object (except for the `SkillTable` object, which is a `pandas` object).
 * The main data selection method is `sel`, which is a wrapper around `xarray.Dataset.sel`.
 * All plotting are accessible via the `plot` accessor of the object.
 
@@ -32,11 +32,9 @@ Point and track data are both `TimeSeries` objects, while grid and dfsu data are
 
 Comparer objects are results of a matching procedure (between observations and model results) or constructed directly from already matched data. A comparison of a *single* observation and one or more model results are stored in a `Comparer` object. A comparison of *multiple* observations and one or more model results are stored in a `ComparerCollection` object which is a collection of `Comparer` objects.
 
-The matched data in a `Comparer` is stored in an `xarray.Dataset` which can be accessed via the `data` attribute. The first DataArray in the Dataset is the observation data, the next DataArrays are model result data and optionally additional DataArrays are auxilliarye data. Each of the DataArrays have a `kind` attribute with either `observation`, `model` or `aux` as value and 
+The matched data in a `Comparer` is stored in an `xarray.Dataset` which can be accessed via the `data` attribute. The Dataset has an attribute `gtype` which is a string describing the type of data (e.g. `point`, `track`). The first DataArray in the Dataset is the observation data, the next DataArrays are model result data and optionally additional DataArrays are auxilliarye data. Each of the DataArrays have a `kind` attribute with either `observation`, `model` or `aux`.
 
-which is a string describing the type of data (e.g. `point`, `track`, `grid`, `dfsu`).
-
-Both objects have a `plot` accessor for plotting the data.
+Both `Comparer` and `ComparerCollection` have a `plot` accessor for plotting the data (e.g. `cmp.plot.timeseries()` or `cmp.plot.scatter()`).
 
 
 
