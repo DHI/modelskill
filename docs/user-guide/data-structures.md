@@ -39,5 +39,17 @@ which is a string describing the type of data (e.g. `point`, `track`, `grid`, `d
 Both objects have a `plot` accessor for plotting the data.
 
 
+
 ## Skill objects
+
+Calling a skill method on a comparer object will return a skill object with skill scores (statistics) from comparing observation and model result data using different metrics (e.g. root mean square error). Two skill objects are currently implemented: `SkillTable` and `SkillGrid`. The first is relevant for all ModelSkill users while the latter is relevant for users of the track data (e.g. MetOcean studies using satellite altimetry data).
+
+If `c` is a comparer object, then the following skill methods are available:
+
+* `c.skill()` -> `SkillTable`
+* `c.mean_skill()` -> `SkillTable`
+* `c.gridded_skill()` -> `SkillGrid`
+
+
+### SkillTable
 
