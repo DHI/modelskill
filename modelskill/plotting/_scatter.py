@@ -41,7 +41,7 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_table: bool = False,
+    skill_table: Optional[str | Sequence[str] | bool],
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: Optional[str] = "",
     ax: Optional[Axes] = None,
@@ -65,9 +65,9 @@ def scatter(
         number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
         if int, this is the number of points
         if sequence (list of floats), represents the desired quantiles (from 0 to 1)
-    fit_to_quantiles: bool, optional, by default False
+    fit_to_quantiles: bool, optional
         by default the regression line is fitted to all data, if True, it is fitted to the quantiles
-        which can be useful to represent the extremes of the distribution
+        which can be useful to represent the extremes of the distribution, by default False
     show_points : (bool, int, float), optional
         Should the scatter points be displayed?
         None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
@@ -102,7 +102,7 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
-    skill_table: bool, optional
+    skill_table: str, List[str], bool, optional
         calculate skill scores and show in box next to the plot,
         True will show default metrics, list of metrics will show
         these skill scores, by default False,
@@ -137,7 +137,6 @@ def scatter(
         raise ValueError("x & y are not of equal length")
 
     if norm is None:
-        # Default: PowerNorm with gamma of 0.5
         norm = colors.PowerNorm(vmin=1, gamma=0.5)
 
     x_sample, y_sample = sample_points(x, y, show_points)
@@ -383,7 +382,7 @@ def _scatter_plotly(
     title,
     skill_scores,  # TODO implement
     skill_score_unit,  # TODO implement
-    fit_to_quantiles,  # TODO implement
+    fit_to_quantiles,
     **kwargs,
 ):
     import plotly.graph_objects as go
