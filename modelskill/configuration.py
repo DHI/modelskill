@@ -1,9 +1,9 @@
 from pathlib import Path
 import pandas as pd
 import yaml
-from typing import Union
+from typing import Union, List
 
-from . import model_result, match
+from . import model_result, match, Quantity
 from .obs import PointObservation, TrackObservation
 from .comparison import ComparerCollection
 
@@ -59,28 +59,27 @@ def from_config(
         modelresults.append(mr)
 
     observations = []
-    for name, obs_dict in conf["observations"].items():
-        if not obs_dict.get("include", True):
-            continue
-        fp = Path(obs_dict["filename"])
-        if relative_path:
-            fp = dirname / fp
+    for name, data in conf["observations"].items():
+        if data.pop("include", True):
+            data["name"] = name
+            observations.append(_obs_from_dict(name, data, dirname, relative_path))
 
-        item = obs_dict.get("item")
-        alt_name = obs_dict.get("name")
-        name = name if alt_name is None else alt_name
-
-        otype = obs_dict.get("type")
-        if (otype is not None) and ("track" in otype.lower()):
-            obs = TrackObservation(fp, item=item, name=name)  # type: ignore
-        else:
-            x, y = obs_dict.get("x"), obs_dict.get("y")
-            obs = PointObservation(fp, item=item, x=x, y=y, name=name)  # type: ignore
-        observations.append(obs)
-
-    # if "connections" in conf:
-    #     raise NotImplementedError()
     return match(obs=observations, mod=modelresults)
+
+
+def _obs_from_dict(
+    name: str, obs_dict: dict, dirname: Path, relative_path: bool
+) -> PointObservation | TrackObservation:
+    fp = Path(obs_dict.pop("filename"))
+    if relative_path:
+        fp = dirname / fp
+
+    otype = obs_dict.pop("type", "point")
+    q = Quantity(**obs_dict.pop("quantity")) if "quantity" in obs_dict else None
+    if "track" in otype.lower():
+        return TrackObservation(fp, quantity=q, **obs_dict)
+    else:
+        return PointObservation(fp, quantity=q, **obs_dict)
 
 
 def _yaml_to_dict(filename: Path) -> dict:
