@@ -103,9 +103,14 @@ def scatter(
     ylabel : str, optional
         y-label text on plot, by default None
     skill_table: bool, optional
-        add a table with skill scores to the plot, by default False
-    skill_scores : dict, optional
-        dictionary with skill (stats) results to be added to plot, by default None
+        calculate skill scores and show in box next to the plot,
+        True will show default metrics, list of metrics will show
+        these skill scores, by default False,
+        Note: cannot be used together with skill_scores argument
+    skill_scores : dict[str, float], optional
+        dictionary with skill scores to be shown in box next to
+        the plot, by default None
+        Note: cannot be used together with skill_table argument
     skill_score_unit : str, optional
         unit for skill_scores, by default None
     ax : matplotlib.axes.Axes, optional
@@ -190,7 +195,8 @@ def scatter(
             )
         df = pd.DataFrame({"obs": x, "model": y})
         cmp = from_matched(df)
-        skill = cmp.skill()
+        metrics = None if skill_table is True else skill_table
+        skill = cmp.skill(metrics=metrics)
         skill_scores = skill.iloc[0].to_dict()
 
     return PLOTTING_BACKENDS[backend](
