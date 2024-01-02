@@ -8,30 +8,18 @@ results and observations.
 ## Workflow
 
 
-The typical ModelSkill workflow consists of these five steps:
+The typical ModelSkill workflow consists of these four steps:
 
-1.  Define **ModelResults**
-2.  Define **Observations**
+1.  Define **Observations**
+2.  Define **ModelResults**
 3.  **Match** observations and ModelResults in space and time
 4.  Do analysis, plotting, etc with a **Comparer**
 
 
-### 1. Define ModelResults
 
-The result of a simulation is stored in one or more result files, e.g. dfsu, dfs0, nc, csv.
+### Define Observations
 
-The name is used to identify the model result in the plots and tables.
-
-```python hl_lines="4"
-import modelskill as ms
-mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", 
-                         item="Sign. Wave Height",
-                         name='HKZN_local')
-```
-
-### 2. Define Observations
-
-The next step is to define the measurements to be used for the skill
+The first step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
 
 -   [PointObservation](api/observation/point.md)
@@ -57,18 +45,34 @@ file, the item number (or item name) and a name. A PointObservation
 further needs to be initialized with it\'s x-, y-position.
 
 
-### 3. Match observations and ModelResults
+### Define ModelResults
+
+The result of a simulation is stored in one or more result files, e.g. dfsu, dfs0, nc, csv.
+
+The name is used to identify the model result in the plots and tables.
+
+```python hl_lines="4"
+import modelskill as ms
+mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", 
+                         item="Sign. Wave Height",
+                         name='HKZN_local')
+```
+
+
+
+### Match observations and ModelResults
+
+This [match()](api/matching.md/#modelskill.match) method returns a [Comparer](api/comparer.md#modelskill.Comparer) (a single observation) or a
+[ComparerCollection](api/comparercollection.md#modelskill.ComparerCollection) (multiple observations)
+for further analysis and plotting.
 
 ```python
 cc = ms.match([hkna, c2], mr)
 ```
 
-This method returns a
-[ComparerCollection](api/comparercollection.md#modelskill.ComparerCollection)
-for further analysis and plotting.
 
 
-### 4. Do analysis, plotting, etc with a Comparer
+### Do analysis, plotting, etc with a Comparer
 
 The object returned by the `match()` method is a *Comparer*/*ComparerCollection*. It holds the matched observation and model data and has methods for plotting and
 skill assessment.
@@ -76,14 +80,10 @@ skill assessment.
 The primary comparer methods are:
 
 - [skill()](api/comparercollection.md#modelskill.ComparerCollection.skill)
-  which returns a table with the skill scores
-- various plot methods of the comparer objects
-    * `plot.scatter()`
-    * `plot.timeseries()`
-    * `plot.kde()`
-    * `plot.qq()`
-    * `plot.hist()`
-
+  which returns a [SkillTable](api/skill.md) with the skill scores
+- various [plot](api/comparercollection.md/#modelskill.comparison._collection_plotter.ComparerCollectionPlotter) methods of the comparer objects (e.g. `plot.scatter()`, `plot.timeseries()`)
+- [sel()](api/comparercollection.md/#modelskill.ComparerCollection.sel) method for selecting data
+    
 
 ### Save / load the ComparerCollection
 
