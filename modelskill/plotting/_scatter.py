@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Tuple, Callable, TYPE_CHECKING
+from typing import Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
+import warnings
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -7,18 +8,18 @@ if TYPE_CHECKING:
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from matplotlib.cm import ScalarMappable
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.ticker import MaxNLocator
 from scipy import interpolate
+import pandas as pd
 
 import modelskill.settings as settings
 from modelskill.settings import options
 
 from ..metrics import _linear_regression
-from ._misc import quantiles_xy, sample_points, format_skill_df, _get_fig_ax
+from ._misc import quantiles_xy, sample_points, format_skill_table, _get_fig_ax
 
 
 def scatter(
@@ -40,8 +41,9 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_df: pd.DataFrame | None = None,
-    units: Optional[str] = "",
+    skill_table: bool = False,
+    skill_scores: Mapping[str, float] | None = None,
+    skill_score_unit: Optional[str] = "",
     ax: Optional[Axes] = None,
     **kwargs,
 ) -> Axes:
@@ -100,10 +102,12 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
-    skill_df : dataframe, optional
-        dataframe with skill (stats) results to be added to plot, by default None
-    units : str, optional
-        user default units to override default units, eg 'metre', by default None
+    skill_table: bool, optional
+        add a table with skill scores to the plot, by default False
+    skill_scores : dict, optional
+        dictionary with skill (stats) results to be added to plot, by default None
+    skill_score_unit : str, optional
+        unit for skill_scores, by default None
     ax : matplotlib.axes.Axes, optional
         axes to plot on, by default None
     **kwargs
@@ -113,6 +117,13 @@ def scatter(
     matplotlib.axes.Axes
         The axes on which the scatter plot was drawn.
     """
+    if "skill_df" in kwargs:
+        warnings.warn(
+            "The `skill_df` keyword argument is deprecated. Use `skill_scores` instead.",
+            FutureWarning,
+        )
+        skill_scores = kwargs.pop("skill_df").iloc[0].to_dict()
+
     if show_hist is None and show_density is None:
         # Default: points density
         show_density = True
@@ -170,6 +181,18 @@ def scatter(
     if backend not in PLOTTING_BACKENDS:
         raise ValueError(f"backend must be one of {list(PLOTTING_BACKENDS.keys())}")
 
+    if skill_table:
+        from modelskill import from_matched
+
+        if skill_scores is not None:
+            raise ValueError(
+                "Cannot pass skill_scores and skill_table at the same time"
+            )
+        df = pd.DataFrame({"obs": x, "model": y})
+        cmp = from_matched(df)
+        skill = cmp.skill()
+        skill_scores = skill.iloc[0].to_dict()
+
     return PLOTTING_BACKENDS[backend](
         x=x,
         y=y,
@@ -191,8 +214,8 @@ def scatter(
         xlim=xlim,
         ylim=ylim,
         title=title,
-        skill_df=skill_df,
-        units=units,
+        skill_scores=skill_scores,
+        skill_score_unit=skill_score_unit,
         fit_to_quantiles=fit_to_quantiles,
         ax=ax,
         **kwargs,
@@ -221,8 +244,8 @@ def _scatter_matplotlib(
     xlim,
     ylim,
     title,
-    skill_df,
-    units,
+    skill_scores,
+    skill_score_unit,
     fit_to_quantiles,
     ax,
     **kwargs,
@@ -325,10 +348,8 @@ def _scatter_matplotlib(
 
     ax.set_title(title)
     # Add skill table
-    if skill_df is not None:
-        df = skill_df.to_dataframe()
-        assert isinstance(df, pd.DataFrame)
-        _plot_summary_table(df, units, max_cbar=max_cbar)
+    if skill_scores is not None:
+        _plot_summary_table(skill_scores, skill_score_unit, max_cbar=max_cbar)
     return ax
 
 
@@ -354,8 +375,8 @@ def _scatter_plotly(
     xlim,
     ylim,
     title,
-    skill_df,  # TODO implement
-    units,  # TODO implement
+    skill_scores,  # TODO implement
+    skill_score_unit,  # TODO implement
     fit_to_quantiles,  # TODO implement
     **kwargs,
 ):
@@ -516,9 +537,9 @@ def _plot_summary_border(
 
 
 def _plot_summary_table(
-    df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
+    skill_scores: Mapping[str, float], units: str, max_cbar: Optional[float] = None
 ) -> None:
-    table = format_skill_df(df, units)
+    table = format_skill_table(skill_scores, units)
     cols = ["name", "sep", "value"]
     text_cols = ["\n".join(table[col]) for col in cols]
 
