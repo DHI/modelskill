@@ -41,7 +41,7 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_table: Optional[str | Sequence[str] | bool],
+    skill_table: Optional[str | Sequence[str] | bool] = False,
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: Optional[str] = "",
     ax: Optional[Axes] = None,
