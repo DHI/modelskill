@@ -988,7 +988,7 @@ class Comparer(Scoreable):
         if cmp.n_points == 0:
             raise ValueError("No data selected for skill assessment")
 
-        by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
+        by = _parse_groupby(by, cmp.n_models, n_obs=1, n_qnt=1)
 
         df = cmp.to_dataframe()
         res = _groupby_df(df, by, metrics)

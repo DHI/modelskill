@@ -63,13 +63,13 @@ def _get_deprecated_obs_var_args(kwargs):
     return observation, variable
 
 
-def _all_df_template(n_variables: int = 1):
+def _all_df_template(n_quantities: int = 1):
     template = {
         "model": pd.Series([], dtype="category"),
         "observation": pd.Series([], dtype="category"),
     }
-    if n_variables > 1:
-        template["variable"] = pd.Series([], dtype="category")
+    if n_quantities > 1:
+        template["quantity"] = pd.Series([], dtype="category")
 
     template["x"] = pd.Series([], dtype="float")
     template["y"] = pd.Series([], dtype="float")
@@ -190,8 +190,8 @@ class ComparerCollection(Mapping, Scoreable):
         return len(self.mod_names)
 
     @property
-    def var_names(self) -> List[str]:
-        """List of unique variable names"""
+    def quantity_names(self) -> List[str]:
+        """List of unique quantity names"""
         unique_names = []
         for cmp in self.comparers.values():
             n = cmp.quantity.name
@@ -200,14 +200,13 @@ class ComparerCollection(Mapping, Scoreable):
         return unique_names
 
     @property
-    def n_variables(self) -> int:
-        return len(self.var_names)
+    def n_quantities(self) -> int:
+        return len(self.quantity_names)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Return a copy of the data as a pandas DataFrame"""
-        # TODO: var_name
         # TODO delegate to each comparer
-        res = _all_df_template(self.n_variables)
+        res = _all_df_template(self.n_quantities)
         frames = []
         cols = res.keys()
         for cmp in self.comparers.values():
@@ -218,8 +217,8 @@ class ComparerCollection(Mapping, Scoreable):
                 df = df.rename(columns={mod_name: "mod_val"})
                 df["model"] = mod_name
                 df["observation"] = cmp.name
-                if self.n_variables > 1:
-                    df["variable"] = cmp.quantity.name
+                if self.n_quantities > 1:
+                    df["quantity"] = cmp.quantity.name
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.data["Observation"].values
@@ -303,11 +302,12 @@ class ComparerCollection(Mapping, Scoreable):
         self,
         model: Optional[IdOrNameTypes] = None,
         observation: Optional[IdOrNameTypes] = None,
-        variable: Optional[IdOrNameTypes] = None,
+        quantity: Optional[IdOrNameTypes] = None,
         start: Optional[TimeTypes] = None,
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
+        variable: Optional[IdOrNameTypes] = None,  # obsolete
         **kwargs,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
@@ -318,8 +318,8 @@ class ComparerCollection(Mapping, Scoreable):
             Model name or index. If None, all models are selected.
         observation : str or int or list of str or list of int, optional
             Observation name or index. If None, all observations are selected.
-        variable : str or int or list of str or list of int, optional
-            Variable name or index. If None, all variables are selected.
+        quantity : str or int or list of str or list of int, optional
+            Quantity name or index. If None, all quantities are selected.
         start : str or datetime, optional
             Start time. If None, all times are selected.
         end : str or datetime, optional
@@ -339,6 +339,12 @@ class ComparerCollection(Mapping, Scoreable):
         ComparerCollection
             New ComparerCollection with selected data.
         """
+        if variable is not None:
+            warnings.warn(
+                "variable is deprecated, use quantity instead",
+                FutureWarning,
+            )
+            quantity = variable
         # TODO is this really necessary to do both in ComparerCollection and Comparer?
         if model is not None:
             if isinstance(model, (str, int)):
@@ -352,15 +358,15 @@ class ComparerCollection(Mapping, Scoreable):
             observation = [observation] if np.isscalar(observation) else observation  # type: ignore
             observation = [_get_name(o, self.obs_names) for o in observation]  # type: ignore
 
-        if (variable is not None) and (self.n_variables > 1):
-            variable = [variable] if np.isscalar(variable) else variable  # type: ignore
-            variable = [_get_name(v, self.var_names) for v in variable]  # type: ignore
+        if (quantity is not None) and (self.n_quantities > 1):
+            quantity = [quantity] if np.isscalar(quantity) else quantity  # type: ignore
+            quantity = [_get_name(v, self.quantity_names) for v in quantity]  # type: ignore
         else:
-            variable = self.var_names
+            quantity = self.quantity_names
 
         cmps = []
         for cmp in self.comparers.values():
-            if cmp.name in observation and cmp.quantity.name in variable:
+            if cmp.name in observation and cmp.quantity.name in quantity:
                 thismodel = (
                     [m for m in mod_names if m in cmp.mod_names] if model else None
                 )
@@ -495,7 +501,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=model,
             observation=observation,
-            variable=variable,
+            quantity=variable,
             start=start,
             end=end,
             area=area,
@@ -511,7 +517,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         # TODO: FIX
         n_var = (
-            cmp.n_variables
+            cmp.n_quantities
         )  # len(df.variable.unique()) if (self.n_variables > 1) else 1
         by = _parse_groupby(by, n_models, n_obs, n_var)
         assert isinstance(by, list)
@@ -524,13 +530,13 @@ class ComparerCollection(Mapping, Scoreable):
         return SkillTable(res)
 
     def _add_as_col_if_not_in_index(
-        self, df, skilldf, fields=["model", "observation", "variable"]
+        self, df, skilldf, fields=["model", "observation", "quantity"]
     ):
         """Add a field to skilldf if unique in df"""
         for field in reversed(fields):
             if (field == "model") and (self.n_models <= 1):
                 continue
-            if (field == "variable") and (self.n_variables <= 1):
+            if (field == "quantity") and (self.n_quantities <= 1):
                 continue
             if field not in skilldf.index.names:
                 unames = df[field].unique()
@@ -632,7 +638,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=model,
             observation=observation,
-            variable=variable,
+            quantity=variable,
             start=start,
             end=end,
             area=area,
@@ -695,14 +701,14 @@ class ComparerCollection(Mapping, Scoreable):
         mod_name = self.mod_names[mod_id]
 
         # select variable
-        var_id = _get_idx(variable, self.var_names)
-        var_name = self.var_names[var_id]
+        qnt_id = _get_idx(variable, self.quantity_names)
+        qnt_name = self.quantity_names[qnt_id]
 
         # filter data
         cmp = self.sel(
             model=mod_name,
             observation=observation,
-            variable=var_name,
+            quantity=qnt_name,
             start=start,
             end=end,
             area=area,
@@ -787,7 +793,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=model,  # deprecated
             observation=observation,  # deprecated
-            variable=variable,  # deprecated
+            quantity=variable,  # deprecated
             start=start,  # deprecated
             end=end,  # deprecated
             area=area,  # deprecated
@@ -800,7 +806,7 @@ class ComparerCollection(Mapping, Scoreable):
         df = cmp.to_dataframe()
         mod_names = cmp.mod_names  # df.model.unique()
         # obs_names = cmp.obs_names  # df.observation.unique()
-        var_names = cmp.var_names  # self.var_names
+        qnt_names = cmp.quantity_names  # self.qnt_names
 
         # skill assessment
         pmetrics = _parse_metric(metrics)
@@ -820,7 +826,7 @@ class ComparerCollection(Mapping, Scoreable):
             return np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
-        by = cmp._mean_skill_by(skilldf, mod_names, var_names)
+        by = cmp._mean_skill_by(skilldf, mod_names, qnt_names)
         agg = {"n": "sum"}
         for metric in pmetrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
@@ -830,7 +836,7 @@ class ComparerCollection(Mapping, Scoreable):
         res.index.name = "model"
 
         # output
-        res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "variable"])
+        res = cmp._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])
         return SkillTable(res.astype({"n": int}))
 
     # def mean_skill_points(
@@ -900,15 +906,15 @@ class ComparerCollection(Mapping, Scoreable):
     #     # return self.skill(df=dfall, metrics=metrics)
     #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
-    def _mean_skill_by(self, skilldf, mod_names, var_names):
+    def _mean_skill_by(self, skilldf, mod_names, qnt_names):
         by = []
         if len(mod_names) > 1:
             by.append("model")
-        if len(var_names) > 1:
-            by.append("variable")
+        if len(qnt_names) > 1:
+            by.append("quantity")
         if len(by) == 0:
-            if (self.n_variables > 1) and ("variable" in skilldf):
-                by.append("variable")
+            if (self.n_quantities > 1) and ("quantity" in skilldf):
+                by.append("quantity")
             elif "model" in skilldf:
                 by.append("model")
             else:
@@ -967,7 +973,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         Wrapping mean_skill() with a single metric.
 
-        NOTE: will take simple mean over different variables
+        NOTE: will take simple mean over different quantities!
 
         Parameters
         ----------
@@ -1032,7 +1038,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=models,  # deprecated
             observation=observation,  # deprecated
-            variable=variable,  # deprecated
+            quantity=variable,  # deprecated
             start=start,  # deprecated
             end=end,  # deprecated
             area=area,  # deprecated
@@ -1071,7 +1077,7 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = self.sel(
             model=model,
             observation=observation,
-            variable=variable,
+            quantity=variable,
             start=start,
             end=end,
             area=area,
