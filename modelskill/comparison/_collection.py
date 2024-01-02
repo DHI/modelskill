@@ -190,6 +190,16 @@ class ComparerCollection(Mapping, Scoreable):
         return len(self.mod_names)
 
     @property
+    def aux_names(self) -> List[str]:
+        """List of unique model names"""
+        unique_names = []
+        for cmp in self.comparers.values():
+            for n in cmp.aux_names:
+                if n not in unique_names:
+                    unique_names.append(n)
+        return unique_names
+    
+    @property
     def quantity_names(self) -> List[str]:
         """List of unique quantity names"""
         unique_names = []
@@ -257,9 +267,19 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc2.mod_names
         ['model1', 'mr2']
         """
+        for k in mapping.keys():
+            allowed_keys = self.obs_names + self.mod_names + self.aux_names
+            if k not in allowed_keys:
+                raise KeyError(f"Unknown key: {k}; must be one of {allowed_keys}")
+
         cmps = []
         for cmp in self.comparers.values():
-            cmps.append(cmp.rename(mapping))
+            try:
+                cmp2 = cmp.rename(mapping)
+                cmps.append(cmp2)
+            except KeyError:
+                # if renaming observation only one will match
+                cmps.append(cmp)
         return ComparerCollection(cmps)
 
     @overload
