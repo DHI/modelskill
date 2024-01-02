@@ -5,7 +5,6 @@ from typing import (
     Callable,
     Dict,
     List,
-    Mapping,
     Optional,
     Union,
     Iterable,
@@ -655,7 +654,7 @@ class Comparer(Scoreable):
     def copy(self):
         return self.__copy__()
 
-    def rename(self, mapping: Mapping[str, str]) -> "Comparer":
+    def rename(self, mapping: Dict[str, str]) -> "Comparer":
         """Rename observation, model or auxiliary data variables
 
         Parameters
@@ -677,6 +676,7 @@ class Comparer(Scoreable):
         ['model2']
         """
         if any([k in __RESERVED_NAMES for k in mapping.values()]):
+            # TODO: also check for duplicates
             raise ValueError(
                 f"Cannot rename to any of {__RESERVED_NAMES}, these are reserved names!"
             )

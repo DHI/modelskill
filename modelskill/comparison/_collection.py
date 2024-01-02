@@ -236,7 +236,7 @@ class ComparerCollection(Mapping, Scoreable):
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
 
-    def rename(self, mapping: Mapping[str, str]) -> "Comparer":
+    def rename(self, mapping: Dict[str, str]) -> "ComparerCollection":
         """Rename observation, model or auxiliary data variables
 
         Parameters
