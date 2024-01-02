@@ -680,12 +680,20 @@ class Comparer(Scoreable):
             raise ValueError(
                 f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
             )
+        if "Observation" in mapping.keys():
+            raise ValueError("Cannot rename Observation")
 
         for k in mapping.keys():
+            # rename observation
             if k == self.name:
                 self.name = mapping[k]
                 mapping.pop(k)
                 break
+
+        for k in mapping.keys():
+            if k not in self.mod_names + self.aux_names:
+                allowed = [self.name] + self.mod_names + self.aux_names
+                raise KeyError(f"Unknown key: {k}; must be one of {allowed}")
 
         data = self.data.rename(mapping)
         raw_mod_data = {mapping.get(k, k): v for k, v in self.raw_mod_data.items()}
