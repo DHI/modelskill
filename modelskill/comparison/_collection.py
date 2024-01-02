@@ -279,6 +279,7 @@ class ComparerCollection(Mapping, Scoreable):
                 cmps.append(cmp2)
             except KeyError:
                 # if renaming observation only one will match
+                # TODO: if we try to rename both observation and model this approach will fail!!!
                 cmps.append(cmp)
         return ComparerCollection(cmps)
 
