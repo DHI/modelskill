@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import modelskill as ms
-from modelskill.plotting._misc import format_skill_df
+from modelskill.plotting._misc import format_skill_table
 from modelskill.plotting._misc import sample_points
 
 
@@ -69,7 +69,7 @@ def test_plot_spatial_overview(o1, o2, o3, mr1):
     plt.close()
 
 
-def test_format_skill_df():
+def test_format_skill_table():
     #
     #    	            n	bias	rmse	urmse	mae	cc	si	r2
     # observation
@@ -89,7 +89,9 @@ def test_format_skill_df():
         index=["smhi_2095_klagshamn"],
     )
 
-    df = format_skill_df(skill_df, units="degC")
+    skill_scores = skill_df.iloc[0].to_dict()
+
+    df = format_skill_table(skill_scores, unit="degC")
     assert "N" in df.iloc[0, 0]
     assert "167" in df.iloc[0, 2]
     assert "BIAS" in df.iloc[1, 0]
@@ -103,7 +105,7 @@ def test_format_skill_df():
     assert "CC" in df.iloc[5, 0]
     assert "0.84" in df.iloc[5, 2]
 
-    df_short = format_skill_df(skill_df, units="meter")
+    df_short = format_skill_table(skill_scores, unit="meter")
 
     assert "N" in df_short.iloc[0, 0]
     assert "167" in df_short.iloc[0, 2]
