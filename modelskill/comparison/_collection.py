@@ -193,12 +193,7 @@ class ComparerCollection(Mapping, Scoreable):
     @property
     def aux_names(self) -> List[str]:
         """List of unique auxiliary names"""
-        unique_names = []
-        for cmp in self.comparers.values():
-            for n in cmp.aux_names:
-                if n not in unique_names:
-                    unique_names.append(n)
-        return unique_names
+        return list({n for cmp in self for n in cmp.aux_names})
 
     @property
     def quantity_names(self) -> List[str]:
