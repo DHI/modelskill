@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
 import yaml
-from typing import Union, List
+from typing import Union
 
 from . import model_result, match, Quantity
 from .obs import PointObservation, TrackObservation
