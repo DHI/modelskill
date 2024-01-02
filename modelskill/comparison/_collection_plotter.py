@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Any, List, Union, Optional, Tuple, Sequence, TYPE_CHECKING
-from matplotlib.axes import Axes  # type: ignore
+from matplotlib.axes import Axes
+import matplotlib.colors as colors
 import warnings
 
 if TYPE_CHECKING:
@@ -36,6 +37,7 @@ class ComparerCollectionPlotter:
         show_points: bool | int | float | None = None,
         show_hist: Optional[bool] = None,
         show_density: Optional[bool] = None,
+        norm: Optional[colors.Normalize] = None,
         backend: str = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
         xlim: Optional[Tuple[float, float]] = None,
@@ -45,9 +47,9 @@ class ComparerCollectionPlotter:
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
         skill_table: Optional[Union[str, List[str], bool]] = None,
-        ax=None,
+        ax: Optional[Axes] = None,
         **kwargs,
-    ):
+    ) -> Axes:
         """Scatter plot showing compared data: observation vs modelled
         Optionally, with density histogram.
 
@@ -140,6 +142,7 @@ class ComparerCollectionPlotter:
                 show_points=show_points,
                 show_hist=show_hist,
                 show_density=show_density,
+                norm=norm,
                 backend=backend,
                 figsize=figsize,
                 xlim=xlim,

@@ -1,5 +1,13 @@
 from __future__ import annotations
-from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING, Callable
+from typing import (
+    Union,
+    List,
+    Optional,
+    Tuple,
+    Sequence,
+    TYPE_CHECKING,
+    Callable,
+)
 import warnings
 
 if TYPE_CHECKING:
@@ -25,11 +33,11 @@ from ..settings import options
 class ComparerPlotter:
     """Plotter class for Comparer"""
 
-    def __init__(self, comparer: Comparer):
+    def __init__(self, comparer: Comparer) -> None:
         self.comparer = comparer
         self.is_directional = comparer.quantity.is_directional
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> matplotlib.axes.Axes:
         """Plot scatter plot of modelled vs observed data"""
         return self.scatter(*args, **kwargs)
 
@@ -457,8 +465,9 @@ class ComparerPlotter:
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
         skill_table: Optional[Union[str, List[str], bool]] = None,
+        ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
-    ):
+    ) -> matplotlib.axes.Axes:
         """Scatter plot showing compared data: observation vs modelled
         Optionally, with density histogram.
 
@@ -514,7 +523,9 @@ class ComparerPlotter:
             list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
             This kword adds a box at the right of the scatter plot,
             by default False
-        kwargs
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
+        **kwargs: other keyword arguments to plt.scatter()
 
         Examples
         ------
@@ -556,6 +567,7 @@ class ComparerPlotter:
                 xlabel=xlabel,
                 ylabel=ylabel,
                 skill_table=skill_table,
+                ax=ax,
                 **kwargs,
             )
             axes.append(ax_mod)
