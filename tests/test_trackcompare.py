@@ -365,7 +365,7 @@ def test_hist(comparer):
 
     cmp.plot.hist(bins=10)
     cmp.plot.hist(density=False)
-    cmp.plot.hist(model=0, title="new_title", alpha=0.2)
+    cmp.sel(model=0).plot.hist(title="new_title", alpha=0.2)
 
 
 def test_residual_hist(comparer):
