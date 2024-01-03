@@ -291,6 +291,26 @@ def test_filter_by_attrs_custom(cc):
     assert cc3[0] == cc[0]
 
 
+def test_skill_by_attrs_gtype(cc):
+    sk = cc.skill(by="attrs:gtype")
+    assert len(sk) == 2
+    assert sk.data.index[0] == "point"
+    assert sk.data.index[1] == "track"
+    assert sk.data.index.name == "gtype"
+
+
+def test_skill_by_attrs_gtype_and_mod(cc):
+    sk = cc.skill(by=["attrs:gtype", "model"])
+    assert len(sk) == 5
+    assert sk.data.index[0] == ("point", "m1")
+    assert sk.data.index[1] == ("point", "m2")
+    assert sk.data.index[2] == ("track", "m1")
+    assert sk.data.index[3] == ("track", "m2")
+    assert sk.data.index[4] == ("track", "m3")
+    assert sk.data.index.names[0] == "gtype"
+    assert sk.data.index.names[1] == "model"
+
+
 # ======================== load/save ========================
 
 
