@@ -108,6 +108,15 @@ class Observation(TimeSeries):
         self.data.attrs["weight"] = weight
 
     @property
+    def attrs(self) -> dict[str, Any]:
+        """Attributes of the observation"""
+        return self.data.attrs
+
+    @attrs.setter
+    def attrs(self, value: dict[str, Serializable]) -> None:
+        self.data.attrs = value
+
+    @property
     def weight(self) -> float:
         """Weighting factor for skill scores"""
         return self.data.attrs["weight"]
@@ -210,15 +219,6 @@ class PointObservation(Observation):
     #         return Point(self.x, self.y)
     #     else:
     #         return Point(self.x, self.y, self.z)
-
-    @property
-    def attrs(self) -> dict[str, Any]:
-        """Attributes of the observation"""
-        return self.data.attrs
-
-    @attrs.setter
-    def attrs(self, value: dict[str, Serializable]) -> None:
-        self.data.attrs = value
 
     @property
     def z(self):
