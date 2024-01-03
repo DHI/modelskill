@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional, get_args
 
 import mikeio
-import numpy as np
 import pandas as pd
 
 from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
@@ -98,7 +97,9 @@ class DfsuModelResult(SpatialField):
     def _in_domain(self, x: float, y: float) -> bool:
         return self.data.geometry.contains([x, y])  # type: ignore
 
-    def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
+    def extract(
+        self, observation: Observation, **kwargs
+    ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
         Parameters
@@ -135,31 +136,28 @@ class DfsuModelResult(SpatialField):
                 f"PointObservation '{observation.name}' ({x}, {y}) outside model domain!"
             )
 
-        # TODO: interp2d
-        xy = np.atleast_2d([x, y])
-        elemids = self.data.geometry.find_index(coords=xy)
         if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-            ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
+            # TODO: interp2d
+            ds_model = self.data.read(x=x, y=y, items=self.sel_items.all)
             aux_items = self.sel_items.aux
         elif isinstance(self.data, mikeio.Dataset):
-            ds_model = self.data[self.sel_items.all].isel(element=elemids)
+            ds_model = self.data[self.sel_items.all].interp(x=x, y=y)
             aux_items = self.sel_items.aux
         elif isinstance(self.data, mikeio.DataArray):
-            da = self.data.isel(element=elemids)
+            da = self.data.interp(x=x, y=y)
             ds_model = mikeio.Dataset({da.name: da})
             aux_items = None
 
         assert isinstance(ds_model, mikeio.Dataset)
 
-        # TODO not sure why we rename here
         assert self.name is not None
         ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
 
         return PointModelResult(
             data=ds_model,
             item=self.name,
-            x=ds_model.geometry.x,
-            y=ds_model.geometry.y,
+            x=x,  #  != ds_model.geometry.x,
+            y=y,  # != ds_model.geometry.y,
             name=self.name,
             quantity=self.quantity,
             aux_items=aux_items,
