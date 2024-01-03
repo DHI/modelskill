@@ -199,11 +199,10 @@ def test_rename_obs(cc):
     assert cc2.obs_names == ["fake point obs 2", "fake track obs"]
     assert cc.obs_names == ["fake point obs", "fake track obs"]
 
-    # TODO: FAILS
-    # cc3 = cc.rename(
-    #     {"fake point obs": "fake point obs 2", "fake track obs": "fake track obs 2"}
-    # )
-    # assert cc3.obs_names == ["fake point obs 2", "fake track obs 2"]
+    cc3 = cc.rename(
+        {"fake point obs": "fake point obs 2", "fake track obs": "fake track obs 2"}
+    )
+    assert cc3.obs_names == ["fake point obs 2", "fake track obs 2"]
 
 
 def test_rename_mod(cc):
@@ -211,9 +210,8 @@ def test_rename_mod(cc):
     assert cc2.mod_names == ["m1b", "m2", "m3"]
     assert cc.mod_names == ["m1", "m2", "m3"]
 
-    # TODO: FAILS
-    # cc3 = cc.rename({"m1": "m1b", "m2": "m2b", "m3": "m3b"})
-    # assert cc3.mod_names == ["m1b", "m2b", "m3b"]
+    cc3 = cc.rename({"m1": "m1b", "m2": "m2b", "m3": "m3b"})
+    assert cc3.mod_names == ["m1b", "m2b", "m3b"]
 
 
 def test_rename_mod_and_obs(cc):
@@ -240,7 +238,7 @@ def test_rename_aux_and_mod(cc):
     cc[0].data["aux"] = aux
     cc2 = cc.rename({"aux": "aux2", "m1": "m1b"})
     assert cc2.aux_names == ["aux2"]
-    # assert cc2.mod_names == ["m1b", "m2", "m3"]  # TODO FAILS!
+    assert cc2.mod_names == ["m1b", "m2", "m3"]
 
 
 def test_rename_fails_key_error(cc):
