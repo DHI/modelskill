@@ -165,6 +165,60 @@ def test_cc_query(cc):
     assert cc2.n_points == 2
 
 
+def test_add_cc_pc(cc, pc):
+    pc2 = pc.copy()
+    pc2.data.attrs["name"] = "pc2"
+    cc2 = cc + pc2
+    assert cc2.n_points == 15
+    assert cc2.n_comparers == 3
+
+
+def test_add_cc_tc(cc, tc):
+    tc2 = tc.copy()
+    tc2.data.attrs["name"] = "tc2"
+    cc2 = cc + tc2
+    assert cc2.n_points == 15
+    assert cc2.n_comparers == 3
+
+
+def test_add_cc_cc(cc, pc, tc):
+    pc2 = pc.copy()
+    pc2.data.attrs["name"] = "pc2"
+    tc2 = tc.copy()
+    tc2.data.attrs["name"] = "tc2"
+    tc3 = tc.copy()  # keep name
+    cc2 = pc2 + tc2 + tc3
+
+    cc3 = cc + cc2
+    # assert cc3.n_points == 15
+    assert cc3.n_comparers == 4
+
+
+def test_filter_by_attrs(cc):
+    cc2 = cc.filter_by_attrs(gtype="point")
+    assert cc2.n_comparers == 1
+    assert cc2[0].gtype == "point"
+
+
+def test_filter_by_attrs_custom(cc):
+    cc[0].data.attrs["custom"] = 12
+    cc[1].data.attrs["custom"] = 13
+
+    cc2 = cc.filter_by_attrs(custom=12)
+    assert cc2.n_comparers == 1
+    assert cc2[0].data.attrs["custom"] == 12
+    assert cc2[0] == cc[0]
+
+    cc[0].data.attrs["custom2"] = True
+    cc3 = cc.filter_by_attrs(custom2=True)
+    assert cc3.n_comparers == 1
+    assert cc3[0].data.attrs["custom2"]
+    assert cc3[0] == cc[0]
+
+
+# ======================== load/save ========================
+
+
 def test_save_and_load_preserves_order_of_comparers(tmp_path):
     data = pd.DataFrame(
         {"zulu": [1, 2, 3], "alpha": [4, 5, 6], "bravo": [7, 8, 9], "m1": [10, 11, 12]}
@@ -222,48 +276,22 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
     assert len(cc2["fake point obs"].raw_mod_data["m1"]) == 6
 
 
-def test_scatter(cc):
+# ======================== plotting ========================
+
+
+def test_plot_scatter(cc):
     ax = cc.plot.scatter(skill_table=True)
     assert ax is not None
 
 
-def test_hist(cc):
+def test_plot_hist(cc):
     ax = cc.sel(model="m1").plot.hist()
     assert ax is not None
 
 
-def test_kde(cc):
+def test_plot_kde(cc):
     ax = cc.plot.kde()
     assert ax is not None
-
-
-def test_add_cc_pc(cc, pc):
-    pc2 = pc.copy()
-    pc2.data.attrs["name"] = "pc2"
-    cc2 = cc + pc2
-    assert cc2.n_points == 15
-    assert cc2.n_comparers == 3
-
-
-def test_add_cc_tc(cc, tc):
-    tc2 = tc.copy()
-    tc2.data.attrs["name"] = "tc2"
-    cc2 = cc + tc2
-    assert cc2.n_points == 15
-    assert cc2.n_comparers == 3
-
-
-def test_add_cc_cc(cc, pc, tc):
-    pc2 = pc.copy()
-    pc2.data.attrs["name"] = "pc2"
-    tc2 = tc.copy()
-    tc2.data.attrs["name"] = "tc2"
-    tc3 = tc.copy()  # keep name
-    cc2 = pc2 + tc2 + tc3
-
-    cc3 = cc + cc2
-    # assert cc3.n_points == 15
-    assert cc3.n_comparers == 4
 
 
 def test_plots_directional(cc):
@@ -351,25 +379,3 @@ def test_plot_accepts_figsize(cc_plot_function):
     ax = cc_plot_function(figsize=figsize)
     a, b = ax.get_figure().get_size_inches()
     assert a, b == figsize
-
-
-def test_filter_by_attrs(cc):
-    cc2 = cc.filter_by_attrs(gtype="point")
-    assert cc2.n_comparers == 1
-    assert cc2[0].gtype == "point"
-
-
-def test_filter_by_attrs_custom(cc):
-    cc[0].data.attrs["custom"] = 12
-    cc[1].data.attrs["custom"] = 13
-
-    cc2 = cc.filter_by_attrs(custom=12)
-    assert cc2.n_comparers == 1
-    assert cc2[0].data.attrs["custom"] == 12
-    assert cc2[0] == cc[0]
-
-    cc[0].data.attrs["custom2"] = True
-    cc3 = cc.filter_by_attrs(custom2=True)
-    assert cc3.n_comparers == 1
-    assert cc3[0].data.attrs["custom2"]
-    assert cc3[0] == cc[0]
