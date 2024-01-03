@@ -310,6 +310,43 @@ def test_skill_by_attrs_gtype_and_mod(cc):
     assert sk.data.index.names[0] == "gtype"
     assert sk.data.index.names[1] == "model"
 
+    # TODO: observed=True doesn't work on model
+    # sk2 = cc.skill(by=["attrs:gtype", "model"], observed=True)
+    # assert len(sk2) == 6
+    # assert sk.data.index[0] == ("point", "m1")
+    # assert sk.data.index[1] == ("point", "m2")
+    # assert sk.data.index[2] == ("point", "m3")
+
+
+def test_skill_by_attrs_int(cc):
+    cc[0].data.attrs["custom"] = 12
+    cc[1].data.attrs["custom"] = 13
+
+    sk = cc.skill(by="attrs:custom")
+    assert len(sk) == 2
+    assert sk.data.index[0] == 12
+    assert sk.data.index[1] == 13
+    assert sk.data.index.name == "custom"
+
+    sk = cc.skill(by=("attrs:custom", "model"))
+    assert len(sk) == 5
+    assert sk.data.index[4] == (13, "m3")
+
+
+def test_skill_by_attrs_observed(cc):
+    cc[0].data.attrs["use"] = "DA"  # point
+
+    sk = cc.skill(by="attrs:use")  # observed=False is default
+    assert len(sk) == 2
+    assert sk.data.index[0] is False  # note sorted by df.groupby !
+    assert sk.data.index[1] == "DA"
+    assert sk.data.index.name == "use"
+
+    sk = cc.skill(by="attrs:use", observed=True)
+    assert len(sk) == 1
+    assert sk.data.index[0] == "DA"
+    assert sk.data.index.name == "use"
+
 
 # ======================== load/save ========================
 
