@@ -9,6 +9,38 @@ mpl.use("Agg")
 
 
 @pytest.fixture
+def sk_df1():
+    d = {
+        "model": "m1",
+        "n": 123,
+        "bias": 0.1,
+        "rmse": 0.2,
+        "corr": 0.3,
+        "si": 0.4,
+        "r2": 0.5,
+    }
+    df = pd.DataFrame(d, index=["obs1"])
+    df.index.name = "observation"
+    df = df.reset_index().set_index(["observation", "model"])
+    return df
+
+
+@pytest.fixture
+def sk_df2():
+    d = {
+        "n": [123, 456],
+        "x": [1.1, 2.1],
+        "y": [1.2, 2.2],
+        "bias": [1.3, 2.3],
+        "rmse": [1.4, 2.4],
+        "corr": [1.5, 2.5],
+    }
+    df = pd.DataFrame(d, index=["obs1", "obs2"])
+    df.index.name = "observation"
+    return df
+
+
+@pytest.fixture
 def cc1():
     fn = "tests/testdata/NorthSeaHD_and_windspeed.dfsu"
     mr = ms.model_result(fn, item=0, name="HD")
@@ -44,6 +76,23 @@ def cc2(o1, o2, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     mr2 = ms.model_result(fn, item=0, name="SW_2")
     return ms.match([o1, o2, o3], [mr1, mr2])
+
+
+def test_skill_table(sk_df1):
+    sk = ms.SkillTable(sk_df1)
+    assert sk.obs_names == ["obs1"]
+    assert sk.mod_names == ["m1"]
+    assert sk.quantity_names == []
+    assert sk.metrics == ["n", "bias", "rmse", "corr", "si", "r2"]
+
+
+def test_skill_table_2rows(sk_df2):
+    sk = ms.SkillTable(sk_df2)
+    assert sk.obs_names[0] == "obs1"
+    assert sk.obs_names[1] == "obs2"
+    assert sk.mod_names == []
+    assert sk.quantity_names == []
+    assert sk.metrics == ["n", "bias", "rmse", "corr"]  # note: no "x", "y"
 
 
 def test_skill(cc1):
