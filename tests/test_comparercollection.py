@@ -199,6 +199,7 @@ def test_rename_obs(cc):
     assert cc2.obs_names == ["fake point obs 2", "fake track obs"]
     assert cc.obs_names == ["fake point obs", "fake track obs"]
 
+    # TODO: FAILS
     # cc3 = cc.rename(
     #     {"fake point obs": "fake point obs 2", "fake track obs": "fake track obs 2"}
     # )
@@ -210,8 +211,64 @@ def test_rename_mod(cc):
     assert cc2.mod_names == ["m1b", "m2", "m3"]
     assert cc.mod_names == ["m1", "m2", "m3"]
 
+    # TODO: FAILS
     # cc3 = cc.rename({"m1": "m1b", "m2": "m2b", "m3": "m3b"})
     # assert cc3.mod_names == ["m1b", "m2b", "m3b"]
+
+
+def test_rename_mod_and_obs(cc):
+    cc2 = cc.rename({"m1": "m1b", "fake point obs": "fake point obs 2"})
+    assert cc2.mod_names == ["m1b", "m2", "m3"]
+    assert cc2.obs_names == ["fake point obs 2", "fake track obs"]
+    assert cc.mod_names == ["m1", "m2", "m3"]
+    assert cc.obs_names == ["fake point obs", "fake track obs"]
+
+
+def test_rename_aux(cc):
+    aux = xr.ones_like(cc[0].data["m1"])
+    aux.attrs["kind"] = "aux"
+    cc[0].data["aux"] = aux
+    assert "aux" in cc.aux_names
+    cc2 = cc.rename({"aux": "aux2"})
+    assert "aux" not in cc2[0].data
+    assert cc2.aux_names == ["aux2"]
+
+
+def test_rename_aux_and_mod(cc):
+    aux = xr.ones_like(cc[0].data["m1"])
+    aux.attrs["kind"] = "aux"
+    cc[0].data["aux"] = aux
+    cc2 = cc.rename({"aux": "aux2", "m1": "m1b"})
+    assert cc2.aux_names == ["aux2"]
+    # assert cc2.mod_names == ["m1b", "m2", "m3"]  # TODO FAILS!
+
+
+def test_rename_fails_key_error(cc):
+    with pytest.raises(KeyError):
+        cc.rename({"m1": "m1b", "fake point obs": "fake point obs 2", "m4": "m4b"})
+    with pytest.raises(KeyError):
+        cc.rename({"m4": "m4b"})
+    with pytest.raises(KeyError):
+        cc.rename(
+            {
+                "fake point obs": "fake point obs 2",
+                "fake track obs": "fake track obs 2",
+                "m4": "m4b",
+            }
+        )
+
+
+def test_rename_fails_reserved_names(cc):
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "x"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "MOD1", "m2": "y"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "z", "fake point obs": "OBS"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "time"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "Observation"})
 
 
 def test_filter_by_attrs(cc):
