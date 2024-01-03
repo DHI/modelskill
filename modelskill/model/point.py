@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, Sequence, Any
 
 import xarray as xr
+import numpy as np
 import pandas as pd
 
 from ..obs import PointObservation
@@ -61,10 +62,29 @@ class PointModelResult(TimeSeries):
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
-    def extract(self, obs: PointObservation) -> PointModelResult:
+    def extract(
+        self, obs: PointObservation, spatial_tolerance=1e-3
+    ) -> PointModelResult:
         if not isinstance(obs, PointObservation):
             raise ValueError(f"obs must be a PointObservation not {type(obs)}")
-        # TODO check x,y,z
+
+        if (
+            (self.x is not None)
+            and (self.y is not None)
+            and (obs.x is not None)
+            and (obs.y is not None)
+        ):
+            x_dist = np.abs(self.x - obs.x)
+            if x_dist > spatial_tolerance:
+                raise ValueError(
+                    f"Model x coordinate {self.x} does not match location of observation {obs.x}"
+                )
+            y_dist = np.abs(self.y - obs.y)
+            if y_dist > spatial_tolerance:
+                raise ValueError(
+                    f"Model y coordinate {self.y} does not match location of observation {obs.y}"
+                )
+
         return self
 
     def interp_time(

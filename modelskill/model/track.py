@@ -67,8 +67,11 @@ class TrackModelResult(TimeSeries):
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
-    def extract(self, obs: TrackObservation) -> TrackModelResult:
+    def extract(
+        self, obs: TrackObservation, spatial_tolerance: float = 1e-3
+    ) -> TrackModelResult:
         if not isinstance(obs, TrackObservation):
             raise ValueError(f"obs must be a TrackObservation not {type(obs)}")
         # TODO check x,y,z
+        # currently handled by removing misaligned points in matching._select_overlapping_trackdata_with_tolerance
         return self

@@ -159,6 +159,7 @@ def match(
     mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_tolerance: float = 1e-3,
 ) -> Comparer:
     ...
 
@@ -172,6 +173,7 @@ def match(
     mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_tolerance: float = 1e-3,
 ) -> ComparerCollection:
     ...
 
@@ -184,6 +186,7 @@ def match(
     mod_item=None,
     gtype=None,
     max_model_gap=None,
+    spatial_tolerance: float = 1e-3,
 ):
     """Compare observations and model results
 
@@ -203,6 +206,8 @@ def match(
     max_model_gap : (float, optional)
         Maximum time gap (s) in the model result (e.g. for event-based
         model results), by default None
+    spatial_tolerance : float, optional
+        Tolerance for spatial matching, by default 1e-3
 
     Returns
     -------
@@ -224,11 +229,12 @@ def match(
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
+            spatial_tolerance=spatial_tolerance,
         )
 
-    assert isinstance(obs, Iterable)
+    assert isinstance(obs, Sequence)
 
-    if len(obs) > 1 and isinstance(mod, Iterable) and len(mod) > 1:
+    if len(obs) > 1 and isinstance(mod, Sequence) and len(mod) > 1:
         if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
             raise ValueError(
                 """
@@ -293,14 +299,19 @@ def _single_obs_compare(
     mod_item: Optional[int | str] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_tolerance: float = 1e-3,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
 
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
-    raw_mod_data = {m.name: m.extract(obs) for m in mods}
-    matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
+    raw_mod_data = {
+        m.name: m.extract(obs, spatial_tolerance=spatial_tolerance) for m in mods
+    }
+    matched_data = match_space_time(
+        obs, raw_mod_data, max_model_gap, spatial_tolerance=spatial_tolerance
+    )
     matched_data.attrs["weight"] = obs.weight
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)

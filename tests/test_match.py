@@ -489,16 +489,8 @@ def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
             {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
         ),
         name="m2",
-        x=2,
-        y=3,
-    )
-    m3 = ms.PointModelResult(
-        pd.DataFrame(
-            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
-        ),
-        name="m3",
-        x=3,
-        y=4,
+        x=1,
+        y=2,
     )
 
     # a single observation and model is ok
@@ -508,4 +500,93 @@ def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
 
     # but this is not allowed
     with pytest.raises(ValueError, match="SpatialField type"):
-        ms.match(obs=[o1, o2], mod=[m1, m2, m3])
+        ms.match(obs=[o1, o2], mod=[m1, m2])
+
+
+def test_matching_track_observation_with_point_model_result_not_supported():
+    track_data = pd.DataFrame(
+        {"x": [1, 2, 3], "y": [1, 2, 3], "wl": [0.0, -0.1, 0.2]},
+        index=pd.date_range("2000", freq="H", periods=3),
+    )
+    to = ms.TrackObservation(track_data, name="Atrack", item="wl")
+
+    mr = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [0.0, -0.1, 0.2]}, index=pd.date_range("2000", freq="H", periods=3)
+        ),
+        name="HD",
+    )
+
+    with pytest.raises(ValueError, match="TrackObservation"):
+        ms.match(obs=to, mod=mr)
+
+
+def test_matching_point_data_with_different_location_raises_error():
+    po = ms.PointObservation(
+        pd.DataFrame(
+            {"wl": [0.0, -0.1, 0.2]},
+            index=pd.date_range("2000", freq="H", periods=3),
+        ),
+        name="A station",
+        x=1,
+        y=1,
+    )
+
+    pm = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [0.0, -0.1, 0.2]},
+            index=pd.date_range("2000", freq="H", periods=3),
+        ),
+        name="Another location",
+        x=2,
+        y=2,
+    )
+
+    with pytest.raises(ValueError, match="location"):
+        ms.match(obs=po, mod=pm)
+
+
+def test_matching_point_data_with_spatial_tolerance():
+    po = ms.PointObservation(
+        pd.DataFrame(
+            {"wl": [0.0, -0.1, 0.2]},
+            index=pd.date_range("2000", freq="H", periods=3),
+        ),
+        name="A station",
+        x=1,
+        y=1,
+    )
+
+    pm = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [0.0, -0.1, 0.2]},
+            index=pd.date_range("2000", freq="H", periods=3),
+        ),
+        name="Another location",
+        x=2,
+        y=2,
+    )
+
+    cmp = ms.match(obs=po, mod=pm, spatial_tolerance=2.0)
+    assert cmp.n_points == 3
+
+
+def test_matching_point_data_with_undefined_location():
+    po = ms.PointObservation(
+        pd.DataFrame(
+            {"wl": [0.0, -0.1, 0.2]},
+            index=pd.date_range("2000", freq="H", periods=3),
+        ),
+        name="Main station",
+    )
+
+    pm = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [0.0, -0.1, 0.2]},
+            index=pd.date_range("2000", freq="H", periods=3),
+        ),
+        name="HD",
+    )
+
+    cmp = ms.match(obs=po, mod=pm)
+    cmp.score()["HD"] == pytest.approx(1.0)

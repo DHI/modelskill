@@ -110,7 +110,7 @@ class GridModelResult(SpatialField):
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def extract(
-        self, observation: PointObservation | TrackObservation
+        self, observation: PointObservation | TrackObservation, **kwargs
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
