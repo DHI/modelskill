@@ -199,15 +199,15 @@ class PointObservation(Observation):
 
         super().__init__(data=data, weight=weight)
 
-    @property
-    def geometry(self):
-        """Coordinates of observation (shapely.geometry.Point)"""
-        from shapely.geometry import Point
+    # @property
+    # def geometry(self):
+    #     """Coordinates of observation (shapely.geometry.Point)"""
+    #     from shapely.geometry import Point
 
-        if self.z is None:
-            return Point(self.x, self.y)
-        else:
-            return Point(self.x, self.y, self.z)
+    #     if self.z is None:
+    #         return Point(self.x, self.y)
+    #     else:
+    #         return Point(self.x, self.y, self.z)
 
     @property
     def z(self):
@@ -305,12 +305,12 @@ class TrackObservation(Observation):
 
     """
 
-    @property
-    def geometry(self):
-        """Coordinates of observation (shapely.geometry.MultiPoint)"""
-        from shapely.geometry import MultiPoint
+    # @property
+    # def geometry(self):
+    #     """Coordinates of observation (shapely.geometry.MultiPoint)"""
+    #     from shapely.geometry import MultiPoint
 
-        return MultiPoint(np.stack([self.x, self.y]).T)
+    #     return MultiPoint(np.stack([self.x, self.y]).T)
 
     def __init__(
         self,
