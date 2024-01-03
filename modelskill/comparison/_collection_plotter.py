@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, List, Union, Optional, Tuple, Sequence, TYPE_CHECKING
+from typing import Any, List, Literal, Union, Optional, Tuple, Sequence, TYPE_CHECKING
 from matplotlib.axes import Axes
 import matplotlib.colors as colors
 import warnings
@@ -38,7 +38,7 @@ class ComparerCollectionPlotter:
         show_hist: Optional[bool] = None,
         show_density: Optional[bool] = None,
         norm: Optional[colors.Normalize] = None,
-        backend: str = "matplotlib",
+        backend: Literal["matplotlib", "plotly"] = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
         xlim: Optional[Tuple[float, float]] = None,
         ylim: Optional[Tuple[float, float]] = None,
@@ -175,7 +175,7 @@ class ComparerCollectionPlotter:
         show_points: bool | int | float | None,
         show_hist: Optional[bool],
         show_density: Optional[bool],
-        backend: str,
+        backend: Literal["matplotlib", "plotly"],
         figsize: Tuple[float, float],
         xlim: Optional[Tuple[float, float]],
         ylim: Optional[Tuple[float, float]],

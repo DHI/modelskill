@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
+from typing import Literal, Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
 import warnings
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ def scatter(
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
     norm: Optional[colors.Normalize] = None,
-    backend: str = "matplotlib",
+    backend: Literal["matplotlib", "plotly"] = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
     ylim: Optional[Tuple[float, float]] = None,
@@ -380,8 +380,8 @@ def _scatter_plotly(
     xlim,
     ylim,
     title,
-    skill_scores,  # TODO implement
-    skill_score_unit,  # TODO implement
+    skill_scores,
+    skill_score_unit,
     fit_to_quantiles,
     **kwargs,
 ):
@@ -475,8 +475,32 @@ def _scatter_plotly(
     )
 
     fig = go.Figure(data=data, layout=layout)
-    fig.update_xaxes(range=xlim)
-    fig.update_yaxes(range=ylim)
+    fig.update_xaxes(range=xlim, nticks=10)
+    fig.update_yaxes(range=ylim, nticks=10)
+
+    if skill_scores is not None:
+        table = format_skill_table(skill_scores=skill_scores, unit=skill_score_unit)
+        lines = [
+            f"{row['name']:<6} {row['sep']} {row['value']:<6}"
+            for _, row in table.iterrows()
+        ]
+
+        # add text box
+        fig.add_annotation(
+            x=0.99,
+            y=0.01,
+            xref="paper",
+            yref="paper",
+            text="<br>".join(lines),
+            showarrow=False,
+            align="left",
+            bordercolor="black",
+            borderwidth=1,
+            borderpad=4,
+            bgcolor="white",
+            font=dict(family="Consolas, 'Liberation Mono', monospace"),
+        )
+
     fig.show()  # Should this be here
 
 
