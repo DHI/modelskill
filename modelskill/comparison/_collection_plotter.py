@@ -213,10 +213,7 @@ class ComparerCollectionPlotter:
             metrics = None if skill_table is True else skill_table
 
             # TODO why is this here?
-            if (
-                isinstance(self, ComparerCollectionPlotter)
-                and cc_sel_mod.n_observations == 1
-            ):
+            if isinstance(self, ComparerCollectionPlotter) and len(cc_sel_mod) == 1:
                 skill = cc_sel_mod.skill(metrics=metrics)  # type: ignore
             else:
                 skill = cc_sel_mod.mean_skill(metrics=metrics)  # type: ignore

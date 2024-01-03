@@ -90,7 +90,7 @@ def cc(pc, tc) -> ms.ComparerCollection:
 
 
 def test_cc_properties(cc):
-    assert cc.n_comparers == 2
+    assert len(cc) == 2
     assert len(cc) == 2
     assert cc.n_models == 3  # first:2, second:3
     assert cc.n_points == 10  # 5 + 5
@@ -102,7 +102,7 @@ def test_cc_properties(cc):
 
 def test_cc_sel_model(cc):
     cc2 = cc.sel(model="m1")
-    assert cc2.n_comparers == 2
+    assert len(cc2) == 2
     assert cc2.n_models == 1
     assert cc2.n_points == 10
     assert cc2.start_time == pd.Timestamp("2019-01-01")
@@ -113,14 +113,14 @@ def test_cc_sel_model(cc):
 
 def test_cc_sel_model_m3(cc):
     cc2 = cc.sel(model="m3")
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2.n_models == 1
 
 
 def test_cc_sel_model_last(cc):
     # last is m3 which is not in the first comparer
     cc2 = cc.sel(model=-1)
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2.n_models == 1
     assert cc2.n_points == 5
     assert cc2.start_time == pd.Timestamp("2019-01-03")
@@ -143,7 +143,7 @@ def test_cc_sel_model_last(cc):
 
 def test_cc_sel_time(cc):
     cc2 = cc.sel(time=slice("2019-01-03", "2019-01-05"))
-    assert cc2.n_comparers == 2
+    assert len(cc2) == 2
     assert cc2.n_models == 3
     assert cc2.n_points == 6
     assert cc2.start_time == pd.Timestamp("2019-01-03")
@@ -154,13 +154,13 @@ def test_cc_sel_time(cc):
 
 def test_cc_sel_attrs(cc):
     cc2 = cc.sel(gtype="point")
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2[0].gtype == "point"
 
 
 def test_cc_query(cc):
     cc2 = cc.query("Observation > 3")
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2.n_models == 2
     assert cc2.n_points == 2
 
@@ -170,7 +170,7 @@ def test_add_cc_pc(cc, pc):
     pc2.data.attrs["name"] = "pc2"
     cc2 = cc + pc2
     assert cc2.n_points == 15
-    assert cc2.n_comparers == 3
+    assert len(cc2) == 3
 
 
 def test_add_cc_tc(cc, tc):
@@ -178,7 +178,7 @@ def test_add_cc_tc(cc, tc):
     tc2.data.attrs["name"] = "tc2"
     cc2 = cc + tc2
     assert cc2.n_points == 15
-    assert cc2.n_comparers == 3
+    assert len(cc2) == 3
 
 
 def test_add_cc_cc(cc, pc, tc):
@@ -191,7 +191,7 @@ def test_add_cc_cc(cc, pc, tc):
 
     cc3 = cc + cc2
     # assert cc3.n_points == 15
-    assert cc3.n_comparers == 4
+    assert len(cc3) == 4
 
 
 def test_rename_obs(cc):
@@ -271,7 +271,7 @@ def test_rename_fails_reserved_names(cc):
 
 def test_filter_by_attrs(cc):
     cc2 = cc.filter_by_attrs(gtype="point")
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2[0].gtype == "point"
 
 
@@ -280,13 +280,13 @@ def test_filter_by_attrs_custom(cc):
     cc[1].data.attrs["custom"] = 13
 
     cc2 = cc.filter_by_attrs(custom=12)
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2[0].data.attrs["custom"] == 12
     assert cc2[0] == cc[0]
 
     cc[0].data.attrs["custom2"] = True
     cc3 = cc.filter_by_attrs(custom2=True)
-    assert cc3.n_comparers == 1
+    assert len(cc3) == 1
     assert cc3[0].data.attrs["custom2"]
     assert cc3[0] == cc[0]
 
@@ -323,7 +323,7 @@ def test_save(cc: modelskill.ComparerCollection, tmp_path):
     cc.save(fn)
 
     cc2 = modelskill.load(fn)
-    assert cc2.n_comparers == 2
+    assert len(cc2) == 2
 
     # this belongs to the comparer, but ComparerCollection is the commonly used class
     assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__
@@ -334,7 +334,7 @@ def test_load_from_root_module(cc, tmp_path):
     cc.save(fn)
 
     cc2 = modelskill.load(fn)
-    assert cc2.n_comparers == 2
+    assert len(cc2) == 2
 
 
 def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
@@ -409,8 +409,7 @@ def cc_plot_function(cc, request):
     if request.param in ["scatter", "hist"]:
 
         def func(**kwargs):
-            kwargs["model"] = 0
-            wrapped_func = getattr(cc.plot, request.param)
+            wrapped_func = getattr(cc.sel(model=[0]).plot, request.param)
             return wrapped_func(**kwargs)
 
     return func

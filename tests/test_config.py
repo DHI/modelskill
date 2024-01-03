@@ -46,7 +46,7 @@ def test_from_excel_include(conf_xlsx):
 def test_comparison_from_dict(conf_dict):
     cc = ms.from_config(conf_dict)
     assert len(cc) == 2
-    assert cc.n_comparers == 2
+    # assert cc.n_comparers == 2
     assert cc.n_models == 1
 
 
@@ -54,7 +54,6 @@ def test_comparison_from_yml():
     cc = ms.from_config("tests/testdata/conf.yml")
 
     assert len(cc) == 2
-    assert cc.n_comparers == 2
     assert cc.n_models == 1
     assert "HD" in cc.mod_names
     assert cc["Klagshamn"].quantity.name == "Water Level"
