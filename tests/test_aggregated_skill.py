@@ -94,7 +94,8 @@ def test_skill_repr_html(sk_df1):
 
 
 def test_skill_table_odd_index(sk_df2):
-    # having a different index name worksprint
+    # having a different index name works
+    sk = ms.SkillTable(sk_df2)
     assert sk.obs_names[0] == "obs1"
     assert sk.obs_names[1] == "obs2"
     assert sk.mod_names == []
