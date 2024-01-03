@@ -22,6 +22,7 @@ import xarray as xr
 
 import mikeio
 
+
 from . import model_result, Quantity
 from .timeseries import TimeSeries
 from .types import GeometryType, Period
@@ -29,6 +30,7 @@ from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
 from .model.point import PointModelResult
+from .model.dummy import DummyModelResult
 from .obs import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
@@ -51,6 +53,7 @@ MRInputType = Union[
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
+    DummyModelResult,
 ]
 ObsInputType = Union[
     str,
@@ -514,7 +517,14 @@ def _parse_single_model(
     gtype: Optional[GeometryTypes] = None,
 ) -> Any:  # TODO
     if isinstance(
-        mod, (DfsuModelResult, GridModelResult, TrackModelResult, PointModelResult)
+        mod,
+        (
+            DfsuModelResult,
+            GridModelResult,
+            TrackModelResult,
+            PointModelResult,
+            DummyModelResult,
+        ),
     ):
         if item is not None:
             raise ValueError(

@@ -27,7 +27,13 @@ if "64" not in architecture()[0]:
 from .quantity import Quantity
 from .model.factory import ModelResult
 from .model import model_result
-from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
+from .model import (
+    PointModelResult,
+    TrackModelResult,
+    GridModelResult,
+    DfsuModelResult,
+    DummyModelResult,
+)
 from .obs import observation, PointObservation, TrackObservation
 from .matching import compare, from_matched, match
 from .connection import Connector
@@ -67,6 +73,7 @@ __all__ = [
     "TrackModelResult",
     "GridModelResult",
     "DfsuModelResult",
+    "DummyModelResult",
     "observation",
     "PointObservation",
     "TrackObservation",
