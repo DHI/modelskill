@@ -178,26 +178,28 @@ class ComparerCollection(Mapping, Scoreable):
     @property
     def mod_names(self) -> List[str]:
         """List of unique model names"""
-        unique_names = []
-        for cmp in self.comparers.values():
-            for n in cmp.mod_names:
-                if n not in unique_names:
-                    unique_names.append(n)
-        return unique_names
+        all_names = [n for cmp in self for n in cmp.mod_names]
+        # preserve order (instead of using set)
+        return list(dict.fromkeys(all_names))
 
     @property
     def n_models(self) -> int:
+        """Number of unique models"""
         return len(self.mod_names)
+
+    @property
+    def aux_names(self) -> List[str]:
+        """List of unique auxiliary names"""
+        all_names = [n for cmp in self for n in cmp.aux_names]
+        # preserve order (instead of using set)
+        return list(dict.fromkeys(all_names))
 
     @property
     def quantity_names(self) -> List[str]:
         """List of unique quantity names"""
-        unique_names = []
-        for cmp in self.comparers.values():
-            n = cmp.quantity.name
-            if n not in unique_names:
-                unique_names.append(n)
-        return unique_names
+        all_names = [cmp.quantity.name for cmp in self]
+        # preserve order (instead of using set)
+        return list(dict.fromkeys(all_names))
 
     @property
     def n_quantities(self) -> int:
@@ -235,6 +237,37 @@ class ComparerCollection(Mapping, Scoreable):
         for key, value in self.comparers.items():
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
+
+    def rename(self, mapping: Dict[str, str]) -> "ComparerCollection":
+        """Rename observation, model or auxiliary data variables
+
+        Parameters
+        ----------
+        mapping : dict
+            mapping of old names to new names
+
+        Returns
+        -------
+        ComparerCollection
+
+        Examples
+        --------
+        >>> cc = ms.match([o1, o2], [mr1, mr2])
+        >>> cc.mod_names
+        ['mr1', 'mr2']
+        >>> cc2 = cc.rename({'mr1': 'model1'})
+        >>> cc2.mod_names
+        ['model1', 'mr2']
+        """
+        for k in mapping.keys():
+            allowed_keys = self.obs_names + self.mod_names + self.aux_names
+            if k not in allowed_keys:
+                raise KeyError(f"Unknown key: {k}; must be one of {allowed_keys}")
+
+        cmps = []
+        for cmp in self.comparers.values():
+            cmps.append(cmp.rename(mapping, errors="ignore"))
+        return ComparerCollection(cmps)
 
     @overload
     def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection:
