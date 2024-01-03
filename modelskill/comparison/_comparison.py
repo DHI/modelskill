@@ -5,6 +5,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Optional,
     Union,
     Iterable,
@@ -654,13 +655,18 @@ class Comparer(Scoreable):
     def copy(self):
         return self.__copy__()
 
-    def rename(self, mapping: Dict[str, str]) -> "Comparer":
+    def rename(
+        self, mapping: Dict[str, str], errors: Literal["raise", "ignore"] = "raise"
+    ) -> "Comparer":
         """Rename observation, model or auxiliary data variables
 
         Parameters
         ----------
         mapping : dict
             mapping of old names to new names
+        errors : {'raise', 'ignore'}, optional
+            If 'raise', raise a KeyError if any of the old names
+            do not exist in the data. By default 'raise'.
 
         Returns
         -------
@@ -675,10 +681,17 @@ class Comparer(Scoreable):
         >>> cmp2.mod_names
         ['model2']
         """
-        for k in mapping.keys():
-            allowed_keys = [self.name] + self.mod_names + self.aux_names
-            if k not in allowed_keys:
-                raise KeyError(f"Unknown key: {k}; must be one of {allowed_keys}")
+        if errors not in ["raise", "ignore"]:
+            raise ValueError("errors must be 'raise' or 'ignore'")
+
+        allowed_keys = [self.name] + self.mod_names + self.aux_names
+        if errors == "raise":
+            for k in mapping.keys():
+                if k not in allowed_keys:
+                    raise KeyError(f"Unknown key: {k}; must be one of {allowed_keys}")
+        else:
+            # "ignore": silently remove keys that are not in allowed_keys
+            mapping = {k: v for k, v in mapping.items() if k in allowed_keys}
 
         if any([k in _RESERVED_NAMES for k in mapping.values()]):
             # TODO: also check for duplicates
@@ -686,9 +699,9 @@ class Comparer(Scoreable):
                 f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
             )
 
+        # rename observation
         obs_name = self.name
         for k in mapping.keys():
-            # rename observation
             if k == self.name:
                 obs_name = mapping[k]
                 mapping.pop(k)
