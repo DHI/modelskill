@@ -83,10 +83,10 @@ def tc() -> modelskill.comparison.Comparer:
 
 
 @pytest.fixture
-def cc(pc, tc) -> modelskill.ComparerCollection:
+def cc(pc, tc) -> ms.ComparerCollection:
     """A comparer collection with two comparers, with partial overlap in time
     one comparer with 2 models, one comparer with 3 models"""
-    return modelskill.ComparerCollection([pc, tc])
+    return ms.ComparerCollection([pc, tc])
 
 
 def test_cc_properties(cc):
@@ -192,6 +192,26 @@ def test_add_cc_cc(cc, pc, tc):
     cc3 = cc + cc2
     # assert cc3.n_points == 15
     assert cc3.n_comparers == 4
+
+
+def test_rename_obs(cc):
+    cc2 = cc.rename({"fake point obs": "fake point obs 2"})
+    assert cc2.obs_names == ["fake point obs 2", "fake track obs"]
+    assert cc.obs_names == ["fake point obs", "fake track obs"]
+
+    # cc3 = cc.rename(
+    #     {"fake point obs": "fake point obs 2", "fake track obs": "fake track obs 2"}
+    # )
+    # assert cc3.obs_names == ["fake point obs 2", "fake track obs 2"]
+
+
+def test_rename_mod(cc):
+    cc2 = cc.rename({"m1": "m1b"})
+    assert cc2.mod_names == ["m1b", "m2", "m3"]
+    assert cc.mod_names == ["m1", "m2", "m3"]
+
+    # cc3 = cc.rename({"m1": "m1b", "m2": "m2b", "m3": "m3b"})
+    # assert cc3.mod_names == ["m1b", "m2b", "m3b"]
 
 
 def test_filter_by_attrs(cc):
