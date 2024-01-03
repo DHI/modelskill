@@ -205,7 +205,7 @@ class ComparerCollectionPlotter:
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{mod_name} vs {cc_sel_mod.name}"
+        title = title or f"{mod_name} vs {cc_sel_mod._name}"
 
         skill = None
         skill_score_unit = None

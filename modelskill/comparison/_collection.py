@@ -111,7 +111,7 @@ class ComparerCollection(Mapping, Scoreable):
             pass
 
     @property
-    def name(self) -> str:
+    def _name(self) -> str:
         return "Observations"
 
     @property
