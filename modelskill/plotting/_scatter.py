@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
+from typing import Literal, Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
 import warnings
 
 if TYPE_CHECKING:
@@ -33,7 +33,7 @@ def scatter(
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
     norm: Optional[colors.Normalize] = None,
-    backend: str = "matplotlib",
+    backend: Literal["matplotlib", "plotly"] = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
     ylim: Optional[Tuple[float, float]] = None,
