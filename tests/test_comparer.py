@@ -314,162 +314,6 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
         Comparer.from_matched_data(data=data)
 
 
-def test_minimal_plots(pt_df):
-    data = xr.Dataset(pt_df)
-
-    data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["color"] = "pink"
-    data["Observation"].attrs["long_name"] = "Waterlevel"
-    data["Observation"].attrs["units"] = "m"
-    data["m1"].attrs["kind"] = "model"
-    data["m2"].attrs["kind"] = "model"
-    data.attrs["name"] = "mini"
-    cmp = Comparer.from_matched_data(data=data)
-    cmp = cmp.sel(model="m1")
-
-    # Not very elaborate testing other than these two methods can be called without errors
-    with pytest.warns(FutureWarning, match="plot.hist"):
-        cmp.hist()
-
-    with pytest.warns(FutureWarning, match="plot.kde"):
-        cmp.kde()
-
-    with pytest.warns(FutureWarning, match="plot.timeseries"):
-        cmp.plot_timeseries()
-
-    with pytest.warns(FutureWarning, match="plot.scatter"):
-        cmp.scatter()
-
-    with pytest.warns(FutureWarning, match="plot.taylor"):
-        cmp.taylor()
-
-    cmp.plot.taylor()
-    # TODO should taylor also return matplotlib axes?
-
-    # default plot is scatter
-    ax = cmp.plot()
-    assert "m1" in ax.get_title()
-
-    ax = cmp.plot.scatter()
-    assert "m1" in ax.get_title()
-
-    ax = cmp.plot.kde()
-    assert ax is not None
-
-    ax = cmp.plot.qq()
-    assert ax is not None
-
-    # ax = cmp.plot.box()
-    # assert ax is not None
-
-    ax = cmp.plot.hist()
-    assert ax is not None
-
-    ax = cmp.plot.timeseries()
-    assert ax is not None
-
-    ax = cmp.plot.scatter()
-    assert "m1" in ax.get_title()
-
-
-@pytest.fixture(
-    params=[
-        "scatter",
-        "kde",
-        "qq",
-        "box",
-        "hist",
-        "timeseries",
-        "taylor",
-        "residual_hist",
-    ]
-)
-def pc_plot_function(pc, request):
-    func = getattr(pc.plot, request.param)
-    # special cases requiring a model to be selected
-    if request.param in ["scatter", "hist", "residual_hist"]:
-        func = getattr(pc.sel(model=0).plot, request.param)
-    return func
-
-
-def test_plot_returns_an_object(pc_plot_function):
-    obj = pc_plot_function()
-    assert obj is not None
-
-
-def test_plot_accepts_ax_if_relevant(pc_plot_function):
-    _, ax = plt.subplots()
-    func_name = pc_plot_function.__name__
-    # plots that don't accept ax
-    if func_name in ["taylor"]:
-        return
-    ret_ax = pc_plot_function(ax=ax)
-    assert ret_ax is ax
-
-
-def test_plot_accepts_title(pc_plot_function):
-    expected_title = "test title"
-    ret_obj = pc_plot_function(title=expected_title)
-
-    # Handle both ax and fig titles
-    title = None
-    if hasattr(ret_obj, "get_title"):
-        title = ret_obj.get_title()
-    elif hasattr(ret_obj, "get_suptitle"):
-        title = ret_obj.get_suptitle()
-    elif hasattr(ret_obj, "_suptitle"):  # older versions of matplotlib
-        title = ret_obj._suptitle.get_text()
-    else:
-        raise pytest.fail("Could not access title from return object.")
-
-    assert title == expected_title
-
-
-def test_plot_accepts_figsize(pc_plot_function):
-    figsize = (10, 10)
-    ax = pc_plot_function(figsize=figsize)
-    a, b = ax.get_figure().get_size_inches()
-    assert a, b == figsize
-
-
-def test_plots_directional(pt_df):
-    data = xr.Dataset(pt_df)
-
-    data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["long_name"] = "Waterlevel"
-    data["Observation"].attrs["units"] = "m"
-    data["m1"].attrs["kind"] = "model"
-    data["m2"].attrs["kind"] = "model"
-    data.attrs["name"] = "mini"
-    cmp = Comparer.from_matched_data(data=data)
-    cmp = cmp.sel(model="m1")
-
-    cmp.plot.is_directional = True
-
-    ax = cmp.plot.scatter()
-    assert "m1" in ax.get_title()
-    assert ax.get_xlim() == (0.0, 360.0)
-    assert ax.get_ylim() == (0.0, 360.0)
-    assert len(ax.get_legend().get_texts()) == 1  # no reg line or qq
-
-    ax = cmp.plot.kde()
-    assert ax is not None
-    assert ax.get_xlim() == (0.0, 360.0)
-
-    # TODO I have no idea why this fails in pandas/plotting/_matplotlib/boxplot.py:387: AssertionError
-    # ax = cmp.plot.box()
-    # assert ax is not None
-    # assert ax.get_ylim() == (0.0, 360.0)
-
-    ax = cmp.plot.hist()
-    assert ax is not None
-    assert ax.get_xlim() == (0.0, 360.0)
-
-    ax = cmp.plot.timeseries()
-    assert ax is not None
-    assert ax.get_ylim() == (0.0, 360.0)
-
-
 def test_multiple_forecasts_matched_data():
     # an example on how a forecast dataset could be constructed
     df = pd.DataFrame(
@@ -746,3 +590,162 @@ def test_skill_dt(pc):
     assert list(sk.data.index.names) == ["model", "weekday"]
     assert list(sk.data.index.levels[0]) == ["m1", "m2"]
     assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
+
+
+# ======================== plotting ========================
+
+
+def test_minimal_plots(pt_df):
+    data = xr.Dataset(pt_df)
+
+    data["Observation"].attrs["kind"] = "observation"
+    data["Observation"].attrs["color"] = "pink"
+    data["Observation"].attrs["long_name"] = "Waterlevel"
+    data["Observation"].attrs["units"] = "m"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "mini"
+    cmp = Comparer.from_matched_data(data=data)
+    cmp = cmp.sel(model="m1")
+
+    # Not very elaborate testing other than these two methods can be called without errors
+    with pytest.warns(FutureWarning, match="plot.hist"):
+        cmp.hist()
+
+    with pytest.warns(FutureWarning, match="plot.kde"):
+        cmp.kde()
+
+    with pytest.warns(FutureWarning, match="plot.timeseries"):
+        cmp.plot_timeseries()
+
+    with pytest.warns(FutureWarning, match="plot.scatter"):
+        cmp.scatter()
+
+    with pytest.warns(FutureWarning, match="plot.taylor"):
+        cmp.taylor()
+
+    cmp.plot.taylor()
+    # TODO should taylor also return matplotlib axes?
+
+    # default plot is scatter
+    ax = cmp.plot()
+    assert "m1" in ax.get_title()
+
+    ax = cmp.plot.scatter()
+    assert "m1" in ax.get_title()
+
+    ax = cmp.plot.kde()
+    assert ax is not None
+
+    ax = cmp.plot.qq()
+    assert ax is not None
+
+    # ax = cmp.plot.box()
+    # assert ax is not None
+
+    ax = cmp.plot.hist()
+    assert ax is not None
+
+    ax = cmp.plot.timeseries()
+    assert ax is not None
+
+    ax = cmp.plot.scatter()
+    assert "m1" in ax.get_title()
+
+
+@pytest.fixture(
+    params=[
+        "scatter",
+        "kde",
+        "qq",
+        "box",
+        "hist",
+        "timeseries",
+        "taylor",
+        "residual_hist",
+    ]
+)
+def pc_plot_function(pc, request):
+    func = getattr(pc.plot, request.param)
+    # special cases requiring a model to be selected
+    if request.param in ["scatter", "hist", "residual_hist"]:
+        func = getattr(pc.sel(model=0).plot, request.param)
+    return func
+
+
+def test_plot_returns_an_object(pc_plot_function):
+    obj = pc_plot_function()
+    assert obj is not None
+
+
+def test_plot_accepts_ax_if_relevant(pc_plot_function):
+    _, ax = plt.subplots()
+    func_name = pc_plot_function.__name__
+    # plots that don't accept ax
+    if func_name in ["taylor"]:
+        return
+    ret_ax = pc_plot_function(ax=ax)
+    assert ret_ax is ax
+
+
+def test_plot_accepts_title(pc_plot_function):
+    expected_title = "test title"
+    ret_obj = pc_plot_function(title=expected_title)
+
+    # Handle both ax and fig titles
+    title = None
+    if hasattr(ret_obj, "get_title"):
+        title = ret_obj.get_title()
+    elif hasattr(ret_obj, "get_suptitle"):
+        title = ret_obj.get_suptitle()
+    elif hasattr(ret_obj, "_suptitle"):  # older versions of matplotlib
+        title = ret_obj._suptitle.get_text()
+    else:
+        raise pytest.fail("Could not access title from return object.")
+
+    assert title == expected_title
+
+
+def test_plot_accepts_figsize(pc_plot_function):
+    figsize = (10, 10)
+    ax = pc_plot_function(figsize=figsize)
+    a, b = ax.get_figure().get_size_inches()
+    assert a, b == figsize
+
+
+def test_plots_directional(pt_df):
+    data = xr.Dataset(pt_df)
+
+    data["Observation"].attrs["kind"] = "observation"
+    data["Observation"].attrs["long_name"] = "Waterlevel"
+    data["Observation"].attrs["units"] = "m"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "mini"
+    cmp = Comparer.from_matched_data(data=data)
+    cmp = cmp.sel(model="m1")
+
+    cmp.plot.is_directional = True
+
+    ax = cmp.plot.scatter()
+    assert "m1" in ax.get_title()
+    assert ax.get_xlim() == (0.0, 360.0)
+    assert ax.get_ylim() == (0.0, 360.0)
+    assert len(ax.get_legend().get_texts()) == 1  # no reg line or qq
+
+    ax = cmp.plot.kde()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    # TODO I have no idea why this fails in pandas/plotting/_matplotlib/boxplot.py:387: AssertionError
+    # ax = cmp.plot.box()
+    # assert ax is not None
+    # assert ax.get_ylim() == (0.0, 360.0)
+
+    ax = cmp.plot.hist()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    ax = cmp.plot.timeseries()
+    assert ax is not None
+    assert ax.get_ylim() == (0.0, 360.0)
