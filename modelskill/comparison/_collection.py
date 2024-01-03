@@ -274,13 +274,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         cmps = []
         for cmp in self.comparers.values():
-            try:
-                cmp2 = cmp.rename(mapping)
-                cmps.append(cmp2)
-            except KeyError:
-                # if renaming observation only one will match
-                # TODO: if we try to rename both observation and model this approach will fail!!!
-                cmps.append(cmp)
+            cmps.append(cmp.rename(mapping, errors="ignore"))            
         return ComparerCollection(cmps)
 
     @overload
