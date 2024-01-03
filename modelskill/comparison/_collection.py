@@ -110,9 +110,9 @@ class ComparerCollection(Mapping, Scoreable):
         else:
             pass
 
-    # @property
-    # def name(self) -> str:
-    #     return "Observations"
+    @property
+    def name(self) -> str:
+        return "Observations"
 
     @property
     def unit_text(self) -> str:
@@ -177,10 +177,6 @@ class ComparerCollection(Mapping, Scoreable):
     @property
     def n_observations(self) -> int:
         """Number of observations"""
-        warnings.warn(
-            "cc.n_observations is deprecated, use len(cc) instead",
-            FutureWarning,
-        )
         return len(self)
 
     @property
