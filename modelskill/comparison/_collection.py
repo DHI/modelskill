@@ -115,13 +115,13 @@ class ComparerCollection(Mapping, Scoreable):
         return "Observations"
 
     @property
-    def unit_text(self) -> str:
+    def _unit_text(self) -> str:
         # Picking the first one is arbitrary, but it should be the same for all
         # we could check that they are all the same, but let's assume that they are
         # for cmp in self:
-        #     if cmp.unit_text != text:
-        #         warnings.warn(f"Unit text is inconsistent: {text} vs {cmp.unit_text}")
-        return self[0].unit_text
+        #     if cmp._unit_text != text:
+        #         warnings.warn(f"Unit text is inconsistent: {text} vs {cmp._unit_text}")
+        return self[0]._unit_text
 
     @property
     def n_comparers(self) -> int:

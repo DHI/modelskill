@@ -201,7 +201,7 @@ class ComparerCollectionPlotter:
         y = df.mod_val.values
 
         # TODO why the first?
-        unit_text = self.cc[0].unit_text
+        unit_text = self.cc[0]._unit_text
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
@@ -296,7 +296,7 @@ class ComparerCollectionPlotter:
             df_model = df[df.model == model]
             df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
 
-        ax.set_xlabel(f"{self.cc.unit_text}")
+        ax.set_xlabel(f"{self.cc._unit_text}")
 
         title = (
             _default_univarate_title("Density plot", self.cc)
@@ -433,7 +433,7 @@ class ComparerCollectionPlotter:
 
         ax.legend([mod_name, "observations"])
         ax.set_title(title)
-        ax.set_xlabel(f"{self.cc[df.observation.iloc[0]].unit_text}")
+        ax.set_xlabel(f"{self.cc[df.observation.iloc[0]]._unit_text}")
 
         if density:
             ax.set_ylabel("density")
