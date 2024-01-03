@@ -178,12 +178,9 @@ class ComparerCollection(Mapping, Scoreable):
     @property
     def mod_names(self) -> List[str]:
         """List of unique model names"""
-        unique_names = []
-        for cmp in self.comparers.values():
-            for n in cmp.mod_names:
-                if n not in unique_names:
-                    unique_names.append(n)
-        return unique_names
+        all_names = [n for cmp in self for n in cmp.mod_names]
+        # preserve order (instead of using set)
+        return list(dict.fromkeys(all_names))
 
     @property
     def n_models(self) -> int:
@@ -200,12 +197,9 @@ class ComparerCollection(Mapping, Scoreable):
     @property
     def quantity_names(self) -> List[str]:
         """List of unique quantity names"""
-        unique_names = []
-        for cmp in self.comparers.values():
-            n = cmp.quantity.name
-            if n not in unique_names:
-                unique_names.append(n)
-        return unique_names
+        all_names = [cmp.quantity.name for cmp in self]
+        # preserve order (instead of using set)
+        return list(dict.fromkeys(all_names))
 
     @property
     def n_quantities(self) -> int:
