@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import Any, List, Union, Optional, Tuple, Sequence, TYPE_CHECKING
-from matplotlib.axes import Axes  # type: ignore
+from typing import Any, List, Literal, Union, Optional, Tuple, Sequence, TYPE_CHECKING
+from matplotlib.axes import Axes
+import matplotlib.colors as colors
 import warnings
 
 if TYPE_CHECKING:
@@ -36,7 +37,8 @@ class ComparerCollectionPlotter:
         show_points: bool | int | float | None = None,
         show_hist: Optional[bool] = None,
         show_density: Optional[bool] = None,
-        backend: str = "matplotlib",
+        norm: Optional[colors.Normalize] = None,
+        backend: Literal["matplotlib", "plotly"] = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
         xlim: Optional[Tuple[float, float]] = None,
         ylim: Optional[Tuple[float, float]] = None,
@@ -45,9 +47,9 @@ class ComparerCollectionPlotter:
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
         skill_table: Optional[Union[str, List[str], bool]] = None,
-        ax=None,
+        ax: Optional[Axes] = None,
         **kwargs,
-    ):
+    ) -> Axes:
         """Scatter plot showing compared data: observation vs modelled
         Optionally, with density histogram.
 
@@ -59,26 +61,33 @@ class ComparerCollectionPlotter:
             if float, represents the bin size
             if sequence (list of int or float), represents the bin edges
         quantiles: (int, sequence), optional
-            number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
-            if int, this is the number of points
-            if sequence (list of floats), represents the desired quantiles (from 0 to 1)
+            number of quantiles for QQ-plot, by default None and will depend
+            on the scatter data length (10, 100 or 1000); if int, this is
+            the number of points; if sequence (list of floats), represents
+            the desired quantiles (from 0 to 1)
         fit_to_quantiles: bool, optional, by default False
-            by default the regression line is fitted to all data, if True, it is fitted to the quantiles
-            which can be useful to represent the extremes of the distribution
+            by default the regression line is fitted to all data, if True,
+            it is fitted to the quantiles which can be useful to represent
+            the extremes of the distribution, by default False
         show_points : (bool, int, float), optional
-            Should the scatter points be displayed?
-            None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
-            float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
-            int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
+            Should the scatter points be displayed? None means: show all
+            points if fewer than 1e4, otherwise show 1e4 sample points,
+            by default None. float: fraction of points to show on plot
+            from 0 to 1. e.g. 0.5 shows 50% of the points. int: if 'n' (int)
+            given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
-            show the data density as a colormap of the scatter, by default None.
-            If both `show_density` and `show_hist` are None, then `show_density`
-            is used by default.
-            for binning the data, the kword `bins=Float` is used
+            show the data density as a colormap of the scatter, by default
+            None. If both `show_density` and `show_hist` are None, then
+            `show_density` is used by default. For binning the data, the
+            kword `bins=Float` is used.
+        norm : matplotlib.colors norm
+            colormap normalization. If None, defaults to
+            matplotlib.colors.PowerNorm(vmin=1, gamma=0.5)
         backend : str, optional
-            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
+            use "plotly" (interactive) or "matplotlib" backend,
+            by default "matplotlib"
         figsize : tuple, optional
             width and height of the figure, by default (8, 8)
         xlim : tuple, optional
@@ -112,8 +121,8 @@ class ComparerCollectionPlotter:
         >>> cc.plot.scatter(bins=0.2, backend='plotly')
         >>> cc.plot.scatter(show_points=False, title='no points')
         >>> cc.plot.scatter(xlabel='all observations', ylabel='my model')
-        >>> cc.plot.scatter(model='HKZN_v2', figsize=(10, 10))
-        >>> cc.plot.scatter(observations=['c2','HKNA'])
+        >>> cc.sel(model='HKZN_v2').plot.scatter(figsize=(10, 10))
+        >>> cc.sel(observations=['c2','HKNA']).plot.scatter()
         """
 
         cc = self.cc
@@ -140,6 +149,7 @@ class ComparerCollectionPlotter:
                 show_points=show_points,
                 show_hist=show_hist,
                 show_density=show_density,
+                norm=norm,
                 backend=backend,
                 figsize=figsize,
                 xlim=xlim,
@@ -165,7 +175,7 @@ class ComparerCollectionPlotter:
         show_points: bool | int | float | None,
         show_hist: Optional[bool],
         show_density: Optional[bool],
-        backend: str,
+        backend: Literal["matplotlib", "plotly"],
         figsize: Tuple[float, float],
         xlim: Optional[Tuple[float, float]],
         ylim: Optional[Tuple[float, float]],

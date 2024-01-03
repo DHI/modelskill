@@ -5,6 +5,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Union,
@@ -38,7 +39,7 @@ from ._utils import (
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 from ..settings import register_option
-from ..utils import _get_name
+from ..utils import _get_name, _RESERVED_NAMES
 from .. import __version__
 
 if TYPE_CHECKING:
@@ -515,6 +516,14 @@ class Comparer(Scoreable):
         """Name of comparer (=name of observation)"""
         return self.data.attrs["name"]
 
+    @name.setter
+    def name(self, name: str) -> None:
+        if name in _RESERVED_NAMES:
+            raise ValueError(
+                f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
+            )
+        self.data.attrs["name"] = name
+
     @property
     def gtype(self) -> str:
         """Geometry type"""
@@ -584,12 +593,12 @@ class Comparer(Scoreable):
         return len(self.mod_names)
 
     @property
-    def mod_names(self) -> Sequence[str]:
+    def mod_names(self) -> List[str]:
         """List of model result names"""
         return list(self.raw_mod_data.keys())
 
     @property
-    def aux_names(self) -> Sequence[str]:
+    def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
         return list(
             [
@@ -647,13 +656,18 @@ class Comparer(Scoreable):
     def copy(self):
         return self.__copy__()
 
-    def rename(self, mapping: Mapping[str, str]) -> "Comparer":
-        """Rename model or auxiliary data
+    def rename(
+        self, mapping: Mapping[str, str], errors: Literal["raise", "ignore"] = "raise"
+    ) -> "Comparer":
+        """Rename observation, model or auxiliary data variables
 
         Parameters
         ----------
         mapping : dict
             mapping of old names to new names
+        errors : {'raise', 'ignore'}, optional
+            If 'raise', raise a KeyError if any of the old names
+            do not exist in the data. By default 'raise'.
 
         Returns
         -------
@@ -668,8 +682,40 @@ class Comparer(Scoreable):
         >>> cmp2.mod_names
         ['model2']
         """
-        data = self.data.rename(mapping)
-        raw_mod_data = {mapping.get(k, k): v for k, v in self.raw_mod_data.items()}
+        if errors not in ["raise", "ignore"]:
+            raise ValueError("errors must be 'raise' or 'ignore'")
+
+        allowed_keys = [self.name] + self.mod_names + self.aux_names
+        if errors == "raise":
+            for k in mapping.keys():
+                if k not in allowed_keys:
+                    raise KeyError(f"Unknown key: {k}; must be one of {allowed_keys}")
+        else:
+            # "ignore": silently remove keys that are not in allowed_keys
+            mapping = {k: v for k, v in mapping.items() if k in allowed_keys}
+
+        if any([k in _RESERVED_NAMES for k in mapping.values()]):
+            # TODO: also check for duplicates
+            raise ValueError(
+                f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
+            )
+
+        # rename observation
+        obs_name = mapping.get(self.name, self.name)
+        ma_mapping = {k: v for k, v in mapping.items() if k != self.name}
+
+        data = self.data.rename(ma_mapping)
+        data.attrs["name"] = obs_name
+        raw_mod_data = dict()
+        for k, v in self.raw_mod_data.items():
+            if k in ma_mapping:
+                # copy is needed here as the same raw data could be
+                # used for multiple Comparers!
+                v2 = v.copy()
+                v2.data = v2.data.rename({k: ma_mapping[k]})
+                raw_mod_data[ma_mapping[k]] = v2
+            else:
+                raw_mod_data[k] = v
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
