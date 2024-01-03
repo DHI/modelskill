@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 import warnings
-import numpy as np
 import pandas as pd
 import xarray as xr
 
