@@ -221,6 +221,46 @@ def test_rename_model_and_aux(pt_df):
     assert "wind_speed" in cmp2.aux_names
 
 
+def test_rename_obs(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df)
+    assert cmp.name == "Observation"
+    cmp2 = cmp.rename({"Observation": "observed"})
+    assert cmp2.name == "observed"
+
+    cmp2.name = "observed2"
+    assert cmp2.name == "observed2"
+
+
+def test_rename_fails_unknown_key(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    with pytest.raises(KeyError, match="Unknown key"):
+        cmp.rename({"m1": "model_1", "wind": "wind_speed", "foo": "bar"})
+    with pytest.raises(KeyError, match="Unknown key"):
+        cmp.rename({"foo": "bar"})
+    with pytest.raises(KeyError, match="Unknown key"):
+        cmp.rename({"m1": "model_1", "foo": "bar"})
+    with pytest.raises(KeyError, match="Unknown key"):
+        cmp.rename({"foo": "bar", "wind": "wind_speed"})
+
+
+def test_rename_fails_reserved_names(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "x"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "y"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "z"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "Observation"})
+
+
 def test_matched_df_illegal_items(pt_df):
     with pytest.raises(AssertionError, match="data must contain at least two items"):
         # dataframe has only one column
