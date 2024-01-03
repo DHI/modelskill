@@ -62,6 +62,7 @@ def _groupby_df(
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
+    # sort=False to avoid re-ordering compared to original cc (also for performance)
     res = df.groupby(by=by, observed=False).apply(calc_metrics)
 
     if n_min:
