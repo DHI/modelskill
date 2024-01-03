@@ -86,8 +86,28 @@ def test_skill_table(sk_df1):
     assert sk.metrics == ["n", "bias", "rmse", "corr", "si", "r2"]
 
 
+def test_skill_table_odd_index(sk_df2):
+    # having a different index name works
+    sk_df2.index.name = "odd"
+    sk = ms.SkillTable(sk_df2)
+    assert sk.obs_names == []
+    assert sk.mod_names == []
+    assert sk.quantity_names == []
+    assert sk.metrics == ["n", "bias", "rmse", "corr"]
+
+
 def test_skill_table_2rows(sk_df2):
     sk = ms.SkillTable(sk_df2)
+    assert sk.obs_names[0] == "obs1"
+    assert sk.obs_names[1] == "obs2"
+    assert sk.mod_names == []
+    assert sk.quantity_names == []
+    assert sk.metrics == ["n", "bias", "rmse", "corr"]  # note: no "x", "y"
+
+
+def test_skill_table_from_xarray(sk_df2):
+    ds = sk_df2.to_xarray()
+    sk = ms.SkillTable(ds)
     assert sk.obs_names[0] == "obs1"
     assert sk.obs_names[1] == "obs2"
     assert sk.mod_names == []
