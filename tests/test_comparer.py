@@ -190,6 +190,24 @@ def test_rename_model(pt_df):
     assert "model_2" in cmp2.raw_mod_data
 
 
+def test_rename_model_conflict(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert cmp.mod_names == ["m1", "m2"]
+    with pytest.raises(ValueError, match="conflicts"):
+        cmp.rename({"m1": "m2"})
+
+
+def test_rename_model_swap_names(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert cmp.mod_names == ["m1", "m2"]
+    assert cmp.raw_mod_data["m1"].data["m1"].values[0] == 1.5
+    assert cmp.raw_mod_data["m2"].data["m2"].values[0] == 1.1
+    cmp2 = cmp.rename({"m1": "m2", "m2": "m1"})
+    assert cmp2.mod_names == ["m2", "m1"]
+    assert cmp2.raw_mod_data["m1"].data["m1"].values[0] == 1.1
+    assert cmp2.raw_mod_data["m2"].data["m2"].values[0] == 1.5
+
+
 def test_partial_rename_model(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
     assert "m1" in cmp.mod_names
@@ -601,64 +619,6 @@ def test_skill_dt(pc):
 # ======================== plotting ========================
 
 
-def test_minimal_plots(pt_df):
-    data = xr.Dataset(pt_df)
-
-    data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["color"] = "pink"
-    data["Observation"].attrs["long_name"] = "Waterlevel"
-    data["Observation"].attrs["units"] = "m"
-    data["m1"].attrs["kind"] = "model"
-    data["m2"].attrs["kind"] = "model"
-    data.attrs["name"] = "mini"
-    cmp = Comparer.from_matched_data(data=data)
-    cmp = cmp.sel(model="m1")
-
-    # Not very elaborate testing other than these two methods can be called without errors
-    with pytest.warns(FutureWarning, match="plot.hist"):
-        cmp.hist()
-
-    with pytest.warns(FutureWarning, match="plot.kde"):
-        cmp.kde()
-
-    with pytest.warns(FutureWarning, match="plot.timeseries"):
-        cmp.plot_timeseries()
-
-    with pytest.warns(FutureWarning, match="plot.scatter"):
-        cmp.scatter()
-
-    with pytest.warns(FutureWarning, match="plot.taylor"):
-        cmp.taylor()
-
-    cmp.plot.taylor()
-    # TODO should taylor also return matplotlib axes?
-
-    # default plot is scatter
-    ax = cmp.plot()
-    assert "m1" in ax.get_title()
-
-    ax = cmp.plot.scatter()
-    assert "m1" in ax.get_title()
-
-    ax = cmp.plot.kde()
-    assert ax is not None
-
-    ax = cmp.plot.qq()
-    assert ax is not None
-
-    # ax = cmp.plot.box()
-    # assert ax is not None
-
-    ax = cmp.plot.hist()
-    assert ax is not None
-
-    ax = cmp.plot.timeseries()
-    assert ax is not None
-
-    ax = cmp.plot.scatter()
-    assert "m1" in ax.get_title()
-
-
 @pytest.fixture(
     params=[
         "scatter",
@@ -719,6 +679,19 @@ def test_plot_accepts_figsize(pc_plot_function):
     assert a, b == figsize
 
 
+def test_plot_title_in_returned_ax(pc):
+    # default plot is scatter
+    ax = pc.sel(model="m1").plot()
+    assert "m1" in ax.get_title()
+
+    ax = pc.plot.scatter()
+    assert "m1" in ax[0].get_title()
+    assert "m2" in ax[1].get_title()
+
+    ax = pc.plot.kde()
+    assert "fake point obs" in ax.get_title()
+
+
 def test_plots_directional(pt_df):
     data = xr.Dataset(pt_df)
 
@@ -744,9 +717,9 @@ def test_plots_directional(pt_df):
     assert ax.get_xlim() == (0.0, 360.0)
 
     # TODO I have no idea why this fails in pandas/plotting/_matplotlib/boxplot.py:387: AssertionError
-    # ax = cmp.plot.box()
-    # assert ax is not None
-    # assert ax.get_ylim() == (0.0, 360.0)
+    ax = cmp.plot.box()
+    assert ax is not None
+    assert ax.get_ylim() == (0.0, 360.0)
 
     ax = cmp.plot.hist()
     assert ax is not None
