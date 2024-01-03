@@ -246,6 +246,12 @@ def test_rename_fails_unknown_key(pt_df):
         cmp.rename({"foo": "bar", "wind": "wind_speed"})
 
 
+def test_rename_errors_ignore(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df)
+    cmp2 = cmp.rename({"NotThere": "observed"}, errors="ignore")
+    assert cmp2.name == "Observation"
+
+
 def test_rename_fails_reserved_names(pt_df):
     pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
     cmp = Comparer.from_matched_data(
