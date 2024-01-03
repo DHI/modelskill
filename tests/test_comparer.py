@@ -444,6 +444,13 @@ def test_pc_sel_model_first(pc):
     assert np.all(pc2.data.m1 == pc.data.m1)
 
 
+def test_pc_isel_model_first(pc):
+    pc2 = pc.isel(model=0)
+    assert pc2.n_points == 5
+    assert pc2.n_models == 1
+    assert np.all(pc2.data.m1 == pc.data.m1)
+
+
 def test_pc_sel_model_last(pc):
     pc2 = pc.sel(model=-1)
     assert pc2.n_points == 5

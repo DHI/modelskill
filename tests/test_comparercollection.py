@@ -129,6 +129,17 @@ def test_cc_sel_model_last(cc):
     assert cc2.mod_names == ["m3"]
 
 
+def test_cc_isel_model_last(cc):
+    cc2 = cc.isel(model=-1)
+    assert len(cc2) == 1
+    assert cc2.n_models == 1
+    assert cc2.n_points == 5
+    assert cc2.start_time == pd.Timestamp("2019-01-03")
+    assert cc2.end_time == pd.Timestamp("2019-01-07")
+    assert cc2.obs_names == ["fake track obs"]
+    assert cc2.mod_names == ["m3"]
+
+
 # TODO: FAILS
 # def test_cc_sel_time_single(cc):
 #     cc1 = cc.sel(time="2019-01-03")

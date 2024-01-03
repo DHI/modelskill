@@ -931,6 +931,21 @@ class Comparer(Scoreable):
                 d = d.isel(time=mask)
         return Comparer.from_matched_data(data=d, raw_mod_data=raw_mod_data)
 
+    def isel(self, model: int) -> "Comparer":
+        """Select data based on model index.
+
+        Parameters
+        ----------
+        model : int
+            Model index.
+
+        Returns
+        -------
+        Comparer
+            New Comparer with selected data.
+        """
+        return self.sel(model=model)
+
     def where(
         self,
         cond: Union[bool, np.ndarray, xr.DataArray],

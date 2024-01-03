@@ -427,6 +427,25 @@ class ComparerCollection(Mapping, Scoreable):
 
         return cc
 
+    def isel(
+        self, model: int | None = None, observation: int | None = None
+    ) -> "ComparerCollection":
+        """Select data based on model and observation index.
+
+        Parameters
+        ----------
+        model : int, optional
+            Model index. If None, all models are selected.
+        observation : int, optional
+            Observation index. If None, all observations are selected.
+
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with selected data.
+        """
+        return self.sel(model=model, observation=observation)
+
     def filter_by_attrs(self, **kwargs) -> "ComparerCollection":
         """Filter by comparer attrs similar to xarray.Dataset.filter_by_attrs
 
