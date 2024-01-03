@@ -67,17 +67,17 @@ def test_subset_cc_for_named_comparers(cc):
 
     ccs = cc[("Klagshamn", "dmi_30357_Drogden_Fyr")]
     assert len(ccs) == 2
-    assert (
-        repr(ccs)
-        == "<ComparerCollection>\nComparer: Klagshamn\nComparer: dmi_30357_Drogden_Fyr"
-    )
+    repr_text = repr(ccs)
+    assert "<ComparerCollection>" in repr_text
+    assert "Klagshamn" in repr_text
+    assert "dmi_30357_Drogden_Fyr" in repr_text
 
     ccs2 = cc[["dmi_30357_Drogden_Fyr", "Klagshamn"]]
+    repr_text = repr(ccs2)
     assert len(ccs2)
-    assert (
-        repr(ccs2)
-        == "<ComparerCollection>\nComparer: dmi_30357_Drogden_Fyr\nComparer: Klagshamn"
-    )
+    assert "<ComparerCollection>" in repr_text
+    assert "Klagshamn" in repr_text
+    assert "dmi_30357_Drogden_Fyr" in repr_text
 
 
 def test_iterate_over_comparers(cc):

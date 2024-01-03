@@ -89,7 +89,11 @@ class DfsuModelResult(SpatialField):
 
     def __repr__(self) -> str:
         # TODO add item name
-        return f"<{self.__class__.__name__}> '{self.name}'"
+        out = [
+            f"<{self.__class__.__name__}>: {self.name}",
+            f"Quantity: {self.quantity}",
+        ]
+        return "\n".join(out)
 
     @property
     def time(self) -> pd.DatetimeIndex:

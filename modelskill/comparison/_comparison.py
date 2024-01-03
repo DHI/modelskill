@@ -513,12 +513,13 @@ class Comparer(Scoreable):
 
     def __repr__(self):
         out = [
-            f"<{type(self).__name__}>",
+            "<Comparer>",
             f"Quantity: {self.quantity}",
             f"Observation: {self.name}, n_points={self.n_points}",
+            "Model(s):",
         ]
-        for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.score()[model]:.3f}")
+        for index, model in enumerate(self.mod_names):
+            out.append(f"{index}: {model}")
 
         for var in self.aux_names:
             out.append(f" Auxiliary: {var}")

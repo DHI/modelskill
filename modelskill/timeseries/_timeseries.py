@@ -178,7 +178,7 @@ class TimeSeries:
 
     # TODO: """Color of time series"""; Hide until used
     @property
-    def _color(self) -> str:        
+    def _color(self) -> str:
         return str(self.data[self.name].attrs["color"])
 
     @_color.setter
@@ -232,7 +232,7 @@ class TimeSeries:
         return self.data[self.name].to_series()
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"
+        return f"<{self.__class__.__name__}>: {self.name} (n_points: {self.n_points})"
 
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables

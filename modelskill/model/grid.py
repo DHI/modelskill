@@ -93,7 +93,7 @@ class GridModelResult(SpatialField):
 
     def __repr__(self) -> str:
         # TODO add item name
-        return f"<GridModelResult> '{self.name}'"
+        return f"<GridModelResult>: {self.name}"
 
     @property
     def time(self) -> pd.DatetimeIndex:

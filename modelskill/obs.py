@@ -218,7 +218,7 @@ class PointObservation(Observation):
         self.data["z"] = value
 
     def __repr__(self):
-        out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
+        out = f"<PointObservation>: {self.name}, x={self.x}, y={self.y}"
         if len(self._aux_vars) > 0:
             out += f", aux={self._aux_vars}"
         return out
@@ -355,7 +355,7 @@ class TrackObservation(Observation):
         super().__init__(data=data, weight=weight)
 
     def __repr__(self):
-        out = f"TrackObservation: {self.name}, n={self.n_points}"
+        out = f"<TrackObservation>: {self.name}, n={self.n_points}"
         if len(self._aux_vars) > 0:
             out += f", aux={self._aux_vars}"
         return out
