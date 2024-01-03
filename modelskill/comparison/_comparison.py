@@ -675,9 +675,6 @@ class Comparer(Scoreable):
         >>> cmp2.mod_names
         ['model2']
         """
-        if "Observation" in mapping.keys():
-            raise ValueError("Cannot rename 'Observation'")
-
         for k in mapping.keys():
             allowed_keys = [self.name] + self.mod_names + self.aux_names
             if k not in allowed_keys:
