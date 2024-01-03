@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import (
+    Literal,
     Union,
     List,
     Optional,
@@ -456,7 +457,7 @@ class ComparerPlotter:
         show_hist: Optional[bool] = None,
         show_density: Optional[bool] = None,
         norm: Optional[colors.Normalize] = None,
-        backend: str = "matplotlib",
+        backend: Literal["matplotlib", "plotly"] = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
         xlim: Optional[Tuple[float, float]] = None,
         ylim: Optional[Tuple[float, float]] = None,
@@ -589,7 +590,7 @@ class ComparerPlotter:
         show_hist: Optional[bool],
         show_density: Optional[bool],
         norm: Optional[colors.Normalize],
-        backend: str,
+        backend: Literal["matplotlib", "plotly"],
         figsize: Tuple[float, float],
         xlim: Optional[Tuple[float, float]],
         ylim: Optional[Tuple[float, float]],
