@@ -435,7 +435,8 @@ class SkillTable:
         return repr(self._df)
 
     def _repr_html_(self):
-        return self._df._repr_html_()
+        pd_repr_html = self._df._repr_html_()
+        return pd_repr_html.replace("<table", "<p>&lt;SkillTable&gt;</p>\n<table")
 
     @overload
     def __getitem__(self, key: Hashable | int) -> SkillArray:
