@@ -511,7 +511,10 @@ class ComparerCollection(Mapping, Scoreable):
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
         observed: bool, optional
-            This only applies if any of the groupers are Categoricals. If True: only show observed values for categorical groupers. If False: show all values for categorical groupers.
+            This only applies if any of the groupers are Categoricals.
+
+            - True: only show observed values for categorical groupers.
+            - False: show all values for categorical groupers.
 
         Returns
         -------
@@ -570,7 +573,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         # TODO: FIX
         # len(df.variable.unique()) if (self.n_variables > 1) else 1
-        n_var = cc.n_quantities  
+        n_var = cc.n_quantities
         by = _parse_groupby(by, n_models, n_obs, n_var)
         by, attrs_keys = self._attrs_keys_in_by(by)
         assert isinstance(by, list)
