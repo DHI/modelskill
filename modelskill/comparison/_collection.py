@@ -193,7 +193,9 @@ class ComparerCollection(Mapping, Scoreable):
     @property
     def aux_names(self) -> List[str]:
         """List of unique auxiliary names"""
-        return list({n for cmp in self for n in cmp.aux_names})
+        all_names = [n for cmp in self for n in cmp.aux_names]
+        # preserve order (instead of using set)
+        return list(dict.fromkeys(all_names))
 
     @property
     def quantity_names(self) -> List[str]:
