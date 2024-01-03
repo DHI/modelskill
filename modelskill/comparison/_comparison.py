@@ -709,7 +709,16 @@ class Comparer(Scoreable):
 
         data = self.data.rename(mapping)
         data.attrs["name"] = obs_name
-        raw_mod_data = {mapping.get(k, k): v for k, v in self.raw_mod_data.items()}
+        raw_mod_data = dict()
+        for k, v in self.raw_mod_data.items():
+            if k in mapping:
+                # copy is needed here as the same raw data could be 
+                # used for multiple Comparers!
+                v2 = v.copy()
+                v2.data = v2.data.rename({k: mapping[k]})
+                raw_mod_data[mapping[k]] = v2
+            else:
+                raw_mod_data[k] = v
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
