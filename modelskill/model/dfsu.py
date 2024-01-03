@@ -49,7 +49,8 @@ class DfsuModelResult(SpatialField):
 
         filename = None
         if isinstance(data, (str, Path)):
-            assert Path(data).suffix == ".dfsu", "File must be a dfsu file"
+            if Path(data).suffix != ".dfsu":
+                raise ValueError(f"File must be a dfsu file, not {Path(data).suffix}")
             name = name or Path(data).stem
             filename = str(data)
             data = mikeio.open(data)
