@@ -581,23 +581,20 @@ class ComparerCollection(Mapping, Scoreable):
         attrs_keys = attrs_keys or []
         res = _all_df_template(self.n_quantities)
         frames = []
-        cols = [*res.keys(), *attrs_keys]
+
         for cmp in self._comparers.values():
+            attrs = {key: cmp.data.attrs.get(key, False) for key in attrs_keys}
             for mod_name in cmp.mod_names:
                 # drop "x", "y",  ?
                 df = (
-                    cmp.data[[mod_name]]
-                    .to_dataframe()
-                    .copy()
-                    .rename(columns={mod_name: "mod_val"})
+                    pd.DataFrame({"mod_val": cmp.data[mod_name].values.copy()})
                     .assign(model=mod_name, observation=cmp.name, x=cmp.x, y=cmp.y)
                     .assign(obs_val=cmp.data["Observation"].values)
+                    .assign(**attrs)
                 )
                 if self.n_quantities > 1:
                     df["quantity"] = cmp.quantity.name
-                for key in attrs_keys:
-                    df[key] = cmp.data.attrs.get(key, False)
-                frames.append(df[cols])
+                frames.append(df)
         res = pd.concat(frames)
         cat_cols = res.select_dtypes(include=["object"]).columns
         res[cat_cols] = res[cat_cols].astype("category")
