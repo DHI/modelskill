@@ -619,6 +619,19 @@ def test_skill_dt(pc):
     assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
 
 
+def test_skill_freq(pc):
+    assert pc.time.freq == "D"
+
+    # aggregate to 2 days
+    sk = pc.skill(by="freq:2D")
+    assert len(sk.to_dataframe()) == 3
+
+    # aggregate to 12 hours (up-sampling) doesn't interpolate
+    sk2 = pc.skill(by="freq:12H")
+    assert len(sk2.to_dataframe()) == 9
+    assert np.isnan(sk2.to_dataframe()["rmse"][3])
+
+
 def test_xy_in_skill_pt(pc):
     # point obs has x,y, track obs x, y are np.nan
     sk = pc.skill()

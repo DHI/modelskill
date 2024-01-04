@@ -121,7 +121,9 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
     return df, by
 
 
-def _parse_groupby(by, n_models: int, n_obs: int, n_qnt: int = 1) -> List[str]:
+def _parse_groupby(
+    by: Iterable[str] | None, n_models: int, n_obs: int, n_qnt: int = 1
+) -> List[str | pd.core.resample.TimeGrouper]:
     if by is None:
         by = []
         if n_models > 1:
@@ -144,7 +146,7 @@ def _parse_groupby(by, n_models: int, n_obs: int, n_qnt: int = 1) -> List[str]:
             by = "quantity"
         if by[:5] == "freq:":
             freq = by.split(":")[1]
-            by = pd.Grouper(freq=freq)
+            by = pd.Grouper(key="time", freq=freq)
         by = [by]
     elif isinstance(by, Iterable):
         by = [_parse_groupby(b, n_models, n_obs, n_qnt)[0] for b in by]
