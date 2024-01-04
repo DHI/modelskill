@@ -623,8 +623,8 @@ class Comparer(Scoreable):
         self.data.attrs["weight"] = value
 
     @property
-    def unit_text(self) -> str:
-        """Quantity name and unit as text suitable for plot labels"""
+    def _unit_text(self) -> str:
+        # Quantity name and unit as text suitable for plot labels
         return f"{self.quantity.name} [{self.quantity.unit}]"
 
     def _model_to_frame(self, mod_name: str) -> pd.DataFrame:

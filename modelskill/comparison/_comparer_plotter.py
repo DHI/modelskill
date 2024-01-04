@@ -91,7 +91,7 @@ class ComparerPlotter:
                 marker=".",
                 color=cmp.data[cmp._obs_name].attrs["color"],
             )
-            ax.set_ylabel(cmp.unit_text)
+            ax.set_ylabel(cmp._unit_text)
             ax.legend([*cmp.mod_names, cmp._obs_name])
             ax.set_ylim(ylim)
             if self.is_directional:
@@ -128,7 +128,7 @@ class ComparerPlotter:
                 ]
             )
 
-            fig.update_layout(title=title, yaxis_title=cmp.unit_text, **kwargs)
+            fig.update_layout(title=title, yaxis_title=cmp._unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
 
             return fig
@@ -241,7 +241,7 @@ class ComparerPlotter:
         )
         ax.legend([mod_name, cmp._obs_name])
         ax.set_title(title)
-        ax.set_xlabel(f"{cmp.unit_text}")
+        ax.set_xlabel(f"{cmp._unit_text}")
         if density:
             ax.set_ylabel("density")
         else:
@@ -293,7 +293,7 @@ class ComparerPlotter:
         for model in cmp.mod_names:
             cmp.data[model].to_series().plot.kde(ax=ax, label=model, **kwargs)
 
-        ax.set_xlabel(cmp.unit_text)  # TODO
+        ax.set_xlabel(cmp._unit_text)  # TODO
 
         ax.legend()
 
@@ -391,8 +391,8 @@ class ComparerPlotter:
         ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
 
         ax.legend()
-        ax.set_xlabel("Observation, " + cmp.unit_text)
-        ax.set_ylabel("Model, " + cmp.unit_text)
+        ax.set_xlabel("Observation, " + cmp._unit_text)
+        ax.set_ylabel("Model, " + cmp._unit_text)
         ax.set_title(title or f"Q-Q plot for {cmp.name}")
 
         if self.is_directional:
@@ -438,7 +438,7 @@ class ComparerPlotter:
         cols = ["Observation"] + cmp.mod_names
         df = cmp.data[cols].to_dataframe()[cols]
         df.boxplot(ax=ax, **kwargs)
-        ax.set_ylabel(cmp.unit_text)
+        ax.set_ylabel(cmp._unit_text)
         ax.set_title(title or cmp.name)
 
         if self.is_directional:
@@ -616,7 +616,7 @@ class ComparerPlotter:
         assert x.ndim == y.ndim == 1, "x and y must be 1D arrays"
         assert x.shape == y.shape, "x and y must have the same shape"
 
-        unit_text = cmp.unit_text
+        unit_text = cmp._unit_text
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
         title = title or f"{mod_name} vs {cmp.name}"
@@ -771,7 +771,7 @@ class ComparerPlotter:
         title = f"Residuals, {self.comparer.name}" if title is None else title
         ax.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
         ax.set_title(title)
-        ax.set_xlabel(f"Residuals of {self.comparer.unit_text}")
+        ax.set_xlabel(f"Residuals of {self.comparer._unit_text}")
 
         if self.is_directional:
             ticks = np.linspace(-180, 180, 9)
