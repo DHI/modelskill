@@ -113,9 +113,9 @@ def test_from_df(klagshamn_filename, klagshamn_df):
     o2 = ms.PointObservation(df, item="Water Level", x=366844, y=6154291)
     assert o1.n_points == o2.n_points
 
-    s = o1.data["Klagshamn1"]
+    ser = o1.data["Klagshamn1"]
     # assert isinstance(s, pd.Series)
-    o3 = ms.PointObservation(s, x=366844, y=6154291, name="Klagshamn3")
+    o3 = ms.PointObservation(ser, x=366844, y=6154291, name="Klagshamn3")
     assert o1.n_points == o3.n_points
 
 
