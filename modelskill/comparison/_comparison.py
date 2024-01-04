@@ -919,11 +919,15 @@ class Comparer(Scoreable):
 
         Parameters
         ----------
-        by : (str, List[str]), optional
-            group by column name or by temporal bin via the freq-argument
-            (using pandas pd.Grouper(freq)),
-            e.g.: 'freq:M' = monthly; 'freq:D' daily
-            by default ["model"]
+        by : str or List[str], optional
+            group by, by default ["model"]
+
+            - by column name
+            - by temporal bin of the DateTimeIndex via the freq-argument
+            (using pandas pd.Grouper(freq)), e.g.: 'freq:M' = monthly; 'freq:D' daily
+            - by the dt accessor of the DateTimeIndex (e.g. 'dt.month') using the
+            syntax 'dt:month'. The dt-argument is different from the freq-argument
+            in that it gives month-of-year rather than month-of-data.
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
 
@@ -1004,7 +1008,7 @@ class Comparer(Scoreable):
 
         Returns
         -------
-        float
+        dict[str, float]
             skill score as a single number (for each model)
 
         See also
@@ -1017,10 +1021,10 @@ class Comparer(Scoreable):
         >>> import modelskill as ms
         >>> cmp = ms.match(c2, mod)
         >>> cmp.score()
-        0.3517964910888918
+        {'mod': 0.3517964910888918}
 
-        >>> cmp.score(metric=ms.metrics.mape)
-        11.567399646108198
+        >>> cmp.score(metric="mape")
+        {'mod': 11.567399646108198}
         """
         metric = _parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
@@ -1082,8 +1086,8 @@ class Comparer(Scoreable):
 
         Returns
         -------
-        xr.Dataset
-            skill assessment as a dataset
+        SkillGrid
+            skill assessment as a SkillGrid object
 
         See also
         --------

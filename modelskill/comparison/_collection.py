@@ -510,16 +510,20 @@ class ComparerCollection(Mapping, Scoreable):
 
         Parameters
         ----------
-        by : (str, List[str]), optional
-            group by column name or by temporal bin via the freq-argument
-            (using pandas pd.Grouper(freq)),
-            e.g.: 'freq:M' = monthly; 'freq:D' daily
-            or by attributes, stored in the cc.data.attrs container,
+        by : str or List[str], optional
+            group by, by default ["model", "observation"]
+
+            - by column name
+            - by temporal bin of the DateTimeIndex via the freq-argument
+            (using pandas pd.Grouper(freq)), e.g.: 'freq:M' = monthly; 'freq:D' daily
+            - by the dt accessor of the DateTimeIndex (e.g. 'dt.month') using the
+            syntax 'dt:month'. The dt-argument is different from the freq-argument
+            in that it gives month-of-year rather than month-of-data.
+            - by attributes, stored in the cc.data.attrs container,
             e.g.: 'attrs:obs_provider' = group by observation provider or
             'attrs:gtype' = group by geometry type (track or point)
-            by default ["model","observation"]
         metrics : list, optional
-            list of modelskill.metrics, by default modelskill.options.metrics.list
+            list of modelskill.metrics (or str), by default modelskill.options.metrics.list
         observed: bool, optional
             This only applies if any of the groupers are Categoricals.
 
@@ -528,8 +532,8 @@ class ComparerCollection(Mapping, Scoreable):
 
         Returns
         -------
-        pd.DataFrame
-            skill assessment as a dataframe
+        SkillTable
+            skill assessment as a SkillTable object
 
         See also
         --------
@@ -547,7 +551,7 @@ class ComparerCollection(Mapping, Scoreable):
         EPL           66 -0.08  0.22   0.20  0.18  0.97  0.07  0.99
         c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 
-        >>> cc.skill(observation='c2', start='2017-10-28').round(2)
+        >>> cc.sel(observation='c2', start='2017-10-28').skill().round(2)
                        n  bias  rmse  urmse   mae    cc    si    r2
         observation
         c2            41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
@@ -648,11 +652,15 @@ class ComparerCollection(Mapping, Scoreable):
         binsize : float, optional
             bin size for x and y dimension, overwrites bins
             creates bins with reference to round(mean(x)), round(mean(y))
-        by : (str, List[str]), optional
-            group by column name or by temporal bin via the freq-argument
-            (using pandas pd.Grouper(freq)),
-            e.g.: 'freq:M' = monthly; 'freq:D' daily
-            by default ["model","observation"]
+        by : str, List[str], optional
+            group by, by default ["model", "observation"]
+
+            - by column name
+            - by temporal bin of the DateTimeIndex via the freq-argument
+            (using pandas pd.Grouper(freq)), e.g.: 'freq:M' = monthly; 'freq:D' daily
+            - by the dt accessor of the DateTimeIndex (e.g. 'dt.month') using the
+            syntax 'dt:month'. The dt-argument is different from the freq-argument
+            in that it gives month-of-year rather than month-of-data.
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
         n_min : int, optional
@@ -661,8 +669,8 @@ class ComparerCollection(Mapping, Scoreable):
 
         Returns
         -------
-        xr.Dataset
-            skill assessment as a dataset
+        SkillGrid
+            skill assessment as a SkillGrid object
 
         See also
         --------
@@ -745,25 +753,26 @@ class ComparerCollection(Mapping, Scoreable):
         First, the skill is calculated per observation,
         the weighted mean of the skills is then found.
 
-        .. warning::
-            This method is NOT the mean skill of all observational points! (mean_skill_points)
+        Warning: This method is NOT the mean skill of
+        all observational points! (mean_skill_points)
 
         Parameters
         ----------
-        weights : (str, List(float), Dict(str, float)), optional
-            None: use observations weight attribute
-            "equal": giving all observations equal weight,
-            "points": giving all points equal weight,
-            list of weights e.g. [0.3, 0.3, 0.4] per observation,
-            dictionary of observations with special weigths, others will be set to 1.0
-            by default None (i.e. observations weight attribute if assigned else "equal")
+        weights : str or List(float) or Dict(str, float), optional
+            weighting of observations, by default None
+
+            - None: use observations weight attribute (if assigned, else "equal")
+            - "equal": giving all observations equal weight,
+            - "points": giving all points equal weight,
+            - list of weights e.g. [0.3, 0.3, 0.4] per observation,
+            - dictionary of observations with special weigths, others will be set to 1.0
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
 
         Returns
         -------
         SkillTable
-            mean skill assessment as a skill object
+            mean skill assessment as a SkillTable object
 
         See also
         --------
@@ -976,13 +985,14 @@ class ComparerCollection(Mapping, Scoreable):
 
         Parameters
         ----------
-        weights : (str, List(float), Dict(str, float)), optional
-            None: use observations weight attribute
-            "equal": giving all observations equal weight,
-            "points": giving all points equal weight,
-            list of weights e.g. [0.3, 0.3, 0.4] per observation,
-            dictionary of observations with special weigths, others will be set to 1.0
-            by default None (i.e. observations weight attribute if assigned else "equal")
+        weights : str or List(float) or Dict(str, float), optional
+            weighting of observations, by default None
+
+            - None: use observations weight attribute (if assigned, else "equal")
+            - "equal": giving all observations equal weight,
+            - "points": giving all points equal weight,
+            - list of weights e.g. [0.3, 0.3, 0.4] per observation,
+            - dictionary of observations with special weigths, others will be set to 1.0
         metric : list, optional
             a single metric from modelskill.metrics, by default rmse
 
@@ -1003,14 +1013,14 @@ class ComparerCollection(Mapping, Scoreable):
         Examples
         --------
         >>> import modelskill as ms
-        >>> cc = ms.match(obs, mod)
+        >>> cc = ms.match([o1, o2], mod)
         >>> cc.score()
-        0.30681206
+        {'mod': 0.30681206}
         >>> cc.score(weights=[0.1,0.1,0.8])
-        0.3383011631797379
+        {'mod': 0.3383011631797379}
 
         >>> cc.score(weights='points', metric="mape")
-        8.414442957854142
+        {'mod': 8.414442957854142}
         """
 
         weights = kwargs.pop("weights", None)
@@ -1060,6 +1070,8 @@ class ComparerCollection(Mapping, Scoreable):
     def save(self, filename: Union[str, Path]) -> None:
         """Save the ComparerCollection to a zip file.
 
+        Each comparer is stored as a netcdf file in the zip file.
+
         Parameters
         ----------
         filename : str or Path
@@ -1069,10 +1081,6 @@ class ComparerCollection(Mapping, Scoreable):
         --------
         >>> cc = ms.match(obs, mod)
         >>> cc.save("my_comparer_collection.msk")
-
-        Notes
-        -----
-        Each comparer is stored as a netcdf file in the zip file.
         """
 
         files = []
