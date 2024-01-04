@@ -766,7 +766,7 @@ class ComparerPlotter:
             figure size, by default None
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
-        **kwargs 
+        **kwargs
             other keyword arguments to plt.hist()
 
         Returns
@@ -778,7 +778,7 @@ class ComparerPlotter:
         default_color = "#8B8D8E"
         color = default_color if color is None else color
         title = f"Residuals, {self.comparer.name}" if title is None else title
-        ax.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
+        ax.hist(self.comparer._residual, bins=bins, color=color, **kwargs)
         ax.set_title(title)
         ax.set_xlabel(f"Residuals of {self.comparer._unit_text}")
 

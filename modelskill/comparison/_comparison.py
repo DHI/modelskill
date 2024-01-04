@@ -1155,7 +1155,7 @@ class Comparer(Scoreable):
         return SkillGrid(ds)
 
     @property
-    def residual(self):
+    def _residual(self):
         df = self.data.drop_vars(["x", "y", "z"]).to_dataframe()
         obs = df[self._obs_str].values
         mod = df[self.mod_names].values
@@ -1164,7 +1164,7 @@ class Comparer(Scoreable):
     def remove_bias(self, correct="Model") -> Comparer:
         cmp = self.copy()
 
-        bias = cmp.residual.mean(axis=0)
+        bias = cmp._residual.mean(axis=0)
         if correct == "Model":
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
