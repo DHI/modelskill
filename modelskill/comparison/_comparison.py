@@ -640,26 +640,6 @@ class Comparer(Scoreable):
         # Quantity name and unit as text suitable for plot labels
         return f"{self.quantity.name} [{self.quantity.unit}]"
 
-    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
-        """Convert single model data to pandas DataFrame"""
-
-        df = self.data.drop_vars(["z"]).to_dataframe().copy()
-        other_models = [m for m in self.mod_names if m is not mod_name]
-        df = df.drop(columns=other_models)
-        df = df.rename(columns={mod_name: "mod_val", self._obs_str: "obs_val"})
-        df["model"] = mod_name
-        df["observation"] = self.name
-
-        return df
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Convert to pandas DataFrame with all model data concatenated"""
-
-        df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
-        df["model"] = df["model"].astype("category")
-        df["observation"] = df["observation"].astype("category")
-        return df
-
     # TODO: is this the best way to copy (self.data.copy.. )
     def __copy__(self):
         return deepcopy(self)
@@ -909,6 +889,24 @@ class Comparer(Scoreable):
         d = d.dropna(dim="time", how="all")
         return Comparer.from_matched_data(d, self.raw_mod_data)
 
+    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
+        """Convert single model data to pandas DataFrame"""
+
+        df = self.data.drop_vars(["z"]).to_dataframe().copy()
+        other_models = [m for m in self.mod_names if m is not mod_name]
+        df = df.drop(columns=other_models)
+        df = df.rename(columns={mod_name: "mod_val", self._obs_str: "obs_val"})
+        df["model"] = mod_name
+        df["observation"] = self.name
+        return df
+
+    def _to_long_dataframe(self) -> pd.DataFrame:
+        """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
+        df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
+        df["model"] = df["model"].astype("category")
+        df["observation"] = df["observation"].astype("category")
+        return df
+
     def skill(
         self,
         by: str | Iterable[str] | None = None,
@@ -973,7 +971,7 @@ class Comparer(Scoreable):
 
         by = _parse_groupby(by, cmp.n_models, n_obs=1, n_qnt=1)
 
-        df = cmp.to_dataframe()
+        df = cmp._to_long_dataframe()
         res = _groupby_df(df, by, metrics)
         res["x"] = df.groupby(by=by, observed=False).x.first()
         res["y"] = df.groupby(by=by, observed=False).y.first()
@@ -1034,7 +1032,7 @@ class Comparer(Scoreable):
         model, start, end, area = _get_deprecated_args(kwargs)
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        s = self.skill(
+        sk = self.skill(
             by=["model", "observation"],
             metrics=[metric],
             model=model,  # deprecated
@@ -1042,7 +1040,7 @@ class Comparer(Scoreable):
             end=end,  # deprecated
             area=area,  # deprecated
         )
-        df = s.to_dataframe()
+        df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
 
@@ -1132,7 +1130,7 @@ class Comparer(Scoreable):
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 
-        df = cmp.to_dataframe()
+        df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
         # n_models = len(df.model.unique())

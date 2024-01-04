@@ -562,8 +562,9 @@ def test_add_tc_pc(pc, tc):
     assert len(cc) == 2
 
 
-def test_pc_to_dataframe(pc):
-    df = pc.to_dataframe()
+def test_pc_to_long_dataframe(pc):
+    # private method testing
+    df = pc._to_long_dataframe()
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 6)
     assert "mod_val" in df.columns
@@ -584,9 +585,10 @@ def test_pc_to_dataframe(pc):
     assert df.iloc[9].model == "m2"
 
 
-def test_pc_to_dataframe_add_col(pc):
+def test_pc_to_long_dataframe_add_col(pc):
+    # private method testing
     pc.data["derived"] = pc.data.m1 + pc.data.m2
-    df = pc.to_dataframe()
+    df = pc._to_long_dataframe()
     assert isinstance(df, pd.DataFrame)
     assert df.shape == (10, 7)
     assert "derived" in df.columns

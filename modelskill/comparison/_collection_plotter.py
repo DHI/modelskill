@@ -196,7 +196,7 @@ class ComparerCollectionPlotter:
         if cc_sel_mod.n_points == 0:
             raise ValueError("No data found in selection")
 
-        df = cc_sel_mod.to_dataframe()
+        df = cc_sel_mod._to_long_dataframe()
         x = df.obs_val.values
         y = df.mod_val.values
 
@@ -287,7 +287,7 @@ class ComparerCollectionPlotter:
         """
         _, ax = _get_fig_ax(ax, figsize)
 
-        df = self.cc.to_dataframe()
+        df = self.cc._to_long_dataframe()
         ax = df.obs_val.plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
         )
@@ -421,7 +421,7 @@ class ComparerCollectionPlotter:
         )
 
         cmp = self.cc
-        df = cmp.to_dataframe()
+        df = cmp._to_long_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
         df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)

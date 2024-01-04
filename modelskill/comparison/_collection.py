@@ -220,42 +220,6 @@ class ComparerCollection(Mapping, Scoreable):
         """Number of unique quantities"""
         return len(self.quantity_names)
 
-    def to_dataframe(self, attrs_keys=None, observed=False) -> pd.DataFrame:
-        """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
-        # TODO delegate to each comparer
-        attrs_keys = attrs_keys or []
-        res = _all_df_template(self.n_quantities)
-        frames = []
-        cols = list(res.keys()) + attrs_keys
-        for cmp in self._comparers.values():
-            for j in range(cmp.n_models):
-                mod_name = cmp.mod_names[j]
-                # drop "x", "y",  ?
-                df = cmp.data.drop_vars(["z"])[[mod_name]].to_dataframe().copy()
-                df = df.rename(columns={mod_name: "mod_val"})
-                df["model"] = mod_name
-                df["observation"] = cmp.name
-                if self.n_quantities > 1:
-                    df["quantity"] = cmp.quantity.name
-                df["x"] = cmp.x
-                df["y"] = cmp.y
-                df["obs_val"] = cmp.data["Observation"].values
-                for key in attrs_keys:
-                    if key in cmp.data.attrs:
-                        df[key] = cmp.data.attrs[key]
-                    else:
-                        df[key] = False
-                frames.append(df[cols])
-        if len(frames) > 0:
-            res = pd.concat(frames)
-        cat_cols = res.select_dtypes(include=["object"]).columns
-        res[cat_cols] = res[cat_cols].astype("category")
-
-        if observed:
-            res = res.loc[~(res == False).any(axis=1)]  # noqa
-        res.index.name = "time"
-        return res
-
     def __repr__(self):
         out = []
         out.append(f"<{type(self).__name__}>")
@@ -583,8 +547,8 @@ class ComparerCollection(Mapping, Scoreable):
 
         pmetrics = _parse_metric(metrics)
 
-        n_models = cc.n_models  # len(df.model.unique())
-        n_obs = cc.n_observations  # len(df.observation.unique())
+        n_models = cc.n_models
+        n_obs = cc.n_observations
 
         # TODO: FIX
         # len(df.variable.unique()) if (self.n_variables > 1) else 1
@@ -593,7 +557,7 @@ class ComparerCollection(Mapping, Scoreable):
         by, attrs_keys = self._attrs_keys_in_by(by)
         assert isinstance(by, list)
 
-        df = cc.to_dataframe(attrs_keys=attrs_keys, observed=observed)
+        df = cc._to_long_dataframe(attrs_keys=attrs_keys, observed=observed)
 
         res = _groupby_df(df, by, pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
@@ -603,6 +567,42 @@ class ComparerCollection(Mapping, Scoreable):
         # TODO: set x,y to NaN if TrackObservation, x.nunique() > 1
         res = cc._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
+
+    def _to_long_dataframe(self, attrs_keys=None, observed=False) -> pd.DataFrame:
+        """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
+        # TODO delegate to each comparer
+        attrs_keys = attrs_keys or []
+        res = _all_df_template(self.n_quantities)
+        frames = []
+        cols = list(res.keys()) + attrs_keys
+        for cmp in self._comparers.values():
+            for j in range(cmp.n_models):
+                mod_name = cmp.mod_names[j]
+                # drop "x", "y",  ?
+                df = cmp.data.drop_vars(["z"])[[mod_name]].to_dataframe().copy()
+                df = df.rename(columns={mod_name: "mod_val"})
+                df["model"] = mod_name
+                df["observation"] = cmp.name
+                if self.n_quantities > 1:
+                    df["quantity"] = cmp.quantity.name
+                df["x"] = cmp.x
+                df["y"] = cmp.y
+                df["obs_val"] = cmp.data["Observation"].values
+                for key in attrs_keys:
+                    if key in cmp.data.attrs:
+                        df[key] = cmp.data.attrs[key]
+                    else:
+                        df[key] = False
+                frames.append(df[cols])
+        if len(frames) > 0:
+            res = pd.concat(frames)
+        cat_cols = res.select_dtypes(include=["object"]).columns
+        res[cat_cols] = res[cat_cols].astype("category")
+
+        if observed:
+            res = res.loc[~(res == False).any(axis=1)]  # noqa
+        res.index.name = "time"
+        return res
 
     @staticmethod
     def _attrs_keys_in_by(by):
@@ -720,7 +720,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         metrics = _parse_metric(metrics)
 
-        df = cmp.to_dataframe()
+        df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
         by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
@@ -812,7 +812,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         ## ---- end of deprecated code ----
 
-        df = cc.to_dataframe()  # TODO: remove
+        df = cc._to_long_dataframe()  # TODO: remove
         mod_names = cc.mod_names
         # obs_names = cmp.obs_names  # df.observation.unique()
         qnt_names = cc.quantity_names
@@ -1058,8 +1058,8 @@ class ComparerCollection(Mapping, Scoreable):
 
         ## ---- end of deprecated code ----
 
-        skill = cmp.mean_skill(weights=weights, metrics=[metric])
-        df = skill.to_dataframe()
+        sk = cmp.mean_skill(weights=weights, metrics=[metric])
+        df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
 
@@ -1259,9 +1259,9 @@ class ComparerCollection(Mapping, Scoreable):
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
         skill_func = cmp.mean_skill if aggregate_observations else cmp.skill
-        s = skill_func(metrics=metrics)
+        sk = skill_func(metrics=metrics)
 
-        df = s.to_dataframe()
+        df = sk.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
