@@ -199,7 +199,6 @@ def test_misc_properties(klagshamn, drogden):
     cc = ms.match([klagshamn, drogden], mr)
 
     assert len(cc) == 2
-    assert cc.n_comparers == 2
 
     assert cc.n_models == 1
     assert cc.mod_names == ["Oresund2D_subset"]

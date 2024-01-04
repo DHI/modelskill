@@ -35,6 +35,7 @@ from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
 from .comparison import ComparerCollection, Comparer
+from .skill import SkillTable
 
 
 def load(filename: Union[str, Path]) -> ComparerCollection:
@@ -73,6 +74,7 @@ __all__ = [
     "from_matched",
     "Comparer",
     "ComparerCollection",
+    "SkillTable",
     "options",
     "get_option",
     "set_option",

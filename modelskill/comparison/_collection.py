@@ -97,7 +97,7 @@ class ComparerCollection(Mapping, Scoreable):
     """Collection of Comparers, indexed by name"""
 
     def __init__(self, comparers: Iterable[Comparer]) -> None:
-        self.comparers: Dict[str, Comparer] = {}
+        self._comparers: Dict[str, Comparer] = {}
         self._insert_comparers(comparers)
         self.plot = ComparerCollection.plotter(self)
 
@@ -111,27 +111,31 @@ class ComparerCollection(Mapping, Scoreable):
             pass
 
     @property
-    def name(self) -> str:
+    def _name(self) -> str:
         return "Observations"
 
     @property
-    def unit_text(self) -> str:
+    def _unit_text(self) -> str:
         # Picking the first one is arbitrary, but it should be the same for all
         # we could check that they are all the same, but let's assume that they are
         # for cmp in self:
-        #     if cmp.unit_text != text:
-        #         warnings.warn(f"Unit text is inconsistent: {text} vs {cmp.unit_text}")
-        return self[0].unit_text
+        #     if cmp._unit_text != text:
+        #         warnings.warn(f"Unit text is inconsistent: {text} vs {cmp._unit_text}")
+        return self[0]._unit_text
 
     @property
     def n_comparers(self) -> int:
         """Number of comparers"""
-        return len(self.comparers)
+        warnings.warn(
+            "cc.n_comparers is deprecated, use len(cc) instead",
+            FutureWarning,
+        )
+        return len(self)
 
     @property
     def n_points(self) -> int:
         """number of compared points"""
-        return sum([c.n_points for c in self.comparers.values()])
+        return sum([c.n_points for c in self._comparers.values()])
 
     @property
     def start(self) -> pd.Timestamp:
@@ -145,7 +149,7 @@ class ComparerCollection(Mapping, Scoreable):
     def start_time(self) -> pd.Timestamp:
         """start timestamp of compared data"""
         starts = [pd.Timestamp.max]
-        for cmp in self.comparers.values():
+        for cmp in self._comparers.values():
             starts.append(cmp.time[0])
         return min(starts)
 
@@ -161,19 +165,19 @@ class ComparerCollection(Mapping, Scoreable):
     def end_time(self) -> pd.Timestamp:
         """end timestamp of compared data"""
         ends = [pd.Timestamp.min]
-        for cmp in self.comparers.values():
+        for cmp in self._comparers.values():
             ends.append(cmp.time[-1])
         return max(ends)
 
     @property
     def obs_names(self) -> List[str]:
         """List of observation names"""
-        return [c.name for c in self.comparers.values()]
+        return [c.name for c in self._comparers.values()]
 
     @property
     def n_observations(self) -> int:
         """Number of observations"""
-        return self.n_comparers
+        return len(self)
 
     @property
     def mod_names(self) -> List[str]:
@@ -212,7 +216,7 @@ class ComparerCollection(Mapping, Scoreable):
         res = _all_df_template(self.n_quantities)
         frames = []
         cols = list(res.keys()) + attrs_keys
-        for cmp in self.comparers.values():
+        for cmp in self._comparers.values():
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
                 # drop "x", "y",  ?
@@ -249,7 +253,7 @@ class ComparerCollection(Mapping, Scoreable):
     def __repr__(self):
         out = []
         out.append(f"<{type(self).__name__}>")
-        for key, value in self.comparers.items():
+        for key, value in self._comparers.items():
             out.append(f"{type(value).__name__}: {key}")
         return str.join("\n", out)
 
@@ -280,7 +284,7 @@ class ComparerCollection(Mapping, Scoreable):
                 raise KeyError(f"Unknown key: {k}; must be one of {allowed_keys}")
 
         cmps = []
-        for cmp in self.comparers.values():
+        for cmp in self._comparers.values():
             cmps.append(cmp.rename(mapping, errors="ignore"))
         return ComparerCollection(cmps)
 
@@ -294,7 +298,7 @@ class ComparerCollection(Mapping, Scoreable):
 
     def __getitem__(self, x):
         if isinstance(x, str):
-            return self.comparers[x]
+            return self._comparers[x]
 
         if isinstance(x, slice):
             idxs = list(range(*x.indices(len(self))))
@@ -302,7 +306,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         if isinstance(x, int):
             name = _get_name(x, self.obs_names)
-            return self.comparers[name]
+            return self._comparers[name]
 
         if isinstance(x, Iterable):
             cmps = [self[i] for i in x]
@@ -312,24 +316,24 @@ class ComparerCollection(Mapping, Scoreable):
         assert isinstance(
             value, Comparer
         ), f"comparer must be a Comparer, not {type(value)}"
-        if x in self.comparers:
+        if x in self._comparers:
             # comparer with this name already exists!
             # maybe the user is trying to add a new model
             # or a new time period
-            self.comparers[x] = self.comparers[x] + value  # type: ignore
+            self._comparers[x] = self._comparers[x] + value  # type: ignore
         else:
-            self.comparers[x] = value
+            self._comparers[x] = value
 
     def __len__(self) -> int:
-        return len(self.comparers)
+        return len(self._comparers)
 
     def __iter__(self):
-        return iter(self.comparers.values())
+        return iter(self._comparers.values())
 
     def __copy__(self):
         cls = self.__class__
         cp = cls.__new__(cls)
-        cp.__init__(list(self.comparers))  # TODO should this use deepcopy?
+        cp.__init__(list(self._comparers))  # TODO should this use deepcopy?
         return cp
 
     def copy(self):
@@ -413,7 +417,7 @@ class ComparerCollection(Mapping, Scoreable):
             quantity = self.quantity_names
 
         cmps = []
-        for cmp in self.comparers.values():
+        for cmp in self._comparers.values():
             if cmp.name in observation and cmp.quantity.name in quantity:
                 thismodel = (
                     [m for m in mod_names if m in cmp.mod_names] if model else None
@@ -462,7 +466,7 @@ class ComparerCollection(Mapping, Scoreable):
         Comparer: alti
         """
         cmps = []
-        for cmp in self.comparers.values():
+        for cmp in self._comparers.values():
             for k, v in kwargs.items():
                 # TODO: should we also filter on cmp.data.Observation.attrs?
                 if cmp.data.attrs.get(k) != v:
@@ -484,7 +488,7 @@ class ComparerCollection(Mapping, Scoreable):
         ComparerCollection
             New ComparerCollection with selected data.
         """
-        q_cmps = [cmp.query(query) for cmp in self.comparers.values()]
+        q_cmps = [cmp.query(query) for cmp in self._comparers.values()]
         cmps_with_data = [cmp for cmp in q_cmps if cmp.n_points > 0]
 
         return ComparerCollection(cmps_with_data)
@@ -1005,7 +1009,7 @@ class ComparerCollection(Mapping, Scoreable):
         if weights is None:
             # get weights from observation objects
             # default is equal weight to all
-            weights = [self.comparers[o].weight for o in observations]
+            weights = [self._comparers[o].weight for o in observations]
         else:
             if isinstance(weights, int):
                 weights = np.ones(n_obs)  # equal weight to all
@@ -1092,7 +1096,7 @@ class ComparerCollection(Mapping, Scoreable):
         metric = _parse_metric(metric)[0]
 
         if weights is None:
-            weights = {c.name: c.weight for c in self.comparers.values()}
+            weights = {c.name: c.weight for c in self._comparers.values()}
 
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
@@ -1212,7 +1216,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         files = []
         no = 0
-        for name, cmp in self.comparers.items():
+        for name, cmp in self._comparers.items():
             cmp_fn = f"{no}_{name}.nc"
             cmp.save(cmp_fn)
             files.append(cmp_fn)

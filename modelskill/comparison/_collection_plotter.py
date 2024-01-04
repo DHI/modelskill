@@ -201,11 +201,11 @@ class ComparerCollectionPlotter:
         y = df.mod_val.values
 
         # TODO why the first?
-        unit_text = self.cc[0].unit_text
+        unit_text = self.cc[0]._unit_text
 
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
-        title = title or f"{mod_name} vs {cc_sel_mod.name}"
+        title = title or f"{mod_name} vs {cc_sel_mod._name}"
 
         skill = None
         skill_score_unit = None
@@ -213,10 +213,7 @@ class ComparerCollectionPlotter:
             metrics = None if skill_table is True else skill_table
 
             # TODO why is this here?
-            if (
-                isinstance(self, ComparerCollectionPlotter)
-                and cc_sel_mod.n_observations == 1
-            ):
+            if isinstance(self, ComparerCollectionPlotter) and len(cc_sel_mod) == 1:
                 skill = cc_sel_mod.skill(metrics=metrics)  # type: ignore
             else:
                 skill = cc_sel_mod.mean_skill(metrics=metrics)  # type: ignore
@@ -299,7 +296,7 @@ class ComparerCollectionPlotter:
             df_model = df[df.model == model]
             df_model.mod_val.plot.kde(ax=ax, label=model, **kwargs)
 
-        ax.set_xlabel(f"{self.cc.unit_text}")
+        ax.set_xlabel(f"{self.cc._unit_text}")
 
         title = (
             _default_univarate_title("Density plot", self.cc)
@@ -436,7 +433,7 @@ class ComparerCollectionPlotter:
 
         ax.legend([mod_name, "observations"])
         ax.set_title(title)
-        ax.set_xlabel(f"{self.cc[df.observation.iloc[0]].unit_text}")
+        ax.set_xlabel(f"{self.cc[df.observation.iloc[0]]._unit_text}")
 
         if density:
             ax.set_ylabel("density")

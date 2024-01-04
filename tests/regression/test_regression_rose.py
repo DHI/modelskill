@@ -1,3 +1,4 @@
+import sys
 import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
@@ -22,6 +23,7 @@ def wave_data_model_obs():
     return df
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def test_wind_rose_image_identical(wave_data_model_obs, tmp_path):
     # TODO this test seems fragile, since it relies pixel by pixel comparison of images
     data = wave_data_model_obs.to_numpy()

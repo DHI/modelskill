@@ -553,13 +553,13 @@ def test_pc_query_empty(pc):
 def test_add_pc_tc(pc, tc):
     cc = pc + tc
     assert cc.n_points == 10
-    assert cc.n_comparers == 2
+    assert len(cc) == 2
 
 
 def test_add_tc_pc(pc, tc):
     cc = tc + pc
     assert cc.n_points == 10
-    assert cc.n_comparers == 2
+    assert len(cc) == 2
 
 
 def test_pc_to_dataframe(pc):
