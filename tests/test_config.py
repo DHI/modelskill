@@ -1,15 +1,15 @@
 import pytest
+
 import modelskill as ms
 
 
-def test_comparison_from_dict():
-    # As an alternative to
-    # mr = ModelResult()
+@pytest.fixture
+def conf_xlsx():
+    return "tests/testdata/SW/conf_SW.xlsx"
 
-    # o1 = PointObservation()
-    # con = Connector(o1, mr)
-    # c = con.extract()
 
+@pytest.fixture
+def conf_dict():
     configuration = dict(
         modelresults=dict(
             HD=dict(
@@ -33,22 +33,30 @@ def test_comparison_from_dict():
             ),
         ),
     )
+    return configuration
 
-    with pytest.warns(FutureWarning, match="modelskill.match"):
-        con = ms.from_config(configuration, validate_eum=False)
 
-    cc = con.extract()
+def test_from_excel_include(conf_xlsx):
+    cc = ms.from_config(conf_xlsx, relative_path=True)
+    assert cc.n_models == 1
+    assert cc.n_observations == 3
+    assert len(cc) == 3
+
+
+def test_comparison_from_dict(conf_dict):
+    cc = ms.from_config(conf_dict)
     assert len(cc) == 2
-    assert cc.n_comparers == 2
+    # assert cc.n_comparers == 2
     assert cc.n_models == 1
 
 
 def test_comparison_from_yml():
-    with pytest.warns(FutureWarning, match="modelskill.match"):
-        con = ms.from_config("tests/testdata/conf.yml", validate_eum=False)
-    cc = con.extract()
+    cc = ms.from_config("tests/testdata/conf.yml")
 
     assert len(cc) == 2
-    assert cc.n_comparers == 2
     assert cc.n_models == 1
-    assert con.observations["Klagshamn"].quantity.name == "Water Level"
+    assert "HD" in cc.mod_names
+    assert cc["Klagshamn"].quantity.name == "Water Level"
+    assert cc["Drogden"].quantity.name == "Water Level"
+
+    assert cc.score()["HD"] == pytest.approx(0.23287298772)

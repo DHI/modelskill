@@ -9,6 +9,38 @@ mpl.use("Agg")
 
 
 @pytest.fixture
+def sk_df1():
+    d = {
+        "model": "m1",
+        "n": 123,
+        "bias": 0.1,
+        "rmse": 0.2,
+        "corr": 0.3,
+        "si": 0.4,
+        "r2": 0.5,
+    }
+    df = pd.DataFrame(d, index=["obs1"])
+    df.index.name = "observation"
+    df = df.reset_index().set_index(["observation", "model"])
+    return df
+
+
+@pytest.fixture
+def sk_df2():
+    d = {
+        "n": [123, 456],
+        "x": [1.1, 2.1],
+        "y": [1.2, 2.2],
+        "bias": [1.3, 2.3],
+        "rmse": [1.4, 2.4],
+        "corr": [1.5, 2.5],
+    }
+    df = pd.DataFrame(d, index=["obs1", "obs2"])
+    df.index.name = "observation"
+    return df
+
+
+@pytest.fixture
 def cc1():
     fn = "tests/testdata/NorthSeaHD_and_windspeed.dfsu"
     mr = ms.model_result(fn, item=0, name="HD")
@@ -46,19 +78,56 @@ def cc2(o1, o2, o3):
     return ms.match([o1, o2, o3], [mr1, mr2])
 
 
+def test_skill_table(sk_df1):
+    sk = ms.SkillTable(sk_df1)
+    assert sk.obs_names == ["obs1"]
+    assert sk.mod_names == ["m1"]
+    assert sk.quantity_names == []
+    assert sk.metrics == ["n", "bias", "rmse", "corr", "si", "r2"]
+
+
+def test_skill_table_odd_index(sk_df2):
+    # having a different index name works
+    sk_df2.index.name = "odd"
+    sk = ms.SkillTable(sk_df2)
+    assert sk.obs_names == []
+    assert sk.mod_names == []
+    assert sk.quantity_names == []
+    assert sk.metrics == ["n", "bias", "rmse", "corr"]
+
+
+def test_skill_table_2rows(sk_df2):
+    sk = ms.SkillTable(sk_df2)
+    assert sk.obs_names[0] == "obs1"
+    assert sk.obs_names[1] == "obs2"
+    assert sk.mod_names == []
+    assert sk.quantity_names == []
+    assert sk.metrics == ["n", "bias", "rmse", "corr"]  # note: no "x", "y"
+
+
+def test_skill_table_from_xarray(sk_df2):
+    ds = sk_df2.to_xarray()
+    sk = ms.SkillTable(ds)
+    assert sk.obs_names[0] == "obs1"
+    assert sk.obs_names[1] == "obs2"
+    assert sk.mod_names == []
+    assert sk.quantity_names == []
+    assert sk.metrics == ["n", "bias", "rmse", "corr"]  # note: no "x", "y"
+
+
 def test_skill(cc1):
-    s = cc1.skill()
+    sk = cc1.skill()
 
     # TODO a minimal skill assesment consists of 1 observation, 1 model and 1 variable
     # in this case model and variable is implict since we only have one of each, but why do we have one observation, seems inconsistent
 
-    assert len(s.mod_names) == 0  # TODO seems wrong
-    assert len(s.obs_names) == 1  # makes sense
-    assert len(s.var_names) == 0  # TODO seems wrong
+    assert len(sk.mod_names) == 0  # TODO seems wrong
+    assert len(sk.obs_names) == 1  # makes sense
+    assert len(sk.quantity_names) == 0  # TODO seems wrong
 
-    df = s.to_dataframe()
+    df = sk.to_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert "bias" in repr(s)
+    assert "bias" in repr(sk)
 
 
 def test_skill_bad_args(cc1):
@@ -67,13 +136,13 @@ def test_skill_bad_args(cc1):
 
 
 def test_skill_multi_model(cc2):
-    s = cc2.skill(metrics=["rmse", "bias"])
+    sk = cc2.skill(metrics=["rmse", "bias"])
 
     # TODO decide if N is a metric or not🤔
-    assert len(s.metrics) == 3
+    assert len(sk.metrics) == 3
 
-    assert len(s.mod_names) == 2
-    assert len(s.obs_names) == 3
+    assert len(sk.mod_names) == 2
+    assert len(sk.obs_names) == 3
 
     # TODO recreate functionality of xs more domain specific
     # s2 = s.xs("SW_1", level="model")
@@ -99,125 +168,125 @@ def test_skill_multi_model(cc2):
 
 
 def test_skill_sel(cc1):
-    s = cc1.skill(metrics=["rmse", "bias"])
-    s2 = s.sel(observation="alti")
+    sk = cc1.skill(metrics=["rmse", "bias"])
+    s2 = sk.sel(observation="alti")
     assert len(s2) == 1
-    assert "rmse" in s.metrics
-    assert "bias" in s.metrics
+    assert "rmse" in sk.metrics
+    assert "bias" in sk.metrics
 
 
 def test_skill_sel_metrics_str(cc1):
-    s = cc1.skill(metrics=["rmse", "bias"])
+    sk = cc1.skill(metrics=["rmse", "bias"])
 
     with pytest.warns(FutureWarning, match="deprecated"):
-        s2 = s.sel(metrics="rmse")
+        s2 = sk.sel(metrics="rmse")
     assert s2.name == "rmse"
 
 
 def test_skill_sel_metrics_list(cc2):
-    s = cc2.skill(metrics=["rmse", "bias"])
+    sk = cc2.skill(metrics=["rmse", "bias"])
 
     with pytest.warns(FutureWarning, match="deprecated"):
-        s2 = s.sel(metrics=["rmse", "n"])
+        s2 = sk.sel(metrics=["rmse", "n"])
     assert "n" in s2.metrics
     assert "bias" not in s2.metrics
 
 
 def test_skill_sel_multi_model(cc2):
-    s = cc2.skill(metrics=["rmse", "bias"])
-    s2 = s.sel(model="SW_1")
-    assert len(s2.mod_names) == 0  # no longer in index
+    sk = cc2.skill(metrics=["rmse", "bias"])
+    sk2 = sk.sel(model="SW_1")
+    assert len(sk2.mod_names) == 0  # no longer in index
     # assert not isinstance(s2.index, pd.MultiIndex)
-    assert len(s2) == 3
+    assert len(sk2) == 3
 
-    s2 = s.sel(model="SW_1", observation=["EPL", "c2"])
-    assert len(s2.obs_names) == 2
+    sk2 = sk.sel(model="SW_1", observation=["EPL", "c2"])
+    assert len(sk2.obs_names) == 2
     # assert not isinstance(s2.index, pd.MultiIndex)
-    assert len(s2) == 2
+    assert len(sk2) == 2
 
-    s2 = s.sel(model=1, observation=["EPL"])
-    assert len(s2.obs_names) == 0
+    sk2 = sk.sel(model=1, observation=["EPL"])
+    assert len(sk2.obs_names) == 0
     # assert not isinstance(s2.index, pd.MultiIndex)
-    assert len(s2) == 1
+    assert len(sk2) == 1
 
 
 def test_skill_sel_query(cc2):
-    s = cc2.skill(metrics=["rmse", "bias"])
+    sk = cc2.skill(metrics=["rmse", "bias"])
     with pytest.warns(FutureWarning, match="deprecated"):
-        s2 = s.sel(query="rmse>0.2")
+        sk2 = sk.sel(query="rmse>0.2")
 
-    assert len(s2.mod_names) == 2
+    assert len(sk2.mod_names) == 2
 
     # s2 = s.sel("rmse>0.2", model="SW_2", observation=[0, 2])
     # assert len(s2.mod_names) == 0  # no longer in index
 
 
 def test_skill_sel_fail(cc2):
-    s = cc2.skill(metrics=["rmse", "bias"])
+    sk = cc2.skill(metrics=["rmse", "bias"])
 
     with pytest.raises(KeyError):
-        s.sel(variable="Hm0")
+        sk.sel(quantity="Hm0")
 
     with pytest.raises(KeyError):
-        s.sel(model=99)
+        sk.sel(model=99)
 
 
 def test_skill_plot_bar(cc1):
-    s = cc1.skill(metrics=["rmse", "bias"])
-    s["bias"].plot.bar()
+    sk = cc1.skill(metrics=["rmse", "bias"])
+    sk["bias"].plot.bar()
 
 
 def test_skill_plot_bar_multi_model(cc2):
-    s = cc2.skill(metrics="rmse")
-    s["rmse"].plot.bar()
+    sk = cc2.skill(metrics="rmse")
+    sk["rmse"].plot.bar()
 
     with pytest.raises(KeyError):
-        s["bad_metric"].plot.bar()
+        sk["bad_metric"].plot.bar()
 
 
 def test_skill_plot_line(cc1):
-    s = cc1.skill(metrics=["rmse", "bias"])
-    s["bias"].plot.line()
-    s["bias"].plot.line(title="Skill")
+    sk = cc1.skill(metrics=["rmse", "bias"])
+    sk["bias"].plot.line()
+    sk["bias"].plot.line(title="Skill")
 
     with pytest.raises(KeyError):
-        s["NOT_A_METRIC"].plot.line()
+        sk["NOT_A_METRIC"].plot.line()
 
 
 def test_skill_plot_line_multi_model(cc2):
-    s = cc2.skill(metrics="rmse")
-    s.rmse.plot.line()
+    sk = cc2.skill(metrics="rmse")
+    sk.rmse.plot.line()
 
     with pytest.raises(KeyError):
-        s["bad_metric"]
+        sk["bad_metric"]
 
 
 def test_skill_plot_grid(cc2):
-    s = cc2.skill()
-    s["rmse"].plot.grid()
-    s["bias"].plot.grid()
-    s["si"].plot.grid(fmt=".0%")
-    s["bias"].plot.grid(figsize=(2, 1), show_numbers=False)
+    sk = cc2.skill()
+    sk["rmse"].plot.grid()
+    sk["bias"].plot.grid()
+    sk["si"].plot.grid(fmt=".0%")
+    sk["bias"].plot.grid(figsize=(2, 1), show_numbers=False)
 
-    s2 = s.sel(model="SW_1")
+    sk2 = sk.sel(model="SW_1")
     with pytest.warns(UserWarning) as wn:
-        s2["rmse"].plot.grid()
+        sk2["rmse"].plot.grid()
     assert len(wn) == 1
     assert "only possible for MultiIndex" in str(wn[0].message)
 
 
 def test_skill_style(cc2):
-    s = cc2.skill(metrics=["bias", "rmse", "lin_slope", "si"])
-    s.style()
-    s.style(decimals=0)
-    s.style(metrics="rmse")
-    s.style(metrics=["bias", "rmse"])
-    s.style(metrics=[])
-    s.style(cmap="viridis_r", show_best=False)
+    sk = cc2.skill(metrics=["bias", "rmse", "lin_slope", "si"])
+    sk.style()
+    sk.style(decimals=0)
+    sk.style(metrics="rmse")
+    sk.style(metrics=["bias", "rmse"])
+    sk.style(metrics=[])
+    sk.style(cmap="viridis_r", show_best=False)
 
 
 def test_skill_round(cc2):
-    s = cc2.skill()
+    sk = cc2.skill()
 
     # TODO consider decimals per metric, e.g. {bias: 2, rmse: 3}
-    s.round(decimals=2)
+    sk.round(decimals=2)

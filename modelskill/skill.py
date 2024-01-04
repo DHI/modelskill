@@ -80,7 +80,7 @@ class SkillArrayPlotter:
         ----------
         level : int or str, optional
             level to unstack, by default 0
-        kwargs : dict, optional
+        **kwargs
             key word arguments to be pased to pd.DataFrame.plot.line()
             e.g. marker, title, figsize, ...
 
@@ -113,7 +113,7 @@ class SkillArrayPlotter:
         ----------
         level : int or str, optional
             level to unstack, by default 0
-        kwargs : dict, optional
+        **kwargs
             key word arguments to be pased to pd.DataFrame.plot.bar()
             e.g. color, title, figsize, ...
 
@@ -140,7 +140,7 @@ class SkillArrayPlotter:
         ----------
         level : int or str, optional
             level to unstack, by default 0
-        kwargs : dict, optional
+        **kwargs
             key word arguments to be passed to pd.DataFrame.plot.barh()
             e.g. color, title, figsize, ...
 
@@ -494,9 +494,9 @@ class SkillTable:
         return self._get_index_level_by_name("observation")
 
     @property
-    def var_names(self) -> list[str]:
-        """List of variable names (in index)"""
-        return self._get_index_level_by_name("variable")
+    def quantity_names(self) -> list[str]:
+        """List of quantity names (in index)"""
+        return self._get_index_level_by_name("quantity")
 
     # TODO what does this method actually do?
     def _get_index_level_by_name(self, name):
@@ -539,7 +539,7 @@ class SkillTable:
         reduce_index : bool, optional
             Should unnecessary levels of the index be removed after subsetting?
             Removed levels will stay as columns. By default True
-        **kwargs : dict, optional
+        **kwargs
             Concrete keys depend on the index names of the SkillTable
             (from the "by" argument in cc.skill() method)
             "model"=... to select specific models,

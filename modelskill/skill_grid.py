@@ -69,7 +69,8 @@ class SkillGridArray(SkillGridMixin):
         ----------
         model : str, optional
             Name of model to plot, by default all models
-        **kwargs : keyword arguments passed to xr.DataArray plot()
+        **kwargs
+            keyword arguments passed to xr.DataArray plot()
             e.g. figsize
 
         Examples
