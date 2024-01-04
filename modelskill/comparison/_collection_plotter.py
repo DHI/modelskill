@@ -112,7 +112,7 @@ class ComparerCollectionPlotter:
             by default False
         ax : matplotlib axes, optional
             axes to plot on, by default None
-        **kwargs :
+        **kwargs
             other keyword arguments to matplotlib.pyplot.scatter()
 
         Examples
@@ -196,7 +196,7 @@ class ComparerCollectionPlotter:
         if cc_sel_mod.n_points == 0:
             raise ValueError("No data found in selection")
 
-        df = cc_sel_mod.to_dataframe()
+        df = cc_sel_mod._to_long_dataframe()
         x = df.obs_val.values
         y = df.mod_val.values
 
@@ -287,7 +287,7 @@ class ComparerCollectionPlotter:
         """
         _, ax = _get_fig_ax(ax, figsize)
 
-        df = self.cc.to_dataframe()
+        df = self.cc._to_long_dataframe()
         ax = df.obs_val.plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
         )
@@ -351,7 +351,8 @@ class ComparerCollectionPlotter:
             axes to plot on, by default None
         figsize : tuple, optional
             width and height of the figure, by default None
-        kwargs : other keyword arguments to df.hist()
+        **kwargs
+            other keyword arguments to df.hist()
 
         Returns
         -------
@@ -413,17 +414,17 @@ class ComparerCollectionPlotter:
         assert (
             mod_name in self.cc.mod_names
         ), f"Model {mod_name} not found in collection"
-        mod_id = _get_idx(mod_name, self.cc.mod_names)
+        mod_idx = _get_idx(mod_name, self.cc.mod_names)
 
         title = (
             _default_univarate_title("Histogram", self.cc) if title is None else title
         )
 
         cmp = self.cc
-        df = cmp.to_dataframe()
+        df = cmp._to_long_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], ax=ax, **kwargs)
+        df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)
         df.obs_val.hist(
             bins=bins,
             color=self.cc[0].data["Observation"].attrs["color"],

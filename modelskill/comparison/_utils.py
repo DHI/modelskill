@@ -6,7 +6,7 @@ import pandas as pd
 
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
-IdOrNameTypes = Union[int, str, List[int], List[str]]
+IdxOrNameTypes = Union[int, str, List[int], List[str]]
 
 
 def _add_spatial_grid_to_df(
@@ -49,17 +49,20 @@ def _groupby_df(
     metrics: List[Callable],
     n_min: Optional[int] = None,
 ) -> pd.DataFrame:
-    def calc_metrics(x):
+    def calc_metrics(group):
         row = {}
-        row["n"] = len(x)
+        # row["x"] = group.x.first() if group.x.nunique() == 1 else np.nan
+        # row["y"] = group.y.first() if group.y.nunique() == 1 else np.nan
+        row["n"] = len(group)
         for metric in metrics:
-            row[metric.__name__] = metric(x.obs_val, x.mod_val)
+            row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
 
     # .drop(columns=["x", "y"])
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
+    # sort=False to avoid re-ordering compared to original cc (also for performance)
     res = df.groupby(by=by, observed=False).apply(calc_metrics)
 
     if n_min:

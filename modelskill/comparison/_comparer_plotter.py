@@ -65,7 +65,10 @@ class ComparerPlotter:
         figsize : (float, float), optional
             figure size, by default None
         backend : str, optional
-            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"backend:
+            use "plotly" (interactive) or "matplotlib" backend,
+            by default "matplotlib"
+        **kwargs
+            other keyword arguments to fig.update_layout (plotly backend)
 
         Returns
         -------
@@ -165,7 +168,8 @@ class ComparerPlotter:
             If True, draw and return a probability density
         alpha : float, optional
             alpha transparency fraction, by default 0.5
-        kwargs : other keyword arguments to df.plot.hist()
+        **kwargs
+            other keyword arguments to df.plot.hist()
 
         Returns
         -------
@@ -220,7 +224,7 @@ class ComparerPlotter:
 
         cmp = self.comparer
         assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
-        mod_id = _get_idx(mod_name, cmp.mod_names)
+        mod_idx = _get_idx(mod_name, cmp.mod_names)
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
 
@@ -233,7 +237,7 @@ class ComparerPlotter:
         ax = (
             cmp.data[mod_name]
             .to_series()
-            .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
+            .hist(bins=bins, color=MOD_COLORS[mod_idx], **kwargs)
         )
 
         cmp.data[cmp._obs_name].to_series().hist(
@@ -265,7 +269,8 @@ class ComparerPlotter:
             plot title, default: "KDE plot for [observation name]"
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to df.plot.kde()
+        **kwargs
+            other keyword arguments to df.plot.kde()
 
         Returns
         -------
@@ -339,7 +344,8 @@ class ComparerPlotter:
             axes to plot on, by default None
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to plt.plot()
+        **kwargs
+            other keyword arguments to plt.plot()
 
         Returns
         -------
@@ -414,7 +420,8 @@ class ComparerPlotter:
             plot title, default: [observation name]
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to df.boxplot()
+        **kwargs
+            other keyword arguments to df.boxplot()
 
         Returns
         -------
@@ -531,7 +538,8 @@ class ComparerPlotter:
             right of the scatter plot, by default False
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
-        **kwargs: other keyword arguments to plt.scatter()
+        **kwargs
+            other keyword arguments to plt.scatter()
 
         Examples
         ------
@@ -715,11 +723,11 @@ class ComparerPlotter:
             mtr.cc,
         ]
 
-        s = cmp.skill(metrics=metrics)
+        sk = cmp.skill(metrics=metrics)
 
-        if s is None:  # TODO
+        if sk is None:  # TODO
             return
-        df = s.to_dataframe()
+        df = sk.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
@@ -758,7 +766,8 @@ class ComparerPlotter:
             figure size, by default None
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
-        kwargs : other keyword arguments to plt.hist()
+        **kwargs
+            other keyword arguments to plt.hist()
 
         Returns
         -------
@@ -769,7 +778,7 @@ class ComparerPlotter:
         default_color = "#8B8D8E"
         color = default_color if color is None else color
         title = f"Residuals, {self.comparer.name}" if title is None else title
-        ax.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
+        ax.hist(self.comparer._residual, bins=bins, color=color, **kwargs)
         ax.set_title(title)
         ax.set_xlabel(f"Residuals of {self.comparer._unit_text}")
 
