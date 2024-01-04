@@ -40,7 +40,8 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
             plot marker, by default '.'
         linestyle : str, optional
             line style, by default None
-        kwargs: other keyword arguments to df.plot()
+        **kwargs
+            other keyword arguments to df.plot()
         """
         kwargs["color"] = self._ts._color if color is None else color
         ax = self._ts._values_as_series.plot(
@@ -66,7 +67,8 @@ class MatplotlibTimeSeriesPlotter(TimeSeriesPlotter):
             plot title, default: observation name
         color : str, optional
             plot color, by default "#d62728"
-        kwargs : other keyword arguments to df.hist()
+        **kwargs
+            other keyword arguments to df.hist()
 
         Returns
         -------
@@ -111,7 +113,8 @@ class PlotlyTimeSeriesPlotter(TimeSeriesPlotter):
         ----------
         bins : int, optional
             specification of bins, by default 100
-        kwargs : other keyword arguments to df.hist()
+        **kwargs
+            other keyword arguments to df.hist()
         """
         import plotly.express as px  # type: ignore
 

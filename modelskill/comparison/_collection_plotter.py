@@ -112,7 +112,7 @@ class ComparerCollectionPlotter:
             by default False
         ax : matplotlib axes, optional
             axes to plot on, by default None
-        **kwargs :
+        **kwargs
             other keyword arguments to matplotlib.pyplot.scatter()
 
         Examples
@@ -351,7 +351,8 @@ class ComparerCollectionPlotter:
             axes to plot on, by default None
         figsize : tuple, optional
             width and height of the figure, by default None
-        kwargs : other keyword arguments to df.hist()
+        **kwargs
+            other keyword arguments to df.hist()
 
         Returns
         -------

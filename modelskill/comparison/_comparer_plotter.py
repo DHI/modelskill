@@ -65,7 +65,10 @@ class ComparerPlotter:
         figsize : (float, float), optional
             figure size, by default None
         backend : str, optional
-            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"backend:
+            use "plotly" (interactive) or "matplotlib" backend,
+            by default "matplotlib"
+        **kwargs
+            other keyword arguments to fig.update_layout (plotly backend)
 
         Returns
         -------
@@ -165,7 +168,8 @@ class ComparerPlotter:
             If True, draw and return a probability density
         alpha : float, optional
             alpha transparency fraction, by default 0.5
-        kwargs : other keyword arguments to df.plot.hist()
+        **kwargs
+            other keyword arguments to df.plot.hist()
 
         Returns
         -------
@@ -265,7 +269,8 @@ class ComparerPlotter:
             plot title, default: "KDE plot for [observation name]"
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to df.plot.kde()
+        **kwargs
+            other keyword arguments to df.plot.kde()
 
         Returns
         -------
@@ -339,7 +344,8 @@ class ComparerPlotter:
             axes to plot on, by default None
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to plt.plot()
+        **kwargs
+            other keyword arguments to plt.plot()
 
         Returns
         -------
@@ -414,7 +420,8 @@ class ComparerPlotter:
             plot title, default: [observation name]
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to df.boxplot()
+        **kwargs
+            other keyword arguments to df.boxplot()
 
         Returns
         -------
@@ -531,7 +538,8 @@ class ComparerPlotter:
             right of the scatter plot, by default False
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
-        **kwargs: other keyword arguments to plt.scatter()
+        **kwargs
+            other keyword arguments to plt.scatter()
 
         Examples
         ------
@@ -758,7 +766,8 @@ class ComparerPlotter:
             figure size, by default None
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
-        kwargs : other keyword arguments to plt.hist()
+        **kwargs 
+            other keyword arguments to plt.hist()
 
         Returns
         -------

@@ -466,6 +466,19 @@ class Comparer(Scoreable):
                 ), f"raw_mod_data[{k}] must be a TimeSeries object"
 
         self.plot = Comparer.plotter(self)
+        """Plot using the ComparerPlotter
+
+        Examples
+        --------
+        >>> cmp.plot.timeseries()
+        >>> cmp.plot.scatter()
+        >>> cmp.plot.qq()
+        >>> cmp.plot.hist()
+        >>> cmp.plot.kde()
+        >>> cmp.plot.box()
+        >>> cmp.plot.residual_hist()
+        >>> cmp.plot.taylor()        
+        """
 
     @staticmethod
     def from_matched_data(
