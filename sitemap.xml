@@ -2,117 +2,117 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://dhi.github.io/modelskill/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/getting-started/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/overview/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/terminology/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/vision/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/comparer/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/comparercollection/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/gridded_skill/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/matching/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/metrics/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/plotting/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/quantity/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/settings/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/skill/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/model/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/model/dfsu/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/model/grid/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/model/point/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/model/track/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/observation/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/observation/point/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://dhi.github.io/modelskill/api/observation/track/</loc>
-         <lastmod>2024-01-03</lastmod>
+         <lastmod>2024-01-04</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
