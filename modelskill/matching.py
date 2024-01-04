@@ -34,7 +34,7 @@ from .comparison import Comparer, ComparerCollection
 from . import __version__
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
-IdOrNameTypes = Optional[Union[int, str]]
+IdxOrNameTypes = Optional[Union[int, str]]
 GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
 MRInputType = Union[
     str,
@@ -155,8 +155,8 @@ def match(
     obs: PointObservation | TrackObservation,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[IdOrNameTypes] = None,
-    mod_item: Optional[IdOrNameTypes] = None,
+    obs_item: Optional[IdxOrNameTypes] = None,
+    mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
 ) -> Comparer:
@@ -168,8 +168,8 @@ def match(
     obs: Iterable[PointObservation | TrackObservation],
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[IdOrNameTypes] = None,
-    mod_item: Optional[IdOrNameTypes] = None,
+    obs_item: Optional[IdxOrNameTypes] = None,
+    mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
 ) -> ComparerCollection:
@@ -496,7 +496,7 @@ def _parse_single_obs(
 
 def _parse_models(
     mod: Any,  # TODO
-    item: Optional[IdOrNameTypes] = None,
+    item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
 ) -> List[Any]:  # TODO
     """Return a list of ModelResult objects"""
@@ -510,7 +510,7 @@ def _parse_models(
 
 def _parse_single_model(
     mod: Any,  # TODO
-    item: Optional[IdOrNameTypes] = None,
+    item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
 ) -> Any:  # TODO
     if isinstance(

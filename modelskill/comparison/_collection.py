@@ -33,7 +33,7 @@ from ._utils import (
     _add_spatial_grid_to_df,
     _groupby_df,
     _parse_groupby,
-    IdOrNameTypes,
+    IdxOrNameTypes,
     TimeTypes,
 )
 from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
@@ -358,14 +358,14 @@ class ComparerCollection(Mapping, Scoreable):
 
     def sel(
         self,
-        model: Optional[IdOrNameTypes] = None,
-        observation: Optional[IdOrNameTypes] = None,
-        quantity: Optional[IdOrNameTypes] = None,
+        model: Optional[IdxOrNameTypes] = None,
+        observation: Optional[IdxOrNameTypes] = None,
+        quantity: Optional[IdxOrNameTypes] = None,
         start: Optional[TimeTypes] = None,
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
-        variable: Optional[IdOrNameTypes] = None,  # obsolete
+        variable: Optional[IdxOrNameTypes] = None,  # obsolete
         **kwargs,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.

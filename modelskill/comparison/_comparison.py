@@ -34,7 +34,7 @@ from ._utils import (
     _groupby_df,
     _parse_groupby,
     TimeTypes,
-    IdOrNameTypes,
+    IdxOrNameTypes,
 )
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
@@ -796,7 +796,7 @@ class Comparer(Scoreable):
 
     def sel(
         self,
-        model: Optional[IdOrNameTypes] = None,
+        model: Optional[IdxOrNameTypes] = None,
         start: Optional[TimeTypes] = None,
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,

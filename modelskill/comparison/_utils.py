@@ -6,7 +6,7 @@ import pandas as pd
 
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
-IdOrNameTypes = Union[int, str, List[int], List[str]]
+IdxOrNameTypes = Union[int, str, List[int], List[str]]
 
 
 def _add_spatial_grid_to_df(
