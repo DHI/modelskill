@@ -562,8 +562,9 @@ class ComparerCollection(Mapping, Scoreable):
         res = _groupby_df(df, by, pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
-        res["x"] = df.groupby(by=by, observed=False).x.first()
-        res["y"] = df.groupby(by=by, observed=False).y.first()
+        groupby_xy = df[["x", "y"]].groupby(by=by, observed=False, sort=False)
+        res["x"] = groupby_xy.x.first() if groupby_xy.x.nunique() == 1 else np.nan
+        res["y"] = groupby_xy.y.first() if groupby_xy.y.nunique() == 1 else np.nan
         # TODO: set x,y to NaN if TrackObservation, x.nunique() > 1
         res = cc._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
@@ -681,7 +682,8 @@ class ComparerCollection(Mapping, Scoreable):
         --------
         >>> import modelskill as ms
         >>> cc = ms.match([HKNA,EPL,c2], mr)  # with satellite track measurements
-        >>> cc.gridded_skill(metrics='bias')
+        >>> gs = cc.gridded_skill(metrics='bias')
+        >>> gs.data
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -692,8 +694,8 @@ class ComparerCollection(Mapping, Scoreable):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.gridded_skill(binsize=0.5)
-        >>> ds.coords
+        >>> gs = cc.gridded_skill(binsize=0.5)
+        >>> gs.data.coords
         Coordinates:
             observation   'alti'
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
@@ -788,9 +790,9 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.mean_skill().round(2)
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
-        >>> s = cc.mean_skill(weights="equal")
-        >>> s = cc.mean_skill(weights="points")
-        >>> s = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
+        >>> sk = cc.mean_skill(weights="equal")
+        >>> sk = cc.mean_skill(weights="points")
+        >>> sk = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
 
         # TODO remove in v1.1
@@ -819,13 +821,13 @@ class ComparerCollection(Mapping, Scoreable):
 
         # skill assessment
         pmetrics = _parse_metric(metrics)
-        s = cc.skill(metrics=pmetrics)
-        if s is None:
+        sk = cc.skill(metrics=pmetrics)
+        if sk is None:
             return None
-        skilldf = s.to_dataframe()
+        skilldf = sk.to_dataframe()
 
         # weights
-        weights = cc._parse_weights(weights, s.obs_names)
+        weights = cc._parse_weights(weights, sk.obs_names)
         skilldf["weights"] = (
             skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
         )
