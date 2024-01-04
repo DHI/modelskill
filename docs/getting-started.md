@@ -106,9 +106,9 @@ In order to select only a subset of the data for analysis, the comparer has a `s
 
 This method allow filtering of the data in several ways:
 
--   on `observation` by specifying name or id of one or more
+-   on `observation` by specifying name or index of one or more
     observations
--   on `model` (if more than one is compared) by giving name or id
+-   on `model` (if more than one is compared) by giving name or index
 -   temporal using the `time` (or `start` and `end`) arguments
 -   spatial using the `area` argument given as a bounding box or a
     polygon
