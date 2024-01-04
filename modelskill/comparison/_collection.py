@@ -561,17 +561,13 @@ class ComparerCollection(Mapping, Scoreable):
         self, attrs_keys: Iterable[str] | None = None, observed: bool = False
     ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
-        attrs_keys = attrs_keys or []
         frames = []
-
-        for cmp in self._comparers.values():
+        for cmp in self:
             frame = cmp._to_long_dataframe(attrs_keys=attrs_keys)
             if self.n_quantities > 1:
                 frame["quantity"] = cmp.quantity.name
             frames.append(frame)
         res = pd.concat(frames)
-        cat_cols = res.select_dtypes(include=["object"]).columns
-        res[cat_cols] = res[cat_cols].astype("category")
 
         if observed:
             res = res.loc[~(res == False).any(axis=1)]  # noqa
