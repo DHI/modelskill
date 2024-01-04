@@ -82,14 +82,14 @@ def from_matched(
     """Create a Comparer from observation and model results that are already matched (aligned)
     Parameters
     ----------
-    data : [pd.DataFrame,str,Path,mikeio.Dfs0, mikeio.Dataset]
+    data : [pd.DataFrame, str, Path, mikeio.Dfs0, mikeio.Dataset]
         DataFrame (or object that can be converted to a DataFrame e.g. dfs0)
         with columns obs_item, mod_items, aux_items
-    obs_item : [str,int], optional
+    obs_item : [str, int], optional
         Name or index of observation item, by default first item
-    mod_items : Iterable[str,int], optional
+    mod_items : Iterable[str, int], optional
         Names or indicies of model items, if None all remaining columns are model items, by default None
-    aux_items : Iterable[str,int], optional
+    aux_items : Iterable[str, int], optional
         Names or indicies of auxiliary items, by default None
     quantity : Quantity, optional
         Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
@@ -186,25 +186,35 @@ def match(
     max_model_gap=None,
 ):
     """Compare observations and model results
+
     Parameters
     ----------
-    obs : (str, pd.DataFrame, Observation)
-        Observation to be compared
-    mod : (str, pd.DataFrame, ModelResultInterface)
-        Model result to be compared
-    obs_item : (int, str), optional
-        observation item, by default None
+    obs : (str, Path, pd.DataFrame, Observation, Sequence[Observation])
+        Observation(s) to be compared
+    mod : (str, Path, pd.DataFrame, ModelResult, Sequence[ModelResult])
+        Model result(s) to be compared
+    obs_item : int or str, optional
+        observation item if obs is a file/dataframe, by default None
     mod_item : (int, str), optional
-        model item, by default None
+        model item if mod is a file/dataframe, by default None
     gtype : (str, optional)
-        Geometry type of the model result. If not specified, it will be guessed.
+        Geometry type of the model result (if mod is a file/dataframe).
+        If not specified, it will be guessed.
     max_model_gap : (float, optional)
-        Maximum time gap (s) in the model result, by default None
+        Maximum time gap (s) in the model result (e.g. for event-based
+        model results), by default None
 
     Returns
     -------
+    Comparer
+        In case of a single observation
     ComparerCollection
-        To be used for plotting and statistics
+        In case of multiple observations
+
+    See Also
+    --------
+    [from_matched][modelskill.from_matched]
+        Create a Comparer from observation and model results that are already matched
     """
     if isinstance(obs, get_args(ObsInputType)):
         return _single_obs_compare(
