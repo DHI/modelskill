@@ -655,8 +655,6 @@ class Comparer(Scoreable):
     def to_dataframe(self) -> pd.DataFrame:
         """Convert to pandas DataFrame with all model data concatenated"""
 
-        # TODO is this needed?, comment out for now
-        # df = df.sort_index()
         df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
         df["model"] = df["model"].astype("category")
         df["observation"] = df["observation"].astype("category")
@@ -731,84 +729,6 @@ class Comparer(Scoreable):
                 raw_mod_data[k] = v
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
-
-    def save(self, filename: Union[str, Path]) -> None:
-        """Save to netcdf file
-
-        Parameters
-        ----------
-        filename : str or Path
-            filename
-        """
-        ds = self.data
-
-        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
-        # an alternative strategy would be to use NetCDF groups
-        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
-
-        # There is no need to save raw data for track data, since it is identical to the matched data
-        if self.gtype == "point":
-            ds = self.data.copy()  # copy needed to avoid modifying self.data
-
-            for key, ts_mod in self.raw_mod_data.items():
-                ts_mod = ts_mod.copy()
-                #  rename time to unique name
-                ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
-                # da = ds_mod.to_xarray()[key]
-                ds["_raw_" + key] = ts_mod.data[key]
-
-        ds.to_netcdf(filename)
-
-    @staticmethod
-    def load(filename: Union[str, Path]) -> "Comparer":
-        """Load from netcdf file
-
-        Parameters
-        ----------
-        filename : str or Path
-            filename
-
-        Returns
-        -------
-        Comparer
-        """
-        with xr.open_dataset(filename) as ds:
-            data = ds.load()
-
-        if data.gtype == "track":
-            return Comparer(matched_data=data)
-
-        if data.gtype == "point":
-            raw_mod_data: Dict[str, TimeSeries] = {}
-
-            for var in data.data_vars:
-                var_name = str(var)
-                if var_name[:5] == "_raw_":
-                    new_key = var_name[5:]  # remove prefix '_raw_'
-                    ds = data[[var_name]].rename(
-                        {"_time_raw_" + new_key: "time", var_name: new_key}
-                    )
-                    ts = PointObservation(data=ds, name=new_key)
-                    # TODO: name of time?
-                    # ts.name = new_key
-                    # df = (
-                    #     data[var_name]
-                    #     .to_dataframe()
-                    #     .rename(
-                    #         columns={"_time_raw_" + new_key: "time", var_name: new_key}
-                    #     )
-                    # )
-                    raw_mod_data[new_key] = ts
-
-                    # data = data.drop(var_name).drop("_time_raw_" + new_key)
-
-            # filter variables, only keep the ones with a 'time' dimension
-            data = data[[v for v in data.data_vars if "time" in data[v].dims]]
-
-            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
-
-        else:
-            raise NotImplementedError(f"Unknown gtype: {data.gtype}")
 
     def _to_observation(self) -> PointObservation | TrackObservation:
         """Convert to Observation"""
@@ -1129,28 +1049,6 @@ class Comparer(Scoreable):
             .to_dict()
         )
 
-    def spatial_skill(
-        self,
-        bins=5,
-        binsize=None,
-        by=None,
-        metrics=None,
-        n_min=None,
-        **kwargs,
-    ):
-        # deprecated
-        warnings.warn(
-            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
-        )
-        return self.gridded_skill(
-            bins=bins,
-            binsize=binsize,
-            by=by,
-            metrics=metrics,
-            n_min=n_min,
-            **kwargs,
-        )
-
     def gridded_skill(
         self,
         bins: int = 5,
@@ -1284,6 +1182,108 @@ class Comparer(Scoreable):
             )
         return cmp
 
+    def save(self, filename: Union[str, Path]) -> None:
+        """Save to netcdf file
+
+        Parameters
+        ----------
+        filename : str or Path
+            filename
+        """
+        ds = self.data
+
+        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
+        # an alternative strategy would be to use NetCDF groups
+        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
+
+        # There is no need to save raw data for track data, since it is identical to the matched data
+        if self.gtype == "point":
+            ds = self.data.copy()  # copy needed to avoid modifying self.data
+
+            for key, ts_mod in self.raw_mod_data.items():
+                ts_mod = ts_mod.copy()
+                #  rename time to unique name
+                ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
+                # da = ds_mod.to_xarray()[key]
+                ds["_raw_" + key] = ts_mod.data[key]
+
+        ds.to_netcdf(filename)
+
+    @staticmethod
+    def load(filename: Union[str, Path]) -> "Comparer":
+        """Load from netcdf file
+
+        Parameters
+        ----------
+        filename : str or Path
+            filename
+
+        Returns
+        -------
+        Comparer
+        """
+        with xr.open_dataset(filename) as ds:
+            data = ds.load()
+
+        if data.gtype == "track":
+            return Comparer(matched_data=data)
+
+        if data.gtype == "point":
+            raw_mod_data: Dict[str, TimeSeries] = {}
+
+            for var in data.data_vars:
+                var_name = str(var)
+                if var_name[:5] == "_raw_":
+                    new_key = var_name[5:]  # remove prefix '_raw_'
+                    ds = data[[var_name]].rename(
+                        {"_time_raw_" + new_key: "time", var_name: new_key}
+                    )
+                    ts = PointObservation(data=ds, name=new_key)
+                    # TODO: name of time?
+                    # ts.name = new_key
+                    # df = (
+                    #     data[var_name]
+                    #     .to_dataframe()
+                    #     .rename(
+                    #         columns={"_time_raw_" + new_key: "time", var_name: new_key}
+                    #     )
+                    # )
+                    raw_mod_data[new_key] = ts
+
+                    # data = data.drop(var_name).drop("_time_raw_" + new_key)
+
+            # filter variables, only keep the ones with a 'time' dimension
+            data = data[[v for v in data.data_vars if "time" in data[v].dims]]
+
+            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+
+        else:
+            raise NotImplementedError(f"Unknown gtype: {data.gtype}")
+
+    # =============== Deprecated methods ===============
+
+    def spatial_skill(
+        self,
+        bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        # deprecated
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
+
     # TODO remove plotting methods in v1.1
     def scatter(
         self,
@@ -1389,11 +1389,3 @@ class Comparer(Scoreable):
         )
 
         return self.plot.residual_hist(bins=bins, title=title, color=color, **kwargs)
-
-
-# class PointComparer(Comparer):
-#     pass
-
-
-# class TrackComparer(Comparer):
-#     pass
