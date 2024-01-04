@@ -413,7 +413,7 @@ class ComparerCollectionPlotter:
         assert (
             mod_name in self.cc.mod_names
         ), f"Model {mod_name} not found in collection"
-        mod_id = _get_idx(mod_name, self.cc.mod_names)
+        mod_idx = _get_idx(mod_name, self.cc.mod_names)
 
         title = (
             _default_univarate_title("Histogram", self.cc) if title is None else title
@@ -423,7 +423,7 @@ class ComparerCollectionPlotter:
         df = cmp.to_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_id], ax=ax, **kwargs)
+        df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)
         df.obs_val.hist(
             bins=bins,
             color=self.cc[0].data["Observation"].attrs["color"],

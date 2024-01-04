@@ -220,7 +220,7 @@ class ComparerPlotter:
 
         cmp = self.comparer
         assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
-        mod_id = _get_idx(mod_name, cmp.mod_names)
+        mod_idx = _get_idx(mod_name, cmp.mod_names)
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
 
@@ -233,7 +233,7 @@ class ComparerPlotter:
         ax = (
             cmp.data[mod_name]
             .to_series()
-            .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
+            .hist(bins=bins, color=MOD_COLORS[mod_idx], **kwargs)
         )
 
         cmp.data[cmp._obs_name].to_series().hist(
