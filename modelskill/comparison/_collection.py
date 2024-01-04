@@ -56,7 +56,7 @@ def _get_deprecated_obs_var_args(kwargs):
 
         if variable is not None:
             warnings.warn(
-                f"The 'variable' argument is deprecated, use 'sel(variable='{variable}') instead",
+                f"The 'variable' argument is deprecated, use 'sel(quantity='{variable}') instead",
                 FutureWarning,
             )
 
@@ -81,7 +81,8 @@ def _all_df_template(n_quantities: int = 1):
 
 class ComparerCollection(Mapping, Scoreable):
     """
-    Collection of comparers, constructed by calling the `modelskill.match` method.
+    Collection of comparers, constructed by calling the `modelskill.match`
+    method. Can be indexed by name or index.
 
     Examples
     --------
@@ -93,8 +94,6 @@ class ComparerCollection(Mapping, Scoreable):
     """
 
     plotter = ComparerCollectionPlotter
-
-    """Collection of Comparers, indexed by name"""
 
     def __init__(self, comparers: Iterable[Comparer]) -> None:
         self._comparers: Dict[str, Comparer] = {}
@@ -125,7 +124,6 @@ class ComparerCollection(Mapping, Scoreable):
 
     @property
     def n_comparers(self) -> int:
-        """Number of comparers"""
         warnings.warn(
             "cc.n_comparers is deprecated, use len(cc) instead",
             FutureWarning,
@@ -176,7 +174,7 @@ class ComparerCollection(Mapping, Scoreable):
 
     @property
     def n_observations(self) -> int:
-        """Number of observations"""
+        """Number of observations (same as len(cc))"""
         return len(self)
 
     @property
@@ -207,6 +205,7 @@ class ComparerCollection(Mapping, Scoreable):
 
     @property
     def n_quantities(self) -> int:
+        """Number of unique quantities"""
         return len(self.quantity_names)
 
     def to_dataframe(self, attrs_keys=None, observed=False) -> pd.DataFrame:
@@ -774,12 +773,12 @@ class ComparerCollection(Mapping, Scoreable):
         observation, variable = _get_deprecated_obs_var_args(kwargs)
 
         # select model
-        mod_id = _get_idx(model, self.mod_names)
-        mod_name = self.mod_names[mod_id]
+        mod_idx = _get_idx(model, self.mod_names)
+        mod_name = self.mod_names[mod_idx]
 
         # select variable
-        qnt_id = _get_idx(variable, self.quantity_names)
-        qnt_name = self.quantity_names[qnt_id]
+        qnt_idx = _get_idx(variable, self.quantity_names)
+        qnt_name = self.quantity_names[qnt_idx]
 
         # filter data
         cmp = self.sel(
