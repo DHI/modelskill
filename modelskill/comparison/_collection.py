@@ -91,6 +91,8 @@ class ComparerCollection(Mapping, Scoreable):
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
     >>> cc = ms.match(obs=[o1,o2], mod=mr)
+    >>> sk = cc.skill()
+    >>> cc["Klagshamn"].plot.timeseries()
     """
 
     plotter = ComparerCollectionPlotter
@@ -98,7 +100,17 @@ class ComparerCollection(Mapping, Scoreable):
     def __init__(self, comparers: Iterable[Comparer]) -> None:
         self._comparers: Dict[str, Comparer] = {}
         self._insert_comparers(comparers)
+
         self.plot = ComparerCollection.plotter(self)
+        """Plot using the ComparerCollectionPlotter
+
+        Examples
+        --------
+        >>> cc.plot.scatter()
+        >>> cc.plot.kde()
+        >>> cc.plot.taylor()
+        >>> cc.plot.hist()
+        """
 
     def _insert_comparers(self, comparer: Union[Comparer, Iterable[Comparer]]) -> None:
         if isinstance(comparer, Iterable):
@@ -209,7 +221,7 @@ class ComparerCollection(Mapping, Scoreable):
         return len(self.quantity_names)
 
     def to_dataframe(self, attrs_keys=None, observed=False) -> pd.DataFrame:
-        """Return a copy of the data as a pandas DataFrame"""
+        """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
         # TODO delegate to each comparer
         attrs_keys = attrs_keys or []
         res = _all_df_template(self.n_quantities)
@@ -228,11 +240,7 @@ class ComparerCollection(Mapping, Scoreable):
                 df["x"] = cmp.x
                 df["y"] = cmp.y
                 df["obs_val"] = cmp.data["Observation"].values
-                # if attrs_keys is not None:
                 for key in attrs_keys:
-                    # assert (
-                    #     key in cmp.data.attrs
-                    # ), f"key {key} not in attrs, valid keys: {cmp.data.attrs.keys()}"
                     if key in cmp.data.attrs:
                         df[key] = cmp.data.attrs[key]
                     else:
@@ -241,11 +249,10 @@ class ComparerCollection(Mapping, Scoreable):
         if len(frames) > 0:
             res = pd.concat(frames)
         cat_cols = res.select_dtypes(include=["object"]).columns
-        res[cat_cols] = res[cat_cols].astype("category")  # TODO
+        res[cat_cols] = res[cat_cols].astype("category")
 
         if observed:
             res = res.loc[~(res == False).any(axis=1)]  # noqa
-        # res = res.sort_index()
         res.index.name = "time"
         return res
 
@@ -379,7 +386,7 @@ class ComparerCollection(Mapping, Scoreable):
             Time. If None, all times are selected.
         area : list of float, optional
             bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
-        kwargs : dict, optional
+        **kwargs
             Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs
             e.g. `sel(gtype='track')` or `sel(obs_provider='CMEMS')` if at least
             one comparer has an entry `obs_provider` with value `CMEMS` in its
@@ -446,7 +453,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         Parameters
         ----------
-        kwargs : dict, optional
+        **kwargs
             Filtering by comparer attrs similar to xarray.Dataset.filter_by_attrs
             e.g. `sel(gtype='track')` or `sel(obs_provider='CMEMS')` if at least
             one comparer has an entry `obs_provider` with value `CMEMS` in its
@@ -551,9 +558,8 @@ class ComparerCollection(Mapping, Scoreable):
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
         """
-        pmetrics = _parse_metric(metrics)
 
-        # TODO remove in v1.1
+        # TODO remove in v1.1 ----------
         model, start, end, area = _get_deprecated_args(kwargs)
         observation, variable = _get_deprecated_obs_var_args(kwargs)
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
@@ -570,6 +576,8 @@ class ComparerCollection(Mapping, Scoreable):
             raise ValueError("Dataset is empty, no data to compare.")
 
         ## ---- end of deprecated code ----
+
+        pmetrics = _parse_metric(metrics)
 
         n_models = cc.n_models  # len(df.model.unique())
         n_obs = cc.n_observations  # len(df.observation.unique())
@@ -619,27 +627,6 @@ class ComparerCollection(Mapping, Scoreable):
                 if len(unames) == 1:
                     skilldf.insert(loc=0, column=field, value=unames[0])
         return skilldf
-
-    def spatial_skill(
-        self,
-        bins=5,
-        binsize=None,
-        by=None,
-        metrics=None,
-        n_min=None,
-        **kwargs,
-    ):
-        warnings.warn(
-            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
-        )
-        return self.gridded_skill(
-            bins=bins,
-            binsize=binsize,
-            by=by,
-            metrics=metrics,
-            n_min=n_min,
-            **kwargs,
-        )
 
     def gridded_skill(
         self,
@@ -709,8 +696,6 @@ class ComparerCollection(Mapping, Scoreable):
         observation, variable = _get_deprecated_obs_var_args(kwargs)
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        metrics = _parse_metric(metrics)
-
         cmp = self.sel(
             model=model,
             observation=observation,
@@ -724,6 +709,8 @@ class ComparerCollection(Mapping, Scoreable):
             raise ValueError("Dataset is empty, no data to compare.")
 
         ## ---- end of deprecated code ----
+
+        metrics = _parse_metric(metrics)
 
         df = cmp.to_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
@@ -745,69 +732,6 @@ class ComparerCollection(Mapping, Scoreable):
         for dim in ("x", "y"):
             ds[dim] = ds[dim].astype(float)
         return SkillGrid(ds)
-
-    def scatter(
-        self,
-        *,
-        bins=120,
-        quantiles=None,
-        fit_to_quantiles=False,
-        show_points=None,
-        show_hist=None,
-        show_density=None,
-        backend="matplotlib",
-        figsize=(8, 8),
-        xlim=None,
-        ylim=None,
-        reg_method="ols",
-        title=None,
-        xlabel=None,
-        ylabel=None,
-        skill_table=None,
-        **kwargs,
-    ):
-        warnings.warn("scatter is deprecated, use plot.scatter instead", FutureWarning)
-
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
-
-        # select model
-        mod_idx = _get_idx(model, self.mod_names)
-        mod_name = self.mod_names[mod_idx]
-
-        # select variable
-        qnt_idx = _get_idx(variable, self.quantity_names)
-        qnt_name = self.quantity_names[qnt_idx]
-
-        # filter data
-        cmp = self.sel(
-            model=mod_name,
-            observation=observation,
-            quantity=qnt_name,
-            start=start,
-            end=end,
-            area=area,
-        )
-
-        return cmp.plot.scatter(
-            bins=bins,
-            quantiles=quantiles,
-            fit_to_quantiles=fit_to_quantiles,
-            show_points=show_points,
-            show_hist=show_hist,
-            show_density=show_density,
-            backend=backend,
-            figsize=figsize,
-            xlim=xlim,
-            ylim=ylim,
-            reg_method=reg_method,
-            title=title,
-            xlabel=xlabel,
-            ylabel=ylabel,
-            skill_table=skill_table,
-            **kwargs,
-        )
 
     def mean_skill(
         self,
@@ -880,13 +804,12 @@ class ComparerCollection(Mapping, Scoreable):
         ## ---- end of deprecated code ----
 
         df = cc.to_dataframe()  # TODO: remove
-        mod_names = cc.mod_names  # df.model.unique()
+        mod_names = cc.mod_names
         # obs_names = cmp.obs_names  # df.observation.unique()
-        qnt_names = cc.quantity_names  # self.qnt_names
+        qnt_names = cc.quantity_names
 
         # skill assessment
         pmetrics = _parse_metric(metrics)
-        # s = self.skill(df=df, metrics=metrics)
         s = cc.skill(metrics=pmetrics)
         if s is None:
             return None
@@ -1134,67 +1057,6 @@ class ComparerCollection(Mapping, Scoreable):
 
         return score
 
-    def taylor(
-        self,
-        normalize_std=False,
-        aggregate_observations=True,
-        figsize=(7, 7),
-        marker="o",
-        marker_size=6.0,
-        title="Taylor diagram",
-        **kwargs,
-    ):
-        warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
-
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self.sel(
-            model=model,
-            observation=observation,
-            quantity=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-
-        if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return
-
-        if (not aggregate_observations) and (not normalize_std):
-            raise ValueError(
-                "aggregate_observations=False is only possible if normalize_std=True!"
-            )
-
-        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        skill_func = cmp.mean_skill if aggregate_observations else cmp.skill
-        s = skill_func(metrics=metrics)
-
-        df = s.to_dataframe()
-        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
-
-        if isinstance(df.index, pd.MultiIndex):
-            df.index = df.index.map("_".join)
-
-        df = df[["_std_obs", "_std_mod", "cc"]].copy()
-        df.columns = ["obs_std", "std", "cc"]
-        pts = [
-            TaylorPoint(
-                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
-            )
-            for r in df.itertuples()
-        ]
-
-        taylor_diagram(
-            obs_std=ref_std,
-            points=pts,
-            figsize=figsize,
-            normalize_std=normalize_std,
-            title=title,
-        )
-
     def save(self, filename: Union[str, Path]) -> None:
         """Save the ComparerCollection to a zip file.
 
@@ -1266,6 +1128,153 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = Comparer.load(f)
         os.remove(f)
         return cmp
+
+    # =============== Deprecated methods ===============
+
+    def spatial_skill(
+        self,
+        bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
+
+    def scatter(
+        self,
+        *,
+        bins=120,
+        quantiles=None,
+        fit_to_quantiles=False,
+        show_points=None,
+        show_hist=None,
+        show_density=None,
+        backend="matplotlib",
+        figsize=(8, 8),
+        xlim=None,
+        ylim=None,
+        reg_method="ols",
+        title=None,
+        xlabel=None,
+        ylabel=None,
+        skill_table=None,
+        **kwargs,
+    ):
+        warnings.warn("scatter is deprecated, use plot.scatter instead", FutureWarning)
+
+        # TODO remove in v1.1
+        model, start, end, area = _get_deprecated_args(kwargs)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
+
+        # select model
+        mod_idx = _get_idx(model, self.mod_names)
+        mod_name = self.mod_names[mod_idx]
+
+        # select variable
+        qnt_idx = _get_idx(variable, self.quantity_names)
+        qnt_name = self.quantity_names[qnt_idx]
+
+        # filter data
+        cmp = self.sel(
+            model=mod_name,
+            observation=observation,
+            quantity=qnt_name,
+            start=start,
+            end=end,
+            area=area,
+        )
+
+        return cmp.plot.scatter(
+            bins=bins,
+            quantiles=quantiles,
+            fit_to_quantiles=fit_to_quantiles,
+            show_points=show_points,
+            show_hist=show_hist,
+            show_density=show_density,
+            backend=backend,
+            figsize=figsize,
+            xlim=xlim,
+            ylim=ylim,
+            reg_method=reg_method,
+            title=title,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            skill_table=skill_table,
+            **kwargs,
+        )
+
+    def taylor(
+        self,
+        normalize_std=False,
+        aggregate_observations=True,
+        figsize=(7, 7),
+        marker="o",
+        marker_size=6.0,
+        title="Taylor diagram",
+        **kwargs,
+    ):
+        warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
+
+        model, start, end, area = _get_deprecated_args(kwargs)
+        observation, variable = _get_deprecated_obs_var_args(kwargs)
+        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
+
+        cmp = self.sel(
+            model=model,
+            observation=observation,
+            quantity=variable,
+            start=start,
+            end=end,
+            area=area,
+        )
+
+        if cmp.n_points == 0:
+            warnings.warn("No data!")
+            return
+
+        if (not aggregate_observations) and (not normalize_std):
+            raise ValueError(
+                "aggregate_observations=False is only possible if normalize_std=True!"
+            )
+
+        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        skill_func = cmp.mean_skill if aggregate_observations else cmp.skill
+        s = skill_func(metrics=metrics)
+
+        df = s.to_dataframe()
+        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
+
+        if isinstance(df.index, pd.MultiIndex):
+            df.index = df.index.map("_".join)
+
+        df = df[["_std_obs", "_std_mod", "cc"]].copy()
+        df.columns = ["obs_std", "std", "cc"]
+        pts = [
+            TaylorPoint(
+                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+            )
+            for r in df.itertuples()
+        ]
+
+        taylor_diagram(
+            obs_std=ref_std,
+            points=pts,
+            figsize=figsize,
+            normalize_std=normalize_std,
+            title=title,
+        )
 
     def kde(self, ax=None, **kwargs):
         warnings.warn("kde is deprecated, use plot.kde instead", FutureWarning)
