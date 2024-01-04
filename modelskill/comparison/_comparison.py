@@ -1107,8 +1107,8 @@ class Comparer(Scoreable):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.gridded_skill(binsize=0.5)
-        >>> ds.coords
+        >>> gs = cc.gridded_skill(binsize=0.5)
+        >>> gs.data.coords
         Coordinates:
             observation   'alti'
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5

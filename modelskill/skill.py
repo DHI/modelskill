@@ -86,10 +86,10 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = cc.skill()["rmse"]
-        >>> s.plot.line()
-        >>> s.plot.line(marker="o", linestyle=':')
-        >>> s.plot.line(color=['0.2', '0.4', '0.6'])
+        >>> sk = cc.skill()["rmse"]
+        >>> sk.plot.line()
+        >>> sk.plot.line(marker="o", linestyle=':')
+        >>> sk.plot.line(color=['0.2', '0.4', '0.6'])
         """
         df = self._get_plot_df(level=level)
         self._name_to_title_in_kwargs(kwargs)
@@ -123,11 +123,11 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = cc.skill()["rmse"]
-        >>> s.plot.bar()
-        >>> s.plot.bar(level="observation")
-        >>> s.plot.bar(title="Root Mean Squared Error")
-        >>> s.plot.bar(color=["red","blue"])
+        >>> sk = cc.skill()["rmse"]
+        >>> sk.plot.bar()
+        >>> sk.plot.bar(level="observation")
+        >>> sk.plot.bar(title="Root Mean Squared Error")
+        >>> sk.plot.bar(color=["red","blue"])
         """
         df = self._get_plot_df(level=level)
         self._name_to_title_in_kwargs(kwargs)
@@ -150,10 +150,10 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = cc.skill()["rmse"]
-        >>> s.plot.barh()
-        >>> s.plot.barh(level="observation")
-        >>> s.plot.barh(title="Root Mean Squared Error")
+        >>> sk = cc.skill()["rmse"]
+        >>> sk.plot.barh()
+        >>> sk.plot.barh(level="observation")
+        >>> sk.plot.barh(title="Root Mean Squared Error")
         """
         df = self._get_plot_df(level)
         self._name_to_title_in_kwargs(kwargs)
@@ -197,11 +197,11 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = cc.skill()["rmse"]
-        >>> s.plot.grid()
-        >>> s.plot.grid(show_numbers=False, cmap="magma")
-        >>> s.plot.grid(precision=1)
-        >>> s.plot.grid(fmt=".0%", title="Root Mean Squared Error")
+        >>> sk = cc.skill()["rmse"]
+        >>> sk.plot.grid()
+        >>> sk.plot.grid(show_numbers=False, cmap="magma")
+        >>> sk.plot.grid(precision=1)
+        >>> sk.plot.grid(fmt=".0%", title="Root Mean Squared Error")
         """
 
         s = self.skillarray
@@ -300,9 +300,9 @@ class SkillArray:
 
     Examples
     --------
-    >>> s = cc.skill()   # SkillTable
-    >>> s.rmse           # SkillArray
-    >>> s.rmse.plot.line()
+    >>> sk = cc.skill()   # SkillTable
+    >>> sk.rmse           # SkillArray
+    >>> sk.rmse.plot.line()
     """
 
     def __init__(self, data: pd.DataFrame) -> None:
@@ -355,12 +355,12 @@ class SkillTable:
 
     Examples
     --------
-    >>> s = cc.skill()
-    >>> s.mod_names
+    >>> sk = cc.skill()
+    >>> sk.mod_names
     ['SW_1', 'SW_2']
-    >>> s.style()
-    >>> s.sel(model='SW_1').style()
-    >>> s.rmse.plot.bar()
+    >>> sk.style()
+    >>> sk.sel(model='SW_1').style()
+    >>> sk.rmse.plot.bar()
     """
 
     _large_is_best_metrics = [
@@ -525,8 +525,8 @@ class SkillTable:
 
         Examples
         --------
-        >>> s = cc.skill()
-        >>> s_above_0p3 = s.query("rmse>0.3")
+        >>> sk = cc.skill()
+        >>> sk_above_0p3 = sk.query("rmse>0.3")
         """
         return self.__class__(self._df.query(query))
 
@@ -552,9 +552,9 @@ class SkillTable:
 
         Examples
         --------
-        >>> s = cc.skill()
-        >>> s_SW1 = s.sel(model = "SW_1")
-        >>> s2 = s.sel(observation = ["EPL", "HKNA"])
+        >>> sk = cc.skill()
+        >>> sk_SW1 = sk.sel(model = "SW_1")
+        >>> sk2 = sk.sel(observation = ["EPL", "HKNA"])
         """
         if query is not None:
             warnings.warn(
@@ -667,10 +667,10 @@ class SkillTable:
 
         Examples
         --------
-        >>> s = cc.skill()
-        >>> s.style()
-        >>> s.style(precision=1, metrics="rmse")
-        >>> s.style(cmap="Blues", show_best=False)
+        >>> sk = cc.skill()
+        >>> sk.style()
+        >>> sk.style(precision=1, metrics="rmse")
+        >>> sk.style(cmap="Blues", show_best=False)
         """
         # identity metric columns
         float_cols = list(self._df.select_dtypes(include="number").columns)
