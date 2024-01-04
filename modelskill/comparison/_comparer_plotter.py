@@ -723,11 +723,11 @@ class ComparerPlotter:
             mtr.cc,
         ]
 
-        s = cmp.skill(metrics=metrics)
+        sk = cmp.skill(metrics=metrics)
 
-        if s is None:  # TODO
+        if sk is None:  # TODO
             return
-        df = s.to_dataframe()
+        df = sk.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
