@@ -606,6 +606,7 @@ class ComparerCollection(Mapping, Scoreable):
         if observed:
             res = res.loc[~(res == False).any(axis=1)]  # noqa
         res.index.name = "time"
+        # TODO change index to regular column, it is not unique
         return res
 
     @staticmethod
