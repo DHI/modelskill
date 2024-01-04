@@ -907,7 +907,7 @@ class ComparerCollection(Mapping, Scoreable):
         agg = {"n": "sum"}
         for metric in pmetrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
-        res = skilldf.groupby(by).agg(agg)
+        res = skilldf.groupby(by, observed=False).agg(agg)
 
         # TODO is this correct?
         res.index.name = "model"
