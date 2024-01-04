@@ -892,20 +892,52 @@ class Comparer(Scoreable):
     def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
         """Convert single model data to pandas DataFrame"""
 
+        # this method will keep user-defined variables
         df = self.data.drop_vars(["z"]).to_dataframe().copy()
         other_models = [m for m in self.mod_names if m is not mod_name]
         df = df.drop(columns=other_models)
         df = df.rename(columns={mod_name: "mod_val", self._obs_str: "obs_val"})
         df["model"] = mod_name
         df["observation"] = self.name
+        df["time"] = df.index
+        df = df.reset_index(drop=True)
+
         return df
 
-    def _to_long_dataframe(self) -> pd.DataFrame:
+    def _to_long_dataframe(
+        self, attrs_keys: Iterable[str] | None = None
+    ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
         df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
         df["model"] = df["model"].astype("category")
         df["observation"] = df["observation"].astype("category")
+        attrs = (
+            {key: self.data.attrs.get(key, False) for key in attrs_keys}
+            if attrs_keys
+            else {}
+        )
+        df = df.assign(**attrs)
         return df
+
+    # def _to_long_dataframe2(self, attrs_keys: Iterable[str]) -> pd.DataFrame:
+    #     """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
+    #     frames = []
+    #     cmp = self.copy()
+    #     attrs = {key: cmp.data.attrs.get(key, False) for key in attrs_keys}
+    #     for mod_name in cmp.mod_names:
+    #         # drop "x", "y",  ?
+    #         df = (
+    #             cmp.data[[mod_name]]
+    #             .to_dataframe()
+    #             .copy()
+    #             .rename(columns={mod_name: "mod_val"})
+    #             .assign(model=mod_name, observation=cmp.name, x=cmp.x, y=cmp.y)
+    #             .assign(obs_val=cmp.data["Observation"].values)
+    #             .assign(**attrs)
+    #         )
+
+    #         frames.append(df)
+    #     return pd.concat(frames)
 
     def skill(
         self,

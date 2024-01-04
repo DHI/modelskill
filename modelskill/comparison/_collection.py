@@ -561,35 +561,20 @@ class ComparerCollection(Mapping, Scoreable):
         self, attrs_keys: Iterable[str] | None = None, observed: bool = False
     ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
-        # TODO delegate to each comparer
         attrs_keys = attrs_keys or []
         frames = []
 
         for cmp in self._comparers.values():
-            attrs = {key: cmp.data.attrs.get(key, False) for key in attrs_keys}
-            for mod_name in cmp.mod_names:
-                # drop "x", "y",  ?
-                df = (
-                    cmp.data[[mod_name]]
-                    .to_dataframe()
-                    .copy()
-                    .rename(columns={mod_name: "mod_val"})
-                    .assign(model=mod_name, observation=cmp.name, x=cmp.x, y=cmp.y)
-                    .assign(obs_val=cmp.data["Observation"].values)
-                    .assign(**attrs)
-                )
-                if self.n_quantities > 1:
-                    df["quantity"] = cmp.quantity.name
-
-                frames.append(df)
+            frame = cmp._to_long_dataframe(attrs_keys=attrs_keys)
+            if self.n_quantities > 1:
+                frame["quantity"] = cmp.quantity.name
+            frames.append(frame)
         res = pd.concat(frames)
         cat_cols = res.select_dtypes(include=["object"]).columns
         res[cat_cols] = res[cat_cols].astype("category")
 
         if observed:
             res = res.loc[~(res == False).any(axis=1)]  # noqa
-        res.index.name = "time"
-        # TODO change index to regular column, it is not unique
         return res
 
     @staticmethod

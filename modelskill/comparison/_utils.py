@@ -98,7 +98,7 @@ ALLOWED_DT = [
 
 
 def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
-    ser = df.index.to_series()
+    ser = df["time"]
     assert isinstance(by, list)
     # by = [by] if isinstance(by, str) else by
 

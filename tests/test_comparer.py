@@ -566,7 +566,8 @@ def test_pc_to_long_dataframe(pc):
     # private method testing
     df = pc._to_long_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (10, 6)
+    assert df.shape == (10, 7)
+    assert "time" in df.columns
     assert "mod_val" in df.columns
     assert "obs_val" in df.columns
     assert "x" in df.columns
@@ -590,7 +591,7 @@ def test_pc_to_long_dataframe_add_col(pc):
     pc.data["derived"] = pc.data.m1 + pc.data.m2
     df = pc._to_long_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (10, 7)
+    assert df.shape == (10, 8)
     assert "derived" in df.columns
     assert df.derived.dtype == "float64"
 
