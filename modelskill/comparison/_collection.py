@@ -587,13 +587,17 @@ class ComparerCollection(Mapping, Scoreable):
             for mod_name in cmp.mod_names:
                 # drop "x", "y",  ?
                 df = (
-                    pd.DataFrame({"mod_val": cmp.data[mod_name].values.copy()})
+                    cmp.data[[mod_name]]
+                    .to_dataframe()
+                    .copy()
+                    .rename(columns={mod_name: "mod_val"})
                     .assign(model=mod_name, observation=cmp.name, x=cmp.x, y=cmp.y)
                     .assign(obs_val=cmp.data["Observation"].values)
                     .assign(**attrs)
                 )
                 if self.n_quantities > 1:
                     df["quantity"] = cmp.quantity.name
+
                 frames.append(df)
         res = pd.concat(frames)
         cat_cols = res.select_dtypes(include=["object"]).columns
