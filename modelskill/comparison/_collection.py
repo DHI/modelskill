@@ -562,9 +562,11 @@ class ComparerCollection(Mapping, Scoreable):
         res = _groupby_df(df, by, pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
-        groupby_xy = df[["x", "y"]].groupby(by=by, observed=False, sort=False)
-        res["x"] = groupby_xy.x.first() if groupby_xy.x.nunique() == 1 else np.nan
-        res["y"] = groupby_xy.y.first() if groupby_xy.y.nunique() == 1 else np.nan
+        groupby_xy = df.groupby(
+            by=by, observed=False, sort=False
+        )  # TODO: second time we do the same groupby!!!
+        res["x"] = groupby_xy.x.first()  # if groupby_xy.x.nunique() == 1 else np.nan
+        res["y"] = groupby_xy.y.first()  # if groupby_xy.y.nunique() == 1 else np.nan
         # TODO: set x,y to NaN if TrackObservation, x.nunique() > 1
         res = cc._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
