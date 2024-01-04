@@ -64,22 +64,6 @@ def _get_deprecated_obs_var_args(kwargs):
     return observation, variable
 
 
-def _all_df_template(n_quantities: int = 1):
-    template = {
-        "model": pd.Series([], dtype="category"),
-        "observation": pd.Series([], dtype="category"),
-    }
-    if n_quantities > 1:
-        template["quantity"] = pd.Series([], dtype="category")
-
-    template["x"] = pd.Series([], dtype="float")
-    template["y"] = pd.Series([], dtype="float")
-    template["mod_val"] = pd.Series([], dtype="float")
-    template["obs_val"] = pd.Series([], dtype="float")
-    res = pd.DataFrame(template)
-    return res
-
-
 class ComparerCollection(Mapping, Scoreable):
     """
     Collection of comparers, constructed by calling the `modelskill.match`
@@ -579,7 +563,6 @@ class ComparerCollection(Mapping, Scoreable):
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
         # TODO delegate to each comparer
         attrs_keys = attrs_keys or []
-        res = _all_df_template(self.n_quantities)
         frames = []
 
         for cmp in self._comparers.values():
