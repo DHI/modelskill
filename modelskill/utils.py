@@ -155,12 +155,12 @@ def make_unique_index(
 
 
 def _get_name(x: int | str | None, valid_names: Sequence[str]) -> str:
-    """Parse name/id from list of valid names (e.g. obs from obs_names), return name"""
+    """Parse name/idx from list of valid names (e.g. obs from obs_names), return name"""
     return valid_names[_get_idx(x, valid_names)]
 
 
 def _get_idx(x: int | str | None, valid_names: Sequence[str]) -> int:
-    """Parse name/id from list of valid names (e.g. obs from obs_names), return id"""
+    """Parse name/idx from list of valid names (e.g. obs from obs_names), return idx"""
 
     if x is None:
         if len(valid_names) == 1:
