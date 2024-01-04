@@ -147,7 +147,7 @@ def _parse_groupby(
         if by[:5] == "freq:":
             freq = by.split(":")[1]
             by = pd.Grouper(key="time", freq=freq)
-        by = [by]
+        return [by]
     elif isinstance(by, Iterable):
         by = [_parse_groupby(b, n_models, n_obs, n_qnt)[0] for b in by]
         return by
