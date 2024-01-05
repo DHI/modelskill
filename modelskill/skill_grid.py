@@ -209,5 +209,11 @@ class SkillGrid(SkillGridMixin):
         return self[metric].plot(model=model, **kwargs)
 
     def to_dataframe(self):
-        """export as pandas.DataFrame"""
+        """Convert gridded skill data to pandas DataFrame
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
         return self.data.to_dataframe()

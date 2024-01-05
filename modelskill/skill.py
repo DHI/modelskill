@@ -311,7 +311,18 @@ class SkillArray:
         self.plot = SkillArrayPlotter(self)
 
     def to_dataframe(self, drop_xy=True) -> pd.DataFrame:
-        """Output as pd.DataFrame"""
+        """Convert SkillArray to pd.DataFrame
+
+        Parameters
+        ----------
+        drop_xy : bool, optional
+            Drop the x, y coordinates?, by default True
+
+        Returns
+        -------
+        pd.DataFrame
+            Skill data as pd.DataFrame
+        """
         if drop_xy:
             return self._ser.to_frame()
         else:
@@ -329,6 +340,23 @@ class SkillArray:
         return self._ser.name
 
     def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
+        """Convert SkillArray to geopandas.GeoDataFrame
+
+        Note: requires geopandas to be installed
+
+        Note: requires x and y columns to be present
+
+        Parameters
+        ----------
+        crs : str, optional
+            Coordinate reference system identifier passed to the
+            GeoDataFrame constructor, by default "EPSG:4326"
+
+        Returns
+        -------
+        gpd.GeoDataFrame
+            Skill data as GeoDataFrame
+        """
         import geopandas as gpd
 
         assert "x" in self.data.columns
@@ -395,10 +423,10 @@ class SkillTable:
         self.plot = DeprecatedSkillPlotter(self)  # TODO remove in v1.1
 
     # TODO: remove?
-    # data without xy columns
     @property
     def _df(self) -> pd.DataFrame:
-        return self.data.drop(columns=["x", "y"], errors="ignore")
+        """Data as DataFrame without x and y columns"""
+        return self.to_dataframe(drop_xy=True)
 
     @property
     def metrics(self) -> Collection[str]:
@@ -410,12 +438,41 @@ class SkillTable:
         return len(self._df)
 
     def to_dataframe(self, drop_xy=True) -> pd.DataFrame:
+        """Convert SkillTable to pd.DataFrame
+
+        Parameters
+        ----------
+        drop_xy : bool, optional
+            Drop the x, y coordinates?, by default True
+
+        Returns
+        -------
+        pd.DataFrame
+            Skill data as pd.DataFrame
+        """
         if drop_xy:
             return self.data.drop(columns=["x", "y"], errors="ignore")
         else:
             return self.data.copy()
 
     def to_geodataframe(self, crs="EPSG:4326") -> gpd.GeoDataFrame:
+        """Convert SkillTable to geopandas.GeoDataFrame
+
+        Note: requires geopandas to be installed
+
+        Note: requires x and y columns to be present
+
+        Parameters
+        ----------
+        crs : str, optional
+            Coordinate reference system identifier passed to the
+            GeoDataFrame constructor, by default "EPSG:4326"
+
+        Returns
+        -------
+        gpd.GeoDataFrame
+            Skill data as GeoDataFrame
+        """
         import geopandas as gpd
 
         assert "x" in self.data.columns
@@ -468,17 +525,18 @@ class SkillTable:
         # For other attributes, return them directly
         return getattr(self.data, item)
 
-    # TODO
     @property
     def loc(self, *args, **kwargs):
         return self._df.loc(*args, **kwargs)
 
-    # TODO: remove?
     def sort_index(self, *args, **kwargs):
         """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
         return self.__class__(self._df.sort_index(*args, **kwargs))
 
-    # TODO: remove?
+    def sort_values(self, *args, **kwargs):
+        """Wrapping pd.DataFrame.sort_values() for e.g. sorting by rmse values"""
+        return self.__class__(self._df.sort_values(*args, **kwargs))
+
     def swaplevel(self, *args, **kwargs):
         """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
         return self.__class__(self._df.swaplevel(*args, **kwargs))
@@ -498,8 +556,8 @@ class SkillTable:
         """List of quantity names (in index)"""
         return self._get_index_level_by_name("quantity")
 
-    # TODO what does this method actually do?
     def _get_index_level_by_name(self, name):
+        # Helper function to get unique values of a level in the index (e.g. model)
         index = self._df.index
         if name in index.names:
             level = index.names.index(name)
@@ -571,7 +629,6 @@ class SkillTable:
                 )
                 return self[value]
 
-        # df = self._df
         df = self.to_dataframe(drop_xy=False)
 
         for key, value in kwargs.items():
@@ -633,6 +690,11 @@ class SkillTable:
             Number of decimal places to round to (default: 3).
             If decimals is negative, it specifies the number of
             positions to the left of the decimal point.
+
+        Returns
+        -------
+        SkillTable
+            A new SkillTable with rounded values
         """
 
         return self.__class__(self.data.round(decimals=decimals))
@@ -774,6 +836,8 @@ class SkillTable:
             "text-decoration: underline; font-style: italic; font-weight: bold;"
         )
         return [cell_style if v else "" for v in (s == s.max())]
+
+    # =============== Deprecated methods ===============
 
     # TODO: remove plot_* methods in v1.1; warnings are not needed
     # as the refering method is also deprecated
