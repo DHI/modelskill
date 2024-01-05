@@ -185,7 +185,14 @@ def match(
     gtype=None,
     max_model_gap=None,
 ):
-    """Compare observations and model results
+    """Match observation and model result data in space and time
+
+    NOTE: In case of multiple model results with different time coverage,
+    only the _overlapping_ time period will be used! (intersection)
+
+    NOTE: In case of multiple observations, multiple models can _only_
+    be matched if they are _all_ of SpatialField type, e.g. DfsuModelResult
+    or GridModelResult.
 
     Parameters
     ----------

@@ -82,7 +82,10 @@ def _all_df_template(n_quantities: int = 1):
 class ComparerCollection(Mapping, Scoreable):
     """
     Collection of comparers, constructed by calling the `modelskill.match`
-    method. Can be indexed by name or index.
+    method or by initializing with a list of comparers.
+
+    NOTE: In case of multiple model results with different time coverage,
+    only the _overlapping_ time period will be used! (intersection)
 
     Examples
     --------
@@ -90,9 +93,12 @@ class ComparerCollection(Mapping, Scoreable):
     >>> mr = ms.DfsuModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
-    >>> cc = ms.match(obs=[o1,o2], mod=mr)
-    >>> sk = cc.skill()
-    >>> cc["Klagshamn"].plot.timeseries()
+    >>> cmp1 = ms.match(o1, mr)  # Comparer
+    >>> cmp2 = ms.match(o2, mr)  # Comparer
+    >>> ccA = ms.ComparerCollection([cmp1, cmp2])
+    >>> ccB = ms.match(obs=[o1, o2], mod=mr)
+    >>> sk = ccB.skill()
+    >>> ccB["Klagshamn"].plot.timeseries()
     """
 
     plotter = ComparerCollectionPlotter
