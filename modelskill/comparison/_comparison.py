@@ -1184,6 +1184,28 @@ class Comparer(Scoreable):
             )
         return cmp
 
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert matched data to pandas DataFrame
+
+        Include x, y coordinates only if gtype=track
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
+        if self.gtype == str(GeometryType.POINT):
+            # we remove the scalar coordinate variables as they
+            # will otherwise be columns in the dataframe
+            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        elif self.gtype == str(GeometryType.TRACK):
+            df = self.data.drop_vars(["z"]).to_dataframe()
+            # make sure that x, y cols are first
+            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            return df[cols]
+        else:
+            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
     def save(self, filename: Union[str, Path]) -> None:
         """Save to netcdf file
 
