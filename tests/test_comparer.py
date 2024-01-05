@@ -618,6 +618,20 @@ def test_skill_dt(pc):
     assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
 
 
+def test_to_dataframe_pt(pc):
+    df = pc.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (5, 3)
+    assert list(df.columns) == ["Observation", "m1", "m2"]
+
+
+def test_to_dataframe_tc(tc):
+    df = tc.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (5, 5)
+    assert list(df.columns) == ["x", "y", "Observation", "m1", "m2"]
+
+
 # ======================== plotting ========================
 
 

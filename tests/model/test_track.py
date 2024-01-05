@@ -112,25 +112,27 @@ def test_track_df_default_items(track_df):
 
 
 def test_track_aux_items(df_aux):
-    o = ms.TrackModelResult(
+    mr = ms.TrackModelResult(
         df_aux, item="WL", x_item="x", y_item="y", aux_items=["aux1"]
     )
-    assert "aux1" in o.data
-    assert o.data["aux1"].values[0] == 1.1
+    assert "aux1" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
 
-    o = ms.TrackModelResult(df_aux, item="WL", x_item="x", y_item="y", aux_items="aux1")
-    assert "aux1" in o.data
-    assert o.data["aux1"].values[0] == 1.1
+    mr = ms.TrackModelResult(
+        df_aux, item="WL", x_item="x", y_item="y", aux_items="aux1"
+    )
+    assert "aux1" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
 
 
 def test_track_aux_items_multiple(df_aux):
-    o = ms.TrackModelResult(
+    mr = ms.TrackModelResult(
         df_aux, item="WL", x_item="x", y_item="y", aux_items=["aux2", "aux1"]
     )
-    assert "aux1" in o.data
-    assert o.data["aux1"].values[0] == 1.1
-    assert "aux2" in o.data
-    assert o.data["aux2"].values[0] == 1.2
+    assert "aux1" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
+    assert "aux2" in mr.data
+    assert mr.data["aux2"].values[0] == 1.2
 
 
 def test_track_aux_items_fail(df_aux):
@@ -141,3 +143,14 @@ def test_track_aux_items_fail(df_aux):
 
     with pytest.raises(ValueError):
         ms.TrackModelResult(df_aux, item="WL", x_item="x", y_item="y", aux_items=["x"])
+
+
+def test_track_to_dataframe(df_aux):
+    mr = ms.TrackModelResult(
+        df_aux, item="WL", x_item="x", y_item="y", aux_items=["aux1"]
+    )
+    df = mr.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    # NOTE: aux items are not included in the dataframe
+    assert df.shape == (6, 3)
+    assert list(df.columns) == ["x", "y", "WL"]

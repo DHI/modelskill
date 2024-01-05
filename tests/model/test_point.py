@@ -183,13 +183,13 @@ def test_wave_directional_data_is_directional_by_default():
 
 
 def test_point_aux_items(df_aux):
-    o = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1"])
-    assert "aux1" in o.data
-    assert o.data["aux1"].values[0] == 1.1
+    mr = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1"])
+    assert "aux1" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
 
-    o = ms.PointModelResult(df_aux, item="WL", aux_items="aux1")
-    assert "aux1" in o.data
-    assert o.data["aux1"].values[0] == 1.1
+    mr = ms.PointModelResult(df_aux, item="WL", aux_items="aux1")
+    assert "aux1" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
 
 
 def test_point_aux_items_fail(df_aux):
@@ -201,11 +201,11 @@ def test_point_aux_items_fail(df_aux):
 
 
 def test_point_aux_items_multiple(df_aux):
-    o = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux2"])
-    assert "aux1" in o.data
-    assert "aux2" in o.data
-    assert o.data["aux1"].values[0] == 1.1
-    assert o.data["aux2"].values[0] == 1.2
+    mr = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux2"])
+    assert "aux1" in mr.data
+    assert "aux2" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
+    assert mr.data["aux2"].values[0] == 1.2
 
 
 def test_point_modelresult_must_have_unique_and_monotonically_increasing_time():
@@ -226,3 +226,13 @@ def test_point_modelresult_must_have_unique_and_monotonically_increasing_time():
 
     with pytest.raises(ValueError):
         ms.PointModelResult(df_up_and_down, item=0)
+
+
+def test_point_to_dataframe(df_aux):
+    mr = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux2"])
+    df = mr.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    # NOTE: aux items are not included in the dataframe
+    assert df.shape == (6, 1)
+    assert list(df.columns) == ["WL"]
+    assert df.index[0] == datetime(2019, 1, 1, 0, 0, 0)
