@@ -86,9 +86,10 @@ def test_n_quantities(cc):
 
 def test_mv_skill(cc_1model):
     df = cc_1model.skill().to_dataframe()
+    assert list(df.reset_index().observation) == cc_1model.obs_names
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "quantity"
-    assert pytest.approx(df.iloc[0].rmse) == 0.22359663
+    assert pytest.approx(df.iloc[1].rmse) == 0.22359663
     idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 
@@ -104,7 +105,7 @@ def test_mv_mm_skill(cc):
     df = cc.sel(model="SW_1").skill().to_dataframe()
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "quantity"
-    assert pytest.approx(df.iloc[0].rmse) == 0.22359663
+    assert pytest.approx(df.iloc[1].rmse) == 0.22359663
     idx = ("HKNA_wind", "Wind speed")
     assert pytest.approx(df.loc[idx].rmse) == 1.27617894455
 

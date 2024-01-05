@@ -338,8 +338,8 @@ def test_skill_by_attrs_observed(cc):
 
     sk = cc.skill(by="attrs:use")  # observed=False is default
     assert len(sk) == 2
-    assert sk.data.index[0] is False  # note sorted by df.groupby !
-    assert sk.data.index[1] == "DA"
+    assert sk.data.index[0] == "DA"
+    assert sk.data.index[1] is False
     assert sk.data.index.name == "use"
 
     sk = cc.skill(by="attrs:use", observed=True)

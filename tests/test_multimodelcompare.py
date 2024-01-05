@@ -78,17 +78,18 @@ def test_add_same_comparer_twice(mr1, mr2, o1, o2):
 def test_mm_skill(cc):
     df = cc.sel(start="2017-10-27 00:01").skill().to_dataframe()
 
-    assert df.iloc[4].name[0] == "SW_2"
-    assert df.iloc[4].name[1] == "HKNA"
-    assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.214476
+    # mod: ['SW_1', 'SW_2'], obs: ['HKNA', 'EPL', 'c2']
+    assert df.iloc[3].name[0] == "SW_2"
+    assert df.iloc[3].name[1] == "HKNA"
+    assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
 
     # TODO remove in v1.1
     with pytest.warns(FutureWarning):
         df = cc.skill(start="2017-10-27 00:01").to_dataframe()
 
-    assert df.iloc[4].name[0] == "SW_2"
-    assert df.iloc[4].name[1] == "HKNA"
-    assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.214476
+    assert df.iloc[3].name[0] == "SW_2"
+    assert df.iloc[3].name[1] == "HKNA"
+    assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
 
 
 def test_mm_skill_model(cc):
@@ -238,7 +239,7 @@ def test_mm_mean_skill(cc):
 
 
 def test_mm_mean_skill_weights_list(cc):
-    sk = cc.mean_skill(weights=[0.3, 0.2, 1.0])
+    sk = cc.mean_skill(weights=[0.2, 0.3, 1.0])
     assert len(sk) == 2
     assert sk.loc["SW_1"].rmse == pytest.approx(0.3261788143)
 
@@ -265,7 +266,7 @@ def test_mm_mean_skill_weights_str(cc):
 
 
 def test_mm_mean_skill_weights_dict(cc):
-    sk = cc.mean_skill(weights={"EPL": 0.2, "c2": 1.0, "HKNA": 0.3})
+    sk = cc.mean_skill(weights={"EPL": 0.3, "c2": 1.0, "HKNA": 0.2})
     df = sk.to_dataframe()
     assert len(sk) == 2
     assert df.loc["SW_1"].rmse == pytest.approx(0.3261788143)
@@ -276,7 +277,7 @@ def test_mm_mean_skill_weights_dict(cc):
     # assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
     # assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
 
-    df = cc.mean_skill(weights={"EPL": 2.0}).to_dataframe()
+    df = cc.mean_skill(weights={"HKNA": 2.0}).to_dataframe()
     assert len(sk) == 2
     assert df.loc["SW_1"].rmse == pytest.approx(0.319830126)
 

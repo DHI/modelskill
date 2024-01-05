@@ -190,7 +190,7 @@ def test_weighted_score_from_prematched():
     assert cc["klagshamn"].weight == 100.0
     assert cc["drogden"].weight == 0.0
 
-    assert cc.score()["Oresund"] == pytest.approx(1.0)
+    assert cc.score()["Oresund"] == pytest.approx(0.0)  # 100 * 0 + 0 * 1
 
 
 def test_misc_properties(klagshamn, drogden):
