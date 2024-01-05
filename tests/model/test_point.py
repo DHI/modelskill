@@ -232,7 +232,7 @@ def test_point_to_dataframe(df_aux):
     mr = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux2"])
     df = mr.to_dataframe()
     assert isinstance(df, pd.DataFrame)
-    # NOTE: aux items are not included in the dataframe
-    assert df.shape == (6, 1)
-    assert list(df.columns) == ["WL"]
+    # NOTE: aux items are included in the dataframe
+    assert df.shape == (6, 3)
+    assert list(df.columns) == ["WL", "aux1", "aux2"]
     assert df.index[0] == datetime(2019, 1, 1, 0, 0, 0)

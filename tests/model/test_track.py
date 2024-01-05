@@ -151,6 +151,6 @@ def test_track_to_dataframe(df_aux):
     )
     df = mr.to_dataframe()
     assert isinstance(df, pd.DataFrame)
-    # NOTE: aux items are not included in the dataframe
-    assert df.shape == (6, 3)
-    assert list(df.columns) == ["x", "y", "WL"]
+    # NOTE: aux items are included in the dataframe
+    assert df.shape == (6, 4)
+    assert list(df.columns) == ["x", "y", "WL", "aux1"]
