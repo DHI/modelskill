@@ -529,16 +529,59 @@ class SkillTable:
     def loc(self, *args, **kwargs):
         return self._df.loc(*args, **kwargs)
 
-    def sort_index(self, *args, **kwargs):
-        """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
+    def sort_index(self, *args, **kwargs) -> SkillTable:
+        """Sort by index (level) e.g. sorting by observation
+
+        Wrapping pd.DataFrame.sort_index()
+
+        Returns
+        -------
+        SkillTable
+            A new SkillTable with sorted index
+
+        Examples
+        --------
+        >>> sk = cc.skill()
+        >>> sk.sort_index()
+        >>> sk.sort_index(level="observation")
+        """
         return self.__class__(self._df.sort_index(*args, **kwargs))
 
-    def sort_values(self, *args, **kwargs):
-        """Wrapping pd.DataFrame.sort_values() for e.g. sorting by rmse values"""
+    def sort_values(self, *args, **kwargs) -> SkillTable:
+        """Sort by values e.g. sorting by rmse values
+
+        Wrapping pd.DataFrame.sort_values()
+
+        Returns
+        -------
+        SkillTable
+            A new SkillTable with sorted values
+
+        Examples
+        --------
+        >>> sk = cc.skill()
+        >>> sk.sort_values("rmse")
+        >>> sk.sort_values("rmse", ascending=False)
+        """
         return self.__class__(self._df.sort_values(*args, **kwargs))
 
-    def swaplevel(self, *args, **kwargs):
-        """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
+    def swaplevel(self, *args, **kwargs) -> SkillTable:
+        """Swap the levels of the MultiIndex e.g. swapping 'model' and 'observation'
+
+        Wrapping pd.DataFrame.swaplevel()
+
+        Returns
+        -------
+        SkillTable
+            A new SkillTable with swapped levels
+
+        Examples
+        --------
+        >>> sk = cc.skill()
+        >>> sk.swaplevel().sort_index(level="observation")
+        >>> sk.swaplevel("model", "observation")
+        >>> sk.swaplevel(0, 1)
+        """
         return self.__class__(self._df.swaplevel(*args, **kwargs))
 
     @property
