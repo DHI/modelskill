@@ -950,7 +950,7 @@ class ComparerCollection(Mapping, Scoreable):
                 weights = np.ones(n_obs)  # equal weight to all
             elif isinstance(weights, dict):
                 w_dict = weights
-                weights = [w_dict.get(name, 1.0) for name in (self.obs_names)]
+                weights = [w_dict.get(name, 1.0) for name in observations]
 
             elif isinstance(weights, str):
                 if weights.lower() == "equal":
