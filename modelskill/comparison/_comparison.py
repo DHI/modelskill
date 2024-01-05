@@ -973,9 +973,8 @@ class Comparer(Scoreable):
 
         df = cmp._to_long_dataframe()
         res = _groupby_df(df, by, metrics)
-        res["x"] = df.groupby(by=by, observed=False).x.first()
-        res["y"] = df.groupby(by=by, observed=False).y.first()
-        # TODO: set x,y to NaN if TrackObservation
+        res["x"] = np.nan if self.gtype == "track" else cmp.x
+        res["y"] = np.nan if self.gtype == "track" else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 

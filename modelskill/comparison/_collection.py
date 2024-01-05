@@ -562,12 +562,7 @@ class ComparerCollection(Mapping, Scoreable):
         res = _groupby_df(df, by, pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
-        groupby_xy = df.groupby(
-            by=by, observed=False, sort=False
-        )  # TODO: second time we do the same groupby!!!
-        res["x"] = groupby_xy.x.first()  # if groupby_xy.x.nunique() == 1 else np.nan
-        res["y"] = groupby_xy.y.first()  # if groupby_xy.y.nunique() == 1 else np.nan
-        # TODO: set x,y to NaN if TrackObservation, x.nunique() > 1
+        res = self._append_xy_to_res(res, cc)
         res = cc._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -609,7 +604,7 @@ class ComparerCollection(Mapping, Scoreable):
 
     @staticmethod
     def _attrs_keys_in_by(by):
-        """Check if 'attrs:' is in by and return attrs_keys"""
+        """skill() helper: Check if 'attrs:' is in by and return attrs_keys"""
         attrs_keys = []
         by = [by] if isinstance(by, str) else by
         for j, b in enumerate(by):
@@ -620,10 +615,28 @@ class ComparerCollection(Mapping, Scoreable):
         attrs_keys = None if len(attrs_keys) == 0 else attrs_keys
         return by, attrs_keys
 
+    @staticmethod
+    def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
+        """skill() helper: Append x and y to res if possible"""
+        res["x"] = np.nan
+        res["y"] = np.nan
+
+        # for MultiIndex in res find "observation" level and
+        # insert x, y if gtype=point for that observation
+        if "observation" in res.index.names:
+            idx_names = res.index.names
+            res = res.reset_index()
+            for cmp in cc:
+                if cmp.gtype == "point":
+                    res.loc[res.observation == cmp.name, "x"] = cmp.x
+                    res.loc[res.observation == cmp.name, "y"] = cmp.y
+            res = res.set_index(idx_names)
+        return res
+
     def _add_as_col_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "quantity"]
     ):
-        """Add a field to skilldf if unique in df"""
+        """skill() helper: Add a field to skilldf if unique in df"""
         for field in reversed(fields):
             if (field == "model") and (self.n_models <= 1):
                 continue
