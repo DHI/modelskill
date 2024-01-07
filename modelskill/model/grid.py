@@ -141,7 +141,7 @@ class GridModelResult(SpatialField):
     ) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a PointObservation. No time interpolation is done!"""
-        spatial_interp_method = spatial_interp_method or "nearest"
+        method: str = spatial_interp_method or "nearest"
 
         x, y = observation.x, observation.y
         if (x is None) or (y is None):
@@ -158,7 +158,7 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        da = self.data.interp(coords=dict(x=x, y=y), method=spatial_interp_method)
+        da = self.data.interp(coords=dict(x=x, y=y), method=method, assume_sorted=True)  # type: ignore
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={self.sel_items.values: self.name})
 
@@ -177,7 +177,7 @@ class GridModelResult(SpatialField):
     ) -> TrackModelResult:
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
-        spatial_interp_method = spatial_interp_method or "linear"
+        method: str = spatial_interp_method or "linear"
 
         obs_df = observation.data.to_dataframe()
 
@@ -188,7 +188,9 @@ class GridModelResult(SpatialField):
 
         assert isinstance(self.data, xr.Dataset)
         da = self.data.interp(
-            coords=dict(time=t, x=x, y=y), method=spatial_interp_method
+            coords=dict(time=t, x=x, y=y),
+            method=method,  # type: ignore
+            assume_sorted=True,
         )
         df = da.to_dataframe().drop(columns=["time"])
         df = df.rename(columns={self.sel_items.values: self.name})

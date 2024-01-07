@@ -6,6 +6,7 @@ import warnings
 from typing import (
     Dict,
     Iterable,
+    Collection,
     List,
     Literal,
     Optional,
@@ -230,9 +231,9 @@ def match(
             spatial_interp_method=spatial_interp_method,
         )
 
-    assert isinstance(obs, Iterable)
+    assert isinstance(obs, Collection)
 
-    if len(obs) > 1 and isinstance(mod, Iterable) and len(mod) > 1:
+    if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
         if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
             raise ValueError(
                 """
