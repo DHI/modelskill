@@ -152,9 +152,6 @@ def test_skill_multi_model(cc2):
     # s2 = s.xs("c2", level="observation")
     # assert len(s2.obs_names) == 0
 
-    # s2 = s.sort_index(level="observation")
-    # assert np.all(s2.iloc[0].name == ("SW_1", "EPL"))
-
     # s2 = s.reorder_levels(["observation", "model"])
     # assert np.all(s2.index.levels[0] == s.index.levels[1])
 
@@ -196,6 +193,24 @@ def test_skill_mm_sort_index(cc2):
         "c2",
         "c2",
     ]
+
+
+def test_skill_mm_sort_values(cc2):
+    sk = cc2.skill(metrics=["rmse", "bias"])
+    assert list(sk.index[0]) == ["SW_1", "HKNA"]
+    assert list(sk.index[-1]) == ["SW_2", "c2"]
+
+    sk2 = sk.sort_values("rmse")
+    assert list(sk2.index[0]) == ["SW_1", "EPL"]
+    assert list(sk2.index[-1]) == ["SW_2", "c2"]
+
+    sk3 = sk.sort_values("rmse", ascending=False)
+    assert list(sk3.index[0]) == ["SW_2", "c2"]
+    assert list(sk3.index[-1]) == ["SW_1", "EPL"]
+
+    sk4 = sk.sort_values(["n", "rmse"])
+    assert list(sk4.index[0]) == ["SW_1", "EPL"]
+    assert list(sk4.index[-1]) == ["SW_1", "HKNA"]
 
 
 def test_skill_sel(cc1):
