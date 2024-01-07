@@ -527,7 +527,7 @@ class SkillTable:
 
     @property
     def loc(self, *args, **kwargs):
-        return self._df.loc(*args, **kwargs)
+        return self.data.loc(*args, **kwargs)
 
     def sort_index(self, *args, **kwargs) -> SkillTable:
         """Sort by index (level) e.g. sorting by observation
@@ -545,7 +545,7 @@ class SkillTable:
         >>> sk.sort_index()
         >>> sk.sort_index(level="observation")
         """
-        return self.__class__(self._df.sort_index(*args, **kwargs))
+        return self.__class__(self.data.sort_index(*args, **kwargs))
 
     def sort_values(self, *args, **kwargs) -> SkillTable:
         """Sort by values e.g. sorting by rmse values
@@ -562,8 +562,9 @@ class SkillTable:
         >>> sk = cc.skill()
         >>> sk.sort_values("rmse")
         >>> sk.sort_values("rmse", ascending=False)
+        >>> sk.sort_values(["n", "rmse"])
         """
-        return self.__class__(self._df.sort_values(*args, **kwargs))
+        return self.__class__(self.data.sort_values(*args, **kwargs))
 
     def swaplevel(self, *args, **kwargs) -> SkillTable:
         """Swap the levels of the MultiIndex e.g. swapping 'model' and 'observation'
@@ -582,7 +583,7 @@ class SkillTable:
         >>> sk.swaplevel("model", "observation")
         >>> sk.swaplevel(0, 1)
         """
-        return self.__class__(self._df.swaplevel(*args, **kwargs))
+        return self.__class__(self.data.swaplevel(*args, **kwargs))
 
     @property
     def mod_names(self) -> list[str]:
@@ -629,7 +630,7 @@ class SkillTable:
         >>> sk = cc.skill()
         >>> sk_above_0p3 = sk.query("rmse>0.3")
         """
-        return self.__class__(self._df.query(query))
+        return self.__class__(self.data.query(query))
 
     def sel(self, query=None, reduce_index=True, **kwargs):
         """Select a subset of the SkillTable by a query,
