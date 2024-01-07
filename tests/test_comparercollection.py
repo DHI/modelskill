@@ -362,6 +362,17 @@ def test_xy_in_skill(cc):
     assert all(df_point.y == cc[0].y)
 
 
+def test_xy_in_skill_no_obs(cc):
+    # if no observation column then no x, y information!
+    # e.g. if we filter by gtype (in this case 1 per obs), no x, y information
+    sk = cc.skill(by=["attrs:gtype", "model"])
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data.reset_index()
+    assert df.x.isna().all()
+    assert df.y.isna().all()
+
+
 # ======================== load/save ========================
 
 
