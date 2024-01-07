@@ -159,6 +159,7 @@ def match(
     mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_interp_method: Optional[str] = None,
 ) -> Comparer:
     ...
 
@@ -172,6 +173,7 @@ def match(
     mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_interp_method: Optional[str] = None,
 ) -> ComparerCollection:
     ...
 
@@ -184,6 +186,7 @@ def match(
     mod_item=None,
     gtype=None,
     max_model_gap=None,
+    spatial_interp_method: Optional[str] = None,
 ):
     """Compare observations and model results
 
@@ -224,6 +227,7 @@ def match(
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
+            spatial_interp_method=spatial_interp_method,
         )
 
     assert isinstance(obs, Iterable)
@@ -250,6 +254,7 @@ def match(
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
+            spatial_interp_method=spatial_interp_method,
         )
         for o in obs
     ]
@@ -293,13 +298,14 @@ def _single_obs_compare(
     mod_item: Optional[int | str] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_interp_method: Optional[str] = None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
 
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
-    raw_mod_data = {m.name: m.extract(obs) for m in mods}
+    raw_mod_data = {m.name: m.extract(obs, spatial_interp_method) for m in mods}
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
     matched_data.attrs["weight"] = obs.weight
 

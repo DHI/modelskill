@@ -73,12 +73,18 @@ def _validate_overlap_in_time(time: pd.DatetimeIndex, observation: Observation) 
 
 class SpatialField(Protocol):
     def extract(
-        self, observation: PointObservation | TrackObservation
+        self,
+        observation: PointObservation | TrackObservation,
+        spatial_interp_method: Optional[str] = None,
     ) -> PointModelResult | TrackModelResult:
         ...
 
-    def extract_point(self, observation: PointObservation) -> PointModelResult:
+    def extract_point(
+        self, observation: PointObservation, spatial_interp_method: Optional[str] = None
+    ) -> PointModelResult:
         ...
 
-    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def extract_track(
+        self, observation: TrackObservation, spatial_interp_method: Optional[str] = None
+    ) -> TrackModelResult:
         ...

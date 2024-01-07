@@ -98,7 +98,9 @@ class DfsuModelResult(SpatialField):
     def _in_domain(self, x: float, y: float) -> bool:
         return self.data.geometry.contains([x, y])  # type: ignore
 
-    def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
+    def extract(
+        self, observation: Observation, spatial_interp_method: Optional[str] = None
+    ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
         Parameters
@@ -113,17 +115,23 @@ class DfsuModelResult(SpatialField):
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
-            return self.extract_point(observation)
+            return self.extract_point(observation, spatial_interp_method)
         elif isinstance(observation, TrackObservation):
-            return self.extract_track(observation)
+            return self.extract_track(observation, spatial_interp_method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
-    def extract_point(self, observation: PointObservation) -> PointModelResult:
+    def extract_point(
+        self, observation: PointObservation, spatial_interp_method: Optional[str] = None
+    ) -> PointModelResult:
         """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
         given a PointObservation. No time interpolation is done!"""
+        if spatial_interp_method is not None:
+            raise NotImplementedError(
+                "spatial interpolation not implemented for flexible meshes"
+            )
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
@@ -165,9 +173,15 @@ class DfsuModelResult(SpatialField):
             aux_items=aux_items,
         )
 
-    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def extract_track(
+        self, observation: TrackObservation, spatial_interp_method: Optional[str] = None
+    ) -> TrackModelResult:
         """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
         given a TrackObservation."""
+        if spatial_interp_method is not None:
+            raise NotImplementedError(
+                "spatial interpolation not implemented for flexible meshes"
+            )
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)

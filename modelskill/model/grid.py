@@ -110,7 +110,9 @@ class GridModelResult(SpatialField):
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def extract(
-        self, observation: PointObservation | TrackObservation
+        self,
+        observation: PointObservation | TrackObservation,
+        spatial_interp_method: Optional[str] = None,
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
@@ -126,17 +128,20 @@ class GridModelResult(SpatialField):
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
-            return self.extract_point(observation)
+            return self.extract_point(observation, spatial_interp_method)
         elif isinstance(observation, TrackObservation):
-            return self.extract_track(observation)
+            return self.extract_track(observation, spatial_interp_method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
-    def extract_point(self, observation: PointObservation) -> PointModelResult:
+    def extract_point(
+        self, observation: PointObservation, spatial_interp_method: Optional[str] = None
+    ) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a PointObservation. No time interpolation is done!"""
+        spatial_interp_method = spatial_interp_method or "nearest"
 
         x, y = observation.x, observation.y
         if (x is None) or (y is None):
@@ -153,7 +158,7 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")
+        da = self.data.interp(coords=dict(x=x, y=y), method=spatial_interp_method)
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={self.sel_items.values: self.name})
 
@@ -167,9 +172,12 @@ class GridModelResult(SpatialField):
             aux_items=self.sel_items.aux,
         )
 
-    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def extract_track(
+        self, observation: TrackObservation, spatial_interp_method: Optional[str] = None
+    ) -> TrackModelResult:
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
+        spatial_interp_method = spatial_interp_method or "linear"
 
         obs_df = observation.data.to_dataframe()
 
@@ -179,7 +187,9 @@ class GridModelResult(SpatialField):
         y = xr.DataArray(renamed_obs_data.y, dims="track")
 
         assert isinstance(self.data, xr.Dataset)
-        da = self.data.interp(coords=dict(time=t, x=x, y=y), method="linear")
+        da = self.data.interp(
+            coords=dict(time=t, x=x, y=y), method=spatial_interp_method
+        )
         df = da.to_dataframe().drop(columns=["time"])
         df = df.rename(columns={self.sel_items.values: self.name})
 
