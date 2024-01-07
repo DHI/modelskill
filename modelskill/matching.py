@@ -207,6 +207,14 @@ def match(
     max_model_gap : (float, optional)
         Maximum time gap (s) in the model result (e.g. for event-based
         model results), by default None
+    spatial_interp_method : str, optional
+        For Dfsu- and GridModelResult, spatial interpolation method,
+        by default None.
+
+        - For DfsuModelResult, one of: 'nearest', 'contained' (=isel),
+        'inverse_distance' (with 4 nearest points)
+        - For GridModelResult, passed to xarray.interp() as method argument,
+        by default None="linear"
 
     Returns
     -------
