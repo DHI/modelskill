@@ -348,6 +348,20 @@ def test_skill_by_attrs_observed(cc):
     assert sk.data.index.name == "use"
 
 
+def test_xy_in_skill(cc):
+    # point obs has x,y, track obs x, y are np.nan
+    sk = cc.skill()
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data.reset_index()
+    df_track = df.loc[df.observation == "fake track obs"]
+    assert df_track.x.isna().all()
+    assert df_track.y.isna().all()
+    df_point = df.loc[df.observation == "fake point obs"]
+    assert all(df_point.x == cc[0].x)
+    assert all(df_point.y == cc[0].y)
+
+
 # ======================== load/save ========================
 
 
