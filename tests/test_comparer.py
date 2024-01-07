@@ -627,7 +627,7 @@ def test_xy_in_skill_pt(pc):
     assert all(df.x == pc.x)
     assert all(df.y == pc.y)
 
-    # x, y maintained on sort_values and similar operations
+    # x, y maintained during sort_values, sort_index, sel
     sk2 = sk.sort_values("rmse")
     assert all(sk2.data.x == pc.x)
     assert all(sk2.data.y == pc.y)
@@ -635,6 +635,10 @@ def test_xy_in_skill_pt(pc):
     sk3 = sk.sort_index()
     assert all(sk3.data.x == pc.x)
     assert all(sk3.data.y == pc.y)
+
+    sk4 = sk.sel(model="m1")
+    assert all(sk4.data.x == pc.x)
+    assert all(sk4.data.y == pc.y)
 
     sa = sk.rmse  # SkillArray
     assert all(sa.data.x == pc.x)
