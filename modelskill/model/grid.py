@@ -120,6 +120,8 @@ class GridModelResult(SpatialField):
         ----------
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
+        spatial_interp_method : Optional[str], optional
+            method in xarray.Dataset.interp, by default None = 'linear'
 
         Returns
         -------
