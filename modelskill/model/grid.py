@@ -158,7 +158,7 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        da = self.data.interp(coords=dict(x=x, y=y), method=method, assume_sorted=True)  # type: ignore
+        da = self.data.interp(coords=dict(x=x, y=y), method=method)  # type: ignore
         df = da.to_dataframe().drop(columns=["x", "y"])
         df = df.rename(columns={self.sel_items.values: self.name})
 
@@ -190,7 +190,6 @@ class GridModelResult(SpatialField):
         da = self.data.interp(
             coords=dict(time=t, x=x, y=y),
             method=method,  # type: ignore
-            assume_sorted=True,
         )
         df = da.to_dataframe().drop(columns=["time"])
         df = df.rename(columns={self.sel_items.values: self.name})
