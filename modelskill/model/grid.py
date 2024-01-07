@@ -116,6 +116,8 @@ class GridModelResult(SpatialField):
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
+        Note: this method is typically not called directly, but through the match() method.
+
         Parameters
         ----------
         observation : <PointObservation> or <TrackObservation>
