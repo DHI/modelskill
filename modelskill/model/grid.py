@@ -128,15 +128,15 @@ class GridModelResult(SpatialField):
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
-            return self.extract_point(observation, spatial_interp_method)
+            return self._extract_point(observation, spatial_interp_method)
         elif isinstance(observation, TrackObservation):
-            return self.extract_track(observation, spatial_interp_method)
+            return self._extract_track(observation, spatial_interp_method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
-    def extract_point(
+    def _extract_point(
         self, observation: PointObservation, spatial_interp_method: Optional[str] = None
     ) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
@@ -172,7 +172,7 @@ class GridModelResult(SpatialField):
             aux_items=self.sel_items.aux,
         )
 
-    def extract_track(
+    def _extract_track(
         self, observation: TrackObservation, spatial_interp_method: Optional[str] = None
     ) -> TrackModelResult:
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
