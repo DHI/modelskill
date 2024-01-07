@@ -123,7 +123,8 @@ class GridModelResult(SpatialField):
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
         spatial_interp_method : Optional[str], optional
-            method in xarray.Dataset.interp, by default None = 'linear'
+            method in xarray.Dataset.interp, typically either "nearest" or
+            "linear", by default None = 'linear'
 
         Returns
         -------
@@ -145,7 +146,7 @@ class GridModelResult(SpatialField):
     ) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a PointObservation. No time interpolation is done!"""
-        method: str = spatial_interp_method or "nearest"
+        method: str = spatial_interp_method or "linear"
 
         x, y = observation.x, observation.y
         if (x is None) or (y is None):
