@@ -163,14 +163,19 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        da = self.data.interp(coords=dict(x=x, y=y), method=method)  # type: ignore
-        df = da.to_dataframe().drop(columns=["x", "y"])
+        ds = self.data.interp(coords=dict(x=x, y=y), method=method)  # type: ignore
+        # TODO: exclude aux cols in dropna
+        df = ds.to_dataframe().drop(columns=["x", "y"]).dropna()
+        if len(df) == 0:
+            raise ValueError(
+                f"Spatial point extraction failed for PointObservation '{observation.name}' in GridModelResult '{self.name}'! (is point outside model domain? Consider spatial_interp_method='nearest')"
+            )
         df = df.rename(columns={self.sel_items.values: self.name})
 
         return PointModelResult(
-            data=df.dropna(),
-            x=da.x.item(),
-            y=da.y.item(),
+            data=df,
+            x=ds.x.item(),
+            y=ds.y.item(),
             item=self.name,
             name=self.name,
             quantity=self.quantity,
@@ -192,15 +197,15 @@ class GridModelResult(SpatialField):
         y = xr.DataArray(renamed_obs_data.y, dims="track")
 
         assert isinstance(self.data, xr.Dataset)
-        da = self.data.interp(
+        ds = self.data.interp(
             coords=dict(time=t, x=x, y=y),
             method=method,  # type: ignore
         )
-        df = da.to_dataframe().drop(columns=["time"])
+        df = ds.to_dataframe().drop(columns=["time"])
         df = df.rename(columns={self.sel_items.values: self.name})
 
         return TrackModelResult(
-            data=df.dropna(),
+            data=df.dropna(),  # TODO: exclude aux cols in dropna
             item=self.name,
             x_item="x",
             y_item="y",
