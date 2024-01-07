@@ -8,7 +8,7 @@ Examples
 """
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Any, Union
 import warnings
 import pandas as pd
 import xarray as xr
@@ -20,6 +20,9 @@ from .timeseries import (
     _parse_point_input,
     _parse_track_input,
 )
+
+# NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
+Serializable = Union[str, int, float]
 
 
 def observation(
@@ -103,6 +106,15 @@ class Observation(TimeSeries):
         data[data_var].attrs["color"] = color
         super().__init__(data=data)
         self.data.attrs["weight"] = weight
+
+    @property
+    def attrs(self) -> dict[str, Any]:
+        """Attributes of the observation"""
+        return self.data.attrs
+
+    @attrs.setter
+    def attrs(self, value: dict[str, Serializable]) -> None:
+        self.data.attrs = value
 
     @property
     def weight(self) -> float:
