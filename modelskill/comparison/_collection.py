@@ -12,6 +12,7 @@ from typing import (
     Iterable,
     overload,
     Hashable,
+    Tuple,
 )
 import warnings
 import zipfile
@@ -572,34 +573,32 @@ class ComparerCollection(Mapping, Scoreable):
         res = cc._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
-    def _to_long_dataframe(self, attrs_keys=None, observed=False) -> pd.DataFrame:
+    def _to_long_dataframe(
+        self, attrs_keys: Iterable[str] | None = None, observed: bool = False
+    ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
         # TODO delegate to each comparer
         attrs_keys = attrs_keys or []
         res = _all_df_template(self.n_quantities)
         frames = []
-        cols = list(res.keys()) + attrs_keys
+        cols = [*res.keys(), *attrs_keys]
         for cmp in self._comparers.values():
-            for j in range(cmp.n_models):
-                mod_name = cmp.mod_names[j]
+            for mod_name in cmp.mod_names:
                 # drop "x", "y",  ?
-                df = cmp.data.drop_vars(["z"])[[mod_name]].to_dataframe().copy()
-                df = df.rename(columns={mod_name: "mod_val"})
-                df["model"] = mod_name
-                df["observation"] = cmp.name
+                df = (
+                    cmp.data[[mod_name]]
+                    .to_dataframe()
+                    .copy()
+                    .rename(columns={mod_name: "mod_val"})
+                    .assign(model=mod_name, observation=cmp.name, x=cmp.x, y=cmp.y)
+                    .assign(obs_val=cmp.data["Observation"].values)
+                )
                 if self.n_quantities > 1:
                     df["quantity"] = cmp.quantity.name
-                df["x"] = cmp.x
-                df["y"] = cmp.y
-                df["obs_val"] = cmp.data["Observation"].values
                 for key in attrs_keys:
-                    if key in cmp.data.attrs:
-                        df[key] = cmp.data.attrs[key]
-                    else:
-                        df[key] = False
+                    df[key] = cmp.data.attrs.get(key, False)
                 frames.append(df[cols])
-        if len(frames) > 0:
-            res = pd.concat(frames)
+        res = pd.concat(frames)
         cat_cols = res.select_dtypes(include=["object"]).columns
         res[cat_cols] = res[cat_cols].astype("category")
 
@@ -609,7 +608,7 @@ class ComparerCollection(Mapping, Scoreable):
         return res
 
     @staticmethod
-    def _attrs_keys_in_by(by):
+    def _attrs_keys_in_by(by: str | List[str]) -> Tuple[List[str], List[str]]:
         """skill() helper: Check if 'attrs:' is in by and return attrs_keys"""
         attrs_keys = []
         by = [by] if isinstance(by, str) else by
@@ -618,7 +617,6 @@ class ComparerCollection(Mapping, Scoreable):
                 key = b.split(":")[1]
                 attrs_keys.append(key)
                 by[j] = key  # remove 'attrs:' prefix
-        attrs_keys = None if len(attrs_keys) == 0 else attrs_keys
         return by, attrs_keys
 
     @staticmethod
