@@ -6,14 +6,12 @@ import warnings
 from typing import (
     Dict,
     Iterable,
-    List,
     Literal,
     Optional,
     Union,
     Sequence,
     get_args,
     TypeVar,
-    Any,
     overload,
 )
 import numpy as np
@@ -22,9 +20,9 @@ import xarray as xr
 
 import mikeio
 
-from . import model_result, Quantity
+from . import model_result, observation, Quantity
 from .timeseries import TimeSeries
-from .types import GeometryType, Period
+from .types import Period
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
@@ -47,7 +45,13 @@ MRInputType = Union[
     pd.Series,
     xr.Dataset,
     xr.DataArray,
-    TimeSeries,
+    PointModelResult,
+    GridModelResult,
+    DfsuModelResult,
+    TrackModelResult,
+]
+MRType = Union[
+    PointModelResult,
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
@@ -151,11 +155,11 @@ def from_matched(
 
 
 def match_1to1(
-    obs,
-    mod,
+    obs: ObsInputType,
+    mod: MRInputType,
     *,
-    obs_item=None,
-    mod_item=None,
+    obs_item: Optional[IdxOrNameTypes] = None,
+    mod_item: Optional[IdxOrNameTypes] = None,
     gtype=None,
     max_model_gap=None,
 ):
@@ -176,6 +180,7 @@ def match_1to1(
     max_model_gap : (float, optional)
         Maximum time gap (s) in the model result (e.g. for event-based
         model results), by default None
+    TODO: add name and quantity argument
 
     Returns
     -------
@@ -189,10 +194,20 @@ def match_1to1(
     [match][modelskill.match]
         Create a Comparer/ComparerCollection from multiple observations and model results
     """
-    obs = _parse_single_obs(obs, obs_item, gtype=gtype)
-    mods = [_parse_single_model(mod, mod_item, gtype=gtype)]
+    if isinstance(obs, (PointObservation, TrackObservation)):
+        if obs_item is not None:
+            raise ValueError("obs_item is not needed when obs is a PointObservation or TrackObservation")
+    else:
+        obs = observation(obs, item=obs_item, gtype=gtype)
+    if isinstance(mod, (PointModelResult, TrackModelResult)):
+        if mod_item is not None:
+            raise ValueError(
+                "mod_item is not needed when mod is a PointModelResult or TrackModelResult"
+            )
+    else:
+        mod = model_result(mod, item=mod_item, gtype=gtype)
 
-    raw_mod_data = {m.name: m.extract(obs) for m in mods}
+    raw_mod_data = {mod.name: mod.extract(obs)}
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
     matched_data.attrs["weight"] = obs.weight
 
@@ -202,7 +217,7 @@ def match_1to1(
 @overload
 def match(
     obs: PointObservation | TrackObservation,
-    mod: Union[MRInputType, Sequence[MRInputType]],
+    mod: Union[MRType, Sequence[MRType]],
     *,
     obs_item: Optional[IdxOrNameTypes] = None,  # TODO: remove
     mod_item: Optional[IdxOrNameTypes] = None,  # TODO: remove
@@ -215,7 +230,7 @@ def match(
 @overload
 def match(
     obs: Iterable[PointObservation | TrackObservation],
-    mod: Union[MRInputType, Sequence[MRInputType]],
+    mod: Union[MRType, Sequence[MRType]],
     *,
     obs_item: Optional[IdxOrNameTypes] = None,  # TODO: remove
     mod_item: Optional[IdxOrNameTypes] = None,  # TODO: remove
@@ -267,17 +282,17 @@ def match(
     [match_1to1][modelskill.match_1to1]
         Match 1 observation with 1 model result of same geometry type
     """
-    # TODO: raise Exception if gtype, obs_item or mod_item is given
+    if (gtype is not None) or (obs_item is not None) or (mod_item is not None):
+        raise NotImplementedError(
+            """
+            gtype, obs_item and mod_item are deprecated arguments. 
+            Please use Observation and ModelResult types instead 
+            or use the match_1to1 function.
+            """
+        )
 
     if isinstance(obs, get_args(ObsInputType)):
-        return _single_obs_compare(
-            obs,
-            mod,
-            obs_item=obs_item,
-            mod_item=mod_item,
-            gtype=gtype,
-            max_model_gap=max_model_gap,
-        )
+        return _single_obs_compare(obs, mod, max_model_gap=max_model_gap)
 
     assert isinstance(obs, Iterable)
 
@@ -295,17 +310,7 @@ def match(
                 """
             )
 
-    clist = [
-        _single_obs_compare(
-            o,
-            mod,
-            obs_item=obs_item,
-            mod_item=mod_item,
-            gtype=gtype,
-            max_model_gap=max_model_gap,
-        )
-        for o in obs
-    ]
+    clist = [_single_obs_compare(o, mod, max_model_gap=max_model_gap) for o in obs]
 
     return ComparerCollection(clist)
 
@@ -320,37 +325,29 @@ def compare(
     max_model_gap=None,
 ) -> ComparerCollection:
     warnings.warn("compare is deprecated. Use match instead.", FutureWarning)
-    observations = [obs] if isinstance(obs, get_args(ObsInputType)) else obs
-    assert isinstance(observations, Iterable)
-
-    clist = [
-        _single_obs_compare(
-            o,
-            mod,
-            obs_item=obs_item,
-            mod_item=mod_item,
-            gtype=gtype,
-            max_model_gap=max_model_gap,
-        )
-        for o in observations
-    ]
-
-    return ComparerCollection(clist)
+    return match(
+        obs,
+        mod,
+        obs_item=obs_item,
+        mod_item=mod_item,
+        gtype=gtype,
+        max_model_gap=max_model_gap,
+    )
 
 
 def _single_obs_compare(
-    obs: ObsInputType,
-    mod: Union[MRInputType, Sequence[MRInputType]],
+    obs: Observation,
+    mod: Union[MRType, Sequence[MRType]],
     *,
-    obs_item: Optional[int | str] = None,
-    mod_item: Optional[int | str] = None,
-    gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
-    obs = _parse_single_obs(obs, obs_item, gtype=gtype)
-
-    mods = _parse_models(mod, mod_item, gtype=gtype)
+    if not isinstance(obs, Observation):
+        raise ValueError(f"Unknown obs type {type(obs)}")
+    mods = mod if isinstance(mod, Sequence) else [mod]
+    for m in mods:
+        if not isinstance(m, get_args(MRType)):
+            raise ValueError(f"Unknown mod type {type(m)}")
 
     raw_mod_data = {m.name: m.extract(obs) for m in mods}
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
@@ -530,60 +527,3 @@ def _select_overlapping_trackdata_with_tolerance(
             f"Removed {n_points_removed} model points outside observation track (spatial_tolerance={spatial_tolerance})"
         )
     return mri.data.sel(time=df.index)
-
-
-def _parse_single_obs(
-    obs: ObsInputType,
-    item: Optional[int | str] = None,
-    gtype: Optional[GeometryTypes] = None,
-) -> PointObservation | TrackObservation:
-    if isinstance(obs, (PointObservation, TrackObservation)):
-        if item is not None:
-            raise ValueError(
-                "obs_item argument not allowed if obs is an modelskill.Observation type"
-            )
-        return obs
-    else:
-        if (gtype is not None) and (
-            GeometryType.from_string(gtype) == GeometryType.TRACK
-        ):
-            return TrackObservation(obs, item=item)
-        else:
-            return PointObservation(obs, item=item)
-
-
-# TODO: remove
-def _parse_models(
-    mod: Any,  # TODO
-    item: Optional[IdxOrNameTypes] = None,
-    gtype: Optional[GeometryTypes] = None,
-) -> List[Any]:  # TODO
-    """Return a list of ModelResult objects"""
-    if isinstance(mod, get_args(MRInputType)):
-        return [_parse_single_model(mod, item=item, gtype=gtype)]
-    elif isinstance(mod, Sequence):
-        return [_parse_single_model(m, item=item, gtype=gtype) for m in mod]
-    else:
-        raise ValueError(f"Unknown mod type {type(mod)}")
-
-
-def _parse_single_model(
-    mod: Any,  # TODO
-    item: Optional[IdxOrNameTypes] = None,
-    gtype: Optional[GeometryTypes] = None,
-) -> Any:  # TODO
-    if isinstance(
-        mod, (DfsuModelResult, GridModelResult, TrackModelResult, PointModelResult)
-    ):
-        if item is not None:
-            raise ValueError(
-                "mod_item argument not allowed if mod is an modelskill.ModelResult"
-            )
-        return mod
-
-    try:
-        return model_result(mod, item=item, gtype=gtype)
-    except ValueError as e:
-        raise ValueError(
-            f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
-        )
