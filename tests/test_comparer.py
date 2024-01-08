@@ -618,6 +618,57 @@ def test_skill_dt(pc):
     assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
 
 
+def test_xy_in_skill_pt(pc):
+    # point obs has x,y, track obs x, y are np.nan
+    sk = pc.skill()
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data
+    assert all(df.x == pc.x)
+    assert all(df.y == pc.y)
+
+    # x, y maintained during sort_values, sort_index, sel
+    sk2 = sk.sort_values("rmse")
+    assert all(sk2.data.x == pc.x)
+    assert all(sk2.data.y == pc.y)
+
+    sk3 = sk.sort_index()
+    assert all(sk3.data.x == pc.x)
+    assert all(sk3.data.y == pc.y)
+
+    sk4 = sk.sel(model="m1")
+    assert all(sk4.data.x == pc.x)
+    assert all(sk4.data.y == pc.y)
+
+    sa = sk.rmse  # SkillArray
+    assert all(sa.data.x == pc.x)
+    assert all(sa.data.y == pc.y)
+
+
+def test_xy_not_in_skill_tc(tc):
+    # point obs has x,y, track obs x, y are np.nan
+    sk = tc.skill()
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data
+    assert df.x.isna().all()
+    assert df.y.isna().all()
+
+
+def test_to_dataframe_pt(pc):
+    df = pc.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (5, 3)
+    assert list(df.columns) == ["Observation", "m1", "m2"]
+
+
+def test_to_dataframe_tc(tc):
+    df = tc.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (5, 5)
+    assert list(df.columns) == ["x", "y", "Observation", "m1", "m2"]
+
+
 # ======================== plotting ========================
 
 
