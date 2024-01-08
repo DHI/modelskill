@@ -29,7 +29,7 @@ from .model.factory import ModelResult
 from .model import model_result
 from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
 from .obs import observation, PointObservation, TrackObservation
-from .matching import compare, from_matched, match
+from .matching import compare, from_matched, match, match_1to1
 from .connection import Connector
 from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
@@ -71,6 +71,7 @@ __all__ = [
     "PointObservation",
     "TrackObservation",
     "match",
+    "match_1to1",
     "from_matched",
     "Comparer",
     "ComparerCollection",

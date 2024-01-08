@@ -213,12 +213,15 @@ def test_small_multi_model_shifted_time_match():
     # observation has four timesteps, but only three of them are in the Simple model and three in the NotSimple model
     # the number of overlapping points for all three datasets are 2, but three if we look at the models individually
 
-    cmp1 = ms.match(obs=obs, mod=mod)
+    cmp1 = ms.match_1to1(obs=obs, mod=mod)
     assert cmp1.n_points == 3
 
-    cmp2 = ms.match(obs=obs, mod=mod2)
+    cmp2 = ms.match_1to1(obs=obs, mod=mod2)
     assert cmp2.n_points == 3
 
+    obs = ms.observation(obs)
+    mod = ms.model_result(mod)
+    mod2 = ms.model_result(mod2)
     mcmp = ms.match(obs=obs, mod=[mod, mod2])
     assert mcmp.n_points == 2
 
@@ -398,11 +401,12 @@ def test_wind_directions():
     assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
 
 
-def test_specifying_mod_item_not_allowed_twice(o1, mr1):
-    # item was already specified in the construction of the DfsuModelResult
+# No longer relevant
+# def test_specifying_mod_item_not_allowed_twice(o1, mr1):
+#     # item was already specified in the construction of the DfsuModelResult
 
-    with pytest.raises(ValueError, match="item"):
-        ms.match(obs=o1, mod=mr1, mod_item=1)
+#     with pytest.raises(ValueError, match="item"):
+#         ms.match(obs=o1, mod=mr1, mod_item=1)
 
 
 def test_bad_model_input(o1):

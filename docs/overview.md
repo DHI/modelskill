@@ -14,11 +14,11 @@ If not, the `match()` function can be used to match the observations and model r
 
 If the observations and model results are not in the same data source (e.g. dfs0 file), 
 they will need to be defined and then matched in space and time with the `match()` function. 
-In simple cases, observations and model results can be defined directly in the `match()` function: 
+In simple cases, observations and model results can be defined directly in the `match_1to1()` function: 
 
 ```python
 import modelskill as ms
-cmp = ms.match("obs.dfs0", "model.dfs0", obs_item="obs_WL", mod_item="WL")
+cmp = ms.match_1to1("obs.dfs0", "model.dfs0", obs_item="obs_WL", mod_item="WL")
 ```
 
 But in most cases, the observations and model results will need to be defined separately first.
