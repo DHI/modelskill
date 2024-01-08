@@ -150,14 +150,63 @@ def from_matched(
     return cmp
 
 
+def match_1to1(
+    obs,
+    mod,
+    *,
+    obs_item=None,
+    mod_item=None,
+    gtype=None,
+    max_model_gap=None,
+):
+    """Match 1 observation with 1 model result of same geometry type
+
+    Parameters
+    ----------
+    obs : (str, Path, pd.DataFrame)
+        Observation to be compared
+    mod : (str, Path, pd.DataFrame)
+        Model result(s) to be compared
+    obs_item : int or str, optional
+        observation item, by default None
+    mod_item : (int, str), optional
+        model item, by default None
+    gtype : str, optional
+        Geometry type of the observation and model result. By default: 'point'.
+    max_model_gap : (float, optional)
+        Maximum time gap (s) in the model result (e.g. for event-based
+        model results), by default None
+
+    Returns
+    -------
+    Comparer
+        Comparer with matched data
+
+    See Also
+    --------
+    [from_matched][modelskill.from_matched]
+        Create a Comparer from observation and model results that are already matched
+    [match][modelskill.match]
+        Create a Comparer/ComparerCollection from multiple observations and model results
+    """
+    obs = _parse_single_obs(obs, obs_item, gtype=gtype)
+    mods = [_parse_single_model(mod, mod_item, gtype=gtype)]
+
+    raw_mod_data = {m.name: m.extract(obs) for m in mods}
+    matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
+    matched_data.attrs["weight"] = obs.weight
+
+    return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
+
+
 @overload
 def match(
     obs: PointObservation | TrackObservation,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[IdxOrNameTypes] = None,
-    mod_item: Optional[IdxOrNameTypes] = None,
-    gtype: Optional[GeometryTypes] = None,
+    obs_item: Optional[IdxOrNameTypes] = None,  # TODO: remove
+    mod_item: Optional[IdxOrNameTypes] = None,  # TODO: remove
+    gtype: Optional[GeometryTypes] = None,  # TODO: remove
     max_model_gap: Optional[float] = None,
 ) -> Comparer:
     ...
@@ -168,9 +217,9 @@ def match(
     obs: Iterable[PointObservation | TrackObservation],
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[IdxOrNameTypes] = None,
-    mod_item: Optional[IdxOrNameTypes] = None,
-    gtype: Optional[GeometryTypes] = None,
+    obs_item: Optional[IdxOrNameTypes] = None,  # TODO: remove
+    mod_item: Optional[IdxOrNameTypes] = None,  # TODO: remove
+    gtype: Optional[GeometryTypes] = None,  # TODO: remove
     max_model_gap: Optional[float] = None,
 ) -> ComparerCollection:
     ...
@@ -180,9 +229,9 @@ def match(
     obs,
     mod,
     *,
-    obs_item=None,
-    mod_item=None,
-    gtype=None,
+    obs_item=None,  # TODO: remove
+    mod_item=None,  # TODO: remove
+    gtype=None,  # TODO: remove
     max_model_gap=None,
 ):
     """Match observation and model result data in space and time
@@ -196,17 +245,10 @@ def match(
 
     Parameters
     ----------
-    obs : (str, Path, pd.DataFrame, Observation, Sequence[Observation])
+    obs : Observation or Sequence[Observation]
         Observation(s) to be compared
-    mod : (str, Path, pd.DataFrame, ModelResult, Sequence[ModelResult])
+    mod : ModelResult or Sequence[ModelResult]
         Model result(s) to be compared
-    obs_item : int or str, optional
-        observation item if obs is a file/dataframe, by default None
-    mod_item : (int, str), optional
-        model item if mod is a file/dataframe, by default None
-    gtype : (str, optional)
-        Geometry type of the model result (if mod is a file/dataframe).
-        If not specified, it will be guessed.
     max_model_gap : (float, optional)
         Maximum time gap (s) in the model result (e.g. for event-based
         model results), by default None
@@ -222,7 +264,11 @@ def match(
     --------
     [from_matched][modelskill.from_matched]
         Create a Comparer from observation and model results that are already matched
+    [match_1to1][modelskill.match_1to1]
+        Match 1 observation with 1 model result of same geometry type
     """
+    # TODO: raise Exception if gtype, obs_item or mod_item is given
+
     if isinstance(obs, get_args(ObsInputType)):
         return _single_obs_compare(
             obs,
@@ -506,6 +552,7 @@ def _parse_single_obs(
             return PointObservation(obs, item=item)
 
 
+# TODO: remove
 def _parse_models(
     mod: Any,  # TODO
     item: Optional[IdxOrNameTypes] = None,
@@ -535,7 +582,6 @@ def _parse_single_model(
         return mod
 
     try:
-        # return ModelResult(mod, item=item, gtype=gtype)
         return model_result(mod, item=item, gtype=gtype)
     except ValueError as e:
         raise ValueError(
