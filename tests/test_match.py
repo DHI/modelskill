@@ -87,13 +87,13 @@ def test_match_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
     assert cc["HKNA"].name == "HKNA"
 
 
-def test_match_dataarray(o1, o3):
+def test_match_from_dataarray(o1, o3):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]  # Skip warm-up period
 
     # Using a mikeio.DataArray instead of a Dfs file, makes it possible to select a subset of data
-
-    cc = ms.match([o1, o3], da)
+    mr = ms.DfsuModelResult(da)
+    cc = ms.match([o1, o3], mr)
     assert cc.n_models == 1
     assert cc["c2"].n_points == 41
 
@@ -101,7 +101,8 @@ def test_match_dataarray(o1, o3):
         0
     ]  # Spatio/temporal subset
 
-    cc2 = ms.match([o1, o3], da2)
+    mr2 = ms.DfsuModelResult(da2)
+    cc2 = ms.match([o1, o3], mr2)
     assert cc2["c2"].n_points == 19
 
 
@@ -374,7 +375,8 @@ def test_save_comparercollection(o1, o3, tmp_path):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]
 
-    cc = ms.match([o1, o3], da)
+    mr = ms.DfsuModelResult(da)
+    cc = ms.match([o1, o3], mr)
 
     fn = tmp_path / "cc.msk"
     cc.save(fn)
