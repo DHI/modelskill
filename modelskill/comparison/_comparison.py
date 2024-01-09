@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -11,6 +12,7 @@ from typing import (
     Union,
     Iterable,
     Protocol,
+    Serializable,
     Sequence,
     TYPE_CHECKING,
 )
@@ -613,6 +615,7 @@ class Comparer(Scoreable):
     @property
     def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
+        # we don't require the kind attribute to be "auxiliary"
         return list(
             [
                 k
@@ -639,6 +642,15 @@ class Comparer(Scoreable):
     def _unit_text(self) -> str:
         # Quantity name and unit as text suitable for plot labels
         return f"{self.quantity.name} [{self.quantity.unit}]"
+
+    @property
+    def attrs(self) -> dict[str, Any]:
+        """Attributes of the observation"""
+        return self.data.attrs
+
+    @attrs.setter
+    def attrs(self, value: dict[str, Serializable]) -> None:
+        self.data.attrs = value
 
     # TODO: is this the best way to copy (self.data.copy.. )
     def __copy__(self):
