@@ -894,31 +894,30 @@ class Comparer(Scoreable):
     ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
 
-        # df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
-        df = self.data.to_dataframe()
+        data = self.data.drop_vars("z", errors="ignore")
 
-        # this step is necessary since we keep arbitrary derived data in the dataset
-        id_cols = ["time"] + [c for c in df.columns if c not in self.mod_names]
+        # this step is necessary since we keep arbitrary derived data in the dataset, but not z
+        # i.e. using a hardcoded whitelist of variables to keep is less flexible
+        id_vars = [v for v in data.variables if v not in self.mod_names]
 
         attrs = (
-            {key: self.data.attrs.get(key, False) for key in attrs_keys}
+            {key: data.attrs.get(key, False) for key in attrs_keys}
             if attrs_keys
             else {}
         )
 
         df = (
-            self.data.to_dataframe()
+            data.to_dataframe()
             .reset_index(names="time")
             .melt(
                 value_vars=self.mod_names,
                 var_name="model",
                 value_name="mod_val",
-                id_vars=id_cols,
+                id_vars=id_vars,
             )
             .rename(columns={self._obs_str: "obs_val"})
             .assign(observation=self.name)
             .assign(**attrs)
-            .drop(columns=["z"])  # 🤔
             .astype({"model": "category", "observation": "category"})
         )
 
