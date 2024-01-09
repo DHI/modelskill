@@ -12,7 +12,6 @@ from typing import (
     Union,
     Iterable,
     Protocol,
-    Serializable,
     Sequence,
     TYPE_CHECKING,
 )
@@ -46,6 +45,8 @@ from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+Serializable = Union[str, int, float]
 
 
 class Scoreable(Protocol):
