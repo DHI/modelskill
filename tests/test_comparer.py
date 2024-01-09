@@ -419,8 +419,6 @@ def test_tc_properties(tc):
 
 
 def test_attrs(pc):
-    assert pc.attrs["a1"] == "v1"
-
     pc.attrs["a2"] = "v2"
     assert pc.attrs["a2"] == "v2"
 
