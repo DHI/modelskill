@@ -51,19 +51,16 @@ def _groupby_df(
 ) -> pd.DataFrame:
     def calc_metrics(group):
         row = {}
-        # row["x"] = group.x.first() if group.x.nunique() == 1 else np.nan
-        # row["y"] = group.y.first() if group.y.nunique() == 1 else np.nan
         row["n"] = len(group)
         for metric in metrics:
             row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
 
-    # .drop(columns=["x", "y"])
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
     # sort=False to avoid re-ordering compared to original cc (also for performance)
-    res = df.groupby(by=by, observed=False).apply(calc_metrics)
+    res = df.groupby(by=by, observed=False, sort=False).apply(calc_metrics)
 
     if n_min:
         # nan for all cols but n

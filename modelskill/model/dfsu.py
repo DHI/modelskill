@@ -252,8 +252,9 @@ class DfsuModelResult(SpatialField):
             ds_model.rename({self.sel_items.values: self.name}, inplace=True)
             aux_items = self.sel_items.aux
 
-        x_name = "Longitude" if "Longitude" in ds_model else "x"
-        y_name = "Latitude" if "Latitude" in ds_model else "y"
+        item_names = [i.name for i in ds_model.items]
+        x_name = "Longitude" if "Longitude" in item_names else "x"
+        y_name = "Latitude" if "Latitude" in item_names else "y"
 
         return TrackModelResult(
             data=ds_model.dropna(),  # TODO: not on aux cols

@@ -48,8 +48,8 @@ class SkillGridArray(SkillGridMixin):
 
     Examples
     --------
-    >>> ss = cc.gridded_skill()
-    >>> ss["bias"].plot()
+    >>> gs = cc.gridded_skill()
+    >>> gs["bias"].plot()
     """
 
     def __init__(self, data):
@@ -75,10 +75,10 @@ class SkillGridArray(SkillGridMixin):
 
         Examples
         --------
-        >>> ss = cc.gridded_skill()
-        >>> ss["bias"].plot()
-        >>> ss.rmse.plot(model='SW_1')
-        >>> ss.r2.plot(cmap='YlOrRd', figsize=(10,10))
+        >>> gs = cc.gridded_skill()
+        >>> gs["bias"].plot()
+        >>> gs.rmse.plot(model='SW_1')
+        >>> gs.r2.plot(cmap='YlOrRd', figsize=(10,10))
         """
         if model is None:
             da = self.data
@@ -113,14 +113,14 @@ class SkillGrid(SkillGridMixin):
 
     Examples
     --------
-    >>> ss = cc.gridded_skill()
-    >>> ss.metrics
+    >>> gs = cc.gridded_skill()
+    >>> gs.metrics
     ['n', 'bias', 'rmse', 'urmse', 'mae', 'cc', 'si', 'r2']
 
-    >>> ss.mod_names
+    >>> gs.mod_names
     ['SW_1', 'SW_2']
 
-    >>> ss.rmse.plot(model='SW_1')
+    >>> gs.sel(model='SW_1').rmse.plot()
     """
 
     def __init__(self, data, name: Optional[str] = None):
@@ -209,5 +209,11 @@ class SkillGrid(SkillGridMixin):
         return self[metric].plot(model=model, **kwargs)
 
     def to_dataframe(self):
-        """export as pandas.DataFrame"""
+        """Convert gridded skill data to pandas DataFrame
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
         return self.data.to_dataframe()

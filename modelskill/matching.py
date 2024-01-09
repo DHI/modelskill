@@ -189,7 +189,14 @@ def match(
     max_model_gap=None,
     spatial_interp_method: Optional[str] = None,
 ):
-    """Compare observations and model results
+    """Match observation and model result data in space and time
+
+    NOTE: In case of multiple model results with different time coverage,
+    only the _overlapping_ time period will be used! (intersection)
+
+    NOTE: In case of multiple observations, multiple models can _only_
+    be matched if they are _all_ of SpatialField type, e.g. DfsuModelResult
+    or GridModelResult.
 
     Parameters
     ----------
@@ -483,9 +490,14 @@ def _select_overlapping_trackdata_with_tolerance(
     df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
 
     # 2. remove model points outside observation track
+    n_points = len(df)
     keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
     keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
     df = df[keep_x & keep_y]
+    if n_points_removed := n_points - len(df):
+        warnings.warn(
+            f"Removed {n_points_removed} model points outside observation track (spatial_tolerance={spatial_tolerance})"
+        )
     return mri.data.sel(time=df.index)
 
 

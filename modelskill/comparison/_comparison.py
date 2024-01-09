@@ -973,9 +973,8 @@ class Comparer(Scoreable):
 
         df = cmp._to_long_dataframe()
         res = _groupby_df(df, by, metrics)
-        res["x"] = df.groupby(by=by, observed=False).x.first()
-        res["y"] = df.groupby(by=by, observed=False).y.first()
-        # TODO: set x,y to NaN if TrackObservation
+        res["x"] = np.nan if self.gtype == "track" else cmp.x
+        res["y"] = np.nan if self.gtype == "track" else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -1107,8 +1106,8 @@ class Comparer(Scoreable):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.gridded_skill(binsize=0.5)
-        >>> ds.coords
+        >>> gs = cc.gridded_skill(binsize=0.5)
+        >>> gs.data.coords
         Coordinates:
             observation   'alti'
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
@@ -1183,6 +1182,28 @@ class Comparer(Scoreable):
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
             )
         return cmp
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert matched data to pandas DataFrame
+
+        Include x, y coordinates only if gtype=track
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
+        if self.gtype == str(GeometryType.POINT):
+            # we remove the scalar coordinate variables as they
+            # will otherwise be columns in the dataframe
+            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        elif self.gtype == str(GeometryType.TRACK):
+            df = self.data.drop_vars(["z"]).to_dataframe()
+            # make sure that x, y cols are first
+            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            return df[cols]
+        else:
+            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def save(self, filename: Union[str, Path]) -> None:
         """Save to netcdf file
