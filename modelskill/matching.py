@@ -196,7 +196,9 @@ def match_1to1(
     """
     if isinstance(obs, (PointObservation, TrackObservation)):
         if obs_item is not None:
-            raise ValueError("obs_item is not needed when obs is a PointObservation or TrackObservation")
+            raise ValueError(
+                "obs_item is not needed when obs is a PointObservation or TrackObservation"
+            )
     else:
         obs = observation(obs, item=obs_item, gtype=gtype)
     if isinstance(mod, (PointModelResult, TrackModelResult)):
@@ -207,11 +209,12 @@ def match_1to1(
     else:
         mod = model_result(mod, item=mod_item, gtype=gtype)
 
-    raw_mod_data = {mod.name: mod.extract(obs)}
-    matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
-    matched_data.attrs["weight"] = obs.weight
+    return match(obs, mod, max_model_gap=max_model_gap)
+    # raw_mod_data = {mod.name: mod.extract(obs)}
+    # matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
+    # matched_data.attrs["weight"] = obs.weight
 
-    return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
+    # return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
 
 @overload
