@@ -428,19 +428,17 @@ class Comparer(Scoreable):
     modelskill.match, modelskill.from_matched
     """
 
-    data: xr.Dataset
-    raw_mod_data: Dict[str, TimeSeries]
     _obs_str = "Observation"
     plotter = ComparerPlotter
 
     def __init__(
         self,
         matched_data: xr.Dataset,
-        raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
+        raw_mod_data: Optional[Mapping[str, TimeSeries]] = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
-        self.raw_mod_data = (
-            raw_mod_data
+        self.raw_mod_data: Dict[str, TimeSeries] = (
+            dict(raw_mod_data)
             if raw_mod_data is not None
             else {
                 # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
@@ -483,7 +481,7 @@ class Comparer(Scoreable):
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
+        raw_mod_data: Optional[Mapping[str, TimeSeries]] = None,
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,

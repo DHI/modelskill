@@ -339,7 +339,7 @@ def compare(
 
 
 def _single_obs_compare(
-    obs: Observation,
+    obs: Union[PointObservation | TrackObservation],
     mod: Union[MRType, Sequence[MRType]],
     *,
     max_model_gap: Optional[float] = None,
@@ -352,7 +352,8 @@ def _single_obs_compare(
         if not isinstance(m, get_args(MRType)):
             raise ValueError(f"Unknown mod type {type(m)}")
 
-    raw_mod_data = {m.name: m.extract(obs) for m in mods}
+    # all model result types does not support extracting both point and trackobservation to the following line is deceptive
+    raw_mod_data = {m.name: m.extract(obs) for m in mods}  # type: ignore
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
     matched_data.attrs["weight"] = obs.weight
 
