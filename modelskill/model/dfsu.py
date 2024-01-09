@@ -152,7 +152,7 @@ class DfsuModelResult(SpatialField):
 
         method = spatial_interp_method or "contained"
         assert method in ["nearest", "contained", "inverse_distance"]
-        n_nearest = 3 if method == "inverse_distance" else 1
+        n_nearest = 5 if method == "inverse_distance" else 1
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
@@ -175,16 +175,14 @@ class DfsuModelResult(SpatialField):
                 da = self.data.isel(element=elemids)
                 ds_model = mikeio.Dataset({da.name: da})
         else:
-            # elemids = self.data.geometry.find_nearest_elements(
-            #     x, y, n_nearest=n_nearest
-            # )
             if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-                if n_nearest != 1:
-                    raise NotImplementedError(
-                        "spatial method 'inverse_distance' not implemented for dfsu extraction in MIKE IO; except if read to Dataset first!"
-                    )
-                elemids = self.data.geometry.find_nearest_elements(x, y, n_nearest=1)
-                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
+                elemids = self.data.geometry.find_nearest_elements(
+                    x, y, n_nearest=n_nearest
+                )
+                ds = self.data.read(elements=elemids, items=self.sel_items.all)
+                ds_model = (
+                    ds.interp(x=x, y=y, n_nearest=n_nearest) if n_nearest > 1 else ds
+                )
             elif isinstance(self.data, mikeio.Dataset):
                 ds_model = self.data[self.sel_items.all].interp(
                     x=x, y=y, n_nearest=n_nearest
