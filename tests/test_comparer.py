@@ -418,6 +418,21 @@ def test_tc_properties(tc):
     assert np.all(tc.raw_mod_data["m1"].x == [10.1, 10.2, 10.3, 10.4, 10.5, 10.6])
 
 
+def test_attrs(pc):
+    pc.attrs["a2"] = "v2"
+    assert pc.attrs["a2"] == "v2"
+
+    pc.data.attrs["version"] = 42
+    assert pc.attrs["version"] == 42
+
+    pc.attrs["version"] = 43
+    assert pc.attrs["version"] == 43
+
+    # remove all attributes and add a new one
+    pc.attrs = {"version": 44}
+    assert pc.attrs["version"] == 44
+
+
 def test_pc_sel_time(pc):
     pc2 = pc.sel(time=slice("2019-01-03", "2019-01-04"))
     assert pc2.n_points == 2
