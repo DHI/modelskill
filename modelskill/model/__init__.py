@@ -5,6 +5,7 @@ from .point import PointModelResult
 from .track import TrackModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
+from .dummy import DummyModelResult
 
 __all__ = [
     "PointModelResult",
@@ -12,4 +13,5 @@ __all__ = [
     "DfsuModelResult",
     "GridModelResult",
     "model_result",
+    "DummyModelResult",
 ]

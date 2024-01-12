@@ -22,6 +22,7 @@ import xarray as xr
 
 import mikeio
 
+
 from . import model_result, Quantity
 from .timeseries import TimeSeries
 from .types import GeometryType, Period
@@ -29,6 +30,7 @@ from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
 from .model.point import PointModelResult
+from .model.dummy import DummyModelResult
 from .obs import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
@@ -51,6 +53,7 @@ MRInputType = Union[
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
+    DummyModelResult,
 ]
 ObsInputType = Union[
     str,
@@ -526,18 +529,27 @@ def _parse_single_model(
     gtype: Optional[GeometryTypes] = None,
 ) -> Any:  # TODO
     if isinstance(
-        mod, (DfsuModelResult, GridModelResult, TrackModelResult, PointModelResult)
+        mod,
+        (
+            str,
+            Path,
+            pd.DataFrame,
+            xr.Dataset,
+            xr.DataArray,
+            mikeio.Dfs0,
+            mikeio.Dataset,
+            mikeio.DataArray,
+            mikeio.dfsu.Dfsu2DH,
+        ),
     ):
-        if item is not None:
+        try:
+            return model_result(mod, item=item, gtype=gtype)
+        except ValueError as e:
             raise ValueError(
-                "mod_item argument not allowed if mod is an modelskill.ModelResult"
+                f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
             )
+    else:
+        if item is not None:
+            raise ValueError("item argument not allowed if mod is a ModelResult type")
+        # assume it is already a model result
         return mod
-
-    try:
-        # return ModelResult(mod, item=item, gtype=gtype)
-        return model_result(mod, item=item, gtype=gtype)
-    except ValueError as e:
-        raise ValueError(
-            f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
-        )
