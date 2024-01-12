@@ -110,13 +110,13 @@ class DfsuModelResult(SpatialField):
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
         spatial_method : Optional[str], optional
-            spatial interpolation method, 'nearest', 'contained' (=isel),
+            spatial selection/interpolation method, 'nearest', 'contained' (=isel),
             'inverse_distance' (with 3 nearest points), by default None = 'contained'
 
         Returns
         -------
         PointModelResult or TrackModelResult
-            extracted modelresult
+            extracted modelresult with the same geometry as the observation
         """
         method = self._parse_spatial_method(spatial_method)
 
