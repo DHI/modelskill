@@ -144,14 +144,18 @@ def test_grid_aux_items_fail(ERA5_DutchCoast_nc):
 
 def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     pmr = mr_ERA5_swh.extract(pointobs_epl_hm0)
-    ds = pmr.data
 
     assert isinstance(pmr, ms.PointModelResult)
     assert pmr.time[0] == datetime(2017, 10, 27, 0, 0, 0)
     assert pmr.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
     assert pmr.n_points == 67
-    assert len(ds.data_vars) == 1
-    assert pytest.approx(ds.to_pandas().iloc[0, 0]) == 0.875528
+    assert len(pmr.data.data_vars) == 1
+    assert pytest.approx(pmr.data.to_pandas().iloc[0, 0]) == 0.847677
+
+    # default spatial_method='linear'
+    pmr2 = mr_ERA5_swh.extract(pointobs_epl_hm0, spatial_method="nearest")
+    assert pmr2.n_points == 67
+    assert pytest.approx(pmr2.data.to_pandas().iloc[0, 0]) == 0.875528
 
 
 def test_grid_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):

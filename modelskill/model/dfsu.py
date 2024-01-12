@@ -98,32 +98,65 @@ class DfsuModelResult(SpatialField):
     def _in_domain(self, x: float, y: float) -> bool:
         return self.data.geometry.contains([x, y])  # type: ignore
 
-    def extract(self, observation: Observation) -> PointModelResult | TrackModelResult:
+    def extract(
+        self, observation: Observation, spatial_method: Optional[str] = None
+    ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
+
+        Note: this method is typically not called directly, but by the match() method.
 
         Parameters
         ----------
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
+        spatial_method : Optional[str], optional
+            spatial selection/interpolation method, 'contained' (=isel),
+            'nearest', 'inverse_distance' (with 5 nearest points),
+            by default None = 'inverse_distance'
 
         Returns
         -------
         PointModelResult or TrackModelResult
-            extracted modelresult
+            extracted modelresult with the same geometry as the observation
         """
+        method = self._parse_spatial_method(spatial_method)
+
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
-            return self.extract_point(observation)
+            return self._extract_point(observation, spatial_method=method)
         elif isinstance(observation, TrackObservation):
-            return self.extract_track(observation)
+            return self._extract_track(observation, spatial_method=method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
-    def extract_point(self, observation: PointObservation) -> PointModelResult:
-        """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
-        given a PointObservation. No time interpolation is done!"""
+    @staticmethod
+    def _parse_spatial_method(method):
+        if method == "isel":
+            method = "contained"
+        if method == "IDW":
+            method = "inverse_distance"
+        if method is None:
+            return None  # decide default later
+        elif method not in ["nearest", "contained", "inverse_distance"]:
+            raise ValueError(
+                f"spatial_method for Dfsu must be 'nearest', 'contained', or 'inverse_distance'. Not {method}."
+            )
+        return method
+
+    def _extract_point(
+        self, observation: PointObservation, spatial_method: Optional[str] = None
+    ) -> PointModelResult:
+        """Spatially extract a PointModelResult from a DfsuModelResult
+        given a PointObservation. No time interpolation is done!
+
+        Note: 'inverse_distance' method uses 5 nearest points and is the default.
+        """
+
+        method = spatial_method or "inverse_distance"
+        assert method in ["nearest", "contained", "inverse_distance"]
+        n_nearest = 5 if method == "inverse_distance" else 1
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
@@ -135,19 +168,36 @@ class DfsuModelResult(SpatialField):
                 f"PointObservation '{observation.name}' ({x}, {y}) outside model domain!"
             )
 
-        # TODO: interp2d
-        xy = np.atleast_2d([x, y])
-        elemids = self.data.geometry.find_index(coords=xy)
-        if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-            ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
-            aux_items = self.sel_items.aux
-        elif isinstance(self.data, mikeio.Dataset):
-            ds_model = self.data[self.sel_items.all].isel(element=elemids)
-            aux_items = self.sel_items.aux
-        elif isinstance(self.data, mikeio.DataArray):
-            da = self.data.isel(element=elemids)
-            ds_model = mikeio.Dataset({da.name: da})
-            aux_items = None
+        if method == "contained":
+            xy = np.atleast_2d([x, y])
+            elemids = self.data.geometry.find_index(coords=xy)
+            if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
+                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
+            elif isinstance(self.data, mikeio.Dataset):
+                ds_model = self.data[self.sel_items.all].isel(element=elemids)
+            elif isinstance(self.data, mikeio.DataArray):
+                da = self.data.isel(element=elemids)
+                ds_model = mikeio.Dataset({da.name: da})
+        else:
+            if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
+                elemids = self.data.geometry.find_nearest_elements(
+                    x, y, n_nearest=n_nearest
+                )
+                ds = self.data.read(elements=elemids, items=self.sel_items.all)
+                ds_model = (
+                    ds.interp(x=x, y=y, n_nearest=n_nearest) if n_nearest > 1 else ds
+                )
+            elif isinstance(self.data, mikeio.Dataset):
+                ds_model = self.data[self.sel_items.all].interp(
+                    x=x, y=y, n_nearest=n_nearest
+                )
+            elif isinstance(self.data, mikeio.DataArray):
+                da = self.data.interp(x=x, y=y, n_nearest=n_nearest)
+                ds_model = mikeio.Dataset({da.name: da})
+
+        aux_items = (
+            None if isinstance(self.data, mikeio.DataArray) else self.sel_items.aux
+        )
 
         assert isinstance(ds_model, mikeio.Dataset)
 
@@ -165,9 +215,22 @@ class DfsuModelResult(SpatialField):
             aux_items=aux_items,
         )
 
-    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def _extract_track(
+        self, observation: TrackObservation, spatial_method: Optional[str] = None
+    ) -> TrackModelResult:
         """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
-        given a TrackObservation."""
+        given a TrackObservation.
+
+        Wraps MIKEIO's extract_track method (which has the default method='nearest').
+
+        MIKE IO's extract_track, inverse_distance method, uses 5 nearest points.
+        """
+        method = spatial_method or "inverse_distance"
+        if method == "contained":
+            raise NotImplementedError(
+                "spatial method 'contained' (=isel) not implemented for track extraction in MIKE IO"
+            )
+        assert method in ["nearest", "inverse_distance"]
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
@@ -176,16 +239,18 @@ class DfsuModelResult(SpatialField):
         track = observation.data.to_dataframe()
 
         if isinstance(self.data, mikeio.DataArray):
-            ds_model = self.data.extract_track(track=track)
+            ds_model = self.data.extract_track(track=track, method=method)
             ds_model.rename({self.data.name: self.name}, inplace=True)
             aux_items = None
         else:
             if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
                 ds_model = self.data.extract_track(
-                    track=track, items=self.sel_items.all
+                    track=track, items=self.sel_items.all, method=method
                 )
             elif isinstance(self.data, mikeio.Dataset):
-                ds_model = self.data[self.sel_items.all].extract_track(track=track)
+                ds_model = self.data[self.sel_items.all].extract_track(
+                    track=track, method=method
+                )
             ds_model.rename({self.sel_items.values: self.name}, inplace=True)
             aux_items = self.sel_items.aux
 

@@ -531,9 +531,8 @@ def test_compare_model_vs_dummy_for_track(mr1, o3):
 
     cmp2 = ms.match(obs=o3, mod=[mr1, mr])
 
-    assert cmp2.score()["dummy"] == pytest.approx(
-        1.225945
-    )  # not identical to above since it is evaluated on a subset of the data
-    assert cmp2.score()["SW_1"] == pytest.approx(
-        0.35179650395619716
-    )  # better than dummy 🙂
+    # not identical to above since it is evaluated on a subset of the data
+    assert cmp2.score()["dummy"] == pytest.approx(1.225945)  
+    
+    # better than dummy 🙂
+    assert cmp2.score()["SW_1"] == pytest.approx(0.3524703)  

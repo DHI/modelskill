@@ -6,6 +6,7 @@ import warnings
 from typing import (
     Dict,
     Iterable,
+    Collection,
     List,
     Literal,
     Optional,
@@ -162,6 +163,7 @@ def match(
     mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_method: Optional[str] = None,
 ) -> Comparer:
     ...
 
@@ -175,6 +177,7 @@ def match(
     mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_method: Optional[str] = None,
 ) -> ComparerCollection:
     ...
 
@@ -187,6 +190,7 @@ def match(
     mod_item=None,
     gtype=None,
     max_model_gap=None,
+    spatial_method: Optional[str] = None,
 ):
     """Match observation and model result data in space and time
 
@@ -213,6 +217,13 @@ def match(
     max_model_gap : (float, optional)
         Maximum time gap (s) in the model result (e.g. for event-based
         model results), by default None
+    spatial_method : str, optional
+        For Dfsu- and GridModelResult, spatial interpolation/selection method.
+
+        - For DfsuModelResult, one of: 'contained' (=isel), 'nearest',
+        'inverse_distance' (with 5 nearest points), by default "inverse_distance".
+        - For GridModelResult, passed to xarray.interp() as method argument,
+        by default 'linear'.
 
     Returns
     -------
@@ -234,11 +245,12 @@ def match(
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
+            spatial_method=spatial_method,
         )
 
-    assert isinstance(obs, Iterable)
+    assert isinstance(obs, Collection)
 
-    if len(obs) > 1 and isinstance(mod, Iterable) and len(mod) > 1:
+    if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
         if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
             raise ValueError(
                 """
@@ -260,6 +272,7 @@ def match(
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
+            spatial_method=spatial_method,
         )
         for o in obs
     ]
@@ -303,13 +316,14 @@ def _single_obs_compare(
     mod_item: Optional[int | str] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_method: Optional[str] = None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
 
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
-    raw_mod_data = {m.name: m.extract(obs) for m in mods}
+    raw_mod_data = {m.name: m.extract(obs, spatial_method) for m in mods}
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
     matched_data.attrs["weight"] = obs.weight
 

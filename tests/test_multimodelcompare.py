@@ -40,7 +40,7 @@ def o3():
 
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3):
-    return ms.match([o1, o2, o3], [mr1, mr2])
+    return ms.match([o1, o2, o3], [mr1, mr2], spatial_method="nearest")
 
 
 def test_compare(mr1, mr2, o1, o2, o3):
