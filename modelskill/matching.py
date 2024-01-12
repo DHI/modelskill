@@ -217,10 +217,10 @@ def match(
     spatial_method : str, optional
         For Dfsu- and GridModelResult, spatial interpolation/selection method.
 
-        - For DfsuModelResult, one of: 'contained' (=isel), 'nearest' (not recommended),
+        - For DfsuModelResult, one of: 'contained' (=isel), 'nearest',
         'inverse_distance' (with 5 nearest points), by default "inverse_distance".
         - For GridModelResult, passed to xarray.interp() as method argument,
-        by default "linear".
+        by default 'linear'.
 
     Returns
     -------

@@ -103,15 +103,16 @@ class DfsuModelResult(SpatialField):
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
-        Note: this method is typically not called directly, but through the match() method.
+        Note: this method is typically not called directly, but by the match() method.
 
         Parameters
         ----------
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
         spatial_method : Optional[str], optional
-            spatial selection/interpolation method, 'nearest', 'contained' (=isel),
-            'inverse_distance' (with 3 nearest points), by default None = 'contained'
+            spatial selection/interpolation method, 'contained' (=isel),
+            'nearest', 'inverse_distance' (with 5 nearest points),
+            by default None = 'inverse_distance'
 
         Returns
         -------
@@ -153,7 +154,7 @@ class DfsuModelResult(SpatialField):
         Note: 'inverse_distance' method uses 5 nearest points and is the default.
         """
 
-        method = spatial_method or "contained"
+        method = spatial_method or "inverse_distance"
         assert method in ["nearest", "contained", "inverse_distance"]
         n_nearest = 5 if method == "inverse_distance" else 1
 
