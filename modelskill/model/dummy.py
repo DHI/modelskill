@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Literal
+from typing import Literal, Optional
 
 import pandas as pd
 
@@ -54,26 +54,27 @@ class DummyModelResult:
         self.strategy = strategy
 
     def extract(
-        self, observation: PointObservation | TrackObservation
+        self,
+        observation: PointObservation | TrackObservation,
+        spatial_method: Optional[str] = None,
     ) -> PointModelResult | TrackModelResult:
+        if spatial_method is not None:
+            raise NotImplementedError(
+                "spatial interpolation not possible when matching point model results with point observations"
+            )
+
+        da = observation.data[observation.name].copy()
+        if self.strategy == "mean":
+            da[:] = da.mean()
+        else:
+            da[:] = self.data
+
         if isinstance(observation, PointObservation):
-            da = observation.data[observation.name].copy()
-            if self.strategy == "mean":
-                da[:] = da.mean()
-            else:
-                da[:] = self.data
-            pmr = PointModelResult(
+            return PointModelResult(
                 data=da, x=observation.x, y=observation.y, name=self.name
             )
-            return pmr
 
-        if isinstance(observation, TrackObservation):
-            da = observation.data[observation.name].copy()
-            if self.strategy == "mean":
-                da[:] = da.mean()
-            else:
-                da[:] = self.data
-
+        elif isinstance(observation, TrackObservation):
             data = pd.DataFrame(
                 {
                     "x": observation.x,
@@ -82,5 +83,8 @@ class DummyModelResult:
                 },
                 index=da.time,
             )
-            tmr = TrackModelResult(data=data, name=self.name)
-            return tmr
+            return TrackModelResult(data=data, name=self.name)
+        else:
+            raise ValueError(
+                f"observation must be a PointObservation or TrackObservation not {type(observation)}"
+            )
