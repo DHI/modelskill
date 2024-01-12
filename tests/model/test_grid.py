@@ -152,8 +152,8 @@ def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     assert len(pmr.data.data_vars) == 1
     assert pytest.approx(pmr.data.to_pandas().iloc[0, 0]) == 0.847677
 
-    # default spatial_interp_method='linear'
-    pmr2 = mr_ERA5_swh.extract(pointobs_epl_hm0, spatial_interp_method="nearest")
+    # default spatial_method='linear'
+    pmr2 = mr_ERA5_swh.extract(pointobs_epl_hm0, spatial_method="nearest")
     assert pmr2.n_points == 67
     assert pytest.approx(pmr2.data.to_pandas().iloc[0, 0]) == 0.875528
 

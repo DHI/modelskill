@@ -112,7 +112,7 @@ class GridModelResult(SpatialField):
     def extract(
         self,
         observation: PointObservation | TrackObservation,
-        spatial_interp_method: Optional[str] = None,
+        spatial_method: Optional[str] = None,
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
@@ -122,7 +122,7 @@ class GridModelResult(SpatialField):
         ----------
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
-        spatial_interp_method : Optional[str], optional
+        spatial_method : Optional[str], optional
             method in xarray.Dataset.interp, typically either "nearest" or
             "linear", by default None = 'linear'
 
@@ -133,20 +133,20 @@ class GridModelResult(SpatialField):
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
-            return self._extract_point(observation, spatial_interp_method)
+            return self._extract_point(observation, spatial_method)
         elif isinstance(observation, TrackObservation):
-            return self._extract_track(observation, spatial_interp_method)
+            return self._extract_track(observation, spatial_method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
     def _extract_point(
-        self, observation: PointObservation, spatial_interp_method: Optional[str] = None
+        self, observation: PointObservation, spatial_method: Optional[str] = None
     ) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a PointObservation. No time interpolation is done!"""
-        method: str = spatial_interp_method or "linear"
+        method: str = spatial_method or "linear"
 
         x, y = observation.x, observation.y
         if (x is None) or (y is None):
@@ -168,7 +168,7 @@ class GridModelResult(SpatialField):
         df = ds.to_dataframe().drop(columns=["x", "y"]).dropna()
         if len(df) == 0:
             raise ValueError(
-                f"Spatial point extraction failed for PointObservation '{observation.name}' in GridModelResult '{self.name}'! (is point outside model domain? Consider spatial_interp_method='nearest')"
+                f"Spatial point extraction failed for PointObservation '{observation.name}' in GridModelResult '{self.name}'! (is point outside model domain? Consider spatial_method='nearest')"
             )
         df = df.rename(columns={self.sel_items.values: self.name})
 
@@ -183,11 +183,11 @@ class GridModelResult(SpatialField):
         )
 
     def _extract_track(
-        self, observation: TrackObservation, spatial_interp_method: Optional[str] = None
+        self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult:
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
-        method: str = spatial_interp_method or "linear"
+        method: str = spatial_method or "linear"
 
         obs_df = observation.data.to_dataframe()
 

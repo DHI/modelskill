@@ -68,11 +68,11 @@ class TrackModelResult(TimeSeries):
         super().__init__(data=data)
 
     def extract(
-        self, obs: TrackObservation, spatial_interp_method: Optional[str] = None
+        self, obs: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult:
         if not isinstance(obs, TrackObservation):
             raise ValueError(f"obs must be a TrackObservation not {type(obs)}")
-        if spatial_interp_method is not None:
+        if spatial_method is not None:
             raise NotImplementedError(
                 "spatial interpolation not possible when matching track model results with track observations"
             )

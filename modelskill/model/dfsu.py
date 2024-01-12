@@ -99,7 +99,7 @@ class DfsuModelResult(SpatialField):
         return self.data.geometry.contains([x, y])  # type: ignore
 
     def extract(
-        self, observation: Observation, spatial_interp_method: Optional[str] = None
+        self, observation: Observation, spatial_method: Optional[str] = None
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
 
@@ -109,7 +109,7 @@ class DfsuModelResult(SpatialField):
         ----------
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
-        spatial_interp_method : Optional[str], optional
+        spatial_method : Optional[str], optional
             spatial interpolation method, 'nearest', 'contained' (=isel),
             'inverse_distance' (with 3 nearest points), by default None = 'contained'
 
@@ -118,20 +118,20 @@ class DfsuModelResult(SpatialField):
         PointModelResult or TrackModelResult
             extracted modelresult
         """
-        method = self._parse_spatial_interp_method(spatial_interp_method)
+        method = self._parse_spatial_method(spatial_method)
 
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
-            return self._extract_point(observation, spatial_interp_method=method)
+            return self._extract_point(observation, spatial_method=method)
         elif isinstance(observation, TrackObservation):
-            return self._extract_track(observation, spatial_interp_method=method)
+            return self._extract_track(observation, spatial_method=method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
     @staticmethod
-    def _parse_spatial_interp_method(method):
+    def _parse_spatial_method(method):
         if method == "isel":
             method = "contained"
         if method == "IDW":
@@ -140,17 +140,17 @@ class DfsuModelResult(SpatialField):
             return None  # decide default later
         elif method not in ["nearest", "contained", "inverse_distance"]:
             raise ValueError(
-                f"spatial_interp_method for Dfsu must be 'nearest', 'contained', or 'inverse_distance'. Not {method}."
+                f"spatial_method for Dfsu must be 'nearest', 'contained', or 'inverse_distance'. Not {method}."
             )
         return method
 
     def _extract_point(
-        self, observation: PointObservation, spatial_interp_method: Optional[str] = None
+        self, observation: PointObservation, spatial_method: Optional[str] = None
     ) -> PointModelResult:
         """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
         given a PointObservation. No time interpolation is done!"""
 
-        method = spatial_interp_method or "contained"
+        method = spatial_method or "contained"
         assert method in ["nearest", "contained", "inverse_distance"]
         n_nearest = 5 if method == "inverse_distance" else 1
 
@@ -212,7 +212,7 @@ class DfsuModelResult(SpatialField):
         )
 
     def _extract_track(
-        self, observation: TrackObservation, spatial_interp_method: Optional[str] = None
+        self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult:
         """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
         given a TrackObservation.
@@ -221,7 +221,7 @@ class DfsuModelResult(SpatialField):
 
         MIKE IO's extract_track, inverse_distance method, uses 5 nearest points.
         """
-        method = spatial_interp_method or "nearest"
+        method = spatial_method or "nearest"
         if method == "contained":
             raise NotImplementedError(
                 "spatial method 'contained' (=isel) not implemented for track extraction in MIKE IO"

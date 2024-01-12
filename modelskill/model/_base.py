@@ -75,16 +75,16 @@ class SpatialField(Protocol):
     def extract(
         self,
         observation: PointObservation | TrackObservation,
-        spatial_interp_method: Optional[str] = None,
+        spatial_method: Optional[str] = None,
     ) -> PointModelResult | TrackModelResult:
         ...
 
     def _extract_point(
-        self, observation: PointObservation, spatial_interp_method: Optional[str] = None
+        self, observation: PointObservation, spatial_method: Optional[str] = None
     ) -> PointModelResult:
         ...
 
     def _extract_track(
-        self, observation: TrackObservation, spatial_interp_method: Optional[str] = None
+        self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult:
         ...

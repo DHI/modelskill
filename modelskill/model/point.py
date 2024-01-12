@@ -62,11 +62,11 @@ class PointModelResult(TimeSeries):
         super().__init__(data=data)
 
     def extract(
-        self, obs: PointObservation, spatial_interp_method: Optional[str] = None
+        self, obs: PointObservation, spatial_method: Optional[str] = None
     ) -> PointModelResult:
         if not isinstance(obs, PointObservation):
             raise ValueError(f"obs must be a PointObservation not {type(obs)}")
-        if spatial_interp_method is not None:
+        if spatial_method is not None:
             raise NotImplementedError(
                 "spatial interpolation not possible when matching point model results with point observations"
             )
