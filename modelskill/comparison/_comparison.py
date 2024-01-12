@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -44,6 +45,8 @@ from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+Serializable = Union[str, int, float]
 
 
 class Scoreable(Protocol):
@@ -613,6 +616,7 @@ class Comparer(Scoreable):
     @property
     def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
+        # we don't require the kind attribute to be "auxiliary"
         return list(
             [
                 k
@@ -639,6 +643,15 @@ class Comparer(Scoreable):
     def _unit_text(self) -> str:
         # Quantity name and unit as text suitable for plot labels
         return f"{self.quantity.name} [{self.quantity.unit}]"
+
+    @property
+    def attrs(self) -> dict[str, Any]:
+        """Attributes of the observation"""
+        return self.data.attrs
+
+    @attrs.setter
+    def attrs(self, value: dict[str, Serializable]) -> None:
+        self.data.attrs = value
 
     # TODO: is this the best way to copy (self.data.copy.. )
     def __copy__(self):
@@ -889,22 +902,38 @@ class Comparer(Scoreable):
         d = d.dropna(dim="time", how="all")
         return Comparer.from_matched_data(d, self.raw_mod_data)
 
-    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
-        """Convert single model data to pandas DataFrame"""
-
-        df = self.data.drop_vars(["z"]).to_dataframe().copy()
-        other_models = [m for m in self.mod_names if m is not mod_name]
-        df = df.drop(columns=other_models)
-        df = df.rename(columns={mod_name: "mod_val", self._obs_str: "obs_val"})
-        df["model"] = mod_name
-        df["observation"] = self.name
-        return df
-
-    def _to_long_dataframe(self) -> pd.DataFrame:
+    def _to_long_dataframe(
+        self, attrs_keys: Iterable[str] | None = None
+    ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
-        df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
-        df["model"] = df["model"].astype("category")
-        df["observation"] = df["observation"].astype("category")
+
+        data = self.data.drop_vars("z", errors="ignore")
+
+        # this step is necessary since we keep arbitrary derived data in the dataset, but not z
+        # i.e. using a hardcoded whitelist of variables to keep is less flexible
+        id_vars = [v for v in data.variables if v not in self.mod_names]
+
+        attrs = (
+            {key: data.attrs.get(key, False) for key in attrs_keys}
+            if attrs_keys
+            else {}
+        )
+
+        df = (
+            data.to_dataframe()
+            .reset_index(names="time")
+            .melt(
+                value_vars=self.mod_names,
+                var_name="model",
+                value_name="mod_val",
+                id_vars=id_vars,
+            )
+            .rename(columns={self._obs_str: "obs_val"})
+            .assign(observation=self.name)
+            .assign(**attrs)
+            .astype({"model": "category", "observation": "category"})
+        )
+
         return df
 
     def skill(

@@ -418,6 +418,21 @@ def test_tc_properties(tc):
     assert np.all(tc.raw_mod_data["m1"].x == [10.1, 10.2, 10.3, 10.4, 10.5, 10.6])
 
 
+def test_attrs(pc):
+    pc.attrs["a2"] = "v2"
+    assert pc.attrs["a2"] == "v2"
+
+    pc.data.attrs["version"] = 42
+    assert pc.attrs["version"] == 42
+
+    pc.attrs["version"] = 43
+    assert pc.attrs["version"] == 43
+
+    # remove all attributes and add a new one
+    pc.attrs = {"version": 44}
+    assert pc.attrs["version"] == 44
+
+
 def test_pc_sel_time(pc):
     pc2 = pc.sel(time=slice("2019-01-03", "2019-01-04"))
     assert pc2.n_points == 2
@@ -566,7 +581,8 @@ def test_pc_to_long_dataframe(pc):
     # private method testing
     df = pc._to_long_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (10, 6)
+    assert df.shape == (10, 7)
+    assert "time" in df.columns
     assert "mod_val" in df.columns
     assert "obs_val" in df.columns
     assert "x" in df.columns
@@ -590,7 +606,7 @@ def test_pc_to_long_dataframe_add_col(pc):
     pc.data["derived"] = pc.data.m1 + pc.data.m2
     df = pc._to_long_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (10, 7)
+    assert df.shape == (10, 8)
     assert "derived" in df.columns
     assert df.derived.dtype == "float64"
 
@@ -616,6 +632,19 @@ def test_skill_dt(pc):
     assert list(sk.data.index.names) == ["model", "weekday"]
     assert list(sk.data.index.levels[0]) == ["m1", "m2"]
     assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
+
+
+def test_skill_freq(pc):
+    assert pc.time.freq == "D"
+
+    # aggregate to 2 days
+    sk = pc.skill(by="freq:2D")
+    assert len(sk.to_dataframe()) == 3
+
+    # aggregate to 12 hours (up-sampling) doesn't interpolate
+    sk2 = pc.skill(by="freq:12H")
+    assert len(sk2.to_dataframe()) == 9
+    assert np.isnan(sk2.to_dataframe()["rmse"][3])
 
 
 def test_xy_in_skill_pt(pc):
