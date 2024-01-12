@@ -147,8 +147,11 @@ class DfsuModelResult(SpatialField):
     def _extract_point(
         self, observation: PointObservation, spatial_method: Optional[str] = None
     ) -> PointModelResult:
-        """Spatially extract a PointModelResult from a DfsuModelResult (when data is a Dfsu object),
-        given a PointObservation. No time interpolation is done!"""
+        """Spatially extract a PointModelResult from a DfsuModelResult
+        given a PointObservation. No time interpolation is done!
+
+        Note: 'inverse_distance' method uses 5 nearest points and is the default.
+        """
 
         method = spatial_method or "contained"
         assert method in ["nearest", "contained", "inverse_distance"]
@@ -221,7 +224,7 @@ class DfsuModelResult(SpatialField):
 
         MIKE IO's extract_track, inverse_distance method, uses 5 nearest points.
         """
-        method = spatial_method or "nearest"
+        method = spatial_method or "inverse_distance"
         if method == "contained":
             raise NotImplementedError(
                 "spatial method 'contained' (=isel) not implemented for track extraction in MIKE IO"

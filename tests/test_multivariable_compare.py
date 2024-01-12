@@ -121,10 +121,12 @@ def test_mv_mm_mean_skill(cc):
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "quantity"
     idx = ("SW_1", "Wind speed")
-    assert pytest.approx(df.loc[idx].r2) == 0.63344531
+    assert pytest.approx(df.loc[idx].r2) == 0.6392425
+    # spatial_interp nearest: 0.63344531
 
     df = cc.sel(quantity="Significant wave height").mean_skill().to_dataframe()
-    assert pytest.approx(df.loc["SW_1"].cc) == 0.963095
+    assert pytest.approx(df.loc["SW_1"].cc) == 0.9638679
+    # spatial_interp nearest: 0.963095
 
 
 def test_mv_mm_scatter(cc):
