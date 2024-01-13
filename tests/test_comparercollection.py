@@ -338,14 +338,39 @@ def test_skill_by_attrs_observed(cc):
 
     sk = cc.skill(by="attrs:use")  # observed=False is default
     assert len(sk) == 2
-    assert sk.data.index[0] is False  # note sorted by df.groupby !
-    assert sk.data.index[1] == "DA"
+    assert sk.data.index[0] == "DA"
+    assert sk.data.index[1] is False
     assert sk.data.index.name == "use"
 
     sk = cc.skill(by="attrs:use", observed=True)
     assert len(sk) == 1
     assert sk.data.index[0] == "DA"
     assert sk.data.index.name == "use"
+
+
+def test_xy_in_skill(cc):
+    # point obs has x,y, track obs x, y are np.nan
+    sk = cc.skill()
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data.reset_index()
+    df_track = df.loc[df.observation == "fake track obs"]
+    assert df_track.x.isna().all()
+    assert df_track.y.isna().all()
+    df_point = df.loc[df.observation == "fake point obs"]
+    assert all(df_point.x == cc[0].x)
+    assert all(df_point.y == cc[0].y)
+
+
+def test_xy_in_skill_no_obs(cc):
+    # if no observation column then no x, y information!
+    # e.g. if we filter by gtype (in this case 1 per obs), no x, y information
+    sk = cc.skill(by=["attrs:gtype", "model"])
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data.reset_index()
+    assert df.x.isna().all()
+    assert df.y.isna().all()
 
 
 # ======================== load/save ========================

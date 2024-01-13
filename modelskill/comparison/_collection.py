@@ -12,6 +12,7 @@ from typing import (
     Iterable,
     overload,
     Hashable,
+    Tuple,
 )
 import warnings
 import zipfile
@@ -63,26 +64,13 @@ def _get_deprecated_obs_var_args(kwargs):
     return observation, variable
 
 
-def _all_df_template(n_quantities: int = 1):
-    template = {
-        "model": pd.Series([], dtype="category"),
-        "observation": pd.Series([], dtype="category"),
-    }
-    if n_quantities > 1:
-        template["quantity"] = pd.Series([], dtype="category")
-
-    template["x"] = pd.Series([], dtype="float")
-    template["y"] = pd.Series([], dtype="float")
-    template["mod_val"] = pd.Series([], dtype="float")
-    template["obs_val"] = pd.Series([], dtype="float")
-    res = pd.DataFrame(template)
-    return res
-
-
 class ComparerCollection(Mapping, Scoreable):
     """
     Collection of comparers, constructed by calling the `modelskill.match`
-    method. Can be indexed by name or index.
+    method or by initializing with a list of comparers.
+
+    NOTE: In case of multiple model results with different time coverage,
+    only the _overlapping_ time period will be used! (intersection)
 
     Examples
     --------
@@ -90,9 +78,12 @@ class ComparerCollection(Mapping, Scoreable):
     >>> mr = ms.DfsuModelResult("Oresund2D.dfsu", item=0)
     >>> o1 = ms.PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o2 = ms.PointObservation("drogden.dfs0", item=0, x=355568.0, y=6156863.0)
-    >>> cc = ms.match(obs=[o1,o2], mod=mr)
-    >>> sk = cc.skill()
-    >>> cc["Klagshamn"].plot.timeseries()
+    >>> cmp1 = ms.match(o1, mr)  # Comparer
+    >>> cmp2 = ms.match(o2, mr)  # Comparer
+    >>> ccA = ms.ComparerCollection([cmp1, cmp2])
+    >>> ccB = ms.match(obs=[o1, o2], mod=mr)
+    >>> sk = ccB.skill()
+    >>> ccB["Klagshamn"].plot.timeseries()
     """
 
     plotter = ComparerCollectionPlotter
@@ -562,51 +553,32 @@ class ComparerCollection(Mapping, Scoreable):
         res = _groupby_df(df, by, pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
-        res["x"] = df.groupby(by=by, observed=False).x.first()
-        res["y"] = df.groupby(by=by, observed=False).y.first()
-        # TODO: set x,y to NaN if TrackObservation, x.nunique() > 1
+        res = self._append_xy_to_res(res, cc)
         res = cc._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
-    def _to_long_dataframe(self, attrs_keys=None, observed=False) -> pd.DataFrame:
+    def _to_long_dataframe(
+        self, attrs_keys: Iterable[str] | None = None, observed: bool = False
+    ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
-        # TODO delegate to each comparer
-        attrs_keys = attrs_keys or []
-        res = _all_df_template(self.n_quantities)
         frames = []
-        cols = list(res.keys()) + attrs_keys
-        for cmp in self._comparers.values():
-            for j in range(cmp.n_models):
-                mod_name = cmp.mod_names[j]
-                # drop "x", "y",  ?
-                df = cmp.data.drop_vars(["z"])[[mod_name]].to_dataframe().copy()
-                df = df.rename(columns={mod_name: "mod_val"})
-                df["model"] = mod_name
-                df["observation"] = cmp.name
-                if self.n_quantities > 1:
-                    df["quantity"] = cmp.quantity.name
-                df["x"] = cmp.x
-                df["y"] = cmp.y
-                df["obs_val"] = cmp.data["Observation"].values
-                for key in attrs_keys:
-                    if key in cmp.data.attrs:
-                        df[key] = cmp.data.attrs[key]
-                    else:
-                        df[key] = False
-                frames.append(df[cols])
-        if len(frames) > 0:
-            res = pd.concat(frames)
+        for cmp in self:
+            frame = cmp._to_long_dataframe(attrs_keys=attrs_keys)
+            if self.n_quantities > 1:
+                frame["quantity"] = cmp.quantity.name
+            frames.append(frame)
+        res = pd.concat(frames)
+
         cat_cols = res.select_dtypes(include=["object"]).columns
         res[cat_cols] = res[cat_cols].astype("category")
 
         if observed:
             res = res.loc[~(res == False).any(axis=1)]  # noqa
-        res.index.name = "time"
         return res
 
     @staticmethod
-    def _attrs_keys_in_by(by):
-        """Check if 'attrs:' is in by and return attrs_keys"""
+    def _attrs_keys_in_by(by: str | List[str]) -> Tuple[List[str], List[str]]:
+        """skill() helper: Check if 'attrs:' is in by and return attrs_keys"""
         attrs_keys = []
         by = [by] if isinstance(by, str) else by
         for j, b in enumerate(by):
@@ -614,13 +586,30 @@ class ComparerCollection(Mapping, Scoreable):
                 key = b.split(":")[1]
                 attrs_keys.append(key)
                 by[j] = key  # remove 'attrs:' prefix
-        attrs_keys = None if len(attrs_keys) == 0 else attrs_keys
         return by, attrs_keys
+
+    @staticmethod
+    def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
+        """skill() helper: Append x and y to res if possible"""
+        res["x"] = np.nan
+        res["y"] = np.nan
+
+        # for MultiIndex in res find "observation" level and
+        # insert x, y if gtype=point for that observation
+        if "observation" in res.index.names:
+            idx_names = res.index.names
+            res = res.reset_index()
+            for cmp in cc:
+                if cmp.gtype == "point":
+                    res.loc[res.observation == cmp.name, "x"] = cmp.x
+                    res.loc[res.observation == cmp.name, "y"] = cmp.y
+            res = res.set_index(idx_names)
+        return res
 
     def _add_as_col_if_not_in_index(
         self, df, skilldf, fields=["model", "observation", "quantity"]
     ):
-        """Add a field to skilldf if unique in df"""
+        """skill() helper: Add a field to skilldf if unique in df"""
         for field in reversed(fields):
             if (field == "model") and (self.n_models <= 1):
                 continue
@@ -681,7 +670,8 @@ class ComparerCollection(Mapping, Scoreable):
         --------
         >>> import modelskill as ms
         >>> cc = ms.match([HKNA,EPL,c2], mr)  # with satellite track measurements
-        >>> cc.gridded_skill(metrics='bias')
+        >>> gs = cc.gridded_skill(metrics='bias')
+        >>> gs.data
         <xarray.Dataset>
         Dimensions:      (x: 5, y: 5)
         Coordinates:
@@ -692,8 +682,8 @@ class ComparerCollection(Mapping, Scoreable):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.gridded_skill(binsize=0.5)
-        >>> ds.coords
+        >>> gs = cc.gridded_skill(binsize=0.5)
+        >>> gs.data.coords
         Coordinates:
             observation   'alti'
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
@@ -788,9 +778,9 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.mean_skill().round(2)
                       n  bias  rmse  urmse   mae    cc    si    r2
         HKZN_local  564 -0.09  0.31   0.28  0.24  0.97  0.09  0.99
-        >>> s = cc.mean_skill(weights="equal")
-        >>> s = cc.mean_skill(weights="points")
-        >>> s = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
+        >>> sk = cc.mean_skill(weights="equal")
+        >>> sk = cc.mean_skill(weights="points")
+        >>> sk = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
 
         # TODO remove in v1.1
@@ -819,13 +809,13 @@ class ComparerCollection(Mapping, Scoreable):
 
         # skill assessment
         pmetrics = _parse_metric(metrics)
-        s = cc.skill(metrics=pmetrics)
-        if s is None:
+        sk = cc.skill(metrics=pmetrics)
+        if sk is None:
             return None
-        skilldf = s.to_dataframe()
+        skilldf = sk.to_dataframe()
 
         # weights
-        weights = cc._parse_weights(weights, s.obs_names)
+        weights = cc._parse_weights(weights, sk.obs_names)
         skilldf["weights"] = (
             skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
         )
@@ -946,7 +936,7 @@ class ComparerCollection(Mapping, Scoreable):
                 weights = np.ones(n_obs)  # equal weight to all
             elif isinstance(weights, dict):
                 w_dict = weights
-                weights = [w_dict.get(name, 1.0) for name in (self.obs_names)]
+                weights = [w_dict.get(name, 1.0) for name in observations]
 
             elif isinstance(weights, str):
                 if weights.lower() == "equal":

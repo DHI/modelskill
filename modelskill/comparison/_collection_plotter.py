@@ -497,13 +497,13 @@ class ComparerCollectionPlotter:
 
         metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
         skill_func = self.cc.mean_skill if aggregate_observations else self.cc.skill
-        s = skill_func(
+        sk = skill_func(
             metrics=metrics,  # type: ignore
         )
-        if s is None:
+        if sk is None:
             return
 
-        df = s.to_dataframe()
+        df = sk.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):

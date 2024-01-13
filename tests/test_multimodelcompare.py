@@ -40,7 +40,7 @@ def o3():
 
 @pytest.fixture
 def cc(mr1, mr2, o1, o2, o3):
-    return ms.match([o1, o2, o3], [mr1, mr2])
+    return ms.match([o1, o2, o3], [mr1, mr2], spatial_method="nearest")
 
 
 def test_compare(mr1, mr2, o1, o2, o3):
@@ -78,17 +78,18 @@ def test_add_same_comparer_twice(mr1, mr2, o1, o2):
 def test_mm_skill(cc):
     df = cc.sel(start="2017-10-27 00:01").skill().to_dataframe()
 
-    assert df.iloc[4].name[0] == "SW_2"
-    assert df.iloc[4].name[1] == "HKNA"
-    assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.214476
+    # mod: ['SW_1', 'SW_2'], obs: ['HKNA', 'EPL', 'c2']
+    assert df.iloc[3].name[0] == "SW_2"
+    assert df.iloc[3].name[1] == "HKNA"
+    assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
 
     # TODO remove in v1.1
     with pytest.warns(FutureWarning):
         df = cc.skill(start="2017-10-27 00:01").to_dataframe()
 
-    assert df.iloc[4].name[0] == "SW_2"
-    assert df.iloc[4].name[1] == "HKNA"
-    assert pytest.approx(df.iloc[4].mae, 1e-5) == 0.214476
+    assert df.iloc[3].name[0] == "SW_2"
+    assert df.iloc[3].name[1] == "HKNA"
+    assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
 
 
 def test_mm_skill_model(cc):
@@ -113,16 +114,16 @@ def test_mm_sel_missing_model(cc):
 
 def test_mm_skill_obs(cc):
     with pytest.warns(FutureWarning):
-        s = cc.skill(observation="c2")
-        assert len(s) == 2
-        assert pytest.approx(s.loc["SW_2"].bias) == 0.081431053
+        sk = cc.skill(observation="c2")
+        assert len(sk) == 2
+        assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
 
-    s = cc.sel(observation="c2").skill()
-    assert len(s) == 2
-    assert pytest.approx(s.loc["SW_2"].bias) == 0.081431053
+    sk = cc.sel(observation="c2").skill()
+    assert len(sk) == 2
+    assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
 
-    s2 = cc.sel(observation=-1).skill()
-    assert s.loc["SW_2"].bias == s2.loc["SW_2"].bias
+    sk2 = cc.sel(observation=-1).skill()
+    assert sk.loc["SW_2"].bias == sk2.loc["SW_2"].bias
 
 
 def test_mm_mean_skill_obs(cc):
@@ -143,45 +144,45 @@ def test_mm_sel_missing_obs(cc, o1):
 
 def test_mm_skill_start_end(cc):
     # TODO should we keep these tests?
-    s = cc.sel(model="SW_1", start="2017").skill()
-    assert s.loc["EPL"].n == 67
-    s = cc.sel(model="SW_1", end="2017-10-28 00:00:00").skill()
-    assert s.loc["EPL"].n == 25
-    s = cc.sel(model="SW_1", start="2017-10-28 00:00:01").skill()
-    assert s.loc["EPL"].n == 42
+    sk = cc.sel(model="SW_1", start="2017").skill()
+    assert sk.loc["EPL"].n == 67
+    sk = cc.sel(model="SW_1", end="2017-10-28 00:00:00").skill()
+    assert sk.loc["EPL"].n == 25
+    sk = cc.sel(model="SW_1", start="2017-10-28 00:00:01").skill()
+    assert sk.loc["EPL"].n == 42
 
 
 def test_mm_skill_area_bbox(cc):
     bbox = [0.5, 52.5, 5, 54]
-    s = cc.sel(model="SW_1", area=bbox).skill()
-    assert pytest.approx(s.loc["HKNA"].urmse) == 0.293498777
+    sk = cc.sel(model="SW_1", area=bbox).skill()
+    assert pytest.approx(sk.loc["HKNA"].urmse) == 0.293498777
     bbox = np.array([0.5, 52.5, 5, 54])
-    s = cc.sel(model="SW_1", area=bbox).skill()
-    assert pytest.approx(s.loc["HKNA"].urmse) == 0.293498777
+    sk = cc.sel(model="SW_1", area=bbox).skill()
+    assert pytest.approx(sk.loc["HKNA"].urmse) == 0.293498777
 
 
 def test_mm_skill_area_polygon(cc):
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
-    s = cc.sel(model="SW_2", area=polygon).skill()
-    assert "HKNA" not in s.obs_names
-    assert s.to_dataframe().iloc[1].n == 66
+    sk = cc.sel(model="SW_2", area=polygon).skill()
+    assert "HKNA" not in sk.obs_names
+    assert sk.to_dataframe().iloc[1].n == 66
 
     # "this is not the indexing you want..."
     # assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
     # same as above but not closed
     polygon = np.array([[6, 51], [0, 55], [0, 51]])
-    s = cc.sel(model="SW_2", area=polygon).skill()
+    sk = cc.sel(model="SW_2", area=polygon).skill()
 
     # assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
     polygon = [6, 51, 0, 55, 0, 51, 6, 51]
-    s = cc.sel(model="SW_2", area=polygon).skill()
+    sk = cc.sel(model="SW_2", area=polygon).skill()
     # assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
     # same as above but not closed
     polygon = [6, 51, 0, 55, 0, 51]
-    s = cc.sel(model="SW_2", area=polygon).skill()
+    sk = cc.sel(model="SW_2", area=polygon).skill()
     # assert pytest.approx(s.iloc[0].r2) == 0.9271339372
 
 
@@ -190,12 +191,12 @@ def test_mm_mean_skill_area_polygon(cc):
     # It also states that if the exterior linear ring of a polygon is defined in a counterclockwise direction, then it will be seen from the "top".
     # Any interior linear rings should be defined in opposite fashion compared to the exterior ring, in this case, clockwise
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
-    s = cc.sel(area=polygon).mean_skill()
-    assert pytest.approx(s.loc["SW_2"].rmse) == 0.3349027897
+    sk = cc.sel(area=polygon).mean_skill()
+    assert pytest.approx(sk.loc["SW_2"].rmse) == 0.3349027897
 
     closed_polygon = ((6, 51), (0, 55), (0, 51), (6, 51))
-    s2 = cc.sel(area=closed_polygon).mean_skill()
-    assert pytest.approx(s2.loc["SW_2"].rmse) == 0.3349027897
+    sk2 = cc.sel(area=closed_polygon).mean_skill()
+    assert pytest.approx(sk2.loc["SW_2"].rmse) == 0.3349027897
 
     # TODO support for polygons with holes
 
@@ -219,9 +220,9 @@ def test_mm_skill_metrics(cc):
     df = cc.sel(model="SW_1").skill(metrics=[mtr.mean_absolute_error]).to_dataframe()
     assert df.mean_absolute_error.values.sum() > 0.0
 
-    s = cc.sel(model="SW_1").skill(metrics=[mtr.bias, "rmse"])
-    assert pytest.approx(s.loc["EPL"].bias) == -0.06659714
-    assert pytest.approx(s.loc["EPL"].rmse) == 0.22359664
+    sk = cc.sel(model="SW_1").skill(metrics=[mtr.bias, "rmse"])
+    assert pytest.approx(sk.loc["EPL"].bias) == -0.06659714
+    assert pytest.approx(sk.loc["EPL"].rmse) == 0.22359664
 
     with pytest.raises(ValueError):
         cc.sel(model="SW_1").skill(metrics=["mean_se"])
@@ -232,22 +233,22 @@ def test_mm_skill_metrics(cc):
 
 
 def test_mm_mean_skill(cc):
-    s = cc.mean_skill()
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+    sk = cc.mean_skill()
+    assert len(sk) == 2
+    assert sk.loc["SW_1"].rmse == pytest.approx(0.309118939)
 
 
 def test_mm_mean_skill_weights_list(cc):
-    s = cc.mean_skill(weights=[0.3, 0.2, 1.0])
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.3261788143)
+    sk = cc.mean_skill(weights=[0.2, 0.3, 1.0])
+    assert len(sk) == 2
+    assert sk.loc["SW_1"].rmse == pytest.approx(0.3261788143)
 
-    s = cc.mean_skill(weights=[100000000000.0, 1.0, 1.0])
-    assert s.loc["SW_1"].rmse < 1.0
+    sk = cc.mean_skill(weights=[100000000000.0, 1.0, 1.0])
+    assert sk.loc["SW_1"].rmse < 1.0
 
-    s = cc.mean_skill(weights=1)
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+    sk = cc.mean_skill(weights=1)
+    assert len(sk) == 2
+    assert sk.loc["SW_1"].rmse == pytest.approx(0.309118939)
 
     with pytest.raises(ValueError):
         # too many weights
@@ -255,19 +256,19 @@ def test_mm_mean_skill_weights_list(cc):
 
 
 def test_mm_mean_skill_weights_str(cc):
-    s = cc.mean_skill(weights="points")
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.3367349)
+    sk = cc.mean_skill(weights="points")
+    assert len(sk) == 2
+    assert sk.loc["SW_1"].rmse == pytest.approx(0.3367349)
 
-    s = cc.mean_skill(weights="equal")
-    assert len(s) == 2
-    assert s.loc["SW_1"].rmse == pytest.approx(0.309118939)
+    sk = cc.mean_skill(weights="equal")
+    assert len(sk) == 2
+    assert sk.loc["SW_1"].rmse == pytest.approx(0.309118939)
 
 
 def test_mm_mean_skill_weights_dict(cc):
-    s = cc.mean_skill(weights={"EPL": 0.2, "c2": 1.0, "HKNA": 0.3})
-    df = s.to_dataframe()
-    assert len(s) == 2
+    sk = cc.mean_skill(weights={"EPL": 0.3, "c2": 1.0, "HKNA": 0.2})
+    df = sk.to_dataframe()
+    assert len(sk) == 2
     assert df.loc["SW_1"].rmse == pytest.approx(0.3261788143)
 
     # s2 = cc.mean_skill(weights=[0.3, 0.2, 1.0])
@@ -276,8 +277,8 @@ def test_mm_mean_skill_weights_dict(cc):
     # assert s.loc["SW_1"].rmse == s2.loc["SW_1"].rmse
     # assert s.loc["SW_2"].rmse == s2.loc["SW_2"].rmse
 
-    df = cc.mean_skill(weights={"EPL": 2.0}).to_dataframe()
-    assert len(s) == 2
+    df = cc.mean_skill(weights={"HKNA": 2.0}).to_dataframe()
+    assert len(sk) == 2
     assert df.loc["SW_1"].rmse == pytest.approx(0.319830126)
 
     # df2 = cc.mean_skill(weights={"EPL": 2.0, "c2": 1.0, "HKNA": 1.0}).to_dataframe()
@@ -289,9 +290,9 @@ def test_mm_mean_skill_weights_dict(cc):
 
 # TODO: mean_skill_points needs fixing before this test can be enabled
 # def test_mean_skill_points(cc):
-#     s = cc.mean_skill_points()
-#     assert len(s) == 2
-#     assert s.loc["SW_1"].rmse == pytest.approx(0.33927729)
+#     sk = cc.mean_skill_points()
+#     assert len(sk) == 2
+#     assert sk.loc["SW_1"].rmse == pytest.approx(0.33927729)
 
 
 def test_mm_scatter(cc):
@@ -353,12 +354,12 @@ def test_custom_metric_skilltable_mm_scatter(cc):
     assert mtr.is_valid_metric("cm_1")
 
     # use custom metric as function
-    s = cc.skill(metrics=[cm_1])
-    assert s["cm_1"] is not None
+    sk = cc.skill(metrics=[cm_1])
+    assert sk["cm_1"] is not None
 
     # use custom metric as string
     cc.skill(metrics=["cm_1"])
-    assert s["cm_1"] is not None
+    assert sk["cm_1"] is not None
 
     # using a non-registred metric raises an error, even though it is a defined function, but not registered
     with pytest.raises(ValueError) as e_info:
