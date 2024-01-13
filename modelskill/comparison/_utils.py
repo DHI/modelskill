@@ -51,19 +51,16 @@ def _groupby_df(
 ) -> pd.DataFrame:
     def calc_metrics(group):
         row = {}
-        # row["x"] = group.x.first() if group.x.nunique() == 1 else np.nan
-        # row["y"] = group.y.first() if group.y.nunique() == 1 else np.nan
         row["n"] = len(group)
         for metric in metrics:
             row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
 
-    # .drop(columns=["x", "y"])
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
     # sort=False to avoid re-ordering compared to original cc (also for performance)
-    res = df.groupby(by=by, observed=False).apply(calc_metrics)
+    res = df.groupby(by=by, observed=False, sort=False).apply(calc_metrics)
 
     if n_min:
         # nan for all cols but n
@@ -101,7 +98,7 @@ ALLOWED_DT = [
 
 
 def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
-    ser = df.index.to_series()
+    ser = df["time"]
     assert isinstance(by, list)
     # by = [by] if isinstance(by, str) else by
 
@@ -124,7 +121,9 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
     return df, by
 
 
-def _parse_groupby(by, n_models: int, n_obs: int, n_qnt: int = 1) -> List[str]:
+def _parse_groupby(
+    by: Iterable[str] | None, n_models: int, n_obs: int, n_qnt: int = 1
+) -> List[str | pd.core.resample.TimeGrouper]:
     if by is None:
         by = []
         if n_models > 1:
@@ -147,8 +146,8 @@ def _parse_groupby(by, n_models: int, n_obs: int, n_qnt: int = 1) -> List[str]:
             by = "quantity"
         if by[:5] == "freq:":
             freq = by.split(":")[1]
-            by = pd.Grouper(freq=freq)
-        by = [by]
+            by = pd.Grouper(key="time", freq=freq)
+        return [by]
     elif isinstance(by, Iterable):
         by = [_parse_groupby(b, n_models, n_obs, n_qnt)[0] for b in by]
         return by

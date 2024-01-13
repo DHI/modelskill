@@ -258,13 +258,26 @@ class TimeSeries:
         return self.equals(other)
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Convert to pandas DataFrame"""
+        """Convert matched data to pandas DataFrame
+
+        Include x, y coordinates only if gtype=track
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
         if self.gtype == str(GeometryType.POINT):
             # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
-            return self.data.drop_vars(["x", "y", "z"])[self.name].to_dataframe()
+            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        elif self.gtype == str(GeometryType.TRACK):
+            df = self.data.drop_vars(["z"]).to_dataframe()
+            # make sure that x, y cols are first
+            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            return df[cols]
         else:
-            return self.data.drop_vars(["z"])[["x", "y", self.name]].to_dataframe()
+            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def sel(self: T, **kwargs: Any) -> T:
         """Select data by label"""

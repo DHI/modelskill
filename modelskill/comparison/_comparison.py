@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -44,6 +45,8 @@ from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+Serializable = Union[str, int, float]
 
 
 class Scoreable(Protocol):
@@ -614,6 +617,7 @@ class Comparer(Scoreable):
     @property
     def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
+        # we don't require the kind attribute to be "auxiliary"
         return list(
             [
                 k
@@ -640,6 +644,15 @@ class Comparer(Scoreable):
     def _unit_text(self) -> str:
         # Quantity name and unit as text suitable for plot labels
         return f"{self.quantity.name} [{self.quantity.unit}]"
+
+    @property
+    def attrs(self) -> dict[str, Any]:
+        """Attributes of the observation"""
+        return self.data.attrs
+
+    @attrs.setter
+    def attrs(self, value: dict[str, Serializable]) -> None:
+        self.data.attrs = value
 
     # TODO: is this the best way to copy (self.data.copy.. )
     def __copy__(self):
@@ -890,22 +903,38 @@ class Comparer(Scoreable):
         d = d.dropna(dim="time", how="all")
         return Comparer.from_matched_data(d, self.raw_mod_data)
 
-    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
-        """Convert single model data to pandas DataFrame"""
-
-        df = self.data.drop_vars(["z"]).to_dataframe().copy()
-        other_models = [m for m in self.mod_names if m is not mod_name]
-        df = df.drop(columns=other_models)
-        df = df.rename(columns={mod_name: "mod_val", self._obs_str: "obs_val"})
-        df["model"] = mod_name
-        df["observation"] = self.name
-        return df
-
-    def _to_long_dataframe(self) -> pd.DataFrame:
+    def _to_long_dataframe(
+        self, attrs_keys: Iterable[str] | None = None
+    ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
-        df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
-        df["model"] = df["model"].astype("category")
-        df["observation"] = df["observation"].astype("category")
+
+        data = self.data.drop_vars("z", errors="ignore")
+
+        # this step is necessary since we keep arbitrary derived data in the dataset, but not z
+        # i.e. using a hardcoded whitelist of variables to keep is less flexible
+        id_vars = [v for v in data.variables if v not in self.mod_names]
+
+        attrs = (
+            {key: data.attrs.get(key, False) for key in attrs_keys}
+            if attrs_keys
+            else {}
+        )
+
+        df = (
+            data.to_dataframe()
+            .reset_index(names="time")
+            .melt(
+                value_vars=self.mod_names,
+                var_name="model",
+                value_name="mod_val",
+                id_vars=id_vars,
+            )
+            .rename(columns={self._obs_str: "obs_val"})
+            .assign(observation=self.name)
+            .assign(**attrs)
+            .astype({"model": "category", "observation": "category"})
+        )
+
         return df
 
     def skill(
@@ -974,9 +1003,8 @@ class Comparer(Scoreable):
 
         df = cmp._to_long_dataframe()
         res = _groupby_df(df, by, metrics)
-        res["x"] = df.groupby(by=by, observed=False).x.first()
-        res["y"] = df.groupby(by=by, observed=False).y.first()
-        # TODO: set x,y to NaN if TrackObservation
+        res["x"] = np.nan if self.gtype == "track" else cmp.x
+        res["y"] = np.nan if self.gtype == "track" else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -1108,8 +1136,8 @@ class Comparer(Scoreable):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.gridded_skill(binsize=0.5)
-        >>> ds.coords
+        >>> gs = cc.gridded_skill(binsize=0.5)
+        >>> gs.data.coords
         Coordinates:
             observation   'alti'
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
@@ -1184,6 +1212,28 @@ class Comparer(Scoreable):
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
             )
         return cmp
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert matched data to pandas DataFrame
+
+        Include x, y coordinates only if gtype=track
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
+        if self.gtype == str(GeometryType.POINT):
+            # we remove the scalar coordinate variables as they
+            # will otherwise be columns in the dataframe
+            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        elif self.gtype == str(GeometryType.TRACK):
+            df = self.data.drop_vars(["z"]).to_dataframe()
+            # make sure that x, y cols are first
+            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            return df[cols]
+        else:
+            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def save(self, filename: Union[str, Path]) -> None:
         """Save to netcdf file

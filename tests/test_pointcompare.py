@@ -107,9 +107,9 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 
     assert cc.score(metric=root_mean_squared_error)[
         "Oresund2D_subset"
-    ] == pytest.approx(0.1986296276629835)
-    s = cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
-    s.root_mean_squared_error.data.mean() == pytest.approx(0.1986296276629835)
+    ] == pytest.approx(0.19870695)
+    sk = cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
+    sk.root_mean_squared_error.data.mean() == pytest.approx(0.19870695)
 
 
 def test_weighted_score(modelresult_oresund_WL):
@@ -132,9 +132,9 @@ def test_weighted_score(modelresult_oresund_WL):
 
     mr = ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0, name="Oresund")
 
-    cc = ms.match(obs=[o1, o2], mod=mr)
+    cc = ms.match(obs=[o1, o2], mod=mr, spatial_method="contained")
     unweighted = cc.score()
-    assert unweighted["Oresund"] == pytest.approx(0.1986296276629835)
+    assert unweighted["Oresund"] == pytest.approx(0.1986296)
 
     # Weighted
 
@@ -158,10 +158,10 @@ def test_weighted_score(modelresult_oresund_WL):
         weight=0.1,
     )
 
-    cc_w = ms.match(obs=[o1_w, o2_w], mod=mr)
+    cc_w = ms.match(obs=[o1_w, o2_w], mod=mr, spatial_method="contained")
     weighted = cc_w.score()
 
-    assert weighted["Oresund"] == pytest.approx(0.1666888485806514)
+    assert weighted["Oresund"] == pytest.approx(0.1666888)
 
 
 def test_weighted_score_from_prematched():
@@ -190,7 +190,7 @@ def test_weighted_score_from_prematched():
     assert cc["klagshamn"].weight == 100.0
     assert cc["drogden"].weight == 0.0
 
-    assert cc.score()["Oresund"] == pytest.approx(1.0)
+    assert cc.score()["Oresund"] == pytest.approx(0.0)  # 100 * 0 + 0 * 1
 
 
 def test_misc_properties(klagshamn, drogden):
@@ -300,7 +300,7 @@ def test_mod_aux_carried_over(klagshamn):
     mr = ms.model_result(
         "tests/testdata/Oresund2D_subset.dfsu", item=0, aux_items="U velocity"
     )
-    cmp = ms.match(klagshamn, mr)
+    cmp = ms.match(klagshamn, mr, spatial_method="contained")
     assert "U velocity" in cmp.data.data_vars
     assert cmp.data["U velocity"].values[0] == pytest.approx(-0.0360998)
     assert cmp.data["U velocity"].attrs["kind"] == "aux"

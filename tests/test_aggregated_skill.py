@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import pandas as pd
 import matplotlib as mpl
@@ -75,7 +76,7 @@ def cc2(o1, o2, o3):
     mr1 = ms.model_result(fn, item=0, name="SW_1")
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     mr2 = ms.model_result(fn, item=0, name="SW_2")
-    return ms.match([o1, o2, o3], [mr1, mr2])
+    return ms.match([o1, o2, o3], [mr1, mr2], spatial_method="nearest")
 
 
 def test_skill_table(sk_df1):
@@ -149,20 +150,65 @@ def test_skill_multi_model(cc2):
     # s2 = s.xs("c2", level="observation")
     # assert len(s2.obs_names) == 0
 
-    # s2 = s.swaplevel()
-    # assert np.all(s2.index.levels[0] == s.index.levels[1])
-
-    # s2 = s.head(1)
-    # assert s.iloc[0]["rmse"] == s2.iloc[-1]["rmse"]
-
-    # s2 = s.tail(1)
-    # assert s.iloc[-1]["rmse"] == s2.iloc[0]["rmse"]
-
-    # s2 = s.sort_index(level="observation")
-    # assert np.all(s2.iloc[0].name == ("SW_1", "EPL"))
-
     # s2 = s.reorder_levels(["observation", "model"])
     # assert np.all(s2.index.levels[0] == s.index.levels[1])
+
+
+def test_skill_mm_swaplevel(cc2):
+    sk = cc2.skill(metrics=["rmse", "bias"])
+    assert list(sk.data.index.names) == ["model", "observation"]
+    sk2 = sk.swaplevel()
+    assert np.all(sk2.index.levels[0] == sk.index.levels[1])
+
+
+def test_skill_mm_sort_index(cc2):
+    sk = cc2.skill(metrics=["rmse", "bias"])
+    assert list(sk.index.get_level_values(1)) == [
+        "HKNA",
+        "EPL",
+        "c2",
+        "HKNA",
+        "EPL",
+        "c2",
+    ]
+
+    sk2 = sk.sort_index(level="observation")
+    assert list(sk2.index.get_level_values(1)) == [
+        "EPL",
+        "EPL",
+        "HKNA",
+        "HKNA",
+        "c2",
+        "c2",
+    ]
+
+    sk3 = sk.swaplevel().sort_index()
+    assert list(sk3.index.get_level_values(0)) == [
+        "EPL",
+        "EPL",
+        "HKNA",
+        "HKNA",
+        "c2",
+        "c2",
+    ]
+
+
+def test_skill_mm_sort_values(cc2):
+    sk = cc2.skill(metrics=["rmse", "bias"])
+    assert list(sk.index[0]) == ["SW_1", "HKNA"]
+    assert list(sk.index[-1]) == ["SW_2", "c2"]
+
+    sk2 = sk.sort_values("rmse")
+    assert list(sk2.index[0]) == ["SW_1", "EPL"]
+    assert list(sk2.index[-1]) == ["SW_2", "c2"]
+
+    sk3 = sk.sort_values("rmse", ascending=False)
+    assert list(sk3.index[0]) == ["SW_2", "c2"]
+    assert list(sk3.index[-1]) == ["SW_1", "EPL"]
+
+    sk4 = sk.sort_values(["n", "rmse"])
+    assert list(sk4.index[0]) == ["SW_1", "EPL"]
+    assert list(sk4.index[-1]) == ["SW_1", "HKNA"]
 
 
 def test_skill_sel(cc1):
