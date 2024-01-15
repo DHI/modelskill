@@ -519,9 +519,17 @@ class SkillTable:
     def __getattr__(self, item):
         if item in self.data.columns:
             return self[item]  # Redirects to __getitem__
+        else:
+            raise AttributeError(f"SkillTable has no attribute {item}")
 
-        # For other attributes, return them directly
-        return getattr(self.data, item)
+    # TODO used in tests, but is it needed?
+    @property
+    def index(self):
+        return self.data.index
+
+    @property
+    def iloc(self, *args, **kwargs):
+        return self.data.iloc(*args, **kwargs)
 
     @property
     def loc(self, *args, **kwargs):
