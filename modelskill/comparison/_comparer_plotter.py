@@ -237,11 +237,11 @@ class ComparerPlotter:
         ax = (
             cmp.data[mod_name]
             .to_series()
-            .hist(bins=bins, color=MOD_COLORS[mod_idx], **kwargs)
+            .hist(bins=bins, color=MOD_COLORS[mod_idx], **kwargs)  # type: ignore
         )
 
         cmp.data[cmp._obs_name].to_series().hist(
-            bins=bins, color=cmp.data[cmp._obs_name].attrs["color"], **kwargs
+            bins=bins, color=cmp.data[cmp._obs_name].attrs["color"], **kwargs  # type: ignore
         )
         ax.legend([mod_name, cmp._obs_name])
         ax.set_title(title)
@@ -731,7 +731,7 @@ class ComparerPlotter:
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
-        df.columns = ["obs_std", "std", "cc"]
+        df.columns = ["obs_std", "std", "cc"]  # type: ignore
 
         pts = [
             TaylorPoint(

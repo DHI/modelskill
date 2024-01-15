@@ -417,9 +417,7 @@ class SkillTable:
     _zero_is_best_metrics = ["bias"]
 
     def __init__(self, data: pd.DataFrame):
-        self.data: pd.DataFrame = (
-            data if isinstance(data, pd.DataFrame) else data.to_dataframe()
-        )
+        self.data: pd.DataFrame = data if isinstance(data, pd.DataFrame) else data.to_dataframe()  # type: ignore
         self.plot = DeprecatedSkillPlotter(self)  # TODO remove in v1.1
 
     # TODO: remove?

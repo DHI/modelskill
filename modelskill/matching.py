@@ -345,7 +345,7 @@ def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
         time_delta = pd.Timedelta(time_delta)
     elif np.isscalar(time_delta):
         # assume seconds
-        time_delta = pd.Timedelta(time_delta, "s")
+        time_delta = pd.Timedelta(time_delta, "s")  # type: ignore
     assert isinstance(time_delta, pd.Timedelta)
     return time_delta
 

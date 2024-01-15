@@ -531,8 +531,8 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def pr(
-    obs: np.ndarray,
-    model: np.ndarray,
+    obs: pd.Series,
+    model: pd.Series,
     inter_event_level: float = 0.7,
     AAP: int = 2,
     inter_event_time="36h",

@@ -360,12 +360,12 @@ def _matched_data_to_xarray(
     items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
 
     # check that items.obs and items.model are numeric
-    if not np.issubdtype(df[items.obs].dtype, np.number):
+    if not np.issubdtype(df[items.obs].dtype, np.number):  # type: ignore
         raise ValueError(
             "Observation data is of type {df[items.obs].dtype}, it must be numeric"
         )
     for m in items.model:
-        if not np.issubdtype(df[m].dtype, np.number):
+        if not np.issubdtype(df[m].dtype, np.number):  # type: ignore
             raise ValueError(
                 f"Model data: {m} is of type {df[m].dtype}, it must be numeric"
             )
@@ -498,9 +498,11 @@ class Comparer(Scoreable):
         quantity: Optional[Quantity] = None,
     ) -> "Comparer":
         """Initialize from compared data"""
-        if not isinstance(data, xr.Dataset):
+        if isinstance(data, xr.Dataset):
+            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+        else:
             # TODO: handle raw_mod_data by accessing data.attrs["kind"] and only remove nan after
-            data = _matched_data_to_xarray(
+            xr_data = _matched_data_to_xarray(
                 data,
                 obs_item=obs_item,
                 mod_items=mod_items,
@@ -512,7 +514,8 @@ class Comparer(Scoreable):
                 quantity=quantity,
             )
             data.attrs["weight"] = weight
-        return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+
+        return Comparer(matched_data=xr_data, raw_mod_data=raw_mod_data)
 
     def __repr__(self):
         out = [
@@ -1001,7 +1004,7 @@ class Comparer(Scoreable):
         by = _parse_groupby(by, cmp.n_models, n_obs=1, n_qnt=1)
 
         df = cmp._to_long_dataframe()
-        res = _groupby_df(df, by, metrics)
+        res = _groupby_df(df, by, metrics)  # type: ignore
         res["x"] = np.nan if self.gtype == "track" else cmp.x
         res["y"] = np.nan if self.gtype == "track" else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
