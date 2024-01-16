@@ -570,16 +570,17 @@ class ComparerCollection(Mapping, Scoreable):
         return res
 
     @staticmethod
-    def _attrs_keys_in_by(by: str | List[str]) -> Tuple[List[str], List[str]]:
-        """skill() helper: Check if 'attrs:' is in by and return attrs_keys"""
-        attrs_keys = []
-        by = [by] if isinstance(by, str) else by
-        for j, b in enumerate(by):
-            if isinstance(b, str) and b.startswith("attrs:"):
+    def _attrs_keys_in_by(by: List[str]) -> Tuple[List[str], List[str]]:
+        attrs_keys: List[str] = []
+        agg_cols: List[str] = []
+        for b in by:
+            if b.startswith("attrs:"):
                 key = b.split(":")[1]
                 attrs_keys.append(key)
-                by[j] = key  # remove 'attrs:' prefix
-        return by, attrs_keys
+                agg_cols.append(key)
+            else:
+                agg_cols.append(b)
+        return agg_cols, attrs_keys
 
     @staticmethod
     def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
