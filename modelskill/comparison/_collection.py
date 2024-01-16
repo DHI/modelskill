@@ -300,7 +300,8 @@ class ComparerCollection(Mapping, Scoreable):
     def __copy__(self) -> "ComparerCollection":
         cls = self.__class__
         cp = cls.__new__(cls)
-        cp.__init__(list(self._comparers))  # TODO should this use deepcopy?
+        # TODO should this use deepcopy?
+        cp.__init__(list(self._comparers))  # type: ignore
         return cp
 
     def copy(self) -> "ComparerCollection":
@@ -966,7 +967,7 @@ class ComparerCollection(Mapping, Scoreable):
         self,
         metric: str | Callable = mtr.rmse,
         **kwargs: Any,
-    ) -> Dict[str, float]:
+    ) -> Dict[Any, Any]:
         """Weighted mean score of model(s) over all observations
 
         Wrapping mean_skill() with a single metric.
@@ -1053,7 +1054,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
 
-        score = {str(k): float(v) for k, v in df[metric_name].to_dict()}
+        score = df[metric_name].to_dict()
 
         return score
 
