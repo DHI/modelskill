@@ -63,7 +63,11 @@ class SkillGridArray(SkillGridMixin):
         self.data = data
 
     def __repr__(self) -> str:
-        return "<SkillGridArray>"
+        out = [
+            "<SkillGridArray>",
+            f"Dimensions: (x: {len(self.x)}, y: {len(self.y)})",
+        ]
+        return "\n".join(out)
 
     def plot(self, model: str | None = None, **kwargs: Any) -> Axes:
         """wrapper for xArray DataArray plot function
@@ -138,7 +142,11 @@ class SkillGrid(SkillGridMixin):
         return list(self.data.data_vars)
 
     def __repr__(self) -> str:
-        return f"<SkillGrid> (name={self.name})"
+        out = [
+            f"<SkillGrid> (name={self.name})"
+            f"Dimensions: (x: {len(self.x)}, y: {len(self.y)})",
+        ]
+        return "\n".join(out)
 
     @overload
     def __getitem__(self, key: Hashable) -> SkillGridArray:
