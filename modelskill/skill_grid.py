@@ -160,9 +160,8 @@ class SkillGrid(SkillGridMixin):
     def __getattr__(self, item):
         if item in self.data.data_vars:
             return self[item]  # Redirects to __getitem__
-
-        # For other attributes, return them directly
-        return getattr(self.data, item)
+        else:
+            raise AttributeError(f"SkillGrid has no attribute {item}")
 
     def _set_attrs(self):
         # TODO: use type and unit to give better long name
