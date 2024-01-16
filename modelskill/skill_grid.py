@@ -130,10 +130,9 @@ class SkillGrid(SkillGridMixin):
     >>> gs.sel(model='SW_1').rmse.plot()
     """
 
-    def __init__(self, data: xr.Dataset, name: str | None = None) -> None:
+    def __init__(self, data: xr.Dataset) -> None:
         # TODO: add type and unit info; add domain to plot outline on map
         self.data = data
-        self.name = name
         self._set_attrs()
 
     @property
@@ -143,7 +142,7 @@ class SkillGrid(SkillGridMixin):
 
     def __repr__(self) -> str:
         out = [
-            f"<SkillGrid> (name={self.name})"
+            f"<SkillGrid>",
             f"Dimensions: (x: {len(self.x)}, y: {len(self.y)})",
         ]
         return "\n".join(out)
