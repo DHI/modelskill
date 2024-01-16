@@ -142,7 +142,7 @@ class SkillGrid(SkillGridMixin):
 
     def __repr__(self) -> str:
         out = [
-            f"<SkillGrid>",
+            "<SkillGrid>",
             f"Dimensions: (x: {len(self.x)}, y: {len(self.y)})",
         ]
         return "\n".join(out)
