@@ -231,8 +231,8 @@ class ComparerCollectionPlotter:
         skill_scores = skill.iloc[0].to_dict() if skill is not None else None
 
         ax = scatter(
-            x=x,  # type: ignore
-            y=y,  # type: ignore
+            x=x,
+            y=y,
             bins=bins,
             quantiles=quantiles,
             fit_to_quantiles=fit_to_quantiles,

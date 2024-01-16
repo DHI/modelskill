@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Optional
 from dataclasses import dataclass
 import pandas as pd
 import xarray as xr
@@ -89,7 +89,7 @@ TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Datas
 
 @dataclass(frozen=True)
 class Period:
-    """Period of data, defined by start and end time"""
+    """Period of data, defined by start and end time, can be open ended"""
 
-    start: pd.Timestamp
-    end: pd.Timestamp
+    start: Optional[pd.Timestamp] = None
+    end: Optional[pd.Timestamp] = None

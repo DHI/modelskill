@@ -1,13 +1,5 @@
 from __future__ import annotations
-from typing import (
-    Callable,
-    Optional,
-    Iterable,
-    List,
-    Tuple,
-    Union,
-    Any,
-)
+from typing import Callable, Optional, Iterable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -68,7 +60,7 @@ def _groupby_df(
         df, by = _add_dt_to_df(df, by)
 
     # sort=False to avoid re-ordering compared to original cc (also for performance)
-    res = df.groupby(by=by, observed=False, sort=False).apply(calc_metrics)  # type: ignore
+    res = df.groupby(by=by, observed=False, sort=False).apply(calc_metrics)
 
     if n_min:
         # nan for all cols but n
@@ -107,7 +99,7 @@ ALLOWED_DT = [
 
 def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
     ser = df["time"]
-    by = list(by)
+    assert isinstance(by, list)
     # by = [by] if isinstance(by, str) else by
 
     for j, b in enumerate(by):
@@ -129,7 +121,9 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
     return df, by
 
 
-def _parse_groupby(by: Any, n_models: int, n_obs: int, n_qnt: int = 1) -> List[str]:
+def _parse_groupby(
+    by: Iterable[str] | None, n_models: int, n_obs: int, n_qnt: int = 1
+) -> List[str | pd.core.resample.TimeGrouper]:
     if by is None:
         by = []
         if n_models > 1:
@@ -159,3 +153,4 @@ def _parse_groupby(by: Any, n_models: int, n_obs: int, n_qnt: int = 1) -> List[s
         return by
     else:
         raise ValueError("Invalid by argument. Must be string or list of strings.")
+    return by
