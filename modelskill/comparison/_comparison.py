@@ -499,7 +499,7 @@ class Comparer(Scoreable):
     ) -> "Comparer":
         """Initialize from compared data"""
         if isinstance(data, xr.Dataset):
-            xr_data = data
+            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
         else:
             # TODO: handle raw_mod_data by accessing data.attrs["kind"] and only remove nan after
             xr_data = _matched_data_to_xarray(
@@ -513,7 +513,7 @@ class Comparer(Scoreable):
                 z=z,
                 quantity=quantity,
             )
-            xr_data.attrs["weight"] = weight
+            data.attrs["weight"] = weight
 
         return Comparer(matched_data=xr_data, raw_mod_data=raw_mod_data)
 
