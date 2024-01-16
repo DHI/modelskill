@@ -1027,7 +1027,7 @@ class Comparer(Scoreable):
         self,
         metric: str | Callable = mtr.rmse,
         **kwargs: Any,
-    ) -> Dict[Any, Any]:
+    ) -> Dict[str, float]:
         """Model skill score
 
         Parameters
@@ -1074,13 +1074,9 @@ class Comparer(Scoreable):
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
-
-        return (
-            df.reset_index()
-            .groupby("model", observed=True)[metric_name]
-            .mean()
-            .to_dict()
-        )
+        ser = df.reset_index().groupby("model", observed=True)[metric_name].mean()
+        score = {str(k): float(v) for k, v in ser.items()}
+        return score
 
     def gridded_skill(
         self,

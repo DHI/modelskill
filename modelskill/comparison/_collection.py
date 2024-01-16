@@ -967,7 +967,7 @@ class ComparerCollection(Mapping, Scoreable):
         self,
         metric: str | Callable = mtr.rmse,
         **kwargs: Any,
-    ) -> Dict[Any, Any]:
+    ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
 
         Wrapping mean_skill() with a single metric.
@@ -1053,8 +1053,8 @@ class ComparerCollection(Mapping, Scoreable):
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
-
-        score = df[metric_name].to_dict()
+        ser = df[metric_name]
+        score = {str(col): float(value) for col, value in ser.items()}
 
         return score
 
