@@ -45,7 +45,8 @@ def _add_spatial_grid_to_df(
 
 def _groupby_df(
     df: pd.DataFrame,
-    by: List[str],
+    *,
+    by: List[str | pd.Grouper],
     metrics: List[Callable],
     n_min: Optional[int] = None,
 ) -> pd.DataFrame:

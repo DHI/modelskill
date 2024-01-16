@@ -538,13 +538,12 @@ class ComparerCollection(Mapping, Scoreable):
 
         pmetrics = _parse_metric(metrics)
 
-        by = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
-        by, attrs_keys = self._attrs_keys_in_by(by)
-        assert isinstance(by, list)
+        agg_cols = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
+        agg_cols, attrs_keys = self._attrs_keys_in_by(agg_cols)
 
         df = cc._to_long_dataframe(attrs_keys=attrs_keys, observed=observed)
 
-        res = _groupby_df(df, by, pmetrics)
+        res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
         res = self._append_xy_to_res(res, cc)
@@ -707,17 +706,14 @@ class ComparerCollection(Mapping, Scoreable):
         df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        by = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=cmp.n_quantities)
-        if isinstance(by, str) or (not isinstance(by, Iterable)):
-            by = [by]  # type: ignore
-        if "x" not in by:  # type: ignore
-            by.insert(0, "x")  # type: ignore
-        if "y" not in by:  # type: ignore
-            by.insert(0, "y")  # type: ignore
-        assert isinstance(by, list)
+        agg_cols = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=cmp.n_quantities)
+        if "x" not in agg_cols:
+            agg_cols.insert(0, "x")
+        if "y" not in agg_cols:
+            agg_cols.insert(0, "y")
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
-        res = _groupby_df(df, by, metrics, n_min)
+        res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
         ds = res.to_xarray().squeeze()
 
         # change categorial index to coordinates

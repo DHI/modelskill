@@ -1001,7 +1001,7 @@ class Comparer(Scoreable):
         by = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=1)
 
         df = cmp._to_long_dataframe()
-        res = _groupby_df(df, by, metrics)
+        res = _groupby_df(df, by=by, metrics=metrics)
         res["x"] = np.nan if self.gtype == "track" else cmp.x
         res["y"] = np.nan if self.gtype == "track" else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
