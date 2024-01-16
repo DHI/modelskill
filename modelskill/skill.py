@@ -170,7 +170,7 @@ class SkillArrayPlotter:
         figsize: tuple[float, float] | None = None,
         title: str | None = None,
         cmap: str | Colormap | None = None,
-    ) -> Axes:
+    ) -> Axes | None:
         """Plot statistic as a colored grid, optionally with values in the cells.
 
         Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
@@ -212,6 +212,7 @@ class SkillArrayPlotter:
         errors = _validate_multi_index(ser.index)  # type: ignore
         if len(errors) > 0:
             warnings.warn("plot_grid: " + "\n".join(errors))
+            # TODO raise error?
             return None
             # df = self.df[field]    TODO: at_least_2d...
         df = ser.unstack()
@@ -238,6 +239,7 @@ class SkillArrayPlotter:
         if figsize is None:
             figsize = (nx, ny)
         fig, ax = _get_fig_ax(ax, figsize)
+        assert ax is not None
         pcm = ax.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
         ax.set_xticks(np.arange(nx) + 0.5)
         ax.set_xticklabels(xlabels, rotation=90)
