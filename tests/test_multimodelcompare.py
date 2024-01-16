@@ -123,7 +123,7 @@ def test_mm_skill_obs(cc):
     assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
 
     sk2 = cc.sel(observation=-1).skill()
-    assert sk.loc["SW_2"].bias == sk2.loc["SW_2"].bias
+    assert pytest.approx(sk2.loc["SW_2"].bias) == 0.081431053
 
 
 def test_mm_mean_skill_obs(cc):

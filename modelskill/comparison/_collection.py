@@ -538,13 +538,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         pmetrics = _parse_metric(metrics)
 
-        n_models = cc.n_models
-        n_obs = cc.n_observations
-
-        # TODO: FIX
-        # len(df.variable.unique()) if (self.n_variables > 1) else 1
-        n_var = cc.n_quantities
-        by = _parse_groupby(by, n_models, n_obs, n_var)
+        by = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
         by, attrs_keys = self._attrs_keys_in_by(by)
         assert isinstance(by, list)
 
@@ -713,7 +707,7 @@ class ComparerCollection(Mapping, Scoreable):
         df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
+        by = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=cmp.n_quantities)
         if isinstance(by, str) or (not isinstance(by, Iterable)):
             by = [by]  # type: ignore
         if "x" not in by:  # type: ignore
