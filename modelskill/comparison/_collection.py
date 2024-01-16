@@ -570,11 +570,11 @@ class ComparerCollection(Mapping, Scoreable):
         return res
 
     @staticmethod
-    def _attrs_keys_in_by(by: List[str]) -> Tuple[List[str], List[str]]:
+    def _attrs_keys_in_by(by: List[str | pd.Grouper]) -> Tuple[List[str], List[str]]:
         attrs_keys: List[str] = []
         agg_cols: List[str] = []
         for b in by:
-            if b.startswith("attrs:"):
+            if isinstance(b, str) and b.startswith("attrs:"):
                 key = b.split(":")[1]
                 attrs_keys.append(key)
                 agg_cols.append(key)
