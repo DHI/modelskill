@@ -183,7 +183,7 @@ class SingleObsConnector:
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self, max_model_gap: Optional[float] = None) -> Optional[Comparer]:
+    def extract(self, **kwargs) -> Optional[Comparer]:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -191,9 +191,7 @@ class SingleObsConnector:
         Comparer
             A comparer object for further analysis and plotting.
         """
-        comparer = _single_obs_compare(
-            obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
-        )
+        comparer = _single_obs_compare(obs=self.obs, mod=self.modelresults, **kwargs)
         if comparer.n_points == 0:
             warnings.warn(f"No overlapping data was found for {comparer.name}!")
             return None
@@ -316,15 +314,15 @@ class Connector(Sequence):
                 self.modelresults[mod.name] = mod
 
     def _get_obs_name(self, obs):
-        return self.obs_names[self._get_obs_id(obs)]
+        return self.obs_names[self._get_obs_idx(obs)]
 
-    def _get_obs_id(self, obs):
+    def _get_obs_idx(self, obs):
         n_con = len(self.connections)
         if obs is None or n_con <= 1:
             return 0
         elif isinstance(obs, str):
             if obs in self.obs_names:
-                obs_id = self.obs_names.index(obs)
+                obs_idx = self.obs_names.index(obs)
             else:
                 raise KeyError(
                     f"connection {obs} could not be found in {self.obs_names}"
@@ -333,12 +331,12 @@ class Connector(Sequence):
             if obs < 0:  # Handle negative indices
                 obs += n_con
             if obs >= 0 and obs < n_con:
-                obs_id = obs
+                obs_idx = obs
             else:
                 raise IndexError(f"connection id {obs} is out of range (0, {n_con-1})")
         else:
             raise KeyError("connection must be None, str or int")
-        return obs_id
+        return obs_idx
 
     def __getitem__(self, x):
         if isinstance(x, int):

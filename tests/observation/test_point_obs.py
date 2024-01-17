@@ -113,9 +113,9 @@ def test_from_df(klagshamn_filename, klagshamn_df):
     o2 = ms.PointObservation(df, item="Water Level", x=366844, y=6154291)
     assert o1.n_points == o2.n_points
 
-    s = o1.data["Klagshamn1"]
+    ser = o1.data["Klagshamn1"]
     # assert isinstance(s, pd.Series)
-    o3 = ms.PointObservation(s, x=366844, y=6154291, name="Klagshamn3")
+    o3 = ms.PointObservation(ser, x=366844, y=6154291, name="Klagshamn3")
     assert o1.n_points == o3.n_points
 
 
@@ -152,12 +152,22 @@ def test_attrs(klagshamn_filename):
     o1 = ms.PointObservation(
         klagshamn_filename, item=0, attrs={"a1": "v1"}, name="Klagshamn"
     )
-    assert o1.data.attrs["a1"] == "v1"
+    assert o1.attrs["a1"] == "v1"
+
+    o1.attrs["a2"] = "v2"
+    assert o1.attrs["a2"] == "v2"
 
     o2 = ms.PointObservation(
         klagshamn_filename, item=0, attrs={"version": 42}, name="Klagshamn"
     )
-    assert o2.data.attrs["version"] == 42
+    assert o2.attrs["version"] == 42
+
+    o2.attrs["version"] = 43
+    assert o2.attrs["version"] == 43
+
+    # remove all attributes and add a new one
+    o2.attrs = {"version": 44}
+    assert o2.attrs["version"] == 44
 
 
 def test_attrs_non_serializable(klagshamn_filename):

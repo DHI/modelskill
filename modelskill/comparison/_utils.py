@@ -6,7 +6,7 @@ import pandas as pd
 
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
-IdOrNameTypes = Union[int, str, List[int], List[str]]
+IdxOrNameTypes = Union[int, str, List[int], List[str]]
 
 
 def _add_spatial_grid_to_df(
@@ -45,22 +45,23 @@ def _add_spatial_grid_to_df(
 
 def _groupby_df(
     df: pd.DataFrame,
-    by: List[str],
+    *,
+    by: List[str | pd.Grouper],
     metrics: List[Callable],
     n_min: Optional[int] = None,
 ) -> pd.DataFrame:
-    def calc_metrics(x):
+    def calc_metrics(group):
         row = {}
-        row["n"] = len(x)
+        row["n"] = len(group)
         for metric in metrics:
-            row[metric.__name__] = metric(x.obs_val, x.mod_val)
+            row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
 
-    # .drop(columns=["x", "y"])
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
-    res = df.groupby(by=by, observed=False).apply(calc_metrics)
+    # sort=False to avoid re-ordering compared to original cc (also for performance)
+    res = df.groupby(by=by, observed=False, sort=False).apply(calc_metrics)
 
     if n_min:
         # nan for all cols but n
@@ -98,7 +99,7 @@ ALLOWED_DT = [
 
 
 def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
-    ser = df.index.to_series()
+    ser = df["time"]
     assert isinstance(by, list)
     # by = [by] if isinstance(by, str) else by
 
@@ -121,34 +122,29 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
     return df, by
 
 
-def _parse_groupby(by, n_models: int, n_obs: int, n_var: int = 1) -> List[str]:
+def _parse_groupby(
+    by: str | Iterable[str] | None, *, n_mod: int, n_qnt: int
+) -> List[str | pd.Grouper]:
     if by is None:
-        by = []
-        if n_models > 1:
-            by.append("model")
-        if n_obs > 1:  # or ((n_models == 1) and (n_obs == 1)):
-            by.append("observation")
-        if n_var > 1:
-            by.append("variable")
-        if len(by) == 0:
-            # default value
-            by.append("observation")
-        return by
+        cols: List[str | pd.Grouper]
+        cols = ["model", "observation", "quantity"]
+
+        if n_mod == 1:
+            cols.remove("model")
+        if n_qnt == 1:
+            cols.remove("quantity")
+        return cols
 
     if isinstance(by, str):
-        if by in {"mdl", "mod", "models"}:
-            by = "model"
-        if by in {"obs", "observations"}:
-            by = "observation"
-        if by in {"var", "variables", "item"}:
-            by = "variable"
-        if by[:5] == "freq:":
-            freq = by.split(":")[1]
-            by = pd.Grouper(freq=freq)
-        by = [by]
+        cols = [by]
     elif isinstance(by, Iterable):
-        by = [_parse_groupby(b, n_models, n_obs, n_var)[0] for b in by]
-        return by
-    else:
-        raise ValueError("Invalid by argument. Must be string or list of strings.")
-    return by
+        cols = list(by)
+
+    res = []
+    for col in cols:
+        if col[:5] == "freq:":
+            freq = col.split(":")[1]
+            res.append(pd.Grouper(key="time", freq=freq))
+        else:
+            res.append(col)
+    return res

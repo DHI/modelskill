@@ -8,9 +8,8 @@ Examples
 """
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Any, Union
 import warnings
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -21,6 +20,9 @@ from .timeseries import (
     _parse_point_input,
     _parse_track_input,
 )
+
+# NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
+Serializable = Union[str, int, float]
 
 
 def observation(
@@ -96,13 +98,23 @@ class Observation(TimeSeries):
         self,
         data: xr.Dataset,
         weight: float,
-        color: str = "#d62728",  # TODO: cannot currently be set
+        color: str = "#d62728",  # TODO: cannot currently be set by user
     ) -> None:
         data["time"] = self._parse_time(data.time)
 
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["color"] = color
         super().__init__(data=data)
         self.data.attrs["weight"] = weight
-        self.data.attrs["color"] = color
+
+    @property
+    def attrs(self) -> dict[str, Any]:
+        """Attributes of the observation"""
+        return self.data.attrs
+
+    @attrs.setter
+    def attrs(self, value: dict[str, Serializable]) -> None:
+        self.data.attrs = value
 
     @property
     def weight(self) -> float:
@@ -153,6 +165,8 @@ class PointObservation(Observation):
         list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
 
     Examples
     --------
@@ -196,15 +210,15 @@ class PointObservation(Observation):
 
         super().__init__(data=data, weight=weight)
 
-    @property
-    def geometry(self):
-        """Coordinates of observation (shapely.geometry.Point)"""
-        from shapely.geometry import Point
+    # @property
+    # def geometry(self):
+    #     """Coordinates of observation (shapely.geometry.Point)"""
+    #     from shapely.geometry import Point
 
-        if self.z is None:
-            return Point(self.x, self.y)
-        else:
-            return Point(self.x, self.y, self.z)
+    #     if self.z is None:
+    #         return Point(self.x, self.y)
+    #     else:
+    #         return Point(self.x, self.y, self.z)
 
     @property
     def z(self):
@@ -247,9 +261,6 @@ class TrackObservation(Observation):
         "first" to keep first occurrence, "last" to keep last occurrence,
         False to drop all duplicates, "offset" to add milliseconds to
         consecutive duplicates, by default "first"
-    offset_duplicates : float, optional
-        DEPRECATED! in case of duplicate timestamps and keep_duplicates="offset",
-        add this many seconds to consecutive duplicate entries, by default 0.001
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
@@ -257,6 +268,8 @@ class TrackObservation(Observation):
         list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
 
     Examples
     --------
@@ -303,12 +316,12 @@ class TrackObservation(Observation):
 
     """
 
-    @property
-    def geometry(self):
-        """Coordinates of observation (shapely.geometry.MultiPoint)"""
-        from shapely.geometry import MultiPoint
+    # @property
+    # def geometry(self):
+    #     """Coordinates of observation (shapely.geometry.MultiPoint)"""
+    #     from shapely.geometry import MultiPoint
 
-        return MultiPoint(np.stack([self.x, self.y]).T)
+    #     return MultiPoint(np.stack([self.x, self.y]).T)
 
     def __init__(
         self,

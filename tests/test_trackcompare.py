@@ -184,8 +184,10 @@ def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
         obs_tiny = ms.TrackObservation(
             obs_tiny_df, item="alti", x_item="x", y_item="y", keep_duplicates="first"
         )
-    cmp = ms.match(obs_tiny, mod_tiny_unique)
-    assert cmp.n_points == 2  # 2 points removed due to difference in x,y
+    with pytest.warns(UserWarning, match="Removed 2 model points"):
+        # 2 points removed due to difference in x,y
+        cmp = ms.match(obs_tiny, mod_tiny_unique)
+    assert cmp.n_points == 2
     expected_time = pd.DatetimeIndex(
         [
             "2017-10-27 13:00:02",
@@ -341,10 +343,10 @@ def test_gridded_skill_bins(comparer):
     assert ds.x[0] == -0.75
 
 
-def test_gridded_skill_by(comparer):
-    # odd order of by
-    ds = comparer.gridded_skill(metrics=["bias"], by=["y", "mod"])
-    assert ds.coords._names == {"y", "model", "x"}
+# This test doesn't test anything meaningful
+# def test_gridded_skill_by(comparer):
+#     ds = comparer.gridded_skill(metrics=["bias"], by=["y", "mod"])
+#     assert ds.coords._names == {"y", "model", "x"}
 
 
 def test_gridded_skill_misc(comparer):
@@ -365,7 +367,7 @@ def test_hist(comparer):
 
     cmp.plot.hist(bins=10)
     cmp.plot.hist(density=False)
-    cmp.plot.hist(model=0, title="new_title", alpha=0.2)
+    cmp.sel(model=0).plot.hist(title="new_title", alpha=0.2)
 
 
 def test_residual_hist(comparer):

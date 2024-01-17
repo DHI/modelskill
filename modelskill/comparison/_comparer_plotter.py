@@ -1,5 +1,14 @@
 from __future__ import annotations
-from typing import Union, List, Optional, Tuple, Sequence, TYPE_CHECKING, Callable
+from typing import (
+    Literal,
+    Union,
+    List,
+    Optional,
+    Tuple,
+    Sequence,
+    TYPE_CHECKING,
+    Callable,
+)
 import warnings
 
 if TYPE_CHECKING:
@@ -25,11 +34,11 @@ from ..settings import options
 class ComparerPlotter:
     """Plotter class for Comparer"""
 
-    def __init__(self, comparer: Comparer):
+    def __init__(self, comparer: Comparer) -> None:
         self.comparer = comparer
         self.is_directional = comparer.quantity.is_directional
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> matplotlib.axes.Axes:
         """Plot scatter plot of modelled vs observed data"""
         return self.scatter(*args, **kwargs)
 
@@ -56,7 +65,10 @@ class ComparerPlotter:
         figsize : (float, float), optional
             figure size, by default None
         backend : str, optional
-            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"backend:
+            use "plotly" (interactive) or "matplotlib" backend,
+            by default "matplotlib"
+        **kwargs
+            other keyword arguments to fig.update_layout (plotly backend)
 
         Returns
         -------
@@ -82,7 +94,7 @@ class ComparerPlotter:
                 marker=".",
                 color=cmp.data[cmp._obs_name].attrs["color"],
             )
-            ax.set_ylabel(cmp.unit_text)
+            ax.set_ylabel(cmp._unit_text)
             ax.legend([*cmp.mod_names, cmp._obs_name])
             ax.set_ylim(ylim)
             if self.is_directional:
@@ -119,7 +131,7 @@ class ComparerPlotter:
                 ]
             )
 
-            fig.update_layout(title=title, yaxis_title=cmp.unit_text, **kwargs)
+            fig.update_layout(title=title, yaxis_title=cmp._unit_text, **kwargs)
             fig.update_yaxes(range=ylim)
 
             return fig
@@ -156,7 +168,8 @@ class ComparerPlotter:
             If True, draw and return a probability density
         alpha : float, optional
             alpha transparency fraction, by default 0.5
-        kwargs : other keyword arguments to df.plot.hist()
+        **kwargs
+            other keyword arguments to df.plot.hist()
 
         Returns
         -------
@@ -211,7 +224,7 @@ class ComparerPlotter:
 
         cmp = self.comparer
         assert mod_name in cmp.mod_names, f"Model {mod_name} not found in comparer"
-        mod_id = _get_idx(mod_name, cmp.mod_names)
+        mod_idx = _get_idx(mod_name, cmp.mod_names)
 
         title = f"{mod_name} vs {cmp.name}" if title is None else title
 
@@ -224,7 +237,7 @@ class ComparerPlotter:
         ax = (
             cmp.data[mod_name]
             .to_series()
-            .hist(bins=bins, color=MOD_COLORS[mod_id], **kwargs)
+            .hist(bins=bins, color=MOD_COLORS[mod_idx], **kwargs)
         )
 
         cmp.data[cmp._obs_name].to_series().hist(
@@ -232,7 +245,7 @@ class ComparerPlotter:
         )
         ax.legend([mod_name, cmp._obs_name])
         ax.set_title(title)
-        ax.set_xlabel(f"{cmp.unit_text}")
+        ax.set_xlabel(f"{cmp._unit_text}")
         if density:
             ax.set_ylabel("density")
         else:
@@ -256,7 +269,8 @@ class ComparerPlotter:
             plot title, default: "KDE plot for [observation name]"
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to df.plot.kde()
+        **kwargs
+            other keyword arguments to df.plot.kde()
 
         Returns
         -------
@@ -284,7 +298,7 @@ class ComparerPlotter:
         for model in cmp.mod_names:
             cmp.data[model].to_series().plot.kde(ax=ax, label=model, **kwargs)
 
-        ax.set_xlabel(cmp.unit_text)  # TODO
+        ax.set_xlabel(cmp._unit_text)  # TODO
 
         ax.legend()
 
@@ -330,7 +344,8 @@ class ComparerPlotter:
             axes to plot on, by default None
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to plt.plot()
+        **kwargs
+            other keyword arguments to plt.plot()
 
         Returns
         -------
@@ -382,8 +397,8 @@ class ComparerPlotter:
         ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
 
         ax.legend()
-        ax.set_xlabel("Observation, " + cmp.unit_text)
-        ax.set_ylabel("Model, " + cmp.unit_text)
+        ax.set_xlabel("Observation, " + cmp._unit_text)
+        ax.set_ylabel("Model, " + cmp._unit_text)
         ax.set_title(title or f"Q-Q plot for {cmp.name}")
 
         if self.is_directional:
@@ -405,7 +420,8 @@ class ComparerPlotter:
             plot title, default: [observation name]
         figsize : tuple, optional
             figure size, by default None
-        kwargs : other keyword arguments to df.boxplot()
+        **kwargs
+            other keyword arguments to df.boxplot()
 
         Returns
         -------
@@ -429,7 +445,7 @@ class ComparerPlotter:
         cols = ["Observation"] + cmp.mod_names
         df = cmp.data[cols].to_dataframe()[cols]
         df.boxplot(ax=ax, **kwargs)
-        ax.set_ylabel(cmp.unit_text)
+        ax.set_ylabel(cmp._unit_text)
         ax.set_title(title or cmp.name)
 
         if self.is_directional:
@@ -448,7 +464,7 @@ class ComparerPlotter:
         show_hist: Optional[bool] = None,
         show_density: Optional[bool] = None,
         norm: Optional[colors.Normalize] = None,
-        backend: str = "matplotlib",
+        backend: Literal["matplotlib", "plotly"] = "matplotlib",
         figsize: Tuple[float, float] = (8, 8),
         xlim: Optional[Tuple[float, float]] = None,
         ylim: Optional[Tuple[float, float]] = None,
@@ -457,8 +473,9 @@ class ComparerPlotter:
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
         skill_table: Optional[Union[str, List[str], bool]] = None,
+        ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
-    ):
+    ) -> matplotlib.axes.Axes:
         """Scatter plot showing compared data: observation vs modelled
         Optionally, with density histogram.
 
@@ -470,28 +487,33 @@ class ComparerPlotter:
             if float, represents the bin size
             if sequence (list of int or float), represents the bin edges
         quantiles: (int, sequence), optional
-            number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
-            if int, this is the number of points
-            if sequence (list of floats), represents the desired quantiles (from 0 to 1)
-        fit_to_quantiles: bool, optional, by default False
-            by default the regression line is fitted to all data, if True, it is fitted to the quantiles
-            which can be useful to represent the extremes of the distribution
+            number of quantiles for QQ-plot, by default None and will depend
+            on the scatter data length (10, 100 or 1000); if int, this is
+            the number of points; if sequence (list of floats), represents
+            the desired quantiles (from 0 to 1)
+        fit_to_quantiles: bool, optional
+            by default the regression line is fitted to all data, if True,
+            it is fitted to the quantiles which can be useful to represent
+            the extremes of the distribution, by default False
         show_points : (bool, int, float), optional
-            Should the scatter points be displayed?
-            None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
-            float: fraction of points to show on plot from 0 to 1. eg 0.5 shows 50% of the points.
-            int: if 'n' (int) given, then 'n' points will be displayed, randomly selected
+            Should the scatter points be displayed? None means: show all
+            points if fewer than 1e4, otherwise show 1e4 sample points,
+            by default None. float: fraction of points to show on plot
+            from 0 to 1. e.g. 0.5 shows 50% of the points. int: if 'n' (int)
+            given, then 'n' points will be displayed, randomly selected
         show_hist : bool, optional
             show the data density as a a 2d histogram, by default None
         show_density: bool, optional
-            show the data density as a colormap of the scatter, by default None.
-            If both `show_density` and `show_hist` are None, then `show_density`
-            is used by default. For binning the data, the kword `bins=Float` is used.
+            show the data density as a colormap of the scatter, by default
+            None. If both `show_density` and `show_hist` are None, then
+            `show_density` is used by default. For binning the data, the
+            kword `bins=Float` is used.
         norm : matplotlib.colors norm
-            colormap normalization
-            If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
+            colormap normalization. If None, defaults to
+            matplotlib.colors.PowerNorm(vmin=1, gamma=0.5)
         backend : str, optional
-            use "plotly" (interactive) or "matplotlib" backend, by default "matplotlib"
+            use "plotly" (interactive) or "matplotlib" backend,
+            by default "matplotlib"
         figsize : tuple, optional
             width and height of the figure, by default (8, 8)
         xlim : tuple, optional
@@ -511,10 +533,13 @@ class ComparerPlotter:
         ylabel : str, optional
             y-label text on plot, by default None
         skill_table : str, List[str], bool, optional
-            list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
-            This kword adds a box at the right of the scatter plot,
-            by default False
-        kwargs
+            list of modelskill.metrics or boolean, if True then by default
+            modelskill.options.metrics.list. This kword adds a box at the
+            right of the scatter plot, by default False
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
+        **kwargs
+            other keyword arguments to plt.scatter()
 
         Examples
         ------
@@ -556,6 +581,7 @@ class ComparerPlotter:
                 xlabel=xlabel,
                 ylabel=ylabel,
                 skill_table=skill_table,
+                ax=ax,
                 **kwargs,
             )
             axes.append(ax_mod)
@@ -572,7 +598,7 @@ class ComparerPlotter:
         show_hist: Optional[bool],
         show_density: Optional[bool],
         norm: Optional[colors.Normalize],
-        backend: str,
+        backend: Literal["matplotlib", "plotly"],
         figsize: Tuple[float, float],
         xlim: Optional[Tuple[float, float]],
         ylim: Optional[Tuple[float, float]],
@@ -598,26 +624,28 @@ class ComparerPlotter:
         assert x.ndim == y.ndim == 1, "x and y must be 1D arrays"
         assert x.shape == y.shape, "x and y must have the same shape"
 
-        unit_text = cmp.unit_text
+        unit_text = cmp._unit_text
         xlabel = xlabel or f"Observation, {unit_text}"
         ylabel = ylabel or f"Model, {unit_text}"
         title = title or f"{mod_name} vs {cmp.name}"
 
         skill = None
-        units = None
+        skill_score_unit = None
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
             skill = cmp_sel_mod.skill(metrics=metrics)  # type: ignore
             try:
-                units = unit_text.split("[")[1].split("]")[0]
+                skill_score_unit = unit_text.split("[")[1].split("]")[0]
             except IndexError:
-                units = ""  # Dimensionless
+                skill_score_unit = ""  # Dimensionless
 
         if self.is_directional:
             # hide quantiles and regression line
             quantiles = 0
             reg_method = False
+
+        skill_scores = skill.iloc[0].to_dict() if skill is not None else None
 
         ax = scatter(
             x=x,
@@ -637,8 +665,8 @@ class ComparerPlotter:
             title=title,
             xlabel=xlabel,
             ylabel=ylabel,
-            skill_df=skill,
-            units=units,
+            skill_scores=skill_scores,
+            skill_score_unit=skill_score_unit,
             **kwargs,
         )
 
@@ -695,11 +723,11 @@ class ComparerPlotter:
             mtr.cc,
         ]
 
-        s = cmp.skill(metrics=metrics)
+        sk = cmp.skill(metrics=metrics)
 
-        if s is None:  # TODO
+        if sk is None:  # TODO
             return
-        df = s.to_dataframe()
+        df = sk.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()
@@ -738,7 +766,8 @@ class ComparerPlotter:
             figure size, by default None
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
-        kwargs : other keyword arguments to plt.hist()
+        **kwargs
+            other keyword arguments to plt.hist()
 
         Returns
         -------
@@ -749,9 +778,9 @@ class ComparerPlotter:
         default_color = "#8B8D8E"
         color = default_color if color is None else color
         title = f"Residuals, {self.comparer.name}" if title is None else title
-        ax.hist(self.comparer.residual, bins=bins, color=color, **kwargs)
+        ax.hist(self.comparer._residual, bins=bins, color=color, **kwargs)
         ax.set_title(title)
-        ax.set_xlabel(f"Residuals of {self.comparer.unit_text}")
+        ax.set_xlabel(f"Residuals of {self.comparer._unit_text}")
 
         if self.is_directional:
             ticks = np.linspace(-180, 180, 9)

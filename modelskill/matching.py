@@ -6,6 +6,7 @@ import warnings
 from typing import (
     Dict,
     Iterable,
+    Collection,
     List,
     Literal,
     Optional,
@@ -22,6 +23,7 @@ import xarray as xr
 
 import mikeio
 
+
 from . import model_result, Quantity
 from .timeseries import TimeSeries
 from .types import GeometryType, Period
@@ -29,12 +31,13 @@ from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
 from .model.point import PointModelResult
+from .model.dummy import DummyModelResult
 from .obs import Observation, PointObservation, TrackObservation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
-IdOrNameTypes = Optional[Union[int, str]]
+IdxOrNameTypes = Optional[Union[int, str]]
 GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
 MRInputType = Union[
     str,
@@ -51,6 +54,7 @@ MRInputType = Union[
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
+    DummyModelResult,
 ]
 ObsInputType = Union[
     str,
@@ -82,14 +86,14 @@ def from_matched(
     """Create a Comparer from observation and model results that are already matched (aligned)
     Parameters
     ----------
-    data : [pd.DataFrame,str,Path,mikeio.Dfs0, mikeio.Dataset]
+    data : [pd.DataFrame, str, Path, mikeio.Dfs0, mikeio.Dataset]
         DataFrame (or object that can be converted to a DataFrame e.g. dfs0)
         with columns obs_item, mod_items, aux_items
-    obs_item : [str,int], optional
+    obs_item : [str, int], optional
         Name or index of observation item, by default first item
-    mod_items : Iterable[str,int], optional
+    mod_items : Iterable[str, int], optional
         Names or indicies of model items, if None all remaining columns are model items, by default None
-    aux_items : Iterable[str,int], optional
+    aux_items : Iterable[str, int], optional
         Names or indicies of auxiliary items, by default None
     quantity : Quantity, optional
         Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
@@ -155,10 +159,11 @@ def match(
     obs: PointObservation | TrackObservation,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[IdOrNameTypes] = None,
-    mod_item: Optional[IdOrNameTypes] = None,
+    obs_item: Optional[IdxOrNameTypes] = None,
+    mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_method: Optional[str] = None,
 ) -> Comparer:
     ...
 
@@ -168,10 +173,11 @@ def match(
     obs: Iterable[PointObservation | TrackObservation],
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[IdOrNameTypes] = None,
-    mod_item: Optional[IdOrNameTypes] = None,
+    obs_item: Optional[IdxOrNameTypes] = None,
+    mod_item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_method: Optional[str] = None,
 ) -> ComparerCollection:
     ...
 
@@ -184,27 +190,52 @@ def match(
     mod_item=None,
     gtype=None,
     max_model_gap=None,
+    spatial_method: Optional[str] = None,
 ):
-    """Compare observations and model results
+    """Match observation and model result data in space and time
+
+    NOTE: In case of multiple model results with different time coverage,
+    only the _overlapping_ time period will be used! (intersection)
+
+    NOTE: In case of multiple observations, multiple models can _only_
+    be matched if they are _all_ of SpatialField type, e.g. DfsuModelResult
+    or GridModelResult.
+
     Parameters
     ----------
-    obs : (str, pd.DataFrame, Observation)
-        Observation to be compared
-    mod : (str, pd.DataFrame, ModelResultInterface)
-        Model result to be compared
-    obs_item : (int, str), optional
-        observation item, by default None
+    obs : (str, Path, pd.DataFrame, Observation, Sequence[Observation])
+        Observation(s) to be compared
+    mod : (str, Path, pd.DataFrame, ModelResult, Sequence[ModelResult])
+        Model result(s) to be compared
+    obs_item : int or str, optional
+        observation item if obs is a file/dataframe, by default None
     mod_item : (int, str), optional
-        model item, by default None
+        model item if mod is a file/dataframe, by default None
     gtype : (str, optional)
-        Geometry type of the model result. If not specified, it will be guessed.
+        Geometry type of the model result (if mod is a file/dataframe).
+        If not specified, it will be guessed.
     max_model_gap : (float, optional)
-        Maximum time gap (s) in the model result, by default None
+        Maximum time gap (s) in the model result (e.g. for event-based
+        model results), by default None
+    spatial_method : str, optional
+        For Dfsu- and GridModelResult, spatial interpolation/selection method.
+
+        - For DfsuModelResult, one of: 'contained' (=isel), 'nearest',
+        'inverse_distance' (with 5 nearest points), by default "inverse_distance".
+        - For GridModelResult, passed to xarray.interp() as method argument,
+        by default 'linear'.
 
     Returns
     -------
+    Comparer
+        In case of a single observation
     ComparerCollection
-        To be used for plotting and statistics
+        In case of multiple observations
+
+    See Also
+    --------
+    [from_matched][modelskill.from_matched]
+        Create a Comparer from observation and model results that are already matched
     """
     if isinstance(obs, get_args(ObsInputType)):
         return _single_obs_compare(
@@ -214,11 +245,12 @@ def match(
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
+            spatial_method=spatial_method,
         )
 
-    assert isinstance(obs, Iterable)
+    assert isinstance(obs, Collection)
 
-    if len(obs) > 1 and isinstance(mod, Iterable) and len(mod) > 1:
+    if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
         if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
             raise ValueError(
                 """
@@ -240,6 +272,7 @@ def match(
             mod_item=mod_item,
             gtype=gtype,
             max_model_gap=max_model_gap,
+            spatial_method=spatial_method,
         )
         for o in obs
     ]
@@ -283,13 +316,14 @@ def _single_obs_compare(
     mod_item: Optional[int | str] = None,
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
+    spatial_method: Optional[str] = None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
 
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
-    raw_mod_data = {m.name: m.extract(obs) for m in mods}
+    raw_mod_data = {m.name: m.extract(obs, spatial_method) for m in mods}
     matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
     matched_data.attrs["weight"] = obs.weight
 
@@ -458,9 +492,14 @@ def _select_overlapping_trackdata_with_tolerance(
     df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
 
     # 2. remove model points outside observation track
+    n_points = len(df)
     keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
     keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
     df = df[keep_x & keep_y]
+    if n_points_removed := n_points - len(df):
+        warnings.warn(
+            f"Removed {n_points_removed} model points outside observation track (spatial_tolerance={spatial_tolerance})"
+        )
     return mri.data.sel(time=df.index)
 
 
@@ -486,7 +525,7 @@ def _parse_single_obs(
 
 def _parse_models(
     mod: Any,  # TODO
-    item: Optional[IdOrNameTypes] = None,
+    item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
 ) -> List[Any]:  # TODO
     """Return a list of ModelResult objects"""
@@ -500,22 +539,31 @@ def _parse_models(
 
 def _parse_single_model(
     mod: Any,  # TODO
-    item: Optional[IdOrNameTypes] = None,
+    item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
 ) -> Any:  # TODO
     if isinstance(
-        mod, (DfsuModelResult, GridModelResult, TrackModelResult, PointModelResult)
+        mod,
+        (
+            str,
+            Path,
+            pd.DataFrame,
+            xr.Dataset,
+            xr.DataArray,
+            mikeio.Dfs0,
+            mikeio.Dataset,
+            mikeio.DataArray,
+            mikeio.dfsu.Dfsu2DH,
+        ),
     ):
-        if item is not None:
+        try:
+            return model_result(mod, item=item, gtype=gtype)
+        except ValueError as e:
             raise ValueError(
-                "mod_item argument not allowed if mod is an modelskill.ModelResult"
+                f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
             )
+    else:
+        if item is not None:
+            raise ValueError("item argument not allowed if mod is a ModelResult type")
+        # assume it is already a model result
         return mod
-
-    try:
-        # return ModelResult(mod, item=item, gtype=gtype)
-        return model_result(mod, item=item, gtype=gtype)
-    except ValueError as e:
-        raise ValueError(
-            f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
-        )

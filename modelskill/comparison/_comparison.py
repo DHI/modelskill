@@ -2,9 +2,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
+    Literal,
     Mapping,
     Optional,
     Union,
@@ -33,16 +35,18 @@ from ._utils import (
     _groupby_df,
     _parse_groupby,
     TimeTypes,
-    IdOrNameTypes,
+    IdxOrNameTypes,
 )
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 from ..settings import register_option
-from ..utils import _get_name
+from ..utils import _get_name, _RESERVED_NAMES
 from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+
+Serializable = Union[str, int, float]
 
 
 class Scoreable(Protocol):
@@ -465,6 +469,19 @@ class Comparer(Scoreable):
                 ), f"raw_mod_data[{k}] must be a TimeSeries object"
 
         self.plot = Comparer.plotter(self)
+        """Plot using the ComparerPlotter
+
+        Examples
+        --------
+        >>> cmp.plot.timeseries()
+        >>> cmp.plot.scatter()
+        >>> cmp.plot.qq()
+        >>> cmp.plot.hist()
+        >>> cmp.plot.kde()
+        >>> cmp.plot.box()
+        >>> cmp.plot.residual_hist()
+        >>> cmp.plot.taylor()        
+        """
 
     @staticmethod
     def from_matched_data(
@@ -514,6 +531,14 @@ class Comparer(Scoreable):
     def name(self) -> str:
         """Name of comparer (=name of observation)"""
         return self.data.attrs["name"]
+
+    @name.setter
+    def name(self, name: str) -> None:
+        if name in _RESERVED_NAMES:
+            raise ValueError(
+                f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
+            )
+        self.data.attrs["name"] = name
 
     @property
     def gtype(self) -> str:
@@ -584,13 +609,14 @@ class Comparer(Scoreable):
         return len(self.mod_names)
 
     @property
-    def mod_names(self) -> Sequence[str]:
+    def mod_names(self) -> List[str]:
         """List of model result names"""
         return list(self.raw_mod_data.keys())
 
     @property
-    def aux_names(self) -> Sequence[str]:
+    def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
+        # we don't require the kind attribute to be "auxiliary"
         return list(
             [
                 k
@@ -614,31 +640,18 @@ class Comparer(Scoreable):
         self.data.attrs["weight"] = value
 
     @property
-    def unit_text(self) -> str:
-        """Quantity name and unit as text suitable for plot labels"""
+    def _unit_text(self) -> str:
+        # Quantity name and unit as text suitable for plot labels
         return f"{self.quantity.name} [{self.quantity.unit}]"
 
-    def _model_to_frame(self, mod_name: str) -> pd.DataFrame:
-        """Convert single model data to pandas DataFrame"""
+    @property
+    def attrs(self) -> dict[str, Any]:
+        """Attributes of the observation"""
+        return self.data.attrs
 
-        df = self.data.drop_vars(["z"]).to_dataframe().copy()
-        other_models = [m for m in self.mod_names if m is not mod_name]
-        df = df.drop(columns=other_models)
-        df = df.rename(columns={mod_name: "mod_val", self._obs_str: "obs_val"})
-        df["model"] = mod_name
-        df["observation"] = self.name
-
-        return df
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """Convert to pandas DataFrame with all model data concatenated"""
-
-        # TODO is this needed?, comment out for now
-        # df = df.sort_index()
-        df = pd.concat([self._model_to_frame(name) for name in self.mod_names])
-        df["model"] = df["model"].astype("category")
-        df["observation"] = df["observation"].astype("category")
-        return df
+    @attrs.setter
+    def attrs(self, value: dict[str, Serializable]) -> None:
+        self.data.attrs = value
 
     # TODO: is this the best way to copy (self.data.copy.. )
     def __copy__(self):
@@ -647,13 +660,18 @@ class Comparer(Scoreable):
     def copy(self):
         return self.__copy__()
 
-    def rename(self, mapping: Mapping[str, str]) -> "Comparer":
-        """Rename model or auxiliary data
+    def rename(
+        self, mapping: Mapping[str, str], errors: Literal["raise", "ignore"] = "raise"
+    ) -> "Comparer":
+        """Rename observation, model or auxiliary data variables
 
         Parameters
         ----------
         mapping : dict
             mapping of old names to new names
+        errors : {'raise', 'ignore'}, optional
+            If 'raise', raise a KeyError if any of the old names
+            do not exist in the data. By default 'raise'.
 
         Returns
         -------
@@ -668,88 +686,42 @@ class Comparer(Scoreable):
         >>> cmp2.mod_names
         ['model2']
         """
-        data = self.data.rename(mapping)
-        raw_mod_data = {mapping.get(k, k): v for k, v in self.raw_mod_data.items()}
+        if errors not in ["raise", "ignore"]:
+            raise ValueError("errors must be 'raise' or 'ignore'")
+
+        allowed_keys = [self.name] + self.mod_names + self.aux_names
+        if errors == "raise":
+            for k in mapping.keys():
+                if k not in allowed_keys:
+                    raise KeyError(f"Unknown key: {k}; must be one of {allowed_keys}")
+        else:
+            # "ignore": silently remove keys that are not in allowed_keys
+            mapping = {k: v for k, v in mapping.items() if k in allowed_keys}
+
+        if any([k in _RESERVED_NAMES for k in mapping.values()]):
+            # TODO: also check for duplicates
+            raise ValueError(
+                f"Cannot rename to any of {_RESERVED_NAMES}, these are reserved names!"
+            )
+
+        # rename observation
+        obs_name = mapping.get(self.name, self.name)
+        ma_mapping = {k: v for k, v in mapping.items() if k != self.name}
+
+        data = self.data.rename(ma_mapping)
+        data.attrs["name"] = obs_name
+        raw_mod_data = dict()
+        for k, v in self.raw_mod_data.items():
+            if k in ma_mapping:
+                # copy is needed here as the same raw data could be
+                # used for multiple Comparers!
+                v2 = v.copy()
+                v2.data = v2.data.rename({k: ma_mapping[k]})
+                raw_mod_data[ma_mapping[k]] = v2
+            else:
+                raw_mod_data[k] = v
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
-
-    def save(self, filename: Union[str, Path]) -> None:
-        """Save to netcdf file
-
-        Parameters
-        ----------
-        filename : str or Path
-            filename
-        """
-        ds = self.data
-
-        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
-        # an alternative strategy would be to use NetCDF groups
-        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
-
-        # There is no need to save raw data for track data, since it is identical to the matched data
-        if self.gtype == "point":
-            ds = self.data.copy()  # copy needed to avoid modifying self.data
-
-            for key, ts_mod in self.raw_mod_data.items():
-                ts_mod = ts_mod.copy()
-                #  rename time to unique name
-                ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
-                # da = ds_mod.to_xarray()[key]
-                ds["_raw_" + key] = ts_mod.data[key]
-
-        ds.to_netcdf(filename)
-
-    @staticmethod
-    def load(filename: Union[str, Path]) -> "Comparer":
-        """Load from netcdf file
-
-        Parameters
-        ----------
-        filename : str or Path
-            filename
-
-        Returns
-        -------
-        Comparer
-        """
-        with xr.open_dataset(filename) as ds:
-            data = ds.load()
-
-        if data.gtype == "track":
-            return Comparer(matched_data=data)
-
-        if data.gtype == "point":
-            raw_mod_data: Dict[str, TimeSeries] = {}
-
-            for var in data.data_vars:
-                var_name = str(var)
-                if var_name[:5] == "_raw_":
-                    new_key = var_name[5:]  # remove prefix '_raw_'
-                    ds = data[[var_name]].rename(
-                        {"_time_raw_" + new_key: "time", var_name: new_key}
-                    )
-                    ts = PointObservation(data=ds, name=new_key)
-                    # TODO: name of time?
-                    # ts.name = new_key
-                    # df = (
-                    #     data[var_name]
-                    #     .to_dataframe()
-                    #     .rename(
-                    #         columns={"_time_raw_" + new_key: "time", var_name: new_key}
-                    #     )
-                    # )
-                    raw_mod_data[new_key] = ts
-
-                    # data = data.drop(var_name).drop("_time_raw_" + new_key)
-
-            # filter variables, only keep the ones with a 'time' dimension
-            data = data[[v for v in data.data_vars if "time" in data[v].dims]]
-
-            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
-
-        else:
-            raise NotImplementedError(f"Unknown gtype: {data.gtype}")
 
     def _to_observation(self) -> PointObservation | TrackObservation:
         """Convert to Observation"""
@@ -817,7 +789,7 @@ class Comparer(Scoreable):
 
     def sel(
         self,
-        model: Optional[IdOrNameTypes] = None,
+        model: Optional[IdxOrNameTypes] = None,
         start: Optional[TimeTypes] = None,
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
@@ -930,6 +902,40 @@ class Comparer(Scoreable):
         d = d.dropna(dim="time", how="all")
         return Comparer.from_matched_data(d, self.raw_mod_data)
 
+    def _to_long_dataframe(
+        self, attrs_keys: Iterable[str] | None = None
+    ) -> pd.DataFrame:
+        """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
+
+        data = self.data.drop_vars("z", errors="ignore")
+
+        # this step is necessary since we keep arbitrary derived data in the dataset, but not z
+        # i.e. using a hardcoded whitelist of variables to keep is less flexible
+        id_vars = [v for v in data.variables if v not in self.mod_names]
+
+        attrs = (
+            {key: data.attrs.get(key, False) for key in attrs_keys}
+            if attrs_keys
+            else {}
+        )
+
+        df = (
+            data.to_dataframe()
+            .reset_index(names="time")
+            .melt(
+                value_vars=self.mod_names,
+                var_name="model",
+                value_name="mod_val",
+                id_vars=id_vars,
+            )
+            .rename(columns={self._obs_str: "obs_val"})
+            .assign(observation=self.name)
+            .assign(**attrs)
+            .astype({"model": "category", "observation": "category"})
+        )
+
+        return df
+
     def skill(
         self,
         by: str | Iterable[str] | None = None,
@@ -940,11 +946,15 @@ class Comparer(Scoreable):
 
         Parameters
         ----------
-        by : (str, List[str]), optional
-            group by column name or by temporal bin via the freq-argument
-            (using pandas pd.Grouper(freq)),
-            e.g.: 'freq:M' = monthly; 'freq:D' daily
-            by default ["model"]
+        by : str or List[str], optional
+            group by, by default ["model"]
+
+            - by column name
+            - by temporal bin of the DateTimeIndex via the freq-argument
+            (using pandas pd.Grouper(freq)), e.g.: 'freq:M' = monthly; 'freq:D' daily
+            - by the dt accessor of the DateTimeIndex (e.g. 'dt.month') using the
+            syntax 'dt:month'. The dt-argument is different from the freq-argument
+            in that it gives month-of-year rather than month-of-data.
         metrics : list, optional
             list of modelskill.metrics, by default modelskill.options.metrics.list
 
@@ -988,13 +998,12 @@ class Comparer(Scoreable):
         if cmp.n_points == 0:
             raise ValueError("No data selected for skill assessment")
 
-        by = _parse_groupby(by, cmp.n_models, n_obs=1, n_var=1)
+        by = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=1)
 
-        df = cmp.to_dataframe()
-        res = _groupby_df(df, by, metrics)
-        res["x"] = df.groupby(by=by, observed=False).x.first()
-        res["y"] = df.groupby(by=by, observed=False).y.first()
-        # TODO: set x,y to NaN if TrackObservation
+        df = cmp._to_long_dataframe()
+        res = _groupby_df(df, by=by, metrics=metrics)
+        res["x"] = np.nan if self.gtype == "track" else cmp.x
+        res["y"] = np.nan if self.gtype == "track" else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -1025,7 +1034,7 @@ class Comparer(Scoreable):
 
         Returns
         -------
-        float
+        dict[str, float]
             skill score as a single number (for each model)
 
         See also
@@ -1038,10 +1047,10 @@ class Comparer(Scoreable):
         >>> import modelskill as ms
         >>> cmp = ms.match(c2, mod)
         >>> cmp.score()
-        0.3517964910888918
+        {'mod': 0.3517964910888918}
 
-        >>> cmp.score(metric=ms.metrics.mape)
-        11.567399646108198
+        >>> cmp.score(metric="mape")
+        {'mod': 11.567399646108198}
         """
         metric = _parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
@@ -1051,7 +1060,7 @@ class Comparer(Scoreable):
         model, start, end, area = _get_deprecated_args(kwargs)
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        s = self.skill(
+        sk = self.skill(
             by=["model", "observation"],
             metrics=[metric],
             model=model,  # deprecated
@@ -1059,7 +1068,7 @@ class Comparer(Scoreable):
             end=end,  # deprecated
             area=area,  # deprecated
         )
-        df = s.to_dataframe()
+        df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
 
@@ -1068,28 +1077,6 @@ class Comparer(Scoreable):
             .groupby("model", observed=True)[metric_name]
             .mean()
             .to_dict()
-        )
-
-    def spatial_skill(
-        self,
-        bins=5,
-        binsize=None,
-        by=None,
-        metrics=None,
-        n_min=None,
-        **kwargs,
-    ):
-        # deprecated
-        warnings.warn(
-            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
-        )
-        return self.gridded_skill(
-            bins=bins,
-            binsize=binsize,
-            by=by,
-            metrics=metrics,
-            n_min=n_min,
-            **kwargs,
         )
 
     def gridded_skill(
@@ -1125,8 +1112,8 @@ class Comparer(Scoreable):
 
         Returns
         -------
-        xr.Dataset
-            skill assessment as a dataset
+        SkillGrid
+            skill assessment as a SkillGrid object
 
         See also
         --------
@@ -1148,8 +1135,8 @@ class Comparer(Scoreable):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> ds = cc.gridded_skill(binsize=0.5)
-        >>> ds.coords
+        >>> gs = cc.gridded_skill(binsize=0.5)
+        >>> gs.data.coords
         Coordinates:
             observation   'alti'
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
@@ -1171,24 +1158,17 @@ class Comparer(Scoreable):
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 
-        df = cmp.to_dataframe()
+        df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        # n_models = len(df.model.unique())
-        # n_obs = len(df.observation.unique())
-
-        # n_obs=1 because we only have one observation (**SingleObsComparer**)
-        by = _parse_groupby(by=by, n_models=cmp.n_models, n_obs=1)
-        if isinstance(by, str) or (not isinstance(by, Iterable)):
-            by = [by]  # type: ignore
-        if "x" not in by:  # type: ignore
-            by.insert(0, "x")  # type: ignore
-        if "y" not in by:  # type: ignore
-            by.insert(0, "y")  # type: ignore
-        assert isinstance(by, list)
+        agg_cols = _parse_groupby(by=by, n_mod=cmp.n_models, n_qnt=1)
+        if "x" not in agg_cols:
+            agg_cols.insert(0, "x")
+        if "y" not in agg_cols:
+            agg_cols.insert(0, "y")
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
-        res = _groupby_df(df, by, metrics, n_min)
+        res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
         ds = res.to_xarray().squeeze()
 
         # change categorial index to coordinates
@@ -1198,7 +1178,7 @@ class Comparer(Scoreable):
         return SkillGrid(ds)
 
     @property
-    def residual(self):
+    def _residual(self):
         df = self.data.drop_vars(["x", "y", "z"]).to_dataframe()
         obs = df[self._obs_str].values
         mod = df[self.mod_names].values
@@ -1207,7 +1187,7 @@ class Comparer(Scoreable):
     def remove_bias(self, correct="Model") -> Comparer:
         cmp = self.copy()
 
-        bias = cmp.residual.mean(axis=0)
+        bias = cmp._residual.mean(axis=0)
         if correct == "Model":
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
@@ -1224,6 +1204,130 @@ class Comparer(Scoreable):
                 f"Unknown correct={correct}. Only know 'Model' and 'Observation'"
             )
         return cmp
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert matched data to pandas DataFrame
+
+        Include x, y coordinates only if gtype=track
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
+        if self.gtype == str(GeometryType.POINT):
+            # we remove the scalar coordinate variables as they
+            # will otherwise be columns in the dataframe
+            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        elif self.gtype == str(GeometryType.TRACK):
+            df = self.data.drop_vars(["z"]).to_dataframe()
+            # make sure that x, y cols are first
+            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            return df[cols]
+        else:
+            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
+    def save(self, filename: Union[str, Path]) -> None:
+        """Save to netcdf file
+
+        Parameters
+        ----------
+        filename : str or Path
+            filename
+        """
+        ds = self.data
+
+        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
+        # an alternative strategy would be to use NetCDF groups
+        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
+
+        # There is no need to save raw data for track data, since it is identical to the matched data
+        if self.gtype == "point":
+            ds = self.data.copy()  # copy needed to avoid modifying self.data
+
+            for key, ts_mod in self.raw_mod_data.items():
+                ts_mod = ts_mod.copy()
+                #  rename time to unique name
+                ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
+                # da = ds_mod.to_xarray()[key]
+                ds["_raw_" + key] = ts_mod.data[key]
+
+        ds.to_netcdf(filename)
+
+    @staticmethod
+    def load(filename: Union[str, Path]) -> "Comparer":
+        """Load from netcdf file
+
+        Parameters
+        ----------
+        filename : str or Path
+            filename
+
+        Returns
+        -------
+        Comparer
+        """
+        with xr.open_dataset(filename) as ds:
+            data = ds.load()
+
+        if data.gtype == "track":
+            return Comparer(matched_data=data)
+
+        if data.gtype == "point":
+            raw_mod_data: Dict[str, TimeSeries] = {}
+
+            for var in data.data_vars:
+                var_name = str(var)
+                if var_name[:5] == "_raw_":
+                    new_key = var_name[5:]  # remove prefix '_raw_'
+                    ds = data[[var_name]].rename(
+                        {"_time_raw_" + new_key: "time", var_name: new_key}
+                    )
+                    ts = PointObservation(data=ds, name=new_key)
+                    # TODO: name of time?
+                    # ts.name = new_key
+                    # df = (
+                    #     data[var_name]
+                    #     .to_dataframe()
+                    #     .rename(
+                    #         columns={"_time_raw_" + new_key: "time", var_name: new_key}
+                    #     )
+                    # )
+                    raw_mod_data[new_key] = ts
+
+                    # data = data.drop(var_name).drop("_time_raw_" + new_key)
+
+            # filter variables, only keep the ones with a 'time' dimension
+            data = data[[v for v in data.data_vars if "time" in data[v].dims]]
+
+            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+
+        else:
+            raise NotImplementedError(f"Unknown gtype: {data.gtype}")
+
+    # =============== Deprecated methods ===============
+
+    def spatial_skill(
+        self,
+        bins=5,
+        binsize=None,
+        by=None,
+        metrics=None,
+        n_min=None,
+        **kwargs,
+    ):
+        # deprecated
+        warnings.warn(
+            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
+        )
+        return self.gridded_skill(
+            bins=bins,
+            binsize=binsize,
+            by=by,
+            metrics=metrics,
+            n_min=n_min,
+            **kwargs,
+        )
 
     # TODO remove plotting methods in v1.1
     def scatter(
@@ -1330,11 +1434,3 @@ class Comparer(Scoreable):
         )
 
         return self.plot.residual_hist(bins=bins, title=title, color=color, **kwargs)
-
-
-# class PointComparer(Comparer):
-#     pass
-
-
-# class TrackComparer(Comparer):
-#     pass
