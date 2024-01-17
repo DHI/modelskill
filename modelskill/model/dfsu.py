@@ -1,4 +1,5 @@
 from __future__ import annotations
+import inspect
 from pathlib import Path
 from typing import Optional, get_args
 
@@ -164,10 +165,11 @@ class DfsuModelResult(SpatialField):
             )
 
         if method == "contained":
-            if z is None:
-                elemids = self.data.geometry.find_index(x=x, y=y)
-            else:
+            signature = inspect.signature(self.data.geometry.find_index)
+            if "z" in signature.parameters and z is not None:
                 elemids = self.data.geometry.find_index(x=x, y=y, z=z)
+            else:
+                elemids = self.data.geometry.find_index(x=x, y=y)
             if isinstance(self.data, mikeio.Dataset):
                 ds_model = self.data[self.sel_items.all].isel(element=elemids)
             elif isinstance(self.data, mikeio.DataArray):
