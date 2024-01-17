@@ -177,7 +177,9 @@ class DfsuModelResult(SpatialField):
                 ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
         else:
             if z is not None:
-                raise NotImplementedError("Interpolation in 3d files is not supported")
+                raise NotImplementedError(
+                    "Interpolation in 3d files is not supported, use spatial_method='contained' instead"
+                )
             if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
                 elemids = self.data.geometry.find_nearest_elements(
                     x, y, n_nearest=n_nearest
