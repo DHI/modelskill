@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import tempfile
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -617,8 +618,7 @@ class ComparerCollection(Mapping, Scoreable):
 
     def gridded_skill(
         self,
-        bins=5,
-        binsize: float | None = None,
+        bins: Any = 5,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: Optional[int] = None,
@@ -632,9 +632,6 @@ class ComparerCollection(Mapping, Scoreable):
             criteria to bin x and y by, argument bins to pd.cut(), default 5
             define different bins for x and y a tuple
             e.g.: bins = 5, bins = (5,[2,3,5])
-        binsize : float, optional
-            bin size for x and y dimension, overwrites bins
-            creates bins with reference to round(mean(x)), round(mean(y))
         by : str, List[str], optional
             group by, by default ["model", "observation"]
 
@@ -676,7 +673,7 @@ class ComparerCollection(Mapping, Scoreable):
             n            (x, y) int32 3 0 0 14 37 17 50 36 72 ... 0 0 15 20 0 0 0 28 76
             bias         (x, y) float64 -0.02626 nan nan ... nan 0.06785 -0.1143
 
-        >>> gs = cc.gridded_skill(binsize=0.5)
+        >>> gs = cc.gridded_skill()
         >>> gs.data.coords
         Coordinates:
             observation   'alti'
@@ -705,7 +702,7 @@ class ComparerCollection(Mapping, Scoreable):
         metrics = _parse_metric(metrics)
 
         df = cmp._to_long_dataframe()
-        df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
+        df = _add_spatial_grid_to_df(df=df, bins=bins)
 
         agg_cols = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=cmp.n_quantities)
         if "x" not in agg_cols:
@@ -1123,7 +1120,6 @@ class ComparerCollection(Mapping, Scoreable):
     def spatial_skill(
         self,
         bins=5,
-        binsize=None,
         by=None,
         metrics=None,
         n_min=None,
@@ -1134,7 +1130,6 @@ class ComparerCollection(Mapping, Scoreable):
         )
         return self.gridded_skill(
             bins=bins,
-            binsize=binsize,
             by=by,
             metrics=metrics,
             n_min=n_min,

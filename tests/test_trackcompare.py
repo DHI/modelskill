@@ -336,12 +336,6 @@ def test_gridded_skill_bins(comparer):
     assert len(ds.x) == 2
     assert len(ds.y) == 3
 
-    # binsize (overwrites bins)
-    ds = comparer.gridded_skill(metrics=["bias"], binsize=2.5, bins=100)
-    assert len(ds.x) == 4
-    assert len(ds.y) == 3
-    assert ds.x[0] == -0.75
-
 
 # This test doesn't test anything meaningful
 # def test_gridded_skill_by(comparer):

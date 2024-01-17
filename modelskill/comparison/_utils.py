@@ -9,31 +9,14 @@ TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
 IdxOrNameTypes = Union[int, str, List[int], List[str]]
 
 
-def _add_spatial_grid_to_df(
-    df: pd.DataFrame, bins, binsize: Optional[float]
-) -> pd.DataFrame:
-    if binsize is None:
-        # bins from bins
-        if isinstance(bins, tuple):
-            bins_x = bins[0]
-            bins_y = bins[1]
-        else:
-            bins_x = bins
-            bins_y = bins
+def _add_spatial_grid_to_df(df: pd.DataFrame, bins) -> pd.DataFrame:
+    if isinstance(bins, tuple):
+        bins_x = bins[0]
+        bins_y = bins[1]
     else:
-        # bins from binsize
-        x_ptp = df.x.values.ptp()  # type: ignore
-        y_ptp = df.y.values.ptp()  # type: ignore
-        nx = int(np.ceil(x_ptp / binsize))
-        ny = int(np.ceil(y_ptp / binsize))
-        x_mean = np.round(df.x.mean())
-        y_mean = np.round(df.y.mean())
-        bins_x = np.arange(
-            x_mean - nx / 2 * binsize, x_mean + (nx / 2 + 1) * binsize, binsize
-        )
-        bins_y = np.arange(
-            y_mean - ny / 2 * binsize, y_mean + (ny / 2 + 1) * binsize, binsize
-        )
+        bins_x = bins
+        bins_y = bins
+
     # cut and get bin centre
     df["xBin"] = pd.cut(df.x, bins=bins_x)
     df["xBin"] = df["xBin"].apply(lambda x: x.mid)
