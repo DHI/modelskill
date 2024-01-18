@@ -257,6 +257,17 @@ def _scatter_matplotlib(
 ) -> matplotlib.axes.Axes:
     fig, ax = _get_fig_ax(ax, figsize)
 
+    N_POINTS_MIN = 50  # TODO what is a good number here?
+    show_qq = True
+
+    if len(x) < 3:
+        raise ValueError("Not enough data to plot")
+
+    if len(x) < N_POINTS_MIN:
+        show_density = False
+        show_hist = False
+        show_qq = False
+
     ax.plot(
         [xlim[0], xlim[1]],
         [xlim[0], xlim[1]],
@@ -284,7 +295,7 @@ def _scatter_matplotlib(
             norm=norm_,
             **kwargs,
         )
-    if len(xq) > 0:
+    if show_qq:
         ax.plot(
             xq,
             yq,
