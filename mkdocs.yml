@@ -16,6 +16,7 @@ nav:
     - 'getting-started.md'
     - 'user-guide/terminology.md'  
     - 'user-guide/data-structures.md'
+    - 'user-guide/matching.md'
     - 'user-guide/selecting-data.md'
     - 'overview.md'    
   - API Reference:
