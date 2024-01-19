@@ -324,7 +324,9 @@ def _single_obs_compare(
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
     raw_mod_data = {m.name: m.extract(obs, spatial_method) for m in mods}
-    matched_data = match_space_time(obs, raw_mod_data, max_model_gap)
+    matched_data = match_space_time(
+        observation=obs, raw_mod_data=raw_mod_data, max_model_gap=max_model_gap
+    )
     matched_data.attrs["weight"] = obs.weight
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
@@ -342,7 +344,7 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 def match_space_time(
     observation: PointObservation | TrackObservation,
     raw_mod_data: Dict[str, PointModelResult | TrackModelResult],
-    max_model_gap: Optional[TimeDeltaTypes] = None,
+    max_model_gap: float | None = None,
     spatial_tolerance: float = 1e-3,
 ) -> xr.Dataset:
     """Match observation with one or more model results in time domain

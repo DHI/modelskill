@@ -82,7 +82,7 @@ class PointModelResult(TimeSeries):
         self,
         new_time: pd.DatetimeIndex,
         dropna: bool = True,
-        max_gap: TimeDeltaTypes | None = None,
+        max_gap: float | None = None,
         **kwargs: Any,
     ) -> PointModelResult:
         """Interpolate time series to new time index
@@ -124,11 +124,11 @@ class PointModelResult(TimeSeries):
     def _remove_model_gaps(
         self,
         mod_index: pd.DatetimeIndex,
-        max_gap: TimeDeltaTypes,
+        max_gap: float | None = None,
     ) -> PointModelResult:
         """Remove model gaps longer than max_gap from TimeSeries"""
-        max_gap = _time_delta_to_pd_timedelta(max_gap)
-        valid_times = self._get_valid_times(mod_index, max_gap)
+        max_gap_delta = pd.Timedelta(max_gap, "s")
+        valid_times = self._get_valid_times(mod_index, max_gap_delta)
         ds = self.data.sel(time=valid_times)
         return PointModelResult(ds)
 
@@ -164,13 +164,3 @@ def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
         .reindex(new_time)
     )
     return new_df
-
-
-def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
-    if isinstance(time_delta, (timedelta, np.timedelta64)):
-        time_delta = pd.Timedelta(time_delta)
-    elif np.isscalar(time_delta):
-        # assume seconds
-        time_delta = pd.Timedelta(time_delta, "s")
-    assert isinstance(time_delta, pd.Timedelta)
-    return time_delta
