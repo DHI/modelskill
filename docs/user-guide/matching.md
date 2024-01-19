@@ -15,10 +15,17 @@ The matching process will be different depending on the geometry of observation 
 Temporal matching is done by interpolating the model result data to the observation data time points; it is carried out after spatial matching when applicable. The interpolation is *linear* in time and done inside the `match()` function.
 
 
-
 ## Matching of time series
 
 If observation and model result are of the same geometry, the matching is done *one* observation at a time. Several model results can be matched to the same observation. The result of the matching process is a `Comparer` object which contains the matched data. 
+
+In the most simple cases, one observation to one model result, the `match()` function can be used directly, without creating Observation and ModelResult objects first:
+
+```python
+>>> cmp = ms.match('obs.dfs0', 'model.dfs0', obs_item='obs_WL', mod_item='WL')
+```
+
+In all other cases, the observations and model results needs to be defined first.
 
 ```python
 >>> o = ms.observation('obs.dfs0', item='waterlevel')
@@ -37,6 +44,7 @@ In most cases, *several* observations needs to matched with several model result
 >>>     cmps.append(ms.match(o, [mr1, mr2]))
 >>> cc = ms.ComparerCollection(cmps)
 ```
+
 
 
 ## Matching with dfsu or grid model result
@@ -62,7 +70,6 @@ Matching `TrackObservation` with `SpatialField` model results is for technical r
 The spatial matching method (selection or interpolation) can be specified using the `spatial_method` argument of the `match()` function. The default method depends on the type of observation and model result as specified in the sections below.
 
 
-
 ### Extracting data from a DfsuModelResult
 
 Extracting data for a specific point position from the flexible mesh dfsu files can be done in several ways (specified by the `spatial_method` argument of the `match()` function): 
@@ -70,7 +77,6 @@ Extracting data for a specific point position from the flexible mesh dfsu files 
 * Selection of the "contained" element 
 * Selection of the "nearest" element (often the same as the contained element, but not always)
 * Interpolation with "inverse_distance" weighting (IDW) using the five nearest elements (default)
-
 
 The default (inverse_distance) is not necessarily the best method in all cases. When the extracted position is close to the model boundary, "contained" may be a better choice.
 
@@ -95,3 +101,8 @@ Extracting data from a GridModelResult is done through xarray's `interp()` funct
 ## Event-based matching and handling of gaps
 
 If the model result data contains gaps either because only events are stored or because of missing data, the `max_model_gap` argument of the `match()` function can be used to specify the maximum allowed gap (in seconds) in the model result data. This will avoid interpolating model data over long gaps in the model result data!
+
+
+## Multiple model results with different temporal coverage
+
+If the model results have different temporal coverage, the `match()` function will only match the overlapping time period to ensure that the model results are comparable. The `Comparer` object will contain the matched data for the overlapping period only.
