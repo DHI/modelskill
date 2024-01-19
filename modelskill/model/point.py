@@ -1,5 +1,7 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Any
+from datetime import timedelta
+from typing import Optional, Sequence, Any, TypeVar, Union
+import numpy as np
 
 import xarray as xr
 import pandas as pd
@@ -8,6 +10,9 @@ from ..obs import PointObservation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
+
+TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
+T = TypeVar("T", bound="TimeSeries")
 
 
 class PointModelResult(TimeSeries):
@@ -77,6 +82,7 @@ class PointModelResult(TimeSeries):
         self,
         new_time: pd.DatetimeIndex,
         dropna: bool = True,
+        max_gap: TimeDeltaTypes | None = None,
         **kwargs: Any,
     ) -> PointModelResult:
         """Interpolate time series to new time index
@@ -109,4 +115,64 @@ class PointModelResult(TimeSeries):
         )
         if dropna:
             dati = dati.dropna(dim="time")
-        return PointModelResult(dati)
+
+        pmr = PointModelResult(dati)
+        if max_gap is not None:
+            pmr = _remove_model_gaps(ts=pmr, mod_index=self.time, max_gap=max_gap)
+
+        return pmr
+
+
+def _remove_model_gaps(
+    ts: T,
+    mod_index: pd.DatetimeIndex,
+    max_gap: TimeDeltaTypes,
+) -> T:
+    """Remove model gaps longer than max_gap from TimeSeries"""
+    max_gap = _time_delta_to_pd_timedelta(max_gap)
+    valid_time = _get_valid_query_time(mod_index, ts.time, max_gap)
+    ds = ts.data.sel(time=valid_time[valid_time].index)
+    return ts.__class__(ds)
+
+
+def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
+    """Interpolate time series to new time index"""
+    new_df = (
+        df.reindex(df.index.union(new_time))
+        .interpolate(method="time", limit_area="inside")
+        .reindex(new_time)
+    )
+    return new_df
+
+
+def _get_valid_query_time(
+    mod_index: pd.DatetimeIndex, obs_index: pd.DatetimeIndex, max_gap: pd.Timedelta
+) -> pd.Series[bool]:
+    """Used only by _remove_model_gaps"""
+    # init dataframe of available timesteps and their index
+    df = pd.DataFrame(index=mod_index)
+    df["idx"] = range(len(df))
+
+    # for query times get available left and right index of source times
+    df = _interp_time(df, obs_index).dropna()
+    df["idxa"] = np.floor(df.idx).astype(int)
+    df["idxb"] = np.ceil(df.idx).astype(int)
+
+    # time of left and right source times and time delta
+    df["ta"] = mod_index[df.idxa]
+    df["tb"] = mod_index[df.idxb]
+    df["dt"] = df.tb - df.ta
+
+    # valid query times where time delta is less than max_gap
+    valid_idx = df.dt <= max_gap
+    return valid_idx
+
+
+def _time_delta_to_pd_timedelta(time_delta: TimeDeltaTypes) -> pd.Timedelta:
+    if isinstance(time_delta, (timedelta, np.timedelta64)):
+        time_delta = pd.Timedelta(time_delta)
+    elif np.isscalar(time_delta):
+        # assume seconds
+        time_delta = pd.Timedelta(time_delta, "s")
+    assert isinstance(time_delta, pd.Timedelta)
+    return time_delta
