@@ -125,7 +125,15 @@ class TimeSeries:
 
     def __init__(self, data: xr.Dataset) -> None:
         self.data = data if self._is_input_validated(data) else _validate_dataset(data)
+
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
+        """Plot using the ComparerPlotter
+
+        Examples
+        --------
+        >>> obj.plot.timeseries()
+        >>> obj.plot.hist()
+        """
 
     def _is_input_validated(self, data: Any) -> bool:
         """Check if data is already a valid TimeSeries (contains the modelskill_version attribute)"""

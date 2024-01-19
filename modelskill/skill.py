@@ -308,7 +308,17 @@ class SkillArray:
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
         self._ser = data.iloc[:, -1]  # last column is the metric
+        
         self.plot = SkillArrayPlotter(self)
+        """Plot using the SkillArrayPlotter
+
+        Examples
+        --------
+        >>> sk.rmse.plot.line()
+        >>> sk.rmse.plot.bar()
+        >>> sk.rmse.plot.barh()
+        >>> sk.rmse.plot.grid()
+        """
 
     def to_dataframe(self, drop_xy=True) -> pd.DataFrame:
         """Convert SkillArray to pd.DataFrame
