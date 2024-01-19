@@ -55,7 +55,9 @@ def test_spatial_skill_deprecated(cmp1) -> None:
     assert len(ss.obs_names) == 0
     df = ss.to_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert "Coordinates:" in repr(ss)
+    # assert "Coordinates:" in repr(ss)
+    assert "y: 5" in repr(ss)
+    assert "x: 5" in repr(ss)
     assert ss.coords is not None
     assert ss.n is not None
 
