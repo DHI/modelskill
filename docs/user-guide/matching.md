@@ -52,24 +52,43 @@ In this situation, *multiple* observations can be matched to the same model resu
 >>> cc = ms.match([o1, o2], mr)   # returns a ComparerCollection
 ```
 
-Matching `PointObservation`s with `SpatialField` model results consists of two steps: 
+Matching `PointObservation` with `SpatialField` model results consists of two steps: 
 
 1. Extracting data from the model result at the spatial position of the observation, which returns a PointModelResult
 2. Matching the extracted data with the observation data in time
 
-Matching `TrackObservation`s with `SpatialField` model results is for technical reasons handled in *one* step, i.e., the data is extracted in both space and time.
+Matching `TrackObservation` with `SpatialField` model results is for technical reasons handled in *one* step, i.e., the data is extracted in both space and time.
+
+The spatial matching method (selection or interpolation) can be specified using the `spatial_method` argument of the `match()` function. The default method depends on the type of observation and model result as specified in the sections below.
 
 
 
 ### Extracting data from a DfsuModelResult
 
+Extracting data for a specific point position from the flexible mesh dfsu files can be done in several ways (specified by the `spatial_method` argument of the `match()` function): 
+
+* Selection of the "contained" element 
+* Selection of the "nearest" element (often the same as the contained element, but not always)
+* Interpolation with "inverse_distance" weighting (IDW) using the five nearest elements (default)
+
+
+The default (inverse_distance) is not necessarily the best method in all cases. When the extracted position is close to the model boundary, "contained" may be a better choice.
+
+```python
+>>> cc = ms.match([o1, o2], mr_dfsu, spatial_method='contained')   
+```
+
+Note that extraction of *track* data does not currently support the "contained" method.
+
+Note that the extraction of point data from 3D dfsu files is not yet fully supported. It is recommended to extract the data "offline" prior to using ModelSkill.
 
 
 ### Extracting data from a GridModelResult
 
+Extracting data from a GridModelResult is done through xarray's `interp()` function. The `spatial_method` argument of the `match()` function is passed on to the `interp()` function as the `method` argument. The default method is "linear" which is the recommended method for most cases. Close to land where the grid model result data is often missing, "nearest" may be a better choice.
 
 
 
 ## Event-based matching and handling of gaps
 
-If the model result data contains gaps either because only events are stored or because of missing data, the `max_model_gap` argument of the `match()` function can be used to specify the maximum allowed gap (in seconds) in the model result data. 
+If the model result data contains gaps either because only events are stored or because of missing data, the `max_model_gap` argument of the `match()` function can be used to specify the maximum allowed gap (in seconds) in the model result data. This will avoid interpolating model data over long gaps in the model result data!
