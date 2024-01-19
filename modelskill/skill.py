@@ -529,20 +529,33 @@ class SkillTable:
         if item in self.data.columns:
             return self[item]  # Redirects to __getitem__
         else:
-            raise AttributeError(f"SkillTable has no attribute {item}")
+            attr = getattr(self.data, item)
+            if isinstance(attr, pd.DataFrame):
+                return SkillTable(attr)
+            elif isinstance(attr, pd.Series):
+                return SkillArray(attr)
+            else:
+                return attr
+                # raise AttributeError(
+                #     f"""
+                #         SkillTable has no attribute {item}; Maybe you are 
+                #         looking for the corresponding DataFrame attribute? 
+                #         Try exporting the skill table to a DataFrame using sk.to_dataframe().
+                #     """
+                # )
 
     # TODO used in tests, but is it needed?
-    @property
-    def index(self) -> Any:
-        return self.data.index
+    # @property
+    # def index(self) -> Any:
+    #     return self.data.index
 
-    @property
-    def iloc(self, *args, **kwargs):  # type: ignore
-        return self.data.iloc(*args, **kwargs)
+    # @property
+    # def iloc(self, *args, **kwargs):  # type: ignore
+    #     return self.data.iloc(*args, **kwargs)
 
-    @property
-    def loc(self, *args, **kwargs):  # type: ignore
-        return self.data.loc(*args, **kwargs)
+    # @property
+    # def loc(self, *args, **kwargs):  # type: ignore
+    #     return self.data.loc(*args, **kwargs)
 
     def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
         """Sort by index (level) e.g. sorting by observation
