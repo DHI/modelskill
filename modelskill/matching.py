@@ -329,15 +329,6 @@ def _single_obs_compare(
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
-    # def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
-    #     """Interpolate time series to new time index"""
-    #     new_df = (
-    #         df.reindex(df.index.union(new_time))
-    #         .interpolate(method="time", limit_area="inside")
-    #         .reindex(new_time)
-    #     )
-    return new_df
-
 
 def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
     assert all([len(x) > 0 for x in idxs])
