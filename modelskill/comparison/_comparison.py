@@ -998,10 +998,10 @@ class Comparer(Scoreable):
         if cmp.n_points == 0:
             raise ValueError("No data selected for skill assessment")
 
-        by = _parse_groupby(by, cmp.n_models, n_obs=1, n_qnt=1)
+        by = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=1)
 
         df = cmp._to_long_dataframe()
-        res = _groupby_df(df, by, metrics)
+        res = _groupby_df(df, by=by, metrics=metrics)
         res["x"] = np.nan if self.gtype == "track" else cmp.x
         res["y"] = np.nan if self.gtype == "track" else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
@@ -1161,21 +1161,14 @@ class Comparer(Scoreable):
         df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        # n_models = len(df.model.unique())
-        # n_obs = len(df.observation.unique())
-
-        # n_obs=1 because we only have one observation (**SingleObsComparer**)
-        by = _parse_groupby(by=by, n_models=cmp.n_models, n_obs=1)
-        if isinstance(by, str) or (not isinstance(by, Iterable)):
-            by = [by]  # type: ignore
-        if "x" not in by:  # type: ignore
-            by.insert(0, "x")  # type: ignore
-        if "y" not in by:  # type: ignore
-            by.insert(0, "y")  # type: ignore
-        assert isinstance(by, list)
+        agg_cols = _parse_groupby(by=by, n_mod=cmp.n_models, n_qnt=1)
+        if "x" not in agg_cols:
+            agg_cols.insert(0, "x")
+        if "y" not in agg_cols:
+            agg_cols.insert(0, "y")
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
-        res = _groupby_df(df, by, metrics, n_min)
+        res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
         ds = res.to_xarray().squeeze()
 
         # change categorial index to coordinates

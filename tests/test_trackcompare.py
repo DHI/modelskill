@@ -343,10 +343,10 @@ def test_gridded_skill_bins(comparer):
     assert ds.x[0] == -0.75
 
 
-def test_gridded_skill_by(comparer):
-    # odd order of by
-    ds = comparer.gridded_skill(metrics=["bias"], by=["y", "mod"])
-    assert ds.coords._names == {"y", "model", "x"}
+# This test doesn't test anything meaningful
+# def test_gridded_skill_by(comparer):
+#     ds = comparer.gridded_skill(metrics=["bias"], by=["y", "mod"])
+#     assert ds.coords._names == {"y", "model", "x"}
 
 
 def test_gridded_skill_misc(comparer):

@@ -299,6 +299,14 @@ def test_skill_by_attrs_gtype(cc):
     assert sk.data.index.name == "gtype"
 
 
+def test_skill_by_freq(cc):
+    skd = cc.skill(by="freq:D")
+    assert len(skd) == 7
+
+    skw = cc.skill(by="freq:W")
+    assert len(skw) == 2
+
+
 def test_skill_by_attrs_gtype_and_mod(cc):
     sk = cc.skill(by=["attrs:gtype", "model"])
     assert len(sk) == 5

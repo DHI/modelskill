@@ -45,7 +45,8 @@ def _add_spatial_grid_to_df(
 
 def _groupby_df(
     df: pd.DataFrame,
-    by: List[str],
+    *,
+    by: List[str | pd.Grouper],
     metrics: List[Callable],
     n_min: Optional[int] = None,
 ) -> pd.DataFrame:
@@ -122,35 +123,28 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
 
 
 def _parse_groupby(
-    by: Iterable[str] | None, n_models: int, n_obs: int, n_qnt: int = 1
-) -> List[str | pd.core.resample.TimeGrouper]:
+    by: str | Iterable[str] | None, *, n_mod: int, n_qnt: int
+) -> List[str | pd.Grouper]:
     if by is None:
-        by = []
-        if n_models > 1:
-            by.append("model")
-        if n_obs > 1:  # or ((n_models == 1) and (n_obs == 1)):
-            by.append("observation")
-        if n_qnt > 1:
-            by.append("quantity")
-        if len(by) == 0:
-            # default value
-            by.append("observation")
-        return by
+        cols: List[str | pd.Grouper]
+        cols = ["model", "observation", "quantity"]
+
+        if n_mod == 1:
+            cols.remove("model")
+        if n_qnt == 1:
+            cols.remove("quantity")
+        return cols
 
     if isinstance(by, str):
-        if by in {"mdl", "mod", "models"}:
-            by = "model"
-        if by in {"obs", "observations"}:
-            by = "observation"
-        if by in {"var", "quantities", "item"}:
-            by = "quantity"
-        if by[:5] == "freq:":
-            freq = by.split(":")[1]
-            by = pd.Grouper(key="time", freq=freq)
-        return [by]
+        cols = [by]
     elif isinstance(by, Iterable):
-        by = [_parse_groupby(b, n_models, n_obs, n_qnt)[0] for b in by]
-        return by
-    else:
-        raise ValueError("Invalid by argument. Must be string or list of strings.")
-    return by
+        cols = list(by)
+
+    res = []
+    for col in cols:
+        if col[:5] == "freq:":
+            freq = col.split(":")[1]
+            res.append(pd.Grouper(key="time", freq=freq))
+        else:
+            res.append(col)
+    return res
