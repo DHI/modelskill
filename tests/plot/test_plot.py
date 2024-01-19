@@ -93,7 +93,7 @@ def test_format_skill_table():
 
     df = format_skill_table(skill_scores, unit="degC")
     assert "N" in df.iloc[0, 0]
-    assert "167" in df.iloc[0, 2]
+    assert "167" == str(df.iloc[0, 2]).strip()
     assert "BIAS" in df.iloc[1, 0]
     assert "0.00 degC" in df.iloc[1, 2]
     assert "RMSE" in df.iloc[2, 0]
