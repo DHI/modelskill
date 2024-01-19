@@ -87,6 +87,9 @@ Note that the extraction of point data from 3D dfsu files is not yet fully suppo
 
 Extracting data from a GridModelResult is done through xarray's `interp()` function. The `spatial_method` argument of the `match()` function is passed on to the `interp()` function as the `method` argument. The default method is "linear" which is the recommended method for most cases. Close to land where the grid model result data is often missing, "nearest" may be a better choice.
 
+```python
+>>> cc = ms.match([o1, o2], mr_netcdf, spatial_method='nearest')   
+```
 
 
 ## Event-based matching and handling of gaps
