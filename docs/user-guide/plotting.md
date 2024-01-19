@@ -54,7 +54,7 @@ The `plot` accessor on a Comparer or ComparerCollection object can be used to pl
 
 ## Plotting Taylor diagrams
 
-A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean square error. The `taylor` plot can be accessed through the Comparer [`plot`](api/comparer.md/#modelskill.comparison._comparer_plotter.ComparerPlotter) accessor or the ComparerCollection [`plot`](../api/comparercollection.md/#modelskill.comparison._collection_plotter.ComparerCollectionPlotter) accessor:
+A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean square error. The `taylor` plot can be accessed through the Comparer [`plot`](../api/comparer.md/#modelskill.comparison._comparer_plotter.ComparerPlotter) accessor or the ComparerCollection [`plot`](../api/comparercollection.md/#modelskill.comparison._collection_plotter.ComparerCollectionPlotter) accessor:
 
 ```python
 >>> cc = ms.match([o1, o2, o3], [mr_CMEMS, mr_ERA5, mr_MIKE21SW])
