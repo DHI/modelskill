@@ -19,4 +19,5 @@ __all__ = [
     "taylor_diagram",
     "temporal_coverage",
     "wind_rose",
+    "TaylorPoint",
 ]

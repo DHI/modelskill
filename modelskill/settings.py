@@ -302,7 +302,7 @@ def register_option(
     key: str,
     defval: object,
     doc: str = "",
-    validator: Optional[Callable[[object], Any]] = None,
+    validator: Optional[Callable[[Any], Any]] = None,
     # cb: Optional[Callable[[str], Any]] = None,
 ) -> None:
     """
