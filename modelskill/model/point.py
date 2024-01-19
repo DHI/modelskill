@@ -1,6 +1,5 @@
 from __future__ import annotations
-from datetime import timedelta
-from typing import Optional, Sequence, Any, TypeVar, Union
+from typing import Optional, Sequence, Any
 import numpy as np
 
 import xarray as xr
@@ -10,9 +9,6 @@ from ..obs import PointObservation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
-
-TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
-T = TypeVar("T", bound="TimeSeries")
 
 
 class PointModelResult(TimeSeries):
