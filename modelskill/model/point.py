@@ -17,15 +17,17 @@ class PointModelResult(TimeSeries):
 
     Parameters
     ----------
-    data : types.PointType
-        the input data or file path
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        filename (.dfs0 or .nc) or object with the data
     name : Optional[str], optional
         The name of the model result,
         by default None (will be set to file name or item name)
     x : float, optional
-        first coordinate of point position, by default None
+        first coordinate of point position, inferred from data if not given, else None
     y : float, optional
-        second coordinate of point position, by default None
+        second coordinate of point position, inferred from data if not given, else None
+    z : float, optional
+        third coordinate of point position, inferred from data if not given, else None
     item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None

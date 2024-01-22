@@ -145,17 +145,17 @@ class PointObservation(Observation):
 
     Parameters
     ----------
-    data : (str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset, xr.DataArray)
-        filename or object with the data
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        filename (.dfs0 or .nc) or object with the data
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
     x : float, optional
-        x-coordinate of the observation point, by default None
+        x-coordinate of the observation point, inferred from data if not given, else None
     y : float, optional
-        y-coordinate of the observation point, by default None
+        y-coordinate of the observation point, inferred from data if not given, else None
     z : float, optional
-        z-coordinate of the observation point, by default None
+        z-coordinate of the observation point, inferred from data if not given, else None
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
     quantity : Quantity, optional
