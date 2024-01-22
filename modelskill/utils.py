@@ -17,6 +17,8 @@ POS_COORDINATE_NAME_MAPPING = {
     "north": "y",
     "x": "x",
     "y": "y",
+    "z": "z",
+    "depth": "z",
 }
 TIME_COORDINATE_NAME_MAPPING = {
     "t": "time",

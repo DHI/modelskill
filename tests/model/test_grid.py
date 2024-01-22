@@ -218,3 +218,27 @@ def test_grid_with_directional_data_with_cf_metadata_is_directional_by_default()
         "tests/testdata/SW/CMEMS_DutchCoast_2017-10-28.nc", item="VMDR"
     )
     assert mr.quantity.is_directional
+
+
+def test_extract_point_from_3d():
+    mr = ms.GridModelResult(
+        "tests/testdata/cmems_mod_med_phy-sal_anfc_4.2km-3D_PT1H-m_1705916517624.nc",
+        item="so",
+    )
+
+    assert "x" in mr.data.dims  # renamed from longitude
+    assert "y" in mr.data.dims  # renamed from latitude
+    assert "z" in mr.data.dims  # renamed from depth
+
+    point_ds = xr.open_dataset("tests/testdata/aegean_sea_salinity_ts.nc")
+    obs = ms.PointObservation(
+        point_ds,
+        x=float(point_ds.longitude),
+        y=float(point_ds.latitude),
+        z=float(point_ds.depth),
+        item="so",
+    )
+    assert obs.z is not None
+
+    pmr = mr.extract(obs)
+    assert isinstance(pmr, ms.PointModelResult)
