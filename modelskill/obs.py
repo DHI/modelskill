@@ -195,9 +195,13 @@ class PointObservation(Observation):
             data = _parse_point_input(
                 data, name=name, item=item, quantity=quantity, aux_items=aux_items
             )
-            data.coords["x"] = x
-            data.coords["y"] = y
-            data.coords["z"] = z
+
+            # TODO re-use for PointModelResult
+            coords = ("x", "y", "z")
+
+            for coord, value in zip(coords, (x, y, z)):
+                if coord not in data.coords:
+                    data.coords[coord] = value
 
         assert isinstance(data, xr.Dataset)
 

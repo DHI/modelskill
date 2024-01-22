@@ -221,3 +221,11 @@ def test_mikeio_iteminfo_pretty_units():
 
     obs = ms.PointObservation(da, x=0, y=0)
     assert obs.quantity.unit == "m^3/s"
+
+
+def test_pointObservation_from_nc_file():
+    obs = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.nc", item="Water Level"
+    )
+    assert obs.x == pytest.approx(366844)
+    assert obs.y == pytest.approx(6154291)

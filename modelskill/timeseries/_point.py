@@ -63,9 +63,12 @@ def _parse_point_input(
     ), f"Could not construct object from provided data of type {type(data)}"
 
     if isinstance(data, (str, Path)):
-        assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
-        name = name or Path(data).stem
-        data = mikeio.read(data)  # now mikeio.Dataset
+        suffix = Path(data).suffix
+        if suffix == ".dfs0":
+            name = name or Path(data).stem
+            data = mikeio.read(data)  # now mikeio.Dataset
+        elif suffix == ".nc":
+            data = xr.open_dataset(data)
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
 
