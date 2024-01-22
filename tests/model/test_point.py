@@ -244,3 +244,4 @@ def test_point_model_result_from_nc_file():
     )
     assert mr.x == pytest.approx(366844)
     assert mr.y == pytest.approx(6154291)
+    assert mr.name == "smhi_2095_klagshamn"

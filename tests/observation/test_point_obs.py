@@ -223,9 +223,30 @@ def test_mikeio_iteminfo_pretty_units():
     assert obs.quantity.unit == "m^3/s"
 
 
-def test_pointObservation_from_nc_file():
+def test_point_observation_from_nc_file():
     obs = ms.PointObservation(
         "tests/testdata/smhi_2095_klagshamn.nc", item="Water Level"
     )
     assert obs.x == pytest.approx(366844)
     assert obs.y == pytest.approx(6154291)
+
+    # TODO is using the filename as name a good idea?
+    assert obs.name == "smhi_2095_klagshamn"
+
+    named_obs = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.nc",
+        item="Water Level",
+        name="Klagshamn",
+    )
+
+    assert named_obs.name == "Klagshamn"
+
+
+def test_point_observation_set_coords():
+    """Setting x, y explicitly should override the values in the file"""
+    obs = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.nc", item="Water Level", x=0, y=0
+    )
+
+    assert obs.x == 0
+    assert obs.y == 0

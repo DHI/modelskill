@@ -193,15 +193,15 @@ class PointObservation(Observation):
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_point_input(
-                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                x=x,
+                y=y,
+                z=z,
             )
-
-            # TODO re-use for PointModelResult
-            coords = ("x", "y", "z")
-
-            for coord, value in zip(coords, (x, y, z)):
-                if coord not in data.coords:
-                    data.coords[coord] = value
 
         assert isinstance(data, xr.Dataset)
 

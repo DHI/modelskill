@@ -49,19 +49,15 @@ class PointModelResult(TimeSeries):
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_point_input(
-                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                x=x,
+                y=y,
+                z=z,
             )
-
-            # TODO extract to common function for obs and model
-            coords = ("x", "y", "z")
-
-            for coord, value in zip(coords, (x, y, z)):
-                if coord not in data.coords:
-                    data.coords[coord] = value
-
-            # data.coords["x"] = x
-            # data.coords["y"] = y
-            # data.coords["z"] = None  # TODO: or np.nan?
 
         assert isinstance(data, xr.Dataset)
 
