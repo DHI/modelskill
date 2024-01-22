@@ -42,6 +42,7 @@ class PointModelResult(TimeSeries):
         name: Optional[str] = None,
         x: Optional[float] = None,
         y: Optional[float] = None,
+        z: Optional[float] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[Sequence[int | str]] = None,
@@ -51,9 +52,16 @@ class PointModelResult(TimeSeries):
                 data, name=name, item=item, quantity=quantity, aux_items=aux_items
             )
 
-            data.coords["x"] = x
-            data.coords["y"] = y
-            data.coords["z"] = None  # TODO: or np.nan?
+            # TODO extract to common function for obs and model
+            coords = ("x", "y", "z")
+
+            for coord, value in zip(coords, (x, y, z)):
+                if coord not in data.coords:
+                    data.coords[coord] = value
+
+            # data.coords["x"] = x
+            # data.coords["y"] = y
+            # data.coords["z"] = None  # TODO: or np.nan?
 
         assert isinstance(data, xr.Dataset)
 

@@ -236,3 +236,11 @@ def test_point_to_dataframe(df_aux):
     assert df.shape == (6, 3)
     assert list(df.columns) == ["WL", "aux1", "aux2"]
     assert df.index[0] == datetime(2019, 1, 1, 0, 0, 0)
+
+
+def test_point_model_result_from_nc_file():
+    mr = ms.PointModelResult(
+        "tests/testdata/smhi_2095_klagshamn.nc", item="Water Level"
+    )
+    assert mr.x == pytest.approx(366844)
+    assert mr.y == pytest.approx(6154291)
