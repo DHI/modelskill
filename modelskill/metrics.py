@@ -533,18 +533,20 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
 def pr(
     obs: np.ndarray,
     model: np.ndarray,
+    time: pd.DatetimeIndex,
     inter_event_level: float = 0.7,
     AAP: int = 2,
     inter_event_time="36h",
 ) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
-    return peak_ratio(obs, model, inter_event_level, AAP, inter_event_time)
+    return peak_ratio(obs, model, time, inter_event_level, AAP, inter_event_time)
 
 
 def peak_ratio(
-    obs: pd.Series,
-    model: pd.Series,
+    obs: np.ndarray,
+    model: np.ndarray,
+    time: pd.Series,
     inter_event_level: float = 0.7,
     AAP: int = 2,
     inter_event_time="36h",
@@ -574,8 +576,10 @@ def peak_ratio(
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
-    assert isinstance(obs.index, pd.DatetimeIndex)
-    time = obs.index
+    assert isinstance(time, pd.Series)
+    obs = pd.Series(obs, index=time)
+    model = pd.Series(model, index=time)
+
     # Calculate number of years
     dt_int = time[1:].values - time[0:-1].values
     dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds

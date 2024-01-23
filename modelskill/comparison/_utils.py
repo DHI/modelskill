@@ -1,4 +1,5 @@
 from __future__ import annotations
+import inspect
 from typing import Callable, Optional, Iterable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
@@ -54,7 +55,11 @@ def _groupby_df(
         row = {}
         row["n"] = len(group)
         for metric in metrics:
-            row[metric.__name__] = metric(group.obs_val, group.mod_val)
+            # inspect signature of metric, if time is in signature, pass time
+            if "time" in inspect.signature(metric).parameters:
+                row[metric.__name__] = metric(group.obs_val, group.mod_val, group.time)
+            else:
+                row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
 
     if _dt_in_by(by):

@@ -199,7 +199,7 @@ def test_pr(obs_series, mod_series):
     obs = obs_series
     mod = mod_series
 
-    pr = mtr.pr(obs, mod)
+    pr = mtr.pr(obs, mod, time=obs.index.to_series())
 
     assert pr == pytest.approx(1.0799999095653732)
 
@@ -210,7 +210,7 @@ def test_pr_2(obs_series, mod_series):
     obs = obs_series
     mod = mod_series
 
-    pr = mtr.pr(obs, mod, AAP=8, inter_event_level=0.2)
+    pr = mtr.pr(obs, mod, time=obs.index.to_series(), AAP=8, inter_event_level=0.2)
 
     assert pr == pytest.approx(1.0949999434255118)
 

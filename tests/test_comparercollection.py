@@ -543,3 +543,11 @@ def test_plot_accepts_figsize(cc_plot_function):
     ax = cc_plot_function(figsize=figsize)
     a, b = ax.get_figure().get_size_inches()
     assert a, b == figsize
+
+
+def test_peak_ratio(cc):
+    cc = cc.sel(model="m1")
+    sk = cc.skill(metrics=["peak_ratio"])
+    assert "peak_ratio" in sk.data.columns
+
+    # TODO add actual asserts
