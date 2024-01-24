@@ -231,6 +231,8 @@ class PointObservation(Observation):
 
     def __repr__(self):
         out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
+        if self.z is not None:
+            out += f", z={self.z}"
         if len(self._aux_vars) > 0:
             out += f", aux={self._aux_vars}"
         return out

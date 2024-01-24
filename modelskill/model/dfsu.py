@@ -1,9 +1,9 @@
 from __future__ import annotations
+import inspect
 from pathlib import Path
 from typing import Optional, get_args
 
 import mikeio
-import numpy as np
 import pandas as pd
 
 from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
@@ -158,27 +158,30 @@ class DfsuModelResult(SpatialField):
         assert method in ["nearest", "contained", "inverse_distance"]
         n_nearest = 5 if method == "inverse_distance" else 1
 
-        assert isinstance(
-            self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)
-        )
-
-        x, y = observation.x, observation.y
+        x, y, z = observation.x, observation.y, observation.z
         if not self._in_domain(x, y):
             raise ValueError(
                 f"PointObservation '{observation.name}' ({x}, {y}) outside model domain!"
             )
 
         if method == "contained":
-            xy = np.atleast_2d([x, y])
-            elemids = self.data.geometry.find_index(coords=xy)
-            if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
-                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
-            elif isinstance(self.data, mikeio.Dataset):
+            signature = inspect.signature(self.data.geometry.find_index)
+            if "z" in signature.parameters and z is not None:
+                elemids = self.data.geometry.find_index(x=x, y=y, z=z)
+            else:
+                elemids = self.data.geometry.find_index(x=x, y=y)
+            if isinstance(self.data, mikeio.Dataset):
                 ds_model = self.data[self.sel_items.all].isel(element=elemids)
             elif isinstance(self.data, mikeio.DataArray):
                 da = self.data.isel(element=elemids)
                 ds_model = mikeio.Dataset({da.name: da})
+            else:  # Dfsu
+                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
         else:
+            if z is not None:
+                raise NotImplementedError(
+                    "Interpolation in 3d files is not supported, use spatial_method='contained' instead"
+                )
             if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
                 elemids = self.data.geometry.find_nearest_elements(
                     x, y, n_nearest=n_nearest
