@@ -934,7 +934,7 @@ class Comparer(Scoreable):
             .assign(**attrs)
             .astype({"model": "category", "observation": "category"})
         )
-
+        df.index=data.to_dataframe().index
         return df
 
     def skill(
