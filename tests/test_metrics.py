@@ -241,3 +241,18 @@ def test_add_metric_is_not_a_valid_metric():
 def test_get_metric():
     rmse = mtr.get_metric("rmse")
     assert isinstance(rmse, Callable)
+
+
+def test_parse_metric_custom_fun():
+    def my_metric(obs, model):
+        return 1.0
+
+    assert mtr._parse_metric(my_metric) == [my_metric]
+
+
+def test_parse_bad_metric():
+    def not_a_metric(obs):
+        return 1.0
+
+    with pytest.raises(ValueError):
+        mtr._parse_metric(not_a_metric)

@@ -361,16 +361,13 @@ def test_custom_metric_skilltable_mm_scatter(cc):
     cc.skill(metrics=["cm_1"])
     assert sk["cm_1"] is not None
 
-    # using a non-registred metric raises an error, even though it is a defined function, but not registered
+    # using a non-registred metric raises an error, since it cannot be found in the registry
     with pytest.raises(ValueError) as e_info:
         cc.skill(metrics=["cm_3"])
-
     assert "add_metric" in str(e_info.value)
 
-    with pytest.raises(ValueError) as e_info:
-        cc.skill(metrics=[cm_3])
-
-    assert "add_metric" in str(e_info.value)
+    # using it as a function directly is ok
+    cc.skill(metrics=[cm_3])
 
 
 def test_mm_kde(cc):
