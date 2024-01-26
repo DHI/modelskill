@@ -562,7 +562,6 @@ def test_peak_ratio(cc):
     cc = cc.sel(model="m1")
     sk = cc.skill(metrics=["peak_ratio"])
 
-    # TODO DACA check if this is correct
     assert sk.loc["fake point obs", "peak_ratio"] == pytest.approx(1.119999999)
 
 
