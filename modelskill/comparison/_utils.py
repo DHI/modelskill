@@ -57,9 +57,13 @@ def _groupby_df(
         for metric in metrics:
             # inspect signature of metric, if time is in signature, pass time
             if "time" in inspect.signature(metric).parameters:
-                row[metric.__name__] = metric(group.obs_val, group.mod_val, group.time)
+                row[metric.__name__] = metric(
+                    group.obs_val.values, group.mod_val.values, group.time
+                )
             else:
-                row[metric.__name__] = metric(group.obs_val, group.mod_val)
+                row[metric.__name__] = metric(
+                    group.obs_val.values, group.mod_val.values
+                )
         return pd.Series(row)
 
     if _dt_in_by(by):
