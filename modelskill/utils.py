@@ -141,7 +141,7 @@ def make_unique_index(
             "Time axis has duplicate entries. Now adding milliseconds to non-unique entries to make index unique."
         )
     values = df_index.duplicated(keep=False).astype(float)  # keep='first'
-    values[values == 0] = np.NaN
+    values[values == 0] = np.nan
 
     missings = np.isnan(values)
     cumsum = np.cumsum(~missings)
