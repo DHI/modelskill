@@ -375,6 +375,60 @@ class TrackObservation(Observation):
         return out
 
 
+# TODO to be used for ProfileObservation and ProfileModelResult
+def _parse_profile_data(
+    *,
+    data: DataInputType,
+    x: float,
+    y: float,
+    z_item: str,
+    item: str,
+    name: str,
+    quantity: Quantity | None = None,
+) -> xr.Dataset:
+    if isinstance(data, xr.Dataset):
+        ds = data
+    elif isinstance(data, pd.DataFrame):
+        ds = data.to_xarray()
+    else:
+        raise NotImplementedError
+
+    ds = ds.rename({item: name})
+
+    data_quantity = quantity or Quantity.undefined()
+
+    ds.coords["x"] = x
+    ds.coords["y"] = y
+    ds.coords["z"] = ds[z_item]
+    ds[name].attrs["kind"] = "observation"
+    ds.attrs["gtype"] = "profile"
+    ds[name].attrs["long_name"] = data_quantity.name
+    ds[name].attrs["units"] = data_quantity.unit
+
+    return ds
+
+
+class ProfileObservation(Observation):
+    def __init__(
+        self,
+        data: DataInputType,
+        x: float,
+        y: float,
+        item: str,
+        name: str,
+        weight: float = 1.0,
+        z_item: str = "depth",
+        quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
+        attrs: Optional[dict] = None,
+    ) -> None:
+        parsed_data = _parse_profile_data(
+            data=data, x=x, y=y, z_item=z_item, item=item, name=name, quantity=quantity
+        )
+
+        super().__init__(data=parsed_data, weight=weight)
+
+
 def unit_display_name(name: str) -> str:
     """Display name
 
@@ -399,4 +453,5 @@ def unit_display_name(name: str) -> str:
 _obs_class_lookup = {
     GeometryType.POINT: PointObservation,
     GeometryType.TRACK: TrackObservation,
+    GeometryType.PROFILE: ProfileObservation,
 }
