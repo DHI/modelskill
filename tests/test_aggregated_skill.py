@@ -334,10 +334,10 @@ def test_skill_style(cc2):
 def test_styled_skill_can_be_rendered(cc2):
     sk = cc2.skill()
     # _repr_html_ is called by Jupyter
-    html = sk._repr_html_()
+    sk._repr_html_()
 
     styled_skill = cc2.skill().style()
-    styled_html = styled_skill._repr_html_()
+    styled_skill._repr_html_()
 
 
 def test_skill_round(cc2):
