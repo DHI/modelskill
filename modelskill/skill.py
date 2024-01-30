@@ -403,6 +403,7 @@ class SkillTable:
         "rho",
         "nash_sutcliffe_efficiency",
         "nse",
+        "kge",
     ]
     _small_is_best_metrics = [
         "mae",
@@ -525,16 +526,22 @@ class SkillTable:
         else:
             raise NotImplementedError("Unexpected type of result")
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattr__(self, item: str, *args, **kwargs) -> Any:
+        # note: no help from type hints here!
         if item in self.data.columns:
             return self[item]  # Redirects to __getitem__
         else:
-            raise AttributeError(f"SkillTable has no attribute {item}")
-
-    # TODO used in tests, but is it needed?
-    @property
-    def index(self) -> Any:
-        return self.data.index
+            # act as a DataFrame... (necessary for style() to work)
+            # drawback is that methods such as head() etc would appear
+            # as working but return a DataFrame instead of a SkillTable!
+            return getattr(self.data, item, *args, **kwargs)
+            # raise AttributeError(
+            #     f"""
+            #         SkillTable has no attribute {item}; Maybe you are
+            #         looking for the corresponding DataFrame attribute?
+            #         Try exporting the skill table to a DataFrame using sk.to_dataframe().
+            #     """
+            # )
 
     @property
     def iloc(self, *args, **kwargs):  # type: ignore
@@ -542,7 +549,7 @@ class SkillTable:
 
     @property
     def loc(self, *args, **kwargs):  # type: ignore
-        return self.data.loc(*args, **kwargs)
+        return self.data.loc(*args, **kwargs)        
 
     def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
         """Sort by index (level) e.g. sorting by observation
