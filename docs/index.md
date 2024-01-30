@@ -2,8 +2,10 @@
 
 
 # ModelSkill: Assess the skill of your MIKE model
+![OS](https://img.shields.io/badge/OS-Windows%20%7C%20Linux-blue)
 ![Python version](https://img.shields.io/pypi/pyversions/modelskill.svg)
 ![PyPI version](https://badge.fury.io/py/modelskill.svg)
+
     
 Compare results from MIKE simulations with observations.
 [ModelSkill](https://github.com/DHI/modelskill) would like to be your
@@ -19,7 +21,7 @@ companion during the different phases of a MIKE modelling workflow.
     Install **ModelSkill** with [`pip`](https://pypi.org/project/modelskill/) and get up
     and running in minutes
 
-    [:octicons-arrow-right-24: Getting started](getting_started.md)
+    [:octicons-arrow-right-24: Getting started](getting-started.md)
 
 -   :fontawesome-brands-python:{ .lg .middle } __It's just Python__
 
