@@ -10,45 +10,39 @@ Compare results from MIKE simulations with observations.
 companion during the different phases of a MIKE modelling workflow.
 
 
-## Installation
+<div class="grid cards" markdown>
 
-ModelSkill is available as open-source on PyPI and can be installed with pip:
+-   :material-clock-fast:{ .lg .middle } __Set up in 5 minutes__
 
-```bash
-$ pip install modelskill
-```
+    ---
 
-ModelSkill is compatible with Python 3.8 and later versions on Windows and Linux.
+    Install **ModelSkill** with [`pip`](https://pypi.org/project/modelskill/) and get up
+    and running in minutes
 
+    [:octicons-arrow-right-24: Getting started](getting_started.md)
 
-## Getting started
+-   :fontawesome-brands-python:{ .lg .middle } __It's just Python__
 
-Are your observations and model results already matched? 
+    ---
 
-```python
-import modelskill as ms
-cmp = ms.from_matched("matched_data.dfs0", obs_item="obs_WL", mod_item="WL")
-cmp.skill()
-```
+    Focus on your modelling and less on generate a validation report
 
-Or do you need to match the observations and results first?
+    [:octicons-arrow-right-24: Reference](api/index.md)
 
-```python
-import modelskill as ms
-o = ms.PointObservation("obs.dfs0", item="obs_WL")
-mr = ms.PointModelResult("model.dfs0", item="WL")
-cmp = ms.match(o, mr)
-cmp.skill()
-```
+-   :fontawesome-solid-ruler:{ .lg .middle } __Made to measure__
 
-Read more in the [Getting started guide](getting-started.md) or in the [overview](overview.md) of the package.
+    ---
 
+    Choose between different skill metrics and customizable tables and charts
 
-## Resources
+    [:octicons-arrow-right-24: Customization](api/metrics.md)
 
-- [Documentation](https://dhi.github.io/modelskill/) (this site)
-- [Getting started guide](getting-started.md)
-- [Example notebooks](https://nbviewer.jupyter.org/github/DHI/modelskill/tree/main/notebooks/)
-- [PyPI](https://pypi.org/project/modelskill/)
-- [Source code](https://github.com/DHI/modelskill/)
+-   :material-scale-balance:{ .lg .middle } __Open Source, MIT__
 
+    ---
+
+    ModelSkill is licensed under MIT and available on [GitHub](https://github.com/DHI/modelskill)
+
+    [:octicons-arrow-right-24: License](license.md)
+
+</div>
