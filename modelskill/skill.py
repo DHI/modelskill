@@ -529,21 +529,37 @@ class SkillTable:
         if item in self.data.columns:
             return self[item]  # Redirects to __getitem__
         else:
-            # act as a DataFrame...
-            attr = getattr(self.data, item, *args, **kwargs)
-            if isinstance(attr, pd.DataFrame):
-                return SkillTable(attr)
-            elif isinstance(attr, pd.Series):
-                return SkillArray(attr)
-            else:
-                return attr
-                # raise AttributeError(
-                #     f"""
-                #         SkillTable has no attribute {item}; Maybe you are
-                #         looking for the corresponding DataFrame attribute?
-                #         Try exporting the skill table to a DataFrame using sk.to_dataframe().
-                #     """
-                # )
+            # act as a DataFrame... (necessary for style() to work)
+            # drawback is that methods such as head() etc would appear
+            # as working but return a DataFrame instead of a SkillTable!
+            return getattr(self.data, item, *args, **kwargs)
+            # raise AttributeError(
+            #     f"""
+            #         SkillTable has no attribute {item}; Maybe you are
+            #         looking for the corresponding DataFrame attribute?
+            #         Try exporting the skill table to a DataFrame using sk.to_dataframe().
+            #     """
+            # )
+
+    @property
+    def iloc(self, *args, **kwargs):  # type: ignore
+        d = self.data.iloc(*args, **kwargs)
+        if isinstance(d, pd.DataFrame):
+            return SkillTable(d)
+        elif isinstance(d, pd.Series):
+            return SkillArray(d)
+        else:
+            return d
+
+    @property
+    def loc(self, *args, **kwargs):  # type: ignore
+        d = self.data.loc(*args, **kwargs)
+        if isinstance(d, pd.DataFrame):
+            return SkillTable(d)
+        elif isinstance(d, pd.Series):
+            return SkillArray(d)
+        else:
+            return d
 
     def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
         """Sort by index (level) e.g. sorting by observation
