@@ -525,12 +525,12 @@ class SkillTable:
         else:
             raise NotImplementedError("Unexpected type of result")
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattr__(self, item: str, *args, **kwargs) -> Any:
         if item in self.data.columns:
             return self[item]  # Redirects to __getitem__
         else:
             # act as a DataFrame...
-            attr = getattr(self.data, item)
+            attr = getattr(self.data, item, *args, **kwargs)
             if isinstance(attr, pd.DataFrame):
                 return SkillTable(attr)
             elif isinstance(attr, pd.Series):
