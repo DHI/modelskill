@@ -166,11 +166,18 @@ class SkillGrid(SkillGridMixin):
         else:
             return result
 
-    def __getattr__(self, item: str) -> Any:
+    def __getattr__(self, item: str, *args, **kwargs) -> Any:
         if item in self.data.data_vars:
             return self[item]  # Redirects to __getitem__
         else:
-            raise AttributeError(f"SkillGrid has no attribute {item}")
+            # return getattr(self.data, item, *args, **kwargs)
+            raise AttributeError(
+                f"""
+                    SkillGrid has no attribute {item}; Maybe you are
+                    looking for the corresponding xr.Dataset attribute?
+                    Access SkillGrid's Dataset with '.data'.
+                """
+            )
 
     def _set_attrs(self) -> None:
         # TODO: use type and unit to give better long name
