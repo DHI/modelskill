@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any, List, Literal, Union, Optional, Tuple, Sequence, TYPE_CHECKING
+from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 import matplotlib.colors as colors
 import warnings
@@ -13,6 +14,7 @@ from .. import metrics as mtr
 from ..utils import _get_idx
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
+from ._comparison import MOD_COLORS
 
 
 def _default_univarate_title(kind: str, cc: ComparerCollection) -> str:
@@ -26,6 +28,120 @@ class ComparerCollectionPlotter:
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.scatter(*args, **kwds)
+
+    def timeseries(
+        self,
+        figsize: Optional[Tuple[float, float]] = None,
+        sharex: bool = True,
+        sharey: bool = False,
+        backend: Literal["matplotlib", "plotly"] = "matplotlib",
+    ):
+        """Plot timeseries of all observations and models.
+
+        Parameters
+        ----------
+
+        figsize : tuple, optional
+            width and height of the figure, by default None
+        sharex : bool, optional
+            share x-axis, by default True
+        sharey : bool, optional
+            share y-axis, by default False
+        """
+
+        if backend == "matplotlib":
+            fig, axs = plt.subplots(
+                figsize=figsize,
+                nrows=len(self.cc),
+                ncols=1,
+                sharex=sharex,
+                sharey=sharey,
+            )
+
+            for cmp, ax in zip(self.cc, axs):
+                for j in range(cmp.n_models):
+                    key = cmp.mod_names[j]
+                    mod = cmp.raw_mod_data[key]._values_as_series
+                    # mod.plot(ax=ax, color=MOD_COLORS[j])
+                    ax.plot(mod.index, mod.values, color=MOD_COLORS[j])
+
+                ax.scatter(
+                    cmp.time,
+                    cmp.data[cmp._obs_name].values,
+                    marker=".",
+                    color=cmp.data[cmp._obs_name].attrs["color"],
+                )
+                ax.text(
+                    s=cmp.name,
+                    transform=ax.transAxes,
+                    va="top",
+                    ha="right",
+                    zorder=1,
+                    x=0.95,
+                    y=0.95,
+                )
+
+            ax.legend(
+                [*cmp.mod_names, cmp._obs_name],
+                loc="center left",
+                bbox_to_anchor=(1, 0.5),
+            )
+            fig.text(0.04, 0.5, cmp._unit_text, va="center", rotation="vertical")
+
+        elif backend == "plotly":
+            from plotly.subplots import make_subplots
+            import plotly.graph_objects as go
+
+            if figsize is None:
+                height = 600
+                width = 800
+            else:
+                width, height = figsize
+
+            fig = make_subplots(
+                rows=len(self.cc),
+                cols=1,
+                shared_xaxes=sharex,
+                shared_yaxes=sharey,
+                subplot_titles=[cmp.name for cmp in self.cc],
+                vertical_spacing=0.1,
+            )
+
+            for i, cmp in enumerate(self.cc):
+                for j in range(cmp.n_models):
+                    key = cmp.mod_names[j]
+                    mod = cmp.raw_mod_data[key]._values_as_series
+                    fig.add_trace(
+                        go.Scatter(
+                            x=cmp.time,
+                            y=mod,
+                            mode="lines",
+                            name=key,
+                            line=dict(color=MOD_COLORS[j]),
+                        ),
+                        row=i + 1,
+                        col=1,
+                    )
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=cmp.time,
+                        y=cmp.data[cmp._obs_name].values,
+                        mode="markers",
+                        name=cmp._obs_name,
+                        marker=dict(color=cmp.data[cmp._obs_name].attrs["color"]),
+                    ),
+                    row=i + 1,
+                    col=1,
+                )
+
+                # hide legend for now
+                fig.update_layout(showlegend=False, height=height, width=width)
+
+            # TODO add a single y-axis label
+            fig.show()
+        else:
+            raise ValueError(f"Backend {backend} not supported")
 
     def scatter(
         self,
