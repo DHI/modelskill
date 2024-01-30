@@ -403,6 +403,7 @@ class SkillTable:
         "rho",
         "nash_sutcliffe_efficiency",
         "nse",
+        "kge",
     ]
     _small_is_best_metrics = [
         "mae",
