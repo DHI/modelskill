@@ -526,6 +526,7 @@ class SkillTable:
             raise NotImplementedError("Unexpected type of result")
 
     def __getattr__(self, item: str, *args, **kwargs) -> Any:
+        # note: no help from type hints here!
         if item in self.data.columns:
             return self[item]  # Redirects to __getitem__
         else:
@@ -543,23 +544,11 @@ class SkillTable:
 
     @property
     def iloc(self, *args, **kwargs):  # type: ignore
-        d = self.data.iloc(*args, **kwargs)
-        if isinstance(d, pd.DataFrame):
-            return SkillTable(d)
-        elif isinstance(d, pd.Series):
-            return SkillArray(d)
-        else:
-            return d
+        return self.data.iloc(*args, **kwargs)
 
     @property
     def loc(self, *args, **kwargs):  # type: ignore
-        d = self.data.loc(*args, **kwargs)
-        if isinstance(d, pd.DataFrame):
-            return SkillTable(d)
-        elif isinstance(d, pd.Series):
-            return SkillArray(d)
-        else:
-            return d
+        return self.data.loc(*args, **kwargs)        
 
     def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
         """Sort by index (level) e.g. sorting by observation
