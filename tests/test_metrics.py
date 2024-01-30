@@ -193,13 +193,13 @@ def test_ev():
     assert ev == 1.0
 
 
-def test_pr(obs_series, mod_series):
+def test_pr(obs_series: pd.Series, mod_series: pd.Series) -> None:
     # Obs needs to be a series as the mode of the time index is used.
     # Will use the same data for a real test of ev
     obs = obs_series
     mod = mod_series
 
-    pr = mtr.pr(obs, mod, time=obs.index.to_series())
+    pr = mtr.pr(obs, mod)
 
     assert pr == pytest.approx(1.0799999095653732)
 
@@ -210,7 +210,7 @@ def test_pr_2(obs_series, mod_series):
     obs = obs_series
     mod = mod_series
 
-    pr = mtr.pr(obs, mod, time=obs.index.to_series(), AAP=8, inter_event_level=0.2)
+    pr = mtr.pr(obs, mod, AAP=8, inter_event_level=0.2)
 
     assert pr == pytest.approx(1.0949999434255118)
 
