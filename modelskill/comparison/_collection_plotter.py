@@ -96,7 +96,7 @@ class ComparerCollectionPlotter:
                 height = 600
                 width = 800
             else:
-                width, height = figsize
+                width, height = figsize  # type: ignore
 
             fig = make_subplots(
                 rows=len(self.cc),
@@ -111,7 +111,7 @@ class ComparerCollectionPlotter:
                 for j in range(cmp.n_models):
                     key = cmp.mod_names[j]
                     mod = cmp.raw_mod_data[key]._values_as_series
-                    fig.add_trace(
+                    fig.add_trace(  # type: ignore
                         go.Scatter(
                             x=cmp.time,
                             y=mod,
@@ -123,7 +123,7 @@ class ComparerCollectionPlotter:
                         col=1,
                     )
 
-                fig.add_trace(
+                fig.add_trace(  # type: ignore
                     go.Scatter(
                         x=cmp.time,
                         y=cmp.data[cmp._obs_name].values,
@@ -136,7 +136,7 @@ class ComparerCollectionPlotter:
                 )
 
                 # hide legend for now
-                fig.update_layout(showlegend=False, height=height, width=width)
+                fig.update_layout(showlegend=False, height=height, width=width)  # type: ignore
 
             # TODO add a single y-axis label
             fig.show()
