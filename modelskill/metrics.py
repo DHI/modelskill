@@ -531,7 +531,7 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
 
 
 def pr(
-    obs: np.ndarray,
+    obs: pd.Series,
     model: np.ndarray,
     inter_event_level: float = 0.7,
     AAP: int = 2,
@@ -544,7 +544,7 @@ def pr(
 
 def peak_ratio(
     obs: pd.Series,
-    model: pd.Series,
+    model: np.ndarray,
     inter_event_level: float = 0.7,
     AAP: int = 2,
     inter_event_time="36h",
@@ -576,6 +576,7 @@ def peak_ratio(
         return np.nan
     assert isinstance(obs.index, pd.DatetimeIndex)
     time = obs.index
+
     # Calculate number of years
     dt_int = time[1:].values - time[0:-1].values
     dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
@@ -1206,4 +1207,5 @@ def _parse_metric(
     return [get_metric(m) for m in metrics]
 
 
-__all__ = list(defined_metrics)
+# TODO add non-metric functions to __all__
+__all__ = [str(m) for m in defined_metrics]
