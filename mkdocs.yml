@@ -2,6 +2,7 @@ site_name: ModelSkill documentation
 site_url: https://dhi.github.io/modelskill/
 theme: 
   name: material
+  logo: images/dhi-white-logo.svg
   features:
     - navigation.tabs
     # - navigation.instant
