@@ -1,4 +1,4 @@
-name: Build documentation (don't publish)
+name: Build documentation (staging)
 
 on:
   pull_request:
