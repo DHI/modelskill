@@ -31,4 +31,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az storage blob upload-batch --account-name staging --auth-mode key -d '$web' -s site/
+          az storage blob upload-batch --account-name staging --auth-mode login -d '$web' -s site/
