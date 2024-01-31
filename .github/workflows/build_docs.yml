@@ -24,6 +24,10 @@ jobs:
     - name: Mkdocs build
       run: mkdocs build
 
+    - name: Add robots.txt
+      run: |
+        echo -e "User-agent: *\nDisallow: /" > site/robots.txt
+
     - name: Deploy to Azure blob storage
       uses: azure/CLI@v1
       with:
