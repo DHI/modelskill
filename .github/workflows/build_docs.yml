@@ -1,9 +1,9 @@
 name: Build documentation (don't publish)
 
 on:
-  push:
-    pull_request:
-      branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+    
 
 jobs:
   build:
@@ -12,6 +12,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
@@ -24,8 +27,8 @@ jobs:
     - name: Mkdocs build
       run: mkdocs build
 
-    - name: Upload documentation
-      uses: actions/upload-artifact@v2
+    - name: Deploy to Azure blob storage
+      uses: azure/CLI@v1
       with:
-        name: html
-        path: site/
+        inlineScript: |
+          az storage blob upload-batch --account-name staging --auth-mode key -d '$web' -s site/
