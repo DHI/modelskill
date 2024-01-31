@@ -12,9 +12,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Set up Python 3.10
       uses: actions/setup-python@v2
       with:
@@ -31,4 +28,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az storage blob upload-batch --account-name staging --auth-mode login -d '$web' -s site/
+          az storage blob upload-batch --account-name staging login -d '$web' -s site/ --sas-token ${{secrets.BLOB_SAS_TOKEN}}
