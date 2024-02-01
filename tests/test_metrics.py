@@ -193,7 +193,7 @@ def test_ev():
     assert ev == 1.0
 
 
-def test_pr(obs_series, mod_series):
+def test_pr(obs_series: pd.Series, mod_series: pd.Series) -> None:
     # Obs needs to be a series as the mode of the time index is used.
     # Will use the same data for a real test of ev
     obs = obs_series
