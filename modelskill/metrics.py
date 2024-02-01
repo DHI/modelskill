@@ -65,6 +65,7 @@ Examples
 0.39614855570839064
 """
 from __future__ import annotations
+import inspect
 
 import sys
 import warnings
@@ -1200,11 +1201,21 @@ def _parse_metric(
     elif isinstance(metric, Iterable):
         metrics = list(metric)
 
-    for metric in metrics:
-        if not isinstance(metric, str) and not callable(metric):
-            raise TypeError(f"metric {metric} must be a string or callable")
+    parsed_metrics = []
 
-    return [get_metric(m) for m in metrics]
+    for m in metrics:
+        if isinstance(m, str):
+            parsed_metrics.append(get_metric(m))
+        elif callable(m):
+            if len(inspect.signature(m).parameters) < 2:
+                raise ValueError(
+                    "Metrics must have at least two arguments (obs, model)"
+                )
+            parsed_metrics.append(m)
+        else:
+            raise TypeError(f"metric {m} must be a string or callable")
+
+    return parsed_metrics
 
 
 # TODO add non-metric functions to __all__
