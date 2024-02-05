@@ -163,7 +163,7 @@ def test_skill_mm_swaplevel(cc2):
     assert np.all(sk2.index.levels[0] == sk.index.levels[1])
 
 
-@pytest.mark.skipif(pd.__version__ < "2.0.0")
+@pytest.mark.skipif(pd.__version__ < "2.0.0", reason="requires newer pandas")
 def test_skill_mm_sort_index(cc2):
     sk = cc2.skill(metrics=["rmse", "bias"])
     assert list(sk.index.get_level_values(1)) == [
