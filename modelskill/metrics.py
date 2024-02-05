@@ -89,7 +89,7 @@ def bias(obs, model) -> float:
     """
 
     assert obs.size == model.size
-    return np.mean(model.ravel() - obs.ravel())
+    return np.mean(model - obs)
 
 
 def max_error(obs, model) -> float:
@@ -103,7 +103,7 @@ def max_error(obs, model) -> float:
     """
 
     assert obs.size == model.size
-    return np.max(np.abs(model.ravel() - obs.ravel()))
+    return np.max(np.abs(model - obs))
 
 
 def mae(
@@ -127,7 +127,7 @@ def mean_absolute_error(
     """
     assert obs.size == model.size
 
-    error = np.average(np.abs(model.ravel() - obs.ravel()), weights=weights)
+    error = np.average(np.abs(model - obs), weights=weights)
 
     return error
 
@@ -155,7 +155,7 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
         warnings.warn("Observation is zero, consider to use another metric than MAPE")
         return np.nan  # TODO is it better to return a large value +inf than NaN?
 
-    return np.mean(np.abs((obs.ravel() - model.ravel()) / obs.ravel())) * 100
+    return np.mean(np.abs((obs - model) / obs)) * 100
 
 
 def urmse(
@@ -225,7 +225,7 @@ def root_mean_squared_error(
     """
     assert obs.size == model.size
 
-    residual = obs.ravel() - model.ravel()
+    residual = obs - model
     if unbiased:
         residual = residual - residual.mean()
     error = np.sqrt(np.average(residual**2, weights=weights))
@@ -260,10 +260,7 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     if len(obs) == 0:
         return np.nan
-    error = 1 - (
-        np.sum((obs.ravel() - model.ravel()) ** 2)
-        / np.sum((obs.ravel() - np.mean(obs.ravel())) ** 2)
-    )
+    error = 1 - (np.sum((obs - model) ** 2) / np.sum((obs - np.mean(obs)) ** 2))
 
     return error
 
@@ -340,7 +337,7 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
-    residual = model.ravel() - obs.ravel()
+    residual = model - obs
     SSr = np.sum(residual**2)
     SSt = np.sum((obs - obs.mean()) ** 2)
 
@@ -401,9 +398,9 @@ def corrcoef(obs, model, weights=None) -> float:
         return np.nan
 
     if weights is None:
-        return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
+        return np.corrcoef(obs, model)[0, 1]
     else:
-        C = np.cov(obs.ravel(), model.ravel(), fweights=weights)
+        C = np.cov(obs, model, fweights=weights)
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
 
@@ -465,9 +462,9 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
-    residual = obs.ravel() - model.ravel()
+    residual = obs - model
     residual = residual - residual.mean()  # unbiased
-    return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs.ravel()))
+    return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs))
 
 
 def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
@@ -485,8 +482,7 @@ def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
 
     return np.sqrt(
-        np.sum(((model.ravel() - model.mean()) - (obs.ravel() - obs.mean())) ** 2)
-        / np.sum(obs.ravel() ** 2)
+        np.sum(((model - model.mean()) - (obs - obs.mean())) ** 2) / np.sum(obs**2)
     )
 
 
@@ -523,10 +519,10 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
-    nominator = np.sum((obs.ravel() - obs.mean()) ** 2) - np.sum(
-        ((obs.ravel() - obs.mean()) - (model.ravel() - model.mean())) ** 2
+    nominator = np.sum((obs - obs.mean()) ** 2) - np.sum(
+        ((obs - obs.mean()) - (model - model.mean())) ** 2
     )
-    denominator = np.sum((obs.ravel() - obs.mean()) ** 2)
+    denominator = np.sum((obs - obs.mean()) ** 2)
 
     return nominator / denominator
 
@@ -645,7 +641,7 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
-    residual = model.ravel() - obs.ravel()
+    residual = model - obs
     nominator = np.sum(residual**2)
     denominator = np.sum((np.abs(model - obs.mean()) + np.abs(obs - obs.mean())) ** 2)
 
@@ -674,7 +670,7 @@ def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
     """
     assert obs.size == model.size
 
-    return np.mean(np.abs(obs.ravel() - model.ravel()) < a)
+    return np.mean(np.abs(obs - model) < a)
 
 
 def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
@@ -688,7 +684,7 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
     Range: $(-\infty, \infty )$; Best: 1
     """
     assert obs.size == model.size
-    return _linear_regression(obs.ravel(), model.ravel(), reg_method)[0]
+    return _linear_regression(obs, model, reg_method)[0]
 
 
 def _linear_regression(
@@ -873,7 +869,7 @@ def _partial_duration_series(
 def _c_residual(obs: np.ndarray, model: np.ndarray) -> np.ndarray:
     """Circular residual (0, 360) - output between -180 and 180"""
     assert obs.size == model.size
-    resi = model.ravel() - obs.ravel()
+    resi = model - obs
     resi = (resi + 180) % 360 - 180
     return resi
 
