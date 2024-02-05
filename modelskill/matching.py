@@ -26,13 +26,13 @@ import mikeio
 
 from . import model_result, Quantity
 from .timeseries import TimeSeries
-from .types import GeometryType, Period
+from .types import Period
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
 from .model.point import PointModelResult
 from .model.dummy import DummyModelResult
-from .obs import Observation, PointObservation, TrackObservation
+from .obs import Observation, PointObservation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
 
@@ -156,7 +156,7 @@ def from_matched(
 
 @overload
 def match(
-    obs: PointObservation | TrackObservation,
+    obs: Observation,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
     obs_item: Optional[IdxOrNameTypes] = None,
@@ -169,7 +169,7 @@ def match(
 
 @overload
 def match(
-    obs: Iterable[PointObservation | TrackObservation],
+    obs: Iterable[Observation],
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
     obs_item: Optional[IdxOrNameTypes] = None,
@@ -317,7 +317,7 @@ def _single_obs_compare(
     spatial_method: Optional[str] = None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
-    obs = _parse_single_obs(obs, obs_item, gtype=gtype)
+    obs = _parse_single_obs(obs, obs_item)
 
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
@@ -340,10 +340,9 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 
 def match_space_time(
-    observation: PointObservation | TrackObservation,
+    observation: Observation,
     raw_mod_data: Dict[str, PointModelResult | TrackModelResult],
     max_model_gap: float | None = None,
-    spatial_tolerance: float = 1e-3,
 ) -> xr.Dataset:
     """Match observation with one or more model results in time domain
     and return as xr.Dataset in the format used by modelskill.Comparer
@@ -362,8 +361,6 @@ def match_space_time(
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
         max_model_gap can be given e.g. as seconds, by default None
-    spatial_tolerance : float, optional
-        Tolerance for spatial matching, by default 1e-3
 
     Returns
     -------
@@ -383,39 +380,27 @@ def match_space_time(
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: obs_name})
 
-    for _, mr in raw_mod_data.items():
-        if isinstance(mr, PointModelResult):
-            assert len(observation.time) > 0
-            mri: TimeSeries = mr.interp_time(
-                new_time=observation.time, max_gap=max_model_gap
-            )
-        else:
-            mri = mr
-
-        # TODO move to TrackObservation
-        if isinstance(observation, TrackObservation):
-            assert isinstance(mri, TrackModelResult)
-            mri.data = _select_overlapping_trackdata_with_tolerance(
-                observation=observation, mri=mri, spatial_tolerance=spatial_tolerance
-            )
+    for mr in raw_mod_data.values():
+        aligned = mr.align(
+            observation=observation,
+            max_gap=max_model_gap,
+        )
 
         # check that model and observation have non-overlapping variables
-        if overlapping_names := set(mri.data.data_vars).intersection(
-            set(data.data_vars)
-        ):
+        if overlapping_names := set(aligned.data_vars) & set(data.data_vars):
             raise ValueError(
                 f"Model: '{mr.name}' and observation have overlapping variables: {overlapping_names}"
             )
 
-        # TODO: is name needed?
-        for v in list(mri.data.data_vars):
-            data[v] = mri.data[v]
+        data.update(aligned)
 
     # drop NaNs in model and observation columns (but allow NaNs in aux columns)
-    cols = list(
-        data.filter_by_attrs(kind=lambda k: k in ["model", "observation"]).data_vars
-    )
-    data = data.dropna(dim="time", subset=cols)
+    def mo_kind(k: str) -> bool:
+        return k in ["model", "observation"]
+
+    # TODO mo_cols vs non_aux_cols?
+    mo_cols = data.filter_by_attrs(kind=mo_kind).data_vars
+    data = data.dropna(dim="time", subset=mo_cols)
 
     for n in mod_names:
         data[n].attrs["kind"] = "model"
@@ -425,46 +410,19 @@ def match_space_time(
     return data
 
 
-# TODO move to TrackModelResult
-def _select_overlapping_trackdata_with_tolerance(
-    observation: TrackObservation, mri: TrackModelResult, spatial_tolerance: float
-) -> xr.Dataset:
-    mod_df = mri.data.to_dataframe()
-    obs_df = observation.data.to_dataframe()
-
-    # 1. inner join on time
-    df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
-
-    # 2. remove model points outside observation track
-    n_points = len(df)
-    keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
-    keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
-    df = df[keep_x & keep_y]
-    if n_points_removed := n_points - len(df):
-        warnings.warn(
-            f"Removed {n_points_removed} model points outside observation track (spatial_tolerance={spatial_tolerance})"
-        )
-    return mri.data.sel(time=df.index)
-
-
 def _parse_single_obs(
     obs: ObsInputType,
-    item: Optional[int | str] = None,
-    gtype: Optional[GeometryTypes] = None,
-) -> PointObservation | TrackObservation:
-    if isinstance(obs, (PointObservation, TrackObservation)):
-        if item is not None:
+    obs_item: Optional[int | str] = None,
+) -> Observation:
+    if isinstance(obs, Observation):
+        if obs_item is not None:
             raise ValueError(
                 "obs_item argument not allowed if obs is an modelskill.Observation type"
             )
         return obs
     else:
-        if (gtype is not None) and (
-            GeometryType.from_string(gtype) == GeometryType.TRACK
-        ):
-            return TrackObservation(obs, item=item)
-        else:
-            return PointObservation(obs, item=item)
+        # We convert data to PointObservation, for other Observation types, user have to be explicit
+        return PointObservation(obs, item=obs_item)
 
 
 def _parse_models(

@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 
-from ..obs import PointObservation
+from ..obs import Observation, PointObservation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
@@ -74,21 +74,18 @@ class PointModelResult(TimeSeries):
         # TODO check x,y,z
         return self
 
-    def interp_time(
+    def align(
         self,
-        new_time: pd.DatetimeIndex,
-        dropna: bool = True,
+        observation: Observation,
         max_gap: float | None = None,
         **kwargs: Any,
-    ) -> PointModelResult:
+    ) -> xr.Dataset:
         """Interpolate time series to new time index
 
         Parameters
         ----------
         new_time : pd.DatetimeIndex
             new time index
-        dropna : bool, optional
-            drop nan values, by default True
         **kwargs
             keyword arguments passed to xarray.interp()
 
@@ -97,25 +94,16 @@ class PointModelResult(TimeSeries):
         TimeSeries
             interpolated time series
         """
-        if not isinstance(new_time, pd.DatetimeIndex):
-            try:
-                new_time = pd.DatetimeIndex(new_time)
-            except Exception:
-                raise ValueError(
-                    "new_time must be a pandas DatetimeIndex (or convertible to one)"
-                )
+        new_time = observation.time
 
-        # TODO: is it necessary to dropna before interpolation?
         dati = self.data.dropna("time").interp(
             time=new_time, assume_sorted=True, **kwargs
         )
-        if dropna:
-            dati = dati.dropna(dim="time")
 
         pmr = PointModelResult(dati)
         if max_gap is not None:
             pmr = pmr._remove_model_gaps(mod_index=self.time, max_gap=max_gap)
-        return pmr
+        return pmr.data
 
     def _remove_model_gaps(
         self,
