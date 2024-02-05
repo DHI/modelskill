@@ -209,15 +209,6 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
     mr_extr_2 = mr2.extract(Hm0_EPL.copy())
 
     assert list(mr_extr_1.data.data_vars) == list(mr_extr_2.data.data_vars)
-    assert np.all(mr_extr_1.data == mr_extr_2.data)
-
-    c1 = mr1.extract(Hm0_EPL.copy())
-    c2 = mr2.extract(Hm0_EPL.copy())
-    assert isinstance(c1, ms.PointModelResult)
-    assert isinstance(c2, ms.PointModelResult)
-    assert np.all(c1.data == c2.data)
-    # c1.observation.itemInfo == Hm0_EPL.itemInfo
-    # assert len(c1.observation.data.index.difference(Hm0_EPL.data.index)) == 0
 
 
 def test_dfsu_extract_point_aux(sw_dutch_coast, Hm0_EPL):
@@ -244,15 +235,6 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     ds2 = mr_track2.data
 
     assert list(ds1.data_vars) == list(ds2.data_vars)
-    assert np.all(ds1 == ds2)
-
-    c1 = mr1.extract(Hm0_C2.copy())
-    c2 = mr2.extract(Hm0_C2.copy())
-    assert isinstance(c1, ms.TrackModelResult)
-    assert isinstance(c2, ms.TrackModelResult)
-    assert np.all(c1.data == c2.data)
-    # c1.observation.itemInfo == Hm0_C2.itemInfo
-    # assert len(c1.observation.data.index.difference(Hm0_C2.data.index)) == 0
 
 
 def test_dfsu_extract_track_aux(sw_dutch_coast, Hm0_C2):

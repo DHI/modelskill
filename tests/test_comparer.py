@@ -634,6 +634,7 @@ def test_skill_dt(pc):
     assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
 
 
+@pytest.mark.skipif(pd.__version__ < "2.0.0")
 def test_skill_freq(pc):
     assert pc.time.freq == "D"
 
