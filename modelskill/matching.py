@@ -164,8 +164,7 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
-) -> Comparer:
-    ...
+) -> Comparer: ...
 
 
 @overload
@@ -178,8 +177,7 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
-) -> ComparerCollection:
-    ...
+) -> ComparerCollection: ...
 
 
 def match(
@@ -377,8 +375,8 @@ def match_space_time(
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
-    assert isinstance(observation, (PointObservation, TrackObservation))
-    gtype = "point" if isinstance(observation, PointObservation) else "track"
+    assert isinstance(observation, Observation)
+    assert "gtype" in observation.data.attrs
     observation = observation.trim(period.start, period.end)
 
     data = observation.data
@@ -394,6 +392,7 @@ def match_space_time(
         else:
             mri = mr
 
+        # TODO move to TrackObservation
         if isinstance(observation, TrackObservation):
             assert isinstance(mri, TrackModelResult)
             mri.data = _select_overlapping_trackdata_with_tolerance(
@@ -421,7 +420,6 @@ def match_space_time(
     for n in mod_names:
         data[n].attrs["kind"] = "model"
 
-    data.attrs["gtype"] = gtype
     data.attrs["modelskill_version"] = __version__
 
     return data
