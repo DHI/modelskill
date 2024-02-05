@@ -1,3 +1,4 @@
 numpy==1.23.0 #2022-06-23
-pandas==1.5.0 #2022-09-19
+#pandas==1.5.0 #2022-09-19
+pandas==1.4.0 # this should fail
 xarray==2022.3.0 # <- see version
