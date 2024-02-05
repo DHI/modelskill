@@ -388,8 +388,7 @@ def test_df_input(obs_tiny_df, mod_tiny3):
     assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
 
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
-        obs = ms.TrackObservation(obs_tiny_df)
-        cmp = ms.match(obs, mod_tiny3, gtype="track")
+        cmp = ms.match(obs_tiny_df, mod_tiny3, gtype="track")
 
     assert (
         cmp.data.sel(

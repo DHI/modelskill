@@ -77,6 +77,7 @@ class PointModelResult(TimeSeries):
     def align(
         self,
         observation: Observation,
+        *,
         max_gap: float | None = None,
         **kwargs: Any,
     ) -> xr.Dataset:

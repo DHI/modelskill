@@ -4,11 +4,11 @@ from pathlib import Path
 import warnings
 
 from typing import (
-    Dict,
     Iterable,
     Collection,
     List,
     Literal,
+    Mapping,
     Optional,
     Union,
     Sequence,
@@ -32,7 +32,7 @@ from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
 from .model.point import PointModelResult
 from .model.dummy import DummyModelResult
-from .obs import Observation, PointObservation
+from .obs import Observation, observation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
 
@@ -317,7 +317,7 @@ def _single_obs_compare(
     spatial_method: Optional[str] = None,
 ) -> Comparer:
     """Compare a single observation with multiple models"""
-    obs = _parse_single_obs(obs, obs_item)
+    obs = _parse_single_obs(obs, obs_item, gtype=gtype)
 
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
@@ -326,6 +326,9 @@ def _single_obs_compare(
         observation=obs, raw_mod_data=raw_mod_data, max_model_gap=max_model_gap
     )
     matched_data.attrs["weight"] = obs.weight
+
+    # TODO where does this line belong?
+    matched_data.attrs["modelskill_version"] = __version__
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
@@ -341,7 +344,7 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def match_space_time(
     observation: Observation,
-    raw_mod_data: Dict[str, PointModelResult | TrackModelResult],
+    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
     max_model_gap: float | None = None,
 ) -> xr.Dataset:
     """Match observation with one or more model results in time domain
@@ -356,8 +359,8 @@ def match_space_time(
     ----------
     observation : Observation
         Observation to be matched
-    raw_mod_data : Dict[str, PointModelResult | TrackModelResult]
-        Dictionary of model results ready for interpolation
+    raw_mod_data : Mapping[str, PointModelResult | TrackModelResult]
+        Mapping of model results ready for interpolation
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
         max_model_gap can be given e.g. as seconds, by default None
@@ -367,24 +370,18 @@ def match_space_time(
     xr.Dataset
         Matched data in the format used by modelskill.Comparer
     """
-    obs_name = "Observation"
-    mod_names = list(raw_mod_data.keys())
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
-    assert isinstance(observation, Observation)
-    assert "gtype" in observation.data.attrs
     observation = observation.trim(period.start, period.end)
 
     data = observation.data
     data.attrs["name"] = observation.name
-    data = data.rename({observation.name: obs_name})
+    data = data.rename({observation.name: "Observation"})
 
     for mr in raw_mod_data.values():
-        aligned = mr.align(
-            observation=observation,
-            max_gap=max_model_gap,
-        )
+        # TODO is `align` the correct name for this operation?
+        aligned = mr.align(observation, max_gap=max_model_gap)
 
         # check that model and observation have non-overlapping variables
         if overlapping_names := set(aligned.data_vars) & set(data.data_vars):
@@ -402,17 +399,13 @@ def match_space_time(
     mo_cols = data.filter_by_attrs(kind=mo_kind).data_vars
     data = data.dropna(dim="time", subset=mo_cols)
 
-    for n in mod_names:
-        data[n].attrs["kind"] = "model"
-
-    data.attrs["modelskill_version"] = __version__
-
     return data
 
 
 def _parse_single_obs(
     obs: ObsInputType,
-    obs_item: Optional[int | str] = None,
+    obs_item: Optional[int | str],
+    gtype: Optional[GeometryTypes],
 ) -> Observation:
     if isinstance(obs, Observation):
         if obs_item is not None:
@@ -421,8 +414,8 @@ def _parse_single_obs(
             )
         return obs
     else:
-        # We convert data to PointObservation, for other Observation types, user have to be explicit
-        return PointObservation(obs, item=obs_item)
+        # observation factory can only handle track and point
+        return observation(obs, item=obs_item, gtype=gtype)  # type: ignore
 
 
 def _parse_models(
