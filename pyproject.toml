@@ -10,7 +10,7 @@ name="modelskill"
 version="1.0.dev24"
 dependencies = [
     "numpy",
-    "pandas",
+    "pandas >= 1.5",
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",
