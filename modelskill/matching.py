@@ -359,7 +359,7 @@ def match_space_time(
     ----------
     observation : Observation
         Observation to be matched
-    raw_mod_data : Mapping[str, Comparable]
+    raw_mod_data : Mapping[str, Alignable]
         Mapping of model results ready for interpolation
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
@@ -379,15 +379,15 @@ def match_space_time(
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: "Observation"})
 
-    for key, mr in raw_mod_data.items():
+    for mr in raw_mod_data.values():
         # TODO is `align` the correct name for this operation?
         aligned = mr.align(observation, max_gap=max_model_gap)
 
-        # check that model and observation have non-overlapping variables
         if overlapping_names := set(aligned.data_vars) & set(data.data_vars):
-            raise ValueError(
-                f"Model: '{key}' and observation have overlapping variables: {overlapping_names}"
+            warnings.warn(
+                "Model result has overlapping variable names with observation. Renamed with suffix `_model`."
             )
+            aligned = aligned.rename({v: f"{v}_mod" for v in overlapping_names})
 
         data.update(aligned)
 

@@ -50,16 +50,14 @@ Serializable = Union[str, int, float]
 
 
 class Scoreable(Protocol):
-    def score(self, metric: str | Callable, **kwargs: Any) -> Dict[str, float]:
-        ...
+    def score(self, metric: str | Callable, **kwargs: Any) -> Dict[str, float]: ...
 
     def skill(
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs: Any,
-    ) -> SkillTable:
-        ...
+    ) -> SkillTable: ...
 
     def gridded_skill(
         self,
@@ -69,8 +67,7 @@ class Scoreable(Protocol):
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: int | None = None,
         **kwargs: Any,
-    ) -> SkillGrid:
-        ...
+    ) -> SkillGrid: ...
 
 
 def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
@@ -613,6 +610,9 @@ class Comparer(Scoreable):
     def mod_names(self) -> List[str]:
         """List of model result names"""
         return list(self.raw_mod_data.keys())
+
+    def __contains__(self, key: str) -> bool:
+        return key in self.data.data_vars
 
     @property
     def aux_names(self) -> List[str]:
