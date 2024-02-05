@@ -9,9 +9,10 @@ from ..obs import Observation, PointObservation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
+from ._base import Alignable
 
 
-class PointModelResult(TimeSeries):
+class PointModelResult(TimeSeries, Alignable):
     """Construct a PointModelResult from a 0d data source:
     dfs0 file, mikeio.Dataset/DataArray, pandas.DataFrame/Series
     or xarray.Dataset/DataArray
@@ -71,7 +72,6 @@ class PointModelResult(TimeSeries):
             raise NotImplementedError(
                 "spatial interpolation not possible when matching point model results with point observations"
             )
-        # TODO check x,y,z
         return self
 
     def align(
@@ -92,8 +92,8 @@ class PointModelResult(TimeSeries):
 
         Returns
         -------
-        TimeSeries
-            interpolated time series
+        xr.Dataset
+            interpolated dataset
         """
         new_time = observation.time
 

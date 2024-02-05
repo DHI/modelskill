@@ -27,10 +27,10 @@ import mikeio
 from . import model_result, Quantity
 from .timeseries import TimeSeries
 from .types import Period
+from .model._base import Alignable
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
-from .model.point import PointModelResult
 from .model.dummy import DummyModelResult
 from .obs import Observation, observation
 from .comparison import Comparer, ComparerCollection
@@ -344,7 +344,7 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
+    raw_mod_data: Mapping[str, Alignable],
     max_model_gap: float | None = None,
 ) -> xr.Dataset:
     """Match observation with one or more model results in time domain
@@ -359,7 +359,7 @@ def match_space_time(
     ----------
     observation : Observation
         Observation to be matched
-    raw_mod_data : Mapping[str, PointModelResult | TrackModelResult]
+    raw_mod_data : Mapping[str, Comparable]
         Mapping of model results ready for interpolation
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
@@ -379,14 +379,14 @@ def match_space_time(
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: "Observation"})
 
-    for mr in raw_mod_data.values():
+    for key, mr in raw_mod_data.items():
         # TODO is `align` the correct name for this operation?
         aligned = mr.align(observation, max_gap=max_model_gap)
 
         # check that model and observation have non-overlapping variables
         if overlapping_names := set(aligned.data_vars) & set(data.data_vars):
             raise ValueError(
-                f"Model: '{mr.name}' and observation have overlapping variables: {overlapping_names}"
+                f"Model: '{key}' and observation have overlapping variables: {overlapping_names}"
             )
 
         data.update(aligned)

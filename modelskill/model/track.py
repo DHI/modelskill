@@ -9,9 +9,10 @@ from ..obs import Observation, TrackObservation
 from ..types import TrackType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_track_input
+from ._base import Alignable
 
 
-class TrackModelResult(TimeSeries):
+class TrackModelResult(TimeSeries, Alignable):
     """Construct a TrackModelResult from a dfs0 file,
     mikeio.Dataset, pandas.DataFrame or a xarray.Datasets
 
@@ -78,7 +79,6 @@ class TrackModelResult(TimeSeries):
             raise NotImplementedError(
                 "spatial interpolation not possible when matching track model results with track observations"
             )
-        # TODO check x,y,z
         return self
 
     def align(self, observation: Observation, **kwargs: Any) -> xr.Dataset:
