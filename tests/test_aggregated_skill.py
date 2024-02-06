@@ -331,6 +331,15 @@ def test_skill_style(cc2):
     sk.style(cmap="viridis_r", show_best=False)
 
 
+def test_styled_skill_can_be_rendered(cc2):
+    sk = cc2.skill()
+    # _repr_html_ is called by Jupyter
+    sk._repr_html_()
+
+    styled_skill = cc2.skill().style()
+    styled_skill._repr_html_()
+
+
 def test_skill_round(cc2):
     sk = cc2.skill()
 
