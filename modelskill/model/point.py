@@ -19,15 +19,17 @@ class PointModelResult(TimeSeries, Alignable):
 
     Parameters
     ----------
-    data : types.PointType
-        the input data or file path
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        filename (.dfs0 or .nc) or object with the data
     name : Optional[str], optional
         The name of the model result,
         by default None (will be set to file name or item name)
     x : float, optional
-        first coordinate of point position, by default None
+        first coordinate of point position, inferred from data if not given, else None
     y : float, optional
-        second coordinate of point position, by default None
+        second coordinate of point position, inferred from data if not given, else None
+    z : float, optional
+        third coordinate of point position, inferred from data if not given, else None
     item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
@@ -44,18 +46,22 @@ class PointModelResult(TimeSeries, Alignable):
         name: Optional[str] = None,
         x: Optional[float] = None,
         y: Optional[float] = None,
+        z: Optional[float] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[Sequence[int | str]] = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_point_input(
-                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                x=x,
+                y=y,
+                z=z,
             )
-
-            data.coords["x"] = x
-            data.coords["y"] = y
-            data.coords["z"] = None  # TODO: or np.nan?
 
         assert isinstance(data, xr.Dataset)
 

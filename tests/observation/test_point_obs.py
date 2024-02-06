@@ -223,6 +223,7 @@ def test_mikeio_iteminfo_pretty_units():
     assert obs.quantity.unit == "m^3/s"
 
 
+
 def test_point_obs_repr(df_aux):
     # Some basic test to see that repr does not fail
     o = ms.PointObservation(df_aux, item="WL", aux_items=["aux1"])
@@ -230,3 +231,50 @@ def test_point_obs_repr(df_aux):
 
     o.z = 1
     assert "z" in repr(o)
+
+def test_point_observation_without_coords_are_nan():
+    # No coords in file, no coords supplied 😳
+    obs = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.dfs0", item=0, name="Klagshamn"
+    )  #  x=366844, y=6154291,
+    assert np.isnan(obs.x)
+    assert np.isnan(obs.y)
+
+    # NaN is not the same as None
+    assert obs.z is None
+
+
+def test_point_observation_from_nc_file():
+    obs = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.nc", item="Water Level"
+    )
+    assert obs.x == pytest.approx(366844)
+    assert obs.y == pytest.approx(6154291)
+
+    # TODO is using the filename as name a good idea?
+    assert obs.name == "smhi_2095_klagshamn"
+
+    named_obs = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.nc",
+        item="Water Level",
+        name="Klagshamn",
+    )
+
+    assert named_obs.name == "Klagshamn"
+
+
+def test_point_observation_set_coords():
+    """Setting x, y explicitly should override the values in the file"""
+    obs = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.nc", item="Water Level", x=0, y=0
+    )
+
+    assert obs.x == 0
+    assert obs.y == 0
+    assert obs.z is None
+
+    obs3d = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.nc", item="Water Level", x=0, y=0, z=-5
+    )
+
+    assert obs3d.z == -5
