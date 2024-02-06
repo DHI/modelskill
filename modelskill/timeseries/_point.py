@@ -159,13 +159,15 @@ def _parse_point_input(
 
     ds.attrs["gtype"] = str(GeometryType.POINT)
 
-    coords = {"x": x, "y": y, "z": z}
-    for coord, value in coords.items():
+    coords2d = {"x": x, "y": y}
+    for coord, value in coords2d.items():
         if value is not None:
             ds.coords[coord] = value
 
         if coord not in ds.coords:
             ds.coords[coord] = np.nan
+
+    ds.coords["z"] = z
 
     assert isinstance(ds, xr.Dataset)
     return ds
