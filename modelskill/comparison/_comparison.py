@@ -50,16 +50,14 @@ Serializable = Union[str, int, float]
 
 
 class Scoreable(Protocol):
-    def score(self, metric: str | Callable, **kwargs: Any) -> Dict[str, float]:
-        ...
+    def score(self, metric: str | Callable, **kwargs: Any) -> Dict[str, float]: ...
 
     def skill(
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         **kwargs: Any,
-    ) -> SkillTable:
-        ...
+    ) -> SkillTable: ...
 
     def gridded_skill(
         self,
@@ -69,8 +67,7 @@ class Scoreable(Protocol):
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: int | None = None,
         **kwargs: Any,
-    ) -> SkillGrid:
-        ...
+    ) -> SkillGrid: ...
 
 
 def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
@@ -750,6 +747,10 @@ class Comparer(Scoreable):
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
+    def __iadd__(self, other):  # type: ignore
+        # TODO proper inplace addition
+        return self.__add__(other)
 
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
