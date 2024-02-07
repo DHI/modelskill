@@ -126,7 +126,6 @@ def test_dfsu_dataarray(hd_oresund_2d):
 
     mr = ms.model_result(da, name="Oresund")
     assert mr.name == "Oresund"
-    assert isinstance(mr.data, mikeio.DataArray)
 
     mr.name = "Oresund2"
     assert mr.name == "Oresund2"

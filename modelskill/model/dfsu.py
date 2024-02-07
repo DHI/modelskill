@@ -43,11 +43,13 @@ class DfsuModelResult(SpatialField):
         quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,
     ) -> None:
+
+        filename = None
+
         assert isinstance(
             data, get_args(UnstructuredType)
         ), "Could not construct DfsuModelResult from provided data"
 
-        filename = None
         if isinstance(data, (str, Path)):
             assert Path(data).suffix == ".dfsu", "File must be a dfsu file"
             name = name or Path(data).stem
@@ -56,9 +58,6 @@ class DfsuModelResult(SpatialField):
 
         elif isinstance(data, (mikeio.DataArray, mikeio.Dataset)):
             pass
-            # we could check that geometry has FM in the name, but ideally we would like to support more or all geometries
-            # if not "FM" in str(type(data.geometry)):
-            #    raise ValueError(f"Geometry of {type(data.geometry)} is not supported.")
         else:
             raise ValueError(
                 f"data type must be .dfsu or dfsu-Dataset/DataArray. Not {type(data)}."
@@ -71,16 +70,21 @@ class DfsuModelResult(SpatialField):
                 raise ValueError("aux_items must be None when data is a DataArray")
             item_info = data.item
             item = data.name
+            self.sel_items = SelectedItems(values=data.name, aux=[])
+            data = mikeio.Dataset({data.name: data})
         else:
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
 
-            sel_items = SelectedItems.parse(item_names, item=item, aux_items=aux_items)
-            item = sel_items.values
-            self.sel_items = sel_items
+            self.sel_items = SelectedItems.parse(
+                item_names, item=item, aux_items=aux_items
+            )
+            item = self.sel_items.values
+        if isinstance(data, mikeio.Dataset):
+            data = data[self.sel_items.all]
 
-        self.data: mikeio.dfsu.Dfsu2DH | mikeio.DataArray | mikeio.Dataset = data
+        self.data: mikeio.dfsu.Dfsu2DH | mikeio.Dataset = data
         self.name = name or str(item)
         self.quantity = (
             Quantity.from_mikeio_iteminfo(item_info) if quantity is None else quantity
@@ -171,10 +175,7 @@ class DfsuModelResult(SpatialField):
             else:
                 elemids = self.data.geometry.find_index(x=x, y=y)
             if isinstance(self.data, mikeio.Dataset):
-                ds_model = self.data[self.sel_items.all].isel(element=elemids)
-            elif isinstance(self.data, mikeio.DataArray):
-                da = self.data.isel(element=elemids)
-                ds_model = mikeio.Dataset({da.name: da})
+                ds_model = self.data.isel(element=elemids)
             else:  # Dfsu
                 ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
         else:
@@ -191,16 +192,7 @@ class DfsuModelResult(SpatialField):
                     ds.interp(x=x, y=y, n_nearest=n_nearest) if n_nearest > 1 else ds
                 )
             elif isinstance(self.data, mikeio.Dataset):
-                ds_model = self.data[self.sel_items.all].interp(
-                    x=x, y=y, n_nearest=n_nearest
-                )
-            elif isinstance(self.data, mikeio.DataArray):
-                da = self.data.interp(x=x, y=y, n_nearest=n_nearest)
-                ds_model = mikeio.Dataset({da.name: da})
-
-        aux_items = (
-            None if isinstance(self.data, mikeio.DataArray) else self.sel_items.aux
-        )
+                ds_model = self.data.interp(x=x, y=y, n_nearest=n_nearest)
 
         assert isinstance(ds_model, mikeio.Dataset)
 
@@ -215,7 +207,7 @@ class DfsuModelResult(SpatialField):
             y=ds_model.geometry.y,
             name=self.name,
             quantity=self.quantity,
-            aux_items=aux_items,
+            aux_items=self.sel_items.aux,
         )
 
     def _extract_track(
