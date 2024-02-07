@@ -136,18 +136,22 @@ class DfsuModelResult(SpatialField):
             )
 
     @staticmethod
-    def _parse_spatial_method(method):
-        if method == "isel":
-            method = "contained"
-        if method == "IDW":
-            method = "inverse_distance"
-        if method is None:
-            return None  # decide default later
-        elif method not in ["nearest", "contained", "inverse_distance"]:
+    def _parse_spatial_method(method: str | None) -> str | None:
+        METHOD_MAP = {
+            "isel": "contained",
+            "contained": "contained",
+            "IDW": "inverse_distance",
+            "inverse_distance": "inverse_distance",
+            "nearest": "nearest",
+            None: None,
+        }
+
+        if method not in METHOD_MAP:
             raise ValueError(
                 f"spatial_method for Dfsu must be 'nearest', 'contained', or 'inverse_distance'. Not {method}."
             )
-        return method
+        else:
+            return METHOD_MAP[method]
 
     def _extract_point(
         self, observation: PointObservation, spatial_method: Optional[str] = None
