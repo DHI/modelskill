@@ -322,6 +322,7 @@ def test_skill_plot_grid(cc2):
     assert "only possible for MultiIndex" in str(wn[0].message)
 
 
+@pytest.mark.skipif(pd.__version__ < "1.5.0", reason="requires Pandas 1.5.0 or higher")
 def test_skill_style(cc2):
     sk = cc2.skill(metrics=["bias", "rmse", "lin_slope", "si"])
     sk.style()
@@ -332,6 +333,7 @@ def test_skill_style(cc2):
     sk.style(cmap="viridis_r", show_best=False)
 
 
+@pytest.mark.skipif(pd.__version__ < "1.5.0", reason="requires Pandas 1.5.0 or higher")
 def test_styled_skill_can_be_rendered(cc2):
     sk = cc2.skill()
     # _repr_html_ is called by Jupyter
