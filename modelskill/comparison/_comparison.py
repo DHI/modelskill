@@ -748,9 +748,23 @@ class Comparer(Scoreable):
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
-    def __iadd__(self, other):  # type: ignore
-        # TODO proper inplace addition
-        return self.__add__(other)
+    def __iadd__(self, other: Comparer):  # type: ignore
+        from ..matching import match_space_time
+
+        missing_models = set(self.mod_names) - set(other.mod_names)
+        if len(missing_models) == 0:
+            # same obs name and same model names
+            self.data = xr.concat([self.data, other.data], dim="time").drop_duplicates(
+                "time"
+            )
+        else:
+            self.raw_mod_data.update(other.raw_mod_data)
+            matched = match_space_time(
+                observation=self._to_observation(), raw_mod_data=self.raw_mod_data  # type: ignore
+            )
+            self.data = matched
+
+        return self
 
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
