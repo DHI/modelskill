@@ -257,8 +257,13 @@ def _scatter_matplotlib(
 ) -> matplotlib.axes.Axes:
     fig, ax = _get_fig_ax(ax, figsize)
 
+<<<<<<< HEAD
     if len(x) < 2:
         raise ValueError("Not enough data to plot. At least 2 points are required.")
+=======
+    if len(x) < 3:
+        raise ValueError("Not enough data to plot")
+>>>>>>> ee2b31d17758af069df3e8d89d56eab5cf2472fd
 
     ax.plot(
         [xlim[0], xlim[1]],
