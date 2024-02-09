@@ -9,8 +9,8 @@ exclude = ["notebooks", "tests"]
 name="modelskill"
 version="1.0.dev24"
 dependencies = [
-    "numpy",
-    "pandas",
+    "numpy  >= 1.20.0",
+    "pandas >= 1.4",
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",

@@ -18,15 +18,17 @@ class PointModelResult(TimeSeries):
 
     Parameters
     ----------
-    data : types.PointType
-        the input data or file path
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        filename (.dfs0 or .nc) or object with the data
     name : Optional[str], optional
         The name of the model result,
         by default None (will be set to file name or item name)
     x : float, optional
-        first coordinate of point position, by default None
+        first coordinate of point position, inferred from data if not given, else None
     y : float, optional
-        second coordinate of point position, by default None
+        second coordinate of point position, inferred from data if not given, else None
+    z : float, optional
+        third coordinate of point position, inferred from data if not given, else None
     item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
@@ -43,18 +45,22 @@ class PointModelResult(TimeSeries):
         name: Optional[str] = None,
         x: Optional[float] = None,
         y: Optional[float] = None,
+        z: Optional[float] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[Sequence[int | str]] = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_point_input(
-                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                x=x,
+                y=y,
+                z=z,
             )
-
-            data.coords["x"] = x
-            data.coords["y"] = y
-            data.coords["z"] = None  # TODO: or np.nan?
 
         assert isinstance(data, xr.Dataset)
 
@@ -140,7 +146,12 @@ class PointModelResult(TimeSeries):
         df["idx"] = range(len(df))
 
         # for query times get available left and right index of source times
-        df = _interp_time(df, obs_index).dropna()
+        df = (
+            df.reindex(df.index.union(obs_index))
+            .interpolate(method="time", limit_area="inside")
+            .reindex(obs_index)
+            .dropna()
+        )
         df["idxa"] = np.floor(df.idx).astype(int)
         df["idxb"] = np.ceil(df.idx).astype(int)
 
@@ -154,11 +165,3 @@ class PointModelResult(TimeSeries):
         return df[valid_idx].index
 
 
-def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
-    """Interpolate time series to new time index"""
-    new_df = (
-        df.reindex(df.index.union(new_time))
-        .interpolate(method="time", limit_area="inside")
-        .reindex(new_time)
-    )
-    return new_df

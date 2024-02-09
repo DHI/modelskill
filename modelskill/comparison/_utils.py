@@ -50,9 +50,13 @@ def _groupby_df(
     metrics: List[Callable],
     n_min: Optional[int] = None,
 ) -> pd.DataFrame:
-    def calc_metrics(group):
-        row = {}
-        row["n"] = len(group)
+    def calc_metrics(group: pd.DataFrame) -> pd.Series:
+        # set index to time column (in most cases a DatetimeIndex, but not always)
+        group = group.set_index("time")
+
+        # TODO is n a metric or not?
+        row = {"n": len(group)}
+
         for metric in metrics:
             row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
