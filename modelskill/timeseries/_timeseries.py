@@ -3,7 +3,6 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import ClassVar, Optional, TypeVar, Any
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
 import xarray as xr
 
@@ -121,7 +120,9 @@ class TimeSeries:
     """Time series data"""
 
     data: xr.Dataset
-    plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
+    plotter: ClassVar = (
+        MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
+    )
 
     def __init__(self, data: xr.Dataset) -> None:
         self.data = data if self._is_input_validated(data) else _validate_dataset(data)
@@ -213,7 +214,7 @@ class TimeSeries:
     def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    def _coordinate_values(self, coord: str) -> float | NDArray[Any]:
+    def _coordinate_values(self, coord: str) -> float | np.ndarray:
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
@@ -222,7 +223,7 @@ class TimeSeries:
         return bool(self.data[self.name].attrs["kind"] == "model")
 
     @property
-    def values(self) -> NDArray[Any]:
+    def values(self) -> np.ndarray:
         """Values as numpy array"""
         return self.data[self.name].values
 
