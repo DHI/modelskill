@@ -144,7 +144,12 @@ class PointModelResult(TimeSeries):
         df["idx"] = range(len(df))
 
         # for query times get available left and right index of source times
-        df = _interp_time(df, obs_index).dropna()
+        df = (
+            df.reindex(df.index.union(obs_index))
+            .interpolate(method="time", limit_area="inside")
+            .reindex(obs_index)
+            .dropna()
+        )
         df["idxa"] = np.floor(df.idx).astype(int)
         df["idxb"] = np.ceil(df.idx).astype(int)
 
@@ -158,11 +163,3 @@ class PointModelResult(TimeSeries):
         return df[valid_idx].index
 
 
-def _interp_time(df: pd.DataFrame, new_time: pd.DatetimeIndex) -> pd.DataFrame:
-    """Interpolate time series to new time index"""
-    new_df = (
-        df.reindex(df.index.union(new_time))
-        .interpolate(method="time", limit_area="inside")
-        .reindex(new_time)
-    )
-    return new_df
