@@ -265,8 +265,9 @@ def test_matched_data_not_time_index():
             "ts_1": [
                 1.0,
                 2.0,
+                3.0,
             ],
-            "sensor_a": [2.0, 3.0],
+            "sensor_a": [2.0, 3.0, 4.0],
         },
     )
 
