@@ -129,15 +129,7 @@ class TimeSeries:
 
     def _is_input_validated(self, data: Any) -> bool:
         """Check if data is already a valid TimeSeries (contains the modelskill_version attribute)"""
-        if not isinstance(data, xr.Dataset):
-            return False
-        else:
-            if not hasattr(data, "attrs"):
-                return False
-            else:
-                if "modelskill_version" not in data.attrs:
-                    return False
-        return True
+        return isinstance(data, xr.Dataset) and "modelskill_version" in data.attrs
 
     @property
     def _val_item(self) -> str:
