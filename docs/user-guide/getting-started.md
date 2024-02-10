@@ -22,8 +22,8 @@ The typical ModelSkill workflow consists of these four steps:
 The first step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
 
--   [PointObservation](api/observation/point.md)
--   [TrackObservation](api/observation/track.md)
+-   [PointObservation](../api/observation/point.md)
+-   [TrackObservation](../api/observation/track.md)
 
 Let's assume that we have one PointObservation and one
 TrackObservation (`name` is used to identify the observation, similar to the `name` of the model above). 
@@ -62,8 +62,8 @@ mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu",
 
 ### Match observations and ModelResults
 
-This [match()](api/matching.md/#modelskill.match) method returns a [Comparer](api/comparer.md#modelskill.Comparer) (a single observation) or a
-[ComparerCollection](api/comparercollection.md#modelskill.ComparerCollection) (multiple observations)
+This [match()](../api/matching.md/#modelskill.match) method returns a [Comparer](../api/comparer.md#modelskill.Comparer) (a single observation) or a
+[ComparerCollection](../api/comparercollection.md#modelskill.ComparerCollection) (multiple observations)
 for further analysis and plotting.
 
 ```python
@@ -79,10 +79,10 @@ skill assessment.
 
 The primary comparer methods are:
 
-- [skill()](api/comparercollection.md#modelskill.ComparerCollection.skill)
-  which returns a [SkillTable](api/skill.md) with the skill scores
-- various [plot](api/comparercollection.md/#modelskill.comparison._collection_plotter.ComparerCollectionPlotter) methods of the comparer objects (e.g. `plot.scatter()`, `plot.timeseries()`)
-- [sel()](api/comparercollection.md/#modelskill.ComparerCollection.sel) method for selecting data
+- [skill()](../api/comparercollection.md#modelskill.ComparerCollection.skill)
+  which returns a [SkillTable](../api/skill.md) with the skill scores
+- various [plot](../api/comparercollection.md/#modelskill.comparison._collection_plotter.ComparerCollectionPlotter) methods of the comparer objects (e.g. `plot.scatter()`, `plot.timeseries()`)
+- [sel()](../api/comparercollection.md/#modelskill.ComparerCollection.sel) method for selecting data
     
 
 ### Save / load the ComparerCollection

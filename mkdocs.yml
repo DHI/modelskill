@@ -14,13 +14,13 @@ theme:
 nav: 
   - User Guide:
     - 'user-guide/index.md'
-    - 'getting-started.md'
-    - 'user-guide/terminology.md'  
+    - 'user-guide/getting-started.md'
+    - 'user-guide/overview.md'
+    - 'user-guide/terminology.md'
     - 'user-guide/data-structures.md'
     - 'user-guide/matching.md'
     - 'user-guide/plotting.md'
     - 'user-guide/selecting-data.md'
-    - 'overview.md'    
   - API Reference:
     - 'api/index.md'
     - Observation:
