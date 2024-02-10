@@ -12,6 +12,14 @@ Compare results from MIKE simulations with observations.
 companion during the different phases of a MIKE modelling workflow.
 
 
+**Useful links**:
+[Terminology](user-guide/terminology.md) |
+[Overview](user-guide/overview.md) |
+[Plotting](user-guide/plotting.md) |
+[Issues](https://github.com/DHI/modelskill/issues) |
+[Discussion](https://github.com/DHI/modelskill/discussions)
+
+
 <div class="grid cards" markdown>
 
 -   :material-clock-fast:{ .lg .middle } __Set up in 5 minutes__
@@ -21,7 +29,7 @@ companion during the different phases of a MIKE modelling workflow.
     Install **ModelSkill** with [`pip`](https://pypi.org/project/modelskill/) and get up
     and running in minutes
 
-    [:octicons-arrow-right-24: Getting started](getting-started.md)
+    [:octicons-arrow-right-24: Getting started](user-guide/getting-started.md)
 
 -   :fontawesome-brands-python:{ .lg .middle } __It's just Python__
 
