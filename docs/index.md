@@ -29,7 +29,7 @@ companion during the different phases of a MIKE modelling workflow.
 
     Focus on your modelling and less on generate a validation report
 
-    [:octicons-arrow-right-24: Reference](api/index.md)
+    [:octicons-arrow-right-24: API Reference](api/index.md)
 
 -   :fontawesome-solid-ruler:{ .lg .middle } __Made to measure__
 
@@ -37,7 +37,7 @@ companion during the different phases of a MIKE modelling workflow.
 
     Choose between different skill metrics and customizable tables and charts
 
-    [:octicons-arrow-right-24: Customization](api/metrics.md)
+    [:octicons-arrow-right-24: Metrics](api/metrics.md)
 
 -   :material-scale-balance:{ .lg .middle } __Open Source, MIT__
 
