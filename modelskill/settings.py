@@ -5,7 +5,7 @@ a uniform API for working with them.
 This module is inspired by [pandas config module](https://github.com/pandas-dev/pandas/tree/main/pandas/_config).
 
 Overview
-========
+--------
 This module supports the following requirements:
 
 - options are referenced using keys in dot.notation, e.g. "x.y.option - z".
@@ -21,7 +21,7 @@ This module supports the following requirements:
 - a developer can register an option.
 
 Implementation
-==============
+--------------
 - Data is stored using nested dictionaries, and should be accessed
   through the provided API.
 - "Registered options" have metadata associated
@@ -29,12 +29,12 @@ Implementation
   fully-qualified key, e.g. "x.y.z.option".
 
 Examples
-========
+--------
 >>> import modelskill as ms
 >>> ms.options
-metrics.list : [<function bias at 0x0000029D614A2DD0>, <function rmse at 0x0000029D5D42AE60>, <function urmse at 0x0000029D5D42ADD0>, <function mae at 0x0000029D5D42AB90>, <function cc at 0x0000029D5D42B370>, <function si at 0x0000029D5D42B5B0>, <function r2 at 0x0000029D5D42B1C0>]
+metrics.list : [<function bias at 0x0000029D614A2DD0>, (...)]
 plot.rcparams : {}
-plot.scatter.legend.bbox : {'facecolor': 'white', 'edgecolor': 'lightgray', 'linewidth': 1, 'boxstyle': 'round,pad=0.1', 'alpha': 0.95}
+plot.scatter.legend.bbox : {'facecolor': 'white', (...)}
 plot.scatter.legend.fontsize : 12
 plot.scatter.legend.kwargs : {}
 plot.scatter.oneone_line.color : blue
@@ -61,7 +61,6 @@ plot.scatter.reg_line.kwargs : {'color': 'r'}
 >>> ms.reset_option("plot.scatter.points.size")
 >>> ms.options.plot.scatter.points.size
 20
-
 """
 
 import yaml
@@ -207,18 +206,18 @@ def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
 
 def reset_option(pat: str = "", silent: bool = False) -> None:
     """Reset one or more options (matching a pattern) to the default value
-    
+
     Examples
     --------
     >>> ms.options.plot.scatter.points.size
-    20    
+    20
     >>> ms.options.plot.scatter.points.size = 10
     >>> ms.options.plot.scatter.points.size
     10
     >>> ms.reset_option("plot.scatter.points.size")
     >>> ms.options.plot.scatter.points.size
     20
-    
+
     """
 
     keys = _select_options(pat)
@@ -238,6 +237,10 @@ def reset_option(pat: str = "", silent: bool = False) -> None:
 
 
 class OptionsContainer:
+    """provide attribute-style access to a nested dict of options
+
+    Accessed by ms.options
+    """
 
     def __init__(self, d: Dict[str, Any], prefix: str = "") -> None:
         object.__setattr__(self, "d", d)
