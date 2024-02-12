@@ -89,6 +89,8 @@ class PointModelResult(TimeSeries):
     ) -> PointModelResult:
         """Interpolate time series to new time index
 
+        wrapper around xarray.Dataset.interp()
+
         Parameters
         ----------
         new_time : pd.DatetimeIndex
@@ -96,7 +98,7 @@ class PointModelResult(TimeSeries):
         dropna : bool, optional
             drop nan values, by default True
         **kwargs
-            keyword arguments passed to xarray.interp()
+            keyword arguments passed to xarray.Dataset.interp()
 
         Returns
         -------

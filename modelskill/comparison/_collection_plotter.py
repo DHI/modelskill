@@ -20,6 +20,16 @@ def _default_univarate_title(kind: str, cc: ComparerCollection) -> str:
 
 
 class ComparerCollectionPlotter:
+    """Plotter for ComparerCollection
+
+    Examples
+    --------
+    >>> cc.plot.scatter()
+    >>> cc.plot.hist()
+    >>> cc.plot.kde()
+    >>> cc.plot.taylor()
+    """
+
     def __init__(self, cc: ComparerCollection) -> None:
         self.cc = cc
         self.is_directional = False

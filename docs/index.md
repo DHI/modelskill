@@ -2,53 +2,57 @@
 
 
 # ModelSkill: Assess the skill of your MIKE model
+![OS](https://img.shields.io/badge/OS-Windows%20%7C%20Linux-blue)
 ![Python version](https://img.shields.io/pypi/pyversions/modelskill.svg)
 ![PyPI version](https://badge.fury.io/py/modelskill.svg)
+
     
 Compare results from MIKE simulations with observations.
 [ModelSkill](https://github.com/DHI/modelskill) would like to be your
 companion during the different phases of a MIKE modelling workflow.
 
 
-## Installation
-
-ModelSkill is available as open-source on PyPI and can be installed with pip:
-
-```bash
-$ pip install modelskill
-```
-
-ModelSkill is compatible with Python 3.8 and later versions on Windows and Linux.
+**Useful links**:
+[Terminology](user-guide/terminology.md) |
+[Overview](user-guide/overview.md) |
+[Plotting](user-guide/plotting.md) |
+[Issues](https://github.com/DHI/modelskill/issues) |
+[Discussion](https://github.com/DHI/modelskill/discussions)
 
 
-## Getting started
+<div class="grid cards" markdown>
 
-Are your observations and model results already matched? 
+-   :material-clock-fast:{ .lg .middle } __Set up in 5 minutes__
 
-```python
-import modelskill as ms
-cmp = ms.from_matched("matched_data.dfs0", obs_item="obs_WL", mod_item="WL")
-cmp.skill()
-```
+    ---
 
-Or do you need to match the observations and results first?
+    Install **ModelSkill** with [`pip`](https://pypi.org/project/modelskill/) and get up
+    and running in minutes
 
-```python
-import modelskill as ms
-o = ms.PointObservation("obs.dfs0", item="obs_WL")
-mr = ms.PointModelResult("model.dfs0", item="WL")
-cmp = ms.match(o, mr)
-cmp.skill()
-```
+    [:octicons-arrow-right-24: Getting started](user-guide/getting-started.md)
 
-Read more in the [Getting started guide](getting-started.md) or in the [overview](overview.md) of the package.
+-   :fontawesome-brands-python:{ .lg .middle } __It's just Python__
 
+    ---
 
-## Resources
+    Focus on your modelling and less on generate a validation report
 
-- [Documentation](https://dhi.github.io/modelskill/) (this site)
-- [Getting started guide](getting-started.md)
-- [Example notebooks](https://nbviewer.jupyter.org/github/DHI/modelskill/tree/main/notebooks/)
-- [PyPI](https://pypi.org/project/modelskill/)
-- [Source code](https://github.com/DHI/modelskill/)
+    [:octicons-arrow-right-24: API Reference](api/index.md)
 
+-   :fontawesome-solid-ruler:{ .lg .middle } __Made to measure__
+
+    ---
+
+    Choose between different skill metrics and customizable tables and charts
+
+    [:octicons-arrow-right-24: Metrics](api/metrics.md)
+
+-   :material-scale-balance:{ .lg .middle } __Open Source, MIT__
+
+    ---
+
+    ModelSkill is licensed under MIT and available on [GitHub](https://github.com/DHI/modelskill)
+
+    [:octicons-arrow-right-24: License](license.md)
+
+</div>
