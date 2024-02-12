@@ -33,4 +33,4 @@ jobs:
 
     - name: Deploy to Azure blob storage
       run: 
-          az storage blob upload-batch --overwrite --account-name dmistaging -d '$web' -s /home/runner/work/modelskill/modelskill/site/ --sas-token ${{secrets.BLOB_SAS_TOKEN}} --debug
+          az storage blob upload-batch --overwrite --account-name dmistaging -d '$web' -s /home/runner/work/modelskill/modelskill/site/ --sas-token ${{secrets.BLOB_SAS_TOKEN}}
