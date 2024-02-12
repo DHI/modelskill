@@ -3,8 +3,10 @@ import os
 from pathlib import Path
 import tempfile
 from typing import (
+    Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Union,
     Optional,
@@ -40,7 +42,7 @@ from ._utils import (
 from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
 
 
-def _get_deprecated_obs_var_args(kwargs):
+def _get_deprecated_obs_var_args(kwargs):  # type: ignore
     observation, variable = None, None
 
     # Don't bother refactoring this, it will be removed in v1.1
@@ -211,7 +213,7 @@ class ComparerCollection(Mapping, Scoreable):
         """Number of unique quantities"""
         return len(self.quantity_names)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         out = []
         out.append("<ComparerCollection>")
         out.append("Comparers:")
@@ -258,7 +260,9 @@ class ComparerCollection(Mapping, Scoreable):
     def __getitem__(self, x: int | Hashable) -> Comparer:
         ...
 
-    def __getitem__(self, x):
+    def __getitem__(
+        self, x: int | Hashable | slice | Iterable[Hashable]
+    ) -> Comparer | ComparerCollection:
         if isinstance(x, str):
             return self._comparers[x]
 
@@ -273,6 +277,8 @@ class ComparerCollection(Mapping, Scoreable):
         if isinstance(x, Iterable):
             cmps = [self[i] for i in x]
             return ComparerCollection(cmps)
+
+        raise TypeError(f"Invalid type for __getitem__: {type(x)}")
 
     def __setitem__(self, x: str, value: Comparer) -> None:
         assert isinstance(
@@ -289,16 +295,17 @@ class ComparerCollection(Mapping, Scoreable):
     def __len__(self) -> int:
         return len(self._comparers)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Comparer]:
         return iter(self._comparers.values())
 
-    def __copy__(self):
+    def __copy__(self) -> "ComparerCollection":
         cls = self.__class__
         cp = cls.__new__(cls)
-        cp.__init__(list(self._comparers))  # TODO should this use deepcopy?
+        # TODO should this use deepcopy?
+        cp.__init__(list(self._comparers))  # type: ignore
         return cp
 
-    def copy(self):
+    def copy(self) -> "ComparerCollection":
         return self.__copy__()
 
     def __add__(
@@ -322,7 +329,7 @@ class ComparerCollection(Mapping, Scoreable):
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
         variable: Optional[IdxOrNameTypes] = None,  # obsolete
-        **kwargs,
+        **kwargs: Any,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
 
@@ -404,7 +411,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         return cc
 
-    def filter_by_attrs(self, **kwargs) -> "ComparerCollection":
+    def filter_by_attrs(self, **kwargs: Any) -> "ComparerCollection":
         """Filter by comparer attrs similar to xarray.Dataset.filter_by_attrs
 
         Parameters
@@ -460,7 +467,7 @@ class ComparerCollection(Mapping, Scoreable):
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         observed: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> SkillTable:
         """Aggregated skill assessment of model(s)
 
@@ -520,8 +527,8 @@ class ComparerCollection(Mapping, Scoreable):
         """
 
         # TODO remove in v1.1 ----------
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
+        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
+        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cc = self.sel(
@@ -539,23 +546,16 @@ class ComparerCollection(Mapping, Scoreable):
 
         pmetrics = _parse_metric(metrics)
 
-        n_models = cc.n_models
-        n_obs = cc.n_observations
-
-        # TODO: FIX
-        # len(df.variable.unique()) if (self.n_variables > 1) else 1
-        n_var = cc.n_quantities
-        by = _parse_groupby(by, n_models, n_obs, n_var)
-        by, attrs_keys = self._attrs_keys_in_by(by)
-        assert isinstance(by, list)
+        agg_cols = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
+        agg_cols, attrs_keys = self._attrs_keys_in_by(agg_cols)
 
         df = cc._to_long_dataframe(attrs_keys=attrs_keys, observed=observed)
 
-        res = _groupby_df(df, by, pmetrics)
+        res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
         res = self._append_xy_to_res(res, cc)
-        res = cc._add_as_col_if_not_in_index(df, skilldf=res)
+        res = cc._add_as_col_if_not_in_index(df, skilldf=res)  # type: ignore
         return SkillTable(res)
 
     def _to_long_dataframe(
@@ -578,16 +578,17 @@ class ComparerCollection(Mapping, Scoreable):
         return res
 
     @staticmethod
-    def _attrs_keys_in_by(by: str | List[str]) -> Tuple[List[str], List[str]]:
-        """skill() helper: Check if 'attrs:' is in by and return attrs_keys"""
-        attrs_keys = []
-        by = [by] if isinstance(by, str) else by
-        for j, b in enumerate(by):
+    def _attrs_keys_in_by(by: List[str | pd.Grouper]) -> Tuple[List[str], List[str]]:
+        attrs_keys: List[str] = []
+        agg_cols: List[str] = []
+        for b in by:
             if isinstance(b, str) and b.startswith("attrs:"):
                 key = b.split(":")[1]
                 attrs_keys.append(key)
-                by[j] = key  # remove 'attrs:' prefix
-        return by, attrs_keys
+                agg_cols.append(key)
+            else:
+                agg_cols.append(b)
+        return agg_cols, attrs_keys
 
     @staticmethod
     def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
@@ -608,8 +609,11 @@ class ComparerCollection(Mapping, Scoreable):
         return res
 
     def _add_as_col_if_not_in_index(
-        self, df, skilldf, fields=["model", "observation", "quantity"]
-    ):
+        self,
+        df: pd.DataFrame,
+        skilldf: pd.DataFrame,
+        fields: List[str] = ["model", "observation", "quantity"],
+    ) -> pd.DataFrame:
         """skill() helper: Add a field to skilldf if unique in df"""
         for field in reversed(fields):
             if (field == "model") and (self.n_models <= 1):
@@ -624,12 +628,12 @@ class ComparerCollection(Mapping, Scoreable):
 
     def gridded_skill(
         self,
-        bins=5,
+        bins: int = 5,
         binsize: float | None = None,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> SkillGrid:
         """Skill assessment of model(s) on a regular spatial grid.
 
@@ -691,8 +695,8 @@ class ComparerCollection(Mapping, Scoreable):
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
+        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
+        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
@@ -714,17 +718,14 @@ class ComparerCollection(Mapping, Scoreable):
         df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        by = _parse_groupby(by, cmp.n_models, cmp.n_observations)
-        if isinstance(by, str) or (not isinstance(by, Iterable)):
-            by = [by]  # type: ignore
-        if "x" not in by:  # type: ignore
-            by.insert(0, "x")  # type: ignore
-        if "y" not in by:  # type: ignore
-            by.insert(0, "y")  # type: ignore
-        assert isinstance(by, list)
+        agg_cols = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=cmp.n_quantities)
+        if "x" not in agg_cols:
+            agg_cols.insert(0, "x")
+        if "y" not in agg_cols:
+            agg_cols.insert(0, "y")
 
         df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
-        res = _groupby_df(df, by, metrics, n_min)
+        res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
         ds = res.to_xarray().squeeze()
 
         # change categorial index to coordinates
@@ -737,7 +738,7 @@ class ComparerCollection(Mapping, Scoreable):
         *,
         weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         metrics: Optional[list] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> SkillTable:
         """Weighted mean of skills
 
@@ -785,8 +786,8 @@ class ComparerCollection(Mapping, Scoreable):
         """
 
         # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
+        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
+        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         # filter data
@@ -821,11 +822,11 @@ class ComparerCollection(Mapping, Scoreable):
             skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
         )
 
-        def weighted_mean(x):
+        def weighted_mean(x: Any) -> Any:
             return np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
-        by = cc._mean_skill_by(skilldf, mod_names, qnt_names)
+        by = cc._mean_skill_by(skilldf, mod_names, qnt_names)  # type: ignore
         agg = {"n": "sum"}
         for metric in pmetrics:  # type: ignore
             agg[metric.__name__] = weighted_mean  # type: ignore
@@ -835,7 +836,7 @@ class ComparerCollection(Mapping, Scoreable):
         res.index.name = "model"
 
         # output
-        res = cc._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])
+        res = cc._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])  # type: ignore
         return SkillTable(res.astype({"n": int}))
 
     # def mean_skill_points(
@@ -905,7 +906,7 @@ class ComparerCollection(Mapping, Scoreable):
     #     # return self.skill(df=dfall, metrics=metrics)
     #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
-    def _mean_skill_by(self, skilldf, mod_names, qnt_names):
+    def _mean_skill_by(self, skilldf, mod_names, qnt_names):  # type: ignore
         by = []
         if len(mod_names) > 1:
             by.append("model")
@@ -920,7 +921,7 @@ class ComparerCollection(Mapping, Scoreable):
                 by = [mod_names[0]] * len(skilldf)
         return by
 
-    def _parse_weights(self, weights, observations):
+    def _parse_weights(self, weights: Any, observations: Any) -> Any:
         if observations is None:
             observations = self.obs_names
         else:
@@ -966,7 +967,7 @@ class ComparerCollection(Mapping, Scoreable):
     def score(
         self,
         metric: str | Callable = mtr.rmse,
-        **kwargs,
+        **kwargs: Any,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
 
@@ -1024,8 +1025,8 @@ class ComparerCollection(Mapping, Scoreable):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
+        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
+        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         if model is None:
@@ -1053,8 +1054,8 @@ class ComparerCollection(Mapping, Scoreable):
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
-
-        score = df[metric_name].to_dict()
+        ser = df[metric_name]
+        score = {str(col): float(value) for col, value in ser.items()}
 
         return score
 
@@ -1122,7 +1123,7 @@ class ComparerCollection(Mapping, Scoreable):
         return ComparerCollection(comparers)
 
     @staticmethod
-    def _load_comparer(folder, f) -> Comparer:
+    def _load_comparer(folder: str, f: str) -> Comparer:
         f = os.path.join(folder, f)
         cmp = Comparer.load(f)
         os.remove(f)

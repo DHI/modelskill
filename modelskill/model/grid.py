@@ -148,7 +148,7 @@ class GridModelResult(SpatialField):
         given a PointObservation. No time interpolation is done!"""
         method: str = spatial_method or "linear"
 
-        x, y = observation.x, observation.y
+        x, y, z = observation.x, observation.y, observation.z
         if (x is None) or (y is None):
             raise ValueError(
                 f"PointObservation '{observation.name}' cannot be used for extraction "
@@ -163,7 +163,12 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        ds = self.data.interp(coords=dict(x=x, y=y), method=method)  # type: ignore
+        if "z" in self.data.dims and z is not None:
+            ds = self.data.interp(
+                coords=dict(x=x, y=y, z=z), method=method  # type: ignore
+            )
+        else:
+            ds = self.data.interp(coords=dict(x=x, y=y), method=method)  # type: ignore
         # TODO: exclude aux cols in dropna
         df = ds.to_dataframe().drop(columns=["x", "y"]).dropna()
         if len(df) == 0:

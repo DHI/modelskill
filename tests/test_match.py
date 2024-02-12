@@ -265,8 +265,9 @@ def test_matched_data_not_time_index():
             "ts_1": [
                 1.0,
                 2.0,
+                3.0,
             ],
-            "sensor_a": [2.0, 3.0],
+            "sensor_a": [2.0, 3.0, 4.0],
         },
     )
 
@@ -516,6 +517,7 @@ def test_compare_model_vs_dummy(mr1, o1):
     mean_obs = o1.trim(mr1.time[0], mr1.time[-1]).values.mean()
 
     mr2 = ms.DummyModelResult(data=mean_obs, name="dummy")
+    assert "constant" in repr(mr2)
 
     cmp = ms.match(obs=o1, mod=[mr1, mr2])
     assert cmp.score(metric="r2")["dummy"] == pytest.approx(0.0)
@@ -523,6 +525,7 @@ def test_compare_model_vs_dummy(mr1, o1):
 
 def test_compare_model_vs_dummy_for_track(mr1, o3):
     mr = ms.DummyModelResult(name="dummy", strategy="mean")
+    assert "mean" in repr(mr)
 
     cmp = ms.match(obs=o3, mod=mr)
     assert cmp.score(metric="r2")["dummy"] == pytest.approx(0.0)
@@ -532,7 +535,7 @@ def test_compare_model_vs_dummy_for_track(mr1, o3):
     cmp2 = ms.match(obs=o3, mod=[mr1, mr])
 
     # not identical to above since it is evaluated on a subset of the data
-    assert cmp2.score()["dummy"] == pytest.approx(1.225945)  
-    
+    assert cmp2.score()["dummy"] == pytest.approx(1.225945)
+
     # better than dummy 🙂
-    assert cmp2.score()["SW_1"] == pytest.approx(0.3524703)  
+    assert cmp2.score()["SW_1"] == pytest.approx(0.3524703)

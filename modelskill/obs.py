@@ -99,7 +99,16 @@ class Observation(TimeSeries):
         data: xr.Dataset,
         weight: float,
         color: str = "#d62728",  # TODO: cannot currently be set by user
+        attrs: Optional[dict] = None,
     ) -> None:
+        assert isinstance(data, xr.Dataset)
+
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["kind"] = "observation"
+
+        # check that user-defined attrs don't overwrite existing attrs!
+        _validate_attrs(data.attrs, attrs)
+        data.attrs = {**data.attrs, **(attrs or {})}
         data["time"] = self._parse_time(data.time)
 
         data_var = str(list(data.data_vars)[0])
@@ -145,17 +154,17 @@ class PointObservation(Observation):
 
     Parameters
     ----------
-    data : (str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset, xr.DataArray)
-        filename or object with the data
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        filename (.dfs0 or .nc) or object with the data
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
     x : float, optional
-        x-coordinate of the observation point, by default None
+        x-coordinate of the observation point, inferred from data if not given, else None
     y : float, optional
-        y-coordinate of the observation point, by default None
+        y-coordinate of the observation point, inferred from data if not given, else None
     z : float, optional
-        z-coordinate of the observation point, by default None
+        z-coordinate of the observation point, inferred from data if not given, else None
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
     quantity : Quantity, optional
@@ -193,32 +202,18 @@ class PointObservation(Observation):
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_point_input(
-                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                x=x,
+                y=y,
+                z=z,
             )
-            data.coords["x"] = x
-            data.coords["y"] = y
-            data.coords["z"] = z
 
         assert isinstance(data, xr.Dataset)
-
-        data_var = str(list(data.data_vars)[0])
-        data[data_var].attrs["kind"] = "observation"
-
-        # check that user-defined attrs don't overwrite existing attrs!
-        _validate_attrs(data.attrs, attrs)
-        data.attrs = {**data.attrs, **(attrs or {})}
-
-        super().__init__(data=data, weight=weight)
-
-    # @property
-    # def geometry(self):
-    #     """Coordinates of observation (shapely.geometry.Point)"""
-    #     from shapely.geometry import Point
-
-    #     if self.z is None:
-    #         return Point(self.x, self.y)
-    #     else:
-    #         return Point(self.x, self.y, self.z)
+        super().__init__(data=data, weight=weight, attrs=attrs)
 
     @property
     def z(self):
@@ -230,7 +225,9 @@ class PointObservation(Observation):
         self.data["z"] = value
 
     def __repr__(self):
-        out = f"<PointObservation>: {self.name}, x={self.x}, y={self.y}"
+        out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
+        if self.z is not None:
+            out += f", z={self.z}"
         if len(self._aux_vars) > 0:
             out += f", aux={self._aux_vars}"
         return out
@@ -316,13 +313,6 @@ class TrackObservation(Observation):
 
     """
 
-    # @property
-    # def geometry(self):
-    #     """Coordinates of observation (shapely.geometry.MultiPoint)"""
-    #     from shapely.geometry import MultiPoint
-
-    #     return MultiPoint(np.stack([self.x, self.y]).T)
-
     def __init__(
         self,
         data: TrackType,
@@ -356,15 +346,7 @@ class TrackObservation(Observation):
                 aux_items=aux_items,
             )
         assert isinstance(data, xr.Dataset)
-
-        data_var = str(list(data.data_vars)[0])
-        data[data_var].attrs["kind"] = "observation"
-
-        # check that user-defined attrs don't overwrite existing attrs!
-        _validate_attrs(data.attrs, attrs)
-        data.attrs = {**data.attrs, **(attrs or {})}
-
-        super().__init__(data=data, weight=weight)
+        super().__init__(data=data, weight=weight,attrs=attrs)
 
     def __repr__(self):
         out = f"<TrackObservation>: {self.name}, n={self.n_points}"

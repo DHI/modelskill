@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import Literal, Optional
 
 import pandas as pd
@@ -8,7 +9,11 @@ from modelskill.model.track import TrackModelResult
 from modelskill.obs import PointObservation, TrackObservation
 
 
+@dataclass
 class DummyModelResult:
+    name: str = "dummy"
+    data: float | None = None
+    strategy: Literal["mean", "constant"] = "constant"
     """Dummy model result that always returns the same value.
 
     Similar in spirit to <https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyRegressor.html>
@@ -34,24 +39,11 @@ class DummyModelResult:
     time
     2000-01-01 00:00:00    0.5
     2000-01-01 01:00:00    0.5
-
-
-
     """
 
-    def __init__(
-        self,
-        data: float | None = None,
-        *,
-        name: str = "dummy",
-        strategy: Literal["mean", "constant"] = "constant",
-    ):
-        if strategy == "constant":
-            if data is None:
-                raise ValueError("data must be given when strategy is 'constant'")
-        self.data = data
-        self.name = name
-        self.strategy = strategy
+    def __post_init__(self):
+        if self.strategy == "constant" and self.data is None:
+            raise ValueError("data must be given when strategy is 'constant'")
 
     def extract(
         self,
