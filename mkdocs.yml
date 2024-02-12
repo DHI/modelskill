@@ -10,20 +10,8 @@ theme:
     - navigation.sections
     - navigation.indexes
   # toc-depth: 1
-
+  
 nav: 
-<<<<<<< HEAD
-  - 'index.md'
-  - 'getting-started.md'
-  - 'overview.md'
-  - 'vision.md'
-  - 'terminology.md'
-  - Examples:
-    - 'examples/Simple_MIKE21HD_dfsu.ipynb'
-    - 'examples/Hydrology_Vistula_Catchment.ipynb'
-    - 'examples/Metocean_track_comparison.ipynb'
-  - API:
-=======
   - User Guide:
     - 'user-guide/index.md'
     - 'user-guide/getting-started.md'
@@ -33,8 +21,12 @@ nav:
     - 'user-guide/matching.md'
     - 'user-guide/plotting.md'
     - 'user-guide/selecting-data.md'
+  - Examples:
+    - 'examples/Simple_MIKE21HD_dfsu.ipynb'
+    - 'examples/Hydrology_Vistula_Catchment.ipynb'
+    - 'examples/Metocean_track_comparison.ipynb'
+    - 'examples/Prematched_with_auxiliary.ipynb'
   - API Reference:
->>>>>>> main
     - 'api/index.md'
     - Observation:
       - 'api/observation/index.md'
