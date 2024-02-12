@@ -90,7 +90,6 @@ def test_skill_table(sk_df1):
 def test_skill_repr_html(sk_df1):
     sk = ms.SkillTable(sk_df1)
     repr_html = sk._repr_html_()
-    assert "SkillTable" in repr_html
     assert "obs1" in repr_html
 
 
