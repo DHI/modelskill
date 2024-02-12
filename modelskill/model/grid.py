@@ -92,8 +92,9 @@ class GridModelResult(SpatialField):
         self.quantity = quantity
 
     def __repr__(self) -> str:
-        # TODO add item name
-        return f"<GridModelResult>: {self.name}"
+        return "\n".join(
+            [f"<GridModelResult>: {self.name}", f"Quantity: {self.quantity}"]
+        )
 
     @property
     def time(self) -> pd.DatetimeIndex:

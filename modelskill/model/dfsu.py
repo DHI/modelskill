@@ -92,7 +92,6 @@ class DfsuModelResult(SpatialField):
         self.filename = filename  # TODO: remove? backward compatibility
 
     def __repr__(self) -> str:
-        # TODO add item name
         out = [
             f"<{self.__class__.__name__}>: {self.name}",
             f"Quantity: {self.quantity}",

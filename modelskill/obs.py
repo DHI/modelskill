@@ -6,6 +6,7 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
+
 from __future__ import annotations
 
 from typing import Literal, Optional, Any, Union
@@ -225,7 +226,7 @@ class PointObservation(Observation):
         self.data["z"] = value
 
     def __repr__(self):
-        out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
+        out = f"<PointObservation>: {self.name}, x={self.x}, y={self.y}"
         if self.z is not None:
             out += f", z={self.z}"
         if len(self._aux_vars) > 0:
@@ -346,13 +347,7 @@ class TrackObservation(Observation):
                 aux_items=aux_items,
             )
         assert isinstance(data, xr.Dataset)
-        super().__init__(data=data, weight=weight,attrs=attrs)
-
-    def __repr__(self):
-        out = f"<TrackObservation>: {self.name}, n={self.n_points}"
-        if len(self._aux_vars) > 0:
-            out += f", aux={self._aux_vars}"
-        return out
+        super().__init__(data=data, weight=weight, attrs=attrs)
 
 
 def unit_display_name(name: str) -> str:

@@ -233,7 +233,13 @@ class TimeSeries:
         return self.data[self.name].to_series()
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}>: {self.name} (n_points: {self.n_points})"
+        return "\n".join(
+            [
+                f"<{self.__class__.__name__}>: {self.name}",
+                f"Time: {self.time[0]} - {self.time[-1]}",
+                f"Quantity: {self.quantity}",
+            ]
+        )
 
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables
