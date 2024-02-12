@@ -836,3 +836,14 @@ def test_from_matched_track_data():
     )
     gs = cmp.gridded_skill(bins=2)
     gs.data.sel(x=-0.01, y=55.1, method="nearest").n.values == 1
+
+    # positional args
+    cmp2 = ms.from_matched(
+        data=df,
+        x_item=0,
+        y_item=1,
+        obs_item=2,
+        mod_items=3,
+    )
+
+    assert len(cmp2.data.coords["x"]) == 2

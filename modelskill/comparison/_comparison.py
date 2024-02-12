@@ -256,7 +256,7 @@ class ItemSelection:
 
     @staticmethod
     def parse(
-        items: List[str],
+        items: Sequence[str],
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
@@ -272,37 +272,25 @@ class ItemSelection:
         Both integer and str are accepted as items. If str, it must be a key in data.
         """
         assert len(items) > 1, "data must contain at least two items"
-        if obs_item is None:
-            obs_name: str = items[0]
-        else:
-            obs_name = _get_name(obs_item, items)
+        obs_name = _get_name(obs_item, items) if obs_item else items[0]
 
         # Check existance of items and convert to names
-        if mod_items is not None:
-            if isinstance(mod_items, (str, int)):
-                mod_items = [mod_items]
-            mod_names = [_get_name(m, items) for m in mod_items]
+
         if aux_items is not None:
             if isinstance(aux_items, (str, int)):
                 aux_items = [aux_items]
             aux_names = [_get_name(a, items) for a in aux_items]
         else:
             aux_names = []
-
-        if x_item is not None:
-            x_name = _get_name(x_item, items)
+        if mod_items is not None:
+            if isinstance(mod_items, (str, int)):
+                mod_items = [mod_items]
+            mod_names = [_get_name(m, items) for m in mod_items]
         else:
-            x_name = None
+            mod_names = list(set(items) - set(aux_names) - set([obs_name]))
 
-        if y_item is not None:
-            y_name = _get_name(y_item, items)
-        else:
-            y_name = None
-
-        items.remove(obs_name)
-
-        if mod_items is None:
-            mod_names = list(set(items) - set(aux_names))
+        x_name = _get_name(x_item, items) if x_item is not None else None
+        y_name = _get_name(y_item, items) if y_item is not None else None
 
         assert len(mod_names) > 0, "no model items were found! Must be at least one"
         assert obs_name not in mod_names, "observation item must not be a model item"
@@ -404,20 +392,20 @@ def _matched_data_to_xarray(
         ds[a].attrs["kind"] = "auxiliary"
 
     if x_item is not None:
-        ds = ds.rename({x_item: "x"}).set_coords("x")
+        ds = ds.rename({items.x: "x"}).set_coords("x")
     elif x is not None:
         ds.coords["x"] = x
     else:
         ds.coords["x"] = np.nan
 
     if y_item is not None:
-        ds = ds.rename({y_item: "y"}).set_coords("y")
+        ds = ds.rename({items.y: "y"}).set_coords("y")
     elif y is not None:
         ds.coords["y"] = y
     else:
         ds.coords["y"] = np.nan
 
-    # No z-item so far
+    # No z-item so far (relevant for ProfileObservation)
     if z is not None:
         ds.coords["z"] = z
 
@@ -425,6 +413,8 @@ def _matched_data_to_xarray(
         ds.attrs["gtype"] = str(GeometryType.POINT)
     else:
         ds.attrs["gtype"] = str(GeometryType.TRACK)
+    # TODO
+    # ds.attrs["gtype"] = str(GeometryType.PROFILE)
 
     if quantity is None:
         q = Quantity.undefined()
