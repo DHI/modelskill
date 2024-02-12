@@ -35,4 +35,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az storage blob upload-batch --overwrite true --account-name dmistaging -d '$web' -s site/ --sas-token ${{secrets.BLOB_SAS_TOKEN}}
+          az storage blob upload-batch --overwrite --account-name dmistaging -d "$web" -s site/ --sas-token "${{secrets.BLOB_SAS_TOKEN}}"
