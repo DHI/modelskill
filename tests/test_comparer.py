@@ -823,13 +823,8 @@ def test_from_matched_track_data():
             "c2": [1.2, 1.3],
             "mikeswcal5hm0": [1.22, 1.3],
         },
-        index=pd.DatetimeIndex(
-            [
-                pd.Timestamp("2000-01-01T00:00:00"),
-                pd.Timestamp("2000-01-01T00:00:10"),
-            ]
-        ),
     )
+    assert isinstance(df.index, pd.RangeIndex) # Sometime we don't care about time only space
 
     cmp = ms.from_matched(
         data=df, obs_item="c2", mod_items="mikeswcal5hm0", x_item="lon", y_item="lat"
