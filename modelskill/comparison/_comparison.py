@@ -922,7 +922,7 @@ class Comparer(Scoreable):
 
         df = (
             data.to_dataframe()
-            .reset_index(names="time")
+            .reset_index()
             .melt(
                 value_vars=self.mod_names,
                 var_name="model",

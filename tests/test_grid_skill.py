@@ -80,6 +80,7 @@ def test_gridded_skill_sel_model(cc2) -> None:
         gs.sel(model="bad_model")
 
 
+@pytest.mark.skipif(pd.__version__ < "2.0.0", reason="requires newer pandas")
 def test_gridded_skill_is_subsettable(cc2) -> None:
     gs = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
     gs.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
