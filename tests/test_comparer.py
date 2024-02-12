@@ -5,6 +5,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
 from modelskill import __version__
+import modelskill as ms
 
 
 @pytest.fixture
@@ -811,3 +812,27 @@ def test_plots_directional(pt_df):
     ax = cmp.plot.timeseries()
     assert ax is not None
     assert ax.get_ylim() == (0.0, 360.0)
+
+
+def test_from_matched_track_data():
+
+    df = pd.DataFrame(
+        {
+            "lat": [55.0, 55.1],
+            "lon": [-0.1, 0.01],
+            "c2": [1.2, 1.3],
+            "mikeswcal5hm0": [1.22, 1.3],
+        },
+        index=pd.DatetimeIndex(
+            [
+                pd.Timestamp("2000-01-01T00:00:00"),
+                pd.Timestamp("2000-01-01T00:00:10"),
+            ]
+        ),
+    )
+
+    cmp = ms.from_matched(
+        data=df, obs_item="c2", mod_items="mikeswcal5hm0", x_item="lon", y_item="lat"
+    )
+    gs = cmp.gridded_skill(bins=2)
+    gs.data.sel(x=-0.01, y=55.1, method="nearest").n.values == 1
