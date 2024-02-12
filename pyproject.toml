@@ -9,8 +9,8 @@ exclude = ["notebooks", "tests"]
 name="modelskill"
 version="1.0.dev24"
 dependencies = [
-    "numpy",
-    "pandas",
+    "numpy  >= 1.20.0",
+    "pandas >= 1.4",
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",
@@ -44,7 +44,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["pytest",
         "mkdocs==1.5.3",
-        "mkdocs-material==9.4.14",
+        "mkdocs-material==9.5.6",
         "mkdocstrings==0.24.0",
         "mkdocstrings-python==1.7.5",
         "mkdocs-jupyter==0.24.6",

@@ -2,10 +2,10 @@
 The settings module holds package-wide configurables and provides
 a uniform API for working with them.
 
-This module is heavily inspired by [pandas config module](https://github.com/pandas-dev/pandas/tree/main/pandas/_config)
+This module is inspired by [pandas config module](https://github.com/pandas-dev/pandas/tree/main/pandas/_config).
 
 Overview
-========
+--------
 This module supports the following requirements:
 
 - options are referenced using keys in dot.notation, e.g. "x.y.option - z".
@@ -21,14 +21,48 @@ This module supports the following requirements:
 - a developer can register an option.
 
 Implementation
-==============
+--------------
 - Data is stored using nested dictionaries, and should be accessed
   through the provided API.
 - "Registered options" have metadata associated
   with them, which are stored in auxiliary dictionaries keyed on the
   fully-qualified key, e.g. "x.y.z.option".
 
+Examples
+--------
+>>> import modelskill as ms
+>>> ms.options
+metrics.list : [<function bias at 0x0000029D614A2DD0>, (...)]
+plot.rcparams : {}
+plot.scatter.legend.bbox : {'facecolor': 'white', (...)}
+plot.scatter.legend.fontsize : 12
+plot.scatter.legend.kwargs : {}
+plot.scatter.oneone_line.color : blue
+plot.scatter.oneone_line.label : 1:1
+plot.scatter.points.alpha : 0.5
+plot.scatter.points.label : 
+plot.scatter.points.size : 20
+plot.scatter.quantiles.color : darkturquoise
+plot.scatter.quantiles.kwargs : {}
+plot.scatter.quantiles.label : Q-Q
+plot.scatter.quantiles.marker : X
+plot.scatter.quantiles.markeredgecolor : (0, 0, 0, 0.4)
+plot.scatter.quantiles.markeredgewidth : 0.5
+plot.scatter.quantiles.markersize : 3.5
+plot.scatter.reg_line.kwargs : {'color': 'r'}
+>>> ms.set_option("plot.scatter.points.size", 4)  
+>>> plot.scatter.points.size
+4
+>>> ms.get_option("plot.scatter.points.size")
+4
+>>> ms.options.plot.scatter.points.size = 10
+>>> ms.options.plot.scatter.points.size
+10
+>>> ms.reset_option("plot.scatter.points.size")
+>>> ms.options.plot.scatter.points.size
+20
 """
+
 import yaml
 from pathlib import Path
 import re
@@ -63,7 +97,6 @@ _global_settings: Dict[str, Any] = {}
 
 
 class OptionError(AttributeError, KeyError):
-    "Error in options handling, e.g. unknown option"
     pass
 
 
@@ -80,7 +113,7 @@ def _get_single_key(pat: str) -> str:
     return key
 
 
-def _get_option(pat: str) -> Any:
+def get_option(pat: str) -> Any:
     """Get value of a single option matching a pattern
 
     Parameters
@@ -100,13 +133,14 @@ def _get_option(pat: str) -> Any:
     return root[k]
 
 
-def _set_option(*args, **kwargs) -> None:
+def set_option(*args, **kwargs) -> None:
     """Set the value of one or more options
 
     Examples
     --------
-    >>> modelskill.set_option("plot.scatter.point_size", 4)
-    >>> modelskill.set_option({"plot.scatter.point_size": 4})
+    >>> ms.set_option("plot.scatter.points.size", 4)
+    >>> ms.set_option({"plot.scatter.points.size": 4})
+    >>> ms.options.plot.scatter.points.size = 4
     """
     # must at least 1 arg deal with constraints later
 
@@ -140,7 +174,7 @@ def _option_to_dict(pat: str = "") -> Dict:
     keys = _select_options(pat)
     d = dict()
     for k in keys:
-        d[k] = _get_option(k)
+        d[k] = get_option(k)
     return d
 
 
@@ -149,7 +183,7 @@ def _describe_option_short(pat: str = "", _print_desc: bool = True) -> Optional[
     if len(keys) == 0:
         raise OptionError("No such keys(s)")
 
-    s = "\n".join([f"{k} : {_get_option(k)}" for k in keys])
+    s = "\n".join([f"{k} : {get_option(k)}" for k in keys])
 
     if _print_desc:
         print(s)
@@ -170,8 +204,21 @@ def _describe_option(pat: str = "", _print_desc: bool = True) -> Optional[str]:
     return s
 
 
-def _reset_option(pat: str = "", silent: bool = False) -> None:
-    """Reset one or more options (matching a pattern) to the default value"""
+def reset_option(pat: str = "", silent: bool = False) -> None:
+    """Reset one or more options (matching a pattern) to the default value
+
+    Examples
+    --------
+    >>> ms.options.plot.scatter.points.size
+    20
+    >>> ms.options.plot.scatter.points.size = 10
+    >>> ms.options.plot.scatter.points.size
+    10
+    >>> ms.reset_option("plot.scatter.points.size")
+    >>> ms.options.plot.scatter.points.size
+    20
+
+    """
 
     keys = _select_options(pat)
 
@@ -186,11 +233,14 @@ def _reset_option(pat: str = "", silent: bool = False) -> None:
         )
 
     for k in keys:
-        _set_option(k, _registered_options[k].defval, silent=silent)
+        set_option(k, _registered_options[k].defval, silent=silent)
 
 
 class OptionsContainer:
-    """provide attribute-style access to a nested dict"""
+    """provide attribute-style access to a nested dict of options
+
+    Accessed by ms.options
+    """
 
     def __init__(self, d: Dict[str, Any], prefix: str = "") -> None:
         object.__setattr__(self, "d", d)
@@ -204,7 +254,7 @@ class OptionsContainer:
         # you can't set new keys
         # can you can't overwrite subtrees
         if key in self.d and not isinstance(self.d[key], dict):
-            _set_option(prefix, val)
+            set_option(prefix, val)
         else:
             raise OptionError("You can only set the value of existing options")
 
@@ -220,7 +270,7 @@ class OptionsContainer:
         if isinstance(v, dict):
             return OptionsContainer(v, prefix)
         else:
-            return _get_option(prefix)
+            return get_option(prefix)
 
     def to_dict(self) -> Dict:
         """Return options as dictionary with full-name keys"""
@@ -285,15 +335,15 @@ def _build_option_description(k: str) -> str:
         s += "No description available."
 
     if o:
-        s += f"\n    [default: {o.defval}] [currently: {_get_option(k)}]"
+        s += f"\n    [default: {o.defval}] [currently: {get_option(k)}]"
 
     return s
 
 
 # temporary disabled
-get_option = _get_option
-set_option = _set_option
-reset_option = _reset_option
+# get_option = _get_option
+# set_option = _set_option
+# reset_option = _reset_option
 # describe_option = _describe_option
 options = OptionsContainer(_global_settings)
 
@@ -302,7 +352,7 @@ def register_option(
     key: str,
     defval: object,
     doc: str = "",
-    validator: Optional[Callable[[object], Any]] = None,
+    validator: Optional[Callable[[Any], Any]] = None,
     # cb: Optional[Callable[[str], Any]] = None,
 ) -> None:
     """

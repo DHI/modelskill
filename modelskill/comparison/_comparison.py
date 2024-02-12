@@ -50,16 +50,14 @@ Serializable = Union[str, int, float]
 
 
 class Scoreable(Protocol):
-    def score(self, metric: str | Callable, **kwargs) -> Dict[str, float]:
-        ...
+    def score(self, metric: str | Callable, **kwargs: Any) -> Dict[str, float]: ...
 
     def skill(
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        **kwargs,
-    ) -> SkillTable:
-        ...
+        **kwargs: Any,
+    ) -> SkillTable: ...
 
     def gridded_skill(
         self,
@@ -68,12 +66,11 @@ class Scoreable(Protocol):
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: int | None = None,
-        **kwargs,
-    ) -> SkillGrid:
-        ...
+        **kwargs: Any,
+    ) -> SkillGrid: ...
 
 
-def _parse_dataset(data) -> xr.Dataset:
+def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     if not isinstance(data, xr.Dataset):
         raise ValueError("matched_data must be an xarray.Dataset")
         # matched_data = self._matched_data_to_xarray(matched_data)
@@ -145,15 +142,15 @@ def _parse_dataset(data) -> xr.Dataset:
 
 
 def _is_observation(da: xr.DataArray) -> bool:
-    return da.attrs["kind"] == "observation"
+    return str(da.attrs["kind"]) == "observation"
 
 
 def _is_model(da: xr.DataArray) -> bool:
-    return da.attrs["kind"] == "model"
+    return str(da.attrs["kind"]) == "model"
 
 
 # TODO remove in v1.1
-def _get_deprecated_args(kwargs):
+def _get_deprecated_args(kwargs):  # type: ignore
     model, start, end, area = None, None, None, None
 
     # Don't bother refactoring this, it will be removed in v1.1
@@ -195,7 +192,7 @@ def _get_deprecated_args(kwargs):
     return model, start, end, area
 
 
-def _validate_metrics(metrics) -> None:
+def _validate_metrics(metrics: Iterable[Any]) -> None:
     for m in metrics:
         if isinstance(m, str):
             if not mtr.is_valid_metric(m):
@@ -240,7 +237,7 @@ class ItemSelection:
     model: Sequence[str]
     aux: Sequence[str]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # check that obs, model and aux are unique, and that they are not overlapping
         all_items = self.all
         if len(all_items) != len(set(all_items)):
@@ -298,7 +295,7 @@ class ItemSelection:
         return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
 
 
-def _area_is_bbox(area) -> bool:
+def _area_is_bbox(area: Any) -> bool:
     is_bbox = False
     if area is not None:
         if not np.isscalar(area):
@@ -309,7 +306,7 @@ def _area_is_bbox(area) -> bool:
     return is_bbox
 
 
-def _area_is_polygon(area) -> bool:
+def _area_is_polygon(area: Any) -> bool:
     if area is None:
         return False
     if np.isscalar(area):
@@ -335,12 +332,12 @@ def _area_is_polygon(area) -> bool:
     return True
 
 
-def _inside_polygon(polygon, xy) -> np.ndarray:
+def _inside_polygon(polygon: Any, xy: np.ndarray) -> np.ndarray:
     import matplotlib.path as mp  # type: ignore
 
     if polygon.ndim == 1:
         polygon = np.column_stack((polygon[0::2], polygon[1::2]))
-    return mp.Path(polygon).contains_points(xy)
+    return mp.Path(polygon).contains_points(xy)  # type: ignore
 
 
 def _matched_data_to_xarray(
@@ -353,7 +350,7 @@ def _matched_data_to_xarray(
     y: Optional[float] = None,
     z: Optional[float] = None,
     quantity: Optional[Quantity] = None,
-):
+) -> xr.Dataset:
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
     cols = list(df.columns)
@@ -374,6 +371,7 @@ def _matched_data_to_xarray(
     df.index.name = "time"
     df = df.rename(columns={items.obs: "Observation"})
     ds = df.to_xarray()
+    assert isinstance(ds, xr.Dataset)
 
     ds.attrs["name"] = name if name is not None else items.obs
     ds["Observation"].attrs["kind"] = "observation"
@@ -530,7 +528,7 @@ class Comparer(Scoreable):
     @property
     def name(self) -> str:
         """Name of comparer (=name of observation)"""
-        return self.data.attrs["name"]
+        return str(self.data.attrs["name"])
 
     @name.setter
     def name(self, name: str) -> None:
@@ -543,7 +541,7 @@ class Comparer(Scoreable):
     @property
     def gtype(self) -> str:
         """Geometry type"""
-        return self.data.attrs["gtype"]
+        return str(self.data.attrs["gtype"])
 
     @property
     def quantity(self) -> Quantity:
@@ -585,21 +583,21 @@ class Comparer(Scoreable):
     #     return self.time[-1]
 
     @property
-    def x(self):
+    def x(self) -> Any:
         """x-coordinate"""
         return self._coordinate_values("x")
 
     @property
-    def y(self):
+    def y(self) -> Any:
         """y-coordinate"""
         return self._coordinate_values("y")
 
     @property
-    def z(self):
+    def z(self) -> Any:
         """z-coordinate"""
         return self._coordinate_values("z")
 
-    def _coordinate_values(self, coord):
+    def _coordinate_values(self, coord: str) -> Any:
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
@@ -633,11 +631,11 @@ class Comparer(Scoreable):
     @property
     def weight(self) -> float:
         """Weight of observation (used in ComparerCollection score() and mean_skill())"""
-        return self.data.attrs["weight"]
+        return float(self.data.attrs["weight"])
 
     @weight.setter
     def weight(self, value: float) -> None:
-        self.data.attrs["weight"] = value
+        self.data.attrs["weight"] = float(value)
 
     @property
     def _unit_text(self) -> str:
@@ -654,10 +652,10 @@ class Comparer(Scoreable):
         self.data.attrs = value
 
     # TODO: is this the best way to copy (self.data.copy.. )
-    def __copy__(self):
+    def __copy__(self) -> "Comparer":
         return deepcopy(self)
 
-    def copy(self):
+    def copy(self) -> "Comparer":
         return self.__copy__()
 
     def rename(
@@ -752,7 +750,7 @@ class Comparer(Scoreable):
 
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
-    ) -> "ComparerCollection":
+    ) -> "ComparerCollection" | "Comparer":
         from ._collection import ComparerCollection
         from ..matching import match_space_time
 
@@ -921,7 +919,7 @@ class Comparer(Scoreable):
 
         df = (
             data.to_dataframe()
-            .reset_index(names="time")
+            .reset_index()
             .melt(
                 value_vars=self.mod_names,
                 var_name="model",
@@ -940,7 +938,7 @@ class Comparer(Scoreable):
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> SkillTable:
         """Skill assessment of model(s)
 
@@ -986,7 +984,7 @@ class Comparer(Scoreable):
         metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
 
         # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
+        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         cmp = self.sel(
@@ -1007,7 +1005,9 @@ class Comparer(Scoreable):
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
-    def _add_as_col_if_not_in_index(self, df, skilldf):
+    def _add_as_col_if_not_in_index(
+        self, df: pd.DataFrame, skilldf: pd.DataFrame
+    ) -> pd.DataFrame:
         """Add a field to skilldf if unique in df"""
         FIELDS = ("observation", "model")
 
@@ -1023,7 +1023,7 @@ class Comparer(Scoreable):
     def score(
         self,
         metric: str | Callable = mtr.rmse,
-        **kwargs,
+        **kwargs: Any,
     ) -> Dict[str, float]:
         """Model skill score
 
@@ -1057,7 +1057,7 @@ class Comparer(Scoreable):
             raise ValueError("metric must be a string or a function")
 
         # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
+        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         sk = self.skill(
@@ -1071,13 +1071,9 @@ class Comparer(Scoreable):
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
-
-        return (
-            df.reset_index()
-            .groupby("model", observed=True)[metric_name]
-            .mean()
-            .to_dict()
-        )
+        ser = df.reset_index().groupby("model", observed=True)[metric_name].mean()
+        score = {str(k): float(v) for k, v in ser.items()}
+        return score
 
     def gridded_skill(
         self,
@@ -1086,7 +1082,7 @@ class Comparer(Scoreable):
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: int | None = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
@@ -1178,13 +1174,15 @@ class Comparer(Scoreable):
         return SkillGrid(ds)
 
     @property
-    def _residual(self):
+    def _residual(self) -> np.ndarray:
         df = self.data.drop_vars(["x", "y", "z"]).to_dataframe()
         obs = df[self._obs_str].values
         mod = df[self.mod_names].values
         return mod - np.vstack(obs)
 
-    def remove_bias(self, correct="Model") -> Comparer:
+    def remove_bias(
+        self, correct: Literal["Model", "Observation"] = "Model"
+    ) -> Comparer:
         cmp = self.copy()
 
         bias = cmp._residual.mean(axis=0)
@@ -1192,12 +1190,12 @@ class Comparer(Scoreable):
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
                 mod_ts = cmp.raw_mod_data[mod_name]
-                with xr.set_options(keep_attrs=True):
+                with xr.set_options(keep_attrs=True):  # type: ignore
                     mod_ts.data[mod_name].values = mod_ts.values - bias[j]
                     cmp.data[mod_name].values = cmp.data[mod_name].values - bias[j]
         elif correct == "Observation":
             # what if multiple models?
-            with xr.set_options(keep_attrs=True):
+            with xr.set_options(keep_attrs=True):  # type: ignore
                 cmp.data[cmp._obs_str].values = cmp.data[cmp._obs_str].values + bias
         else:
             raise ValueError(

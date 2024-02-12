@@ -163,6 +163,7 @@ def test_skill_mm_swaplevel(cc2):
     assert np.all(sk2.index.levels[0] == sk.index.levels[1])
 
 
+@pytest.mark.skipif(pd.__version__ < "2.0.0", reason="requires newer pandas")
 def test_skill_mm_sort_index(cc2):
     sk = cc2.skill(metrics=["rmse", "bias"])
     assert list(sk.index.get_level_values(1)) == [
@@ -321,6 +322,7 @@ def test_skill_plot_grid(cc2):
     assert "only possible for MultiIndex" in str(wn[0].message)
 
 
+@pytest.mark.skipif(pd.__version__ < "1.5.0", reason="requires Pandas 1.5.0 or higher")
 def test_skill_style(cc2):
     sk = cc2.skill(metrics=["bias", "rmse", "lin_slope", "si"])
     sk.style()
@@ -329,6 +331,16 @@ def test_skill_style(cc2):
     sk.style(metrics=["bias", "rmse"])
     sk.style(metrics=[])
     sk.style(cmap="viridis_r", show_best=False)
+
+
+@pytest.mark.skipif(pd.__version__ < "1.5.0", reason="requires Pandas 1.5.0 or higher")
+def test_styled_skill_can_be_rendered(cc2):
+    sk = cc2.skill()
+    # _repr_html_ is called by Jupyter
+    sk._repr_html_()
+
+    styled_skill = cc2.skill().style()
+    styled_skill._repr_html_()
 
 
 def test_skill_round(cc2):

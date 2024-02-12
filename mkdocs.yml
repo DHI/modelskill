@@ -1,9 +1,10 @@
-site_name: modelskill
+site_name: ModelSkill documentation
 site_url: https://dhi.github.io/modelskill/
 theme: 
   name: material
+  logo: images/dhi-white-logo.svg
   features:
-    # - navigation.tabs
+    - navigation.tabs
     # - navigation.instant
     - navigation.expand
     - navigation.sections
@@ -11,6 +12,7 @@ theme:
   # toc-depth: 1
 
 nav: 
+<<<<<<< HEAD
   - 'index.md'
   - 'getting-started.md'
   - 'overview.md'
@@ -21,17 +23,32 @@ nav:
     - 'examples/Hydrology_Vistula_Catchment.ipynb'
     - 'examples/Metocean_track_comparison.ipynb'
   - API:
+=======
+  - User Guide:
+    - 'user-guide/index.md'
+    - 'user-guide/getting-started.md'
+    - 'user-guide/overview.md'
+    - 'user-guide/terminology.md'
+    - 'user-guide/data-structures.md'
+    - 'user-guide/matching.md'
+    - 'user-guide/plotting.md'
+    - 'user-guide/selecting-data.md'
+  - API Reference:
+>>>>>>> main
     - 'api/index.md'
     - Observation:
       - 'api/observation/index.md'
+      - observation(): 'api/observation/observation.md'
       - PointObservation: 'api/observation/point.md'
       - TrackObservation: 'api/observation/track.md'        
     - Model Result:
       - 'api/model/index.md'
+      - model_result(): 'api/model/model_result.md'
       - PointModelResult: 'api/model/point.md'
       - TrackModelResult: 'api/model/track.md'
       - DfsuModelResult: 'api/model/dfsu.md'
-      - GridModelResult: 'api/model/grid.md'  
+      - GridModelResult: 'api/model/grid.md' 
+      - DummyModelResult: 'api/model/dummy.md' 
     - 'api/matching.md'
     - 'api/comparer.md'
     - 'api/comparercollection.md'
@@ -52,6 +69,11 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 extra_javascript:
   - javascripts/mathjax.js

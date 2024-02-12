@@ -257,6 +257,9 @@ def _scatter_matplotlib(
 ) -> matplotlib.axes.Axes:
     fig, ax = _get_fig_ax(ax, figsize)
 
+    if len(x) < 2:
+        raise ValueError("Not enough data to plot. At least 2 points are required.")
+
     ax.plot(
         [xlim[0], xlim[1]],
         [xlim[0], xlim[1]],
@@ -339,17 +342,21 @@ def _scatter_matplotlib(
     max_cbar = None
     cmap = kwargs.get("cmap", None)
     if show_hist or (show_density and show_points):
-        cbar = fig.colorbar(
-            ScalarMappable(norm, cmap),
-            ax=ax,
-            fraction=0.046,
-            pad=0.04,
-            alpha=options.plot.scatter.points.alpha,
-        )
-        ticks = cbar.ax.get_yticks()
-        max_cbar = ticks[-1]
-        cbar.set_label("# points")
-        cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        try:
+            cbar = fig.colorbar(
+                ScalarMappable(norm, cmap),
+                ax=ax,
+                fraction=0.046,
+                pad=0.04,
+                alpha=options.plot.scatter.points.alpha,
+            )
+            ticks = cbar.ax.get_yticks()
+            max_cbar = ticks[-1]
+            cbar.set_label("# points")
+            cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        except ValueError:
+            # too few points to make a colorbar
+            pass
 
     ax.set_title(title)
     # Add skill table

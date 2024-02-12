@@ -1,27 +1,33 @@
 from __future__ import annotations
-from typing import Iterable, Optional, overload, Hashable
+from typing import Any, Iterable, overload, Hashable, TYPE_CHECKING
 import warnings
 import xarray as xr
 
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    import pandas as pd
+
 
 class SkillGridMixin:
+    data: xr.DataArray | xr.Dataset
+
     @property
-    def x(self):
+    def x(self) -> xr.DataArray:
         """x-coordinate values"""
-        return self.data.x
+        return self.data.x  # type: ignore
 
     @property
-    def y(self):
+    def y(self) -> xr.DataArray:
         """y-coordinate values"""
-        return self.data.y
+        return self.data.y  # type: ignore
 
     @property
-    def coords(self):
+    def coords(self) -> Any:
         """Coordinates (same as xr.DataSet.coords)"""
         return self.data.coords
 
     @property
-    def obs_names(self):
+    def obs_names(self) -> list[str]:
         """List of observation names"""
         if "observation" in self._coords_list:
             return list(self.coords["observation"].values)
@@ -29,7 +35,7 @@ class SkillGridMixin:
             return []
 
     @property
-    def mod_names(self):
+    def mod_names(self) -> list[str]:
         """List of model names"""
         if "model" in self._coords_list:
             return list(self.coords["model"].values)
@@ -37,8 +43,8 @@ class SkillGridMixin:
             return []
 
     @property
-    def _coords_list(self):
-        return [d for d in self.coords.dims]
+    def _coords_list(self) -> list[str]:
+        return [str(d) for d in self.coords.dims]
 
 
 class SkillGridArray(SkillGridMixin):
@@ -52,17 +58,18 @@ class SkillGridArray(SkillGridMixin):
     >>> gs["bias"].plot()
     """
 
-    def __init__(self, data):
+    def __init__(self, data: xr.DataArray) -> None:
         assert isinstance(data, xr.DataArray)
         self.data = data
 
-    def __repr__(self):
-        return repr(self.data)
+    def __repr__(self) -> str:
+        out = [
+            "<SkillGridArray>",
+            f"Dimensions: (x: {len(self.x)}, y: {len(self.y)})",
+        ]
+        return "\n".join(out)
 
-    def _repr_html_(self):
-        return self.data._repr_html_()
-
-    def plot(self, model=None, **kwargs):
+    def plot(self, model: str | None = None, **kwargs: Any) -> Axes:
         """wrapper for xArray DataArray plot function
 
         Parameters
@@ -123,32 +130,34 @@ class SkillGrid(SkillGridMixin):
     >>> gs.sel(model='SW_1').rmse.plot()
     """
 
-    def __init__(self, data, name: Optional[str] = None):
+    def __init__(self, data: xr.Dataset) -> None:
         # TODO: add type and unit info; add domain to plot outline on map
         self.data = data
-        self.name = name
         self._set_attrs()
 
     @property
-    def metrics(self):
+    def metrics(self) -> list[str]:
         """List of metrics (=data vars)"""
         return list(self.data.data_vars)
 
-    def __repr__(self):
-        return repr(self.data)
-
-    def _repr_html_(self):
-        return self.data._repr_html_()
+    def __repr__(self) -> str:
+        out = [
+            "<SkillGrid>",
+            f"Dimensions: (x: {len(self.x)}, y: {len(self.y)})",
+        ]
+        return "\n".join(out)
 
     @overload
-    def __getitem__(self, key: Hashable | int) -> SkillGridArray:
+    def __getitem__(self, key: Hashable) -> SkillGridArray:
         ...
 
     @overload
     def __getitem__(self, key: Iterable[Hashable]) -> SkillGrid:
         ...
 
-    def __getitem__(self, key) -> SkillGridArray | SkillGrid:
+    def __getitem__(
+        self, key: Hashable | Iterable[Hashable]
+    ) -> SkillGridArray | SkillGrid:
         result = self.data[key]
         if isinstance(result, xr.DataArray):
             return SkillGridArray(result)
@@ -157,13 +166,20 @@ class SkillGrid(SkillGridMixin):
         else:
             return result
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str, *args, **kwargs) -> Any:
         if item in self.data.data_vars:
             return self[item]  # Redirects to __getitem__
         else:
-            raise AttributeError(f"SkillGrid has no attribute {item}")
+            # return getattr(self.data, item, *args, **kwargs)
+            raise AttributeError(
+                f"""
+                    SkillGrid has no attribute {item}; Maybe you are
+                    looking for the corresponding xr.Dataset attribute?
+                    Access SkillGrid's Dataset with '.data'.
+                """
+            )
 
-    def _set_attrs(self):
+    def _set_attrs(self) -> None:
         # TODO: use type and unit to give better long name
         # self.ds["bias"].attrs = dict(long_name="Bias of Hm0", units="m")
 
@@ -175,7 +191,7 @@ class SkillGrid(SkillGridMixin):
             self.data["x"].attrs = dict(long_name="Easting", units="meter")
             self.data["y"].attrs = dict(long_name="Northing", units="meter")
 
-    def _has_geographical_coords(self):
+    def _has_geographical_coords(self) -> bool:
         is_geo = True
         if (self.x.min() < -180.0) or (self.x.max() > 360.0):
             is_geo = False
@@ -196,9 +212,11 @@ class SkillGrid(SkillGridMixin):
         SkillGrid
             SkillGrid with only the selected model
         """
-        return SkillGrid(self.data.sel(model=model))
+        sel_data = self.data.sel(model=model)
+        assert isinstance(sel_data, xr.Dataset)
+        return SkillGrid(sel_data)
 
-    def plot(self, metric: str, model=None, **kwargs):
+    def plot(self, metric: str, model: str | None = None, **kwargs: Any) -> Axes:
         warnings.warn(
             "plot() is deprecated and will be removed in a future version. ",
             FutureWarning,
@@ -207,7 +225,7 @@ class SkillGrid(SkillGridMixin):
             raise ValueError(f"metric {metric} not found in {self.metrics}")
         return self[metric].plot(model=model, **kwargs)
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         """Convert gridded skill data to pandas DataFrame
 
         Returns
