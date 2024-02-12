@@ -80,6 +80,25 @@ class PointModelResult(TimeSeries, Alignable):
             )
         return self
 
+    def interp_time(self, observation: Observation, **kwargs: Any) -> PointModelResult:
+        """
+        Interpolate model result to the time of the observation
+
+        Parameters
+        ----------
+        observation : Observation
+            The observation to interpolate to
+        **kwargs
+            Additional keyword arguments passed to xarray.interp
+
+        Returns
+        -------
+        PointModelResult
+            Interpolated model result
+        """
+        ds = self.align(observation, **kwargs)
+        return PointModelResult(ds)
+
     def align(
         self,
         observation: Observation,
@@ -87,20 +106,6 @@ class PointModelResult(TimeSeries, Alignable):
         max_gap: float | None = None,
         **kwargs: Any,
     ) -> xr.Dataset:
-        """Interpolate time series to new time index
-
-        Parameters
-        ----------
-        new_time : pd.DatetimeIndex
-            new time index
-        **kwargs
-            keyword arguments passed to xarray.interp()
-
-        Returns
-        -------
-        xr.Dataset
-            interpolated dataset
-        """
         new_time = observation.time
 
         dati = self.data.dropna("time").interp(
