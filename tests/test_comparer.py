@@ -847,3 +847,27 @@ def test_from_matched_track_data():
     )
 
     assert len(cmp2.data.coords["x"]) == 2
+
+
+def test_from_matched_dfs0():
+    fn = "tests/testdata/matched_track_data.dfs0"
+    # time: 2017-10-27 10:45:19 - 2017-10-29 13:10:44 (532 non-equidistant records)
+    # geometry: GeometryUndefined()
+    # items:
+    #   0:  x <Undefined> (undefined)
+    #   1:  y <Undefined> (undefined)
+    #   2:  HD <Undefined> (undefined)
+    #   3:  Observation <Undefined> (undefined)
+
+    cmp = ms.from_matched(
+        data=fn,
+        x_item=0,
+        y_item=1,
+        obs_item=3,
+        mod_items=2,
+        quantity=ms.Quantity("Water level", "m"),
+    )
+    gs = cmp.gridded_skill()
+    assert float(
+        gs.data.sel(x=-0.01, y=55.1, method="nearest").rmse.values
+    ) == pytest.approx(0.0476569069177831)
