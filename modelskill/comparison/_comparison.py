@@ -236,6 +236,8 @@ class ItemSelection:
     obs: str
     model: Sequence[str]
     aux: Sequence[str]
+    x: Optional[str] = None
+    y: Optional[str] = None
 
     def __post_init__(self) -> None:
         # check that obs, model and aux are unique, and that they are not overlapping
@@ -245,7 +247,12 @@ class ItemSelection:
 
     @property
     def all(self) -> Sequence[str]:
-        return [self.obs] + list(self.model) + list(self.aux)
+        res = [self.obs] + list(self.model) + list(self.aux)
+        if self.x is not None:
+            res.append(self.x)
+        if self.y is not None:
+            res.append(self.y)
+        return res
 
     @staticmethod
     def parse(
@@ -253,6 +260,8 @@ class ItemSelection:
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
+        x_item: str | int | None = None,
+        y_item: str | int | None = None,
     ) -> ItemSelection:
         """Parse items and return observation, model and auxiliary items
         Default behaviour:
@@ -280,6 +289,16 @@ class ItemSelection:
         else:
             aux_names = []
 
+        if x_item is not None:
+            x_name = _get_name(x_item, items)
+        else:
+            x_name = None
+
+        if y_item is not None:
+            y_name = _get_name(y_item, items)
+        else:
+            y_name = None
+
         items.remove(obs_name)
 
         if mod_items is None:
@@ -292,7 +311,9 @@ class ItemSelection:
         ), "observation item must not be an auxiliary item"
         assert isinstance(obs_name, str), "observation item must be a string"
 
-        return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
+        return ItemSelection(
+            obs=obs_name, model=mod_names, aux=aux_names, x=x_name, y=y_name
+        )
 
 
 def _area_is_bbox(area: Any) -> bool:
@@ -349,12 +370,14 @@ def _matched_data_to_xarray(
     x: Optional[float] = None,
     y: Optional[float] = None,
     z: Optional[float] = None,
+    x_item: str | int | None = None,
+    y_item: str | int | None = None,
     quantity: Optional[Quantity] = None,
 ) -> xr.Dataset:
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
     cols = list(df.columns)
-    items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
+    items = ItemSelection.parse(cols, obs_item, mod_items, aux_items, x_item, y_item)
 
     # check that items.obs and items.model are numeric
     if not np.issubdtype(df[items.obs].dtype, np.number):
@@ -380,14 +403,25 @@ def _matched_data_to_xarray(
     for a in items.aux:
         ds[a].attrs["kind"] = "auxiliary"
 
-    if x is not None:
+    if x_item is not None:
+        ds = ds.rename({x_item: "x"}).set_coords("x")
+    elif x is not None:
         ds.coords["x"] = x
-    if y is not None:
+    else:
+        ds.coords["x"] = np.nan
+
+    if y_item is not None:
+        ds = ds.rename({y_item: "y"}).set_coords("y")
+    elif y is not None:
         ds.coords["y"] = y
+    else:
+        ds.coords["y"] = np.nan
+
+    # No z-item so far
     if z is not None:
         ds.coords["z"] = z
 
-    if x is None or np.isscalar(x):
+    if np.isscalar(ds.coords["x"]):
         ds.attrs["gtype"] = str(GeometryType.POINT)
     else:
         ds.attrs["gtype"] = str(GeometryType.TRACK)
@@ -493,6 +527,8 @@ class Comparer(Scoreable):
         x: Optional[float] = None,
         y: Optional[float] = None,
         z: Optional[float] = None,
+        x_item: str | int | None = None,
+        y_item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> "Comparer":
         """Initialize from compared data"""
@@ -507,6 +543,8 @@ class Comparer(Scoreable):
                 x=x,
                 y=y,
                 z=z,
+                x_item=x_item,
+                y_item=y_item,
                 quantity=quantity,
             )
             data.attrs["weight"] = weight
