@@ -32,7 +32,5 @@ jobs:
         echo -e "User-agent: *\nDisallow: /" > site/robots.txt
 
     - name: Deploy to Azure blob storage
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
+      run: 
           az storage blob upload-batch --overwrite --account-name dmistaging -d '$web' -s site/ --sas-token ${{secrets.BLOB_SAS_TOKEN}}
