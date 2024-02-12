@@ -1,4 +1,4 @@
-name: Build documentation (staging)
+name: Build documentation
 
 on:
   push:
@@ -26,11 +26,3 @@ jobs:
     
     - name: Mkdocs build
       run: mkdocs build
-
-    - name: Add robots.txt
-      run: |
-        echo -e "User-agent: *\nDisallow: /" > site/robots.txt
-
-    - name: Deploy to Azure blob storage
-      run: 
-          az storage blob upload-batch --overwrite --account-name dmistaging -d '$web' -s /home/runner/work/modelskill/modelskill/site/ --sas-token ${{secrets.BLOB_SAS_TOKEN}}
