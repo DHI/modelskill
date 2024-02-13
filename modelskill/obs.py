@@ -143,10 +143,6 @@ class Observation(TimeSeries):
         else:
             return time  # can be RangeIndex
 
-    @property
-    def _aux_vars(self):
-        return list(self.data.filter_by_attrs(kind="aux").data_vars)
-
 
 class PointObservation(Observation):
     """Class for observations of fixed locations
@@ -224,14 +220,6 @@ class PointObservation(Observation):
     @z.setter
     def z(self, value):
         self.data["z"] = value
-
-    def __repr__(self):
-        out = f"<PointObservation>: {self.name}, x={self.x}, y={self.y}"
-        if self.z is not None:
-            out += f", z={self.z}"
-        if len(self._aux_vars) > 0:
-            out += f", aux={self._aux_vars}"
-        return out
 
 
 class TrackObservation(Observation):

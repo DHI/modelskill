@@ -92,11 +92,13 @@ class DfsuModelResult(SpatialField):
         self.filename = filename  # TODO: remove? backward compatibility
 
     def __repr__(self) -> str:
-        out = [
-            f"<{self.__class__.__name__}>: {self.name}",
-            f"Quantity: {self.quantity}",
-        ]
-        return "\n".join(out)
+        res = []
+        res.append(f"<{self.__class__.__name__}>: {self.name}")
+        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
+        res.append(f"Quantity: {self.quantity}")
+        if len(self.sel_items.aux) > 0:
+            res.append(f"Auxiliary variables: {', '.join(self.sel_items.aux)}")
+        return "\n".join(res)
 
     @property
     def time(self) -> pd.DatetimeIndex:

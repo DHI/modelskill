@@ -92,9 +92,13 @@ class GridModelResult(SpatialField):
         self.quantity = quantity
 
     def __repr__(self) -> str:
-        return "\n".join(
-            [f"<GridModelResult>: {self.name}", f"Quantity: {self.quantity}"]
-        )
+        res = []
+        res.append(f"<{self.__class__.__name__}>: {self.name}")
+        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
+        res.append(f"Quantity: {self.quantity}")
+        if len(self.sel_items.aux) > 0:
+            res.append(f"Auxiliary variables: {', '.join(self.sel_items.aux)}")
+        return "\n".join(res)
 
     @property
     def time(self) -> pd.DatetimeIndex:

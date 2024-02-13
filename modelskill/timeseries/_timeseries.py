@@ -232,14 +232,20 @@ class TimeSeries:
         """Values to series (for plotting)"""
         return self.data[self.name].to_series()
 
+    @property
+    def _aux_vars(self):
+        return list(self.data.filter_by_attrs(kind="aux").data_vars)
+
     def __repr__(self) -> str:
-        return "\n".join(
-            [
-                f"<{self.__class__.__name__}>: {self.name}",
-                f"Time: {self.time[0]} - {self.time[-1]}",
-                f"Quantity: {self.quantity}",
-            ]
-        )
+        res = []
+        res.append(f"<{self.__class__.__name__}>: {self.name}")
+        if self.gtype == str(GeometryType.POINT):
+            res.append(f"Location: {self.x}, {self.y}")
+        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
+        res.append(f"Quantity: {self.quantity}")
+        if len(self._aux_vars) > 0:
+            res.append(f"Auxiliary variables: {', '.join(self._aux_vars)}")
+        return "\n".join(res)
 
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables
