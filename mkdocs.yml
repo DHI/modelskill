@@ -10,7 +10,7 @@ theme:
     - navigation.sections
     - navigation.indexes
   # toc-depth: 1
-
+  
 nav: 
   - User Guide:
     - 'user-guide/index.md'
@@ -21,6 +21,11 @@ nav:
     - 'user-guide/matching.md'
     - 'user-guide/plotting.md'
     - 'user-guide/selecting-data.md'
+  - Examples:
+    - 'examples/Simple_MIKE21HD_dfsu.ipynb'
+    - 'examples/Hydrology_Vistula_Catchment.ipynb'
+    - 'examples/Metocean_track_comparison.ipynb'
+    - 'examples/Prematched_with_auxiliary.ipynb'
   - API Reference:
     - 'api/index.md'
     - Observation:
@@ -71,6 +76,7 @@ repo_url: https://github.com/DHI/modelskill
 plugins:
 - search
 - autorefs
+- mkdocs-jupyter
 - mkdocstrings:
     handlers:
       python:
