@@ -18,26 +18,27 @@ companion during the different phases of a MIKE modelling workflow.
 ![](images/scatter.png)
 
 
-## __Set up in 5 minutes__
+## {{< fa clock >}} **Set up in 5 minutes**
 
 Install **ModelSkill** with [`pip`](https://pypi.org/project/modelskill/) and get up
 and running in minutes
 
 [**Getting started**](user-guide/getting-started.md)
 
-## __It's just Python__
+## {{< fa brands python >}} **It's just Python**
+
 
 Focus on your modelling and less on generate a validation report
 
 [**API Reference**](api/index.md)
 
-## __Made to measure__
+## {{< fa solid ruler >}} **Made to measure**
 
 Choose between different skill metrics and customizable tables and charts
 
 [Metrics](api/metrics.md)
 
-## __Open Source, MIT__
+## {{< fa scale-balanced >}} **Open Source, MIT**
 
 ModelSkill is licensed under MIT and available on [GitHub](https://github.com/DHI/modelskill)
 
