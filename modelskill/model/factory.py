@@ -25,6 +25,7 @@ _modelresult_lookup = {
 def model_result(
     data: DataInputType,
     *,
+    aux_items: Optional[list[int | str]] = None,
     gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
     **kwargs: Any,
 ) -> Any:
@@ -34,6 +35,8 @@ def model_result(
     ----------
     data : DataInputType
         The data to be used for creating the ModelResult object.
+    aux_items : Optional[list[int | str]]
+        Auxiliary items, by default None
     gtype : Optional[Literal["point", "track", "unstructured", "grid"]]
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
@@ -54,6 +57,7 @@ def model_result(
 
     return _modelresult_lookup[geometry](
         data=data,
+        aux_items=aux_items,
         **kwargs,
     )
 
