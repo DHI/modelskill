@@ -135,7 +135,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Examples</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../api/index.html"> 
+    <a class="nav-link" href="../api/index.md"> 
 <span class="menu-text">API Reference</span></a>
   </li>  
 </ul>
@@ -284,6 +284,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
   <li><a href="#see-also" id="toc-see-also" class="nav-link" data-scroll-target="#see-also">See Also</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
+  <ul class="collapse">
+  <li><a href="#modelskill.Comparer.skill" id="toc-modelskill.Comparer.skill" class="nav-link" data-scroll-target="#modelskill.Comparer.skill">skill</a></li>
+  </ul></li>
   </ul></li>
   </ul>
 </nav>
@@ -341,8 +345,98 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="see-also" class="level2">
 <h2 class="anchored" data-anchor-id="see-also">See Also</h2>
 <p>modelskill.match, modelskill.from_matched</p>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.Comparer.skill">skill</a></td>
+<td>Skill assessment of model(s)</td>
+</tr>
+</tbody>
+</table>
+<section id="modelskill.Comparer.skill" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.Comparer.skill">skill</h3>
+<p><code>Comparer.skill(by=None, metrics=None, **kwargs)</code></p>
+<p>Skill assessment of model(s)</p>
+<section id="parameters-1" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="table">
+<colgroup>
+<col style="width: 2%">
+<col style="width: 6%">
+<col style="width: 88%">
+<col style="width: 2%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>by</code></td>
+<td>str or typing.List[str]</td>
+<td>group by, by default [“model”] - by column name - by temporal bin of the DateTimeIndex via the freq-argument (using pandas pd.Grouper(freq)), e.g.: ‘freq:M’ = monthly; ‘freq:D’ daily - by the dt accessor of the DateTimeIndex (e.g.&nbsp;‘dt.month’) using the syntax ‘dt:month’. The dt-argument is different from the freq-argument in that it gives month-of-year rather than month-of-data.</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td><code>metrics</code></td>
+<td>list</td>
+<td>list of modelskill.metrics, by default modelskill.options.metrics.list</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4">
+<h4 class="anchored" data-anchor-id="returns">Returns</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>modelskill.skill.SkillTable</td>
+<td>skill assessment object</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="see-also-1" class="level4">
+<h4 class="anchored" data-anchor-id="see-also-1">See Also</h4>
+<p>sel a method for filtering/selecting data</p>
+</section>
+<section id="examples-1" class="level4">
+<h4 class="anchored" data-anchor-id="examples-1">Examples</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">import</span> modelskill <span class="im">as</span> ms</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> cc <span class="op">=</span> ms.match(c2, mod)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> cc[<span class="st">'c2'</span>].skill().<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>               n  bias  rmse  urmse   mae    cc    si    r2</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>observation</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>c2           <span class="dv">113</span> <span class="op">-</span><span class="fl">0.00</span>  <span class="fl">0.35</span>   <span class="fl">0.35</span>  <span class="fl">0.29</span>  <span class="fl">0.97</span>  <span class="fl">0.12</span>  <span class="fl">0.99</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> cc[<span class="st">'c2'</span>].skill(by<span class="op">=</span><span class="st">'freq:D'</span>).<span class="bu">round</span>(<span class="dv">2</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>             n  bias  rmse  urmse   mae    cc    si    r2</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dv">2017</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span><span class="dv">27</span>  <span class="dv">72</span> <span class="op">-</span><span class="fl">0.19</span>  <span class="fl">0.31</span>   <span class="fl">0.25</span>  <span class="fl">0.26</span>  <span class="fl">0.48</span>  <span class="fl">0.12</span>  <span class="fl">0.98</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dv">2017</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span><span class="dv">28</span>   <span class="dv">0</span>   NaN   NaN    NaN   NaN   NaN   NaN   NaN</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="dv">2017</span><span class="op">-</span><span class="dv">10</span><span class="op">-</span><span class="dv">29</span>  <span class="dv">41</span>  <span class="fl">0.33</span>  <span class="fl">0.41</span>   <span class="fl">0.25</span>  <span class="fl">0.36</span>  <span class="fl">0.96</span>  <span class="fl">0.06</span>  <span class="fl">0.99</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 
+</section>
+</section>
 </section>
 </section>
 

@@ -1,29 +1,29 @@
 website:
   sidebar:
   - contents:
-    - reference/index.qmd
+    - api/index.qmd
     - contents:
-      - reference/observation.qmd
-      - reference/PointObservation.qmd
-      - reference/TrackObservation.qmd
+      - api/observation.qmd
+      - api/PointObservation.qmd
+      - api/TrackObservation.qmd
       section: Observation
     - contents:
-      - reference/model_result.qmd
-      - reference/PointModelResult.qmd
-      - reference/TrackModelResult.qmd
-      - reference/DfsuModelResult.qmd
-      - reference/GridModelResult.qmd
-      - reference/DummyModelResult.qmd
+      - api/model_result.qmd
+      - api/PointModelResult.qmd
+      - api/TrackModelResult.qmd
+      - api/DfsuModelResult.qmd
+      - api/GridModelResult.qmd
+      - api/DummyModelResult.qmd
       section: Model Result
     - contents:
-      - reference/matching.qmd
+      - api/matching.qmd
       section: Matching
     - contents:
-      - reference/Comparer.qmd
-      - reference/ComparerCollection.qmd
+      - api/Comparer.qmd
+      - api/ComparerCollection.qmd
       section: Comparer
     - contents:
-      - reference/metrics.qmd
+      - api/metrics.qmd
       section: Metrics
-    id: reference
+    id: api
   - id: dummy-sidebar

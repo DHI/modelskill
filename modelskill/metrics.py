@@ -64,6 +64,7 @@ Examples
 >>> ev(obs, mod)
 0.39614855570839064
 """
+
 from __future__ import annotations
 import inspect
 
@@ -561,9 +562,9 @@ def peak_ratio(
     inter_event_time (str, optional)
             Maximum time interval between peaks (default: 36 hours).
 
-    $$
-    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}
-    $$
+    Notes
+    -----
+    $\frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}$
 
     Range: $[0, \infty)$; Best: 1.0
     """
@@ -884,7 +885,9 @@ def c_bias(obs: np.ndarray, model: np.ndarray) -> float:
     model : np.ndarray
         Model in degrees (0, 360)
 
-    Range: [-180., 180.]; Best: 0.
+    Notes
+    -----
+    Range: $[-180., 180.]$; Best: 0.
 
     Returns
     -------
@@ -914,7 +917,9 @@ def c_max_error(obs: np.ndarray, model: np.ndarray) -> float:
     model : np.ndarray
         Model in degrees (0, 360)
 
-    Range: :math:`[0, \\infty)`; Best: 0
+    Notes
+    -----
+    Range: $[0, \\infty)$; Best: 0
 
     Returns
     -------
@@ -954,6 +959,8 @@ def c_mean_absolute_error(
     weights : np.ndarray, optional
         Weights, by default None
 
+    Notes
+    -----
     Range: [0, 180]; Best: 0
 
     Returns
@@ -991,6 +998,8 @@ def c_root_mean_squared_error(
     weights : np.ndarray, optional
         Weights, by default None
 
+    Notes
+    -----
     Range: [0, 180]; Best: 0
 
     Returns
@@ -1027,6 +1036,8 @@ def c_unbiased_root_mean_squared_error(
     weights : np.ndarray, optional
         Weights, by default None
 
+    Notes
+    -----
     Range: [0, 180]; Best: 0
 
     Returns

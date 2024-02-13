@@ -3,6 +3,7 @@ project:
 
 website:
   title: "ModelSkill"
+  page-navigation: true
   navbar:
     left:
       - href: index.qmd
@@ -40,25 +41,27 @@ website:
             text: Prematched with auxiliary
 
 metadata-files:
-  - api/_sidebar.yml
+  - _sidebar.yml
 
 quartodoc:
   style: pkgdown
   dir: api
   package: modelskill
+  renderer:
+    style: markdown
+    display_name: relative
 
-  # write sidebar data to this file
-  sidebar: "api/_sidebar.yml"
+  sidebar: "_sidebar.yml"
 
   sections:
     - title: Observation
-      desc: Observation classes and functions
+      desc: ""
       contents:
         - observation
         - PointObservation
         - TrackObservation
     - title: Model Result
-      desc: Model result classes and functions
+      desc: ""
       contents:
         - model_result
         - PointModelResult
@@ -71,14 +74,17 @@ quartodoc:
       contents:
         - matching
     - title: Comparer
-      desc: Comparer classes and functions
+      desc: ""
       contents:
         - name: Comparer
-          children: embedded
-
-        - ComparerCollection
-    - title: Metrics
-      desc: Metrics classes and functions
+          members:
+            - skill
+        - name: ComparerCollection
+          members:
+            - skill
+        
+    - title: Metrics  
+      desc: ""
       contents:
         - metrics
 

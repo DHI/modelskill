@@ -1,65 +1,28 @@
-# Comparer { #modelskill.Comparer }
-
-`Comparer(self, matched_data, raw_mod_data=None)`
-
-Comparer class for comparing model and observation data.
-
-Typically, the Comparer is part of a ComparerCollection,
-created with the `match` function.
-
-## Parameters
-
-| Name           | Type                          | Description                                                          | Default    |
-|----------------|-------------------------------|----------------------------------------------------------------------|------------|
-| `matched_data` | xarray.xarray.Dataset         | Matched data                                                         | _required_ |
-| `raw_mod_data` | dict of modelskill.TimeSeries | Raw model data. If None, observation and modeldata must be provided. | `None`     |
-
-## Examples
-
-```python
->>> import modelskill as ms
->>> cmp1 = ms.match(observation, modeldata)
->>> cmp2 = ms.from_matched(matched_data)
-```
-
-
-
-
-## See Also
-
-modelskill.match, modelskill.from_matched
-
-## Methods
-
-| Name | Description |
-| --- | --- |
-| [skill](#modelskill.Comparer.skill) | Skill assessment of model(s) |
-
-### skill { #modelskill.Comparer.skill }
+# Comparer.skill { #modelskill.Comparer.skill }
 
 `Comparer.skill(by=None, metrics=None, **kwargs)`
 
 Skill assessment of model(s)
 
-#### Parameters
+## Parameters
 
 | Name      | Type                      | Description                                                                                                                                                                                                                                                                                                                                                                                    | Default   |
 |-----------|---------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|
 | `by`      | str or typing.List\[str\] | group by, by default ["model"]  - by column name - by temporal bin of the DateTimeIndex via the freq-argument (using pandas pd.Grouper(freq)), e.g.: 'freq:M' = monthly; 'freq:D' daily - by the dt accessor of the DateTimeIndex (e.g. 'dt.month') using the syntax 'dt:month'. The dt-argument is different from the freq-argument in that it gives month-of-year rather than month-of-data. | `None`    |
 | `metrics` | list                      | list of modelskill.metrics, by default modelskill.options.metrics.list                                                                                                                                                                                                                                                                                                                         | `None`    |
 
-#### Returns
+## Returns
 
 | Type                        | Description             |
 |-----------------------------|-------------------------|
 | modelskill.skill.SkillTable | skill assessment object |
 
-#### See Also
+## See Also
 
 sel
     a method for filtering/selecting data
 
-#### Examples
+## Examples
 
 ```python
 >>> import modelskill as ms

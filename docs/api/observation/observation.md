@@ -1,3 +1,0 @@
-# observation()
-
-::: modelskill.observation

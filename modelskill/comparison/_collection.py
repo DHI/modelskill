@@ -74,6 +74,11 @@ class ComparerCollection(Mapping, Scoreable):
     NOTE: In case of multiple model results with different time coverage,
     only the _overlapping_ time period will be used! (intersection)
 
+    Parameters
+    ----------
+    comparers : list of Comparer
+        list of comparers
+
     Examples
     --------
     >>> import modelskill as ms
@@ -253,12 +258,10 @@ class ComparerCollection(Mapping, Scoreable):
         return ComparerCollection(cmps)
 
     @overload
-    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection:
-        ...
+    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection: ...
 
     @overload
-    def __getitem__(self, x: int | Hashable) -> Comparer:
-        ...
+    def __getitem__(self, x: int | Hashable) -> Comparer: ...
 
     def __getitem__(
         self, x: int | Hashable | slice | Iterable[Hashable]
