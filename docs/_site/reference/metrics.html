@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.525">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>ModelSkill</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar docked nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">ModelSkill</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="../user-guide/index.html" aria-current="page"> 
+<span class="menu-text">User Guide</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../examples/index.html"> 
+<span class="menu-text">Examples</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../api/index.html"> 
+<span class="menu-text">API Reference</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">User Guide</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">User Guide</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/getting-started.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Getting started</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/terminology.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Terminology</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/data-structures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data Structures</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/matching.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Matching</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/plotting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Plotting</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/selecting-data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selecting/filtering data</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">Examples</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/Simple_MIKE21HD_dfsu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simple_MIKE21HD_dfsu.html</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/Hydrology_Vistula_Catchment.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Hydrology example from the Vistula catchment in Poland</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/Metocean_track_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Metocean track comparison</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../examples/Prematched_with_auxiliary.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Pre-matched data with auxiliary data</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text">API Reference</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">API Documentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false">
+ <span class="menu-text">Observation</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/observation/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observations</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/observation/observation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">observation()</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/observation/point.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PointObservation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/observation/track.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TrackObservation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">Model Result</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/model/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Model Result</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/model/model_result.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">model_result()</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/model/point.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">PointModelResult</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/model/track.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TrackModelResult</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/model/dfsu.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">DfsuModelResult</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/model/grid.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GridModelResult</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/model/dummy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">DummyModelResult</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/matching.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Matching</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/comparer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Comparer</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/comparercollection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ComparerCollection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/metrics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Metrics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/skill.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skill</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/gridded_skill.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Gridded Skill</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/plotting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Plotting</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/settings.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Settings</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../api/quantity.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Quantity</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#modelskill.metrics" id="toc-modelskill.metrics" class="nav-link active" data-scroll-target="#modelskill.metrics">metrics</a>
+  <ul class="collapse">
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
+  <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
+  <ul class="collapse">
+  <li><a href="#modelskill.metrics.add_metric" id="toc-modelskill.metrics.add_metric" class="nav-link" data-scroll-target="#modelskill.metrics.add_metric">add_metric</a></li>
+  <li><a href="#modelskill.metrics.bias" id="toc-modelskill.metrics.bias" class="nav-link" data-scroll-target="#modelskill.metrics.bias">bias</a></li>
+  <li><a href="#modelskill.metrics.c_bias" id="toc-modelskill.metrics.c_bias" class="nav-link" data-scroll-target="#modelskill.metrics.c_bias">c_bias</a></li>
+  <li><a href="#modelskill.metrics.c_mae" id="toc-modelskill.metrics.c_mae" class="nav-link" data-scroll-target="#modelskill.metrics.c_mae">c_mae</a></li>
+  <li><a href="#modelskill.metrics.c_max_error" id="toc-modelskill.metrics.c_max_error" class="nav-link" data-scroll-target="#modelskill.metrics.c_max_error">c_max_error</a></li>
+  <li><a href="#modelskill.metrics.c_mean_absolute_error" id="toc-modelskill.metrics.c_mean_absolute_error" class="nav-link" data-scroll-target="#modelskill.metrics.c_mean_absolute_error">c_mean_absolute_error</a></li>
+  <li><a href="#modelskill.metrics.c_rmse" id="toc-modelskill.metrics.c_rmse" class="nav-link" data-scroll-target="#modelskill.metrics.c_rmse">c_rmse</a></li>
+  <li><a href="#modelskill.metrics.c_root_mean_squared_error" id="toc-modelskill.metrics.c_root_mean_squared_error" class="nav-link" data-scroll-target="#modelskill.metrics.c_root_mean_squared_error">c_root_mean_squared_error</a></li>
+  <li><a href="#modelskill.metrics.c_unbiased_root_mean_squared_error" id="toc-modelskill.metrics.c_unbiased_root_mean_squared_error" class="nav-link" data-scroll-target="#modelskill.metrics.c_unbiased_root_mean_squared_error">c_unbiased_root_mean_squared_error</a></li>
+  <li><a href="#modelskill.metrics.c_urmse" id="toc-modelskill.metrics.c_urmse" class="nav-link" data-scroll-target="#modelskill.metrics.c_urmse">c_urmse</a></li>
+  <li><a href="#modelskill.metrics.cc" id="toc-modelskill.metrics.cc" class="nav-link" data-scroll-target="#modelskill.metrics.cc">cc</a></li>
+  <li><a href="#modelskill.metrics.corrcoef" id="toc-modelskill.metrics.corrcoef" class="nav-link" data-scroll-target="#modelskill.metrics.corrcoef">corrcoef</a></li>
+  <li><a href="#modelskill.metrics.ev" id="toc-modelskill.metrics.ev" class="nav-link" data-scroll-target="#modelskill.metrics.ev">ev</a></li>
+  <li><a href="#modelskill.metrics.explained_variance" id="toc-modelskill.metrics.explained_variance" class="nav-link" data-scroll-target="#modelskill.metrics.explained_variance">explained_variance</a></li>
+  <li><a href="#modelskill.metrics.hit_ratio" id="toc-modelskill.metrics.hit_ratio" class="nav-link" data-scroll-target="#modelskill.metrics.hit_ratio">hit_ratio</a></li>
+  <li><a href="#modelskill.metrics.kge" id="toc-modelskill.metrics.kge" class="nav-link" data-scroll-target="#modelskill.metrics.kge">kge</a></li>
+  <li><a href="#modelskill.metrics.kling_gupta_efficiency" id="toc-modelskill.metrics.kling_gupta_efficiency" class="nav-link" data-scroll-target="#modelskill.metrics.kling_gupta_efficiency">kling_gupta_efficiency</a></li>
+  <li><a href="#modelskill.metrics.lin_slope" id="toc-modelskill.metrics.lin_slope" class="nav-link" data-scroll-target="#modelskill.metrics.lin_slope">lin_slope</a></li>
+  <li><a href="#modelskill.metrics.mae" id="toc-modelskill.metrics.mae" class="nav-link" data-scroll-target="#modelskill.metrics.mae">mae</a></li>
+  <li><a href="#modelskill.metrics.mape" id="toc-modelskill.metrics.mape" class="nav-link" data-scroll-target="#modelskill.metrics.mape">mape</a></li>
+  <li><a href="#modelskill.metrics.max_error" id="toc-modelskill.metrics.max_error" class="nav-link" data-scroll-target="#modelskill.metrics.max_error">max_error</a></li>
+  <li><a href="#modelskill.metrics.mean_absolute_error" id="toc-modelskill.metrics.mean_absolute_error" class="nav-link" data-scroll-target="#modelskill.metrics.mean_absolute_error">mean_absolute_error</a></li>
+  <li><a href="#modelskill.metrics.mean_absolute_percentage_error" id="toc-modelskill.metrics.mean_absolute_percentage_error" class="nav-link" data-scroll-target="#modelskill.metrics.mean_absolute_percentage_error">mean_absolute_percentage_error</a></li>
+  <li><a href="#modelskill.metrics.mef" id="toc-modelskill.metrics.mef" class="nav-link" data-scroll-target="#modelskill.metrics.mef">mef</a></li>
+  <li><a href="#modelskill.metrics.metric_has_units" id="toc-modelskill.metrics.metric_has_units" class="nav-link" data-scroll-target="#modelskill.metrics.metric_has_units">metric_has_units</a></li>
+  <li><a href="#modelskill.metrics.model_efficiency_factor" id="toc-modelskill.metrics.model_efficiency_factor" class="nav-link" data-scroll-target="#modelskill.metrics.model_efficiency_factor">model_efficiency_factor</a></li>
+  <li><a href="#modelskill.metrics.nash_sutcliffe_efficiency" id="toc-modelskill.metrics.nash_sutcliffe_efficiency" class="nav-link" data-scroll-target="#modelskill.metrics.nash_sutcliffe_efficiency">nash_sutcliffe_efficiency</a></li>
+  <li><a href="#modelskill.metrics.nse" id="toc-modelskill.metrics.nse" class="nav-link" data-scroll-target="#modelskill.metrics.nse">nse</a></li>
+  <li><a href="#modelskill.metrics.peak_ratio" id="toc-modelskill.metrics.peak_ratio" class="nav-link" data-scroll-target="#modelskill.metrics.peak_ratio">peak_ratio</a></li>
+  <li><a href="#modelskill.metrics.pr" id="toc-modelskill.metrics.pr" class="nav-link" data-scroll-target="#modelskill.metrics.pr">pr</a></li>
+  <li><a href="#modelskill.metrics.r2" id="toc-modelskill.metrics.r2" class="nav-link" data-scroll-target="#modelskill.metrics.r2">r2</a></li>
+  <li><a href="#modelskill.metrics.rho" id="toc-modelskill.metrics.rho" class="nav-link" data-scroll-target="#modelskill.metrics.rho">rho</a></li>
+  <li><a href="#modelskill.metrics.rmse" id="toc-modelskill.metrics.rmse" class="nav-link" data-scroll-target="#modelskill.metrics.rmse">rmse</a></li>
+  <li><a href="#modelskill.metrics.root_mean_squared_error" id="toc-modelskill.metrics.root_mean_squared_error" class="nav-link" data-scroll-target="#modelskill.metrics.root_mean_squared_error">root_mean_squared_error</a></li>
+  <li><a href="#modelskill.metrics.scatter_index" id="toc-modelskill.metrics.scatter_index" class="nav-link" data-scroll-target="#modelskill.metrics.scatter_index">scatter_index</a></li>
+  <li><a href="#modelskill.metrics.scatter_index2" id="toc-modelskill.metrics.scatter_index2" class="nav-link" data-scroll-target="#modelskill.metrics.scatter_index2">scatter_index2</a></li>
+  <li><a href="#modelskill.metrics.si" id="toc-modelskill.metrics.si" class="nav-link" data-scroll-target="#modelskill.metrics.si">si</a></li>
+  <li><a href="#modelskill.metrics.spearmanr" id="toc-modelskill.metrics.spearmanr" class="nav-link" data-scroll-target="#modelskill.metrics.spearmanr">spearmanr</a></li>
+  <li><a href="#modelskill.metrics.urmse" id="toc-modelskill.metrics.urmse" class="nav-link" data-scroll-target="#modelskill.metrics.urmse">urmse</a></li>
+  <li><a href="#modelskill.metrics.willmott" id="toc-modelskill.metrics.willmott" class="nav-link" data-scroll-target="#modelskill.metrics.willmott">willmott</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+
+
+<section id="modelskill.metrics" class="level1">
+<h1>metrics</h1>
+<p><code>metrics</code></p>
+<p>The <code>metrics</code> module contains different skill metrics for evaluating the difference between a model and an observation.</p>
+<ul>
+<li>[bias][modelskill.metrics.bias]</li>
+<li>[max_error][modelskill.metrics.max_error]</li>
+<li>[root_mean_squared_error (rmse)][modelskill.metrics.root_mean_squared_error]<br>
+</li>
+<li>[urmse][modelskill.metrics.urmse]</li>
+<li>[mean_absolute_error (mae)][modelskill.metrics.mean_absolute_error]</li>
+<li>[mean_absolute_percentage_error (mape)][modelskill.metrics.mean_absolute_percentage_error]</li>
+<li>[kling_gupta_efficiency (kge)][modelskill.metrics.kling_gupta_efficiency]</li>
+<li>[nash_sutcliffe_efficiency (nse)][modelskill.metrics.nash_sutcliffe_efficiency]</li>
+<li>[r2 (r2=nse)][modelskill.metrics.r2]</li>
+<li>[model_efficiency_factor (mef)][modelskill.metrics.model_efficiency_factor]</li>
+<li>[wilmott][modelskill.metrics.willmott]</li>
+<li>[scatter_index (si)][modelskill.metrics.scatter_index]</li>
+<li>[scatter_index2][modelskill.metrics.scatter_index2]</li>
+<li>[corrcoef (cc)][modelskill.metrics.corrcoef]</li>
+<li>[spearmanr (rho)][modelskill.metrics.spearmanr]</li>
+<li>[lin_slope][modelskill.metrics.lin_slope]</li>
+<li>[hit_ratio][modelskill.metrics.hit_ratio]</li>
+<li>[explained_variance (ev)][modelskill.metrics.explained_variance]</li>
+<li>[peak_ratio (pr)][modelskill.metrics.peak_ratio]</li>
+</ul>
+<p>Circular metrics (for directional data with units in degrees):</p>
+<ul>
+<li>[c_bias][modelskill.metrics.c_bias]</li>
+<li>[c_max_error][modelskill.metrics.c_max_error]</li>
+<li>[c_mean_absolute_error (c_mae)][modelskill.metrics.c_mean_absolute_error]</li>
+<li>[c_root_mean_squared_error (c_rmse)][modelskill.metrics.c_root_mean_squared_error]</li>
+<li>[c_unbiased_root_mean_squared_error (c_urmse)][modelskill.metrics.c_unbiased_root_mean_squared_error]</li>
+</ul>
+<p>The names in parentheses are shorthand aliases for the different metrics.</p>
+<section id="examples" class="level2">
+<h2 class="anchored" data-anchor-id="examples">Examples</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> np.array([<span class="fl">0.3</span>, <span class="fl">2.1</span>, <span class="op">-</span><span class="fl">1.0</span>])</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> mod <span class="op">=</span> np.array([<span class="fl">0.0</span>, <span class="fl">2.3</span>, <span class="fl">1.0</span>])</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> bias(obs, mod)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fl">0.6333333333333332</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> max_error(obs, mod)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fl">2.0</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> rmse(obs, mod)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fl">1.173314393786536</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> urmse(obs, mod)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fl">0.9877021593352702</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> mae(obs, mod)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fl">0.8333333333333331</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> mape(obs, mod)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fl">103.17460317460316</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> nse(obs, mod)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fl">0.14786795048143053</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> r2(obs, mod)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fl">0.14786795048143053</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> mef(obs, mod)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="fl">0.9231099877688299</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> si(obs, mod)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="fl">0.8715019052958266</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> spearmanr(obs, mod)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="fl">0.5</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> willmott(obs, mod)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="fl">0.7484604452865941</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> hit_ratio(obs, mod, a<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="fl">0.6666666666666666</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> ev(obs, mod)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="fl">0.39614855570839064</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="functions" class="level2">
+<h2 class="anchored" data-anchor-id="functions">Functions</h2>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.metrics.add_metric">add_metric</a></td>
+<td>Adds a metric to the metric list. Useful for custom metrics.</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.bias">bias</a></td>
+<td>Bias (mean error)</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.c_bias">c_bias</a></td>
+<td>Circular bias (mean error)</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.c_mae">c_mae</a></td>
+<td>alias for circular mean absolute error</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.c_max_error">c_max_error</a></td>
+<td>Circular max error</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.c_mean_absolute_error">c_mean_absolute_error</a></td>
+<td>Circular mean absolute error</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.c_rmse">c_rmse</a></td>
+<td>alias for circular root mean squared error</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.c_root_mean_squared_error">c_root_mean_squared_error</a></td>
+<td>Circular root mean squared error</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.c_unbiased_root_mean_squared_error">c_unbiased_root_mean_squared_error</a></td>
+<td>Circular unbiased root mean squared error</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.c_urmse">c_urmse</a></td>
+<td>alias for circular unbiased root mean squared error</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.cc">cc</a></td>
+<td>alias for corrcoef</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.corrcoef">corrcoef</a></td>
+<td>Pearson’s Correlation coefficient (CC)</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.ev">ev</a></td>
+<td>alias for explained_variance</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.explained_variance">explained_variance</a></td>
+<td>EV: Explained variance</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.hit_ratio">hit_ratio</a></td>
+<td>Fraction within obs ± acceptable deviation</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.kge">kge</a></td>
+<td>alias for kling_gupta_efficiency</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.kling_gupta_efficiency">kling_gupta_efficiency</a></td>
+<td>Kling-Gupta Efficiency (KGE)</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.lin_slope">lin_slope</a></td>
+<td>Slope of the regression line.</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.mae">mae</a></td>
+<td>alias for mean_absolute_error</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.mape">mape</a></td>
+<td>alias for mean_absolute_percentage_error</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.max_error">max_error</a></td>
+<td>Max (absolute) error</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.mean_absolute_error">mean_absolute_error</a></td>
+<td>Mean Absolute Error (MAE)</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.mean_absolute_percentage_error">mean_absolute_percentage_error</a></td>
+<td>Mean Absolute Percentage Error (MAPE)</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.mef">mef</a></td>
+<td>alias for model_efficiency_factor</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.metric_has_units">metric_has_units</a></td>
+<td>Check if a metric has units (dimension).</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.model_efficiency_factor">model_efficiency_factor</a></td>
+<td>Model Efficiency Factor (MEF)</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.nash_sutcliffe_efficiency">nash_sutcliffe_efficiency</a></td>
+<td>Nash-Sutcliffe Efficiency (NSE)</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.nse">nse</a></td>
+<td>alias for nash_sutcliffe_efficiency</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.peak_ratio">peak_ratio</a></td>
+<td>Peak Ratio</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.pr">pr</a></td>
+<td>alias for peak_ratio</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.r2">r2</a></td>
+<td>Coefficient of determination (R2)</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.rho">rho</a></td>
+<td>alias for spearmanr</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.rmse">rmse</a></td>
+<td>alias for root_mean_squared_error</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.root_mean_squared_error">root_mean_squared_error</a></td>
+<td>Root Mean Squared Error (RMSE)</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.scatter_index">scatter_index</a></td>
+<td>Scatter index (SI)</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.scatter_index2">scatter_index2</a></td>
+<td>Alternative formulation of the scatter index (SI)</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.si">si</a></td>
+<td>alias for scatter_index</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.spearmanr">spearmanr</a></td>
+<td>Spearman rank correlation coefficient</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.metrics.urmse">urmse</a></td>
+<td>Unbiased Root Mean Squared Error (uRMSE)</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.metrics.willmott">willmott</a></td>
+<td>Willmott’s Index of Agreement</td>
+</tr>
+</tbody>
+</table>
+<section id="modelskill.metrics.add_metric" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.add_metric">add_metric</h3>
+<p><code>metrics.add_metric(metric, has_units=False)</code></p>
+<p>Adds a metric to the metric list. Useful for custom metrics.</p>
+<p>Some metrics are dimensionless, others have the same dimension as the observations.</p>
+<section id="parameters" class="level4">
+<h4 class="anchored" data-anchor-id="parameters">Parameters</h4>
+<table class="table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 60%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>metric</code></td>
+<td>str or callable</td>
+<td>Metric name or function</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td><code>has_units</code></td>
+<td>bool</td>
+<td>True if metric has a dimension, False otherwise. Default:False</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4">
+<h4 class="anchored" data-anchor-id="returns">Returns</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>None</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples-1" class="level4">
+<h4 class="anchored" data-anchor-id="examples-1">Examples</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> add_metric(hit_ratio)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> add_metric(rmse,<span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="modelskill.metrics.bias" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.bias">bias</h3>
+<p><code>metrics.bias(obs, model)</code></p>
+<p>Bias (mean error)</p>
+<p><span class="math display">\[
+bias=\frac{1}{n}\sum_{i=1}^n (model_i - obs_i)
+\]</span></p>
+<p>Range: <span class="math inline">\((-\infty, \infty)\)</span>; Best: 0</p>
+</section>
+<section id="modelskill.metrics.c_bias" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.c_bias">c_bias</h3>
+<p><code>metrics.c_bias(obs, model)</code></p>
+<p>Circular bias (mean error)</p>
+<section id="parameters-1" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 28%">
+<col style="width: 44%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>obs</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Observation in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td><code>model</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Model in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes" class="level4">
+<h4 class="anchored" data-anchor-id="notes">Notes</h4>
+<p>Range: <span class="math inline">\([-180., 180.]\)</span>; Best: 0.</p>
+</section>
+<section id="returns-1" class="level4">
+<h4 class="anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>float</td>
+<td>Circular bias</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples-2" class="level4">
+<h4 class="anchored" data-anchor-id="examples-2">Examples</h4>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> np.array([<span class="fl">10.</span>, <span class="fl">355.</span>, <span class="fl">170.</span>])</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> mod <span class="op">=</span> np.array([<span class="fl">20.</span>, <span class="fl">5.</span>, <span class="op">-</span><span class="fl">180.</span>])</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> c_bias(obs, mod)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fl">10.0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="modelskill.metrics.c_mae" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.c_mae">c_mae</h3>
+<p><code>metrics.c_mae(obs, model, weights=None)</code></p>
+<p>alias for circular mean absolute error</p>
+</section>
+<section id="modelskill.metrics.c_max_error" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.c_max_error">c_max_error</h3>
+<p><code>metrics.c_max_error(obs, model)</code></p>
+<p>Circular max error</p>
+<section id="parameters-2" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 28%">
+<col style="width: 44%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>obs</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Observation in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td><code>model</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Model in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes-1" class="level4">
+<h4 class="anchored" data-anchor-id="notes-1">Notes</h4>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 0</p>
+</section>
+<section id="returns-2" class="level4">
+<h4 class="anchored" data-anchor-id="returns-2">Returns</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>float</td>
+<td>Circular max error</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples-3" class="level4">
+<h4 class="anchored" data-anchor-id="examples-3">Examples</h4>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> np.array([<span class="fl">10.</span>, <span class="fl">350.</span>, <span class="fl">10.</span>])</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> mod <span class="op">=</span> np.array([<span class="fl">20.</span>, <span class="fl">10.</span>, <span class="fl">350.</span>])</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> c_max_error(obs, mod)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fl">20.0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="modelskill.metrics.c_mean_absolute_error" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.c_mean_absolute_error">c_mean_absolute_error</h3>
+<p><code>metrics.c_mean_absolute_error(obs, model, weights=None)</code></p>
+<p>Circular mean absolute error</p>
+<section id="parameters-3" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-3">Parameters</h4>
+<table class="table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 27%">
+<col style="width: 42%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>obs</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Observation in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td><code>model</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Model in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td><code>weights</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Weights, by default None</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes-2" class="level4">
+<h4 class="anchored" data-anchor-id="notes-2">Notes</h4>
+<p>Range: [0, 180]; Best: 0</p>
+</section>
+<section id="returns-3" class="level4">
+<h4 class="anchored" data-anchor-id="returns-3">Returns</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>float</td>
+<td>Circular mean absolute error</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="modelskill.metrics.c_rmse" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.c_rmse">c_rmse</h3>
+<p><code>metrics.c_rmse(obs, model, weights=None)</code></p>
+<p>alias for circular root mean squared error</p>
+</section>
+<section id="modelskill.metrics.c_root_mean_squared_error" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.c_root_mean_squared_error">c_root_mean_squared_error</h3>
+<p><code>metrics.c_root_mean_squared_error(obs, model, weights=None)</code></p>
+<p>Circular root mean squared error</p>
+<section id="parameters-4" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-4">Parameters</h4>
+<table class="table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 27%">
+<col style="width: 42%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>obs</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Observation in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td><code>model</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Model in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td><code>weights</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Weights, by default None</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes-3" class="level4">
+<h4 class="anchored" data-anchor-id="notes-3">Notes</h4>
+<p>Range: [0, 180]; Best: 0</p>
+</section>
+<section id="returns-4" class="level4">
+<h4 class="anchored" data-anchor-id="returns-4">Returns</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>float</td>
+<td>Circular root mean squared error</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="modelskill.metrics.c_unbiased_root_mean_squared_error" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.c_unbiased_root_mean_squared_error">c_unbiased_root_mean_squared_error</h3>
+<p><code>metrics.c_unbiased_root_mean_squared_error(obs, model, weights=None)</code></p>
+<p>Circular unbiased root mean squared error</p>
+<section id="parameters-5" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-5">Parameters</h4>
+<table class="table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 27%">
+<col style="width: 42%">
+<col style="width: 15%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>obs</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Observation in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td><code>model</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Model in degrees (0, 360)</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td><code>weights</code></td>
+<td>numpy.numpy.ndarray</td>
+<td>Weights, by default None</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes-4" class="level4">
+<h4 class="anchored" data-anchor-id="notes-4">Notes</h4>
+<p>Range: [0, 180]; Best: 0</p>
+</section>
+<section id="returns-5" class="level4">
+<h4 class="anchored" data-anchor-id="returns-5">Returns</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>float</td>
+<td>Circular unbiased root mean squared error</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="modelskill.metrics.c_urmse" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.c_urmse">c_urmse</h3>
+<p><code>metrics.c_urmse(obs, model, weights=None)</code></p>
+<p>alias for circular unbiased root mean squared error</p>
+</section>
+<section id="modelskill.metrics.cc" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.cc">cc</h3>
+<p><code>metrics.cc(obs, model, weights=None)</code></p>
+<p>alias for corrcoef</p>
+</section>
+<section id="modelskill.metrics.corrcoef" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.corrcoef">corrcoef</h3>
+<p><code>metrics.corrcoef(obs, model, weights=None)</code></p>
+<p>Pearson’s Correlation coefficient (CC)</p>
+<p><span class="math display">\[
+CC = \frac{\sum_{i=1}^n (model_i - \overline{model})(obs_i - \overline{obs}) }
+               {\sqrt{\sum_{i=1}^n (model_i - \overline{model})^2}
+                \sqrt{\sum_{i=1}^n (obs_i - \overline{obs})^2} }
+\]</span></p>
+<p>Range: [-1, 1]; Best: 1</p>
+<section id="see-also" class="level4">
+<h4 class="anchored" data-anchor-id="see-also">See Also</h4>
+<p>spearmanr np.corrcoef</p>
+</section>
+</section>
+<section id="modelskill.metrics.ev" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.ev">ev</h3>
+<p><code>metrics.ev(obs, model)</code></p>
+<p>alias for explained_variance</p>
+</section>
+<section id="modelskill.metrics.explained_variance" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.explained_variance">explained_variance</h3>
+<p><code>metrics.explained_variance(obs, model)</code></p>
+<p>EV: Explained variance</p>
+<p>EV is the explained variance and measures the proportion [0 - 1] to which the model accounts for the variation (dispersion) of the observations.</p>
+<p>In cases with no bias, EV is equal to r2</p>
+<p><span class="math display">\[
+\frac{ \sum_{i=1}^n (obs_i - \overline{obs})^2 -
+\sum_{i=1}^n \left( (obs_i - \overline{obs}) -
+(model_i - \overline{model}) \right)^2}{\sum_{i=1}^n
+(obs_i - \overline{obs})^2}
+\]</span></p>
+<p>Range: [0, 1]; Best: 1</p>
+<section id="see-also-1" class="level4">
+<h4 class="anchored" data-anchor-id="see-also-1">See Also</h4>
+<p>r2</p>
+</section>
+</section>
+<section id="modelskill.metrics.hit_ratio" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.hit_ratio">hit_ratio</h3>
+<p><code>metrics.hit_ratio(obs, model, a=0.1)</code></p>
+<p>Fraction within obs ± acceptable deviation</p>
+<p><span class="math display">\[
+HR = \frac{1}{n}\sum_{i=1}^n I_{|(model_i - obs_i)|} &lt; a
+\]</span></p>
+<p>Range: [0, 1]; Best: 1</p>
+<section id="examples-4" class="level4">
+<h4 class="anchored" data-anchor-id="examples-4">Examples</h4>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> np.array([<span class="fl">1.0</span>, <span class="fl">1.1</span>, <span class="fl">1.2</span>, <span class="fl">1.3</span>, <span class="fl">1.4</span>, <span class="fl">1.4</span>, <span class="fl">1.3</span>])</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> model <span class="op">=</span> np.array([<span class="fl">1.02</span>, <span class="fl">1.16</span>, <span class="fl">1.3</span>, <span class="fl">1.38</span>, <span class="fl">1.49</span>, <span class="fl">1.45</span>, <span class="fl">1.32</span>])</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> hit_ratio(obs, model, a<span class="op">=</span><span class="fl">0.05</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fl">0.2857142857142857</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> hit_ratio(obs, model, a<span class="op">=</span><span class="fl">0.1</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fl">0.8571428571428571</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> hit_ratio(obs, model, a<span class="op">=</span><span class="fl">0.15</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="fl">1.0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="modelskill.metrics.kge" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.kge">kge</h3>
+<p><code>metrics.kge(obs, model)</code></p>
+<p>alias for kling_gupta_efficiency</p>
+</section>
+<section id="modelskill.metrics.kling_gupta_efficiency" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.kling_gupta_efficiency">kling_gupta_efficiency</h3>
+<p><code>metrics.kling_gupta_efficiency(obs, model)</code></p>
+<p>Kling-Gupta Efficiency (KGE)</p>
+<p><span class="math display">\[
+KGE = 1 - \sqrt{(r-1)^2 + \left(\frac{\sigma_{mod}}{\sigma_{obs}} - 1\right)^2 +
+                            \left(\frac{\mu_{mod}}{\mu_{obs}} - 1\right)^2 }
+\]</span></p>
+<p>where <span class="math inline">\(r\)</span> is the pearson correlation coefficient, <span class="math inline">\(\mu_{obs},\mu_{mod}\)</span> and <span class="math inline">\(\sigma_{obs},\sigma_{mod}\)</span> is the mean and standard deviation of observations and model.</p>
+<p>Range: <span class="math inline">\((-\infty, 1]\)</span>; Best: 1</p>
+<section id="references" class="level4">
+<h4 class="anchored" data-anchor-id="references">References</h4>
+<p>Gupta, H. V., Kling, H., Yilmaz, K. K. and Martinez, G. F., (2009), Decomposition of the mean squared error and NSE performance criteria: Implications for improving hydrological modelling, J. Hydrol., 377(1-2), 80-91 <a href="https://doi.org/10.1016/j.jhydrol.2009.08.003" class="uri">https://doi.org/10.1016/j.jhydrol.2009.08.003</a></p>
+<p>Knoben, W. J. M., Freer, J. E., and Woods, R. A. (2019) Technical note: Inherent benchmark or not? Comparing Nash–Sutcliffe and Kling–Gupta efficiency scores, Hydrol. Earth Syst. Sci., 23, 4323-4331 <a href="https://doi.org/10.5194/hess-23-4323-2019" class="uri">https://doi.org/10.5194/hess-23-4323-2019</a></p>
+</section>
+</section>
+<section id="modelskill.metrics.lin_slope" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.lin_slope">lin_slope</h3>
+<p><code>metrics.lin_slope(obs, model, reg_method='ols')</code></p>
+<p>Slope of the regression line.</p>
+<p><span class="math display">\[
+slope = \frac{\sum_{i=1}^n (model_i - \overline {model})(obs_i - \overline {obs})}
+                {\sum_{i=1}^n (obs_i - \overline {obs})^2}
+\]</span></p>
+<p>Range: <span class="math inline">\((-\infty, \infty )\)</span>; Best: 1</p>
+</section>
+<section id="modelskill.metrics.mae" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.mae">mae</h3>
+<p><code>metrics.mae(obs, model, weights=None)</code></p>
+<p>alias for mean_absolute_error</p>
+</section>
+<section id="modelskill.metrics.mape" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.mape">mape</h3>
+<p><code>metrics.mape(obs, model)</code></p>
+<p>alias for mean_absolute_percentage_error</p>
+</section>
+<section id="modelskill.metrics.max_error" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.max_error">max_error</h3>
+<p><code>metrics.max_error(obs, model)</code></p>
+<p>Max (absolute) error</p>
+<p><span class="math display">\[
+max_{error} = max(|model_i - obs_i|)
+\]</span></p>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 0</p>
+</section>
+<section id="modelskill.metrics.mean_absolute_error" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.mean_absolute_error">mean_absolute_error</h3>
+<p><code>metrics.mean_absolute_error(obs, model, weights=None)</code></p>
+<p>Mean Absolute Error (MAE)</p>
+<p><span class="math display">\[
+MAE=\frac{1}{n}\sum_{i=1}^n|model_i - obs_i|
+\]</span></p>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 0</p>
+</section>
+<section id="modelskill.metrics.mean_absolute_percentage_error" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.mean_absolute_percentage_error">mean_absolute_percentage_error</h3>
+<p><code>metrics.mean_absolute_percentage_error(obs, model)</code></p>
+<p>Mean Absolute Percentage Error (MAPE)</p>
+<p><span class="math display">\[
+MAPE=\frac{1}{n}\sum_{i=1}^n\frac{|model_i - obs_i|}{obs_i}*100
+\]</span></p>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 0</p>
+</section>
+<section id="modelskill.metrics.mef" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.mef">mef</h3>
+<p><code>metrics.mef(obs, model)</code></p>
+<p>alias for model_efficiency_factor</p>
+</section>
+<section id="modelskill.metrics.metric_has_units" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.metric_has_units">metric_has_units</h3>
+<p><code>metrics.metric_has_units(metric)</code></p>
+<p>Check if a metric has units (dimension).</p>
+<p>Some metrics are dimensionless, others have the same dimension as the observations.</p>
+<section id="parameters-6" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-6">Parameters</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>metric</code></td>
+<td>str or callable</td>
+<td>Metric name or function</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns-6" class="level4">
+<h4 class="anchored" data-anchor-id="returns-6">Returns</h4>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>bool</td>
+<td>True if metric has a dimension, False otherwise</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples-5" class="level4">
+<h4 class="anchored" data-anchor-id="examples-5">Examples</h4>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> metric_has_units(<span class="st">"rmse"</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">True</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> metric_has_units(<span class="st">"kge"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="va">False</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="modelskill.metrics.model_efficiency_factor" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.model_efficiency_factor">model_efficiency_factor</h3>
+<p><code>metrics.model_efficiency_factor(obs, model)</code></p>
+<p>Model Efficiency Factor (MEF)</p>
+<p>Scale independent RMSE, standardized by Stdev of observations</p>
+<p><span class="math display">\[
+MEF = \frac{RMSE}{STDEV}=\frac{\sqrt{\frac{1}{n} \sum_{i=1}^n(model_i - obs_i)^2}}
+                                {\sqrt{\frac{1}{n} \sum_{i=1}^n(obs_i - \overline{obs})^2}}=\sqrt{1-NSE}
+\]</span></p>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 0</p>
+<section id="see-also-2" class="level4">
+<h4 class="anchored" data-anchor-id="see-also-2">See Also</h4>
+<p>nash_sutcliffe_efficiency root_mean_squared_error</p>
+</section>
+</section>
+<section id="modelskill.metrics.nash_sutcliffe_efficiency" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.nash_sutcliffe_efficiency">nash_sutcliffe_efficiency</h3>
+<p><code>metrics.nash_sutcliffe_efficiency(obs, model)</code></p>
+<p>Nash-Sutcliffe Efficiency (NSE)</p>
+<p><span class="math display">\[
+NSE = 1 - \frac {\sum _{i=1}^{n}\left(model_{i} - obs_{i}\right)^{2}}
+                {\sum_{i=1}^{n}\left(obs_{i} - {\overline{obs}}\right)^{2}}
+\]</span></p>
+<p>Range: <span class="math inline">\((-\infty, 1]\)</span>; Best: 1</p>
+<section id="note" class="level4">
+<h4 class="anchored" data-anchor-id="note">Note</h4>
+<p>r2 = nash_sutcliffe_efficiency(nse)</p>
+</section>
+<section id="references-1" class="level4">
+<h4 class="anchored" data-anchor-id="references-1">References</h4>
+<p>Nash, J. E.; Sutcliffe, J. V. (1970). “River flow forecasting through conceptual models part I — A discussion of principles”. Journal of Hydrology. 10 (3): 282–290. <a href="https://doi.org/10.1016/0022-1694(70)90255-6" class="uri">https://doi.org/10.1016/0022-1694(70)90255-6</a></p>
+</section>
+</section>
+<section id="modelskill.metrics.nse" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.nse">nse</h3>
+<p><code>metrics.nse(obs, model)</code></p>
+<p>alias for nash_sutcliffe_efficiency</p>
+</section>
+<section id="modelskill.metrics.peak_ratio" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.peak_ratio">peak_ratio</h3>
+<p><code>metrics.peak_ratio(obs, model, inter_event_level=0.7, AAP=2, inter_event_time='36h')</code></p>
+<p>Peak Ratio</p>
+<p>PR is the mean of the individual ratios of identified peaks in the model / identified peaks in the measurements. PR is calculated only for the joint-events, ie, events that ocurr simulateneously within a window +/- 0.5*inter_event_time.</p>
+<section id="parameters-7" class="level4">
+<h4 class="anchored" data-anchor-id="parameters-7">Parameters</h4>
+<table class="table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 6%">
+<col style="width: 66%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>inter_event_level</code></td>
+<td>float</td>
+<td>Inter-event level threshold (default: 0.7).</td>
+<td><code>0.7</code></td>
+</tr>
+<tr class="even">
+<td><code>AAP</code></td>
+<td>int</td>
+<td>Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)</td>
+<td><code>2</code></td>
+</tr>
+<tr class="odd">
+<td><code>inter_event_time</code></td>
+<td></td>
+<td>Maximum time interval between peaks (default: 36 hours).</td>
+<td><code>'36h'</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="notes-5" class="level4">
+<h4 class="anchored" data-anchor-id="notes-5">Notes</h4>
+<p><span class="math inline">\(\frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}\)</span></p>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 1.0</p>
+</section>
+</section>
+<section id="modelskill.metrics.pr" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.pr">pr</h3>
+<p><code>metrics.pr(obs, model, inter_event_level=0.7, AAP=2, inter_event_time='36h')</code></p>
+<p>alias for peak_ratio</p>
+</section>
+<section id="modelskill.metrics.r2" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.r2">r2</h3>
+<p><code>metrics.r2(obs, model)</code></p>
+<p>Coefficient of determination (R2)</p>
+<p>Pronounced ‘R-squared’; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e.&nbsp;the proportion of explained variance.</p>
+<p><span class="math display">\[
+R^2 = 1 - \frac{\sum_{i=1}^n (model_i - obs_i)^2}
+                {\sum_{i=1}^n (obs_i - \overline {obs})^2}
+\]</span></p>
+<p>Range: <span class="math inline">\((-\infty, 1]\)</span>; Best: 1</p>
+<section id="note-1" class="level4">
+<h4 class="anchored" data-anchor-id="note-1">Note</h4>
+<p>r2 = nash_sutcliffe_efficiency(nse)</p>
+</section>
+<section id="examples-6" class="level4">
+<h4 class="anchored" data-anchor-id="examples-6">Examples</h4>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> np.array([<span class="fl">1.0</span>,<span class="fl">1.1</span>,<span class="fl">1.2</span>,<span class="fl">1.3</span>,<span class="fl">1.4</span>])</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> model <span class="op">=</span> np.array([<span class="fl">1.09</span>, <span class="fl">1.16</span>, <span class="fl">1.3</span> , <span class="fl">1.38</span>, <span class="fl">1.49</span>])</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> r2(obs,model)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fl">0.6379999999999998</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="modelskill.metrics.rho" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.rho">rho</h3>
+<p><code>metrics.rho(obs, model)</code></p>
+<p>alias for spearmanr</p>
+</section>
+<section id="modelskill.metrics.rmse" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.rmse">rmse</h3>
+<p><code>metrics.rmse(obs, model, weights=None, unbiased=False)</code></p>
+<p>alias for root_mean_squared_error</p>
+</section>
+<section id="modelskill.metrics.root_mean_squared_error" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.root_mean_squared_error">root_mean_squared_error</h3>
+<p><code>metrics.root_mean_squared_error(obs, model, weights=None, unbiased=False)</code></p>
+<p>Root Mean Squared Error (RMSE)</p>
+<p><span class="math display">\[
+res_i = model_i - obs_i
+\]</span></p>
+<p><span class="math display">\[
+RMSE=\sqrt{\frac{1}{n} \sum_{i=1}^n res_i^2}
+\]</span></p>
+<p>Unbiased version:</p>
+<p><span class="math display">\[
+res_{u,i} = res_i - \overline {res}
+\]</span></p>
+<p><span class="math display">\[
+uRMSE=\sqrt{\frac{1}{n} \sum_{i=1}^n res_{u,i}^2}
+\]</span></p>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 0</p>
+</section>
+<section id="modelskill.metrics.scatter_index" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.scatter_index">scatter_index</h3>
+<p><code>metrics.scatter_index(obs, model)</code></p>
+<p>Scatter index (SI)</p>
+<p>Which is the same as the unbiased-RMSE normalized by the absolute mean of the observations.</p>
+<p><span class="math display">\[
+\frac{ \sqrt{ \frac{1}{n} \sum_{i=1}^n \left( (model_i - \overline {model}) - (obs_i - \overline {obs}) \right)^2} }
+{\frac{1}{n} \sum_{i=1}^n | obs_i | }
+\]</span></p>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 0</p>
+</section>
+<section id="modelskill.metrics.scatter_index2" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.scatter_index2">scatter_index2</h3>
+<p><code>metrics.scatter_index2(obs, model)</code></p>
+<p>Alternative formulation of the scatter index (SI)</p>
+<p><span class="math display">\[
+\sqrt {\frac{\sum_{i=1}^n \left( (model_i - \overline {model}) - (obs_i - \overline {obs}) \right)^2}
+{\sum_{i=1}^n obs_i^2}}
+\]</span></p>
+<p>Range: [0, 100]; Best: 0</p>
+</section>
+<section id="modelskill.metrics.si" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.si">si</h3>
+<p><code>metrics.si(obs, model)</code></p>
+<p>alias for scatter_index</p>
+</section>
+<section id="modelskill.metrics.spearmanr" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.spearmanr">spearmanr</h3>
+<p><code>metrics.spearmanr(obs, model)</code></p>
+<p>Spearman rank correlation coefficient</p>
+<p>The rank correlation coefficient is similar to the Pearson correlation coefficient but applied to ranked quantities and is useful to quantify a monotonous relationship</p>
+<p><span class="math display">\[
+\rho = \frac{\sum_{i=1}^n (rmodel_i - \overline{rmodel})(robs_i - \overline{robs}) }
+                {\sqrt{\sum_{i=1}^n (rmodel_i - \overline{rmodel})^2}
+                \sqrt{\sum_{i=1}^n (robs_i - \overline{robs})^2} }
+\]</span></p>
+<p>Range: [-1, 1]; Best: 1</p>
+<section id="examples-7" class="level4">
+<h4 class="anchored" data-anchor-id="examples-7">Examples</h4>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">100</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> mod <span class="op">=</span> np.tanh(obs)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> rho(obs, mod)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fl">0.9999759973116955</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> spearmanr(obs, mod)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fl">0.9999759973116955</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="see-also-3" class="level4">
+<h4 class="anchored" data-anchor-id="see-also-3">See Also</h4>
+<p>corrcoef</p>
+</section>
+</section>
+<section id="modelskill.metrics.urmse" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.urmse">urmse</h3>
+<p><code>metrics.urmse(obs, model, weights=None)</code></p>
+<p>Unbiased Root Mean Squared Error (uRMSE)</p>
+<p><span class="math display">\[
+res_i = model_i - obs_i
+\]</span></p>
+<p><span class="math display">\[
+res_{u,i} = res_i - \overline {res}
+\]</span></p>
+<p><span class="math display">\[
+uRMSE = \sqrt{\frac{1}{n} \sum_{i=1}^n res_{u,i}^2}
+\]</span></p>
+<p>Range: <span class="math inline">\([0, \infty)\)</span>; Best: 0</p>
+<section id="see-also-4" class="level4">
+<h4 class="anchored" data-anchor-id="see-also-4">See Also</h4>
+<p>root_mean_squared_error</p>
+</section>
+</section>
+<section id="modelskill.metrics.willmott" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.metrics.willmott">willmott</h3>
+<p><code>metrics.willmott(obs, model)</code></p>
+<p>Willmott’s Index of Agreement</p>
+<p>A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.</p>
+<p><span class="math display">\[
+willmott = 1 - \frac{\frac{1}{n} \sum_{i=1}^n(model_i - obs_i)^2}
+                    {\frac{1}{n} \sum_{i=1}^n(|model_i - \overline{obs}| + |obs_i - \overline{obs}|)^2}
+\]</span></p>
+<p>Range: [0, 1]; Best: 1</p>
+<section id="examples-8" class="level4">
+<h4 class="anchored" data-anchor-id="examples-8">Examples</h4>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> obs <span class="op">=</span> np.array([<span class="fl">1.0</span>, <span class="fl">1.1</span>, <span class="fl">1.2</span>, <span class="fl">1.3</span>, <span class="fl">1.4</span>, <span class="fl">1.4</span>, <span class="fl">1.3</span>])</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> model <span class="op">=</span> np.array([<span class="fl">1.02</span>, <span class="fl">1.16</span>, <span class="fl">1.3</span>, <span class="fl">1.38</span>, <span class="fl">1.49</span>, <span class="fl">1.45</span>, <span class="fl">1.32</span>])</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> willmott(obs, model)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fl">0.9501403174479723</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="references-2" class="level4">
+<h4 class="anchored" data-anchor-id="references-2">References</h4>
+<p>Willmott, C. J. 1981. “On the validation of models”. Physical Geography, 2, 184–194.</p>
+
+
+</section>
+</section>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    const typesetMath = (el) => {
+      if (window.MathJax) {
+        // MathJax Typeset
+        window.MathJax.typeset([el]);
+      } else if (window.katex) {
+        // KaTeX Render
+        var mathElements = el.getElementsByClassName("math");
+        var macros = [];
+        for (var i = 0; i < mathElements.length; i++) {
+          var texText = mathElements[i].firstChild;
+          if (mathElements[i].tagName == "SPAN") {
+            window.katex.render(texText.data, mathElements[i], {
+              displayMode: mathElements[i].classList.contains('display'),
+              throwOnError: false,
+              macros: macros,
+              fleqn: false
+            });
+          }
+        }
+      }
+    }
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        typesetMath(container);
+        return container.innerHTML
+      } else {
+        typesetMath(note);
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      typesetMath(note);
+      return note.innerHTML;
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

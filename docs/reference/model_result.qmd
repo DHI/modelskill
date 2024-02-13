@@ -1,0 +1,24 @@
+# model_result { #modelskill.model_result }
+
+`model_result(data, *, aux_items=None, gtype=None, **kwargs)`
+
+A factory function for creating an appropriate object based on the data input.
+
+## Parameters
+
+| Name        | Type                                                                          | Description                                                                        | Default    |
+|-------------|-------------------------------------------------------------------------------|------------------------------------------------------------------------------------|------------|
+| `data`      | modelskill.types.DataInputType                                                | The data to be used for creating the ModelResult object.                           | _required_ |
+| `aux_items` | typing.Optional\[list\[int \| str\]\]                                         | Auxiliary items, by default None                                                   | `None`     |
+| `gtype`     | typing.Optional\[typing.Literal\['point', 'track', 'unstructured', 'grid'\]\] | The geometry type of the data. If not specified, it will be guessed from the data. | `None`     |
+| `**kwargs`  | typing.Any                                                                    | Additional keyword arguments to be passed to the ModelResult constructor.          | `{}`       |
+
+## Examples
+
+```python
+>>> import modelskill as ms
+>>> ms.model_result("Oresund2D.dfsu", item=0)
+<DfsuModelResult> 'Oresund2D'
+>>> ms.model_result("ERA5_DutchCoast.nc", item="swh", name="ERA5")
+<GridModelResult> 'ERA5'
+```

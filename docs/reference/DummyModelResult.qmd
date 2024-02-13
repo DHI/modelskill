@@ -1,0 +1,4 @@
+# DummyModelResult { #modelskill.DummyModelResult }
+
+`DummyModelResult(name='dummy', data=None, strategy='constant')`
+

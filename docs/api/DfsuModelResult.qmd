@@ -1,0 +1,15 @@
+# DfsuModelResult { #modelskill.DfsuModelResult }
+
+`DfsuModelResult(self, data, *, name=None, item=None, quantity=None, aux_items=None)`
+
+Construct a DfsuModelResult from a dfsu file or mikeio.Dataset/DataArray.
+
+## Parameters
+
+| Name        | Type                                               | Description                                                                                                               | Default    |
+|-------------|----------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------|
+| `data`      | modelskill.types.modelskill.types.UnstructuredType | the input data or file path                                                                                               | _required_ |
+| `name`      | typing.Optional\[str\]                             | The name of the model result, by default None (will be set to file name or item name)                                     | `None`     |
+| `item`      | str \| int \| None                                 | If multiple items/arrays are present in the input an item must be given (as either an index or a string), by default None | `None`     |
+| `quantity`  | modelskill.quantity.Quantity                       | Model quantity, for MIKE files this is inferred from the EUM information                                                  | `None`     |
+| `aux_items` | typing.Optional\[list\[int \| str\]\]              | Auxiliary items, by default None                                                                                          | `None`     |

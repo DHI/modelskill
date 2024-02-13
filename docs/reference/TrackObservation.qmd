@@ -1,0 +1,77 @@
+# TrackObservation { #modelskill.TrackObservation }
+
+`TrackObservation(self, data, *, item=None, name=None, weight=1.0, x_item=0, y_item=1, keep_duplicates='first', offset_duplicates=0.001, quantity=None, aux_items=None, attrs=None)`
+
+Class for observation with locations moving in space, e.g. satellite altimetry
+
+The data needs in addition to the datetime of each single observation point also, x and y coordinates.
+
+Create TrackObservation from dfs0 or DataFrame
+
+## Parameters
+
+| Name              | Type                                                                                       | Description                                                                                                                                                                                                                                             | Default    |
+|-------------------|--------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| `data`            | (str, pathlib.Path, mikeio.mikeio.Dataset, pandas.pandas.DataFrame, xarray.xarray.Dataset) | path to dfs0 file or object with track data                                                                                                                                                                                                             | _required_ |
+| `item`            | (str, int)                                                                                 | item name or index of values, by default None if data contains more than one item, item must be given                                                                                                                                                   | `None`     |
+| `name`            | str                                                                                        | user-defined name for easy identification in plots etc, by default file basename                                                                                                                                                                        | `None`     |
+| `x_item`          | (str, int)                                                                                 | item name or index of x-coordinate, by default 0                                                                                                                                                                                                        | `0`        |
+| `y_item`          | (str, int)                                                                                 | item name or index of y-coordinate, by default 1                                                                                                                                                                                                        | `1`        |
+| `keep_duplicates` | (str, bool)                                                                                | strategy for handling duplicate timestamps (xarray.Dataset.drop_duplicates): "first" to keep first occurrence, "last" to keep last occurrence, False to drop all duplicates, "offset" to add milliseconds to consecutive duplicates, by default "first" | `'first'`  |
+| `quantity`        | modelskill.Quantity                                                                        | The quantity of the observation, for validation with model results For MIKE dfs files this is inferred from the EUM information                                                                                                                         | `None`     |
+| `aux_items`       | list                                                                                       | list of names or indices of auxiliary items, by default None                                                                                                                                                                                            | `None`     |
+| `attrs`           | dict                                                                                       | additional attributes to be added to the data, by default None                                                                                                                                                                                          | `None`     |
+| `weight`          | float                                                                                      | weighting factor for skill scores, by default 1.0                                                                                                                                                                                                       | `1.0`      |
+
+## Examples
+
+```python
+>>> import modelskill as ms
+>>> o1 = ms.TrackObservation("track.dfs0", item=2, name="c2")
+```
+
+```python
+>>> o1 = ms.TrackObservation("track.dfs0", item="wind_speed", name="c2")
+```
+
+```python
+>>> o1 = ms.TrackObservation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
+```
+
+```python
+>>> o1 = ms.TrackObservation("track_wl.dfs0", item="wl", x_item="lon", y_item="lat")
+```
+
+```python
+>>> df = pd.DataFrame(
+...         {
+...             "t": pd.date_range("2010-01-01", freq="10s", periods=n),
+...             "x": np.linspace(0, 10, n),
+...             "y": np.linspace(45000, 45100, n),
+...             "swh": [0.1, 0.3, 0.4, 0.5, 0.3],
+...         }
+... )
+>>> df = df.set_index("t")
+>>> df
+                    x        y  swh
+t
+2010-01-01 00:00:00   0.0  45000.0  0.1
+2010-01-01 00:00:10   2.5  45025.0  0.3
+2010-01-01 00:00:20   5.0  45050.0  0.4
+2010-01-01 00:00:30   7.5  45075.0  0.5
+2010-01-01 00:00:40  10.0  45100.0  0.3
+>>> t1 = TrackObservation(df, name="fake")
+>>> t1.n_points
+5
+>>> t1.values
+array([0.1, 0.3, 0.4, 0.5, 0.3])
+>>> t1.time
+DatetimeIndex(['2010-01-01 00:00:00', '2010-01-01 00:00:10',
+           '2010-01-01 00:00:20', '2010-01-01 00:00:30',
+           '2010-01-01 00:00:40'],
+          dtype='datetime64[ns]', name='t', freq=None)
+>>> t1.x
+array([ 0. ,  2.5,  5. ,  7.5, 10. ])
+>>> t1.y
+array([45000., 45025., 45050., 45075., 45100.])
+```

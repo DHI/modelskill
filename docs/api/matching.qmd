@@ -1,0 +1,121 @@
+# matching { #modelskill.matching }
+
+`matching`
+
+
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [from_matched](#modelskill.matching.from_matched) | Create a Comparer from observation and model results that are already matched (aligned) |
+| [match](#modelskill.matching.match) | Match observation and model result data in space and time |
+| [match_space_time](#modelskill.matching.match_space_time) | Match observation with one or more model results in time domain |
+
+### from_matched { #modelskill.matching.from_matched }
+
+`matching.from_matched(data, *, obs_item=0, mod_items=None, aux_items=None, quantity=None, name=None, weight=1.0, x=None, y=None, z=None, x_item=None, y_item=None)`
+
+Create a Comparer from observation and model results that are already matched (aligned)
+
+#### Parameters
+
+| Name        | Type                                                                                      | Description                                                                                                      | Default    |
+|-------------|-------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|------------|
+| `data`      | \[pandas.pandas.DataFrame, str, pathlib.Path, mikeio.mikeio.Dfs0, mikeio.mikeio.Dataset\] | DataFrame (or object that can be converted to a DataFrame e.g. dfs0) with columns obs_item, mod_items, aux_items | _required_ |
+| `obs_item`  | \[str, int\]                                                                              | Name or index of observation item, by default first item                                                         | `0`        |
+| `mod_items` | typing.Iterable\[str, int\]                                                               | Names or indicies of model items, if None all remaining columns are model items, by default None                 | `None`     |
+| `aux_items` | typing.Iterable\[str, int\]                                                               | Names or indicies of auxiliary items, by default None                                                            | `None`     |
+| `quantity`  | modelskill.Quantity                                                                       | Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")           | `None`     |
+| `name`      | str                                                                                       | Name of the comparer, by default None (will be set to obs_item)                                                  | `None`     |
+| `x`         | float                                                                                     | x-coordinate of observation, by default None                                                                     | `None`     |
+| `y`         | float                                                                                     | y-coordinate of observation, by default None                                                                     | `None`     |
+| `z`         | float                                                                                     | z-coordinate of observation, by default None                                                                     | `None`     |
+| `x_item`    | str \| int \| None                                                                        | Name of x item, only relevant for track data                                                                     | `None`     |
+| `y_item`    | str \| int \| None                                                                        | Name of y item, only relevant for track data                                                                     | `None`     |
+
+#### Examples
+
+```python
+>>> import pandas as pd
+>>> import modelskill as ms
+>>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1]}, index=pd.date_range('2010-01-01', periods=3))
+>>> cmp = ms.from_matched(df, obs_item='stn_a') # remaining columns are model results
+>>> cmp
+<Comparer>
+Quantity: Undefined [Undefined]
+Observation: stn_a, n_points=3
+ Model: local, rmse=0.100
+>>> df = pd.DataFrame({'stn_a': [1,2,3], 'local': [1.1,2.1,3.1], 'global': [1.2,2.2,3.2], 'nonsense':[1,2,3]}, index=pd.date_range('2010-01-01', periods=3))
+>>> cmp = ms.from_matched(df, obs_item='stn_a', mod_items=['local', 'global'])
+>>> cmp
+<Comparer>
+Quantity: Undefined [Undefined]
+Observation: stn_a, n_points=3
+    Model: local, rmse=0.100
+    Model: global, rmse=0.200
+```
+
+### match { #modelskill.matching.match }
+
+`matching.match(obs, mod, *, obs_item=None, mod_item=None, gtype=None, max_model_gap=None, spatial_method=None)`
+
+Match observation and model result data in space and time
+
+NOTE: In case of multiple model results with different time coverage,
+only the _overlapping_ time period will be used! (intersection)
+
+NOTE: In case of multiple observations, multiple models can _only_
+be matched if they are _all_ of SpatialField type, e.g. DfsuModelResult
+or GridModelResult.
+
+#### Parameters
+
+| Name             | Type                                                                                                                                        | Description                                                                                                                                                                                                                                                                                                 | Default    |
+|------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| `obs`            | (str, pathlib.Path, pandas.pandas.DataFrame, modelskill.obs.Observation, typing.Sequence\[modelskill.obs.Observation\])                     | Observation(s) to be compared                                                                                                                                                                                                                                                                               | _required_ |
+| `mod`            | (str, pathlib.Path, pandas.pandas.DataFrame, modelskill.model.factory.ModelResult, typing.Sequence\[modelskill.model.factory.ModelResult\]) | Model result(s) to be compared                                                                                                                                                                                                                                                                              | _required_ |
+| `obs_item`       | int or str                                                                                                                                  | observation item if obs is a file/dataframe, by default None                                                                                                                                                                                                                                                | `None`     |
+| `mod_item`       | (int, str)                                                                                                                                  | model item if mod is a file/dataframe, by default None                                                                                                                                                                                                                                                      | `None`     |
+| `gtype`          | (str, optional)                                                                                                                             | Geometry type of the model result (if mod is a file/dataframe). If not specified, it will be guessed.                                                                                                                                                                                                       | `None`     |
+| `max_model_gap`  | (float, optional)                                                                                                                           | Maximum time gap (s) in the model result (e.g. for event-based model results), by default None                                                                                                                                                                                                              | `None`     |
+| `spatial_method` | str                                                                                                                                         | For Dfsu- and GridModelResult, spatial interpolation/selection method.  - For DfsuModelResult, one of: 'contained' (=isel), 'nearest', 'inverse_distance' (with 5 nearest points), by default "inverse_distance". - For GridModelResult, passed to xarray.interp() as method argument, by default 'linear'. | `None`     |
+
+#### Returns
+
+| Type                                     | Description                      |
+|------------------------------------------|----------------------------------|
+| modelskill.comparison.Comparer           | In case of a single observation  |
+| modelskill.comparison.ComparerCollection | In case of multiple observations |
+
+#### See Also
+
+[from_matched][modelskill.from_matched]
+    Create a Comparer from observation and model results that are already matched
+
+### match_space_time { #modelskill.matching.match_space_time }
+
+`matching.match_space_time(observation, raw_mod_data, max_model_gap=None, spatial_tolerance=0.001)`
+
+Match observation with one or more model results in time domain
+and return as xr.Dataset in the format used by modelskill.Comparer
+
+Will interpolate model results to observation time.
+
+Note: assumes that observation and model data are already matched in space.
+    But positions of track observations will be checked.
+
+#### Parameters
+
+| Name                | Type                                                                                                   | Description                                                                                                             | Default    |
+|---------------------|--------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|------------|
+| `observation`       | modelskill.obs.Observation                                                                             | Observation to be matched                                                                                               | _required_ |
+| `raw_mod_data`      | typing.Dict\[str, modelskill.model.point.PointModelResult \| modelskill.model.track.TrackModelResult\] | Dictionary of model results ready for interpolation                                                                     | _required_ |
+| `max_model_gap`     | typing.Optional\[modelskill.matching.TimeDeltaTypes\]                                                  | In case of non-equidistant model results (e.g. event data), max_model_gap can be given e.g. as seconds, by default None | `None`     |
+| `spatial_tolerance` | float                                                                                                  | Tolerance for spatial matching, by default 1e-3                                                                         | `0.001`    |
+
+#### Returns
+
+| Type                  | Description                                            |
+|-----------------------|--------------------------------------------------------|
+| xarray.xarray.Dataset | Matched data in the format used by modelskill.Comparer |

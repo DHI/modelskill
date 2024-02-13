@@ -1,0 +1,29 @@
+website:
+  sidebar:
+  - contents:
+    - reference/index.qmd
+    - contents:
+      - reference/observation.qmd
+      - reference/PointObservation.qmd
+      - reference/TrackObservation.qmd
+      section: Observation
+    - contents:
+      - reference/model_result.qmd
+      - reference/PointModelResult.qmd
+      - reference/TrackModelResult.qmd
+      - reference/DfsuModelResult.qmd
+      - reference/GridModelResult.qmd
+      - reference/DummyModelResult.qmd
+      section: Model Result
+    - contents:
+      - reference/matching.qmd
+      section: Matching
+    - contents:
+      - reference/Comparer.qmd
+      - reference/ComparerCollection.qmd
+      section: Comparer
+    - contents:
+      - reference/metrics.qmd
+      section: Metrics
+    id: reference
+  - id: dummy-sidebar

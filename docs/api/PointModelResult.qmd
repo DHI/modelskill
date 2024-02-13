@@ -1,0 +1,20 @@
+# PointModelResult { #modelskill.PointModelResult }
+
+`PointModelResult(self, data, *, name=None, x=None, y=None, z=None, item=None, quantity=None, aux_items=None)`
+
+Construct a PointModelResult from a 0d data source:
+dfs0 file, mikeio.Dataset/DataArray, pandas.DataFrame/Series
+or xarray.Dataset/DataArray
+
+## Parameters
+
+| Name        | Type                                                                                                                                                                 | Description                                                                                                               | Default    |
+|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|------------|
+| `data`      | (str, pathlib.Path, mikeio.mikeio.Dataset, mikeio.mikeio.DataArray, pandas.pandas.DataFrame, pandas.pandas.Series, xarray.xarray.Dataset or xarray.xarray.DataArray) | filename (.dfs0 or .nc) or object with the data                                                                           | _required_ |
+| `name`      | typing.Optional\[str\]                                                                                                                                               | The name of the model result, by default None (will be set to file name or item name)                                     | `None`     |
+| `x`         | float                                                                                                                                                                | first coordinate of point position, inferred from data if not given, else None                                            | `None`     |
+| `y`         | float                                                                                                                                                                | second coordinate of point position, inferred from data if not given, else None                                           | `None`     |
+| `z`         | float                                                                                                                                                                | third coordinate of point position, inferred from data if not given, else None                                            | `None`     |
+| `item`      | str \| int \| None                                                                                                                                                   | If multiple items/arrays are present in the input an item must be given (as either an index or a string), by default None | `None`     |
+| `quantity`  | modelskill.quantity.Quantity                                                                                                                                         | Model quantity, for MIKE files this is inferred from the EUM information                                                  | `None`     |
+| `aux_items` | typing.Optional\[list\[int \| str\]\]                                                                                                                                | Auxiliary items, by default None                                                                                          | `None`     |

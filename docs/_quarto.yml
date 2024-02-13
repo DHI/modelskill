@@ -1,0 +1,89 @@
+project:
+  type: website
+
+website:
+  title: "ModelSkill"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - user-guide/index.md
+      - href: examples/index.md
+        text: Examples
+      - href: api/index.md
+        text: API Reference
+  sidebar:
+    style: docked
+    search: true
+    contents: 
+      - section: "User Guide"
+        contents:
+         - user-guide/index.md
+         - user-guide/getting-started.md
+         - user-guide/overview.md
+         - user-guide/terminology.md
+         - user-guide/data-structures.md
+         - user-guide/matching.md
+         - user-guide/plotting.md
+         - user-guide/selecting-data.md
+      - section: "Examples"
+        contents:
+          - href: examples/index.md
+            text: Overview
+          - href: examples/MIKE21HD_dfsu.ipynb
+            text: MIKE21 HD
+          - href: examples/Hydrology_Vistula_Catchment.ipynb
+            text: Hydrology Vistula Catchment
+          - href: examples/Metocean_track_comparison.ipynb
+            text: Metocean track comparison
+          - href: examples/Prematched_with_auxiliary.ipynb
+            text: Prematched with auxiliary
+
+metadata-files:
+  - api/_sidebar.yml
+
+quartodoc:
+  style: pkgdown
+  dir: api
+  package: modelskill
+
+  # write sidebar data to this file
+  sidebar: "api/_sidebar.yml"
+
+  sections:
+    - title: Observation
+      desc: Observation classes and functions
+      contents:
+        - observation
+        - PointObservation
+        - TrackObservation
+    - title: Model Result
+      desc: Model result classes and functions
+      contents:
+        - model_result
+        - PointModelResult
+        - TrackModelResult
+        - DfsuModelResult
+        - GridModelResult
+        - DummyModelResult
+    - title: Matching
+      desc: Matching classes and functions
+      contents:
+        - matching
+    - title: Comparer
+      desc: Comparer classes and functions
+      contents:
+        - name: Comparer
+          children: embedded
+
+        - ComparerCollection
+    - title: Metrics
+      desc: Metrics classes and functions
+      contents:
+        - metrics
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
