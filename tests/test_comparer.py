@@ -5,6 +5,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
 from modelskill import __version__
+import modelskill as ms
 
 
 @pytest.fixture
@@ -811,3 +812,57 @@ def test_plots_directional(pt_df):
     ax = cmp.plot.timeseries()
     assert ax is not None
     assert ax.get_ylim() == (0.0, 360.0)
+
+
+def test_from_matched_track_data():
+
+    df = pd.DataFrame(
+        {
+            "lat": [55.0, 55.1],
+            "lon": [-0.1, 0.01],
+            "c2": [1.2, 1.3],
+            "mikeswcal5hm0": [1.22, 1.3],
+        },
+    )
+    assert isinstance(df.index, pd.RangeIndex) # Sometime we don't care about time only space
+
+    cmp = ms.from_matched(
+        data=df, obs_item="c2", mod_items="mikeswcal5hm0", x_item="lon", y_item="lat"
+    )
+    gs = cmp.gridded_skill(bins=2)
+    gs.data.sel(x=-0.01, y=55.1, method="nearest").n.values == 1
+
+    # positional args
+    cmp2 = ms.from_matched(
+        data=df,
+        x_item=0,
+        y_item=1,
+        obs_item=2,
+        mod_items=3,
+    )
+
+    assert len(cmp2.data.coords["x"]) == 2
+
+
+def test_from_matched_dfs0():
+    fn = "tests/testdata/matched_track_data.dfs0"
+    # time: 2017-10-27 10:45:19 - 2017-10-29 13:10:44 (532 non-equidistant records)
+    # geometry: GeometryUndefined()
+    # items:
+    #   0:  x <Undefined> (undefined)
+    #   1:  y <Undefined> (undefined)
+    #   2:  HD <Undefined> (undefined)
+    #   3:  Observation <Undefined> (undefined)
+
+    cmp = ms.from_matched(
+        data=fn,
+        x_item=0,
+        y_item=1,
+        obs_item=3,
+        mod_items=2,
+        quantity=ms.Quantity("Water level", "m"),
+    )
+    gs = cmp.gridded_skill()
+    assert float(
+        gs.data.sel(x=-0.01, y=55.1, method="nearest").rmse.values
+    ) == pytest.approx(0.0476569069177831)
