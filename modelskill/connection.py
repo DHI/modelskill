@@ -244,7 +244,7 @@ class Connector(Sequence):
     def add(self, obs, mod=None, weight=1.0, validate=True):
         """Add Observation-ModelResult-connections to Connector
 
-        Note
+        Notes
         ----
         Only ModelResults with a single item can be added to the Connector.
         From a multi-item ModelResult 'mr' an item must selected e.g. with
