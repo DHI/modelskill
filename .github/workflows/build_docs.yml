@@ -24,5 +24,8 @@ jobs:
       run: |
         pip install .[dev]
     
-    - name: Mkdocs build
-      run: mkdocs build
+    - name: Quarto build
+      run: |
+        cd docs
+        quartodoc build
+        quarto render
