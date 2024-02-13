@@ -215,9 +215,10 @@ class ComparerCollection(Mapping, Scoreable):
 
     def __repr__(self) -> str:
         out = []
-        out.append(f"<{type(self).__name__}>")
-        for key, value in self._comparers.items():
-            out.append(f"{type(value).__name__}: {key}")
+        out.append("<ComparerCollection>")
+        out.append("Comparers:")
+        for index, (key, value) in enumerate(self._comparers.items()):
+            out.append(f"{index}: {key} - {value.quantity}")
         return str.join("\n", out)
 
     def rename(self, mapping: Dict[str, str]) -> "ComparerCollection":
