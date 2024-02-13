@@ -34,7 +34,7 @@ from .model import (
     DfsuModelResult,
     DummyModelResult,
 )
-from .obs import observation, PointObservation, TrackObservation
+from .obs import observation, PointObservation, TrackObservation, ProfileObservation
 from .matching import compare, from_matched, match
 from .connection import Connector
 from .configuration import from_config
@@ -77,6 +77,7 @@ __all__ = [
     "observation",
     "PointObservation",
     "TrackObservation",
+    "ProfileObservation",
     "match",
     "from_matched",
     "Comparer",

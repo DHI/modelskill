@@ -14,6 +14,7 @@ class GeometryType(Enum):
     TRACK = auto()
     UNSTRUCTURED = auto()
     GRID = auto()
+    PROFILE = auto()
 
     def __str__(self) -> str:
         return self.name.lower()
