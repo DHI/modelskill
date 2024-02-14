@@ -321,8 +321,8 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
 
     Range: $(-\infty, 1]$; Best: 1
 
-    Note
-    ----
+    Notes
+    -----
     r2 = nash_sutcliffe_efficiency(nse)
 
     Examples
