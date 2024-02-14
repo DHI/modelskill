@@ -22,16 +22,18 @@ The typical ModelSkill workflow consists of these four steps:
 The first step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
 
--   [PointObservation](../api/observation/point.md)
--   [TrackObservation](../api/observation/track.md)
+-   [PointObservation](`modelskill.obs.PointObservation`)
+-   [TrackObservation](`modelskill.obs.TrackObservation`)
 
 Let's assume that we have one PointObservation and one
 TrackObservation (`name` is used to identify the observation, similar to the `name` of the model above). 
 
-```python hl_lines="3 5"
+```python
+import modelskill as ms
 hkna = ms.PointObservation("HKNA_Hm0.dfs0", item=0,
                             x=4.2420, y=52.6887,
                             name="HKNA")
+
 c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3,
                           name="c2")
 ```
@@ -51,8 +53,7 @@ The result of a simulation is stored in one or more result files, e.g. dfsu, dfs
 
 The name is used to identify the model result in the plots and tables.
 
-```python hl_lines="4"
-import modelskill as ms
+```python
 mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu", 
                          item="Sign. Wave Height",
                          name='HKZN_local')
@@ -62,8 +63,8 @@ mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu",
 
 ### Match observations and ModelResults
 
-This [match()](../api/matching.md/#modelskill.match) method returns a [Comparer](../api/comparer.md#modelskill.Comparer) (a single observation) or a
-[ComparerCollection](../api/comparercollection.md#modelskill.ComparerCollection) (multiple observations)
+This [match()](`modelskill.matching.match`) method returns a [Comparer](`modelskill.Comparer`) (a single observation) or a
+[ComparerCollection](`modelskill.ComparerCollection`) (multiple observations)
 for further analysis and plotting.
 
 ```python
@@ -79,10 +80,10 @@ skill assessment.
 
 The primary comparer methods are:
 
-- [skill()](../api/comparercollection.md#modelskill.ComparerCollection.skill)
-  which returns a [SkillTable](../api/skill.md) with the skill scores
-- various [plot](../api/comparercollection.md/#modelskill.comparison._collection_plotter.ComparerCollectionPlotter) methods of the comparer objects (e.g. `plot.scatter()`, `plot.timeseries()`)
-- [sel()](../api/comparercollection.md/#modelskill.ComparerCollection.sel) method for selecting data
+- [skill()](`modelskill.ComparerCollection.skill`)
+  which returns a [SkillTable](`modelskill.SkillTable`) with the skill scores
+- various [plot](`modelskill.comparison._collection_plotter.ComparerCollectionPlotter`) methods of the comparer objects (e.g. `plot.scatter()`, `plot.timeseries()`)
+- [sel()](`modelskill.ComparerCollection.sel`) method for selecting data
     
 
 ### Save / load the ComparerCollection

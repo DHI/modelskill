@@ -250,7 +250,7 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     Range: $(-\infty, 1]$; Best: 1
 
     Notes
-    ----
+    -----
     r2 = nash_sutcliffe_efficiency(nse)
 
     Nash, J. E.; Sutcliffe, J. V. (1970). "River flow forecasting through conceptual models part I — A discussion of principles". Journal of Hydrology. 10 (3): 282–290. <https://doi.org/10.1016/0022-1694(70)90255-6>

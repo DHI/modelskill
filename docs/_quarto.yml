@@ -11,7 +11,7 @@ website:
       - user-guide/index.md
       - href: examples/index.md
         text: Examples
-      - href: api/index.md
+      - href: api/index.qmd
         text: API Reference
   sidebar:
     style: docked
@@ -43,6 +43,9 @@ website:
 metadata-files:
   - _sidebar.yml
 
+filters:
+  - interlinks
+
 quartodoc:
   style: pkgdown
   dir: api
@@ -59,7 +62,7 @@ quartodoc:
       contents:
         - observation
         - PointObservation
-        - TrackObservation
+        - obs.TrackObservation
     - title: Model Result
       desc: ""
       contents:
@@ -79,9 +82,32 @@ quartodoc:
         - name: Comparer
           members:
             - skill
+            - gridded_skill
+            - score
+            - rename
+            - sel
+            - where
+            - query
+            - to_dataframe
+            - save
+            - load
+
         - name: ComparerCollection
           members:
             - skill
+            - gridded_skill
+            - score
+            - rename
+            - sel
+            - save
+            - load
+        - name: SkillTable
+    
+    - title: Comparison plotting
+      desc: ""
+      contents:
+      - comparison._comparer_plotter.ComparerPlotter
+      - comparison._collection_plotter.ComparerCollectionPlotter
         
     - title: Metrics  
       desc: ""

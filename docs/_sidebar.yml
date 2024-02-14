@@ -5,7 +5,7 @@ website:
     - contents:
       - api/observation.qmd
       - api/PointObservation.qmd
-      - api/TrackObservation.qmd
+      - api/obs.TrackObservation.qmd
       section: Observation
     - contents:
       - api/model_result.qmd
@@ -21,7 +21,12 @@ website:
     - contents:
       - api/Comparer.qmd
       - api/ComparerCollection.qmd
+      - api/SkillTable.qmd
       section: Comparer
+    - contents:
+      - api/comparison._comparer_plotter.ComparerPlotter.qmd
+      - api/comparison._collection_plotter.ComparerCollectionPlotter.qmd
+      section: Comparison plotting
     - contents:
       - api/metrics.qmd
       section: Metrics
