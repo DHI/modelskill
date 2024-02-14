@@ -22,8 +22,8 @@ The typical ModelSkill workflow consists of these four steps:
 The first step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
 
--   [PointObservation](`modelskill.obs.PointObservation`)
--   [TrackObservation](`modelskill.obs.TrackObservation`)
+-   [PointObservation](`modelskill.PointObservation`)
+-   [TrackObservation](`modelskill.TrackObservation`)
 
 Let's assume that we have one PointObservation and one
 TrackObservation (`name` is used to identify the observation, similar to the `name` of the model above). 

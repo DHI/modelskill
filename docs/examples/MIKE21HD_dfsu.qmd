@@ -1,0 +1,84 @@
+---
+title: MIKE21 HD
+jupyter: python3
+---
+
+
+
+```{python}
+import modelskill as ms
+```
+
+
+```{python}
+mr = ms.model_result('../data/Oresund2D.dfsu',
+                     item='Surface elevation')
+mr
+```
+
+```{python}
+fn = '../data/smhi_2095_klagshamn.dfs0'
+o1 = ms.PointObservation(fn, x=366844.15, y=6154291.6, item=0) 
+o1
+```
+
+## Spatial overview
+
+```{python}
+ms.plotting.spatial_overview(o1, mr, figsize=(8, 8));
+```
+
+```{python}
+cmp = ms.match(o1, mr)
+cmp
+```
+
+
+A very simple plot of the time series
+
+```{python}
+cmp.plot.timeseries(figsize=(10,4));
+```
+
+But we can also make it interactive, using the `plotly` backend.
+
+```{python}
+fig = cmp.plot.timeseries(backend="plotly")
+fig.show()
+```
+
+```{python}
+ub_cmp = cmp.remove_bias()
+ub_cmp.plot.timeseries(figsize=(10,4));
+```
+
+```{python}
+ub_cmp.score("bias")
+```
+
+```{python}
+cmp.score("bias")
+```
+
+
+Get skill for common metrics
+
+```{python}
+cmp.skill()
+```
+
+Or choose specific metrics
+
+```{python}
+cmp.metrics = ["bias","rmse"]
+cmp.skill()
+```
+
+```{python}
+cmp.plot.scatter(bins=0.02, cmap='YlOrRd', show_points=True);
+```
+
+```{python}
+cmp.plot.scatter(skill_table=True, show_points=True);
+```
+

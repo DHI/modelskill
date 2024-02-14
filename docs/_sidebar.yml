@@ -5,7 +5,7 @@ website:
     - contents:
       - api/observation.qmd
       - api/PointObservation.qmd
-      - api/obs.TrackObservation.qmd
+      - api/TrackObservation.qmd
       section: Observation
     - contents:
       - api/model_result.qmd

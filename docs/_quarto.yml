@@ -1,8 +1,10 @@
 project:
   type: website
+  
 
 website:
   title: "ModelSkill"
+  page-footer: "© 2024 DHI Group"
   page-navigation: true
   navbar:
     left:
@@ -29,15 +31,15 @@ website:
          - user-guide/selecting-data.md
       - section: "Examples"
         contents:
-          - href: examples/index.md
+          - href: examples/index.qmd
             text: Overview
-          - href: examples/MIKE21HD_dfsu.ipynb
+          - href: examples/MIKE21HD_dfsu.qmd  
             text: MIKE21 HD
-          - href: examples/Hydrology_Vistula_Catchment.ipynb
+          - href: examples/Hydrology_Vistula_Catchment.qmd
             text: Hydrology Vistula Catchment
-          - href: examples/Metocean_track_comparison.ipynb
+          - href: examples/Metocean_track_comparison.qmd
             text: Metocean track comparison
-          - href: examples/Prematched_with_auxiliary.ipynb
+          - href: examples/Prematched_with_auxiliary.qmd
             text: Prematched with auxiliary
 
 metadata-files:
@@ -62,7 +64,7 @@ quartodoc:
       contents:
         - observation
         - PointObservation
-        - obs.TrackObservation
+        - TrackObservation
     - title: Model Result
       desc: ""
       contents:
