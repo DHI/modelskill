@@ -5,8 +5,18 @@ project:
 website:
   title: "ModelSkill"
   page-footer: "© 2024 DHI Group"
+  repo-url: https://github.com/DHI/modelskill
+  repo-actions: [edit]
+  repo-subdir: docs
   page-navigation: true
   navbar:
+    tools:
+    - icon: github
+      menu:
+      - text: Source Code
+        url:  https://github.com/DHI/modelskill
+      - text: Report a Bug
+        url:  https://github.com/DHI/modelskill/issues
     left:
       - href: index.qmd
         text: Home
