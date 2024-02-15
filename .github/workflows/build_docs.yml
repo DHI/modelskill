@@ -24,7 +24,7 @@ jobs:
         
     - name: Install modelskill
       run: |
-        pip install .[dev]
+        pip install .[dev,notebooks]
     
     - name: Quarto build
       run: |
