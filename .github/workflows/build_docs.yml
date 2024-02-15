@@ -22,9 +22,6 @@ jobs:
     - name: Set up Quarto
       uses: quarto-dev/quarto-actions/setup@v2
 
-    - name: Add Fontawesome to Quarto
-      run: quarto add quarto-ext/fontawesome --no-prompt
-    - name: Add Interlinks filter
       run: quarto add machow/quartodoc --no-prompt
         
     - name: Install modelskill
@@ -33,6 +30,7 @@ jobs:
     
     - name: Quarto build
       run: |
-        cd docs
-        quartodoc build
+        cd docs && \
+        quarto add . --no-prompt && \
+        quartodoc build && \
         quarto render
