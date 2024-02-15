@@ -57,6 +57,13 @@ metadata-files:
 
 filters:
   - interlinks
+interlinks:
+  sources:
+      xarray: 
+        url: https://xarray.pydata.org/en/stable/
+      pandas: 
+        url: https://pandas.pydata.org/docs/
+
 
 quartodoc:
   style: pkgdown

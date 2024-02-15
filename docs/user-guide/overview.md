@@ -6,8 +6,8 @@ ModelSkill compares model results with observations. The workflow can be split i
 2. **Analysis** - plots and statistics of the matched data
 
 If the observations and model results are already matched (i.e. are stored in the same data source), 
-the `from_matched()` function can be used to go directly to the analysis phase. 
-If not, the `match()` function can be used to match the observations and model results in space and time.
+the [`from_matched()`](`modelskill.from_matched`) function can be used to go directly to the analysis phase. 
+If not, the [`match()`](`modelskill.match`) function can be used to match the observations and model results in space and time.
 
 
 ## Matching
@@ -26,7 +26,7 @@ But in most cases, the observations and model results will need to be defined se
 
 ### Define observations
 
-The observations can be defined as either a `PointObservation` or a `TrackObservation` (a moving point). 
+The observations can be defined as either a [`PointObservation`](`modelskill.PointObservation`) or a [`TrackObservation`](`modelskill.TrackObservation`) (a moving point). 
 
 ```python
 o1 = ms.PointObservation("stn1.dfs0", item="obs_WL")
@@ -40,10 +40,10 @@ The `item` needs to be specified as either the item number or the item name if t
 
 A model result will either be a simple point/track like the observations, or spatial field (e.g. 2d dfsu file) from which the model results will be *extracted* at the observation positions. The following types are available:
 
-* `PointModelResult` - a point result from a dfs0/nc file or a DataFrame
-* `TrackModelResult` - a track result from a dfs0/nc file or a DataFrame
-* `GridModelResult` - a spatial field from a dfs2/nc file or a Xarray Dataset
-* `DfsuModelResult` - a spatial field from a dfsu file
+* [`PointModelResult`](`modelskill.PointModelResult`) - a point result from a dfs0/nc file or a DataFrame
+* [`TrackModelResult`](`modelskill.TrackModelResult`) - a track result from a dfs0/nc file or a DataFrame
+* [`GridModelResult`](`modelskill.GridModelResult`) - a spatial field from a dfs2/nc file or a Xarray Dataset
+* [`DfsuModelResult`](`modelskill.DfsuModelResult`) - a spatial field from a dfsu file
 
 ```python
 mr1 = ms.PointModelResult("model.dfs0", item="WL_stn1")
