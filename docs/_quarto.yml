@@ -21,7 +21,7 @@ website:
       - href: index.qmd
         text: Home
       - user-guide/index.md
-      - href: examples/index.md
+      - href: examples/index.qmd
         text: Examples
       - href: api/index.qmd
         text: API Reference
@@ -87,7 +87,8 @@ quartodoc:
     - title: Matching
       desc: Matching classes and functions
       contents:
-        - matching
+        - match
+        - from_matched
     - title: Comparer
       desc: ""
       contents:
@@ -129,5 +130,4 @@ quartodoc:
 format:
   html:
     theme: cosmo
-    css: styles.css
     toc: true

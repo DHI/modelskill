@@ -16,7 +16,8 @@ website:
       - api/DummyModelResult.qmd
       section: Model Result
     - contents:
-      - api/matching.qmd
+      - api/match.qmd
+      - api/from_matched.qmd
       section: Matching
     - contents:
       - api/Comparer.qmd

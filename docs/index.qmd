@@ -30,7 +30,7 @@ and running in minutes
 
 Focus on your modelling and less on generate a validation report
 
-[**API Reference**](api/index.md)
+[**API Reference**](api/index.qmd)
 
 :::
 
