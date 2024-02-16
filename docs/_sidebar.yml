@@ -27,9 +27,16 @@ website:
     - contents:
       - api/comparison._comparer_plotter.ComparerPlotter.qmd
       - api/comparison._collection_plotter.ComparerCollectionPlotter.qmd
-      section: Comparison plotting
+      - api/plotting.qmd
+      section: Plotting
     - contents:
       - api/metrics.qmd
       section: Metrics
+    - contents:
+      - api/settings.qmd
+      section: Settings
+    - contents:
+      - api/Quantity.qmd
+      section: Quantity
     id: api
   - id: dummy-sidebar

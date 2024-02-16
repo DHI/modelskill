@@ -123,16 +123,30 @@ quartodoc:
             - load
         - name: SkillTable
     
-    - title: Comparison plotting
+    - title: Plotting
       desc: ""
       contents:
       - comparison._comparer_plotter.ComparerPlotter
       - comparison._collection_plotter.ComparerCollectionPlotter
+      - name: plotting
+        members: 
+          - scatter
+          - wind_rose
+          - spatial_overview
+          - temporal_coverage
         
     - title: Metrics  
       desc: ""
       contents:
         - metrics
+    - title: Settings
+      desc: ""
+      contents:
+        - settings
+    - title: Quantity
+      desc: ""
+      contents:
+        - Quantity
 
 format:
   html:

@@ -40,7 +40,7 @@ Focus on your modelling and less on generate a validation report
 
 Choose amongst different skill metrics, tables and charts
 
-[Metrics](api/metrics.md)
+[Metrics](`modelskill.metrics.md`)
 
 ## {{< fa scale-balanced >}} **Open Source, MIT**
 

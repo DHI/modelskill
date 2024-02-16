@@ -17,7 +17,7 @@ Only the observation time series is shown here:
 
 ## Plotting temporal coverage
 
-The temporal coverage of observations and model results can be plotted using the [`temporal_coverage`](../api/plotting.md/#modelskill.plotting.temporal_coverage) function in the [`plotting`](../api/plotting.md) module:
+The temporal coverage of observations and model results can be plotted using the [`temporal_coverage`](`modelskill.plotting.temporal_coverage`) function in the [`plotting`](`modelskill.plotting`) module:
 
 ```python
 >>> o1 = ms.PointObservation('HKNA.dfs0', item=0, x=4.2420, y=52.6887)
@@ -32,7 +32,7 @@ The temporal coverage of observations and model results can be plotted using the
 
 ## Plotting spatial overview
 
-The spatial coverage of observations and model results can be plotted using the [`spatial_overview`](../api/plotting.md/#modelskill.plotting.spatial_overview) function in the [`plotting`](../api/plotting.md) module:
+The spatial coverage of observations and model results can be plotted using the [`spatial_overview`](`modelskill.plotting.spatial_overview`) function in the [`plotting`](`modelskill.plotting`) module:
 
 ```python
 >>> ms.plotting.spatial_overview([o1, o2, o3], mr)
@@ -54,7 +54,7 @@ The `plot` accessor on a Comparer or ComparerCollection object can be used to pl
 
 ## Plotting Taylor diagrams
 
-A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean square error. The `taylor` plot can be accessed through the Comparer [`plot`](../api/comparer.md/#modelskill.comparison._comparer_plotter.ComparerPlotter) accessor or the ComparerCollection [`plot`](../api/comparercollection.md/#modelskill.comparison._collection_plotter.ComparerCollectionPlotter) accessor:
+A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean square error. The `taylor` plot can be accessed through the Comparer [`plot`](`modelskill.comparison._comparer_plotter.ComparerPlotter`) accessor or the ComparerCollection [`plot`](`modelskill.comparison._collection_plotter.ComparerCollectionPlotter`) accessor:
 
 ```python
 >>> cc = ms.match([o1, o2, o3], [mr_CMEMS, mr_ERA5, mr_MIKE21SW])
