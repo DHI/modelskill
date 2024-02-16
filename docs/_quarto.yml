@@ -111,6 +111,7 @@ quartodoc:
             - to_dataframe
             - save
             - load
+        -  name : comparison.ComparerPlotter
 
         - name: ComparerCollection
           members:
@@ -121,17 +122,18 @@ quartodoc:
             - sel
             - save
             - load
+        - name : comparison.ComparerCollectionPlotter
         - name: SkillTable
     
     - title: Plotting
       desc: ""
       contents:
-      - comparison._comparer_plotter.ComparerPlotter
-      - comparison._collection_plotter.ComparerCollectionPlotter
+      
       - name: plotting
         members: 
           - scatter
           - wind_rose
+          - taylor_diagram
           - spatial_overview
           - temporal_coverage
         

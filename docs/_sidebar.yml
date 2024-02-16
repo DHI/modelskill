@@ -21,12 +21,12 @@ website:
       section: Matching
     - contents:
       - api/Comparer.qmd
+      - api/comparison.ComparerPlotter.qmd
       - api/ComparerCollection.qmd
+      - api/comparison.ComparerCollectionPlotter.qmd
       - api/SkillTable.qmd
       section: Comparer
     - contents:
-      - api/comparison._comparer_plotter.ComparerPlotter.qmd
-      - api/comparison._collection_plotter.ComparerCollectionPlotter.qmd
       - api/plotting.qmd
       section: Plotting
     - contents:

@@ -970,6 +970,7 @@ class ComparerCollection(Mapping, Scoreable):
     def score(
         self,
         metric: str | Callable = mtr.rmse,
+        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         **kwargs: Any,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
@@ -1017,8 +1018,6 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.score(weights='points', metric="mape")
         {'mod': 8.414442957854142}
         """
-
-        weights = kwargs.pop("weights", None)
 
         metric = _parse_metric(metric)[0]
 
