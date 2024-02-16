@@ -70,8 +70,7 @@ cmp.skill()
 Or choose specific metrics
 
 ```{python}
-cmp.metrics = ["bias","rmse"]
-cmp.skill()
+cmp.skill(metrics = ["bias","rmse"])
 ```
 
 ```{python}
