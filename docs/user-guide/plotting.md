@@ -68,7 +68,7 @@ The radial distance from the point to the observation point is the standard devi
 
 ## Plotting directional data (e.g. wind or currents)
 
-Directional data can be plotted using the [`wind_rose`](../api/plotting.md/#modelskill.plotting.wind_rose) function in the [`plotting`](../api/plotting.md) module. The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:
+Directional data can be plotted using the [`wind_rose`](`modelskill.plotting.wind_rose`) function in the [`plotting`](`modelskill.plotting`) module. The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:
 
 ```python
 >>> df = pd.read_csv('wind.csv', index_col=0, parse_dates=True)
