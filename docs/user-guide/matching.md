@@ -2,7 +2,9 @@
 
 Once observations and model results have been defined, the next step is to match them. This is done using the `match()` function which handles the allignment of the observation and model result data in space and time. Note that if the data is already matched, the `from_matched()` function can be used to create a `Comparer` directly from the matched data and the matching described here is not needed.
 
+::: {.callout-important title="Important"}
 The observation is considered the *truth* and the model result data is therefore interpolated to the observation data positions.
+:::
 
 The matching process will be different depending on the geometry of observation and model result:
 
@@ -84,9 +86,10 @@ The default (inverse_distance) is not necessarily the best method in all cases. 
 >>> cc = ms.match([o1, o2], mr_dfsu, spatial_method='contained')   
 ```
 
-Note that extraction of *track* data does not currently support the "contained" method.
-
-Note that the extraction of point data from 3D dfsu files is not yet fully supported. It is recommended to extract the data "offline" prior to using ModelSkill.
+::: callout-note
+* Extraction of *track* data does not currently support the "contained" method.
+* Extraction of point data from 3D dfsu files is not yet fully supported. It is recommended to extract the data "offline" prior to using ModelSkill.
+:::
 
 
 ### Extracting data from a GridModelResult

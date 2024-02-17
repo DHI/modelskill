@@ -4,6 +4,11 @@
 This page describes the typical ModelSkill workflow for comparing model
 results and observations. 
 
+## Installation
+
+```bash
+pip install modelskill
+```
 
 ## Workflow
 
