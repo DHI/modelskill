@@ -1,6 +1,5 @@
 project:
   type: website
-  
 
 website:
   title: "ModelSkill"
@@ -9,6 +8,7 @@ website:
   repo-actions: [edit]
   repo-subdir: docs
   page-navigation: true
+  
   navbar:
     tools:
     - icon: github
@@ -32,12 +32,13 @@ website:
       - section: "User Guide"
         contents:
          - user-guide/index.md
-         - user-guide/getting-started.md
+         - user-guide/getting-started.qmd
          - user-guide/overview.md
          - user-guide/terminology.md
          - user-guide/data-structures.md
+         - user-guide/workflow.md
          - user-guide/matching.md
-         - user-guide/plotting.md
+         - user-guide/plotting.qmd
          - user-guide/selecting-data.md
       - section: "Examples"
         contents:

@@ -23,7 +23,7 @@ toc: false
 Install **ModelSkill** with [`pip`](https://pypi.org/project/modelskill/) and get up
 and running in minutes
 
-[**Getting started**](user-guide/getting-started.md)
+[**Getting started**](user-guide/getting-started.qmd)
 
 
 ## {{< fa brands python >}} **It's just Python**

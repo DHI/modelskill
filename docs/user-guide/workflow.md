@@ -1,19 +1,6 @@
-# Getting started
+# Workflow
 
-
-This page describes the typical ModelSkill workflow for comparing model
-results and observations. 
-
-## Installation
-
-```bash
-pip install modelskill
-```
-
-## Workflow
-
-
-The typical ModelSkill workflow consists of these four steps:
+A typical ModelSkill workflow consists of these four steps:
 
 1.  Define **Observations**
 2.  Define **ModelResults**
@@ -21,8 +8,7 @@ The typical ModelSkill workflow consists of these four steps:
 4.  Do analysis, plotting, etc with a **Comparer**
 
 
-
-### Define Observations
+## Define Observations
 
 The first step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
@@ -52,7 +38,7 @@ file, the item number (or item name) and a name. A PointObservation
 further needs to be initialized with it\'s x-, y-position.
 
 
-### Define ModelResults
+## Define ModelResults
 
 The result of a simulation is stored in one or more result files, e.g. dfsu, dfs0, nc, csv.
 
@@ -66,7 +52,7 @@ mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu",
 
 
 
-### Match observations and ModelResults
+## Match observations and ModelResults
 
 This [match()](`modelskill.matching.match`) method returns a [Comparer](`modelskill.Comparer`) (a single observation) or a
 [ComparerCollection](`modelskill.ComparerCollection`) (multiple observations)
@@ -78,7 +64,7 @@ cc = ms.match([hkna, c2], mr)
 
 
 
-### Do analysis, plotting, etc with a Comparer
+## Do analysis, plotting, etc with a Comparer
 
 The object returned by the `match()` method is a *Comparer*/*ComparerCollection*. It holds the matched observation and model data and has methods for plotting and
 skill assessment.
@@ -91,7 +77,20 @@ The primary comparer methods are:
 - [sel()](`modelskill.ComparerCollection.sel`) method for selecting data
     
 
-### Save / load the ComparerCollection
+## Filtering
+
+In order to select only a subset of the data for analysis, the comparer has a `sel()` method which returns a new comparer with the selected data. 
+
+This method allow filtering of the data in several ways:
+
+-   on `observation` by specifying name or index of one or more
+    observations
+-   on `model` (if more than one is compared) by giving name or index
+-   temporal using the `time` (or `start` and `end`) arguments
+-   spatial using the `area` argument given as a bounding box or a
+    polygon
+
+## Save / load the ComparerCollection
 
 It can be useful to save the comparer collection for later use. This can be done using the `save()` method:
 
@@ -106,15 +105,4 @@ cc = ms.load("my_comparer_collection.msk")
 ```
 
 
-### Filtering
 
-In order to select only a subset of the data for analysis, the comparer has a `sel()` method which returns a new comparer with the selected data. 
-
-This method allow filtering of the data in several ways:
-
--   on `observation` by specifying name or index of one or more
-    observations
--   on `model` (if more than one is compared) by giving name or index
--   temporal using the `time` (or `start` and `end`) arguments
--   spatial using the `area` argument given as a bounding box or a
-    polygon

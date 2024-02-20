@@ -74,7 +74,7 @@ cmp.plot.scatter();
 A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean squared error. The `taylor` plot can be accessed through the Comparer [`plot`](`modelskill.comparison.ComparerPlotter`) accessor or the ComparerCollection [`plot`](`modelskill.comparison.ComparerCollectionPlotter`) accessor:
 
 ```{python}
-cmp.plot.taylor();
+cmp.plot.taylor()
 ```
 
 
@@ -86,9 +86,13 @@ The radial distance from the point to the observation point is the standard devi
 Directional data can be plotted using the [`wind_rose`](`modelskill.plotting.wind_rose`) function in the [`plotting`](`modelskill.plotting`) module. The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:
 
 ```{python}
-import pandas as pd
-df = pd.read_csv('../data/dual_wave_height_and_direction.csv', 
-    index_col=0, parse_dates=True)
-ms.plotting.wind_rose(df);
+import mikeio
+ds = mikeio.read("../data/wave_dir.dfs0")
+df = ds[[0,2,1,3]].to_dataframe()
+df.round(2).head()
+```
+
+```{python}
+ms.plotting.wind_rose(df, figsize=(12,6));
 ```
 
