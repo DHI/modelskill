@@ -30,8 +30,8 @@ website:
     search: true
     contents: 
       - section: "User Guide"
-        contents:
-         - user-guide/index.md
+        href: user-guide/index.md
+        contents: 
          - user-guide/getting-started.qmd
          - user-guide/overview.md
          - user-guide/terminology.md
@@ -41,9 +41,8 @@ website:
          - user-guide/plotting.qmd
          - user-guide/selecting-data.md
       - section: "Examples"
+        href: examples/index.qmd
         contents:
-          - href: examples/index.qmd
-            text: Overview
           - href: examples/MIKE21HD_dfsu.qmd  
             text: MIKE21 HD
           - href: examples/Hydrology_Vistula_Catchment.qmd
