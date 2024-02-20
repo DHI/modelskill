@@ -725,7 +725,7 @@ class ComparerPlotter:
         cmp = ms.match(obs=o1, mod=mr)
         ```
         ```{python}
-        cmp.plot.taylor()
+        cmp.plot.taylor();
         ```
 
 
@@ -759,6 +759,7 @@ class ComparerPlotter:
             for r in df.itertuples()
         ]
 
+        # TODO consistent return type with other plotting methods
         return taylor_diagram(
             obs_std=ref_std,
             points=pts,
