@@ -47,7 +47,7 @@ ms.plotting.temporal_coverage(obs=[o1, o2], mod=mr);
 The spatial coverage of observations and model results can be plotted using the [`spatial_overview`](`modelskill.plotting.spatial_overview`) function in the [`plotting`](`modelskill.plotting`) module:
 
 ```{python}
->>> ms.plotting.spatial_overview([o1, o2], mr);
+ms.plotting.spatial_overview([o1, o2], mr);
 ```
 
 
@@ -74,7 +74,7 @@ cmp.plot.scatter();
 A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean squared error. The `taylor` plot can be accessed through the Comparer [`plot`](`modelskill.comparison.ComparerPlotter`) accessor or the ComparerCollection [`plot`](`modelskill.comparison.ComparerCollectionPlotter`) accessor:
 
 ```{python}
-cmp.plot.taylor()
+cmp.plot.taylor();
 ```
 
 

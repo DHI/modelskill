@@ -717,8 +717,17 @@ class ComparerPlotter:
 
         Examples
         --------
-        >>> comparer.taylor()
-        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+        ```{python}
+        #| echo: False
+        import modelskill as ms
+        o1 = ms.PointObservation('../data/SW/HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887)
+        mr = ms.DfsuModelResult('../data/SW/HKZN_local_2017_DutchCoast.dfsu', item=0)
+        cmp = ms.match(obs=o1, mod=mr)
+        ```
+        ```{python}
+        cmp.plot.taylor()
+        ```
+
 
         Notes
         -----
