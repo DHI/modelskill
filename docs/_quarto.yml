@@ -51,9 +51,50 @@ website:
             text: Metocean track comparison
           - href: examples/Prematched_with_auxiliary.qmd
             text: Prematched with auxiliary
+      - section: "API Reference"
+        collapsed: true
+        href: api/index.qmd
+        contents:
+        - section: "Observation"
+          contents:
+            - api/observation.qmd
+            - api/PointObservation.qmd
+            - api/TrackObservation.qmd
+        - section: "Model Result"
+          contents:
+            - api/model_result.qmd
+            - api/PointModelResult.qmd
+            - api/TrackModelResult.qmd
+            - api/DfsuModelResult.qmd
+            - api/GridModelResult.qmd
+            - api/DummyModelResult.qmd
+        - section: "Matching"
+          contents:
+            - api/match.qmd
+            - api/from_matched.qmd
+        - section: "Comparer"
+          contents:
+            - api/Comparer.qmd
+            - api/comparison.ComparerPlotter.qmd
+            - api/ComparerCollection.qmd
+            - api/comparison.ComparerCollectionPlotter.qmd
+            - api/SkillTable.qmd
+        - section: "Plotting"
+          contents:
+            - api/plotting.qmd
+        - section: "Metrics"
+          contents:
+            - api/metrics.qmd
+        - section: "Settings"
+          contents:
+            - api/settings.qmd
+        - section: "Quantity"
+          contents:
+            - api/Quantity.qmd
 
-metadata-files:
-  - _sidebar.yml
+
+#metadata-files:
+#  - _sidebar.yml
 
 filters:
   - interlinks
