@@ -8,7 +8,7 @@ A typical ModelSkill workflow consists of these four steps:
 4.  Do analysis, plotting, etc with a **Comparer**
 
 
-## Define Observations
+## {{< fa temperature-half >}} Define Observations
 
 The first step is to define the measurements to be used for the skill
 assessment. Two types of observation are available:
@@ -38,7 +38,7 @@ file, the item number (or item name) and a name. A PointObservation
 further needs to be initialized with it\'s x-, y-position.
 
 
-## Define ModelResults
+## {{< fa database >}} Define ModelResults
 
 The result of a simulation is stored in one or more result files, e.g. dfsu, dfs0, nc, csv.
 
@@ -52,7 +52,7 @@ mr = ms.DfsuModelResult("SW/HKZN_local_2017_DutchCoast.dfsu",
 
 
 
-## Match observations and ModelResults
+## {{< fa link >}} Match observations and ModelResults
 
 This [match()](`modelskill.matching.match`) method returns a [Comparer](`modelskill.Comparer`) (a single observation) or a
 [ComparerCollection](`modelskill.ComparerCollection`) (multiple observations)
@@ -64,7 +64,7 @@ cc = ms.match([hkna, c2], mr)
 
 
 
-## Do analysis, plotting, etc with a Comparer
+## {{< fa ruler >}} Do analysis, plotting, etc with a Comparer
 
 The object returned by the `match()` method is a *Comparer*/*ComparerCollection*. It holds the matched observation and model data and has methods for plotting and
 skill assessment.
@@ -77,7 +77,7 @@ The primary comparer methods are:
 - [sel()](`modelskill.ComparerCollection.sel`) method for selecting data
     
 
-## Filtering
+## {{< fa filter >}} Filtering
 
 In order to select only a subset of the data for analysis, the comparer has a `sel()` method which returns a new comparer with the selected data. 
 
@@ -90,7 +90,7 @@ This method allow filtering of the data in several ways:
 -   spatial using the `area` argument given as a bounding box or a
     polygon
 
-## Save / load the ComparerCollection
+## {{< fa solid floppy-disk >}} Save / load the ComparerCollection
 
 It can be useful to save the comparer collection for later use. This can be done using the `save()` method:
 
