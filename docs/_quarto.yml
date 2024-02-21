@@ -104,6 +104,8 @@ interlinks:
 
 
 quartodoc:
+  options:
+    include_inherited: true
   style: pkgdown
   dir: api
   package: modelskill
