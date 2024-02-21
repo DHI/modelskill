@@ -93,9 +93,6 @@ website:
             - api/Quantity.qmd
 
 
-#metadata-files:
-#  - _sidebar.yml
-
 filters:
   - interlinks
 interlinks:
@@ -193,5 +190,6 @@ quartodoc:
 
 format:
   html:
-    theme: cosmo
+    #theme: cosmo
+    theme: materia
     toc: true
