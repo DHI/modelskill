@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 import os
 from pathlib import Path
 import tempfile
@@ -253,12 +254,10 @@ class ComparerCollection(Mapping, Scoreable):
         return ComparerCollection(cmps)
 
     @overload
-    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection:
-        ...
+    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection: ...
 
     @overload
-    def __getitem__(self, x: int | Hashable) -> Comparer:
-        ...
+    def __getitem__(self, x: int | Hashable) -> Comparer: ...
 
     def __getitem__(
         self, x: int | Hashable | slice | Iterable[Hashable]
@@ -298,15 +297,8 @@ class ComparerCollection(Mapping, Scoreable):
     def __iter__(self) -> Iterator[Comparer]:
         return iter(self._comparers.values())
 
-    def __copy__(self) -> "ComparerCollection":
-        cls = self.__class__
-        cp = cls.__new__(cls)
-        # TODO should this use deepcopy?
-        cp.__init__(list(self._comparers))  # type: ignore
-        return cp
-
     def copy(self) -> "ComparerCollection":
-        return self.__copy__()
+        return deepcopy(self)
 
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
