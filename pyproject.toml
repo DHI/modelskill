@@ -7,7 +7,7 @@ exclude = ["notebooks", "tests"]
 
 [project]
 name="modelskill"
-version="1.0.dev24"
+version="1.0.0"
 dependencies = [
     "numpy  >= 1.20.0",
     "pandas >= 1.4",
