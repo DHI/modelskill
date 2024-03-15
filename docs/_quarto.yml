@@ -192,6 +192,5 @@ quartodoc:
 
 format:
   html:
-    #theme: cosmo
-    theme: materia
+    theme: cosmo
     toc: true
