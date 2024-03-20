@@ -55,60 +55,63 @@ def test_spatial_skill_deprecated(cmp1) -> None:
     assert len(ss.obs_names) == 0
     df = ss.to_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert "Coordinates:" in repr(ss)
+    # assert "Coordinates:" in repr(ss)
+    assert "y: 5" in repr(ss)
+    assert "x: 5" in repr(ss)
     assert ss.coords is not None
     assert ss.n is not None
 
 
 def test_gridded_skill_multi_model(cc2) -> None:
-    ss = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
-    assert len(ss.x) == 3
-    assert len(ss.y) == 3
-    assert len(ss.mod_names) == 2
-    assert len(ss.obs_names) == 3
-    assert len(ss.metrics) == 3
+    gs = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
+    assert len(gs.x) == 3
+    assert len(gs.y) == 3
+    assert len(gs.mod_names) == 2
+    assert len(gs.obs_names) == 3
+    assert len(gs.metrics) == 3
 
 
 def test_gridded_skill_sel_model(cc2) -> None:
-    ss = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
-    ss2 = ss.sel(model="SW_1")
-    ss2.rmse.plot()
+    gs = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
+    gs2 = gs.sel(model="SW_1")
+    gs2.rmse.plot()
 
     with pytest.raises(KeyError):
-        ss.sel(model="bad_model")
+        gs.sel(model="bad_model")
 
 
+@pytest.mark.skipif(pd.__version__ < "2.0.0", reason="requires newer pandas")
 def test_gridded_skill_is_subsettable(cc2) -> None:
-    ss = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
-    ss.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
+    gs = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
+    gs.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
 
     cmp = cc2[0]
 
-    ss2 = cmp.gridded_skill(bins=3, metrics=["rmse", "bias"])
-    ss2.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
+    gs2 = cmp.gridded_skill(bins=3, metrics=["rmse", "bias"])
+    gs2.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
 
 
 def test_gridded_skill_plot(cmp1) -> None:
-    ss = cmp1.gridded_skill(metrics=["rmse", "bias"])
-    ss.bias.plot()
+    gs = cmp1.gridded_skill(metrics=["rmse", "bias"])
+    gs.bias.plot()
 
     with pytest.warns(FutureWarning, match="deprecated"):
-        ss.plot("bias")
+        gs.plot("bias")
 
 
 def test_gridded_skill_plot_multi_model(cc2) -> None:
-    ss = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
-    ss["bias"].plot()
+    gs = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
+    gs["bias"].plot()
 
     with pytest.warns(FutureWarning, match="deprecated"):
-        ss["rmse"].plot(model="SW_1")
+        gs["rmse"].plot(model="SW_1")
 
 
 def test_gridded_skill_plot_multi_model_fails(cc2) -> None:
-    ss = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
+    gs = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
     with pytest.raises(KeyError):
-        ss["bad_metric"]
+        gs["bad_metric"]
 
     with pytest.raises(ValueError):
         with pytest.warns(FutureWarning, match="deprecated"):
-            ss.rmse.plot(model="bad_model")
+            gs.rmse.plot(model="bad_model")

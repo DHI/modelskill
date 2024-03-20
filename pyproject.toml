@@ -7,10 +7,10 @@ exclude = ["notebooks", "tests"]
 
 [project]
 name="modelskill"
-version="1.0.dev23"
+version="1.1.dev0"
 dependencies = [
-    "numpy",
-    "pandas",
+    "numpy  >= 1.20.0",
+    "pandas >= 1.4",
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",
@@ -28,8 +28,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "License :: OSI Approved :: MIT License",
-    "Development Status :: 4 - Beta", # TODO: change to stable
-    #"Development Status :: 5 - Production/Stable",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -44,7 +43,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["pytest",
         "mkdocs==1.5.3",
-        "mkdocs-material==9.4.14",
+        "mkdocs-material==9.5.6",
         "mkdocstrings==0.24.0",
         "mkdocstrings-python==1.7.5",
         "black==22.3.0",

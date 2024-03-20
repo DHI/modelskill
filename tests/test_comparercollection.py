@@ -23,6 +23,18 @@ def _set_attrs(data: xr.Dataset) -> xr.Dataset:
 
 
 @pytest.fixture
+def cc_pr() -> modelskill.comparison.Comparer:
+    """Real data to test Peak Ratio from top-to-bottom"""
+    obs = modelskill.PointObservation(
+        "tests/testdata/PR_test_data.dfs0", item="Hs_measured"
+    )
+    mod = modelskill.PointModelResult(
+        "tests/testdata/PR_test_data.dfs0", item="Hs_model"
+    )
+    return modelskill.match(obs, mod)
+
+
+@pytest.fixture
 def pc() -> modelskill.comparison.Comparer:
     """A comparer with fake point data and 2 models"""
     x, y = 10.0, 55.0
@@ -299,6 +311,14 @@ def test_skill_by_attrs_gtype(cc):
     assert sk.data.index.name == "gtype"
 
 
+def test_skill_by_freq(cc):
+    skd = cc.skill(by="freq:D")
+    assert len(skd) == 7
+
+    skw = cc.skill(by="freq:W")
+    assert len(skw) == 2
+
+
 def test_skill_by_attrs_gtype_and_mod(cc):
     sk = cc.skill(by=["attrs:gtype", "model"])
     assert len(sk) == 5
@@ -338,14 +358,39 @@ def test_skill_by_attrs_observed(cc):
 
     sk = cc.skill(by="attrs:use")  # observed=False is default
     assert len(sk) == 2
-    assert sk.data.index[0] is False  # note sorted by df.groupby !
-    assert sk.data.index[1] == "DA"
+    assert sk.data.index[0] == "DA"
+    assert sk.data.index[1] is False
     assert sk.data.index.name == "use"
 
     sk = cc.skill(by="attrs:use", observed=True)
     assert len(sk) == 1
     assert sk.data.index[0] == "DA"
     assert sk.data.index.name == "use"
+
+
+def test_xy_in_skill(cc):
+    # point obs has x,y, track obs x, y are np.nan
+    sk = cc.skill()
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data.reset_index()
+    df_track = df.loc[df.observation == "fake track obs"]
+    assert df_track.x.isna().all()
+    assert df_track.y.isna().all()
+    df_point = df.loc[df.observation == "fake point obs"]
+    assert all(df_point.x == cc[0].x)
+    assert all(df_point.y == cc[0].y)
+
+
+def test_xy_in_skill_no_obs(cc):
+    # if no observation column then no x, y information!
+    # e.g. if we filter by gtype (in this case 1 per obs), no x, y information
+    sk = cc.skill(by=["attrs:gtype", "model"])
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data.reset_index()
+    assert df.x.isna().all()
+    assert df.y.isna().all()
 
 
 # ======================== load/save ========================
@@ -510,3 +555,27 @@ def test_plot_accepts_figsize(cc_plot_function):
     ax = cc_plot_function(figsize=figsize)
     a, b = ax.get_figure().get_size_inches()
     assert a, b == figsize
+
+
+def test_peak_ratio(cc):
+    """Non existent peak ratio"""
+    cc = cc.sel(model="m1")
+    sk = cc.skill(metrics=["peak_ratio"])
+
+    assert sk.loc["fake point obs", "peak_ratio"] == pytest.approx(1.119999999)
+
+
+def test_peak_ratio_2(cc_pr):
+    sk = cc_pr.skill(metrics=["peak_ratio"])
+    assert "peak_ratio" in sk.data.columns
+    assert sk.to_dataframe()["peak_ratio"].values == pytest.approx(1.0799999095653732)
+
+
+def test_copy(cc):
+    cc2 = cc.copy()
+    assert cc2.n_models == 3
+    assert cc2.n_points == 10
+    assert cc2.start_time == pd.Timestamp("2019-01-01")
+    assert cc2.end_time == pd.Timestamp("2019-01-07")
+    assert cc2.obs_names == ["fake point obs", "fake track obs"]
+    assert cc2.mod_names == ["m1", "m2", "m3"]

@@ -183,7 +183,7 @@ class SingleObsConnector:
         else:
             raise ValueError(f"Unknown observation type {type(obs)}")
 
-    def extract(self, max_model_gap: Optional[float] = None) -> Optional[Comparer]:
+    def extract(self, **kwargs) -> Optional[Comparer]:
         """Extract model results at times and positions of observation.
 
         Returns
@@ -191,9 +191,7 @@ class SingleObsConnector:
         Comparer
             A comparer object for further analysis and plotting.
         """
-        comparer = _single_obs_compare(
-            obs=self.obs, mod=self.modelresults, max_model_gap=max_model_gap
-        )
+        comparer = _single_obs_compare(obs=self.obs, mod=self.modelresults, **kwargs)
         if comparer.n_points == 0:
             warnings.warn(f"No overlapping data was found for {comparer.name}!")
             return None

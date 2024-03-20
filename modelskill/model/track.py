@@ -1,15 +1,18 @@
 from __future__ import annotations
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
+import warnings
 
+import numpy as np
 import xarray as xr
 
-from ..obs import TrackObservation
+from ..obs import Observation, TrackObservation
 from ..types import TrackType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_track_input
+from ._base import Alignable
 
 
-class TrackModelResult(TimeSeries):
+class TrackModelResult(TimeSeries, Alignable):
     """Construct a TrackModelResult from a dfs0 file,
     mikeio.Dataset, pandas.DataFrame or a xarray.Datasets
 
@@ -67,8 +70,34 @@ class TrackModelResult(TimeSeries):
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
-    def extract(self, obs: TrackObservation) -> TrackModelResult:
+    def extract(
+        self, obs: TrackObservation, spatial_method: Optional[str] = None
+    ) -> TrackModelResult:
         if not isinstance(obs, TrackObservation):
             raise ValueError(f"obs must be a TrackObservation not {type(obs)}")
-        # TODO check x,y,z
+        if spatial_method is not None:
+            raise NotImplementedError(
+                "spatial interpolation not possible when matching track model results with track observations"
+            )
         return self
+
+    def align(self, observation: Observation, **kwargs: Any) -> xr.Dataset:
+        spatial_tolerance = 1e-3
+
+        mri = self
+        mod_df = mri.data.to_dataframe()
+        obs_df = observation.data.to_dataframe()
+
+        # 1. inner join on time
+        df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
+
+        # 2. remove model points outside observation track
+        n_points = len(df)
+        keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
+        keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
+        df = df[keep_x & keep_y]
+        if n_points_removed := n_points - len(df):
+            warnings.warn(
+                f"Removed {n_points_removed} model points outside observation track (spatial_tolerance={spatial_tolerance})"
+            )
+        return mri.data.sel(time=df.index)

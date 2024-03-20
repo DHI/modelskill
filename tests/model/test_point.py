@@ -183,13 +183,13 @@ def test_wave_directional_data_is_directional_by_default():
 
 
 def test_point_aux_items(df_aux):
-    o = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1"])
-    assert "aux1" in o.data
-    assert o.data["aux1"].values[0] == 1.1
+    mr = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1"])
+    assert "aux1" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
 
-    o = ms.PointModelResult(df_aux, item="WL", aux_items="aux1")
-    assert "aux1" in o.data
-    assert o.data["aux1"].values[0] == 1.1
+    mr = ms.PointModelResult(df_aux, item="WL", aux_items="aux1")
+    assert "aux1" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
 
 
 def test_point_aux_items_fail(df_aux):
@@ -201,11 +201,11 @@ def test_point_aux_items_fail(df_aux):
 
 
 def test_point_aux_items_multiple(df_aux):
-    o = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux2"])
-    assert "aux1" in o.data
-    assert "aux2" in o.data
-    assert o.data["aux1"].values[0] == 1.1
-    assert o.data["aux2"].values[0] == 1.2
+    mr = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux2"])
+    assert "aux1" in mr.data
+    assert "aux2" in mr.data
+    assert mr.data["aux1"].values[0] == 1.1
+    assert mr.data["aux2"].values[0] == 1.2
 
 
 def test_point_modelresult_must_have_unique_and_monotonically_increasing_time():
@@ -226,3 +226,54 @@ def test_point_modelresult_must_have_unique_and_monotonically_increasing_time():
 
     with pytest.raises(ValueError):
         ms.PointModelResult(df_up_and_down, item=0)
+
+
+def test_point_to_dataframe(df_aux):
+    mr = ms.PointModelResult(df_aux, item="WL", aux_items=["aux1", "aux2"])
+    df = mr.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    # NOTE: aux items are included in the dataframe
+    assert df.shape == (6, 3)
+    assert list(df.columns) == ["WL", "aux1", "aux2"]
+    assert df.index[0] == datetime(2019, 1, 1, 0, 0, 0)
+
+
+def test_point_model_result_from_nc_file():
+    mr = ms.PointModelResult(
+        "tests/testdata/smhi_2095_klagshamn.nc", item="Water Level"
+    )
+    assert mr.x == pytest.approx(366844)
+    assert mr.y == pytest.approx(6154291)
+    assert mr.name == "smhi_2095_klagshamn"
+
+
+def test_interp_time():
+
+    df = pd.DataFrame(
+        {
+            "WL": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "aux1": [1.1, 2.1, 3.1, 4.1, 5.1, 6.1],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+
+    mr = ms.PointModelResult(df, item="WL", aux_items="aux1")
+
+    obs_df = pd.DataFrame(
+        {
+            "WL": [1.5, 2.5],
+            "time": [
+                pd.Timestamp("2019-01-01 12:15"),
+                pd.Timestamp("2019-01-03 18:30"),
+            ],
+        }
+    ).set_index("time")
+
+    obs = ms.PointObservation(obs_df, item="WL")
+
+    interp = mr.interp_time(obs)
+    assert interp.time[0] == pd.Timestamp("2019-01-01 12:15")
+    assert interp.time[-1] == pd.Timestamp("2019-01-03 18:30")
+
+    assert interp.data["WL"].values[0] == pytest.approx(1.5104166666666665)
+    assert interp.data["aux1"].values[0] == pytest.approx(1.6104166666666666)

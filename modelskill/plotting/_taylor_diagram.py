@@ -85,4 +85,6 @@ def taylor_diagram(
     )
     fig.suptitle(title, size="x-large")
 
+    # prevent the plot from being displayed, since it is also displayed by the returned object
+    plt.close()
     return fig

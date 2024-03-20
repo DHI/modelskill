@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence, get_args, List, Optional
+import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -55,7 +56,10 @@ def _parse_point_input(
     name: Optional[str],
     item: str | int | None,
     quantity: Optional[Quantity],
-    aux_items: Optional[Sequence[int | str]] = None,
+    x: Optional[float],
+    y: Optional[float],
+    z: Optional[float],
+    aux_items: Optional[Sequence[int | str]],
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset"""
     assert isinstance(
@@ -63,10 +67,12 @@ def _parse_point_input(
     ), f"Could not construct object from provided data of type {type(data)}"
 
     if isinstance(data, (str, Path)):
-        if Path(data).suffix != ".dfs0":
-            raise ValueError(f"File must be a dfs0 file, not {Path(data).suffix}")
+        suffix = Path(data).suffix
         name = name or Path(data).stem
-        data = mikeio.read(data)  # now mikeio.Dataset
+        if suffix == ".dfs0":
+            data = mikeio.read(data)  # now mikeio.Dataset
+        elif suffix == ".nc":
+            data = xr.open_dataset(data)
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
 
@@ -152,5 +158,16 @@ def _parse_point_input(
         ds[aux_item].attrs["kind"] = "aux"
 
     ds.attrs["gtype"] = str(GeometryType.POINT)
+
+    coords2d = {"x": x, "y": y}
+    for coord, value in coords2d.items():
+        if value is not None:
+            ds.coords[coord] = value
+
+        if coord not in ds.coords:
+            ds.coords[coord] = np.nan
+
+    ds.coords["z"] = z
+
     assert isinstance(ds, xr.Dataset)
     return ds

@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import pandas as pd
 import matplotlib as mpl
@@ -75,7 +76,7 @@ def cc2(o1, o2, o3):
     mr1 = ms.model_result(fn, item=0, name="SW_1")
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v2.dfsu"
     mr2 = ms.model_result(fn, item=0, name="SW_2")
-    return ms.match([o1, o2, o3], [mr1, mr2])
+    return ms.match([o1, o2, o3], [mr1, mr2], spatial_method="nearest")
 
 
 def test_skill_table(sk_df1):
@@ -86,17 +87,14 @@ def test_skill_table(sk_df1):
     assert sk.metrics == ["n", "bias", "rmse", "corr", "si", "r2"]
 
 
+def test_skill_repr_html(sk_df1):
+    sk = ms.SkillTable(sk_df1)
+    repr_html = sk._repr_html_()
+    assert "obs1" in repr_html
+
+
 def test_skill_table_odd_index(sk_df2):
     # having a different index name works
-    sk_df2.index.name = "odd"
-    sk = ms.SkillTable(sk_df2)
-    assert sk.obs_names == []
-    assert sk.mod_names == []
-    assert sk.quantity_names == []
-    assert sk.metrics == ["n", "bias", "rmse", "corr"]
-
-
-def test_skill_table_2rows(sk_df2):
     sk = ms.SkillTable(sk_df2)
     assert sk.obs_names[0] == "obs1"
     assert sk.obs_names[1] == "obs2"
@@ -151,20 +149,66 @@ def test_skill_multi_model(cc2):
     # s2 = s.xs("c2", level="observation")
     # assert len(s2.obs_names) == 0
 
-    # s2 = s.swaplevel()
-    # assert np.all(s2.index.levels[0] == s.index.levels[1])
-
-    # s2 = s.head(1)
-    # assert s.iloc[0]["rmse"] == s2.iloc[-1]["rmse"]
-
-    # s2 = s.tail(1)
-    # assert s.iloc[-1]["rmse"] == s2.iloc[0]["rmse"]
-
-    # s2 = s.sort_index(level="observation")
-    # assert np.all(s2.iloc[0].name == ("SW_1", "EPL"))
-
     # s2 = s.reorder_levels(["observation", "model"])
     # assert np.all(s2.index.levels[0] == s.index.levels[1])
+
+
+def test_skill_mm_swaplevel(cc2):
+    sk = cc2.skill(metrics=["rmse", "bias"])
+    assert list(sk.data.index.names) == ["model", "observation"]
+    sk2 = sk.swaplevel()
+    assert np.all(sk2.index.levels[0] == sk.index.levels[1])
+
+
+@pytest.mark.skipif(pd.__version__ < "2.0.0", reason="requires newer pandas")
+def test_skill_mm_sort_index(cc2):
+    sk = cc2.skill(metrics=["rmse", "bias"])
+    assert list(sk.index.get_level_values(1)) == [
+        "HKNA",
+        "EPL",
+        "c2",
+        "HKNA",
+        "EPL",
+        "c2",
+    ]
+
+    sk2 = sk.sort_index(level="observation")
+    assert list(sk2.index.get_level_values(1)) == [
+        "EPL",
+        "EPL",
+        "HKNA",
+        "HKNA",
+        "c2",
+        "c2",
+    ]
+
+    sk3 = sk.swaplevel().sort_index()
+    assert list(sk3.index.get_level_values(0)) == [
+        "EPL",
+        "EPL",
+        "HKNA",
+        "HKNA",
+        "c2",
+        "c2",
+    ]
+
+
+def test_skill_mm_sort_values(cc2):
+    sk = cc2.skill(metrics=["rmse", "bias"])
+    assert list(sk.index[0]) == ["SW_1", "HKNA"]
+    assert list(sk.index[-1]) == ["SW_2", "c2"]
+
+    sk2 = sk.sort_values("rmse")
+    assert list(sk2.index[0]) == ["SW_1", "EPL"]
+    assert list(sk2.index[-1]) == ["SW_2", "c2"]
+
+    sk3 = sk.sort_values("rmse", ascending=False)
+    assert list(sk3.index[0]) == ["SW_2", "c2"]
+    assert list(sk3.index[-1]) == ["SW_1", "EPL"]
+
+    sk4 = sk.sort_values(["n", "rmse"])
+    assert list(sk4.index[0]) == ["SW_1", "EPL"]
+    assert list(sk4.index[-1]) == ["SW_1", "HKNA"]
 
 
 def test_skill_sel(cc1):
@@ -275,6 +319,7 @@ def test_skill_plot_grid(cc2):
     assert "only possible for MultiIndex" in str(wn[0].message)
 
 
+@pytest.mark.skipif(pd.__version__ < "1.5.0", reason="requires Pandas 1.5.0 or higher")
 def test_skill_style(cc2):
     sk = cc2.skill(metrics=["bias", "rmse", "lin_slope", "si"])
     sk.style()
@@ -283,6 +328,16 @@ def test_skill_style(cc2):
     sk.style(metrics=["bias", "rmse"])
     sk.style(metrics=[])
     sk.style(cmap="viridis_r", show_best=False)
+
+
+@pytest.mark.skipif(pd.__version__ < "1.5.0", reason="requires Pandas 1.5.0 or higher")
+def test_styled_skill_can_be_rendered(cc2):
+    sk = cc2.skill()
+    # _repr_html_ is called by Jupyter
+    sk._repr_html_()
+
+    styled_skill = cc2.skill().style()
+    styled_skill._repr_html_()
 
 
 def test_skill_round(cc2):

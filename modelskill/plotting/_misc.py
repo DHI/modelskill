@@ -170,7 +170,9 @@ def _format_skill_line(
     item_unit = " "
     fvalue = str(value)
 
-    if name != "n":
+    if name == "n":
+        fvalue = str(int(value))
+    else:
         if metric_has_units(metric=name):
             # if statistic has dimensions, then add units
             item_unit = unit_display_name(unit)

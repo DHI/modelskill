@@ -1,9 +1,12 @@
-name: Build documentation (don't publish)
+name: Build documentation
 
 on:
   push:
-    pull_request:
-      branches: [ main ]
+    branches:    
+      - main
+  pull_request:
+  workflow_dispatch:
+    
 
 jobs:
   build:
@@ -23,9 +26,3 @@ jobs:
     
     - name: Mkdocs build
       run: mkdocs build
-
-    - name: Upload documentation
-      uses: actions/upload-artifact@v2
-      with:
-        name: html
-        path: site/

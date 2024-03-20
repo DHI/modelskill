@@ -3,7 +3,6 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import ClassVar, Optional, TypeVar, Any
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
 import xarray as xr
 
@@ -121,23 +120,25 @@ class TimeSeries:
     """Time series data"""
 
     data: xr.Dataset
-    plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
+    plotter: ClassVar = (
+        MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
+    )
 
     def __init__(self, data: xr.Dataset) -> None:
         self.data = data if self._is_input_validated(data) else _validate_dataset(data)
+
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
+        """Plot using the ComparerPlotter
+
+        Examples
+        --------
+        >>> obj.plot.timeseries()
+        >>> obj.plot.hist()
+        """
 
     def _is_input_validated(self, data: Any) -> bool:
         """Check if data is already a valid TimeSeries (contains the modelskill_version attribute)"""
-        if not isinstance(data, xr.Dataset):
-            return False
-        else:
-            if not hasattr(data, "attrs"):
-                return False
-            else:
-                if "modelskill_version" not in data.attrs:
-                    return False
-        return True
+        return isinstance(data, xr.Dataset) and "modelskill_version" in data.attrs
 
     @property
     def _val_item(self) -> str:
@@ -178,7 +179,7 @@ class TimeSeries:
 
     # TODO: """Color of time series"""; Hide until used
     @property
-    def _color(self) -> str:        
+    def _color(self) -> str:
         return str(self.data[self.name].attrs["color"])
 
     @_color.setter
@@ -213,7 +214,7 @@ class TimeSeries:
     def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    def _coordinate_values(self, coord: str) -> float | NDArray[Any]:
+    def _coordinate_values(self, coord: str) -> float | np.ndarray:
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
@@ -222,7 +223,7 @@ class TimeSeries:
         return bool(self.data[self.name].attrs["kind"] == "model")
 
     @property
-    def values(self) -> NDArray[Any]:
+    def values(self) -> np.ndarray:
         """Values as numpy array"""
         return self.data[self.name].values
 
@@ -231,8 +232,20 @@ class TimeSeries:
         """Values to series (for plotting)"""
         return self.data[self.name].to_series()
 
+    @property
+    def _aux_vars(self):
+        return list(self.data.filter_by_attrs(kind="aux").data_vars)
+
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"
+        res = []
+        res.append(f"<{self.__class__.__name__}>: {self.name}")
+        if self.gtype == str(GeometryType.POINT):
+            res.append(f"Location: {self.x}, {self.y}")
+        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
+        res.append(f"Quantity: {self.quantity}")
+        if len(self._aux_vars) > 0:
+            res.append(f"Auxiliary variables: {', '.join(self._aux_vars)}")
+        return "\n".join(res)
 
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables
@@ -258,13 +271,26 @@ class TimeSeries:
         return self.equals(other)
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Convert to pandas DataFrame"""
+        """Convert matched data to pandas DataFrame
+
+        Include x, y coordinates only if gtype=track
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
         if self.gtype == str(GeometryType.POINT):
             # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
-            return self.data.drop_vars(["x", "y", "z"])[self.name].to_dataframe()
+            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        elif self.gtype == str(GeometryType.TRACK):
+            df = self.data.drop_vars(["z"]).to_dataframe()
+            # make sure that x, y cols are first
+            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            return df[cols]
         else:
-            return self.data.drop_vars(["z"])[["x", "y", self.name]].to_dataframe()
+            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def sel(self: T, **kwargs: Any) -> T:
         """Select data by label"""
