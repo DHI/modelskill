@@ -236,6 +236,8 @@ class ItemSelection:
     obs: str
     model: Sequence[str]
     aux: Sequence[str]
+    x: Optional[str] = None
+    y: Optional[str] = None
 
     def __post_init__(self) -> None:
         # check that obs, model and aux are unique, and that they are not overlapping
@@ -245,14 +247,21 @@ class ItemSelection:
 
     @property
     def all(self) -> Sequence[str]:
-        return [self.obs] + list(self.model) + list(self.aux)
+        res = [self.obs] + list(self.model) + list(self.aux)
+        if self.x is not None:
+            res.append(self.x)
+        if self.y is not None:
+            res.append(self.y)
+        return res
 
     @staticmethod
     def parse(
-        items: List[str],
+        items: Sequence[str],
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
+        x_item: str | int | None = None,
+        y_item: str | int | None = None,
     ) -> ItemSelection:
         """Parse items and return observation, model and auxiliary items
         Default behaviour:
@@ -263,27 +272,25 @@ class ItemSelection:
         Both integer and str are accepted as items. If str, it must be a key in data.
         """
         assert len(items) > 1, "data must contain at least two items"
-        if obs_item is None:
-            obs_name: str = items[0]
-        else:
-            obs_name = _get_name(obs_item, items)
+        obs_name = _get_name(obs_item, items) if obs_item else items[0]
 
         # Check existance of items and convert to names
-        if mod_items is not None:
-            if isinstance(mod_items, (str, int)):
-                mod_items = [mod_items]
-            mod_names = [_get_name(m, items) for m in mod_items]
+
         if aux_items is not None:
             if isinstance(aux_items, (str, int)):
                 aux_items = [aux_items]
             aux_names = [_get_name(a, items) for a in aux_items]
         else:
             aux_names = []
+        if mod_items is not None:
+            if isinstance(mod_items, (str, int)):
+                mod_items = [mod_items]
+            mod_names = [_get_name(m, items) for m in mod_items]
+        else:
+            mod_names = list(set(items) - set(aux_names) - set([obs_name]))
 
-        items.remove(obs_name)
-
-        if mod_items is None:
-            mod_names = list(set(items) - set(aux_names))
+        x_name = _get_name(x_item, items) if x_item is not None else None
+        y_name = _get_name(y_item, items) if y_item is not None else None
 
         assert len(mod_names) > 0, "no model items were found! Must be at least one"
         assert obs_name not in mod_names, "observation item must not be a model item"
@@ -292,7 +299,9 @@ class ItemSelection:
         ), "observation item must not be an auxiliary item"
         assert isinstance(obs_name, str), "observation item must be a string"
 
-        return ItemSelection(obs=obs_name, model=mod_names, aux=aux_names)
+        return ItemSelection(
+            obs=obs_name, model=mod_names, aux=aux_names, x=x_name, y=y_name
+        )
 
 
 def _area_is_bbox(area: Any) -> bool:
@@ -349,12 +358,14 @@ def _matched_data_to_xarray(
     x: Optional[float] = None,
     y: Optional[float] = None,
     z: Optional[float] = None,
+    x_item: str | int | None = None,
+    y_item: str | int | None = None,
     quantity: Optional[Quantity] = None,
 ) -> xr.Dataset:
     """Convert matched data to accepted xarray.Dataset format"""
     assert isinstance(df, pd.DataFrame)
     cols = list(df.columns)
-    items = ItemSelection.parse(cols, obs_item, mod_items, aux_items)
+    items = ItemSelection.parse(cols, obs_item, mod_items, aux_items, x_item, y_item)
 
     # check that items.obs and items.model are numeric
     if not np.issubdtype(df[items.obs].dtype, np.number):
@@ -380,17 +391,30 @@ def _matched_data_to_xarray(
     for a in items.aux:
         ds[a].attrs["kind"] = "auxiliary"
 
-    if x is not None:
+    if x_item is not None:
+        ds = ds.rename({items.x: "x"}).set_coords("x")
+    elif x is not None:
         ds.coords["x"] = x
-    if y is not None:
+    else:
+        ds.coords["x"] = np.nan
+
+    if y_item is not None:
+        ds = ds.rename({items.y: "y"}).set_coords("y")
+    elif y is not None:
         ds.coords["y"] = y
+    else:
+        ds.coords["y"] = np.nan
+
+    # No z-item so far (relevant for ProfileObservation)
     if z is not None:
         ds.coords["z"] = z
 
-    if x is None or np.isscalar(x):
+    if np.isscalar(ds.coords["x"]):
         ds.attrs["gtype"] = str(GeometryType.POINT)
     else:
         ds.attrs["gtype"] = str(GeometryType.TRACK)
+    # TODO
+    # ds.attrs["gtype"] = str(GeometryType.PROFILE)
 
     if quantity is None:
         q = Quantity.undefined()
@@ -493,6 +517,8 @@ class Comparer(Scoreable):
         x: Optional[float] = None,
         y: Optional[float] = None,
         z: Optional[float] = None,
+        x_item: str | int | None = None,
+        y_item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> "Comparer":
         """Initialize from compared data"""
@@ -507,6 +533,8 @@ class Comparer(Scoreable):
                 x=x,
                 y=y,
                 z=z,
+                x_item=x_item,
+                y_item=y_item,
                 quantity=quantity,
             )
             data.attrs["weight"] = weight
@@ -514,12 +542,13 @@ class Comparer(Scoreable):
 
     def __repr__(self):
         out = [
-            f"<{type(self).__name__}>",
+            "<Comparer>",
             f"Quantity: {self.quantity}",
             f"Observation: {self.name}, n_points={self.n_points}",
+            "Model(s):",
         ]
-        for model in self.mod_names:
-            out.append(f" Model: {model}, rmse={self.score()[model]:.3f}")
+        for index, model in enumerate(self.mod_names):
+            out.append(f"{index}: {model}")
 
         for var in self.aux_names:
             out.append(f" Auxiliary: {var}")
@@ -751,6 +780,24 @@ class Comparer(Scoreable):
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
+    def __iadd__(self, other: Comparer):  # type: ignore
+        from ..matching import match_space_time
+
+        missing_models = set(self.mod_names) - set(other.mod_names)
+        if len(missing_models) == 0:
+            # same obs name and same model names
+            self.data = xr.concat([self.data, other.data], dim="time").drop_duplicates(
+                "time"
+            )
+        else:
+            self.raw_mod_data.update(other.raw_mod_data)
+            matched = match_space_time(
+                observation=self._to_observation(), raw_mod_data=self.raw_mod_data  # type: ignore
+            )
+            self.data = matched
+
+        return self
+
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection" | "Comparer":
@@ -766,12 +813,9 @@ class Comparer(Scoreable):
             if len(missing_models) == 0:
                 # same obs name and same model names
                 cmp = self.copy()
-                cmp.data = xr.concat([cmp.data, other.data], dim="time")
-                # cc.data = cc.data[
-                #    ~cc.data.time.to_index().duplicated(keep="last")
-                # ]  # 'first'
-                _, index = np.unique(cmp.data["time"], return_index=True)
-                cmp.data = cmp.data.isel(time=index)
+                cmp.data = xr.concat(
+                    [cmp.data, other.data], dim="time"
+                ).drop_duplicates("time")
 
             else:
                 raw_mod_data = self.raw_mod_data.copy()

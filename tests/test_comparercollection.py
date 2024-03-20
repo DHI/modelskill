@@ -569,3 +569,13 @@ def test_peak_ratio_2(cc_pr):
     sk = cc_pr.skill(metrics=["peak_ratio"])
     assert "peak_ratio" in sk.data.columns
     assert sk.to_dataframe()["peak_ratio"].values == pytest.approx(1.0799999095653732)
+
+
+def test_copy(cc):
+    cc2 = cc.copy()
+    assert cc2.n_models == 3
+    assert cc2.n_points == 10
+    assert cc2.start_time == pd.Timestamp("2019-01-01")
+    assert cc2.end_time == pd.Timestamp("2019-01-07")
+    assert cc2.obs_names == ["fake point obs", "fake track obs"]
+    assert cc2.mod_names == ["m1", "m2", "m3"]

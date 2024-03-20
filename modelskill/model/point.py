@@ -84,13 +84,16 @@ class PointModelResult(TimeSeries, Alignable):
         """
         Interpolate model result to the time of the observation
 
+        wrapper around xarray.Dataset.interp()
+
         Parameters
         ----------
         observation : Observation
             The observation to interpolate to
         **kwargs
-            Additional keyword arguments passed to xarray.interp
 
+            Additional keyword arguments passed to xarray.interp
+            
         Returns
         -------
         PointModelResult

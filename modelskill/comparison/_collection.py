@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 import os
 from pathlib import Path
 import tempfile
@@ -92,7 +93,15 @@ class ComparerCollection(Mapping, Scoreable):
 
     def __init__(self, comparers: Iterable[Comparer]) -> None:
         self._comparers: Dict[str, Comparer] = {}
-        self._insert_comparers(comparers)
+
+        for cmp in comparers:
+            if cmp.name in self._comparers:
+                # comparer with this name already exists!
+                # maybe the user is trying to add a new model
+                # or a new time period
+                self._comparers[cmp.name] += cmp
+            else:
+                self._comparers[cmp.name] = cmp
 
         self.plot = ComparerCollection.plotter(self)
         """Plot using the ComparerCollectionPlotter
@@ -104,15 +113,6 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.plot.taylor()
         >>> cc.plot.hist()
         """
-
-    def _insert_comparers(self, comparer: Union[Comparer, Iterable[Comparer]]) -> None:
-        if isinstance(comparer, Iterable):
-            for c in comparer:
-                self[c.name] = c
-        elif isinstance(comparer, Comparer):
-            self[comparer.name] = comparer
-        else:
-            pass
 
     @property
     def _name(self) -> str:
@@ -215,9 +215,10 @@ class ComparerCollection(Mapping, Scoreable):
 
     def __repr__(self) -> str:
         out = []
-        out.append(f"<{type(self).__name__}>")
-        for key, value in self._comparers.items():
-            out.append(f"{type(value).__name__}: {key}")
+        out.append("<ComparerCollection>")
+        out.append("Comparers:")
+        for index, (key, value) in enumerate(self._comparers.items()):
+            out.append(f"{index}: {key} - {value.quantity}")
         return str.join("\n", out)
 
     def rename(self, mapping: Dict[str, str]) -> "ComparerCollection":
@@ -252,12 +253,10 @@ class ComparerCollection(Mapping, Scoreable):
         return ComparerCollection(cmps)
 
     @overload
-    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection:
-        ...
+    def __getitem__(self, x: slice | Iterable[Hashable]) -> ComparerCollection: ...
 
     @overload
-    def __getitem__(self, x: int | Hashable) -> Comparer:
-        ...
+    def __getitem__(self, x: int | Hashable) -> Comparer: ...
 
     def __getitem__(
         self, x: int | Hashable | slice | Iterable[Hashable]
@@ -279,33 +278,14 @@ class ComparerCollection(Mapping, Scoreable):
 
         raise TypeError(f"Invalid type for __getitem__: {type(x)}")
 
-    def __setitem__(self, x: str, value: Comparer) -> None:
-        assert isinstance(
-            value, Comparer
-        ), f"comparer must be a Comparer, not {type(value)}"
-        if x in self._comparers:
-            # comparer with this name already exists!
-            # maybe the user is trying to add a new model
-            # or a new time period
-            self._comparers[x] = self._comparers[x] + value  # type: ignore
-        else:
-            self._comparers[x] = value
-
     def __len__(self) -> int:
         return len(self._comparers)
 
     def __iter__(self) -> Iterator[Comparer]:
         return iter(self._comparers.values())
 
-    def __copy__(self) -> "ComparerCollection":
-        cls = self.__class__
-        cp = cls.__new__(cls)
-        # TODO should this use deepcopy?
-        cp.__init__(list(self._comparers))  # type: ignore
-        return cp
-
     def copy(self) -> "ComparerCollection":
-        return self.__copy__()
+        return deepcopy(self)
 
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]

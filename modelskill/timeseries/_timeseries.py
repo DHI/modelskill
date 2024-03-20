@@ -126,7 +126,15 @@ class TimeSeries:
 
     def __init__(self, data: xr.Dataset) -> None:
         self.data = data if self._is_input_validated(data) else _validate_dataset(data)
+
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
+        """Plot using the ComparerPlotter
+
+        Examples
+        --------
+        >>> obj.plot.timeseries()
+        >>> obj.plot.hist()
+        """
 
     def _is_input_validated(self, data: Any) -> bool:
         """Check if data is already a valid TimeSeries (contains the modelskill_version attribute)"""
@@ -224,8 +232,20 @@ class TimeSeries:
         """Values to series (for plotting)"""
         return self.data[self.name].to_series()
 
+    @property
+    def _aux_vars(self):
+        return list(self.data.filter_by_attrs(kind="aux").data_vars)
+
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"
+        res = []
+        res.append(f"<{self.__class__.__name__}>: {self.name}")
+        if self.gtype == str(GeometryType.POINT):
+            res.append(f"Location: {self.x}, {self.y}")
+        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
+        res.append(f"Quantity: {self.quantity}")
+        if len(self._aux_vars) > 0:
+            res.append(f"Auxiliary variables: {', '.join(self._aux_vars)}")
+        return "\n".join(res)
 
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables

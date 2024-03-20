@@ -82,6 +82,8 @@ def from_matched(
     x: Optional[float] = None,
     y: Optional[float] = None,
     z: Optional[float] = None,
+    x_item: str | int | None = None,
+    y_item: str | int | None = None,
 ) -> Comparer:
     """Create a Comparer from observation and model results that are already matched (aligned)
     Parameters
@@ -105,6 +107,10 @@ def from_matched(
         y-coordinate of observation, by default None
     z : float, optional
         z-coordinate of observation, by default None
+    x_item: [str, int], optional,
+        Name of x item, only relevant for track data
+    y_item: [str, int], optional
+        Name of y item, only relevant for track data
 
     Examples
     --------
@@ -148,6 +154,8 @@ def from_matched(
         x=x,
         y=y,
         z=z,
+        x_item=x_item,
+        y_item=y_item,
         quantity=quantity,
     )
 

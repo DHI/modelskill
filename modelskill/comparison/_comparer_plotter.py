@@ -32,7 +32,17 @@ from ..settings import options
 
 
 class ComparerPlotter:
-    """Plotter class for Comparer"""
+    """Plotter class for Comparer
+
+    Examples
+    --------
+    >>> cmp.plot.scatter()
+    >>> cmp.plot.timeseries()
+    >>> cmp.plot.hist()
+    >>> cmp.plot.kde()
+    >>> cmp.plot.qq()
+    >>> cmp.plot.box()
+    """
 
     def __init__(self, comparer: Comparer) -> None:
         self.comparer = comparer
