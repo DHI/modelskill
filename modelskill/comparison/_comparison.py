@@ -777,6 +777,24 @@ class Comparer(Scoreable):
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
+    def __iadd__(self, other: Comparer):  # type: ignore
+        from ..matching import match_space_time
+
+        missing_models = set(self.mod_names) - set(other.mod_names)
+        if len(missing_models) == 0:
+            # same obs name and same model names
+            self.data = xr.concat([self.data, other.data], dim="time").drop_duplicates(
+                "time"
+            )
+        else:
+            self.raw_mod_data.update(other.raw_mod_data)
+            matched = match_space_time(
+                observation=self._to_observation(), raw_mod_data=self.raw_mod_data  # type: ignore
+            )
+            self.data = matched
+
+        return self
+
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection" | "Comparer":
@@ -792,12 +810,9 @@ class Comparer(Scoreable):
             if len(missing_models) == 0:
                 # same obs name and same model names
                 cmp = self.copy()
-                cmp.data = xr.concat([cmp.data, other.data], dim="time")
-                # cc.data = cc.data[
-                #    ~cc.data.time.to_index().duplicated(keep="last")
-                # ]  # 'first'
-                _, index = np.unique(cmp.data["time"], return_index=True)
-                cmp.data = cmp.data.isel(time=index)
+                cmp.data = xr.concat(
+                    [cmp.data, other.data], dim="time"
+                ).drop_duplicates("time")
 
             else:
                 raw_mod_data = self.raw_mod_data.copy()
