@@ -125,13 +125,13 @@ def test_timeseries_set_name(ds_track):
     ts.name = "newname"
     assert ts.name == "newname"
 
-    with pytest.raises(AssertionError, match="must be a string"):
+    with pytest.raises(TypeError, match="must be a string"):
         ts.name = 1
 
-    with pytest.raises(AssertionError, match="must be a string"):
+    with pytest.raises(TypeError, match="must be a string"):
         ts.name = None
 
-    with pytest.raises(AssertionError, match="reserved"):
+    with pytest.raises(ValueError, match="reserved"):
         ts.name = "x"
 
 
@@ -143,7 +143,7 @@ def test_timeseries_set_quantity(ds_track):
     ts.quantity = ms.Quantity("water level", "m")
     assert ts.quantity == ms.Quantity("water level", "m")
 
-    with pytest.raises(AssertionError, match="must be a Quantity"):
+    with pytest.raises(TypeError, match="must be a Quantity"):
         ts.quantity = 1
 
 
