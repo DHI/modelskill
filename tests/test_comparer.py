@@ -287,7 +287,7 @@ def test_rename_fails_reserved_names(pt_df):
 
 
 def test_matched_df_illegal_items(pt_df):
-    with pytest.raises(AssertionError, match="data must contain at least two items"):
+    with pytest.raises(ValueError, match="data must contain at least two items"):
         # dataframe has only one column
         df = pt_df[["Observation"]]
         Comparer.from_matched_data(data=df)
@@ -300,7 +300,7 @@ def test_matched_df_illegal_items(pt_df):
         # non existing item
         Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2", "m3"])
 
-    with pytest.raises(AssertionError, match="no model items were found"):
+    with pytest.raises(ValueError, match="no model items were found"):
         # no mod_items
         Comparer.from_matched_data(data=pt_df, aux_items=["m1", "m2"])
 
@@ -824,7 +824,9 @@ def test_from_matched_track_data():
             "mikeswcal5hm0": [1.22, 1.3],
         },
     )
-    assert isinstance(df.index, pd.RangeIndex) # Sometime we don't care about time only space
+    assert isinstance(
+        df.index, pd.RangeIndex
+    )  # Sometime we don't care about time only space
 
     cmp = ms.from_matched(
         data=df, obs_item="c2", mod_items="mikeswcal5hm0", x_item="lon", y_item="lat"

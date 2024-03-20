@@ -27,11 +27,13 @@ DEFAULT_COLORS = [
 
 
 def _validate_data_var_name(name: str) -> str:
-    assert isinstance(name, str), "name must be a string"
+    if not isinstance(name, str):
+        raise TypeError("name must be a string")
     RESERVED_NAMES = ["x", "y", "z", "time"]
-    assert (
-        name not in RESERVED_NAMES
-    ), f"name '{name}' is reserved and cannot be used! Please choose another name."
+    if name in RESERVED_NAMES:
+        raise ValueError(
+            f"name '{name}' is reserved and cannot be used! Please choose another name."
+        )
     return name
 
 
@@ -172,7 +174,8 @@ class TimeSeries:
 
     @quantity.setter
     def quantity(self, quantity: Quantity) -> None:
-        assert isinstance(quantity, Quantity), "value must be a Quantity object"
+        if not isinstance(quantity, Quantity):
+            raise TypeError("value must be a Quantity object")
         self.data[self.name].attrs["long_name"] = quantity.name
         self.data[self.name].attrs["units"] = quantity.unit
         self.data[self.name].attrs["is_directional"] = int(quantity.is_directional)
