@@ -5,13 +5,14 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 
-from ..obs import PointObservation
+from ..obs import Observation, PointObservation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
+from ._base import Alignable
 
 
-class PointModelResult(TimeSeries):
+class PointModelResult(TimeSeries, Alignable):
     """Construct a PointModelResult from a 0d data source:
     dfs0 file, mikeio.Dataset/DataArray, pandas.DataFrame/Series
     or xarray.Dataset/DataArray
@@ -77,53 +78,47 @@ class PointModelResult(TimeSeries):
             raise NotImplementedError(
                 "spatial interpolation not possible when matching point model results with point observations"
             )
-        # TODO check x,y,z
         return self
 
-    def interp_time(
-        self,
-        new_time: pd.DatetimeIndex,
-        dropna: bool = True,
-        max_gap: float | None = None,
-        **kwargs: Any,
-    ) -> PointModelResult:
-        """Interpolate time series to new time index
+    def interp_time(self, observation: Observation, **kwargs: Any) -> PointModelResult:
+        """
+        Interpolate model result to the time of the observation
 
         wrapper around xarray.Dataset.interp()
 
         Parameters
         ----------
-        new_time : pd.DatetimeIndex
-            new time index
-        dropna : bool, optional
-            drop nan values, by default True
+        observation : Observation
+            The observation to interpolate to
         **kwargs
-            keyword arguments passed to xarray.Dataset.interp()
 
+            Additional keyword arguments passed to xarray.interp
+            
         Returns
         -------
-        TimeSeries
-            interpolated time series
+        PointModelResult
+            Interpolated model result
         """
-        if not isinstance(new_time, pd.DatetimeIndex):
-            try:
-                new_time = pd.DatetimeIndex(new_time)
-            except Exception:
-                raise ValueError(
-                    "new_time must be a pandas DatetimeIndex (or convertible to one)"
-                )
+        ds = self.align(observation, **kwargs)
+        return PointModelResult(ds)
 
-        # TODO: is it necessary to dropna before interpolation?
+    def align(
+        self,
+        observation: Observation,
+        *,
+        max_gap: float | None = None,
+        **kwargs: Any,
+    ) -> xr.Dataset:
+        new_time = observation.time
+
         dati = self.data.dropna("time").interp(
             time=new_time, assume_sorted=True, **kwargs
         )
-        if dropna:
-            dati = dati.dropna(dim="time")
 
         pmr = PointModelResult(dati)
         if max_gap is not None:
             pmr = pmr._remove_model_gaps(mod_index=self.time, max_gap=max_gap)
-        return pmr
+        return pmr.data
 
     def _remove_model_gaps(
         self,

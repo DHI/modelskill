@@ -345,3 +345,13 @@ def test_track_aux_items_fail(df_aux):
 
     with pytest.raises(ValueError):
         ms.TrackObservation(df_aux, item="WL", x_item="x", y_item="y", aux_items=["x"])
+
+
+def test_track_basic_repr(df_aux):
+    # Some basic test to see that repr does not fail
+    o = ms.TrackObservation(
+        df_aux, item="WL", x_item="x", y_item="y", aux_items=["aux1"]
+    )
+    assert "TrackObservation" in repr(o)
+    assert "WL" in repr(o)
+    assert "aux1" in repr(o)

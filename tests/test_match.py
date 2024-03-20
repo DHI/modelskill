@@ -426,11 +426,13 @@ def test_obs_and_mod_can_not_have_same_aux_item_names():
     obs = ms.PointObservation(obs_df, item="wl", aux_items=["wind_speed"])
     mod = ms.PointModelResult(mod_df, item="wl", aux_items=["wind_speed"])
 
-    with pytest.raises(ValueError, match="wind_speed"):
-        ms.match(obs=obs, mod=mod)
+    with pytest.warns(match="_model"):
+        cmp = ms.match(obs=obs, mod=mod)
+    assert "wind_speed" in cmp
+    assert "wind_speed_mod" in cmp  # renamed
 
 
-def test_mod_aux_items_must_be_unique():
+def test_mod_aux_items_overlapping_names():
     obs_df = pd.DataFrame(
         {"wl": [1.0, 2.0, 3.0], "wind_speed": [1.0, 2.0, 3.0]},
         index=pd.date_range("2017-01-01", periods=3),
@@ -454,11 +456,10 @@ def test_mod_aux_items_must_be_unique():
         mod2_df, item="wl", aux_items=["wind_speed"], name="remote"
     )
 
-    with pytest.raises(ValueError) as e:
-        ms.match(obs=obs, mod=[mod, mod2])
+    # we don't care which model the aux data comes from
+    cmp = ms.match(obs=obs, mod=[mod, mod2])
 
-    assert "wind_speed" in str(e.value)
-    assert "remote" in str(e.value)
+    assert "wind_speed" in cmp
 
 
 def test_multiple_obs_not_allowed_with_non_spatial_modelresults():

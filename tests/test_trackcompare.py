@@ -386,6 +386,7 @@ def test_df_input(obs_tiny_df, mod_tiny3):
 
     assert isinstance(obs_tiny_df, pd.DataFrame)
     assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
+
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
         cmp = ms.match(obs_tiny_df, mod_tiny3, gtype="track")
 

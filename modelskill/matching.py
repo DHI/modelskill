@@ -4,11 +4,11 @@ from pathlib import Path
 import warnings
 
 from typing import (
-    Dict,
     Iterable,
     Collection,
     List,
     Literal,
+    Mapping,
     Optional,
     Union,
     Sequence,
@@ -26,13 +26,13 @@ import mikeio
 
 from . import model_result, Quantity
 from .timeseries import TimeSeries
-from .types import GeometryType, Period
+from .types import Period
+from .model._base import Alignable
 from .model.grid import GridModelResult
 from .model.dfsu import DfsuModelResult
 from .model.track import TrackModelResult
-from .model.point import PointModelResult
 from .model.dummy import DummyModelResult
-from .obs import Observation, PointObservation, TrackObservation
+from .obs import Observation, observation
 from .comparison import Comparer, ComparerCollection
 from . import __version__
 
@@ -164,7 +164,7 @@ def from_matched(
 
 @overload
 def match(
-    obs: PointObservation | TrackObservation,
+    obs: Observation,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
     obs_item: Optional[IdxOrNameTypes] = None,
@@ -177,7 +177,7 @@ def match(
 
 @overload
 def match(
-    obs: Iterable[PointObservation | TrackObservation],
+    obs: Iterable[Observation],
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
     obs_item: Optional[IdxOrNameTypes] = None,
@@ -335,6 +335,9 @@ def _single_obs_compare(
     )
     matched_data.attrs["weight"] = obs.weight
 
+    # TODO where does this line belong?
+    matched_data.attrs["modelskill_version"] = __version__
+
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
 
@@ -348,10 +351,9 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 
 def match_space_time(
-    observation: PointObservation | TrackObservation,
-    raw_mod_data: Dict[str, PointModelResult | TrackModelResult],
+    observation: Observation,
+    raw_mod_data: Mapping[str, Alignable],
     max_model_gap: float | None = None,
-    spatial_tolerance: float = 1e-3,
 ) -> xr.Dataset:
     """Match observation with one or more model results in time domain
     and return as xr.Dataset in the format used by modelskill.Comparer
@@ -365,114 +367,63 @@ def match_space_time(
     ----------
     observation : Observation
         Observation to be matched
-    raw_mod_data : Dict[str, PointModelResult | TrackModelResult]
-        Dictionary of model results ready for interpolation
+    raw_mod_data : Mapping[str, Alignable]
+        Mapping of model results ready for interpolation
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
         max_model_gap can be given e.g. as seconds, by default None
-    spatial_tolerance : float, optional
-        Tolerance for spatial matching, by default 1e-3
 
     Returns
     -------
     xr.Dataset
         Matched data in the format used by modelskill.Comparer
     """
-    obs_name = "Observation"
-    mod_names = list(raw_mod_data.keys())
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
-    assert isinstance(observation, (PointObservation, TrackObservation))
-    gtype = "point" if isinstance(observation, PointObservation) else "track"
     observation = observation.trim(period.start, period.end)
 
     data = observation.data
     data.attrs["name"] = observation.name
-    data = data.rename({observation.name: obs_name})
+    data = data.rename({observation.name: "Observation"})
 
-    for _, mr in raw_mod_data.items():
-        if isinstance(mr, PointModelResult):
-            assert len(observation.time) > 0
-            mri: TimeSeries = mr.interp_time(
-                new_time=observation.time, max_gap=max_model_gap
+    for mr in raw_mod_data.values():
+        # TODO is `align` the correct name for this operation?
+        aligned = mr.align(observation, max_gap=max_model_gap)
+
+        if overlapping_names := set(aligned.data_vars) & set(data.data_vars):
+            warnings.warn(
+                "Model result has overlapping variable names with observation. Renamed with suffix `_model`."
             )
-        else:
-            mri = mr
+            aligned = aligned.rename({v: f"{v}_mod" for v in overlapping_names})
 
-        if isinstance(observation, TrackObservation):
-            assert isinstance(mri, TrackModelResult)
-            mri.data = _select_overlapping_trackdata_with_tolerance(
-                observation=observation, mri=mri, spatial_tolerance=spatial_tolerance
-            )
-
-        # check that model and observation have non-overlapping variables
-        if overlapping_names := set(mri.data.data_vars).intersection(
-            set(data.data_vars)
-        ):
-            raise ValueError(
-                f"Model: '{mr.name}' and observation have overlapping variables: {overlapping_names}"
-            )
-
-        # TODO: is name needed?
-        for v in list(mri.data.data_vars):
-            data[v] = mri.data[v]
+        data.update(aligned)
 
     # drop NaNs in model and observation columns (but allow NaNs in aux columns)
-    cols = list(
-        data.filter_by_attrs(kind=lambda k: k in ["model", "observation"]).data_vars
-    )
-    data = data.dropna(dim="time", subset=cols)
+    def mo_kind(k: str) -> bool:
+        return k in ["model", "observation"]
 
-    for n in mod_names:
-        data[n].attrs["kind"] = "model"
-
-    data.attrs["gtype"] = gtype
-    data.attrs["modelskill_version"] = __version__
+    # TODO mo_cols vs non_aux_cols?
+    mo_cols = data.filter_by_attrs(kind=mo_kind).data_vars
+    data = data.dropna(dim="time", subset=mo_cols)
 
     return data
 
 
-# TODO move to TrackModelResult
-def _select_overlapping_trackdata_with_tolerance(
-    observation: TrackObservation, mri: TrackModelResult, spatial_tolerance: float
-) -> xr.Dataset:
-    mod_df = mri.data.to_dataframe()
-    obs_df = observation.data.to_dataframe()
-
-    # 1. inner join on time
-    df = mod_df.join(obs_df, how="inner", lsuffix="_mod", rsuffix="_obs")
-
-    # 2. remove model points outside observation track
-    n_points = len(df)
-    keep_x = np.abs((df.x_mod - df.x_obs)) < spatial_tolerance
-    keep_y = np.abs((df.y_mod - df.y_obs)) < spatial_tolerance
-    df = df[keep_x & keep_y]
-    if n_points_removed := n_points - len(df):
-        warnings.warn(
-            f"Removed {n_points_removed} model points outside observation track (spatial_tolerance={spatial_tolerance})"
-        )
-    return mri.data.sel(time=df.index)
-
-
 def _parse_single_obs(
     obs: ObsInputType,
-    item: Optional[int | str] = None,
-    gtype: Optional[GeometryTypes] = None,
-) -> PointObservation | TrackObservation:
-    if isinstance(obs, (PointObservation, TrackObservation)):
-        if item is not None:
+    obs_item: Optional[int | str],
+    gtype: Optional[GeometryTypes],
+) -> Observation:
+    if isinstance(obs, Observation):
+        if obs_item is not None:
             raise ValueError(
                 "obs_item argument not allowed if obs is an modelskill.Observation type"
             )
         return obs
     else:
-        if (gtype is not None) and (
-            GeometryType.from_string(gtype) == GeometryType.TRACK
-        ):
-            return TrackObservation(obs, item=item)
-        else:
-            return PointObservation(obs, item=item)
+        # observation factory can only handle track and point
+        return observation(obs, item=obs_item, gtype=gtype)  # type: ignore
 
 
 def _parse_models(

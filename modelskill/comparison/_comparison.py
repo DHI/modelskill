@@ -640,6 +640,9 @@ class Comparer(Scoreable):
         """List of model result names"""
         return list(self.raw_mod_data.keys())
 
+    def __contains__(self, key: str) -> bool:
+        return key in self.data.data_vars
+
     @property
     def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
