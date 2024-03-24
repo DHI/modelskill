@@ -70,7 +70,8 @@ def test_dfsu_repr(hd_oresund_2d):
 def test_dfsu_properties(hd_oresund_2d):
     mr = ms.model_result(hd_oresund_2d, name="Oresund2d", item="Surface elevation")
 
-    assert mr.data.is_2d
+    # TODO Not sure this assert is useful
+    assert mr.data.geometry.is_2d
 
     # Note != name of item
     assert mr.quantity.name == "Surface Elevation"
