@@ -644,9 +644,9 @@ def test_skill_freq(pc):
     assert len(sk.to_dataframe()) == 3
 
     # aggregate to 12 hours (up-sampling) doesn't interpolate
-    sk2 = pc.skill(by="freq:12H")
+    sk2 = pc.skill(by="freq:12h")
     assert len(sk2.to_dataframe()) == 9
-    assert np.isnan(sk2.to_dataframe()["rmse"][3])
+    assert np.isnan(sk2.to_dataframe().loc["2019-01-02 12:00:00", "rmse"])
 
 
 def test_xy_in_skill_pt(pc):
@@ -824,7 +824,9 @@ def test_from_matched_track_data():
             "mikeswcal5hm0": [1.22, 1.3],
         },
     )
-    assert isinstance(df.index, pd.RangeIndex) # Sometime we don't care about time only space
+    assert isinstance(
+        df.index, pd.RangeIndex
+    )  # Sometime we don't care about time only space
 
     cmp = ms.from_matched(
         data=df, obs_item="c2", mod_items="mikeswcal5hm0", x_item="lon", y_item="lat"

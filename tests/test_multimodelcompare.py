@@ -328,12 +328,12 @@ def test_mm_scatter(cc):
 
 def cm_1(obs, model):
     """Custom metric #1"""
-    return np.mean(obs.ravel() / model.ravel())
+    return np.mean(obs / model)
 
 
 def cm_2(obs, model):
     """Custom metric #2"""
-    return np.mean(obs.ravel() * 1.5 / model.ravel())
+    return np.mean(obs * 1.5 / model)
 
 
 def cm_3(obs, model):
