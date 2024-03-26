@@ -89,10 +89,11 @@ def test_mv_skill(cc_1model):
     assert list(df.reset_index().observation) == cc_1model.obs_names
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "quantity"
-    assert pytest.approx(df.iloc[1].rmse) == 0.22792652  
+    assert pytest.approx(df.iloc[1].rmse) == 0.22792652
     idx = ("HKNA_wind", "Wind speed")
-    assert pytest.approx(df.loc[idx].rmse) == 1.5610323  
+    assert pytest.approx(df.loc[idx].rmse) == 1.5610323
     # spatial_interp nearest: 0.22359663 and 1.2761789
+
 
 def test_mv_mm_skill(cc):
     df = cc.skill().to_dataframe()
@@ -145,12 +146,12 @@ def test_mv_mm_scatter(cc):
 
 def cm_1(obs, model):
     """Custom metric #1"""
-    return np.mean(obs.ravel() / model.ravel())
+    return np.mean(obs / model)
 
 
 def cm_2(obs, model):
     """Custom metric #2"""
-    return np.mean(obs.ravel() * 1.5 / model.ravel())
+    return np.mean(obs * 1.5 / model)
 
 
 def test_custom_metric_skilltable_mv_mm_scatter(cc):
