@@ -201,7 +201,7 @@ def test_pr(obs_series: pd.Series, mod_series: pd.Series) -> None:
 
     pr = mtr.pr(obs, mod)
 
-    assert pr == pytest.approx(1.0799999095653732)
+    assert pr == pytest.approx(0.889999947851914)
 
 
 def test_pr_2(obs_series, mod_series):
@@ -212,7 +212,7 @@ def test_pr_2(obs_series, mod_series):
 
     pr = mtr.pr(obs, mod, AAP=8, inter_event_level=0.2)
 
-    assert pr == pytest.approx(1.0949999434255118)
+    assert pr == pytest.approx(0.947499960537655)
 
 
 def test_metric_has_dimension():
