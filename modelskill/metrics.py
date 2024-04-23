@@ -580,19 +580,27 @@ def peak_ratio(
     dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
     N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
     found_peaks = []
-    for data in [obs, model]:
-        peak_index, AAP_ = _partial_duration_series(
+   
+    peak_index, AAP_ = _partial_duration_series(
             time,
-            data,
+            obs,
             inter_event_level=inter_event_level,
             AAP=AAP,
             inter_event_time=inter_event_time,
         )
-        peaks = data[peak_index]
-        peaks_sorted = peaks.sort_values(ascending=False)
-        found_peaks.append(peaks_sorted)
-    found_peaks_obs = found_peaks[0]
-    found_peaks_mod = found_peaks[1]
+    peaks = obs[peak_index]
+    found_peaks_obs = peaks.sort_values(ascending=False)
+
+    peak_index, _ = _partial_duration_series(
+            time,
+            model,
+            inter_event_level=inter_event_level,
+            AAP=AAP,
+            inter_event_time=inter_event_time,
+        )
+    peaks = model[peak_index]
+    found_peaks_mod = peaks.sort_values(ascending=False)
+
     top_n_peaks = max(1, min(round(AAP_ * N_years), np.sum(peaks)))
     # Resample~ish, find peaks spread maximum Half the inter event time (if inter event =36, select data paired +/- 18h) (or inter_event) and then select
     indices_mod = (
