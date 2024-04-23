@@ -578,9 +578,7 @@ def peak_ratio(
     # Calculate number of years
     dt_int = time[1:].values - time[0:-1].values
     dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
-    N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
-    found_peaks = []
-   
+    N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)  
     peak_index, AAP_ = _partial_duration_series(
             time,
             obs,
