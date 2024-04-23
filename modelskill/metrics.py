@@ -557,7 +557,7 @@ def peak_ratio(
     ----------
     inter_event_level (float, optional)
         Inter-event level threshold (default: 0.7).
-    AAP (float, optional)
+    AAP (int or float, optional)
         Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)
     inter_event_time (str, optional)
             Maximum time interval between peaks (default: 36 hours).
