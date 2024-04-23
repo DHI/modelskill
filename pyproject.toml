@@ -57,6 +57,7 @@ test =  [
             "dask",
             "mypy",
             "types-PyYAML",
+            "geopandas",
         ]
 
 notebooks = [
