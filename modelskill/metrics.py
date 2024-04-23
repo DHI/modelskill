@@ -532,8 +532,8 @@ def pr(
     obs: pd.Series,
     model: np.ndarray,
     inter_event_level: float = 0.7,
-    AAP: int = 2,
-    inter_event_time="36h",
+    AAP: Union[int, float] = 2,
+    inter_event_time: str ="36h",
 ) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
@@ -544,8 +544,8 @@ def peak_ratio(
     obs: pd.Series,
     model: np.ndarray,
     inter_event_level: float = 0.7,
-    AAP: int = 2,
-    inter_event_time="36h",
+    AAP: Union[int, float]  = 2,
+    inter_event_time: str="36h",
 ) -> float:
     r"""Peak Ratio
 
