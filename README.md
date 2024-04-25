@@ -47,7 +47,7 @@ Or the development version:
 3. **Match** Observations and ModelResults
 4. Do plotting, statistics, reporting using the **Comparer**
 
-Read more about the workflow in the [getting started guide](https://dhi.github.io/modelskill/getting-started.html).
+Read more about the workflow in the [getting started guide](https://dhi.github.io/modelskill/user-guide/getting-started/).
 
 
 ## Example of use
