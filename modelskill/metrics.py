@@ -64,6 +64,7 @@ Examples
 >>> ev(obs, mod)
 0.39614855570839064
 """
+
 from __future__ import annotations
 import inspect
 
@@ -531,8 +532,8 @@ def pr(
     obs: pd.Series,
     model: np.ndarray,
     inter_event_level: float = 0.7,
-    AAP: int = 2,
-    inter_event_time="36h",
+    AAP: Union[int, float] = 2,
+    inter_event_time: str ="36h",
 ) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
@@ -543,20 +544,20 @@ def peak_ratio(
     obs: pd.Series,
     model: np.ndarray,
     inter_event_level: float = 0.7,
-    AAP: int = 2,
-    inter_event_time="36h",
+    AAP: Union[int, float]  = 2,
+    inter_event_time: str="36h",
 ) -> float:
     r"""Peak Ratio
 
-    PR is the mean of the individual ratios of identified peaks in the
-    model / identified peaks in the measurements. PR is calculated only for the joint-events,
+    PR is the mean of the largest-N individual ratios of identified peaks in the
+    model / identified peaks in the measurements (N number of events defined by AAP). PR is calculated only for the joint-events,
     ie, events that ocurr simulateneously within a window +/- 0.5*inter_event_time.
 
     Parameters
     ----------
     inter_event_level (float, optional)
         Inter-event level threshold (default: 0.7).
-    AAP (float, optional)
+    AAP (int or float, optional)
         Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)
     inter_event_time (str, optional)
             Maximum time interval between peaks (default: 36 hours).
@@ -577,24 +578,28 @@ def peak_ratio(
     # Calculate number of years
     dt_int = time[1:].values - time[0:-1].values
     dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
-    N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
-    found_peaks = []
-    for data in [obs, model]:
-        peak_index, AAP_ = _partial_duration_series(
+    N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)  
+    peak_index, AAP_ = _partial_duration_series(
             time,
-            data,
+            obs,
             inter_event_level=inter_event_level,
             AAP=AAP,
             inter_event_time=inter_event_time,
         )
-        peaks = data[peak_index]
-        peaks_sorted = peaks.sort_values(ascending=False)
-        found_peaks.append(
-            peaks_sorted[0 : max(1, min(round(AAP_ * N_years), np.sum(peaks)))]
-        )
-    found_peaks_obs = found_peaks[0]
-    found_peaks_mod = found_peaks[1]
+    peaks = obs[peak_index]
+    found_peaks_obs = peaks.sort_values(ascending=False)
 
+    peak_index, _ = _partial_duration_series(
+            time,
+            model,
+            inter_event_level=inter_event_level,
+            AAP=AAP,
+            inter_event_time=inter_event_time,
+        )
+    peaks = model[peak_index]
+    found_peaks_mod = peaks.sort_values(ascending=False)
+
+    top_n_peaks = max(1, min(round(AAP_ * N_years), np.sum(peaks)))
     # Resample~ish, find peaks spread maximum Half the inter event time (if inter event =36, select data paired +/- 18h) (or inter_event) and then select
     indices_mod = (
         abs(found_peaks_obs.index.values[:, None] - found_peaks_mod.index.values)
@@ -604,8 +609,23 @@ def peak_ratio(
         abs(found_peaks_mod.index.values[:, None] - found_peaks_obs.index.values)
         < pd.Timedelta(inter_event_time) / 2
     ).any(axis=0)
+    # Find intersection (co-existing peaks, still a large number, O(1000s))
     obs_joint = found_peaks_obs.loc[indices_obs]
     mod_joint = found_peaks_mod.loc[indices_mod]
+    # Now we forget about time index, as peaks have been paired already.
+    df_filter = pd.DataFrame(
+        data={
+            "model": mod_joint.sort_index().values,
+            "observation": obs_joint.sort_index().values,
+        }
+    )
+    df_filter["Maximum"] = df_filter.max(axis=1)
+    df_filter.sort_values(by="Maximum", ascending=False, inplace=True)
+    # Finally we do the selection of the N- largest peaks from either model or measured
+    df_filter = df_filter.iloc[0:top_n_peaks, :]
+    # Rename to avoid further refactoring
+    obs_joint = df_filter.loc[:, "observation"]
+    mod_joint = df_filter.loc[:, "model"]
 
     if len(obs_joint) == 0 or len(mod_joint) == 0:
         return np.nan
