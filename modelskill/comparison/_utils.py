@@ -22,8 +22,8 @@ def _add_spatial_grid_to_df(
             bins_y = bins
     else:
         # bins from binsize
-        x_ptp = df.x.values.ptp()  # type: ignore
-        y_ptp = df.y.values.ptp()  # type: ignore
+        x_ptp = np.ptp(df.x.values)  # type: ignore
+        y_ptp = np.ptp(df.y.values)  # type: ignore
         nx = int(np.ceil(x_ptp / binsize))
         ny = int(np.ceil(y_ptp / binsize))
         x_mean = np.round(df.x.mean())
