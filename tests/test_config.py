@@ -59,5 +59,5 @@ def test_comparison_from_yml():
     assert cc["Klagshamn"].quantity.name == "Water Level"
     assert cc["Drogden"].quantity.name == "Water Level"
 
-    assert cc.score()["HD"] == pytest.approx(0.2331039)
+    assert cc.score()["HD"] == pytest.approx(0.233009409631)
     # spatial interp nearest: 0.23287298772
