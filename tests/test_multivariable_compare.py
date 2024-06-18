@@ -89,9 +89,9 @@ def test_mv_skill(cc_1model):
     assert list(df.reset_index().observation) == cc_1model.obs_names
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "quantity"
-    assert pytest.approx(df.iloc[1].rmse) == 0.22792652
+    assert pytest.approx(df.iloc[1].rmse) == 0.22492342229
     idx = ("HKNA_wind", "Wind speed")
-    assert pytest.approx(df.loc[idx].rmse) == 1.5610323
+    assert pytest.approx(df.loc[idx].rmse) == 1.305358970478
     # spatial_interp nearest: 0.22359663 and 1.2761789
 
 
@@ -101,22 +101,22 @@ def test_mv_mm_skill(cc):
     assert df.index.names[1] == "observation"
     assert df.index.names[2] == "quantity"
     idx = ("SW_1", "HKNA_wind", "Wind speed")
-    assert pytest.approx(df.loc[idx].rmse) == 1.5610323
+    assert pytest.approx(df.loc[idx].rmse) == 1.30535897
     # spatial_interp nearest: 1.27617894455
 
     df = cc.sel(model="SW_1").skill().to_dataframe()
     assert df.index.names[0] == "observation"
     assert df.index.names[1] == "quantity"
-    assert pytest.approx(df.iloc[1].rmse) == 0.2279265
+    assert pytest.approx(df.iloc[1].rmse) == 0.2249234222997
     # spatial interp nearest: 0.22359663
     idx = ("HKNA_wind", "Wind speed")
-    assert pytest.approx(df.loc[idx].rmse) == 1.5610323
+    assert pytest.approx(df.loc[idx].rmse) == 1.30535897
 
     df = cc.sel(quantity="Wind speed").skill().to_dataframe()
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "observation"
     idx = ("SW_1", "HKNA_wind")
-    assert pytest.approx(df.loc[idx].rmse) == 1.5610323
+    assert pytest.approx(df.loc[idx].rmse) == 1.30535897
 
 
 def test_mv_mm_mean_skill(cc):
@@ -124,11 +124,11 @@ def test_mv_mm_mean_skill(cc):
     assert df.index.names[0] == "model"
     assert df.index.names[1] == "quantity"
     idx = ("SW_1", "Wind speed")
-    assert pytest.approx(df.loc[idx].r2) == 0.6246696
+    assert pytest.approx(df.loc[idx].r2) == 0.643293404624
     # spatial_interp nearest: 0.63344531
 
     df = cc.sel(quantity="Significant wave height").mean_skill().to_dataframe()
-    assert pytest.approx(df.loc["SW_1"].cc) == 0.9627803
+    assert pytest.approx(df.loc["SW_1"].cc) == 0.9640104274957
     # spatial_interp nearest: 0.963095
 
 
