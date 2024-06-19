@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9", "3.10","3.11"]      
+        python-version: ["3.8", "3.9", "3.10","3.11"]      
 
     steps:
     - uses: actions/checkout@v3
@@ -34,9 +34,6 @@ jobs:
         pip install .[test]
     - name: Static type check
       run: make typecheck
-    - name: Install NumPy 2.0 RC2 (for testing purposes)
-      run: |
-        pip install numpy==2.0.0rc2
     - name: Test with pytest
       run: |
         pytest --cov=modelskill --ignore tests/notebooks/
