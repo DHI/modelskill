@@ -495,7 +495,7 @@ class ComparerCollectionPlotter:
         >>> cc.plot.taylor(observation="c2")
         >>> cc.plot.taylor(start="2017-10-28", figsize=(5,5))
 
-        References
+        Notes
         ----------
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """

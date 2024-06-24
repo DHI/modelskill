@@ -19,10 +19,16 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: "3.10"
+    - name: Set up Quarto
+      uses: quarto-dev/quarto-actions/setup@v2
         
     - name: Install modelskill
       run: |
-        pip install .[dev]
+        pip install .[dev,notebooks]
     
-    - name: Mkdocs build
-      run: mkdocs build
+    - name: Quarto build
+      run: |
+        cd docs && \
+        quarto add . --no-prompt && \
+        quartodoc build && \
+        quarto render

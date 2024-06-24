@@ -1,3 +1,0 @@
-# GridModelResult
-
-::: modelskill.GridModelResult

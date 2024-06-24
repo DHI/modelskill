@@ -1,0 +1,112 @@
+---
+title: Pre-matched data with auxiliary data
+jupyter: python3
+---
+
+
+
+
+```{python}
+import modelskill as ms
+import numpy as np
+import pandas as pd
+import mikeio
+```
+
+```{python}
+fn = "../data/SW/eur_matched.dfs0"
+mikeio.read(fn)
+```
+
+The function `from_matched()` takes a dataframe, a dfs0 or a mikeio.Dataset of already matched data and returns a Comparer object.
+
+```{python}
+cmp = ms.from_matched(fn, obs_item=1, mod_items=0, aux_items=[2,3])
+cmp.aux_names
+```
+
+```{python}
+# NOTE: we rename data_vars to avoid spaces in names
+cmp = cmp.rename({"Wind speed": "wind_speed", "Wind Direction": "wind_dir"})
+```
+
+```{python}
+cmp.aux_names
+```
+
+```{python}
+cmp
+```
+
+```{python}
+cmp.skill()
+```
+
+```{python}
+cmp.plot.scatter(quantiles=0, figsize=(6,6));
+cmp.plot.timeseries();
+```
+
+## Filter 
+
+Filter on auxiliary data using `query()` or `where()`. Below, we consider only wave data when the wind speed is above 15 m/s.
+
+```{python}
+cmp.query("wind_speed > 15.0")
+```
+
+```{python}
+cmp2 = cmp.where(cmp.data.wind_speed>15.0)
+cmp2
+```
+
+```{python}
+# notice that the model data is kept, but the observations are filtered
+cmp2.plot.timeseries();
+```
+
+More auxiliary data can be added, e.g. as derived data from the original data. 
+
+```{python}
+cmp.data["residual"] = cmp.data["Hm0, model"] - cmp.data["Observation"]
+```
+
+```{python}
+large_residuals = np.abs(cmp.data.residual)>0.1
+cmp3 = cmp.where(large_residuals)
+cmp3.plot.scatter(figsize=(6,6));
+cmp3.plot.timeseries();
+```
+
+```{python}
+cmp3.data.data_vars
+```
+
+```{python}
+cmp3.data.Observation.values
+```
+
+## Aggregate
+
+Let's split the data based on wind direction sector and aggregate the skill calculation of the significant wave height predition for each sector.
+
+```{python}
+# Note: in this short example wind direction is between 274 and 353 degrees
+df = cmp.data.wind_dir.to_dataframe()
+cmp.data["windsector"] = pd.cut(df.wind_dir,
+                                [255, 285, 315, 345, 360],
+                                labels=["W", "WNW", "NNW", "N"])
+```
+
+```{python}
+cmp.skill(by="windsector")
+```
+
+```{python}
+cmp.skill(by="windsector").rmse.plot.bar(title="Hm0 RMSE by wind sector");
+```
+
+```{python}
+cmp.where(cmp.data.windsector=="W").plot.timeseries();
+```
+

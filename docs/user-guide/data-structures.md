@@ -25,14 +25,14 @@ The primary data of ModelSkill are the data that needs to be compared: observati
 
 Point and track data are both `TimeSeries` objects, while grid and dfsu data are both `SpatialField` objects. `TimeSeries` objects are ready to be compared whereas data from `SpatialField` object needs to be *extracted* first (the extracted object will be of the `TimeSeries` type).
 
-`TimeSeries` objects contains its data in an `xarray.Dataset` with the actual data in the first DataArray and optional auxilliary data in the following DataArrays. The DataArrays have a `kind` attribute with either `observation` or `model`.
+`TimeSeries` objects contains its data in an [](`xarray.Dataset`) with the actual data in the first DataArray and optional auxilliary data in the following DataArrays. The DataArrays have a `kind` attribute with either `observation` or `model`.
 
 
 ## Comparer objects
 
 Comparer objects are results of a matching procedure (between observations and model results) or constructed directly from already matched data. A comparison of a *single* observation and one or more model results are stored in a `Comparer` object. A comparison of *multiple* observations and one or more model results are stored in a `ComparerCollection` object which is a collection of `Comparer` objects.
 
-The matched data in a `Comparer` is stored in an `xarray.Dataset` which can be accessed via the `data` attribute. The Dataset has an attribute `gtype` which is a string describing the type of data (e.g. `point`, `track`). The first DataArray in the Dataset is the observation data, the next DataArrays are model result data and optionally additional DataArrays are auxilliarye data. Each of the DataArrays have a `kind` attribute with either `observation`, `model` or `aux`.
+The matched data in a `Comparer` is stored in an [](`xarray.Dataset`) which can be accessed via the `data` attribute. The Dataset has an attribute `gtype` which is a string describing the type of data (e.g. `point`, `track`). The first DataArray in the Dataset is the observation data, the next DataArrays are model result data and optionally additional DataArrays are auxilliarye data. Each of the DataArrays have a `kind` attribute with either `observation`, `model` or `aux`.
 
 Both `Comparer` and `ComparerCollection` have a `plot` accessor for plotting the data (e.g. `cmp.plot.timeseries()` or `cmp.plot.scatter()`).
 

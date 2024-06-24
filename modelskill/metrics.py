@@ -249,12 +249,10 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     Range: $(-\infty, 1]$; Best: 1
 
-    Note
-    ----
+    Notes
+    -----
     r2 = nash_sutcliffe_efficiency(nse)
 
-    References
-    ----------
     Nash, J. E.; Sutcliffe, J. V. (1970). "River flow forecasting through conceptual models part I — A discussion of principles". Journal of Hydrology. 10 (3): 282–290. <https://doi.org/10.1016/0022-1694(70)90255-6>
     """
     assert obs.size == model.size
@@ -279,7 +277,7 @@ def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     Range: $(-\infty, 1]$; Best: 1
 
-    References
+    Notes
     ----------
     Gupta, H. V., Kling, H., Yilmaz, K. K. and Martinez, G. F., (2009), Decomposition of the mean squared error and NSE performance criteria: Implications for improving hydrological modelling, J. Hydrol., 377(1-2), 80-91 <https://doi.org/10.1016/j.jhydrol.2009.08.003>
 
@@ -323,8 +321,8 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
 
     Range: $(-\infty, 1]$; Best: 1
 
-    Note
-    ----
+    Notes
+    -----
     r2 = nash_sutcliffe_efficiency(nse)
 
     Examples
@@ -562,9 +560,9 @@ def peak_ratio(
     inter_event_time (str, optional)
             Maximum time interval between peaks (default: 36 hours).
 
-    $$
-    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}
-    $$
+    Notes
+    -----
+    $\frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}$
 
     Range: $[0, \infty)$; Best: 1.0
     """
@@ -652,7 +650,7 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     >>> willmott(obs, model)
     np.float64(0.9501403174479723)
 
-    References
+    Notes
     ----------
     Willmott, C. J. 1981. "On the validation of models". Physical Geography, 2, 184–194.
     """
@@ -904,7 +902,9 @@ def c_bias(obs: np.ndarray, model: np.ndarray) -> float:
     model : np.ndarray
         Model in degrees (0, 360)
 
-    Range: [-180., 180.]; Best: 0.
+    Notes
+    -----
+    Range: $[-180., 180.]$; Best: 0.
 
     Returns
     -------
@@ -934,7 +934,9 @@ def c_max_error(obs: np.ndarray, model: np.ndarray) -> float:
     model : np.ndarray
         Model in degrees (0, 360)
 
-    Range: :math:`[0, \\infty)`; Best: 0
+    Notes
+    -----
+    Range: $[0, \\infty)$; Best: 0
 
     Returns
     -------
@@ -974,6 +976,8 @@ def c_mean_absolute_error(
     weights : np.ndarray, optional
         Weights, by default None
 
+    Notes
+    -----
     Range: [0, 180]; Best: 0
 
     Returns
@@ -1011,6 +1015,8 @@ def c_root_mean_squared_error(
     weights : np.ndarray, optional
         Weights, by default None
 
+    Notes
+    -----
     Range: [0, 180]; Best: 0
 
     Returns
@@ -1047,6 +1053,8 @@ def c_unbiased_root_mean_squared_error(
     weights : np.ndarray, optional
         Weights, by default None
 
+    Notes
+    -----
     Range: [0, 180]; Best: 0
 
     Returns

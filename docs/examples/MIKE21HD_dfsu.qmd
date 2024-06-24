@@ -1,0 +1,76 @@
+---
+title: MIKE21 HD
+jupyter: python3
+---
+
+Water level comparison between MIKE21 HD and observations from the Oresund.
+
+```{python}
+import modelskill as ms
+```
+
+
+```{python}
+mr = ms.model_result('../data/Oresund2D.dfsu',
+                     item='Surface elevation')
+mr
+```
+
+```{python}
+mr.data.geometry.projection
+```
+
+Coordinate reference system used in this model is UTM-33.
+
+```{python} 
+o1 = ms.PointObservation('../data/smhi_2095_klagshamn.dfs0', item=0,
+    x=366844.15, y=6154291.6) # UTM-33
+o1
+```
+
+## Spatial overview
+
+Confirm that the observation is correctly located in the model domain.
+
+```{python}
+ms.plotting.spatial_overview(o1, mr, figsize=(8, 8));
+```
+
+Match the observed data to the model result (interpolate the model result to the observation points).
+
+```{python}
+cmp = ms.match(o1, mr)
+cmp
+```
+
+
+```{python}
+fig = cmp.plot.timeseries(backend="plotly")
+fig.show()
+```
+
+The reference level is not the same for the model and the observation. We can remove the bias from the model result to make the comparison more fair.
+
+```{python}
+ub_cmp = cmp.remove_bias()
+ub_cmp.plot.timeseries(backend="plotly").show();
+```
+
+The bias is removed, which affects the rmse, but not the un-biased version urmse.
+
+```{python}
+cmp.skill()
+```
+
+```{python}
+ub_cmp.skill()
+```
+
+## Scatter plot
+
+```{python}
+ms.load_style("MOOD")
+ub_cmp.plot.scatter(skill_table=True);
+```
+
+
