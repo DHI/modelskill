@@ -1,7 +1,10 @@
 from __future__ import annotations
 from typing import Any, Iterable, overload, Hashable, TYPE_CHECKING
 import warnings
+
+import numpy as np
 import xarray as xr
+import matplotlib.pyplot as plt
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
@@ -105,6 +108,23 @@ class SkillGridArray(SkillGridMixin):
             ax = da.plot(col=extra_dims[0], **kwargs)
         else:
             ax = da.plot(**kwargs)
+        return ax
+
+    def ecdf(self) -> Axes:
+        # TODO ax argument
+        fig, ax = plt.subplots()
+
+        # TODO fix that self.mod_names is empty
+        for model in self.mod_names:
+            all_vals = self.data.sel(model=model).to_numpy().flatten()
+            non_na_vals = all_vals[~np.isnan(all_vals)]
+            ax.ecdf(non_na_vals, label=model)
+            ax.set_ylabel("CDF")
+            metric = self.data.name
+            ax.set_xlabel(metric)
+
+        plt.legend()
+
         return ax
 
 
