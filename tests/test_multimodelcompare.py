@@ -83,14 +83,6 @@ def test_mm_skill(cc):
     assert df.iloc[3].name[1] == "HKNA"
     assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
 
-    # TODO remove in v1.1
-    with pytest.warns(FutureWarning):
-        df = cc.skill(start="2017-10-27 00:01").to_dataframe()
-
-    assert df.iloc[3].name[0] == "SW_2"
-    assert df.iloc[3].name[1] == "HKNA"
-    assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
-
 
 def test_mm_skill_model(cc):
     df = cc.sel(model="SW_1").skill().to_dataframe()

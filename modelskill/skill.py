@@ -312,7 +312,7 @@ class SkillArray:
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
         self._ser = data.iloc[:, -1]  # last column is the metric
-        
+
         self.plot = SkillArrayPlotter(self)
         """Plot using the SkillArrayPlotter
 
@@ -435,8 +435,6 @@ class SkillTable:
         self.data: pd.DataFrame = (
             data if isinstance(data, pd.DataFrame) else data.to_dataframe()
         )
-        # TODO remove in v1.1
-        self.plot = DeprecatedSkillPlotter(self)  # type: ignore
 
     # TODO: remove?
     @property
@@ -511,12 +509,10 @@ class SkillTable:
         return self._df._repr_html_()
 
     @overload
-    def __getitem__(self, key: Hashable | int) -> SkillArray:
-        ...
+    def __getitem__(self, key: Hashable | int) -> SkillArray: ...
 
     @overload
-    def __getitem__(self, key: Iterable[Hashable]) -> SkillTable:
-        ...
+    def __getitem__(self, key: Iterable[Hashable]) -> SkillTable: ...
 
     def __getitem__(
         self, key: Hashable | Iterable[Hashable]
@@ -559,7 +555,7 @@ class SkillTable:
 
     @property
     def loc(self, *args, **kwargs):  # type: ignore
-        return self.data.loc(*args, **kwargs)        
+        return self.data.loc(*args, **kwargs)
 
     def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
         """Sort by index (level) e.g. sorting by observation
