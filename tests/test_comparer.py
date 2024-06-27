@@ -644,9 +644,9 @@ def test_skill_freq(pc):
     assert len(sk.to_dataframe()) == 3
 
     # aggregate to 12 hours (up-sampling) doesn't interpolate
-    sk2 = pc.skill(by="freq:12H")
+    sk2 = pc.skill(by="freq:12h")
     assert len(sk2.to_dataframe()) == 9
-    assert np.isnan(sk2.to_dataframe()["rmse"][3])
+    assert np.isnan(sk2.to_dataframe().loc["2019-01-02 12:00:00", "rmse"])
 
 
 def test_xy_in_skill_pt(pc):

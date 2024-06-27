@@ -22,8 +22,8 @@ def _add_spatial_grid_to_df(
             bins_y = bins
     else:
         # bins from binsize
-        x_ptp = df.x.values.ptp()  # type: ignore
-        y_ptp = df.y.values.ptp()  # type: ignore
+        x_ptp = np.ptp(df.x.values)  # type: ignore
+        y_ptp = np.ptp(df.y.values)  # type: ignore
         nx = int(np.ceil(x_ptp / binsize))
         ny = int(np.ceil(y_ptp / binsize))
         x_mean = np.round(df.x.mean())
@@ -65,7 +65,9 @@ def _groupby_df(
         df, by = _add_dt_to_df(df, by)
 
     # sort=False to avoid re-ordering compared to original cc (also for performance)
-    res = df.groupby(by=by, observed=False, sort=False).apply(calc_metrics)
+    res = df.groupby(by=by, observed=False, sort=False, group_keys=True)[
+        ["time", "obs_val", "mod_val"]
+    ].apply(calc_metrics)
 
     if n_min:
         # nan for all cols but n
