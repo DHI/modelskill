@@ -1033,7 +1033,8 @@ class Comparer(Scoreable):
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
+        if kwargs != {}:
+            raise AttributeError(f"Unknown keyword arguments: {kwargs}")
 
         cmp = self.sel(
             model=model,
