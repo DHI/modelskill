@@ -65,6 +65,7 @@ notebooks = [
             "jupyter",
             "plotly",
             "shapely",
+            "seaborn",
         ]
 
 [project.urls]
