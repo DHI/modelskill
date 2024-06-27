@@ -86,6 +86,7 @@ def tc() -> Comparer:
 
 def test_matched_df(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df)
+    assert cmp.gtype == "point"
     assert "m2" in cmp.mod_names
     assert "m1" in cmp.mod_names
     assert len(cmp.mod_names) == 2
@@ -93,6 +94,14 @@ def test_matched_df(pt_df):
     assert cmp.name == "Observation"
     assert cmp.score()["m1"] == pytest.approx(0.5916079783099617)
     assert cmp.score()["m2"] == pytest.approx(0.15811388300841905)
+
+
+def test_matched_skill_geodataframe(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, x=10.0, y=55.0)
+    sk = cmp.skill()
+    gdf = sk.to_geodataframe()
+    assert gdf.iloc[0].geometry.coords[0][0] == 10.0
+    assert gdf.iloc[0].geometry.coords[0][1] == 55.0
 
 
 def test_df_score():

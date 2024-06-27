@@ -410,7 +410,7 @@ def _matched_data_to_xarray(
     if z is not None:
         ds.coords["z"] = z
 
-    if np.isscalar(ds.coords["x"]):
+    if ds.coords["x"].size == 1:
         ds.attrs["gtype"] = str(GeometryType.POINT)
     else:
         ds.attrs["gtype"] = str(GeometryType.TRACK)
