@@ -56,7 +56,6 @@ class Scoreable(Protocol):
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        **kwargs: Any,
     ) -> SkillTable: ...
 
     def gridded_skill(
@@ -66,7 +65,6 @@ class Scoreable(Protocol):
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: int | None = None,
-        **kwargs: Any,
     ) -> SkillGrid: ...
 
 
@@ -147,49 +145,6 @@ def _is_observation(da: xr.DataArray) -> bool:
 
 def _is_model(da: xr.DataArray) -> bool:
     return str(da.attrs["kind"]) == "model"
-
-
-# TODO remove in v1.1
-def _get_deprecated_args(kwargs):  # type: ignore
-    model, start, end, area = None, None, None, None
-
-    # Don't bother refactoring this, it will be removed in v1.1
-    if "model" in kwargs:
-        model = kwargs.pop("model")
-        if model is not None:
-            warnings.warn(
-                f"The 'model' argument is deprecated, use 'sel(model='{model}')' instead",
-                FutureWarning,
-            )
-
-    if "start" in kwargs:
-        start = kwargs.pop("start")
-
-        if start is not None:
-            warnings.warn(
-                f"The 'start' argument is deprecated, use 'sel(start={start})' instead",
-                FutureWarning,
-            )
-
-    if "end" in kwargs:
-        end = kwargs.pop("end")
-
-        if end is not None:
-            warnings.warn(
-                f"The 'end' argument is deprecated, use 'sel(end={end})' instead",
-                FutureWarning,
-            )
-
-    if "area" in kwargs:
-        area = kwargs.pop("area")
-
-        if area is not None:
-            warnings.warn(
-                f"The 'area' argument is deprecated, use 'sel(area={area})' instead",
-                FutureWarning,
-            )
-
-    return model, start, end, area
 
 
 def _validate_metrics(metrics: Iterable[Any]) -> None:
@@ -986,7 +941,6 @@ class Comparer(Scoreable):
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        **kwargs: Any,
     ) -> SkillTable:
         """Skill assessment of model(s)
 
@@ -1031,26 +985,12 @@ class Comparer(Scoreable):
         """
         metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        if kwargs != {}:
-            raise AttributeError(f"Unknown keyword arguments: {kwargs}")
+        by = _parse_groupby(by, n_mod=self.n_models, n_qnt=1)
 
-        cmp = self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        )
-        if cmp.n_points == 0:
-            raise ValueError("No data selected for skill assessment")
-
-        by = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=1)
-
-        df = cmp._to_long_dataframe()
+        df = self._to_long_dataframe()
         res = _groupby_df(df, by=by, metrics=metrics)
-        res["x"] = np.nan if self.gtype == "track" else cmp.x
-        res["y"] = np.nan if self.gtype == "track" else cmp.y
+        res["x"] = np.nan if self.gtype == "track" else self.x
+        res["y"] = np.nan if self.gtype == "track" else self.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -1105,17 +1045,9 @@ class Comparer(Scoreable):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
         sk = self.skill(
             by=["model", "observation"],
             metrics=[metric],
-            model=model,  # deprecated
-            start=start,  # deprecated
-            end=end,  # deprecated
-            area=area,  # deprecated
         )
         df = sk.to_dataframe()
 
@@ -1131,7 +1063,6 @@ class Comparer(Scoreable):
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: int | None = None,
-        **kwargs: Any,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
@@ -1188,25 +1119,14 @@ class Comparer(Scoreable):
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        )
-
         metrics = _parse_metric(metrics)
-        if cmp.n_points == 0:
+        if self.n_points == 0:
             raise ValueError("No data to compare")
 
-        df = cmp._to_long_dataframe()
+        df = self._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
-        agg_cols = _parse_groupby(by=by, n_mod=cmp.n_models, n_qnt=1)
+        agg_cols = _parse_groupby(by=by, n_mod=self.n_models, n_qnt=1)
         if "x" not in agg_cols:
             agg_cols.insert(0, "x")
         if "y" not in agg_cols:
@@ -1402,16 +1322,7 @@ class Comparer(Scoreable):
             "This method is deprecated, use plot.scatter instead", FutureWarning
         )
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-
-        # self.plot.scatter(
-        self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        ).plot.scatter(
+        self.plot.scatter(
             bins=bins,
             quantiles=quantiles,
             fit_to_quantiles=fit_to_quantiles,
