@@ -134,7 +134,8 @@ def from_matched(
     """
     # pre-process if dfs0, or mikeio.Dataset
     if isinstance(data, (str, Path)):
-        assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
+        if Path(data).suffix != ".dfs0":
+            raise ValueError(f"File must be a dfs0 file, not {Path(data).suffix}")
         data = mikeio.read(data)  # now mikeio.Dataset
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset

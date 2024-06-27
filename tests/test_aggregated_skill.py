@@ -129,7 +129,9 @@ def test_skill(cc1):
 
 
 def test_skill_bad_args(cc1):
-    with pytest.raises(AssertionError):
+
+    # is there a better error type?
+    with pytest.raises(AttributeError):
         cc1.skill(nonexisting_arg=1)
 
 

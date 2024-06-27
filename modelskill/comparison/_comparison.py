@@ -271,7 +271,8 @@ class ItemSelection:
 
         Both integer and str are accepted as items. If str, it must be a key in data.
         """
-        assert len(items) > 1, "data must contain at least two items"
+        if len(items) < 2:
+            raise ValueError("data must contain at least two items")
         obs_name = _get_name(obs_item, items) if obs_item else items[0]
 
         # Check existance of items and convert to names
@@ -292,12 +293,12 @@ class ItemSelection:
         x_name = _get_name(x_item, items) if x_item is not None else None
         y_name = _get_name(y_item, items) if y_item is not None else None
 
-        assert len(mod_names) > 0, "no model items were found! Must be at least one"
-        assert obs_name not in mod_names, "observation item must not be a model item"
-        assert (
-            obs_name not in aux_names
-        ), "observation item must not be an auxiliary item"
-        assert isinstance(obs_name, str), "observation item must be a string"
+        if len(mod_names) == 0:
+            raise ValueError("no model items were found! Must be at least one")
+        if obs_name in mod_names:
+            raise ValueError("observation item must not be a model item")
+        if obs_name in aux_names:
+            raise ValueError("observation item must not be an auxiliary item")
 
         return ItemSelection(
             obs=obs_name, model=mod_names, aux=aux_names, x=x_name, y=y_name
@@ -1032,7 +1033,8 @@ class Comparer(Scoreable):
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
+        if kwargs != {}:
+            raise AttributeError(f"Unknown keyword arguments: {kwargs}")
 
         cmp = self.sel(
             model=model,
