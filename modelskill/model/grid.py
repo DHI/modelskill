@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional, Sequence, get_args
 
+import mikeio
 import pandas as pd
 import xarray as xr
 
@@ -51,7 +52,14 @@ class GridModelResult(SpatialField):
                 ds = xr.open_mfdataset(data)
             else:
                 assert Path(data).exists(), f"{data}: File does not exist."
-                ds = xr.open_dataset(data)
+                fp = Path(data)
+                if fp.suffix == ".dfs2":
+                    # how robust is it to rely on Dataset.to_xarray()?
+                    ds = mikeio.read(data).to_xarray()
+                    for v in ds.data_vars:
+                        ds[v].attrs["long_name"] = ds[v].name
+                else:
+                    ds = xr.open_dataset(data)
 
         elif isinstance(data, Sequence) and all(
             isinstance(file, (str, Path)) for file in data
