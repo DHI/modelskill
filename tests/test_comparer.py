@@ -5,6 +5,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
 from modelskill import __version__
+import modelskill as ms
 
 
 @pytest.fixture
@@ -37,7 +38,6 @@ def _get_track_df() -> pd.DataFrame:
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["weight"] = 1.0
     data["Observation"].attrs["units"] = "m"
     data["Observation"].attrs["long_name"] = "fake var"
     data["m1"].attrs["kind"] = "model"
@@ -86,6 +86,7 @@ def tc() -> Comparer:
 
 def test_matched_df(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df)
+    assert cmp.gtype == "point"
     assert "m2" in cmp.mod_names
     assert "m1" in cmp.mod_names
     assert len(cmp.mod_names) == 2
@@ -93,6 +94,14 @@ def test_matched_df(pt_df):
     assert cmp.name == "Observation"
     assert cmp.score()["m1"] == pytest.approx(0.5916079783099617)
     assert cmp.score()["m2"] == pytest.approx(0.15811388300841905)
+
+
+def test_matched_skill_geodataframe(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, x=10.0, y=55.0)
+    sk = cmp.skill()
+    gdf = sk.to_geodataframe()
+    assert gdf.iloc[0].geometry.coords[0][0] == 10.0
+    assert gdf.iloc[0].geometry.coords[0][1] == 55.0
 
 
 def test_df_score():
@@ -191,6 +200,24 @@ def test_rename_model(pt_df):
     assert "model_2" in cmp2.raw_mod_data
 
 
+def test_rename_model_conflict(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert cmp.mod_names == ["m1", "m2"]
+    with pytest.raises(ValueError, match="conflicts"):
+        cmp.rename({"m1": "m2"})
+
+
+def test_rename_model_swap_names(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
+    assert cmp.mod_names == ["m1", "m2"]
+    assert cmp.raw_mod_data["m1"].data["m1"].values[0] == 1.5
+    assert cmp.raw_mod_data["m2"].data["m2"].values[0] == 1.1
+    cmp2 = cmp.rename({"m1": "m2", "m2": "m1"})
+    assert cmp2.mod_names == ["m2", "m1"]
+    assert cmp2.raw_mod_data["m1"].data["m1"].values[0] == 1.1
+    assert cmp2.raw_mod_data["m2"].data["m2"].values[0] == 1.5
+
+
 def test_partial_rename_model(pt_df):
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
     assert "m1" in cmp.mod_names
@@ -206,10 +233,10 @@ def test_rename_aux(pt_df):
     cmp = Comparer.from_matched_data(
         data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
     )
-    assert cmp.aux_names == ("wind",)
+    assert cmp.aux_names == ["wind"]
     cmp2 = cmp.rename({"wind": "wind_speed"})
-    assert cmp.aux_names == ("wind",)
-    assert cmp2.aux_names == ("wind_speed",)
+    assert cmp.aux_names == ["wind"]
+    assert cmp2.aux_names == ["wind_speed"]
 
 
 def test_rename_model_and_aux(pt_df):
@@ -222,8 +249,54 @@ def test_rename_model_and_aux(pt_df):
     assert "wind_speed" in cmp2.aux_names
 
 
+def test_rename_obs(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df)
+    assert cmp.name == "Observation"
+    cmp2 = cmp.rename({"Observation": "observed"})
+    assert cmp2.name == "observed"
+
+    cmp2.name = "observed2"
+    assert cmp2.name == "observed2"
+
+
+def test_rename_fails_unknown_key(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    with pytest.raises(KeyError, match="Unknown key"):
+        cmp.rename({"m1": "model_1", "wind": "wind_speed", "foo": "bar"})
+    with pytest.raises(KeyError, match="Unknown key"):
+        cmp.rename({"foo": "bar"})
+    with pytest.raises(KeyError, match="Unknown key"):
+        cmp.rename({"m1": "model_1", "foo": "bar"})
+    with pytest.raises(KeyError, match="Unknown key"):
+        cmp.rename({"foo": "bar", "wind": "wind_speed"})
+
+
+def test_rename_errors_ignore(pt_df):
+    cmp = Comparer.from_matched_data(data=pt_df)
+    cmp2 = cmp.rename({"NotThere": "observed"}, errors="ignore")
+    assert cmp2.name == "Observation"
+
+
+def test_rename_fails_reserved_names(pt_df):
+    pt_df["wind"] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    cmp = Comparer.from_matched_data(
+        data=pt_df, mod_items=["m1", "m2"], aux_items=["wind"]
+    )
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "x"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "y"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "z"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cmp.rename({"m1": "Observation"})
+
+
 def test_matched_df_illegal_items(pt_df):
-    with pytest.raises(AssertionError, match="data must contain at least two items"):
+    with pytest.raises(ValueError, match="data must contain at least two items"):
         # dataframe has only one column
         df = pt_df[["Observation"]]
         Comparer.from_matched_data(data=df)
@@ -236,7 +309,7 @@ def test_matched_df_illegal_items(pt_df):
         # non existing item
         Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2", "m3"])
 
-    with pytest.raises(AssertionError, match="no model items were found"):
+    with pytest.raises(ValueError, match="no model items were found"):
         # no mod_items
         Comparer.from_matched_data(data=pt_df, aux_items=["m1", "m2"])
 
@@ -273,162 +346,6 @@ def test_from_compared_data_doesnt_accept_missing_values_in_obs():
 
     with pytest.raises(ValueError):
         Comparer.from_matched_data(data=data)
-
-
-def test_minimal_plots(pt_df):
-    data = xr.Dataset(pt_df)
-
-    data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["color"] = "pink"
-    data["Observation"].attrs["long_name"] = "Waterlevel"
-    data["Observation"].attrs["units"] = "m"
-    data["m1"].attrs["kind"] = "model"
-    data["m2"].attrs["kind"] = "model"
-    data.attrs["name"] = "mini"
-    cmp = Comparer.from_matched_data(data=data)
-    cmp = cmp.sel(model="m1")
-
-    # Not very elaborate testing other than these two methods can be called without errors
-    with pytest.warns(FutureWarning, match="plot.hist"):
-        cmp.hist()
-
-    with pytest.warns(FutureWarning, match="plot.kde"):
-        cmp.kde()
-
-    with pytest.warns(FutureWarning, match="plot.timeseries"):
-        cmp.plot_timeseries()
-
-    with pytest.warns(FutureWarning, match="plot.scatter"):
-        cmp.scatter()
-
-    with pytest.warns(FutureWarning, match="plot.taylor"):
-        cmp.taylor()
-
-    cmp.plot.taylor()
-    # TODO should taylor also return matplotlib axes?
-
-    # default plot is scatter
-    ax = cmp.plot()
-    assert "m1" in ax.get_title()
-
-    ax = cmp.plot.scatter()
-    assert "m1" in ax.get_title()
-
-    ax = cmp.plot.kde()
-    assert ax is not None
-
-    ax = cmp.plot.qq()
-    assert ax is not None
-
-    # ax = cmp.plot.box()
-    # assert ax is not None
-
-    ax = cmp.plot.hist()
-    assert ax is not None
-
-    ax = cmp.plot.timeseries()
-    assert ax is not None
-
-    ax = cmp.plot.scatter()
-    assert "m1" in ax.get_title()
-
-
-@pytest.fixture(
-    params=[
-        "scatter",
-        "kde",
-        "qq",
-        "box",
-        "hist",
-        "timeseries",
-        "taylor",
-        "residual_hist",
-    ]
-)
-def pc_plot_function(pc, request):
-    func = getattr(pc.plot, request.param)
-    # special cases requiring a model to be selected
-    if request.param in ["scatter", "hist", "residual_hist"]:
-        func = getattr(pc.sel(model=0).plot, request.param)
-    return func
-
-
-def test_plot_returns_an_object(pc_plot_function):
-    obj = pc_plot_function()
-    assert obj is not None
-
-
-def test_plot_accepts_ax_if_relevant(pc_plot_function):
-    _, ax = plt.subplots()
-    func_name = pc_plot_function.__name__
-    # plots that don't accept ax
-    if func_name in ["taylor"]:
-        return
-    ret_ax = pc_plot_function(ax=ax)
-    assert ret_ax is ax
-
-
-def test_plot_accepts_title(pc_plot_function):
-    expected_title = "test title"
-    ret_obj = pc_plot_function(title=expected_title)
-
-    # Handle both ax and fig titles
-    title = None
-    if hasattr(ret_obj, "get_title"):
-        title = ret_obj.get_title()
-    elif hasattr(ret_obj, "get_suptitle"):
-        title = ret_obj.get_suptitle()
-    elif hasattr(ret_obj, "_suptitle"):  # older versions of matplotlib
-        title = ret_obj._suptitle.get_text()
-    else:
-        raise pytest.fail("Could not access title from return object.")
-
-    assert title == expected_title
-
-
-def test_plot_accepts_figsize(pc_plot_function):
-    figsize = (10, 10)
-    ax = pc_plot_function(figsize=figsize)
-    a, b = ax.get_figure().get_size_inches()
-    assert a, b == figsize
-
-
-def test_plots_directional(pt_df):
-    data = xr.Dataset(pt_df)
-
-    data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["long_name"] = "Waterlevel"
-    data["Observation"].attrs["units"] = "m"
-    data["m1"].attrs["kind"] = "model"
-    data["m2"].attrs["kind"] = "model"
-    data.attrs["name"] = "mini"
-    cmp = Comparer.from_matched_data(data=data)
-    cmp = cmp.sel(model="m1")
-
-    cmp.plot.is_directional = True
-
-    ax = cmp.plot.scatter()
-    assert "m1" in ax.get_title()
-    assert ax.get_xlim() == (0.0, 360.0)
-    assert ax.get_ylim() == (0.0, 360.0)
-    assert len(ax.get_legend().get_texts()) == 1  # no reg line or qq
-
-    ax = cmp.plot.kde()
-    assert ax is not None
-    assert ax.get_xlim() == (0.0, 360.0)
-
-    # TODO I have no idea why this fails in pandas/plotting/_matplotlib/boxplot.py:387: AssertionError
-    # ax = cmp.plot.box()
-    # assert ax is not None
-    # assert ax.get_ylim() == (0.0, 360.0)
-
-    ax = cmp.plot.hist()
-    assert ax is not None
-    assert ax.get_xlim() == (0.0, 360.0)
-
-    ax = cmp.plot.timeseries()
-    assert ax is not None
-    assert ax.get_ylim() == (0.0, 360.0)
 
 
 def test_multiple_forecasts_matched_data():
@@ -482,11 +399,11 @@ def test_pc_properties(pc):
     assert pc.y == 55.0
     assert pc.name == "fake point obs"
     assert pc.quantity.name == "fake var"
-    assert pc.start == pd.Timestamp("2019-01-01")
-    assert pc.end == pd.Timestamp("2019-01-05")
+    assert pc.time[0] == pd.Timestamp("2019-01-01")
+    assert pc.time[-1] == pd.Timestamp("2019-01-05")
     assert pc.mod_names == ["m1", "m2"]
-    assert pc.obs[-1] == 5.0
-    assert pc.mod[-1, 1] == 4.9
+    # assert pc.obs[-1] == 5.0  # TODO
+    # assert pc.mod[-1, 1] == 4.9
 
     assert list(pc.raw_mod_data["m1"].data.data_vars) == ["m1"]
     assert np.all(pc.raw_mod_data["m1"].values == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
@@ -500,15 +417,30 @@ def test_tc_properties(tc):
     assert np.all(tc.y == [55.1, 55.2, 55.3, 55.4, 55.5])
     assert tc.name == "fake track obs"
     assert tc.quantity.name == "fake var"
-    assert tc.start == pd.Timestamp("2019-01-01")
-    assert tc.end == pd.Timestamp("2019-01-05")
+    assert tc.time[0] == pd.Timestamp("2019-01-01")
+    assert tc.time[-1] == pd.Timestamp("2019-01-05")
     assert tc.mod_names == ["m1", "m2"]
-    assert tc.obs[-1] == 5.0
-    assert tc.mod[-1, 1] == 4.9
+    # assert tc.obs[-1] == 5.0   # TODO
+    # assert tc.mod[-1, 1] == 4.9
 
     assert list(tc.raw_mod_data["m1"].data.data_vars) == ["m1"]
     assert np.all(tc.raw_mod_data["m1"].values == [1.5, 2.4, 3.6, 4.9, 5.6, 6.4])
     assert np.all(tc.raw_mod_data["m1"].x == [10.1, 10.2, 10.3, 10.4, 10.5, 10.6])
+
+
+def test_attrs(pc):
+    pc.attrs["a2"] = "v2"
+    assert pc.attrs["a2"] == "v2"
+
+    pc.data.attrs["version"] = 42
+    assert pc.attrs["version"] == 42
+
+    pc.attrs["version"] = 43
+    assert pc.attrs["version"] == 43
+
+    # remove all attributes and add a new one
+    pc.attrs = {"version": 44}
+    assert pc.attrs["version"] == 44
 
 
 def test_pc_sel_time(pc):
@@ -646,19 +578,21 @@ def test_pc_query_empty(pc):
 def test_add_pc_tc(pc, tc):
     cc = pc + tc
     assert cc.n_points == 10
-    assert cc.n_comparers == 2
+    assert len(cc) == 2
 
 
 def test_add_tc_pc(pc, tc):
     cc = tc + pc
     assert cc.n_points == 10
-    assert cc.n_comparers == 2
+    assert len(cc) == 2
 
 
-def test_pc_to_dataframe(pc):
-    df = pc.to_dataframe()
+def test_pc_to_long_dataframe(pc):
+    # private method testing
+    df = pc._to_long_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (10, 6)
+    assert df.shape == (10, 7)
+    assert "time" in df.columns
     assert "mod_val" in df.columns
     assert "obs_val" in df.columns
     assert "x" in df.columns
@@ -677,11 +611,12 @@ def test_pc_to_dataframe(pc):
     assert df.iloc[9].model == "m2"
 
 
-def test_pc_to_dataframe_add_col(pc):
+def test_pc_to_long_dataframe_add_col(pc):
+    # private method testing
     pc.data["derived"] = pc.data.m1 + pc.data.m2
-    df = pc.to_dataframe()
+    df = pc._to_long_dataframe()
     assert isinstance(df, pd.DataFrame)
-    assert df.shape == (10, 7)
+    assert df.shape == (10, 8)
     assert "derived" in df.columns
     assert df.derived.dtype == "float64"
 
@@ -692,3 +627,253 @@ def test_remove_bias():
     assert cmp.score("bias")["mod"] == pytest.approx(0.1)
     ub_cmp = cmp.remove_bias()
     assert ub_cmp.score("bias")["mod"] == pytest.approx(0.0)
+
+
+def test_skill_dt(pc):
+    by = ["model", "dt:month"]
+    sk = pc.skill(by=by)
+    assert list(sk.data.index.names) == ["model", "month"]
+    assert list(sk.data.index.levels[0]) == ["m1", "m2"]
+    assert list(sk.data.index.levels[1]) == [1]  # only January
+
+    # 2019-01-01 is Tuesday = 1 (Monday = 0)
+    by = ["model", "dt:weekday"]
+    sk = pc.skill(by=by)
+    assert list(sk.data.index.names) == ["model", "weekday"]
+    assert list(sk.data.index.levels[0]) == ["m1", "m2"]
+    assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
+
+
+@pytest.mark.skipif(pd.__version__ < "2.0.0", reason="requires newer pandas")
+def test_skill_freq(pc):
+    assert pc.time.freq == "D"
+
+    # aggregate to 2 days
+    sk = pc.skill(by="freq:2D")
+    assert len(sk.to_dataframe()) == 3
+
+    # aggregate to 12 hours (up-sampling) doesn't interpolate
+    sk2 = pc.skill(by="freq:12h")
+    assert len(sk2.to_dataframe()) == 9
+    assert np.isnan(sk2.to_dataframe().loc["2019-01-02 12:00:00", "rmse"])
+
+
+def test_xy_in_skill_pt(pc):
+    # point obs has x,y, track obs x, y are np.nan
+    sk = pc.skill()
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data
+    assert all(df.x == pc.x)
+    assert all(df.y == pc.y)
+
+    # x, y maintained during sort_values, sort_index, sel
+    sk2 = sk.sort_values("rmse")
+    assert all(sk2.data.x == pc.x)
+    assert all(sk2.data.y == pc.y)
+
+    sk3 = sk.sort_index()
+    assert all(sk3.data.x == pc.x)
+    assert all(sk3.data.y == pc.y)
+
+    sk4 = sk.sel(model="m1")
+    assert all(sk4.data.x == pc.x)
+    assert all(sk4.data.y == pc.y)
+
+    sa = sk.rmse  # SkillArray
+    assert all(sa.data.x == pc.x)
+    assert all(sa.data.y == pc.y)
+
+
+def test_xy_not_in_skill_tc(tc):
+    # point obs has x,y, track obs x, y are np.nan
+    sk = tc.skill()
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data
+    assert df.x.isna().all()
+    assert df.y.isna().all()
+
+
+def test_to_dataframe_pt(pc):
+    df = pc.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (5, 3)
+    assert list(df.columns) == ["Observation", "m1", "m2"]
+
+
+def test_to_dataframe_tc(tc):
+    df = tc.to_dataframe()
+    assert isinstance(df, pd.DataFrame)
+    assert df.shape == (5, 5)
+    assert list(df.columns) == ["x", "y", "Observation", "m1", "m2"]
+
+
+# ======================== plotting ========================
+
+
+@pytest.fixture(
+    params=[
+        "scatter",
+        "kde",
+        "qq",
+        "box",
+        "hist",
+        "timeseries",
+        "taylor",
+        "residual_hist",
+    ]
+)
+def pc_plot_function(pc, request):
+    func = getattr(pc.plot, request.param)
+    # special cases requiring a model to be selected
+    if request.param in ["scatter", "hist", "residual_hist"]:
+        func = getattr(pc.sel(model=0).plot, request.param)
+    return func
+
+
+def test_plot_returns_an_object(pc_plot_function):
+    obj = pc_plot_function()
+    assert obj is not None
+
+
+def test_plot_accepts_ax_if_relevant(pc_plot_function):
+    _, ax = plt.subplots()
+    func_name = pc_plot_function.__name__
+    # plots that don't accept ax
+    if func_name in ["taylor"]:
+        return
+    ret_ax = pc_plot_function(ax=ax)
+    assert ret_ax is ax
+
+
+def test_plot_accepts_title(pc_plot_function):
+    expected_title = "test title"
+    ret_obj = pc_plot_function(title=expected_title)
+
+    # Handle both ax and fig titles
+    title = None
+    if hasattr(ret_obj, "get_title"):
+        title = ret_obj.get_title()
+    elif hasattr(ret_obj, "get_suptitle"):
+        title = ret_obj.get_suptitle()
+    elif hasattr(ret_obj, "_suptitle"):  # older versions of matplotlib
+        title = ret_obj._suptitle.get_text()
+    else:
+        raise pytest.fail("Could not access title from return object.")
+
+    assert title == expected_title
+
+
+def test_plot_accepts_figsize(pc_plot_function):
+    figsize = (10, 10)
+    ax = pc_plot_function(figsize=figsize)
+    a, b = ax.get_figure().get_size_inches()
+    assert a, b == figsize
+
+
+def test_plot_title_in_returned_ax(pc):
+    # default plot is scatter
+    ax = pc.sel(model="m1").plot()
+    assert "m1" in ax.get_title()
+
+    ax = pc.plot.scatter()
+    assert "m1" in ax[0].get_title()
+    assert "m2" in ax[1].get_title()
+
+    ax = pc.plot.kde()
+    assert "fake point obs" in ax.get_title()
+
+
+def test_plots_directional(pt_df):
+    data = xr.Dataset(pt_df)
+
+    data["Observation"].attrs["kind"] = "observation"
+    data["Observation"].attrs["long_name"] = "Waterlevel"
+    data["Observation"].attrs["units"] = "m"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "mini"
+    cmp = Comparer.from_matched_data(data=data)
+    cmp = cmp.sel(model="m1")
+
+    cmp.plot.is_directional = True
+
+    ax = cmp.plot.scatter()
+    assert "m1" in ax.get_title()
+    assert ax.get_xlim() == (0.0, 360.0)
+    assert ax.get_ylim() == (0.0, 360.0)
+    assert len(ax.get_legend().get_texts()) == 1  # no reg line or qq
+
+    ax = cmp.plot.kde()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    # TODO I have no idea why this fails in pandas/plotting/_matplotlib/boxplot.py:387: AssertionError
+    ax = cmp.plot.box()
+    assert ax is not None
+    assert ax.get_ylim() == (0.0, 360.0)
+
+    ax = cmp.plot.hist()
+    assert ax is not None
+    assert ax.get_xlim() == (0.0, 360.0)
+
+    ax = cmp.plot.timeseries()
+    assert ax is not None
+    assert ax.get_ylim() == (0.0, 360.0)
+
+
+def test_from_matched_track_data():
+
+    df = pd.DataFrame(
+        {
+            "lat": [55.0, 55.1],
+            "lon": [-0.1, 0.01],
+            "c2": [1.2, 1.3],
+            "mikeswcal5hm0": [1.22, 1.3],
+        },
+    )
+    assert isinstance(
+        df.index, pd.RangeIndex
+    )  # Sometime we don't care about time only space
+
+    cmp = ms.from_matched(
+        data=df, obs_item="c2", mod_items="mikeswcal5hm0", x_item="lon", y_item="lat"
+    )
+    gs = cmp.gridded_skill(bins=2)
+    gs.data.sel(x=-0.01, y=55.1, method="nearest").n.values == 1
+
+    # positional args
+    cmp2 = ms.from_matched(
+        data=df,
+        x_item=0,
+        y_item=1,
+        obs_item=2,
+        mod_items=3,
+    )
+
+    assert len(cmp2.data.coords["x"]) == 2
+
+
+def test_from_matched_dfs0():
+    fn = "tests/testdata/matched_track_data.dfs0"
+    # time: 2017-10-27 10:45:19 - 2017-10-29 13:10:44 (532 non-equidistant records)
+    # geometry: GeometryUndefined()
+    # items:
+    #   0:  x <Undefined> (undefined)
+    #   1:  y <Undefined> (undefined)
+    #   2:  HD <Undefined> (undefined)
+    #   3:  Observation <Undefined> (undefined)
+
+    cmp = ms.from_matched(
+        data=fn,
+        x_item=0,
+        y_item=1,
+        obs_item=3,
+        mod_items=2,
+        quantity=ms.Quantity("Water level", "m"),
+    )
+    gs = cmp.gridded_skill()
+    assert float(
+        gs.data.sel(x=-0.01, y=55.1, method="nearest").rmse.values
+    ) == pytest.approx(0.0476569069177831)

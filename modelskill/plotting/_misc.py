@@ -1,6 +1,6 @@
 from __future__ import annotations
 import warnings
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union, Mapping
 
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
@@ -149,38 +149,38 @@ def quantiles_xy(
     return np.quantile(x, q=q), np.quantile(y, q=q)
 
 
-def format_skill_df(df: pd.DataFrame, units: str, precision: int = 2):
+def format_skill_table(skill_scores: Mapping[str, float], unit: str) -> pd.DataFrame:
     # select metrics columns
     accepted_columns = defined_metrics | {"n"}
+    kv = {k: v for k, v in skill_scores.items() if k in accepted_columns}
 
-    df = df.loc[:, df.columns.isin(accepted_columns)]
+    lines = [_format_skill_line(key, value, unit) for key, value in kv.items()]
 
-    # loop over series in dataframe, (columns)
-    lines = [_format_skill_line(df[col], units, precision) for col in list(df.columns)]
-
-    return np.array(lines)
+    # TODO add sign and unit columns
+    df = pd.DataFrame(lines, columns=["name", "sep", "value"])
+    return df
 
 
 def _format_skill_line(
-    series: pd.Series,
-    units: str,
-    precision: int,
+    name: str,
+    value: float | int,
+    unit: str,
 ) -> Tuple[str, str, str]:
-    name = series.name
-
+    precision: int = 2
     item_unit = " "
+    fvalue = str(value)
 
     if name == "n":
-        fvalue = series.values[0]
+        fvalue = str(int(value))
     else:
         if metric_has_units(metric=name):
             # if statistic has dimensions, then add units
-            item_unit = unit_display_name(units)
+            item_unit = unit_display_name(unit)
 
-        rounded_value = np.round(series.values[0], precision)
+        rounded_value = np.round(value, precision)
         fmt = f".{precision}f"
         fvalue = f"{rounded_value:{fmt}}"
 
-    name = series.name.upper()
+    name = name.upper()
 
     return f"{name}", " =  ", f"{fvalue} {item_unit}"

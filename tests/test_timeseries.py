@@ -59,17 +59,13 @@ def test_timeseries_track_init(ds_track):
 
 def test_timeseries_validation_fails_gtype(ds_point):
     ds_point.attrs["gtype"] = "GRID"
-    with pytest.raises(AssertionError):  # , match="attribute 'gtype' must be"):
+    with pytest.raises(ValueError):  # , match="attribute 'gtype' must be"):
         TimeSeries(ds_point)
 
     ds_point.attrs["gtype"] = "point"  # lower case okay
     ts = TimeSeries(ds_point)
     assert isinstance(ts, TimeSeries)
     assert ts.data.attrs["gtype"] == str(GeometryType.POINT)
-
-    # ds_point.attrs["gtype"] = "POINT"  # upper case not okay
-    # with pytest.raises(AssertionError):  # , match="attribute 'gtype' must be"):
-    #    TimeSeries(ds_point)
 
 
 def test_timeseries_validation_fails_kind(ds_point):
@@ -84,12 +80,12 @@ def test_timeseries_validation_fails_kind(ds_point):
 
 def test_timeseries_validation_fails_xy(ds_point):
     ds_without_x = ds_point.drop_vars("x")
-    with pytest.raises(AssertionError, match="data must have an x-coordinate"):
+    with pytest.raises(ValueError, match="data must have an x-coordinate"):
         TimeSeries(ds_without_x)
 
     # ds_point.coords["x"] = 0
     ds_without_y = ds_point.drop_vars("y")
-    with pytest.raises(AssertionError, match="data must have a y-coordinate"):
+    with pytest.raises(ValueError, match="data must have a y-coordinate"):
         TimeSeries(ds_without_y)
 
 
@@ -99,11 +95,11 @@ def test_timeseries_point_properties(ds_point):
     assert ts.x == 0
     assert ts.y == 3
     assert list(ts.time) == list(pd.date_range("2000-01-01", periods=3))
-    assert ts.start_time == pd.Timestamp("2000-01-01")
-    assert ts.end_time == pd.Timestamp("2000-01-03")
+    assert ts.time[0] == pd.Timestamp("2000-01-01")
+    assert ts.time[-1] == pd.Timestamp("2000-01-03")
     assert ts.n_points == 3
     assert len(ts) == 3
-    assert len(ts.color) == 7
+    assert len(ts._color) == 7
 
 
 def test_timeseries_track_properties(ds_track):
@@ -112,11 +108,11 @@ def test_timeseries_track_properties(ds_track):
     assert list(ts.x) == [0, 1, 2]
     assert list(ts.y) == [3, 4, 5]
     assert list(ts.time) == list(pd.date_range("2000-01-01", periods=3))
-    assert ts.start_time == pd.Timestamp("2000-01-01")
-    assert ts.end_time == pd.Timestamp("2000-01-03")
+    assert ts.time[0] == pd.Timestamp("2000-01-01")
+    assert ts.time[-1] == pd.Timestamp("2000-01-03")
     assert ts.n_points == 3
     assert len(ts) == 3
-    assert len(ts.color) == 7
+    assert len(ts._color) == 7
 
 
 def test_timeseries_set_name(ds_track):
@@ -125,13 +121,13 @@ def test_timeseries_set_name(ds_track):
     ts.name = "newname"
     assert ts.name == "newname"
 
-    with pytest.raises(AssertionError, match="must be a string"):
+    with pytest.raises(TypeError, match="must be a string"):
         ts.name = 1
 
-    with pytest.raises(AssertionError, match="must be a string"):
+    with pytest.raises(TypeError, match="must be a string"):
         ts.name = None
 
-    with pytest.raises(AssertionError, match="reserved"):
+    with pytest.raises(ValueError, match="reserved"):
         ts.name = "x"
 
 
@@ -143,29 +139,29 @@ def test_timeseries_set_quantity(ds_track):
     ts.quantity = ms.Quantity("water level", "m")
     assert ts.quantity == ms.Quantity("water level", "m")
 
-    with pytest.raises(AssertionError, match="must be a Quantity"):
+    with pytest.raises(TypeError, match="must be a Quantity"):
         ts.quantity = 1
 
 
 def test_timeseries_set_color(ds_track):
     ts = TimeSeries(ds_track)
-    orig_color = ts.color
-    assert isinstance(ts.color, str)
+    orig_color = ts._color
+    assert isinstance(ts._color, str)
 
-    ts.color = "red"
-    assert ts.color == "red"
+    ts._color = "red"
+    assert ts._color == "red"
 
-    ts.color = None
-    assert ts.color == orig_color
+    ts._color = None
+    assert ts._color == orig_color
 
-    ts.color = "0.6"
-    assert ts.color == "0.6"
-
-    with pytest.raises(ValueError, match="color"):
-        ts.color = "fakeblue"
+    ts._color = "0.6"
+    assert ts._color == "0.6"
 
     with pytest.raises(ValueError, match="color"):
-        ts.color = 1
+        ts._color = "fakeblue"
+
+    with pytest.raises(ValueError, match="color"):
+        ts._color = 1
 
 
 def test_timeseries_point_set_xy(ds_point):
@@ -178,12 +174,6 @@ def test_timeseries_point_set_xy(ds_point):
     assert ts.x == 1
     assert ts.y == 2
 
-    # with pytest.raises(AssertionError, match="must be a float"):
-    #     ts.x = "1"
-
-    # with pytest.raises(AssertionError, match="must be a float"):
-    #     ts.y = None
-
 
 def test_timeseries_track_set_xy(ds_track):
     ts = TimeSeries(ds_track)
@@ -194,9 +184,6 @@ def test_timeseries_track_set_xy(ds_track):
     ts.y = [4, 5, 6]
     assert list(ts.x) == [1, 2, 3]
     assert list(ts.y) == [4, 5, 6]
-
-    # with pytest.raises(AssertionError):
-    #     ts.x = [8, 9] # wrong length
 
 
 def test_timeseries_point_to_dataframe(ds_point):

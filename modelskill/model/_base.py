@@ -1,12 +1,13 @@
 from __future__ import annotations
 from collections import Counter
-from typing import List, Optional, Protocol, Sequence, TYPE_CHECKING
+from typing import Any, List, Optional, Protocol, Sequence, TYPE_CHECKING
 from dataclasses import dataclass
 import warnings
 
 import pandas as pd
 
 if TYPE_CHECKING:
+    import xarray as xr
     from .point import PointModelResult
     from .track import TrackModelResult
 
@@ -73,12 +74,29 @@ def _validate_overlap_in_time(time: pd.DatetimeIndex, observation: Observation) 
 
 class SpatialField(Protocol):
     def extract(
-        self, observation: PointObservation | TrackObservation
-    ) -> PointModelResult | TrackModelResult:
-        ...
+        self,
+        observation: PointObservation | TrackObservation,
+        spatial_method: Optional[str] = None,
+    ) -> PointModelResult | TrackModelResult: ...
 
-    def extract_point(self, observation: PointObservation) -> PointModelResult:
-        ...
+    def _extract_point(
+        self, observation: PointObservation, spatial_method: Optional[str] = None
+    ) -> PointModelResult: ...
 
-    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
-        ...
+    def _extract_track(
+        self, observation: TrackObservation, spatial_method: Optional[str] = None
+    ) -> TrackModelResult: ...
+
+
+class Alignable(Protocol):
+
+    @property
+    def time(self) -> pd.DatetimeIndex: ...
+
+    def align(
+        self,
+        observation: Observation,
+        **kwargs: Any,
+    ) -> xr.Dataset: ...
+
+    # the attributues of the returned dataset have additional requirements, but we can't express that here

@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Tuple, Callable, TYPE_CHECKING
+from typing import Literal, Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
+import warnings
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -7,18 +8,18 @@ if TYPE_CHECKING:
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from matplotlib.cm import ScalarMappable
 from matplotlib import patches
 from matplotlib.axes import Axes
 from matplotlib.ticker import MaxNLocator
 from scipy import interpolate
+import pandas as pd
 
 import modelskill.settings as settings
 from modelskill.settings import options
 
 from ..metrics import _linear_regression
-from ._misc import quantiles_xy, sample_points, format_skill_df, _get_fig_ax
+from ._misc import quantiles_xy, sample_points, format_skill_table, _get_fig_ax
 
 
 def scatter(
@@ -32,7 +33,7 @@ def scatter(
     show_hist: Optional[bool] = None,
     show_density: Optional[bool] = None,
     norm: Optional[colors.Normalize] = None,
-    backend: str = "matplotlib",
+    backend: Literal["matplotlib", "plotly"] = "matplotlib",
     figsize: Tuple[float, float] = (8, 8),
     xlim: Optional[Tuple[float, float]] = None,
     ylim: Optional[Tuple[float, float]] = None,
@@ -40,11 +41,12 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_df: Optional[pd.DataFrame] = None,
-    units: Optional[str] = "",
+    skill_table: Optional[str | Sequence[str] | bool] = False,
+    skill_scores: Mapping[str, float] | None = None,
+    skill_score_unit: Optional[str] = "",
     ax: Optional[Axes] = None,
     **kwargs,
-):
+) -> Axes:
     """Scatter plot showing compared data: observation vs modelled
     Optionally, with density histogram.
 
@@ -63,9 +65,9 @@ def scatter(
         number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
         if int, this is the number of points
         if sequence (list of floats), represents the desired quantiles (from 0 to 1)
-    fit_to_quantiles: bool, optional, by default False
+    fit_to_quantiles: bool, optional
         by default the regression line is fitted to all data, if True, it is fitted to the quantiles
-        which can be useful to represent the extremes of the distribution
+        which can be useful to represent the extremes of the distribution, by default False
     show_points : (bool, int, float), optional
         Should the scatter points be displayed?
         None means: show all points if fewer than 1e4, otherwise show 1e4 sample points, by default None.
@@ -100,10 +102,17 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
-    skill_df : dataframe, optional
-        dataframe with skill (stats) results to be added to plot, by default None
-    units : str, optional
-        user default units to override default units, eg 'metre', by default None
+    skill_table: str, List[str], bool, optional
+        calculate skill scores and show in box next to the plot,
+        True will show default metrics, list of metrics will show
+        these skill scores, by default False,
+        Note: cannot be used together with skill_scores argument
+    skill_scores : dict[str, float], optional
+        dictionary with skill scores to be shown in box next to
+        the plot, by default None
+        Note: cannot be used together with skill_table argument
+    skill_score_unit : str, optional
+        unit for skill_scores, by default None
     ax : matplotlib.axes.Axes, optional
         axes to plot on, by default None
     **kwargs
@@ -113,6 +122,13 @@ def scatter(
     matplotlib.axes.Axes
         The axes on which the scatter plot was drawn.
     """
+    if "skill_df" in kwargs:
+        warnings.warn(
+            "The `skill_df` keyword argument is deprecated. Use `skill_scores` instead.",
+            FutureWarning,
+        )
+        skill_scores = kwargs.pop("skill_df").to_dict("records")[0]
+
     if show_hist is None and show_density is None:
         # Default: points density
         show_density = True
@@ -121,7 +137,6 @@ def scatter(
         raise ValueError("x & y are not of equal length")
 
     if norm is None:
-        # Default: PowerNorm with gamma of 0.5
         norm = colors.PowerNorm(vmin=1, gamma=0.5)
 
     x_sample, y_sample = sample_points(x, y, show_points)
@@ -170,6 +185,19 @@ def scatter(
     if backend not in PLOTTING_BACKENDS:
         raise ValueError(f"backend must be one of {list(PLOTTING_BACKENDS.keys())}")
 
+    if skill_table:
+        from modelskill import from_matched
+
+        if skill_scores is not None:
+            raise ValueError(
+                "Cannot pass skill_scores and skill_table at the same time"
+            )
+        df = pd.DataFrame({"obs": x, "model": y})
+        cmp = from_matched(df)
+        metrics = None if skill_table is True else skill_table
+        skill = cmp.skill(metrics=metrics)
+        skill_scores = skill.to_dict("records")[0]
+
     return PLOTTING_BACKENDS[backend](
         x=x,
         y=y,
@@ -191,8 +219,8 @@ def scatter(
         xlim=xlim,
         ylim=ylim,
         title=title,
-        skill_df=skill_df,
-        units=units,
+        skill_scores=skill_scores,
+        skill_score_unit=skill_score_unit,
         fit_to_quantiles=fit_to_quantiles,
         ax=ax,
         **kwargs,
@@ -221,13 +249,16 @@ def _scatter_matplotlib(
     xlim,
     ylim,
     title,
-    skill_df,
-    units,
+    skill_scores,
+    skill_score_unit,
     fit_to_quantiles,
     ax,
     **kwargs,
 ) -> matplotlib.axes.Axes:
     fig, ax = _get_fig_ax(ax, figsize)
+
+    if len(x) < 2:
+        raise ValueError("Not enough data to plot. At least 2 points are required.")
 
     ax.plot(
         [xlim[0], xlim[1]],
@@ -311,24 +342,26 @@ def _scatter_matplotlib(
     max_cbar = None
     cmap = kwargs.get("cmap", None)
     if show_hist or (show_density and show_points):
-        cbar = fig.colorbar(
-            ScalarMappable(norm, cmap),
-            ax=ax,
-            fraction=0.046,
-            pad=0.04,
-            alpha=options.plot.scatter.points.alpha,
-        )
-        ticks = cbar.ax.get_yticks()
-        max_cbar = ticks[-1]
-        cbar.set_label("# points")
-        cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        try:
+            cbar = fig.colorbar(
+                ScalarMappable(norm, cmap),
+                ax=ax,
+                fraction=0.046,
+                pad=0.04,
+                alpha=options.plot.scatter.points.alpha,
+            )
+            ticks = cbar.ax.get_yticks()
+            max_cbar = ticks[-1]
+            cbar.set_label("# points")
+            cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        except ValueError:
+            # too few points to make a colorbar
+            pass
 
     ax.set_title(title)
     # Add skill table
-    if skill_df is not None:
-        df = skill_df.to_dataframe()
-        assert isinstance(df, pd.DataFrame)
-        _plot_summary_table(df, units, max_cbar=max_cbar)
+    if skill_scores is not None:
+        _plot_summary_table(skill_scores, skill_score_unit, max_cbar=max_cbar)
     return ax
 
 
@@ -354,9 +387,9 @@ def _scatter_plotly(
     xlim,
     ylim,
     title,
-    skill_df,  # TODO implement
-    units,  # TODO implement
-    fit_to_quantiles,  # TODO implement
+    skill_scores,
+    skill_score_unit,
+    fit_to_quantiles,
     **kwargs,
 ):
     import plotly.graph_objects as go
@@ -449,8 +482,32 @@ def _scatter_plotly(
     )
 
     fig = go.Figure(data=data, layout=layout)
-    fig.update_xaxes(range=xlim)
-    fig.update_yaxes(range=ylim)
+    fig.update_xaxes(range=xlim, nticks=10)
+    fig.update_yaxes(range=ylim, nticks=10)
+
+    if skill_scores is not None:
+        table = format_skill_table(skill_scores=skill_scores, unit=skill_score_unit)
+        lines = [
+            f"{row['name']:<6} {row['sep']} {row['value']:<6}"
+            for _, row in table.iterrows()
+        ]
+
+        # add text box
+        fig.add_annotation(
+            x=0.99,
+            y=0.01,
+            xref="paper",
+            yref="paper",
+            text="<br>".join(lines),
+            showarrow=False,
+            align="left",
+            bordercolor="black",
+            borderwidth=1,
+            borderpad=4,
+            bgcolor="white",
+            font=dict(family="Consolas, 'Liberation Mono', monospace"),
+        )
+
     fig.show()  # Should this be here
 
 
@@ -516,10 +573,11 @@ def _plot_summary_border(
 
 
 def _plot_summary_table(
-    df: pd.DataFrame, units: str, max_cbar: Optional[float] = None
+    skill_scores: Mapping[str, float], units: str, max_cbar: Optional[float] = None
 ) -> None:
-    lines = format_skill_df(df, units)
-    text_ = ["\n".join(lines[:, i]) for i in range(lines.shape[1])]
+    table = format_skill_table(skill_scores, units)
+    cols = ["name", "sep", "value"]
+    text_cols = ["\n".join(table[col]) for col in cols]
 
     if max_cbar is None:
         x = 0.93
@@ -546,10 +604,10 @@ def _plot_summary_table(
     # Column 1
     text_columns = []
     dx = 0
-    for ti in text_:
+    for ti in text_cols:
         text_col_i = fig.text(x + dx, 0.6, ti, **txt_settings)
         ## Render, and get width
-        plt.draw()
+        # plt.draw() # TOOO this causes an error and I have no idea why it is here
         dx = (
             dx
             + figure_transform.inverted().transform(

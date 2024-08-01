@@ -19,7 +19,7 @@ from typing import Union
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = "1.0.b0"
+__version__ = "1.1.dev0"
 
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")
@@ -27,7 +27,13 @@ if "64" not in architecture()[0]:
 from .quantity import Quantity
 from .model.factory import ModelResult
 from .model import model_result
-from .model import PointModelResult, TrackModelResult, GridModelResult, DfsuModelResult
+from .model import (
+    PointModelResult,
+    TrackModelResult,
+    GridModelResult,
+    DfsuModelResult,
+    DummyModelResult,
+)
 from .obs import observation, PointObservation, TrackObservation
 from .matching import compare, from_matched, match
 from .connection import Connector
@@ -35,6 +41,7 @@ from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
 from .comparison import ComparerCollection, Comparer
+from .skill import SkillTable
 
 
 def load(filename: Union[str, Path]) -> ComparerCollection:
@@ -66,6 +73,7 @@ __all__ = [
     "TrackModelResult",
     "GridModelResult",
     "DfsuModelResult",
+    "DummyModelResult",
     "observation",
     "PointObservation",
     "TrackObservation",
@@ -73,6 +81,7 @@ __all__ = [
     "from_matched",
     "Comparer",
     "ComparerCollection",
+    "SkillTable",
     "options",
     "get_option",
     "set_option",

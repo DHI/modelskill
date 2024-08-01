@@ -5,6 +5,7 @@ import pytest
 import mikeio
 import modelskill as ms
 from modelskill.comparison._comparison import ItemSelection
+from modelskill.model.dfsu import DfsuModelResult
 
 
 @pytest.fixture
@@ -25,7 +26,7 @@ def o2_gaps():
     obs = mikeio.read(fn, items=0).to_dataframe().rename(columns=dict(Hm0="obs")) + 1
     dt = pd.Timedelta(180, unit="s")
     obs.index = obs.index - dt
-    obs.index = obs.index.round("S")
+    obs.index = obs.index.round("s")
     return ms.PointObservation(obs, item=0, x=3.2760, y=51.9990, name="EPL")
 
 
@@ -39,7 +40,7 @@ def o3():
 def mr12_gaps():
     fn = "tests/testdata/SW/ts_storm_4.dfs0"
     df1 = mikeio.read(fn, items=0).to_dataframe()
-    df1 = df1.resample("2H").nearest()
+    df1 = df1.resample("2h").nearest()
     df1 = df1.rename(columns={df1.columns[0]: "mr1"})
     df2 = df1.copy().rename(columns=dict(mr1="mr2")) - 1
 
@@ -52,7 +53,7 @@ def mr12_gaps():
 
 
 @pytest.fixture
-def mr1():
+def mr1() -> DfsuModelResult:
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     return ms.model_result(fn, item=0, name="SW_1")
 
@@ -213,14 +214,16 @@ def test_small_multi_model_shifted_time_match():
     # observation has four timesteps, but only three of them are in the Simple model and three in the NotSimple model
     # the number of overlapping points for all three datasets are 2, but three if we look at the models individually
 
-    cmp1 = ms.match(obs=obs, mod=mod)
-    assert cmp1.n_points == 3
+    with pytest.warns(UserWarning):
+        cmp1 = ms.match(obs=obs, mod=mod)
+        cmp1 = ms.match(obs=obs, mod=mod)
+        assert cmp1.n_points == 3
 
-    cmp2 = ms.match(obs=obs, mod=mod2)
-    assert cmp2.n_points == 3
+        cmp2 = ms.match(obs=obs, mod=mod2)
+        assert cmp2.n_points == 3
 
-    mcmp = ms.match(obs=obs, mod=[mod, mod2])
-    assert mcmp.n_points == 2
+        mcmp = ms.match(obs=obs, mod=[mod, mod2])
+        assert mcmp.n_points == 2
 
 
 def test_matched_data_single_model():
@@ -264,8 +267,9 @@ def test_matched_data_not_time_index():
             "ts_1": [
                 1.0,
                 2.0,
+                3.0,
             ],
-            "sensor_a": [2.0, 3.0],
+            "sensor_a": [2.0, 3.0, 4.0],
         },
     )
 
@@ -275,8 +279,8 @@ def test_matched_data_not_time_index():
     cmp.plot.scatter()
 
     # skill metrics do not care about time
-    s = cmp.skill(metrics="mae")
-    assert s.loc["sensor_a", "mae"] == pytest.approx(1.0)
+    sk = cmp.skill(metrics="mae")
+    assert sk.loc["sensor_a", "mae"] == pytest.approx(1.0)
 
     cmp.plot.timeseries()
 
@@ -318,7 +322,7 @@ def test_from_matched_dfs0():
     assert cmp.n_points == 397
     assert cmp.n_models == 5
     assert cmp.quantity.name == "Significant wave height"
-    assert cmp.quantity.unit == "meter"
+    assert cmp.quantity.unit == "m"
 
 
 def test_from_matched_Dfs0():
@@ -329,7 +333,7 @@ def test_from_matched_Dfs0():
     assert cmp.n_points == 397
     assert cmp.n_models == 5
     assert cmp.quantity.name == "Significant wave height"
-    assert cmp.quantity.unit == "meter"
+    assert cmp.quantity.unit == "m"
 
 
 def test_from_matched_mikeio_dataset():
@@ -339,7 +343,7 @@ def test_from_matched_mikeio_dataset():
     assert cmp.n_points == 145
     assert cmp.n_models == 5
     assert cmp.quantity.name == "Significant wave height"
-    assert cmp.quantity.unit == "meter"
+    assert cmp.quantity.unit == "m"
 
 
 def test_trackmodelresult_and_trackobservation_uses_model_name():
@@ -385,7 +389,7 @@ def test_wind_directions():
             "obs": [359, 91, 181, 268],
             "mod": [0, 90, 180, 270],
         },
-        index=pd.date_range("2017-01-01", periods=4, freq="H"),
+        index=pd.date_range("2017-01-01", periods=4, freq="h"),
     )
 
     cc = ms.from_matched(
@@ -393,8 +397,8 @@ def test_wind_directions():
         obs_item="obs",
         quantity=ms.Quantity("Wind direction", unit="degree", is_directional=True),
     )
+    # default metrics *are* directional
     df = cc.skill().to_dataframe()
-    assert df.loc["obs", "c_max_error"] == pytest.approx(2.0)
     assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
 
 
@@ -424,11 +428,13 @@ def test_obs_and_mod_can_not_have_same_aux_item_names():
     obs = ms.PointObservation(obs_df, item="wl", aux_items=["wind_speed"])
     mod = ms.PointModelResult(mod_df, item="wl", aux_items=["wind_speed"])
 
-    with pytest.raises(ValueError, match="wind_speed"):
-        ms.match(obs=obs, mod=mod)
+    with pytest.warns(match="_model"):
+        cmp = ms.match(obs=obs, mod=mod)
+    assert "wind_speed" in cmp
+    assert "wind_speed_mod" in cmp  # renamed
 
 
-def test_mod_aux_items_must_be_unique():
+def test_mod_aux_items_overlapping_names():
     obs_df = pd.DataFrame(
         {"wl": [1.0, 2.0, 3.0], "wind_speed": [1.0, 2.0, 3.0]},
         index=pd.date_range("2017-01-01", periods=3),
@@ -452,8 +458,87 @@ def test_mod_aux_items_must_be_unique():
         mod2_df, item="wl", aux_items=["wind_speed"], name="remote"
     )
 
-    with pytest.raises(ValueError) as e:
-        ms.match(obs=obs, mod=[mod, mod2])
+    # we don't care which model the aux data comes from
+    cmp = ms.match(obs=obs, mod=[mod, mod2])
 
-    assert "wind_speed" in str(e.value)
-    assert "remote" in str(e.value)
+    assert "wind_speed" in cmp
+
+
+def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
+    o1 = ms.PointObservation(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
+        ),
+        name="o1",
+        x=1,
+        y=2,
+    )
+    o2 = ms.PointObservation(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
+        ),
+        name="o2",
+        x=2,
+        y=3,
+    )
+    m1 = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
+        ),
+        name="m1",
+        x=1,
+        y=2,
+    )
+    m2 = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
+        ),
+        name="m2",
+        x=2,
+        y=3,
+    )
+    m3 = ms.PointModelResult(
+        pd.DataFrame(
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
+        ),
+        name="m3",
+        x=3,
+        y=4,
+    )
+
+    # a single observation and model is ok
+    cmp = ms.match(obs=o1, mod=[m1, m2])
+    assert "m1" in cmp.mod_names
+    assert "m2" in cmp.mod_names
+
+    # but this is not allowed
+    with pytest.raises(ValueError, match="SpatialField type"):
+        ms.match(obs=[o1, o2], mod=[m1, m2, m3])
+
+
+def test_compare_model_vs_dummy(mr1, o1):
+    mean_obs = o1.trim(mr1.time[0], mr1.time[-1]).values.mean()
+
+    mr2 = ms.DummyModelResult(data=mean_obs, name="dummy")
+    assert "constant" in repr(mr2)
+
+    cmp = ms.match(obs=o1, mod=[mr1, mr2])
+    assert cmp.score(metric="r2")["dummy"] == pytest.approx(0.0)
+
+
+def test_compare_model_vs_dummy_for_track(mr1, o3):
+    mr = ms.DummyModelResult(name="dummy", strategy="mean")
+    assert "mean" in repr(mr)
+
+    cmp = ms.match(obs=o3, mod=mr)
+    assert cmp.score(metric="r2")["dummy"] == pytest.approx(0.0)
+
+    assert cmp.score()["dummy"] == pytest.approx(1.140079520671913)
+
+    cmp2 = ms.match(obs=o3, mod=[mr1, mr])
+
+    # not identical to above since it is evaluated on a subset of the data
+    assert cmp2.score()["dummy"] == pytest.approx(1.225945)
+
+    # better than dummy 🙂
+    assert cmp2.score()["SW_1"] == pytest.approx(0.3524703)

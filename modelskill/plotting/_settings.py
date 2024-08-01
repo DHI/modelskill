@@ -37,10 +37,11 @@ register_option(
 register_option(
     "plot.scatter.legend.bbox",
     {
-        "facecolor": "blue",
-        "edgecolor": "k",
-        "boxstyle": "round",
-        "alpha": 0.05,
+        "facecolor": "white",
+        "edgecolor": "lightgray",
+        "linewidth": 1,
+        "boxstyle": "round,pad=0.1",
+        "alpha": 0.95,
     },
     validator=settings.is_dict,
 )

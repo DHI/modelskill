@@ -44,8 +44,8 @@ def trackobs_c2_hm0():
 def test_grid_from_nc(mr_ERA5_pp1d):
     mr = mr_ERA5_pp1d
     assert mr.name == "ERA5_DutchCoast"
-    assert mr.start_time == datetime(2017, 10, 27, 0, 0, 0)
-    assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert mr.time[0] == datetime(2017, 10, 27, 0, 0, 0)
+    assert mr.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
 
 
 def test_grid_from_DataArray(ERA5_DutchCoast_nc):
@@ -82,8 +82,8 @@ def test_grid_from_multifile(mf_modelresult):
     mr = mf_modelresult
 
     assert mr.name == "CMEMS"
-    assert mr.start_time == datetime(2017, 10, 28, 0, 0, 0)
-    assert mr.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert mr.time[0] == datetime(2017, 10, 28, 0, 0, 0)
+    assert mr.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
 
 
 # should be supported
@@ -144,14 +144,18 @@ def test_grid_aux_items_fail(ERA5_DutchCoast_nc):
 
 def test_grid_extract_point(mr_ERA5_swh, pointobs_epl_hm0):
     pmr = mr_ERA5_swh.extract(pointobs_epl_hm0)
-    ds = pmr.data
 
     assert isinstance(pmr, ms.PointModelResult)
-    assert pmr.start_time == datetime(2017, 10, 27, 0, 0, 0)
-    assert pmr.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert pmr.time[0] == datetime(2017, 10, 27, 0, 0, 0)
+    assert pmr.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
     assert pmr.n_points == 67
-    assert len(ds.data_vars) == 1
-    assert pytest.approx(ds.to_pandas().iloc[0, 0]) == 0.875528
+    assert len(pmr.data.data_vars) == 1
+    assert pytest.approx(pmr.data.to_pandas().iloc[0, 0]) == 0.847677
+
+    # default spatial_method='linear'
+    pmr2 = mr_ERA5_swh.extract(pointobs_epl_hm0, spatial_method="nearest")
+    assert pmr2.n_points == 67
+    assert pytest.approx(pmr2.data.to_pandas().iloc[0, 0]) == 0.875528
 
 
 def test_grid_extract_point_xoutside(mr_ERA5_pp1d, pointobs_epl_hm0):
@@ -174,8 +178,8 @@ def test_grid_extract_point_aux(ERA5_DutchCoast_nc, pointobs_epl_hm0):
     mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
     pc = mr.extract(pointobs_epl_hm0)
     assert isinstance(pc, ms.PointModelResult)
-    assert pc.start_time == datetime(2017, 10, 27, 0, 0, 0)
-    assert pc.end_time == datetime(2017, 10, 29, 18, 0, 0)
+    assert pc.time[0] == datetime(2017, 10, 27, 0, 0, 0)
+    assert pc.time[-1] == datetime(2017, 10, 29, 18, 0, 0)
     assert pc.n_points == 67
     assert len(pc.data.data_vars) == 2
 
@@ -193,8 +197,8 @@ def test_grid_extract_track(mr_ERA5_pp1d, trackobs_c2_hm0):
     mri = mr_ERA5_pp1d
     tmr = mri.extract(trackobs_c2_hm0)
     assert isinstance(tmr, ms.TrackModelResult)
-    assert tmr.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
-    assert tmr.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
+    assert tmr.time[0].strftime("%Y-%m-%dT%H:%M:%S") == "2017-10-27T12:52:52"
+    assert tmr.time[-1].strftime("%Y-%m-%dT%H:%M:%S") == "2017-10-29T12:51:28"
     assert tmr.n_points == 99
 
 
@@ -202,8 +206,8 @@ def test_grid_extract_track_aux(ERA5_DutchCoast_nc, trackobs_c2_hm0):
     mr = ms.GridModelResult(ERA5_DutchCoast_nc, item="pp1d", aux_items=["swh"])
     tc = mr.extract(trackobs_c2_hm0)
     assert isinstance(tc, ms.TrackModelResult)
-    assert tc.start_time.replace(microsecond=0) == datetime(2017, 10, 27, 12, 52, 52)
-    assert tc.end_time.replace(microsecond=0) == datetime(2017, 10, 29, 12, 51, 28)
+    assert tc.time[0].strftime("%Y-%m-%dT%H:%M:%S") == "2017-10-27T12:52:52"
+    assert tc.time[-1].strftime("%Y-%m-%dT%H:%M:%S") == "2017-10-29T12:51:28"
     assert tc.n_points == 99
     assert len(tc.data.data_vars) == 2
     assert "swh" in tc.data.data_vars
@@ -214,3 +218,31 @@ def test_grid_with_directional_data_with_cf_metadata_is_directional_by_default()
         "tests/testdata/SW/CMEMS_DutchCoast_2017-10-28.nc", item="VMDR"
     )
     assert mr.quantity.is_directional
+
+
+def test_extract_point_from_3d():
+    mr = ms.GridModelResult(
+        "tests/testdata/cmems_mod_med_phy-sal_anfc_4.2km-3D_PT1H-m_1705916517624.nc",
+        item="so",
+        name="MedSea",
+    )
+
+    point_ds = xr.open_dataset("tests/testdata/aegean_sea_salinity_ts.nc")
+
+    # TODO use x,y,z without explicitly setting them (NetCDF has them as coordinates)
+    obs = ms.PointObservation(
+        point_ds,
+        x=float(point_ds.longitude),
+        y=float(point_ds.latitude),
+        z=float(point_ds.depth),
+        item="so",
+    )
+
+    cmp = ms.match(obs=obs, mod=mr, spatial_method="nearest")
+    assert cmp.quantity.name == "Salinity"
+    assert cmp.quantity.unit == "0.001"
+
+    sc = cmp.score()
+
+    # "Observed" data is extracted from the 3D model result, so the score should be 0.0
+    assert sc["MedSea"] == pytest.approx(0.0)

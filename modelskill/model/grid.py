@@ -92,20 +92,17 @@ class GridModelResult(SpatialField):
         self.quantity = quantity
 
     def __repr__(self) -> str:
-        # TODO add item name
-        return f"<GridModelResult> '{self.name}'"
+        res = []
+        res.append(f"<{self.__class__.__name__}>: {self.name}")
+        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
+        res.append(f"Quantity: {self.quantity}")
+        if len(self.sel_items.aux) > 0:
+            res.append(f"Auxiliary variables: {', '.join(self.sel_items.aux)}")
+        return "\n".join(res)
 
     @property
     def time(self) -> pd.DatetimeIndex:
         return pd.DatetimeIndex(self.data.time)
-
-    @property
-    def start_time(self) -> pd.Timestamp:
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        return self.time[-1]
 
     def _in_domain(self, x: float, y: float) -> bool:
         assert hasattr(self.data, "x") and hasattr(
@@ -118,14 +115,21 @@ class GridModelResult(SpatialField):
         return (x >= xmin) & (x <= xmax) & (y >= ymin) & (y <= ymax)
 
     def extract(
-        self, observation: PointObservation | TrackObservation
+        self,
+        observation: PointObservation | TrackObservation,
+        spatial_method: Optional[str] = None,
     ) -> PointModelResult | TrackModelResult:
         """Extract ModelResult at observation positions
+
+        Note: this method is typically not called directly, but through the match() method.
 
         Parameters
         ----------
         observation : <PointObservation> or <TrackObservation>
             positions (and times) at which modelresult should be extracted
+        spatial_method : Optional[str], optional
+            method in xarray.Dataset.interp, typically either "nearest" or
+            "linear", by default None = 'linear'
 
         Returns
         -------
@@ -134,19 +138,22 @@ class GridModelResult(SpatialField):
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
-            return self.extract_point(observation)
+            return self._extract_point(observation, spatial_method)
         elif isinstance(observation, TrackObservation):
-            return self.extract_track(observation)
+            return self._extract_track(observation, spatial_method)
         else:
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
-    def extract_point(self, observation: PointObservation) -> PointModelResult:
+    def _extract_point(
+        self, observation: PointObservation, spatial_method: Optional[str] = None
+    ) -> PointModelResult:
         """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a PointObservation. No time interpolation is done!"""
+        method: str = spatial_method or "linear"
 
-        x, y = observation.x, observation.y
+        x, y, z = observation.x, observation.y, observation.z
         if (x is None) or (y is None):
             raise ValueError(
                 f"PointObservation '{observation.name}' cannot be used for extraction "
@@ -161,23 +168,36 @@ class GridModelResult(SpatialField):
         assert isinstance(self.data, xr.Dataset)
 
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
-        da = self.data.interp(coords=dict(x=x, y=y), method="nearest")
-        df = da.to_dataframe().drop(columns=["x", "y"])
+        if "z" in self.data.dims and z is not None:
+            ds = self.data.interp(
+                coords=dict(x=x, y=y, z=z), method=method  # type: ignore
+            )
+        else:
+            ds = self.data.interp(coords=dict(x=x, y=y), method=method)  # type: ignore
+        # TODO: exclude aux cols in dropna
+        df = ds.to_dataframe().drop(columns=["x", "y"]).dropna()
+        if len(df) == 0:
+            raise ValueError(
+                f"Spatial point extraction failed for PointObservation '{observation.name}' in GridModelResult '{self.name}'! (is point outside model domain? Consider spatial_method='nearest')"
+            )
         df = df.rename(columns={self.sel_items.values: self.name})
 
         return PointModelResult(
-            data=df.dropna(),
-            x=da.x.item(),
-            y=da.y.item(),
+            data=df,
+            x=ds.x.item(),
+            y=ds.y.item(),
             item=self.name,
             name=self.name,
             quantity=self.quantity,
             aux_items=self.sel_items.aux,
         )
 
-    def extract_track(self, observation: TrackObservation) -> TrackModelResult:
+    def _extract_track(
+        self, observation: TrackObservation, spatial_method: Optional[str] = None
+    ) -> TrackModelResult:
         """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
+        method: str = spatial_method or "linear"
 
         obs_df = observation.data.to_dataframe()
 
@@ -187,12 +207,15 @@ class GridModelResult(SpatialField):
         y = xr.DataArray(renamed_obs_data.y, dims="track")
 
         assert isinstance(self.data, xr.Dataset)
-        da = self.data.interp(coords=dict(time=t, x=x, y=y), method="linear")
-        df = da.to_dataframe().drop(columns=["time"])
+        ds = self.data.interp(
+            coords=dict(time=t, x=x, y=y),
+            method=method,  # type: ignore
+        )
+        df = ds.to_dataframe().drop(columns=["time"])
         df = df.rename(columns={self.sel_items.values: self.name})
 
         return TrackModelResult(
-            data=df.dropna(),
+            data=df.dropna(),  # TODO: exclude aux cols in dropna
             item=self.name,
             x_item="x",
             y_item="y",

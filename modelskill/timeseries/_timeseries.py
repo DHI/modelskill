@@ -3,7 +3,6 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import ClassVar, Optional, TypeVar, Any
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
 import xarray as xr
 
@@ -28,11 +27,13 @@ DEFAULT_COLORS = [
 
 
 def _validate_data_var_name(name: str) -> str:
-    assert isinstance(name, str), "name must be a string"
+    if not isinstance(name, str):
+        raise TypeError("name must be a string")
     RESERVED_NAMES = ["x", "y", "z", "time"]
-    assert (
-        name not in RESERVED_NAMES
-    ), f"name '{name}' is reserved and cannot be used! Please choose another name."
+    if name in RESERVED_NAMES:
+        raise ValueError(
+            f"name '{name}' is reserved and cannot be used! Please choose another name."
+        )
     return name
 
 
@@ -61,8 +62,10 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     ), "time must be increasing (please check for duplicate times))"
 
     # Validate coordinates
-    assert "x" in ds.coords, "data must have an x-coordinate"
-    assert "y" in ds.coords, "data must have a y-coordinate"
+    if "x" not in ds.coords:
+        raise ValueError("data must have an x-coordinate")
+    if "y" not in ds.coords:
+        raise ValueError("data must have a y-coordinate")
     if "z" not in ds.coords:
         ds.coords["z"] = np.nan
     # assert "z" in ds.coords, "data must have a z-coordinate"
@@ -99,11 +102,15 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     da = ds[name]
 
     # Validate attrs
-    assert "gtype" in ds.attrs, "data must have a gtype attribute"
-    assert ds.attrs["gtype"] in [
+    if "gtype" not in ds.attrs:
+        raise ValueError("data must have a gtype attribute")
+    if ds.attrs["gtype"] not in [
         str(GeometryType.POINT),
         str(GeometryType.TRACK),
-    ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
+    ]:
+        raise ValueError(
+            f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
+        )
     if "long_name" not in da.attrs:
         da.attrs["long_name"] = Quantity.undefined().name
     if "units" not in da.attrs:
@@ -121,23 +128,25 @@ class TimeSeries:
     """Time series data"""
 
     data: xr.Dataset
-    plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
+    plotter: ClassVar = (
+        MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
+    )
 
     def __init__(self, data: xr.Dataset) -> None:
         self.data = data if self._is_input_validated(data) else _validate_dataset(data)
+
         self.plot: TimeSeriesPlotter = TimeSeries.plotter(self)
+        """Plot using the ComparerPlotter
+
+        Examples
+        --------
+        >>> obj.plot.timeseries()
+        >>> obj.plot.hist()
+        """
 
     def _is_input_validated(self, data: Any) -> bool:
         """Check if data is already a valid TimeSeries (contains the modelskill_version attribute)"""
-        if not isinstance(data, xr.Dataset):
-            return False
-        else:
-            if not hasattr(data, "attrs"):
-                return False
-            else:
-                if "modelskill_version" not in data.attrs:
-                    return False
-        return True
+        return isinstance(data, xr.Dataset) and "modelskill_version" in data.attrs
 
     @property
     def _val_item(self) -> str:
@@ -171,18 +180,19 @@ class TimeSeries:
 
     @quantity.setter
     def quantity(self, quantity: Quantity) -> None:
-        assert isinstance(quantity, Quantity), "value must be a Quantity object"
+        if not isinstance(quantity, Quantity):
+            raise TypeError("value must be a Quantity object")
         self.data[self.name].attrs["long_name"] = quantity.name
         self.data[self.name].attrs["units"] = quantity.unit
         self.data[self.name].attrs["is_directional"] = int(quantity.is_directional)
 
+    # TODO: """Color of time series"""; Hide until used
     @property
-    def color(self) -> str:
-        """Color of time series"""
+    def _color(self) -> str:
         return str(self.data[self.name].attrs["color"])
 
-    @color.setter
-    def color(self, color: str | None) -> None:
+    @_color.setter
+    def _color(self, color: str | None) -> None:
         self.data[self.name].attrs["color"] = _parse_color(self.name, color)
 
     @property
@@ -213,7 +223,7 @@ class TimeSeries:
     def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    def _coordinate_values(self, coord: str) -> float | NDArray[Any]:
+    def _coordinate_values(self, coord: str) -> float | np.ndarray:
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
@@ -222,7 +232,7 @@ class TimeSeries:
         return bool(self.data[self.name].attrs["kind"] == "model")
 
     @property
-    def values(self) -> NDArray[Any]:
+    def values(self) -> np.ndarray:
         """Values as numpy array"""
         return self.data[self.name].values
 
@@ -232,17 +242,19 @@ class TimeSeries:
         return self.data[self.name].to_series()
 
     @property
-    def start_time(self) -> pd.Timestamp:
-        """Start time of time series data"""
-        return self.time[0]
-
-    @property
-    def end_time(self) -> pd.Timestamp:
-        """End time of time series data"""
-        return self.time[-1]
+    def _aux_vars(self):
+        return list(self.data.filter_by_attrs(kind="aux").data_vars)
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}> '{self.name}' (n_points: {self.n_points})"
+        res = []
+        res.append(f"<{self.__class__.__name__}>: {self.name}")
+        if self.gtype == str(GeometryType.POINT):
+            res.append(f"Location: {self.x}, {self.y}")
+        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
+        res.append(f"Quantity: {self.quantity}")
+        if len(self._aux_vars) > 0:
+            res.append(f"Auxiliary variables: {', '.join(self._aux_vars)}")
+        return "\n".join(res)
 
     # len() of a DataFrame returns the number of rows,
     # len() of xr.Dataset returns the number of variables
@@ -268,13 +280,26 @@ class TimeSeries:
         return self.equals(other)
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Convert to pandas DataFrame"""
+        """Convert matched data to pandas DataFrame
+
+        Include x, y coordinates only if gtype=track
+
+        Returns
+        -------
+        pd.DataFrame
+            data as a pandas DataFrame
+        """
         if self.gtype == str(GeometryType.POINT):
             # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
-            return self.data.drop_vars(["x", "y", "z"])[self.name].to_dataframe()
+            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        elif self.gtype == str(GeometryType.TRACK):
+            df = self.data.drop_vars(["z"]).to_dataframe()
+            # make sure that x, y cols are first
+            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            return df[cols]
         else:
-            return self.data.drop_vars(["z"])[["x", "y", self.name]].to_dataframe()
+            raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def sel(self: T, **kwargs: Any) -> T:
         """Select data by label"""

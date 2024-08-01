@@ -1,14 +1,19 @@
 from __future__ import annotations
 import warnings
-from typing import Iterable, Collection, overload, Hashable
+from typing import Any, Iterable, Collection, overload, Hashable, TYPE_CHECKING
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    import geopandas as gpd
+    from matplotlib.axes import Axes
+    from matplotlib.colors import Colormap
 
 from .plotting._misc import _get_fig_ax
 
 
 # TODO remove ?
-def _validate_multi_index(index, min_levels=2, max_levels=2):
+def _validate_multi_index(index, min_levels=2, max_levels=2):  # type: ignore
     errors = []
     if isinstance(index, pd.MultiIndex):
         if len(index.levels) < min_levels:
@@ -33,27 +38,42 @@ class SkillArrayPlotter:
     plot.grid() : colored grid
     """
 
-    def __init__(self, skillarray):
+    def __init__(self, skillarray: "SkillArray") -> None:
         self.skillarray = skillarray
 
-    def _name_to_title_in_kwargs(self, kwargs):
+    def _name_to_title_in_kwargs(self, kwargs: Any) -> None:
         if "title" not in kwargs:
             if self.skillarray.name is not None:
                 kwargs["title"] = self.skillarray.name
 
     def _get_plot_df(self, level: int | str = 0) -> pd.DataFrame:
-        ser = self.skillarray.data
+        ser = self.skillarray._ser
         if isinstance(ser.index, pd.MultiIndex):
             df = ser.unstack(level=level)
         else:
             df = ser.to_frame()
         return df
 
+    # TODO hide this for now until we are certain about the API
+    # def map(self, **kwargs):
+    #     if "model" in self.skillarray.data.index.names:
+    #         n_models = len(self.skillarray.data.reset_index().model.unique())
+    #         if n_models > 1:
+    #             raise ValueError(
+    #                 "map() is only possible for single model skill. Use .sel(model=...) to select a single model."
+    #             )
+
+    #     gdf = self.skillarray.to_geodataframe()
+    #     column = self.skillarray.name
+    #     kwargs = {"marker_kwds": {"radius": 10}} | kwargs
+
+    #     return gdf.explore(column=column, **kwargs)
+
     def line(
         self,
         level: int | str = 0,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> Axes:
         """Plot statistic as a lines using pd.DataFrame.plot.line()
 
         Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
@@ -62,16 +82,16 @@ class SkillArrayPlotter:
         ----------
         level : int or str, optional
             level to unstack, by default 0
-        kwargs : dict, optional
+        **kwargs
             key word arguments to be pased to pd.DataFrame.plot.line()
             e.g. marker, title, figsize, ...
 
         Examples
         --------
-        >>> s = cc.skill()["rmse"]
-        >>> s.plot.line()
-        >>> s.plot.line(marker="o", linestyle=':')
-        >>> s.plot.line(color=['0.2', '0.4', '0.6'])
+        >>> sk = cc.skill()["rmse"]
+        >>> sk.plot.line()
+        >>> sk.plot.line(marker="o", linestyle=':')
+        >>> sk.plot.line(color=['0.2', '0.4', '0.6'])
         """
         df = self._get_plot_df(level=level)
         self._name_to_title_in_kwargs(kwargs)
@@ -88,14 +108,14 @@ class SkillArrayPlotter:
                 ax.set_xticklabels(xlabels, rotation=90)
         return axes
 
-    def bar(self, level: int | str = 0, **kwargs):
+    def bar(self, level: int | str = 0, **kwargs: Any) -> Axes:
         """Plot statistic as bar chart using pd.DataFrame.plot.bar()
 
         Parameters
         ----------
         level : int or str, optional
             level to unstack, by default 0
-        kwargs : dict, optional
+        **kwargs
             key word arguments to be pased to pd.DataFrame.plot.bar()
             e.g. color, title, figsize, ...
 
@@ -105,24 +125,24 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = cc.skill()["rmse"]
-        >>> s.plot.bar()
-        >>> s.plot.bar(level="observation")
-        >>> s.plot.bar(title="Root Mean Squared Error")
-        >>> s.plot.bar(color=["red","blue"])
+        >>> sk = cc.skill()["rmse"]
+        >>> sk.plot.bar()
+        >>> sk.plot.bar(level="observation")
+        >>> sk.plot.bar(title="Root Mean Squared Error")
+        >>> sk.plot.bar(color=["red","blue"])
         """
         df = self._get_plot_df(level=level)
         self._name_to_title_in_kwargs(kwargs)
         return df.plot.bar(**kwargs)
 
-    def barh(self, level: int | str = 0, **kwargs):
+    def barh(self, level: int | str = 0, **kwargs: Any) -> Axes:
         """Plot statistic as horizontal bar chart using pd.DataFrame.plot.barh()
 
         Parameters
         ----------
         level : int or str, optional
             level to unstack, by default 0
-        kwargs : dict, optional
+        **kwargs
             key word arguments to be passed to pd.DataFrame.plot.barh()
             e.g. color, title, figsize, ...
 
@@ -132,10 +152,10 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = cc.skill()["rmse"]
-        >>> s.plot.barh()
-        >>> s.plot.barh(level="observation")
-        >>> s.plot.barh(title="Root Mean Squared Error")
+        >>> sk = cc.skill()["rmse"]
+        >>> sk.plot.barh()
+        >>> sk.plot.barh(level="observation")
+        >>> sk.plot.barh(title="Root Mean Squared Error")
         """
         df = self._get_plot_df(level)
         self._name_to_title_in_kwargs(kwargs)
@@ -143,14 +163,14 @@ class SkillArrayPlotter:
 
     def grid(
         self,
-        show_numbers=True,
-        precision=3,
-        fmt=None,
-        ax=None,
-        figsize=None,
-        title=None,
-        cmap=None,
-    ):
+        show_numbers: bool = True,
+        precision: int = 3,
+        fmt: str | None = None,
+        ax: Axes | None = None,
+        figsize: tuple[float, float] | None = None,
+        title: str | None = None,
+        cmap: str | Colormap | None = None,
+    ) -> Axes | None:
         """Plot statistic as a colored grid, optionally with values in the cells.
 
         Primarily for MultiIndex skill objects, e.g. multiple models and multiple observations
@@ -179,19 +199,20 @@ class SkillArrayPlotter:
 
         Examples
         --------
-        >>> s = cc.skill()["rmse"]
-        >>> s.plot.grid()
-        >>> s.plot.grid(show_numbers=False, cmap="magma")
-        >>> s.plot.grid(precision=1)
-        >>> s.plot.grid(fmt=".0%", title="Root Mean Squared Error")
+        >>> sk = cc.skill()["rmse"]
+        >>> sk.plot.grid()
+        >>> sk.plot.grid(show_numbers=False, cmap="magma")
+        >>> sk.plot.grid(precision=1)
+        >>> sk.plot.grid(fmt=".0%", title="Root Mean Squared Error")
         """
 
         s = self.skillarray
-        ser = s.data
+        ser = s._ser
 
-        errors = _validate_multi_index(ser.index)
+        errors = _validate_multi_index(ser.index)  # type: ignore
         if len(errors) > 0:
             warnings.warn("plot_grid: " + "\n".join(errors))
+            # TODO raise error?
             return None
             # df = self.df[field]    TODO: at_least_2d...
         df = ser.unstack()
@@ -218,6 +239,7 @@ class SkillArrayPlotter:
         if figsize is None:
             figsize = (nx, ny)
         fig, ax = _get_fig_ax(ax, figsize)
+        assert ax is not None
         pcm = ax.pcolormesh(df, cmap=cmap, vmin=vmin, vmax=vmax)
         ax.set_xticks(np.arange(nx) + 0.5)
         ax.set_xticklabels(xlabels, rotation=90)
@@ -249,30 +271,30 @@ class SkillArrayPlotter:
 
 
 class DeprecatedSkillPlotter:
-    def __init__(self, skilltable):
+    def __init__(self, skilltable):  # type: ignore
         self.skilltable = skilltable
 
     @staticmethod
-    def _deprecated_warning(method, field):
+    def _deprecated_warning(method, field):  # type: ignore
         warnings.warn(
             f"Selecting metric in plot functions like modelskill.skill().plot.{method}({field}) is deprecated and will be removed in a future version. Use modelskill.skill()['{field}'].plot.{method}() instead.",
             FutureWarning,
         )
 
-    def line(self, field: str, **kwargs):
-        self._deprecated_warning("line", field)
+    def line(self, field, **kwargs):  # type: ignore
+        self._deprecated_warning("line", field)  # type: ignore
         return self.skilltable[field].plot.line(**kwargs)
 
-    def bar(self, field: str, **kwargs):
-        self._deprecated_warning("bar", field)
+    def bar(self, field, **kwargs):  # type: ignore
+        self._deprecated_warning("bar", field)  # type: ignore
         return self.skilltable[field].plot.bar(**kwargs)
 
-    def barh(self, field: str, **kwargs):
-        self._deprecated_warning("barh", field)
+    def barh(self, field, **kwargs):  # type: ignore
+        self._deprecated_warning("barh", field)  # type: ignore
         return self.skilltable[field].plot.barh(**kwargs)
 
-    def grid(self, field: str, **kwargs):
-        self._deprecated_warning("grid", field)
+    def grid(self, field, **kwargs):  # type: ignore
+        self._deprecated_warning("grid", field)  # type: ignore
         return self.skilltable[field].plot.grid(**kwargs)
 
 
@@ -282,30 +304,85 @@ class SkillArray:
 
     Examples
     --------
-    >>> s = cc.skill()   # SkillTable
-    >>> s.rmse           # SkillArray
-    >>> s.rmse.plot.line()
+    >>> sk = cc.skill()   # SkillTable
+    >>> sk.rmse           # SkillArray
+    >>> sk.rmse.plot.line()
     """
 
-    def __init__(self, data: pd.Series) -> None:
-        assert isinstance(data, pd.Series)
+    def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
+        self._ser = data.iloc[:, -1]  # last column is the metric
+        
         self.plot = SkillArrayPlotter(self)
+        """Plot using the SkillArrayPlotter
 
-    def to_dataframe(self) -> pd.DataFrame:
-        """Output as pd.DataFrame"""
-        return self.data.to_dataframe()
+        Examples
+        --------
+        >>> sk.rmse.plot.line()
+        >>> sk.rmse.plot.bar()
+        >>> sk.rmse.plot.barh()
+        >>> sk.rmse.plot.grid()
+        """
 
-    def __repr__(self):
+    def to_dataframe(self, drop_xy: bool = True) -> pd.DataFrame:
+        """Convert SkillArray to pd.DataFrame
+
+        Parameters
+        ----------
+        drop_xy : bool, optional
+            Drop the x, y coordinates?, by default True
+
+        Returns
+        -------
+        pd.DataFrame
+            Skill data as pd.DataFrame
+        """
+        if drop_xy:
+            return self._ser.to_frame()
+        else:
+            return self.data.copy()
+
+    def __repr__(self) -> str:
         return repr(self.to_dataframe())
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> Any:
         return self.to_dataframe()._repr_html_()
 
     @property
-    def name(self):
+    def name(self) -> Any:
         """Name of the metric"""
-        return self.data.name
+        return self._ser.name
+
+    def to_geodataframe(self, crs: str = "EPSG:4326") -> gpd.GeoDataFrame:
+        """Convert SkillArray to geopandas.GeoDataFrame
+
+        Note: requires geopandas to be installed
+
+        Note: requires x and y columns to be present
+
+        Parameters
+        ----------
+        crs : str, optional
+            Coordinate reference system identifier passed to the
+            GeoDataFrame constructor, by default "EPSG:4326"
+
+        Returns
+        -------
+        gpd.GeoDataFrame
+            Skill data as GeoDataFrame
+        """
+        import geopandas as gpd
+
+        assert "x" in self.data.columns
+        assert "y" in self.data.columns
+
+        gdf = gpd.GeoDataFrame(
+            self._ser,
+            geometry=gpd.points_from_xy(self.data.x, self.data.y),
+            crs=crs,
+        )
+
+        return gdf
 
 
 class SkillTable:
@@ -320,12 +397,12 @@ class SkillTable:
 
     Examples
     --------
-    >>> s = cc.skill()
-    >>> s.mod_names
+    >>> sk = cc.skill()
+    >>> sk.mod_names
     ['SW_1', 'SW_2']
-    >>> s.style()
-    >>> s.sel(model='SW_1').style()
-    >>> s.rmse.plot.bar()
+    >>> sk.style()
+    >>> sk.sel(model='SW_1').style()
+    >>> sk.rmse.plot.bar()
     """
 
     _large_is_best_metrics = [
@@ -336,6 +413,7 @@ class SkillTable:
         "rho",
         "nash_sutcliffe_efficiency",
         "nse",
+        "kge",
     ]
     _small_is_best_metrics = [
         "mae",
@@ -357,29 +435,79 @@ class SkillTable:
         self.data: pd.DataFrame = (
             data if isinstance(data, pd.DataFrame) else data.to_dataframe()
         )
-        self.plot = DeprecatedSkillPlotter(self)  # TODO remove in v1.1
+        # TODO remove in v1.1
+        self.plot = DeprecatedSkillPlotter(self)  # type: ignore
 
     # TODO: remove?
     @property
     def _df(self) -> pd.DataFrame:
-        return self.data
+        """Data as DataFrame without x and y columns"""
+        return self.to_dataframe(drop_xy=True)
 
     @property
     def metrics(self) -> Collection[str]:
         """List of metrics (columns) in the SkillTable"""
-        return list(self.data.columns)
+        return list(self._df.columns)
 
     # TODO: remove?
     def __len__(self) -> int:
         return len(self._df)
 
-    def to_dataframe(self) -> pd.DataFrame:
-        return self._df.copy()
+    def to_dataframe(self, drop_xy: bool = True) -> pd.DataFrame:
+        """Convert SkillTable to pd.DataFrame
 
-    def __repr__(self):
+        Parameters
+        ----------
+        drop_xy : bool, optional
+            Drop the x, y coordinates?, by default True
+
+        Returns
+        -------
+        pd.DataFrame
+            Skill data as pd.DataFrame
+        """
+        if drop_xy:
+            return self.data.drop(columns=["x", "y"], errors="ignore")
+        else:
+            return self.data.copy()
+
+    def to_geodataframe(self, crs: str = "EPSG:4326") -> gpd.GeoDataFrame:
+        """Convert SkillTable to geopandas.GeoDataFrame
+
+        Note: requires geopandas to be installed
+
+        Note: requires x and y columns to be present
+
+        Parameters
+        ----------
+        crs : str, optional
+            Coordinate reference system identifier passed to the
+            GeoDataFrame constructor, by default "EPSG:4326"
+
+        Returns
+        -------
+        gpd.GeoDataFrame
+            Skill data as GeoDataFrame
+        """
+        import geopandas as gpd
+
+        assert "x" in self.data.columns
+        assert "y" in self.data.columns
+
+        df = self.to_dataframe(drop_xy=False)
+
+        gdf = gpd.GeoDataFrame(
+            df,
+            geometry=gpd.points_from_xy(df.x, df.y),
+            crs=crs,
+        )
+
+        return gdf
+
+    def __repr__(self) -> str:
         return repr(self._df)
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> Any:
         return self._df._repr_html_()
 
     @overload
@@ -390,38 +518,104 @@ class SkillTable:
     def __getitem__(self, key: Iterable[Hashable]) -> SkillTable:
         ...
 
-    def __getitem__(self, key) -> SkillArray | SkillTable:
+    def __getitem__(
+        self, key: Hashable | Iterable[Hashable]
+    ) -> SkillArray | SkillTable:
         if isinstance(key, int):
             key = list(self.data.columns)[key]
         result = self.data[key]
         if isinstance(result, pd.Series):
-            return SkillArray(result)
+            # I don't think this should be necessary, but in some cases the input doesn't contain x and y
+            if "x" in self.data.columns and "y" in self.data.columns:
+                cols = ["x", "y", key]
+                return SkillArray(self.data[cols])
+            else:
+                return SkillArray(result.to_frame())
         elif isinstance(result, pd.DataFrame):
             return SkillTable(result)
         else:
-            return result
+            raise NotImplementedError("Unexpected type of result")
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str, *args, **kwargs) -> Any:
+        # note: no help from type hints here!
         if item in self.data.columns:
             return self[item]  # Redirects to __getitem__
+        else:
+            # act as a DataFrame... (necessary for style() to work)
+            # drawback is that methods such as head() etc would appear
+            # as working but return a DataFrame instead of a SkillTable!
+            return getattr(self.data, item, *args, **kwargs)
+            # raise AttributeError(
+            #     f"""
+            #         SkillTable has no attribute {item}; Maybe you are
+            #         looking for the corresponding DataFrame attribute?
+            #         Try exporting the skill table to a DataFrame using sk.to_dataframe().
+            #     """
+            # )
 
-        # For other attributes, return them directly
-        return getattr(self.data, item)
-
-    # TODO
     @property
-    def loc(self, *args, **kwargs):
-        return self._df.loc(*args, **kwargs)
+    def iloc(self, *args, **kwargs):  # type: ignore
+        return self.data.iloc(*args, **kwargs)
 
-    # TODO: remove?
-    def sort_index(self, *args, **kwargs):
-        """Wrapping pd.DataFrame.sort_index() for e.g. sorting by observation"""
-        return self.__class__(self._df.sort_index(*args, **kwargs))
+    @property
+    def loc(self, *args, **kwargs):  # type: ignore
+        return self.data.loc(*args, **kwargs)        
 
-    # TODO: remove?
-    def swaplevel(self, *args, **kwargs):
-        """Wrapping pd.DataFrame.swaplevel() for e.g. swapping model and observation"""
-        return self.__class__(self._df.swaplevel(*args, **kwargs))
+    def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
+        """Sort by index (level) e.g. sorting by observation
+
+        Wrapping pd.DataFrame.sort_index()
+
+        Returns
+        -------
+        SkillTable
+            A new SkillTable with sorted index
+
+        Examples
+        --------
+        >>> sk = cc.skill()
+        >>> sk.sort_index()
+        >>> sk.sort_index(level="observation")
+        """
+        return self.__class__(self.data.sort_index(*args, **kwargs))
+
+    def sort_values(self, *args, **kwargs) -> SkillTable:  # type: ignore
+        """Sort by values e.g. sorting by rmse values
+
+        Wrapping pd.DataFrame.sort_values()
+
+        Returns
+        -------
+        SkillTable
+            A new SkillTable with sorted values
+
+        Examples
+        --------
+        >>> sk = cc.skill()
+        >>> sk.sort_values("rmse")
+        >>> sk.sort_values("rmse", ascending=False)
+        >>> sk.sort_values(["n", "rmse"])
+        """
+        return self.__class__(self.data.sort_values(*args, **kwargs))
+
+    def swaplevel(self, *args, **kwargs) -> SkillTable:  # type: ignore
+        """Swap the levels of the MultiIndex e.g. swapping 'model' and 'observation'
+
+        Wrapping pd.DataFrame.swaplevel()
+
+        Returns
+        -------
+        SkillTable
+            A new SkillTable with swapped levels
+
+        Examples
+        --------
+        >>> sk = cc.skill()
+        >>> sk.swaplevel().sort_index(level="observation")
+        >>> sk.swaplevel("model", "observation")
+        >>> sk.swaplevel(0, 1)
+        """
+        return self.__class__(self.data.swaplevel(*args, **kwargs))
 
     @property
     def mod_names(self) -> list[str]:
@@ -434,16 +628,16 @@ class SkillTable:
         return self._get_index_level_by_name("observation")
 
     @property
-    def var_names(self) -> list[str]:
-        """List of variable names (in index)"""
-        return self._get_index_level_by_name("variable")
+    def quantity_names(self) -> list[str]:
+        """List of quantity names (in index)"""
+        return self._get_index_level_by_name("quantity")
 
-    # TODO what does this method actually do?
-    def _get_index_level_by_name(self, name):
+    def _get_index_level_by_name(self, name: str) -> list[str]:
+        # Helper function to get unique values of a level in the index (e.g. model)
         index = self._df.index
         if name in index.names:
             level = index.names.index(name)
-            return index.get_level_values(level).unique()
+            return list(index.get_level_values(level).unique())
         else:
             return []
             # raise ValueError(f"name {name} not in index {list(self.index.names)}")
@@ -465,12 +659,14 @@ class SkillTable:
 
         Examples
         --------
-        >>> s = cc.skill()
-        >>> s_above_0p3 = s.query("rmse>0.3")
+        >>> sk = cc.skill()
+        >>> sk_above_0p3 = sk.query("rmse>0.3")
         """
-        return self.__class__(self._df.query(query))
+        return self.__class__(self.data.query(query))
 
-    def sel(self, query=None, reduce_index=True, **kwargs):
+    def sel(
+        self, query: str | None = None, reduce_index: bool = True, **kwargs: Any
+    ) -> SkillTable | SkillArray:
         """Select a subset of the SkillTable by a query,
            (part of) the index, or specific columns
 
@@ -479,7 +675,7 @@ class SkillTable:
         reduce_index : bool, optional
             Should unnecessary levels of the index be removed after subsetting?
             Removed levels will stay as columns. By default True
-        **kwargs : dict, optional
+        **kwargs
             Concrete keys depend on the index names of the SkillTable
             (from the "by" argument in cc.skill() method)
             "model"=... to select specific models,
@@ -492,9 +688,9 @@ class SkillTable:
 
         Examples
         --------
-        >>> s = cc.skill()
-        >>> s_SW1 = s.sel(model = "SW_1")
-        >>> s2 = s.sel(observation = ["EPL", "HKNA"])
+        >>> sk = cc.skill()
+        >>> sk_SW1 = sk.sel(model = "SW_1")
+        >>> sk2 = sk.sel(observation = ["EPL", "HKNA"])
         """
         if query is not None:
             warnings.warn(
@@ -509,9 +705,9 @@ class SkillTable:
                     f"s.sel({key}=...) is deprecated, use getitem s[...] instead",
                     FutureWarning,
                 )
-                return self[value]
+                return self[value]  # type: ignore
 
-        df = self._df
+        df = self.to_dataframe(drop_xy=False)
 
         for key, value in kwargs.items():
             if key in df.index.names:
@@ -527,7 +723,9 @@ class SkillTable:
             df = self._reduce_index(df)
         return self.__class__(df)
 
-    def _sel_from_index(self, df, key, value):
+    def _sel_from_index(
+        self, df: pd.DataFrame, key: str, value: str | int
+    ) -> pd.DataFrame:
         if (not isinstance(value, str)) and isinstance(value, Iterable):
             for i, v in enumerate(value):
                 dfi = self._sel_from_index(df, key, v)
@@ -546,15 +744,15 @@ class SkillTable:
             df = df[df.index == value]  # .copy()
         return df
 
-    def _idx_to_name(self, index, idx) -> str:
+    def _idx_to_name(self, index_name: str, pos: int) -> str:
         """Assumes that index is valid and idx is int"""
-        names = self._get_index_level_by_name(index)
+        names = self._get_index_level_by_name(index_name)
         n = len(names)
-        if (idx < 0) or (idx >= n):
-            raise KeyError(f"Id {idx} is out of bounds for index {index} (0, {n})")
-        return names[idx]
+        if (pos < 0) or (pos >= n):
+            raise KeyError(f"Id {pos} is out of bounds for index {index_name} (0, {n})")
+        return names[pos]
 
-    def _reduce_index(self, df):
+    def _reduce_index(self, df: pd.DataFrame) -> pd.DataFrame:
         """Remove unnecessary levels of MultiIndex"""
         df.index = df.index.remove_unused_levels()
         levels_to_reset = []
@@ -563,7 +761,7 @@ class SkillTable:
                 levels_to_reset.append(j)
         return df.reset_index(level=levels_to_reset)
 
-    def round(self, decimals=3):
+    def round(self, decimals: int = 3) -> SkillTable:
         """Round all values in SkillTable
 
         Parameters
@@ -572,18 +770,23 @@ class SkillTable:
             Number of decimal places to round to (default: 3).
             If decimals is negative, it specifies the number of
             positions to the left of the decimal point.
+
+        Returns
+        -------
+        SkillTable
+            A new SkillTable with rounded values
         """
 
         return self.__class__(self.data.round(decimals=decimals))
 
     def style(
         self,
-        decimals=3,
-        metrics=None,
-        cmap="OrRd",
-        show_best=True,
-        **kwargs,
-    ):
+        decimals: int = 3,
+        metrics: Iterable[str] | None = None,
+        cmap: str = "OrRd",
+        show_best: bool = True,
+        **kwargs: Any,
+    ) -> pd.io.formats.style.Styler:
         """Style SkillTable with colors using pandas style
 
         Parameters
@@ -606,10 +809,10 @@ class SkillTable:
 
         Examples
         --------
-        >>> s = cc.skill()
-        >>> s.style()
-        >>> s.style(precision=1, metrics="rmse")
-        >>> s.style(cmap="Blues", show_best=False)
+        >>> sk = cc.skill()
+        >>> sk.style()
+        >>> sk.style(precision=1, metrics="rmse")
+        >>> sk.style(cmap="Blues", show_best=False)
         """
         # identity metric columns
         float_cols = list(self._df.select_dtypes(include="number").columns)
@@ -658,7 +861,7 @@ class SkillTable:
             sdf = sdf.background_gradient(subset=cols, cmap=cmap)
 
             cols = list(set(self._large_is_best_metrics) & set(bg_cols))
-            cmap_r = self._reverse_colormap(cmap)
+            cmap_r = self._reverse_colormap(cmap)  # type: ignore
             sdf = sdf.background_gradient(subset=cols, cmap=cmap_r)
 
         if show_best:
@@ -673,7 +876,7 @@ class SkillTable:
 
         return sdf
 
-    def _reverse_colormap(self, cmap):
+    def _reverse_colormap(self, cmap):  # type: ignore
         cmap_r = cmap
         if isinstance(cmap, str):
             if cmap[-2:] == "_r":
@@ -684,7 +887,7 @@ class SkillTable:
             cmap_r = cmap.reversed()
         return cmap_r
 
-    def _style_one_best(self, s):
+    def _style_one_best(self, s: pd.Series) -> list[str]:
         """Using underline-etc to highlight the best in a Series."""
         is_best = (s - 1.0).abs() == (s - 1.0).abs().min()
         cell_style = (
@@ -692,7 +895,7 @@ class SkillTable:
         )
         return [cell_style if v else "" for v in is_best]
 
-    def _style_abs_min(self, s):
+    def _style_abs_min(self, s: pd.Series) -> list[str]:
         """Using underline-etc to highlight the best in a Series."""
         is_best = s.abs() == s.abs().min()
         cell_style = (
@@ -700,30 +903,32 @@ class SkillTable:
         )
         return [cell_style if v else "" for v in is_best]
 
-    def _style_min(self, s):
+    def _style_min(self, s: pd.Series) -> list[str]:
         """Using underline-etc to highlight the best in a Series."""
         cell_style = (
             "text-decoration: underline; font-style: italic; font-weight: bold;"
         )
         return [cell_style if v else "" for v in (s == s.min())]
 
-    def _style_max(self, s):
+    def _style_max(self, s: pd.Series) -> list[str]:
         """Using underline-etc to highlight the best in a Series."""
         cell_style = (
             "text-decoration: underline; font-style: italic; font-weight: bold;"
         )
         return [cell_style if v else "" for v in (s == s.max())]
 
+    # =============== Deprecated methods ===============
+
     # TODO: remove plot_* methods in v1.1; warnings are not needed
     # as the refering method is also deprecated
-    def plot_line(self, **kwargs):
-        return self.plot.line(**kwargs)
+    def plot_line(self, **kwargs):  # type: ignore
+        return self.plot.line(**kwargs)  # type: ignore
 
-    def plot_bar(self, **kwargs):
-        return self.plot.bar(**kwargs)
+    def plot_bar(self, **kwargs):  # type: ignore
+        return self.plot.bar(**kwargs)  # type: ignore
 
-    def plot_barh(self, **kwargs):
-        return self.plot.barh(**kwargs)
+    def plot_barh(self, **kwargs):  # type: ignore
+        return self.plot.barh(**kwargs)  # type: ignore
 
-    def plot_grid(self, **kwargs):
-        return self.plot.grid(**kwargs)
+    def plot_grid(self, **kwargs):  # type: ignore
+        return self.plot.grid(**kwargs)  # type: ignore

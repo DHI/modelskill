@@ -57,7 +57,7 @@ def test_concat_model(o123, mrmike, mrmike2):
     assert len(cc12.mod_names) == 2
     assert cc1.mod_names[0] == cc12.mod_names[0]
     assert cc2.mod_names[0] == cc12.mod_names[-1]
-    assert cc2.end == cc12.end
+    assert cc2.end_time == cc12.end_time
 
     cc12b = cc1 + cc2
     assert cc12b.score() == cc12.score()
@@ -75,7 +75,7 @@ def test_concat_model_different_time(o123, mrmike, mr2days):
     assert len(cc12.mod_names) == 2
     assert cc1.mod_names[0] == cc12.mod_names[0]
     assert cc2.mod_names[0] == cc12.mod_names[-1]
-    assert cc2.end == cc12.end
+    assert cc2.end_time == cc12.end_time
 
     cc12b = cc1 + cc2
     assert cc12b.score() == cc12.score()
@@ -109,14 +109,14 @@ def test_concat_time_overlap(o123, mrmike):
 
     cc26 = ms.match([o1, o2, o3], mrmike)
 
-    assert cc1.start == cc26.start
-    assert cc1.end > cc26.end
+    assert cc1.start_time == cc26.start_time
+    assert cc1.end_time > cc26.end_time
     assert cc1.n_points > cc26.n_points
 
     # cc26 completely contained in cc1
     cc12 = cc1 + cc26
-    assert cc1.start == cc12.start
-    assert cc1.end == cc12.end
+    assert cc1.start_time == cc12.start_time
+    assert cc1.end_time == cc12.end_time
     assert cc1.n_points == cc12.n_points
     assert cc1.score() == cc12.score()
 
@@ -133,8 +133,8 @@ def test_concat_time_overlap(o123, mrmike):
 
     # cc26 _not_ completely contained in cc2
     cc12 = cc26 + cc2
-    assert cc2.start > cc12.start
-    assert cc2.end == cc12.end
+    assert cc2.start_time > cc12.start_time
+    assert cc2.end_time == cc12.end_time
     assert cc2.n_points < cc12.n_points
 
     cc12a = cc2 + cc26

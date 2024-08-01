@@ -67,17 +67,17 @@ def test_subset_cc_for_named_comparers(cc):
 
     ccs = cc[("Klagshamn", "dmi_30357_Drogden_Fyr")]
     assert len(ccs) == 2
-    assert (
-        repr(ccs)
-        == "<ComparerCollection>\nComparer: Klagshamn\nComparer: dmi_30357_Drogden_Fyr"
-    )
+    repr_text = repr(ccs)
+    assert "<ComparerCollection>" in repr_text
+    assert "Klagshamn" in repr_text
+    assert "dmi_30357_Drogden_Fyr" in repr_text
 
     ccs2 = cc[["dmi_30357_Drogden_Fyr", "Klagshamn"]]
+    repr_text = repr(ccs2)
     assert len(ccs2)
-    assert (
-        repr(ccs2)
-        == "<ComparerCollection>\nComparer: dmi_30357_Drogden_Fyr\nComparer: Klagshamn"
-    )
+    assert "<ComparerCollection>" in repr_text
+    assert "Klagshamn" in repr_text
+    assert "dmi_30357_Drogden_Fyr" in repr_text
 
 
 def test_iterate_over_comparers(cc):
@@ -100,6 +100,29 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
     assert not np.any(np.isnan(df))
 
 
+def test_score_two_elements():
+    mr = ms.model_result("tests/testdata/two_elements.dfsu", item=0)
+
+    obs_df = pd.DataFrame(
+        [2.0, 2.0], index=pd.date_range("2020-01-01", periods=2, freq="D")
+    )
+
+    # observation is in the center of the second element
+    obs = ms.PointObservation(obs_df, item=0, x=2.0, y=2.0, name="obs")
+
+    cc = ms.match(obs, mr, spatial_method="contained")
+
+    assert cc.score(metric=root_mean_squared_error)["two_elements"] == pytest.approx(
+        0.0
+    )
+
+    cc_default = ms.match(obs, mr)
+
+    assert cc_default.score(metric=root_mean_squared_error)[
+        "two_elements"
+    ] == pytest.approx(0.0)
+
+
 def test_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
@@ -107,32 +130,90 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 
     assert cc.score(metric=root_mean_squared_error)[
         "Oresund2D_subset"
-    ] == pytest.approx(0.1986296276629835)
-    s = cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
-    s.root_mean_squared_error.data.mean() == pytest.approx(0.1986296276629835)
+    ] == pytest.approx(0.198637164895926)
+    sk = cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
+    sk.root_mean_squared_error.data.mean() == pytest.approx(0.198637164895926)
 
 
-# def test_weighted_score(modelresult_oresund_WL, klagshamn, drogden):
-#     mr = modelresult_oresund_WL
+def test_weighted_score(modelresult_oresund_WL):
+    o1 = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.dfs0",
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn",
+    )
+    o2 = ms.PointObservation(
+        "tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+        item=0,
+        x=355568.0,
+        y=6156863.0,
+        quantity=ms.Quantity(
+            "Water Level", unit="meter"
+        ),  # not sure if this is relevant in this test
+    )
 
-#     cc = ms.match([klagshamn, drogden], mr)
-#     unweighted_skill = cc.score()
+    mr = ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0, name="Oresund")
 
-#     con = ms.Connector()
+    cc = ms.match(obs=[o1, o2], mod=mr, spatial_method="contained")
+    unweighted = cc.score()
+    assert unweighted["Oresund"] == pytest.approx(0.1986296)
 
-#     con.add(klagshamn, mr, weight=0.9, validate=False)
-#     con.add(drogden, mr, weight=0.1, validate=False)
-#     cc = con.extract()
-#     weighted_skill = cc.score()
-#     assert unweighted_skill != weighted_skill
+    # Weighted
 
-#     obs = [klagshamn, drogden]
+    o1_w = ms.PointObservation(
+        "tests/testdata/smhi_2095_klagshamn.dfs0",
+        item=0,
+        x=366844,
+        y=6154291,
+        name="Klagshamn",
+        weight=10.0,
+    )
 
-#     con = ms.Connector(obs, mr, weight=[0.9, 0.1], validate=False)
-#     cc = con.extract()
-#     weighted_skill2 = cc.score()
+    o2_w = ms.PointObservation(
+        "tests/testdata/dmi_30357_Drogden_Fyr.dfs0",
+        item=0,
+        x=355568.0,
+        y=6156863.0,
+        quantity=ms.Quantity(
+            "Water Level", unit="meter"
+        ),  # not sure if this is relevant in this test
+        weight=0.1,
+    )
 
-#     assert weighted_skill == weighted_skill2
+    cc_w = ms.match(obs=[o1_w, o2_w], mod=mr, spatial_method="contained")
+    weighted = cc_w.score()
+
+    assert weighted["Oresund"] == pytest.approx(0.1666888)
+
+
+def test_weighted_score_from_prematched():
+    df = pd.DataFrame(
+        {"Oresund": [0.0, 1.0], "klagshamn": [0.0, 1.0], "drogden": [-1.0, 2.0]}
+    )
+
+    cmp1 = ms.from_matched(
+        df[["Oresund", "klagshamn"]],
+        mod_items=["Oresund"],
+        obs_item="klagshamn",
+        weight=100.0,
+    )
+    cmp2 = ms.from_matched(
+        df[["Oresund", "drogden"]],
+        mod_items=["Oresund"],
+        obs_item="drogden",
+        weight=0.0,
+    )
+    assert cmp1.weight == 100.0
+    assert cmp2.weight == 0.0
+    assert cmp1.score()["Oresund"] == pytest.approx(0.0)
+    assert cmp2.score()["Oresund"] == pytest.approx(1.0)
+
+    cc = ms.ComparerCollection([cmp1, cmp2])
+    assert cc["klagshamn"].weight == 100.0
+    assert cc["drogden"].weight == 0.0
+
+    assert cc.score()["Oresund"] == pytest.approx(0.0)  # 100 * 0 + 0 * 1
 
 
 def test_misc_properties(klagshamn, drogden):
@@ -141,7 +222,6 @@ def test_misc_properties(klagshamn, drogden):
     cc = ms.match([klagshamn, drogden], mr)
 
     assert len(cc) == 2
-    assert cc.n_comparers == 2
 
     assert cc.n_models == 1
     assert cc.mod_names == ["Oresund2D_subset"]
@@ -151,8 +231,8 @@ def test_misc_properties(klagshamn, drogden):
 
     assert ck.n_points > 0
 
-    assert ck.start.year == 2018  # intersection of observation and model times
-    assert ck.end.year == 2018
+    assert ck.time[0].year == 2018  # intersection of observation and model times
+    assert ck.time[-1].year == 2018
 
     assert ck.x == 366844
 
@@ -181,9 +261,7 @@ def test_skill_choose_metrics(klagshamn, drogden):
 
     cc = ms.match([klagshamn, drogden], mr)
 
-    cc.metrics = ["mae", "si"]
-
-    df = cc.skill().to_dataframe()
+    df = cc.skill(metrics=["mae", "si"]).to_dataframe()
 
     assert "mae" in df.columns
     assert "rmse" not in df.columns
@@ -196,17 +274,13 @@ def test_skill_choose_metrics(klagshamn, drogden):
 
 
 def test_skill_choose_metrics_back_defaults(cc):
-    cc.metrics = ["kge", "nse", "max_error"]
-
-    df = cc.skill().to_dataframe()
+    df = cc.skill(metrics=["kge", "nse", "max_error"]).to_dataframe()
     assert "kge" in df.columns
     assert "rmse" not in df.columns
 
-    df = cc.mean_skill().to_dataframe()
+    df = cc.mean_skill(metrics=["kge", "nse", "max_error"]).to_dataframe()
     assert "kge" in df.columns
     assert "rmse" not in df.columns
-
-    cc.metrics = None  # go back to defaults
 
     df = cc.mean_skill().to_dataframe()
     assert "kge" not in df.columns
@@ -249,7 +323,7 @@ def test_mod_aux_carried_over(klagshamn):
     mr = ms.model_result(
         "tests/testdata/Oresund2D_subset.dfsu", item=0, aux_items="U velocity"
     )
-    cmp = ms.match(klagshamn, mr)
+    cmp = ms.match(klagshamn, mr, spatial_method="contained")
     assert "U velocity" in cmp.data.data_vars
     assert cmp.data["U velocity"].values[0] == pytest.approx(-0.0360998)
     assert cmp.data["U velocity"].attrs["kind"] == "aux"

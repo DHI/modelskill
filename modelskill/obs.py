@@ -6,11 +6,11 @@ Examples
 --------
 >>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
 """
+
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Any, Union
 import warnings
-import numpy as np
 import pandas as pd
 import xarray as xr
 
@@ -21,6 +21,9 @@ from .timeseries import (
     _parse_point_input,
     _parse_track_input,
 )
+
+# NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
+Serializable = Union[str, int, float]
 
 
 def observation(
@@ -95,36 +98,50 @@ class Observation(TimeSeries):
     def __init__(
         self,
         data: xr.Dataset,
-        weight: float = 1.0,  # TODO: cannot currently be set
-        color: str = "#d62728",  # TODO: cannot currently be set
+        weight: float,
+        color: str = "#d62728",  # TODO: cannot currently be set by user
+        attrs: Optional[dict] = None,
     ) -> None:
+        assert isinstance(data, xr.Dataset)
+
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["kind"] = "observation"
+
+        # check that user-defined attrs don't overwrite existing attrs!
+        _validate_attrs(data.attrs, attrs)
+        data.attrs = {**data.attrs, **(attrs or {})}
         data["time"] = self._parse_time(data.time)
 
+        data_var = str(list(data.data_vars)[0])
+        data[data_var].attrs["color"] = color
         super().__init__(data=data)
-        self.data[self.name].attrs["weight"] = weight
-        self.data[self.name].attrs["color"] = color
+        self.data.attrs["weight"] = weight
+
+    @property
+    def attrs(self) -> dict[str, Any]:
+        """Attributes of the observation"""
+        return self.data.attrs
+
+    @attrs.setter
+    def attrs(self, value: dict[str, Serializable]) -> None:
+        self.data.attrs = value
 
     @property
     def weight(self) -> float:
         """Weighting factor for skill scores"""
-        return self.data[self.name].attrs["weight"]
+        return self.data.attrs["weight"]
 
     @weight.setter
     def weight(self, value: float) -> None:
-        self.data[self.name].attrs["weight"] = value
+        self.data.attrs["weight"] = value
 
     # TODO: move this to TimeSeries?
     @staticmethod
     def _parse_time(time):
-        if not isinstance(time.to_index(), pd.DatetimeIndex):
-            raise TypeError(
-                f"Input must have a datetime index! Provided index was {type(time.to_index())}"
-            )
-        return time.dt.round("100us")
-
-    @property
-    def _aux_vars(self):
-        return list(self.data.filter_by_attrs(kind="aux").data_vars)
+        if isinstance(time, pd.DatetimeIndex):
+            return time.dt.round("100us")
+        else:
+            return time  # can be RangeIndex
 
 
 class PointObservation(Observation):
@@ -134,17 +151,17 @@ class PointObservation(Observation):
 
     Parameters
     ----------
-    data : (str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset, xr.DataArray)
-        filename or object with the data
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        filename (.dfs0 or .nc) or object with the data
     item : (int, str), optional
         index or name of the wanted item/column, by default None
         if data contains more than one item, item must be given
     x : float, optional
-        x-coordinate of the observation point, by default None
+        x-coordinate of the observation point, inferred from data if not given, else None
     y : float, optional
-        y-coordinate of the observation point, by default None
+        y-coordinate of the observation point, inferred from data if not given, else None
     z : float, optional
-        z-coordinate of the observation point, by default None
+        z-coordinate of the observation point, inferred from data if not given, else None
     name : str, optional
         user-defined name for easy identification in plots etc, by default file basename
     quantity : Quantity, optional
@@ -154,6 +171,8 @@ class PointObservation(Observation):
         list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
 
     Examples
     --------
@@ -173,38 +192,25 @@ class PointObservation(Observation):
         y: Optional[float] = None,
         z: Optional[float] = None,
         name: Optional[str] = None,
+        weight: float = 1.0,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,
         attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
             data = _parse_point_input(
-                data, name=name, item=item, quantity=quantity, aux_items=aux_items
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                x=x,
+                y=y,
+                z=z,
             )
-            data.coords["x"] = x
-            data.coords["y"] = y
-            data.coords["z"] = z
 
         assert isinstance(data, xr.Dataset)
-
-        data_var = str(list(data.data_vars)[0])
-        data[data_var].attrs["kind"] = "observation"
-
-        # check that user-defined attrs don't overwrite existing attrs!
-        _validate_attrs(data.attrs, attrs)
-        data.attrs = {**data.attrs, **(attrs or {})}
-
-        super().__init__(data=data)
-
-    @property
-    def geometry(self):
-        """Coordinates of observation (shapely.geometry.Point)"""
-        from shapely.geometry import Point
-
-        if self.z is None:
-            return Point(self.x, self.y)
-        else:
-            return Point(self.x, self.y, self.z)
+        super().__init__(data=data, weight=weight, attrs=attrs)
 
     @property
     def z(self):
@@ -214,12 +220,6 @@ class PointObservation(Observation):
     @z.setter
     def z(self, value):
         self.data["z"] = value
-
-    def __repr__(self):
-        out = f"PointObservation: {self.name}, x={self.x}, y={self.y}"
-        if len(self._aux_vars) > 0:
-            out += f", aux={self._aux_vars}"
-        return out
 
 
 class TrackObservation(Observation):
@@ -247,9 +247,6 @@ class TrackObservation(Observation):
         "first" to keep first occurrence, "last" to keep last occurrence,
         False to drop all duplicates, "offset" to add milliseconds to
         consecutive duplicates, by default "first"
-    offset_duplicates : float, optional
-        DEPRECATED! in case of duplicate timestamps and keep_duplicates="offset",
-        add this many seconds to consecutive duplicate entries, by default 0.001
     quantity : Quantity, optional
         The quantity of the observation, for validation with model results
         For MIKE dfs files this is inferred from the EUM information
@@ -257,6 +254,8 @@ class TrackObservation(Observation):
         list of names or indices of auxiliary items, by default None
     attrs : dict, optional
         additional attributes to be added to the data, by default None
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
 
     Examples
     --------
@@ -303,19 +302,13 @@ class TrackObservation(Observation):
 
     """
 
-    @property
-    def geometry(self):
-        """Coordinates of observation (shapely.geometry.MultiPoint)"""
-        from shapely.geometry import MultiPoint
-
-        return MultiPoint(np.stack([self.x, self.y]).T)
-
     def __init__(
         self,
         data: TrackType,
         *,
         item: Optional[int | str] = None,
         name: Optional[str] = None,
+        weight: float = 1.0,
         x_item: Optional[int | str] = 0,
         y_item: Optional[int | str] = 1,
         keep_duplicates: bool | str = "first",
@@ -342,21 +335,7 @@ class TrackObservation(Observation):
                 aux_items=aux_items,
             )
         assert isinstance(data, xr.Dataset)
-
-        data_var = str(list(data.data_vars)[0])
-        data[data_var].attrs["kind"] = "observation"
-
-        # check that user-defined attrs don't overwrite existing attrs!
-        _validate_attrs(data.attrs, attrs)
-        data.attrs = {**data.attrs, **(attrs or {})}
-
-        super().__init__(data=data)
-
-    def __repr__(self):
-        out = f"TrackObservation: {self.name}, n={self.n_points}"
-        if len(self._aux_vars) > 0:
-            out += f", aux={self._aux_vars}"
-        return out
+        super().__init__(data=data, weight=weight, attrs=attrs)
 
 
 def unit_display_name(name: str) -> str:

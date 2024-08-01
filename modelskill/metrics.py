@@ -22,6 +22,7 @@ difference between a model and an observation.
 * [peak_ratio (pr)][modelskill.metrics.peak_ratio]
 
 Circular metrics (for directional data with units in degrees):
+
 * [c_bias][modelskill.metrics.c_bias]
 * [c_max_error][modelskill.metrics.c_max_error]
 * [c_mean_absolute_error (c_mae)][modelskill.metrics.c_mean_absolute_error]
@@ -35,41 +36,47 @@ Examples
 >>> obs = np.array([0.3, 2.1, -1.0])
 >>> mod = np.array([0.0, 2.3, 1.0])
 >>> bias(obs, mod)
-0.6333333333333332
+np.float64(0.6333333333333332)
 >>> max_error(obs, mod)
-2.0
+np.float64(2.0)
 >>> rmse(obs, mod)
-1.173314393786536
+np.float64(1.173314393786536)
 >>> urmse(obs, mod)
-0.9877021593352702
+np.float64(0.9877021593352702)
 >>> mae(obs, mod)
-0.8333333333333331
+np.float64(0.8333333333333331)
 >>> mape(obs, mod)
-103.17460317460316
+np.float64(103.17460317460316)
 >>> nse(obs, mod)
-0.14786795048143053
+np.float64(0.14786795048143053)
 >>> r2(obs, mod)
-0.14786795048143053
+np.float64(0.14786795048143053)
 >>> mef(obs, mod)
-0.9231099877688299
+np.float64(0.9231099877688299)
 >>> si(obs, mod)
-0.8715019052958266
+np.float64(0.8715019052958266)
 >>> spearmanr(obs, mod)
-0.5
+np.float64(0.5)
 >>> willmott(obs, mod)
-0.7484604452865941
+np.float64(0.7484604452865941)
 >>> hit_ratio(obs, mod, a=0.5)
-0.6666666666666666
+np.float64(0.6666666666666666)
 >>> ev(obs, mod)
-0.39614855570839064
+np.float64(0.39614855570839064)
 """
+
+from __future__ import annotations
+import inspect
+
 import sys
-from typing import Optional, Callable, Union, Tuple, Set
 import warnings
+from typing import Callable, Iterable, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+from .settings import options
 
 
 def bias(obs, model) -> float:
@@ -83,7 +90,7 @@ def bias(obs, model) -> float:
     """
 
     assert obs.size == model.size
-    return np.mean(model.ravel() - obs.ravel())
+    return np.mean(model - obs)
 
 
 def max_error(obs, model) -> float:
@@ -97,7 +104,7 @@ def max_error(obs, model) -> float:
     """
 
     assert obs.size == model.size
-    return np.max(np.abs(model.ravel() - obs.ravel()))
+    return np.max(np.abs(model - obs))
 
 
 def mae(
@@ -121,7 +128,7 @@ def mean_absolute_error(
     """
     assert obs.size == model.size
 
-    error = np.average(np.abs(model.ravel() - obs.ravel()), weights=weights)
+    error = np.average(np.abs(model - obs), weights=weights)
 
     return error
 
@@ -149,7 +156,7 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
         warnings.warn("Observation is zero, consider to use another metric than MAPE")
         return np.nan  # TODO is it better to return a large value +inf than NaN?
 
-    return np.mean(np.abs((obs.ravel() - model.ravel()) / obs.ravel())) * 100
+    return np.mean(np.abs((obs - model) / obs)) * 100
 
 
 def urmse(
@@ -219,7 +226,7 @@ def root_mean_squared_error(
     """
     assert obs.size == model.size
 
-    residual = obs.ravel() - model.ravel()
+    residual = obs - model
     if unbiased:
         residual = residual - residual.mean()
     error = np.sqrt(np.average(residual**2, weights=weights))
@@ -254,10 +261,7 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     if len(obs) == 0:
         return np.nan
-    error = 1 - (
-        np.sum((obs.ravel() - model.ravel()) ** 2)
-        / np.sum((obs.ravel() - np.mean(obs.ravel())) ** 2)
-    )
+    error = 1 - (np.sum((obs - model) ** 2) / np.sum((obs - np.mean(obs)) ** 2))
 
     return error
 
@@ -328,13 +332,13 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.array([1.0,1.1,1.2,1.3,1.4])
     >>> model = np.array([1.09, 1.16, 1.3 , 1.38, 1.49])
     >>> r2(obs,model)
-    0.6379999999999998
+    np.float64(0.6379999999999998)
     """
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
 
-    residual = model.ravel() - obs.ravel()
+    residual = model - obs
     SSr = np.sum(residual**2)
     SSt = np.sum((obs - obs.mean()) ** 2)
 
@@ -395,9 +399,9 @@ def corrcoef(obs, model, weights=None) -> float:
         return np.nan
 
     if weights is None:
-        return np.corrcoef(obs.ravel(), model.ravel())[0, 1]
+        return np.corrcoef(obs, model)[0, 1]
     else:
-        C = np.cov(obs.ravel(), model.ravel(), fweights=weights)
+        C = np.cov(obs, model, fweights=weights)
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
 
@@ -425,9 +429,9 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.linspace(-20, 20, 100)
     >>> mod = np.tanh(obs)
     >>> rho(obs, mod)
-    0.9999759973116955
+    np.float64(0.9999759973116955)
     >>> spearmanr(obs, mod)
-    0.9999759973116955
+    np.float64(0.9999759973116955)
 
     See Also
     --------
@@ -459,9 +463,9 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
-    residual = obs.ravel() - model.ravel()
+    residual = obs - model
     residual = residual - residual.mean()  # unbiased
-    return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs.ravel()))
+    return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs))
 
 
 def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
@@ -479,8 +483,7 @@ def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
 
     return np.sqrt(
-        np.sum(((model.ravel() - model.mean()) - (obs.ravel() - obs.mean())) ** 2)
-        / np.sum(obs.ravel() ** 2)
+        np.sum(((model - model.mean()) - (obs - obs.mean())) ** 2) / np.sum(obs**2)
     )
 
 
@@ -517,20 +520,20 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
-    nominator = np.sum((obs.ravel() - obs.mean()) ** 2) - np.sum(
-        ((obs.ravel() - obs.mean()) - (model.ravel() - model.mean())) ** 2
+    nominator = np.sum((obs - obs.mean()) ** 2) - np.sum(
+        ((obs - obs.mean()) - (model - model.mean())) ** 2
     )
-    denominator = np.sum((obs.ravel() - obs.mean()) ** 2)
+    denominator = np.sum((obs - obs.mean()) ** 2)
 
     return nominator / denominator
 
 
 def pr(
-    obs: np.ndarray,
+    obs: pd.Series,
     model: np.ndarray,
     inter_event_level: float = 0.7,
-    AAP: int = 2,
-    inter_event_time="36h",
+    AAP: Union[int, float] = 2,
+    inter_event_time: str = "36h",
 ) -> float:
     """alias for peak_ratio"""
     assert obs.size == model.size
@@ -539,28 +542,28 @@ def pr(
 
 def peak_ratio(
     obs: pd.Series,
-    model: pd.Series,
+    model: np.ndarray,
     inter_event_level: float = 0.7,
-    AAP: int = 2,
-    inter_event_time="36h",
+    AAP: Union[int, float] = 2,
+    inter_event_time: str = "36h",
 ) -> float:
     r"""Peak Ratio
 
-    PR is the mean of the individual ratios of identified peaks in the
-    model / identified peaks in the measurements. PR is calculated only for the joint-events,
+    PR is the mean of the largest-N individual ratios of identified peaks in the
+    model / identified peaks in the measurements (N number of events defined by AAP). PR is calculated only for the joint-events,
     ie, events that ocurr simulateneously within a window +/- 0.5*inter_event_time.
 
     Parameters
     ----------
     inter_event_level (float, optional)
         Inter-event level threshold (default: 0.7).
-    AAP (float, optional)
+    AAP (int or float, optional)
         Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)
     inter_event_time (str, optional)
             Maximum time interval between peaks (default: 36 hours).
 
     $$
-    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_model_i}{Peak_obs_i} )}{N_{joint-peaks}}
+    \frac{\sum_{i=1}^{N_{joint-peaks}} (\frac{Peak_{model_i}}{Peak_{obs_i}} )}{N_{joint-peaks}}
     $$
 
     Range: $[0, \infty)$; Best: 1.0
@@ -571,27 +574,32 @@ def peak_ratio(
         return np.nan
     assert isinstance(obs.index, pd.DatetimeIndex)
     time = obs.index
+
     # Calculate number of years
     dt_int = time[1:].values - time[0:-1].values
     dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
     N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
-    found_peaks = []
-    for data in [obs, model]:
-        peak_index, AAP_ = _partial_duration_series(
-            time,
-            data,
-            inter_event_level=inter_event_level,
-            AAP=AAP,
-            inter_event_time=inter_event_time,
-        )
-        peaks = data[peak_index]
-        peaks_sorted = peaks.sort_values(ascending=False)
-        found_peaks.append(
-            peaks_sorted[0 : max(1, min(round(AAP_ * N_years), np.sum(peaks)))]
-        )
-    found_peaks_obs = found_peaks[0]
-    found_peaks_mod = found_peaks[1]
+    peak_index, AAP_ = _partial_duration_series(
+        time,
+        obs,
+        inter_event_level=inter_event_level,
+        AAP=AAP,
+        inter_event_time=inter_event_time,
+    )
+    peaks = obs[peak_index]
+    found_peaks_obs = peaks.sort_values(ascending=False)
 
+    peak_index, _ = _partial_duration_series(
+        time,
+        model,
+        inter_event_level=inter_event_level,
+        AAP=AAP,
+        inter_event_time=inter_event_time,
+    )
+    peaks = model[peak_index]
+    found_peaks_mod = peaks.sort_values(ascending=False)
+
+    top_n_peaks = max(1, min(round(AAP_ * N_years), np.sum(peaks)))
     # Resample~ish, find peaks spread maximum Half the inter event time (if inter event =36, select data paired +/- 18h) (or inter_event) and then select
     indices_mod = (
         abs(found_peaks_obs.index.values[:, None] - found_peaks_mod.index.values)
@@ -601,13 +609,26 @@ def peak_ratio(
         abs(found_peaks_mod.index.values[:, None] - found_peaks_obs.index.values)
         < pd.Timedelta(inter_event_time) / 2
     ).any(axis=0)
+    # Find intersection (co-existing peaks, still a large number, O(1000s))
     obs_joint = found_peaks_obs.loc[indices_obs]
     mod_joint = found_peaks_mod.loc[indices_mod]
+    # Now we forget about time index, as peaks have been paired already.
+    df_filter = pd.DataFrame(
+        data={
+            "model": mod_joint.sort_index().values,
+            "observation": obs_joint.sort_index().values,
+        }
+    )
+    df_filter["Maximum"] = df_filter.max(axis=1)
+    df_filter.sort_values(by="Maximum", ascending=False, inplace=True)
+    # Finally we do the selection of the N- largest peaks from either model or measured
+    df_filter = df_filter.iloc[0:top_n_peaks, :]
+    # Rename to avoid further refactoring
+    obs_joint = df_filter.loc[:, "observation"]
+    mod_joint = df_filter.loc[:, "model"]
 
     if len(obs_joint) == 0 or len(mod_joint) == 0:
-        raise ValueError(
-            f"Combination of Model/Measurements does not have overlapping peaks within inter_event_time={inter_event_time}"
-        )
+        return np.nan
     res = np.mean(mod_joint.values / obs_joint.values)
     return res
 
@@ -629,7 +650,7 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])
     >>> model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])
     >>> willmott(obs, model)
-    0.9501403174479723
+    np.float64(0.9501403174479723)
 
     References
     ----------
@@ -640,7 +661,7 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
-    residual = model.ravel() - obs.ravel()
+    residual = model - obs
     nominator = np.sum(residual**2)
     denominator = np.sum((np.abs(model - obs.mean()) + np.abs(obs - obs.mean())) ** 2)
 
@@ -661,15 +682,15 @@ def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
     >>> obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])
     >>> model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])
     >>> hit_ratio(obs, model, a=0.05)
-    0.2857142857142857
+    np.float64(0.2857142857142857)
     >>> hit_ratio(obs, model, a=0.1)
-    0.8571428571428571
+    np.float64(0.8571428571428571)
     >>> hit_ratio(obs, model, a=0.15)
-    1.0
+    np.float64(1.0)
     """
     assert obs.size == model.size
 
-    return np.mean(np.abs(obs.ravel() - model.ravel()) < a)
+    return np.mean(np.abs(obs - model) < a)
 
 
 def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
@@ -683,7 +704,7 @@ def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
     Range: $(-\infty, \infty )$; Best: 1
     """
     assert obs.size == model.size
-    return _linear_regression(obs.ravel(), model.ravel(), reg_method)[0]
+    return _linear_regression(obs, model, reg_method)[0]
 
 
 def _linear_regression(
@@ -868,7 +889,7 @@ def _partial_duration_series(
 def _c_residual(obs: np.ndarray, model: np.ndarray) -> np.ndarray:
     """Circular residual (0, 360) - output between -180 and 180"""
     assert obs.size == model.size
-    resi = model.ravel() - obs.ravel()
+    resi = model - obs
     resi = (resi + 180) % 360 - 180
     return resi
 
@@ -895,7 +916,7 @@ def c_bias(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.array([10., 355., 170.])
     >>> mod = np.array([20., 5., -180.])
     >>> c_bias(obs, mod)
-    10.0
+    np.float64(10.0)
     """
     from scipy.stats import circmean
 
@@ -925,7 +946,7 @@ def c_max_error(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.array([10., 350., 10.])
     >>> mod = np.array([20., 10., 350.])
     >>> c_max_error(obs, mod)
-    20.0
+    np.float64(20.0)
     """
 
     resi = _c_residual(obs, model)
@@ -1064,7 +1085,8 @@ METRICS_WITH_DIMENSION = set(
     ]
 )
 
-default_metrics = [bias, rmse, urmse, mae, cc, si, r2]
+default_metrics: List[Callable] = [bias, rmse, urmse, mae, cc, si, r2]
+default_circular_metrics: List[Callable] = [c_bias, c_rmse, c_urmse, c_mae]
 
 
 def metric_has_units(metric: Union[str, Callable]) -> bool:
@@ -1110,10 +1132,12 @@ NON_METRICS = set(
         "Optional",
         "Set",
         "Tuple",
+        "List",
+        "Iterable",
         "Union",
         "_c_residual",
         "_linear_regression",
-        "_partial_duration_series",        
+        "_partial_duration_series",
     ]
 )
 
@@ -1173,4 +1197,42 @@ defined_metrics: Set[str] = (
     - NON_METRICS
 )
 
-__all__ = list(defined_metrics)
+
+def _parse_metric(
+    metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
+    *,
+    directional: bool = False,
+) -> List[Callable]:
+    if metric is None:
+        if directional:
+            return default_circular_metrics
+        else:
+            # could be a list of str!
+            return [get_metric(m) for m in options.metrics.list]
+
+    if isinstance(metric, str):
+        metrics: list = [metric]
+    elif callable(metric):
+        metrics = [metric]
+    elif isinstance(metric, Iterable):
+        metrics = list(metric)
+
+    parsed_metrics = []
+
+    for m in metrics:
+        if isinstance(m, str):
+            parsed_metrics.append(get_metric(m))
+        elif callable(m):
+            if len(inspect.signature(m).parameters) < 2:
+                raise ValueError(
+                    "Metrics must have at least two arguments (obs, model)"
+                )
+            parsed_metrics.append(m)
+        else:
+            raise TypeError(f"metric {m} must be a string or callable")
+
+    return parsed_metrics
+
+
+# TODO add non-metric functions to __all__
+__all__ = [str(m) for m in defined_metrics]

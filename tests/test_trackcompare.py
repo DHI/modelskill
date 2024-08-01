@@ -178,14 +178,20 @@ def test_tiny_mod_unique(obs_tiny, mod_tiny_unique):
 
 # Currently fails as check on x, y difference is missing!
 def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
-    obs_tiny_df.x.iloc[0] = 1.1  # difference in x larger than tolerance
-    obs_tiny_df.y.iloc[3] = 13.6  # difference in y larger than tolerance
+    obs_tiny_df.loc["2017-10-27 13:00:01", "x"] = (
+        1.1  # difference in x larger than tolerance
+    )
+    obs_tiny_df.loc["2017-10-27 13:00:03", "y"] = (
+        13.6  # difference in y larger than tolerance
+    )
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
         obs_tiny = ms.TrackObservation(
             obs_tiny_df, item="alti", x_item="x", y_item="y", keep_duplicates="first"
         )
-    cmp = ms.match(obs_tiny, mod_tiny_unique)
-    assert cmp.n_points == 2  # 2 points removed due to difference in x,y
+    with pytest.warns(UserWarning, match="Removed 2 model points"):
+        # 2 points removed due to difference in x,y
+        cmp = ms.match(obs_tiny, mod_tiny_unique)
+    assert cmp.n_points == 2
     expected_time = pd.DatetimeIndex(
         [
             "2017-10-27 13:00:02",
@@ -341,10 +347,10 @@ def test_gridded_skill_bins(comparer):
     assert ds.x[0] == -0.75
 
 
-def test_gridded_skill_by(comparer):
-    # odd order of by
-    ds = comparer.gridded_skill(metrics=["bias"], by=["y", "mod"])
-    assert ds.coords._names == {"y", "model", "x"}
+# This test doesn't test anything meaningful
+# def test_gridded_skill_by(comparer):
+#     ds = comparer.gridded_skill(metrics=["bias"], by=["y", "mod"])
+#     assert ds.coords._names == {"y", "model", "x"}
 
 
 def test_gridded_skill_misc(comparer):
@@ -365,7 +371,7 @@ def test_hist(comparer):
 
     cmp.plot.hist(bins=10)
     cmp.plot.hist(density=False)
-    cmp.plot.hist(model=0, title="new_title", alpha=0.2)
+    cmp.sel(model=0).plot.hist(title="new_title", alpha=0.2)
 
 
 def test_residual_hist(comparer):
@@ -384,6 +390,7 @@ def test_df_input(obs_tiny_df, mod_tiny3):
 
     assert isinstance(obs_tiny_df, pd.DataFrame)
     assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
+
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
         cmp = ms.match(obs_tiny_df, mod_tiny3, gtype="track")
 

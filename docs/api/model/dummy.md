@@ -1,0 +1,3 @@
+# DummyModelResult
+
+::: modelskill.DummyModelResult

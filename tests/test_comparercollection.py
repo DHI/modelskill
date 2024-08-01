@@ -3,6 +3,7 @@ import pytest
 import pandas as pd
 import xarray as xr
 import modelskill.comparison
+import modelskill as ms
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -13,13 +14,24 @@ mpl.use("Agg")
 
 def _set_attrs(data: xr.Dataset) -> xr.Dataset:
     data["Observation"].attrs["kind"] = "observation"
-    data["Observation"].attrs["weight"] = 1.0
     data["Observation"].attrs["long_name"] = "fake var"
     data["Observation"].attrs["units"] = "m"
     data["m1"].attrs["kind"] = "model"
     data["m2"].attrs["kind"] = "model"
     data.attrs["modelskill_version"] = modelskill.__version__
     return data
+
+
+@pytest.fixture
+def cc_pr() -> modelskill.comparison.Comparer:
+    """Real data to test Peak Ratio from top-to-bottom"""
+    obs = modelskill.PointObservation(
+        "tests/testdata/PR_test_data.dfs0", item="Hs_measured"
+    )
+    mod = modelskill.PointModelResult(
+        "tests/testdata/PR_test_data.dfs0", item="Hs_model"
+    )
+    return modelskill.match(obs, mod)
 
 
 @pytest.fixture
@@ -83,48 +95,48 @@ def tc() -> modelskill.comparison.Comparer:
 
 
 @pytest.fixture
-def cc(pc, tc) -> modelskill.ComparerCollection:
+def cc(pc, tc) -> ms.ComparerCollection:
     """A comparer collection with two comparers, with partial overlap in time
     one comparer with 2 models, one comparer with 3 models"""
-    return modelskill.ComparerCollection([pc, tc])
+    return ms.ComparerCollection([pc, tc])
 
 
 def test_cc_properties(cc):
-    assert cc.n_comparers == 2
+    assert len(cc) == 2
     assert len(cc) == 2
     assert cc.n_models == 3  # first:2, second:3
     assert cc.n_points == 10  # 5 + 5
-    assert cc.start == pd.Timestamp("2019-01-01")
-    assert cc.end == pd.Timestamp("2019-01-07")
+    assert cc.start_time == pd.Timestamp("2019-01-01")
+    assert cc.end_time == pd.Timestamp("2019-01-07")
     assert cc.obs_names == ["fake point obs", "fake track obs"]
     assert cc.mod_names == ["m1", "m2", "m3"]
 
 
 def test_cc_sel_model(cc):
     cc2 = cc.sel(model="m1")
-    assert cc2.n_comparers == 2
+    assert len(cc2) == 2
     assert cc2.n_models == 1
     assert cc2.n_points == 10
-    assert cc2.start == pd.Timestamp("2019-01-01")
-    assert cc2.end == pd.Timestamp("2019-01-07")
+    assert cc2.start_time == pd.Timestamp("2019-01-01")
+    assert cc2.end_time == pd.Timestamp("2019-01-07")
     assert cc2.obs_names == ["fake point obs", "fake track obs"]
     assert cc2.mod_names == ["m1"]
 
 
 def test_cc_sel_model_m3(cc):
     cc2 = cc.sel(model="m3")
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2.n_models == 1
 
 
 def test_cc_sel_model_last(cc):
     # last is m3 which is not in the first comparer
     cc2 = cc.sel(model=-1)
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2.n_models == 1
     assert cc2.n_points == 5
-    assert cc2.start == pd.Timestamp("2019-01-03")
-    assert cc2.end == pd.Timestamp("2019-01-07")
+    assert cc2.start_time == pd.Timestamp("2019-01-03")
+    assert cc2.end_time == pd.Timestamp("2019-01-07")
     assert cc2.obs_names == ["fake track obs"]
     assert cc2.mod_names == ["m3"]
 
@@ -143,26 +155,268 @@ def test_cc_sel_model_last(cc):
 
 def test_cc_sel_time(cc):
     cc2 = cc.sel(time=slice("2019-01-03", "2019-01-05"))
-    assert cc2.n_comparers == 2
+    assert len(cc2) == 2
     assert cc2.n_models == 3
     assert cc2.n_points == 6
-    assert cc2.start == pd.Timestamp("2019-01-03")
-    assert cc2.end == pd.Timestamp("2019-01-05")
+    assert cc2.start_time == pd.Timestamp("2019-01-03")
+    assert cc2.end_time == pd.Timestamp("2019-01-05")
     assert cc2.obs_names == ["fake point obs", "fake track obs"]
     assert cc2.mod_names == ["m1", "m2", "m3"]
 
 
 def test_cc_sel_attrs(cc):
     cc2 = cc.sel(gtype="point")
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2[0].gtype == "point"
 
 
 def test_cc_query(cc):
     cc2 = cc.query("Observation > 3")
-    assert cc2.n_comparers == 1
+    assert len(cc2) == 1
     assert cc2.n_models == 2
     assert cc2.n_points == 2
+
+
+def test_add_cc_pc(cc, pc):
+    pc2 = pc.copy()
+    pc2.data.attrs["name"] = "pc2"
+    cc2 = cc + pc2
+    assert cc2.n_points == 15
+    assert len(cc2) == 3
+
+
+def test_add_cc_tc(cc, tc):
+    tc2 = tc.copy()
+    tc2.data.attrs["name"] = "tc2"
+    cc2 = cc + tc2
+    assert cc2.n_points == 15
+    assert len(cc2) == 3
+
+
+def test_add_cc_cc(cc, pc, tc):
+    pc2 = pc.copy()
+    pc2.data.attrs["name"] = "pc2"
+    tc2 = tc.copy()
+    tc2.data.attrs["name"] = "tc2"
+    tc3 = tc.copy()  # keep name
+    cc2 = pc2 + tc2 + tc3
+
+    cc3 = cc + cc2
+    # assert cc3.n_points == 15
+    assert len(cc3) == 4
+
+
+def test_rename_obs(cc):
+    cc2 = cc.rename({"fake point obs": "fake point obs 2"})
+    assert cc2.obs_names == ["fake point obs 2", "fake track obs"]
+    assert cc.obs_names == ["fake point obs", "fake track obs"]
+
+    cc3 = cc.rename(
+        {"fake point obs": "fake point obs 2", "fake track obs": "fake track obs 2"}
+    )
+    assert cc3.obs_names == ["fake point obs 2", "fake track obs 2"]
+
+
+def test_rename_mod(cc):
+    cc2 = cc.rename({"m1": "m1b"})
+    assert cc2.mod_names == ["m1b", "m2", "m3"]
+    assert cc.mod_names == ["m1", "m2", "m3"]
+
+    cc3 = cc.rename({"m1": "m1b", "m2": "m2b", "m3": "m3b"})
+    assert cc3.mod_names == ["m1b", "m2b", "m3b"]
+
+
+def test_rename_mod_and_obs(cc):
+    cc2 = cc.rename({"m1": "m1b", "fake point obs": "fake point obs 2"})
+    assert cc2.mod_names == ["m1b", "m2", "m3"]
+    assert cc2.obs_names == ["fake point obs 2", "fake track obs"]
+    assert cc.mod_names == ["m1", "m2", "m3"]
+    assert cc.obs_names == ["fake point obs", "fake track obs"]
+
+
+def test_rename_aux(cc):
+    aux = xr.ones_like(cc[0].data["m1"])
+    aux.attrs["kind"] = "aux"
+    cc[0].data["aux"] = aux
+    assert "aux" in cc.aux_names
+    cc2 = cc.rename({"aux": "aux2"})
+    assert "aux" not in cc2[0].data
+    assert cc2.aux_names == ["aux2"]
+
+
+def test_rename_aux_and_mod(cc):
+    aux = xr.ones_like(cc[0].data["m1"])
+    aux.attrs["kind"] = "aux"
+    cc[0].data["aux"] = aux
+    cc2 = cc.rename({"aux": "aux2", "m1": "m1b"})
+    assert cc2.aux_names == ["aux2"]
+    assert cc2.mod_names == ["m1b", "m2", "m3"]
+
+
+def test_rename_fails_key_error(cc):
+    with pytest.raises(KeyError):
+        cc.rename({"m1": "m1b", "fake point obs": "fake point obs 2", "m4": "m4b"})
+    with pytest.raises(KeyError):
+        cc.rename({"m4": "m4b"})
+    with pytest.raises(KeyError):
+        cc.rename(
+            {
+                "fake point obs": "fake point obs 2",
+                "fake track obs": "fake track obs 2",
+                "m4": "m4b",
+            }
+        )
+
+
+def test_rename_fails_reserved_names(cc):
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "x"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "MOD1", "m2": "y"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "z", "fake point obs": "OBS"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "time"})
+    with pytest.raises(ValueError, match="reserved names!"):
+        cc.rename({"m1": "Observation"})
+
+
+def test_filter_by_attrs(cc):
+    cc2 = cc.filter_by_attrs(gtype="point")
+    assert len(cc2) == 1
+    assert cc2[0].gtype == "point"
+
+
+def test_filter_by_attrs_custom(cc):
+    cc[0].data.attrs["custom"] = 12
+    cc[1].data.attrs["custom"] = 13
+
+    cc2 = cc.filter_by_attrs(custom=12)
+    assert len(cc2) == 1
+    assert cc2[0].data.attrs["custom"] == 12
+    assert cc2[0] == cc[0]
+
+    cc[0].data.attrs["custom2"] = True
+    cc3 = cc.filter_by_attrs(custom2=True)
+    assert len(cc3) == 1
+    assert cc3[0].data.attrs["custom2"]
+    assert cc3[0] == cc[0]
+
+
+def test_skill_by_attrs_gtype(cc):
+    sk = cc.skill(by="attrs:gtype")
+    assert len(sk) == 2
+    assert sk.data.index[0] == "point"
+    assert sk.data.index[1] == "track"
+    assert sk.data.index.name == "gtype"
+
+
+def test_skill_by_freq(cc):
+    skd = cc.skill(by="freq:D")
+    assert len(skd) == 7
+
+    skw = cc.skill(by="freq:W")
+    assert len(skw) == 2
+
+
+def test_skill_by_attrs_gtype_and_mod(cc):
+    sk = cc.skill(by=["attrs:gtype", "model"])
+    assert len(sk) == 5
+    assert sk.data.index[0] == ("point", "m1")
+    assert sk.data.index[1] == ("point", "m2")
+    assert sk.data.index[2] == ("track", "m1")
+    assert sk.data.index[3] == ("track", "m2")
+    assert sk.data.index[4] == ("track", "m3")
+    assert sk.data.index.names[0] == "gtype"
+    assert sk.data.index.names[1] == "model"
+
+    # TODO: observed=True doesn't work on model
+    # sk2 = cc.skill(by=["attrs:gtype", "model"], observed=True)
+    # assert len(sk2) == 6
+    # assert sk.data.index[0] == ("point", "m1")
+    # assert sk.data.index[1] == ("point", "m2")
+    # assert sk.data.index[2] == ("point", "m3")
+
+
+def test_skill_by_attrs_int(cc):
+    cc[0].data.attrs["custom"] = 12
+    cc[1].data.attrs["custom"] = 13
+
+    sk = cc.skill(by="attrs:custom")
+    assert len(sk) == 2
+    assert sk.data.index[0] == 12
+    assert sk.data.index[1] == 13
+    assert sk.data.index.name == "custom"
+
+    sk = cc.skill(by=("attrs:custom", "model"))
+    assert len(sk) == 5
+    assert sk.data.index[4] == (13, "m3")
+
+
+def test_skill_by_attrs_observed(cc):
+    cc[0].data.attrs["use"] = "DA"  # point
+
+    sk = cc.skill(by="attrs:use")  # observed=False is default
+    assert len(sk) == 2
+    assert sk.data.index[0] == "DA"
+    assert sk.data.index[1] is False
+    assert sk.data.index.name == "use"
+
+    sk = cc.skill(by="attrs:use", observed=True)
+    assert len(sk) == 1
+    assert sk.data.index[0] == "DA"
+    assert sk.data.index.name == "use"
+
+
+def test_xy_in_skill(cc):
+    # point obs has x,y, track obs x, y are np.nan
+    sk = cc.skill()
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data.reset_index()
+    df_track = df.loc[df.observation == "fake track obs"]
+    assert df_track.x.isna().all()
+    assert df_track.y.isna().all()
+    df_point = df.loc[df.observation == "fake point obs"]
+    assert all(df_point.x == cc[0].x)
+    assert all(df_point.y == cc[0].y)
+
+
+def test_xy_in_skill_no_obs(cc):
+    # if no observation column then no x, y information!
+    # e.g. if we filter by gtype (in this case 1 per obs), no x, y information
+    sk = cc.skill(by=["attrs:gtype", "model"])
+    assert "x" in sk.data.columns
+    assert "y" in sk.data.columns
+    df = sk.data.reset_index()
+    assert df.x.isna().all()
+    assert df.y.isna().all()
+
+
+# ======================== load/save ========================
+
+
+def test_save_and_load_preserves_order_of_comparers(tmp_path):
+    data = pd.DataFrame(
+        {"zulu": [1, 2, 3], "alpha": [4, 5, 6], "bravo": [7, 8, 9], "m1": [10, 11, 12]}
+    )
+
+    cmp1 = ms.from_matched(data, obs_item="zulu", mod_items="m1")
+    cmp2 = ms.from_matched(data, obs_item="alpha", mod_items="m1")
+    cmp3 = ms.from_matched(data, obs_item="bravo", mod_items="m1")
+
+    cc = ms.ComparerCollection([cmp1, cmp2, cmp3])
+    assert cc[0].name == "zulu"
+    assert cc[1].name == "alpha"
+    assert cc[2].name == "bravo"
+
+    fn = tmp_path / "test_cc.msk"
+    cc.save(fn)
+
+    cc2 = modelskill.load(fn)
+    assert cc2[0].name == "zulu"
+    assert cc2[1].name == "alpha"
+    assert cc2[2].name == "bravo"
 
 
 def test_save(cc: modelskill.ComparerCollection, tmp_path):
@@ -171,7 +425,7 @@ def test_save(cc: modelskill.ComparerCollection, tmp_path):
     cc.save(fn)
 
     cc2 = modelskill.load(fn)
-    assert cc2.n_comparers == 2
+    assert len(cc2) == 2
 
     # this belongs to the comparer, but ComparerCollection is the commonly used class
     assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__
@@ -182,7 +436,7 @@ def test_load_from_root_module(cc, tmp_path):
     cc.save(fn)
 
     cc2 = modelskill.load(fn)
-    assert cc2.n_comparers == 2
+    assert len(cc2) == 2
 
 
 def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
@@ -199,43 +453,22 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
     assert len(cc2["fake point obs"].raw_mod_data["m1"]) == 6
 
 
-def test_hist(cc):
+# ======================== plotting ========================
+
+
+def test_plot_scatter(cc):
+    ax = cc.plot.scatter(skill_table=True)
+    assert ax is not None
+
+
+def test_plot_hist(cc):
     ax = cc.sel(model="m1").plot.hist()
     assert ax is not None
 
 
-def test_kde(cc):
+def test_plot_kde(cc):
     ax = cc.plot.kde()
     assert ax is not None
-
-
-def test_add_cc_pc(cc, pc):
-    pc2 = pc.copy()
-    pc2.data.attrs["name"] = "pc2"
-    cc2 = cc + pc2
-    assert cc2.n_points == 15
-    assert cc2.n_comparers == 3
-
-
-def test_add_cc_tc(cc, tc):
-    tc2 = tc.copy()
-    tc2.data.attrs["name"] = "tc2"
-    cc2 = cc + tc2
-    assert cc2.n_points == 15
-    assert cc2.n_comparers == 3
-
-
-def test_add_cc_cc(cc, pc, tc):
-    pc2 = pc.copy()
-    pc2.data.attrs["name"] = "pc2"
-    tc2 = tc.copy()
-    tc2.data.attrs["name"] = "tc2"
-    tc3 = tc.copy()  # keep name
-    cc2 = pc2 + tc2 + tc3
-
-    cc3 = cc + cc2
-    # assert cc3.n_points == 15
-    assert cc3.n_comparers == 4
 
 
 def test_plots_directional(cc):
@@ -278,8 +511,7 @@ def cc_plot_function(cc, request):
     if request.param in ["scatter", "hist"]:
 
         def func(**kwargs):
-            kwargs["model"] = 0
-            wrapped_func = getattr(cc.plot, request.param)
+            wrapped_func = getattr(cc.sel(model=[0]).plot, request.param)
             return wrapped_func(**kwargs)
 
     return func
@@ -325,23 +557,25 @@ def test_plot_accepts_figsize(cc_plot_function):
     assert a, b == figsize
 
 
-def test_filter_by_attrs(cc):
-    cc2 = cc.filter_by_attrs(gtype="point")
-    assert cc2.n_comparers == 1
-    assert cc2[0].gtype == "point"
+def test_peak_ratio(cc):
+    """Non existent peak ratio"""
+    cc = cc.sel(model="m1")
+    sk = cc.skill(metrics=["peak_ratio"])
+
+    assert sk.loc["fake point obs", "peak_ratio"] == pytest.approx(1.119999999)
 
 
-def test_filter_by_attrs_custom(cc):
-    cc[0].data.attrs["custom"] = 12
-    cc[1].data.attrs["custom"] = 13
+def test_peak_ratio_2(cc_pr):
+    sk = cc_pr.skill(metrics=["peak_ratio"])
+    assert "peak_ratio" in sk.data.columns
+    assert sk.to_dataframe()["peak_ratio"].values == pytest.approx(0.88999995)
 
-    cc2 = cc.filter_by_attrs(custom=12)
-    assert cc2.n_comparers == 1
-    assert cc2[0].data.attrs["custom"] == 12
-    assert cc2[0] == cc[0]
 
-    cc[0].data.attrs["custom2"] = True
-    cc3 = cc.filter_by_attrs(custom2=True)
-    assert cc3.n_comparers == 1
-    assert cc3[0].data.attrs["custom2"]
-    assert cc3[0] == cc[0]
+def test_copy(cc):
+    cc2 = cc.copy()
+    assert cc2.n_models == 3
+    assert cc2.n_points == 10
+    assert cc2.start_time == pd.Timestamp("2019-01-01")
+    assert cc2.end_time == pd.Timestamp("2019-01-07")
+    assert cc2.obs_names == ["fake point obs", "fake track obs"]
+    assert cc2.mod_names == ["m1", "m2", "m3"]

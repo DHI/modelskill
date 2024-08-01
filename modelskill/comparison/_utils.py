@@ -1,30 +1,12 @@
 from __future__ import annotations
-from typing import Optional, Iterable, Callable, List, Union
+from typing import Callable, Optional, Iterable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from .. import metrics as mtr
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
-IdOrNameTypes = Union[int, str, List[int], List[str]]
-
-
-def _parse_metric(metric, default_metrics, return_list=False):
-    if metric is None:
-        metric = default_metrics
-
-    if isinstance(metric, (str, Callable)):
-        metric = mtr.get_metric(metric)
-    elif isinstance(metric, Iterable):
-        metrics = [_parse_metric(m, default_metrics) for m in metric]
-        return metrics
-    elif not callable(metric):
-        raise TypeError(f"Invalid metric: {metric}. Must be either string or callable.")
-    if return_list:
-        if callable(metric) or isinstance(metric, str):
-            metric = [metric]
-    return metric
+IdxOrNameTypes = Union[int, str, List[int], List[str]]
 
 
 def _add_spatial_grid_to_df(
@@ -40,8 +22,8 @@ def _add_spatial_grid_to_df(
             bins_y = bins
     else:
         # bins from binsize
-        x_ptp = df.x.values.ptp()  # type: ignore
-        y_ptp = df.y.values.ptp()  # type: ignore
+        x_ptp = np.ptp(df.x.values)  # type: ignore
+        y_ptp = np.ptp(df.y.values)  # type: ignore
         nx = int(np.ceil(x_ptp / binsize))
         ny = int(np.ceil(y_ptp / binsize))
         x_mean = np.round(df.x.mean())
@@ -61,17 +43,31 @@ def _add_spatial_grid_to_df(
     return df
 
 
-def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
-    def calc_metrics(x):
-        row = {}
-        row["n"] = len(x)
+def _groupby_df(
+    df: pd.DataFrame,
+    *,
+    by: List[str | pd.Grouper],
+    metrics: List[Callable],
+    n_min: Optional[int] = None,
+) -> pd.DataFrame:
+    def calc_metrics(group: pd.DataFrame) -> pd.Series:
+        # set index to time column (in most cases a DatetimeIndex, but not always)
+        group = group.set_index("time")
+
+        # TODO is n a metric or not?
+        row = {"n": len(group)}
+
         for metric in metrics:
-            row[metric.__name__] = metric(x.obs_val, x.mod_val)
+            row[metric.__name__] = metric(group.obs_val, group.mod_val)
         return pd.Series(row)
 
-    # .drop(columns=["x", "y"])
+    if _dt_in_by(by):
+        df, by = _add_dt_to_df(df, by)
 
-    res = df.groupby(by=by, observed=False).apply(calc_metrics)
+    # sort=False to avoid re-ordering compared to original cc (also for performance)
+    res = df.groupby(by=by, observed=False, sort=False, group_keys=True)[
+        ["time", "obs_val", "mod_val"]
+    ].apply(calc_metrics)
 
     if n_min:
         # nan for all cols but n
@@ -84,33 +80,77 @@ def _groupby_df(df, by, metrics, n_min: Optional[int] = None):
     return res
 
 
-def _parse_groupby(by, n_models, n_obs, n_var=1):
+def _dt_in_by(by):
+    by = [by] if isinstance(by, str) else by
+    if any(str(by).startswith("dt:") for by in by):
+        return True
+    return False
+
+
+ALLOWED_DT = [
+    "year",
+    "quarter",
+    "month",
+    "month_name",
+    "day",
+    "day_of_year",
+    "dayofyear",
+    "day_of_week",
+    "dayofweek",
+    "hour",
+    "minute",
+    "second",
+    "weekday",
+]
+
+
+def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+    ser = df["time"]
+    assert isinstance(by, list)
+    # by = [by] if isinstance(by, str) else by
+
+    for j, b in enumerate(by):
+        assert isinstance(b, str)
+        if str(b).startswith("dt:"):
+            dt_str = b.split(":")[1].lower()
+            if dt_str not in ALLOWED_DT:
+                raise ValueError(
+                    f"Invalid Pandas dt accessor: {dt_str}. Allowed values are: {ALLOWED_DT}"
+                )
+            ser = ser.dt.__getattribute__(dt_str)
+            if dt_str in df.columns:
+                raise ValueError(
+                    f"Cannot use datetime attribute {dt_str} as it already exists in the dataframe."
+                )
+            df[dt_str] = ser
+            by[j] = dt_str  # remove 'dt:' prefix
+    # by = by[0] if len(by) == 1 else by
+    return df, by
+
+
+def _parse_groupby(
+    by: str | Iterable[str] | None, *, n_mod: int, n_qnt: int
+) -> List[str | pd.Grouper]:
     if by is None:
-        by = []
-        if n_models > 1:
-            by.append("model")
-        if n_obs > 1:  # or ((n_models == 1) and (n_obs == 1)):
-            by.append("observation")
-        if n_var > 1:
-            by.append("variable")
-        if len(by) == 0:
-            # default value
-            by.append("observation")
-        return by
+        cols: List[str | pd.Grouper]
+        cols = ["model", "observation", "quantity"]
+
+        if n_mod == 1:
+            cols.remove("model")
+        if n_qnt == 1:
+            cols.remove("quantity")
+        return cols
 
     if isinstance(by, str):
-        if by in {"mdl", "mod", "models"}:
-            by = "model"
-        if by in {"obs", "observations"}:
-            by = "observation"
-        if by in {"var", "variables", "item"}:
-            by = "variable"
-        if by[:5] == "freq:":
-            freq = by.split(":")[1]
-            by = pd.Grouper(freq=freq)
+        cols = [by]
     elif isinstance(by, Iterable):
-        by = [_parse_groupby(b, n_models, n_obs, n_var) for b in by]
-        return by
-    else:
-        raise ValueError("Invalid by argument. Must be string or list of strings.")
-    return by
+        cols = list(by)
+
+    res = []
+    for col in cols:
+        if col[:5] == "freq:":
+            freq = col.split(":")[1]
+            res.append(pd.Grouper(key="time", freq=freq))
+        else:
+            res.append(col)
+    return res
