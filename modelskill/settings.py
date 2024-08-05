@@ -420,7 +420,7 @@ def register_option(
 
 def is_type_factory(_type: Type[Any]) -> Callable[[Any], None]:
     def inner(x) -> None:
-        if type(x) != _type:
+        if type(x) is not _type:
             raise ValueError(f"Value must have type '{_type}'")
 
     return inner

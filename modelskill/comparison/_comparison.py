@@ -809,7 +809,6 @@ class Comparer(Scoreable):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
         if isinstance(other, Comparer) and (self.name == other.name):
-            assert type(self) == type(other), "Must be same type!"
             missing_models = set(self.mod_names) - set(other.mod_names)
             if len(missing_models) == 0:
                 # same obs name and same model names
