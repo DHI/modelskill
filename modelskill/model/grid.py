@@ -170,10 +170,10 @@ class GridModelResult(SpatialField):
         # TODO: avoid runtrip to pandas if possible (potential loss of metadata)
         if "z" in self.data.dims and z is not None:
             ds = self.data.interp(
-                coords=dict(x=x, y=y, z=z), method=method  # type: ignore
+                coords=dict(x=float(x), y=float(y), z=float(z)), method=method  # type: ignore
             )
         else:
-            ds = self.data.interp(coords=dict(x=x, y=y), method=method)  # type: ignore
+            ds = self.data.interp(coords=dict(x=float(x), y=float(y)), method=method)  # type: ignore
         # TODO: exclude aux cols in dropna
         df = ds.to_dataframe().drop(columns=["x", "y"]).dropna()
         if len(df) == 0:
