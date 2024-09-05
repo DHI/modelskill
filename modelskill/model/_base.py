@@ -89,7 +89,6 @@ class SpatialField(Protocol):
 
 
 class Alignable(Protocol):
-
     @property
     def time(self) -> pd.DatetimeIndex: ...
 
