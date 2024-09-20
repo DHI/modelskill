@@ -112,7 +112,7 @@ class SkillArrayPlotter:
                 if numeric_index:
                     xlabel_positions = xlabels
                 else:
-                    xlabel_positions = np.arange(len(xlabels))
+                    xlabel_positions = np.arange(len(xlabels)).tolist()
                 ax.set_xticks(xlabel_positions)
                 ax.set_xticklabels(xlabels, rotation=90)
         return axes
