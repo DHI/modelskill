@@ -542,3 +542,13 @@ def test_compare_model_vs_dummy_for_track(mr1, o3):
 
     # better than dummy 🙂
     assert cmp2.score()["SW_1"] == pytest.approx(0.3524703)
+
+def test_match_obs_model_pos_args_wrong_order_helpful_error_message():
+
+    # match is pretty helpful in converting strings or dataset
+    # so we need to use a ModelResult to trigger the error
+    mr = ms.PointModelResult(data=pd.Series([0.0,0.0], index=pd.date_range("1970", periods=2, freq='d')), name="Zero")
+    obs = ms.PointObservation(data=pd.Series([1.0, 2.0, 3.0], index=pd.date_range("1970", periods=3, freq='h')), name="MyStation")
+
+    with pytest.raises(TypeError, match="order"):
+        ms.match(mr, obs)
