@@ -69,6 +69,11 @@ class SkillArrayPlotter:
 
     #     return gdf.explore(column=column, **kwargs)
 
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        raise NotImplementedError(
+            "It is not possible to call plot directly (has no default)! Use one of the plot methods explicitly e.g. plot.line() or plot.bar()"
+        )
+
     def line(
         self,
         level: int | str = 0,
@@ -279,6 +284,11 @@ class DeprecatedSkillPlotter:
         warnings.warn(
             f"Selecting metric in plot functions like modelskill.skill().plot.{method}({field}) is deprecated and will be removed in a future version. Use modelskill.skill()['{field}'].plot.{method}() instead.",
             FutureWarning,
+        )
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        raise NotImplementedError(
+            "It is not possible to call plot directly on SkillTable! Select metric first (which gives a plotable SkillArray)"
         )
 
     def line(self, field, **kwargs):  # type: ignore
