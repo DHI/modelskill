@@ -103,13 +103,17 @@ class SkillArrayPlotter:
         axes = df.plot.line(**kwargs)
 
         xlabels = list(df.index)
-        nx = len(xlabels)
+        numeric_index = all(isinstance(item, (int, float)) for item in xlabels)
 
         if not isinstance(axes, Iterable):
             axes = [axes]
         for ax in axes:
             if not isinstance(df.index, pd.DatetimeIndex):
-                ax.set_xticks(np.arange(nx))
+                if numeric_index:
+                    xlabel_positions = xlabels
+                else:
+                    xlabel_positions = np.arange(len(xlabels)).tolist()
+                ax.set_xticks(xlabel_positions)
                 ax.set_xticklabels(xlabels, rotation=90)
         return axes
 
