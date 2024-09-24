@@ -1960,12 +1960,12 @@
 
     <div class="doc doc-contents first">
 
-      <p>The <code>metrics</code> module contains different skill metrics for evaluating the 
-difference between a model and an observation. </p>
+      <p>The <code>metrics</code> module contains different skill metrics for evaluating the
+difference between a model and an observation.</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="#modelskill.metrics.bias">bias</a></li>
 <li><a class="autorefs autorefs-internal" href="#modelskill.metrics.max_error">max_error</a></li>
-<li><a class="autorefs autorefs-internal" href="#modelskill.metrics.root_mean_squared_error">root_mean_squared_error (rmse)</a>    </li>
+<li><a class="autorefs autorefs-internal" href="#modelskill.metrics.root_mean_squared_error">root_mean_squared_error (rmse)</a></li>
 <li><a class="autorefs autorefs-internal" href="#modelskill.metrics.urmse">urmse</a></li>
 <li><a class="autorefs autorefs-internal" href="#modelskill.metrics.mean_absolute_error">mean_absolute_error (mae)</a></li>
 <li><a class="autorefs autorefs-internal" href="#modelskill.metrics.mean_absolute_percentage_error">mean_absolute_percentage_error (mape)</a></li>
@@ -2988,9 +2988,7 @@ bias=\frac{1}{n}\sum_{i=1}^n (model_i - obs_i)
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">c_unbiased_root_mean_squared_error</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">c_unbiased_root_mean_squared_error</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4314,13 +4312,7 @@ NSE = 1 - \frac {\sum _{i=1}^{n}\left(model_{i} - obs_{i}\right)^{2}}
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">peak_ratio</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">obs</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">model</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">inter_event_level</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">AAP</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">inter_event_time</span><span class="o">=</span><span class="s2">&quot;36h&quot;</span><span class="p">,</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">peak_ratio</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">inter_event_level</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">AAP</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">inter_event_time</span><span class="o">=</span><span class="s1">&#39;36h&#39;</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4598,13 +4590,7 @@ ie, events that ocurr simulateneously within a window +/- 0.5*inter_event_time.<
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">pr</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">obs</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">model</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">inter_event_level</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">AAP</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">inter_event_time</span><span class="o">=</span><span class="s2">&quot;36h&quot;</span><span class="p">,</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">pr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">inter_event_level</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">AAP</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">inter_event_time</span><span class="o">=</span><span class="s1">&#39;36h&#39;</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4817,9 +4803,7 @@ R^2 = 1 - \frac{\sum_{i=1}^n (model_i - obs_i)^2}
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">root_mean_squared_error</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unbiased</span><span class="o">=</span><span class="kc">False</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">root_mean_squared_error</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unbiased</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
