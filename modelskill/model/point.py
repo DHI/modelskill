@@ -93,7 +93,7 @@ class PointModelResult(TimeSeries, Alignable):
         **kwargs
 
             Additional keyword arguments passed to xarray.interp
-            
+
         Returns
         -------
         PointModelResult
@@ -158,5 +158,3 @@ class PointModelResult(TimeSeries, Alignable):
         # valid query times where time delta is less than max_gap
         valid_idx = df.dt <= max_gap
         return df[valid_idx].index
-
-

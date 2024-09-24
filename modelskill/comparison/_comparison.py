@@ -233,6 +233,7 @@ MOD_COLORS = (
 @dataclass
 class ItemSelection:
     "Utility class to keep track of observation, model and auxiliary items"
+
     obs: str
     model: Sequence[str]
     aux: Sequence[str]
@@ -793,7 +794,8 @@ class Comparer(Scoreable):
         else:
             self.raw_mod_data.update(other.raw_mod_data)
             matched = match_space_time(
-                observation=self._to_observation(), raw_mod_data=self.raw_mod_data  # type: ignore
+                observation=self._to_observation(),
+                raw_mod_data=self.raw_mod_data,  # type: ignore
             )
             self.data = matched
 
@@ -821,7 +823,8 @@ class Comparer(Scoreable):
                 raw_mod_data = self.raw_mod_data.copy()
                 raw_mod_data.update(other.raw_mod_data)  # TODO!
                 matched = match_space_time(
-                    observation=self._to_observation(), raw_mod_data=raw_mod_data  # type: ignore
+                    observation=self._to_observation(),
+                    raw_mod_data=raw_mod_data,  # type: ignore
                 )
                 cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
@@ -879,7 +882,9 @@ class Comparer(Scoreable):
             d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)  # type: ignore
 
             # Note: if user asks for a specific time, we also filter raw
-            raw_mod_data = {k: v.sel(time=slice(start, end)) for k, v in raw_mod_data.items()}  # type: ignore
+            raw_mod_data = {
+                k: v.sel(time=slice(start, end)) for k, v in raw_mod_data.items()
+            }  # type: ignore
         if time is not None:
             d = d.sel(time=time)
 

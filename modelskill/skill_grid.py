@@ -148,12 +148,10 @@ class SkillGrid(SkillGridMixin):
         return "\n".join(out)
 
     @overload
-    def __getitem__(self, key: Hashable) -> SkillGridArray:
-        ...
+    def __getitem__(self, key: Hashable) -> SkillGridArray: ...
 
     @overload
-    def __getitem__(self, key: Iterable[Hashable]) -> SkillGrid:
-        ...
+    def __getitem__(self, key: Iterable[Hashable]) -> SkillGrid: ...
 
     def __getitem__(
         self, key: Hashable | Iterable[Hashable]
