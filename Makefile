@@ -8,6 +8,9 @@ build: typecheck test
 lint:
 	ruff check $(LIB)
 
+format:
+	ruff format $(LIB)
+
 test:
 	pytest --disable-warnings
 

@@ -1,9 +1,9 @@
-"""The `metrics` module contains different skill metrics for evaluating the 
-difference between a model and an observation. 
+"""The `metrics` module contains different skill metrics for evaluating the
+difference between a model and an observation.
 
 * [bias][modelskill.metrics.bias]
 * [max_error][modelskill.metrics.max_error]
-* [root_mean_squared_error (rmse)][modelskill.metrics.root_mean_squared_error]    
+* [root_mean_squared_error (rmse)][modelskill.metrics.root_mean_squared_error]
 * [urmse][modelskill.metrics.urmse]
 * [mean_absolute_error (mae)][modelskill.metrics.mean_absolute_error]
 * [mean_absolute_percentage_error (mape)][modelskill.metrics.mean_absolute_percentage_error]

@@ -40,7 +40,7 @@ plot.scatter.legend.kwargs : {}
 plot.scatter.oneone_line.color : blue
 plot.scatter.oneone_line.label : 1:1
 plot.scatter.points.alpha : 0.5
-plot.scatter.points.label : 
+plot.scatter.points.label :
 plot.scatter.points.size : 20
 plot.scatter.quantiles.color : darkturquoise
 plot.scatter.quantiles.kwargs : {}
@@ -50,7 +50,7 @@ plot.scatter.quantiles.markeredgecolor : (0, 0, 0, 0.4)
 plot.scatter.quantiles.markeredgewidth : 0.5
 plot.scatter.quantiles.markersize : 3.5
 plot.scatter.reg_line.kwargs : {'color': 'r'}
->>> ms.set_option("plot.scatter.points.size", 4)  
+>>> ms.set_option("plot.scatter.points.size", 4)
 >>> plot.scatter.points.size
 4
 >>> ms.get_option("plot.scatter.points.size")
@@ -414,7 +414,10 @@ def register_option(
 
     # save the option metadata
     _registered_options[key] = RegisteredOption(
-        key=key, defval=defval, doc=doc, validator=validator  # , cb=cb
+        key=key,
+        defval=defval,
+        doc=doc,
+        validator=validator,  # , cb=cb
     )
 
 

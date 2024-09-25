@@ -44,7 +44,6 @@ class DfsuModelResult(SpatialField):
         quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,
     ) -> None:
-
         filename = None
 
         assert isinstance(

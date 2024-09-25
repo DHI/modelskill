@@ -256,7 +256,9 @@ def match(
     if isinstance(obs, Collection):
         assert all(isinstance(o, get_args(ObsInputType)) for o in obs)
     else:
-        raise TypeError(f"Obs is not the correct type: it is {type(obs)}. Check the order of the arguments (obs, mod).")
+        raise TypeError(
+            f"Obs is not the correct type: it is {type(obs)}. Check the order of the arguments (obs, mod)."
+        )
 
     if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
         if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
