@@ -70,6 +70,32 @@ def mr3():
     return ms.model_result(fn, item=0, name="SW_3")
 
 
+def test_properties_after_match(o1, mr1):
+    cmp = ms.match(o1, mr1)
+    assert cmp.n_models == 1
+    assert cmp.n_points == 386
+    assert cmp.x == 4.242
+    assert cmp.y == 52.6887
+    assert cmp.z is None
+    assert cmp.name == "HKNA"
+    assert cmp.gtype == "point"
+    assert cmp.mod_names == ["SW_1"]
+
+
+def test_properties_after_match_ts(o1):
+    fn = "tests/testdata/SW/HKNA_Hm0.dfs0"
+    mr = ms.PointModelResult(fn, item=0, name="SW_1")
+    cmp = ms.match(o1, mr)
+    assert cmp.n_models == 1
+    assert cmp.n_points == 564
+    assert cmp.x == 4.242
+    assert cmp.y == 52.6887
+    assert cmp.z is None
+    assert cmp.name == "HKNA"
+    assert cmp.gtype == "point"
+    assert cmp.mod_names == ["SW_1"]
+
+
 # TODO remove in v1.1
 def test_compare_multi_obs_multi_model_is_deprecated(o1, o2, o3, mr1, mr2):
     with pytest.warns(FutureWarning, match="match"):
@@ -543,12 +569,20 @@ def test_compare_model_vs_dummy_for_track(mr1, o3):
     # better than dummy 🙂
     assert cmp2.score()["SW_1"] == pytest.approx(0.3524703)
 
-def test_match_obs_model_pos_args_wrong_order_helpful_error_message():
 
+def test_match_obs_model_pos_args_wrong_order_helpful_error_message():
     # match is pretty helpful in converting strings or dataset
     # so we need to use a ModelResult to trigger the error
-    mr = ms.PointModelResult(data=pd.Series([0.0,0.0], index=pd.date_range("1970", periods=2, freq='d')), name="Zero")
-    obs = ms.PointObservation(data=pd.Series([1.0, 2.0, 3.0], index=pd.date_range("1970", periods=3, freq='h')), name="MyStation")
+    mr = ms.PointModelResult(
+        data=pd.Series([0.0, 0.0], index=pd.date_range("1970", periods=2, freq="d")),
+        name="Zero",
+    )
+    obs = ms.PointObservation(
+        data=pd.Series(
+            [1.0, 2.0, 3.0], index=pd.date_range("1970", periods=3, freq="h")
+        ),
+        name="MyStation",
+    )
 
     with pytest.raises(TypeError, match="order"):
         ms.match(mr, obs)

@@ -1,40 +1,38 @@
 from __future__ import annotations
+
+import warnings
 from datetime import timedelta
 from pathlib import Path
-import warnings
-
 from typing import (
-    Iterable,
+    Any,
     Collection,
+    Iterable,
     List,
     Literal,
     Mapping,
     Optional,
-    Union,
     Sequence,
-    get_args,
     TypeVar,
-    Any,
+    Union,
+    get_args,
     overload,
 )
+
+import mikeio
 import numpy as np
 import pandas as pd
 import xarray as xr
 
-import mikeio
-
-
-from . import model_result, Quantity
+from . import Quantity, __version__, model_result
+from .comparison import Comparer, ComparerCollection
+from .model._base import Alignable
+from .model.dfsu import DfsuModelResult
+from .model.dummy import DummyModelResult
+from .model.grid import GridModelResult
+from .model.track import TrackModelResult
+from .obs import Observation, observation
 from .timeseries import TimeSeries
 from .types import Period
-from .model._base import Alignable
-from .model.grid import GridModelResult
-from .model.dfsu import DfsuModelResult
-from .model.track import TrackModelResult
-from .model.dummy import DummyModelResult
-from .obs import Observation, observation
-from .comparison import Comparer, ComparerCollection
-from . import __version__
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 IdxOrNameTypes = Optional[Union[int, str]]
@@ -403,7 +401,8 @@ def match_space_time(
             )
             aligned = aligned.rename({v: f"{v}_mod" for v in overlapping_names})
 
-        data.update(aligned)
+        for dv in aligned:
+            data[dv] = aligned[dv]
 
     # drop NaNs in model and observation columns (but allow NaNs in aux columns)
     def mo_kind(k: str) -> bool:
