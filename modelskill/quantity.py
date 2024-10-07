@@ -22,18 +22,24 @@ class Quantity:
 
     Examples
     --------
-    >>> wl = Quantity(name="Water Level", unit="meter")
-    >>> wl
-    Quantity(name='Water Level', unit='meter')
-    >>> wl.name
+    ```{python}
+    from modelskill import Quantity
+    wl = Quantity(name="Water Level", unit="meter")
+    wl
+    ```
+    ```{python}
+    wl.name
     'Water Level'
-    >>> wl.unit
-    'meter'
-    >>> wl.is_compatible(wl)
-    True
-    >>> ws = Quantity(name="Wind Direction", unit="degree", is_directional=True)
-    >>> ws
-    Quantity(name='Wind Direction', unit='degree', is_directional=True)
+    ```
+    ```{python}
+    wl.unit
+    ```
+    ```{python}
+    wl.is_compatible(wl)
+    ```
+    ```{python}
+    Quantity(name="Wind Direction", unit="degree", is_directional=True)
+    ```
     """
 
     name: str
@@ -57,13 +63,15 @@ class Quantity:
 
         Examples
         --------
-        >>> wl = Quantity(name="Water Level", unit="meter")
-        >>> ws = Quantity(name="Wind Speed", unit="meter per second")
-        >>> wl.is_compatible(ws)
-        False
-        >>> uq = Quantity(name="Undefined", unit="Undefined")
-        >>> wl.is_compatible(uq)
-        True
+        ```{python}
+        wl = Quantity(name="Water Level", unit="meter")
+        ws = Quantity(name="Wind Speed", unit="meter per second")
+        wl.is_compatible(ws)
+        ```
+        ```{python}
+        uq = Quantity(name="Undefined", unit="Undefined")
+        wl.is_compatible(uq)
+        ```
         """
 
         if self == other:
@@ -96,10 +104,12 @@ class Quantity:
 
         Examples
         --------
-        >>> Quantity.from_cf_attrs({'long_name': 'Water Level', 'units': 'meter'})
-        Quantity(name='Water Level', unit='meter')
-        >>> Quantity.from_cf_attrs({'long_name': 'Wind direction', 'units': 'degree'})
-        Quantity(name='Wind direction', unit='degree', is_directional=True)
+        ```{python}
+        Quantity.from_cf_attrs({'long_name': 'Water Level', 'units': 'meter'})
+        ```
+        ```{python}
+        Quantity.from_cf_attrs({'long_name': 'Wind direction', 'units': 'degree'})
+        ```
 
         """
         quantity = Quantity.undefined()
@@ -137,8 +147,9 @@ class Quantity:
 
         Examples
         --------
-        >>> Quantity.from_mikeio_eum_name("Water Level")
-        Quantity(name='Water Level', unit='meter')
+        ```{python}
+        Quantity.from_mikeio_eum_name("Water Level")
+        ```
         """
         try:
             etype = mikeio.EUMType[type_name]

@@ -1,0 +1,171 @@
+---
+title: Metocean track comparison
+jupyter: python3
+---
+
+
+Comparing MIKE 21 HD dfsu model result with satellite track observation of surface elevation. 
+
+This notebook also includes gridded spatial skill assessments. 
+
+
+```{python}
+import pandas as pd
+import matplotlib.pyplot as plt
+import modelskill as ms
+```
+
+## Extract track data
+
+```{python}
+mr = ms.model_result('../data/NorthSeaHD_and_windspeed.dfsu',
+                     name='HD', item=0)
+mr
+```
+
+In this case, the track observations are stored in a csv file, which we can read in using pandas.
+Any file format that can be read into a pandas dataframe can be used here.
+
+```{python}
+df = pd.read_csv('../data/altimetry_NorthSea_20171027.csv',
+                  index_col=0, parse_dates=True)
+df.head()
+```
+
+Csv files have no metadata on which quantity it contains, we add this manually, consistent with the model result, using the [`TrackObservation`](`modelskill.TrackObservation`) class.
+
+```{python}
+o1 = ms.TrackObservation(df, item="surface_elevation", name='alti',
+                         quantity=ms.Quantity(name="Surface Elevation", unit="meter")) 
+o1
+```
+
+```{python}
+ms.plotting.spatial_overview(o1, mr);
+```
+
+```{python}
+cmp = ms.match(o1, mr)
+cmp
+```
+
+```{python}
+cmp.plot.scatter();
+```
+
+## Extract track from dfs0
+
+Using the [`TrackModelResult`](`modelskill.TrackModelResult`) class.
+
+```{python}
+mr = ms.TrackModelResult('../data/NorthSeaHD_extracted_track.dfs0',
+                          name='HD', item=2)
+mr
+```
+
+```{python}
+df = pd.read_csv('../data/altimetry_NorthSea_20171027.csv',
+                  index_col=0, parse_dates=True)
+o1 = ms.TrackObservation(df, item=2, name='alti',
+                         quantity=ms.Quantity(name="Surface Elevation", unit="meter"))
+o1
+```
+
+```{python}
+cmp = ms.match(o1, mr)
+cmp
+```
+
+```{python}
+cmp.plot.scatter();
+```
+
+## Gridded skill
+
+Load model, load observation, add observation to model and extract.
+
+```{python}
+mr = ms.model_result('../data/NorthSeaHD_and_windspeed.dfsu',
+                     name='HD', item=0)
+
+df = pd.read_csv('../data/altimetry_NorthSea_20171027.csv',
+                 index_col=0, parse_dates=True)
+o1 = ms.TrackObservation(df, item=2, name='alti',
+                         quantity=ms.Quantity(name="Surface Elevation", unit="meter"))
+cmp = ms.match(o1, mr)
+cmp
+```
+
+Get metrics binned by a regular spatial grid, returns xarray Dataset
+
+```{python}
+gs = cmp.gridded_skill(metrics=['bias'])
+gs
+```
+
+```{python}
+fig, axes = plt.subplots(ncols=2, nrows=1, figsize = (10, 5))
+gs.n.plot(ax=axes[0])
+gs.bias.plot(ax=axes[1]);
+```
+
+## Minimum number of observations
+
+```{python}
+gs = cmp.gridded_skill(metrics=['bias'], n_min=25)
+fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10, 5))
+gs.n.plot(ax=axes[0])
+gs.bias.plot(ax=axes[1]);
+```
+
+## Multiple bins - gridded skill for water level categories
+
+Get data from comparer as dataframe and add a water level category as a new column.
+
+```{python}
+dftmp = cmp.data.to_dataframe()
+dftmp["wl category"] = 'high'
+dftmp.loc[dftmp['HD']<0, "wl category"] = 'low'
+```
+
+Add the "wl category" to the comparer's data structure.
+
+```{python}
+cmp.data["wl category"] = dftmp["wl category"]
+```
+
+Now aggregate the data by the new column (and x and y):
+
+```{python}
+gs = cmp.gridded_skill(by=['wl category'], metrics=['bias'], n_min=5)
+gs
+```
+
+```{python}
+gs.bias.plot();
+```
+
+## Multiple observations
+
+Add fake 2nd observation to model
+
+```{python}
+import warnings
+
+df2 = df.copy()
+df2['surface_elevation'] = df2['surface_elevation'] - 0.2
+o2 = ms.TrackObservation(df2, item=2, name='alti2')
+
+warnings.filterwarnings('ignore', message="duplicate")
+cmp2 = ms.match(o2, mr)
+```
+
+Extract, gridded skill, add attrs, plot.
+
+```{python}
+cmp = cmp + cmp2
+gs = cmp.gridded_skill(metrics=['bias'], n_min=20)
+gs.bias.data.attrs = dict(long_name="Bias of surface elevation", units="m")
+gs.bias.plot(figsize=(10,5));
+```
+

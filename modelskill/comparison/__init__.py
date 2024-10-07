@@ -4,6 +4,13 @@ observation comparison (Comparer), and collections of Comparers (ComparerCollect
 
 from ._comparison import Comparer
 from ._collection import ComparerCollection
+from ._comparer_plotter import ComparerPlotter
+from ._collection_plotter import ComparerCollectionPlotter
 
 
-__all__ = ["Comparer", "ComparerCollection"]
+__all__ = [
+    "Comparer",
+    "ComparerCollection",
+    "ComparerPlotter",
+    "ComparerCollectionPlotter",
+]
