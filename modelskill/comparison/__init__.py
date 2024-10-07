@@ -1,4 +1,4 @@
-"""The `comparison` module contains different types of classes for single 
+"""The `comparison` module contains different types of classes for single
 observation comparison (Comparer), and collections of Comparers (ComparerCollection).
 """
 

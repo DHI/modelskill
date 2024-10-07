@@ -69,6 +69,11 @@ class SkillArrayPlotter:
 
     #     return gdf.explore(column=column, **kwargs)
 
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        raise NotImplementedError(
+            "It is not possible to call plot directly (has no default)! Use one of the plot methods explicitly e.g. plot.line() or plot.bar()"
+        )
+
     def line(
         self,
         level: int | str = 0,
@@ -98,13 +103,17 @@ class SkillArrayPlotter:
         axes = df.plot.line(**kwargs)
 
         xlabels = list(df.index)
-        nx = len(xlabels)
+        numeric_index = all(isinstance(item, (int, float)) for item in xlabels)
 
         if not isinstance(axes, Iterable):
             axes = [axes]
         for ax in axes:
             if not isinstance(df.index, pd.DatetimeIndex):
-                ax.set_xticks(np.arange(nx))
+                if numeric_index:
+                    xlabel_positions = xlabels
+                else:
+                    xlabel_positions = np.arange(len(xlabels)).tolist()
+                ax.set_xticks(xlabel_positions)
                 ax.set_xticklabels(xlabels, rotation=90)
         return axes
 
@@ -281,6 +290,11 @@ class DeprecatedSkillPlotter:
             FutureWarning,
         )
 
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        raise NotImplementedError(
+            "It is not possible to call plot directly on SkillTable! Select metric first (which gives a plotable SkillArray)"
+        )
+
     def line(self, field, **kwargs):  # type: ignore
         self._deprecated_warning("line", field)  # type: ignore
         return self.skilltable[field].plot.line(**kwargs)
@@ -312,7 +326,7 @@ class SkillArray:
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
         self._ser = data.iloc[:, -1]  # last column is the metric
-        
+
         self.plot = SkillArrayPlotter(self)
         """Plot using the SkillArrayPlotter
 
@@ -511,12 +525,10 @@ class SkillTable:
         return self._df._repr_html_()
 
     @overload
-    def __getitem__(self, key: Hashable | int) -> SkillArray:
-        ...
+    def __getitem__(self, key: Hashable | int) -> SkillArray: ...
 
     @overload
-    def __getitem__(self, key: Iterable[Hashable]) -> SkillTable:
-        ...
+    def __getitem__(self, key: Iterable[Hashable]) -> SkillTable: ...
 
     def __getitem__(
         self, key: Hashable | Iterable[Hashable]
@@ -559,7 +571,7 @@ class SkillTable:
 
     @property
     def loc(self, *args, **kwargs):  # type: ignore
-        return self.data.loc(*args, **kwargs)        
+        return self.data.loc(*args, **kwargs)
 
     def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
         """Sort by index (level) e.g. sorting by observation

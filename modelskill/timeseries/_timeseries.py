@@ -27,11 +27,13 @@ DEFAULT_COLORS = [
 
 
 def _validate_data_var_name(name: str) -> str:
-    assert isinstance(name, str), "name must be a string"
+    if not isinstance(name, str):
+        raise TypeError("name must be a string")
     RESERVED_NAMES = ["x", "y", "z", "time"]
-    assert (
-        name not in RESERVED_NAMES
-    ), f"name '{name}' is reserved and cannot be used! Please choose another name."
+    if name in RESERVED_NAMES:
+        raise ValueError(
+            f"name '{name}' is reserved and cannot be used! Please choose another name."
+        )
     return name
 
 
@@ -60,8 +62,10 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     ), "time must be increasing (please check for duplicate times))"
 
     # Validate coordinates
-    assert "x" in ds.coords, "data must have an x-coordinate"
-    assert "y" in ds.coords, "data must have a y-coordinate"
+    if "x" not in ds.coords:
+        raise ValueError("data must have an x-coordinate")
+    if "y" not in ds.coords:
+        raise ValueError("data must have a y-coordinate")
     if "z" not in ds.coords:
         ds.coords["z"] = np.nan
     # assert "z" in ds.coords, "data must have a z-coordinate"
@@ -98,11 +102,15 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     da = ds[name]
 
     # Validate attrs
-    assert "gtype" in ds.attrs, "data must have a gtype attribute"
-    assert ds.attrs["gtype"] in [
+    if "gtype" not in ds.attrs:
+        raise ValueError("data must have a gtype attribute")
+    if ds.attrs["gtype"] not in [
         str(GeometryType.POINT),
         str(GeometryType.TRACK),
-    ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
+    ]:
+        raise ValueError(
+            f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
+        )
     if "long_name" not in da.attrs:
         da.attrs["long_name"] = Quantity.undefined().name
     if "units" not in da.attrs:
@@ -120,9 +128,7 @@ class TimeSeries:
     """Time series data"""
 
     data: xr.Dataset
-    plotter: ClassVar = (
-        MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
-    )
+    plotter: ClassVar = MatplotlibTimeSeriesPlotter  # TODO is this the best option to choose a plotter? Can we use the settings module?
 
     def __init__(self, data: xr.Dataset) -> None:
         self.data = data if self._is_input_validated(data) else _validate_dataset(data)
@@ -172,7 +178,8 @@ class TimeSeries:
 
     @quantity.setter
     def quantity(self, quantity: Quantity) -> None:
-        assert isinstance(quantity, Quantity), "value must be a Quantity object"
+        if not isinstance(quantity, Quantity):
+            raise TypeError("value must be a Quantity object")
         self.data[self.name].attrs["long_name"] = quantity.name
         self.data[self.name].attrs["units"] = quantity.unit
         self.data[self.name].attrs["is_directional"] = int(quantity.is_directional)

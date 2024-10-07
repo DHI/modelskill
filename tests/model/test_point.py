@@ -245,3 +245,35 @@ def test_point_model_result_from_nc_file():
     assert mr.x == pytest.approx(366844)
     assert mr.y == pytest.approx(6154291)
     assert mr.name == "smhi_2095_klagshamn"
+
+
+def test_interp_time():
+
+    df = pd.DataFrame(
+        {
+            "WL": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "aux1": [1.1, 2.1, 3.1, 4.1, 5.1, 6.1],
+            "time": pd.date_range("2019-01-01", periods=6, freq="D"),
+        }
+    ).set_index("time")
+
+    mr = ms.PointModelResult(df, item="WL", aux_items="aux1")
+
+    obs_df = pd.DataFrame(
+        {
+            "WL": [1.5, 2.5],
+            "time": [
+                pd.Timestamp("2019-01-01 12:15"),
+                pd.Timestamp("2019-01-03 18:30"),
+            ],
+        }
+    ).set_index("time")
+
+    obs = ms.PointObservation(obs_df, item="WL")
+
+    interp = mr.interp_time(obs)
+    assert interp.time[0] == pd.Timestamp("2019-01-01 12:15")
+    assert interp.time[-1] == pd.Timestamp("2019-01-03 18:30")
+
+    assert interp.data["WL"].values[0] == pytest.approx(1.5104166666666665)
+    assert interp.data["aux1"].values[0] == pytest.approx(1.6104166666666666)

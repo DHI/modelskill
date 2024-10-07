@@ -15,11 +15,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10","3.11"]      
+        python-version: ["3.9", "3.12"]      
 
     steps:
     - uses: actions/checkout@v3
     - uses: chartboost/ruff-action@v1 # Fail fast if there are any linting errors
+      with:
+        version: 0.6.2
+        src: "modelskill"
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:

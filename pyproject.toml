@@ -10,7 +10,7 @@ allow-direct-references = true
 
 [project]
 name="modelskill"
-version="1.0.dev24"
+version="1.1.dev0"
 dependencies = [
     "numpy  >= 1.20.0",
     "pandas >= 1.4",
@@ -31,8 +31,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
     "License :: OSI Approved :: MIT License",
-    "Development Status :: 4 - Beta", # TODO: change to stable
-    #"Development Status :: 5 - Production/Stable",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -49,15 +48,17 @@ dev = ["pytest",
         "quartodoc@git+https://github.com/machow/quartodoc#d4140b4f804ebc6ec249699d52e3efa62cf53127",
         "black==22.3.0",
         "plotly >= 4.5",
-        "ruff",]
+        "ruff==0.6.2",]
 
 test =  [
             "pytest",
+            "pytest-cov", 
             "netCDF4",
             "openpyxl",
             "dask",
             "mypy",
             "types-PyYAML",
+            "geopandas",
         ]
 
 notebooks = [
@@ -66,6 +67,7 @@ notebooks = [
             "jupyter",
             "plotly",
             "shapely",
+            "seaborn",
         ]
 
 [project.urls]
@@ -75,7 +77,7 @@ notebooks = [
 
 [tool.ruff]
 # ignore line too long
-ignore = ["E501"]
+lint.ignore  = ["E501"]
 
 [tool.mypy]
 python_version = "3.9"

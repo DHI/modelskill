@@ -26,7 +26,7 @@ def o2_gaps():
     obs = mikeio.read(fn, items=0).to_dataframe().rename(columns=dict(Hm0="obs")) + 1
     dt = pd.Timedelta(180, unit="s")
     obs.index = obs.index - dt
-    obs.index = obs.index.round("S")
+    obs.index = obs.index.round("s")
     return ms.PointObservation(obs, item=0, x=3.2760, y=51.9990, name="EPL")
 
 
@@ -40,7 +40,7 @@ def o3():
 def mr12_gaps():
     fn = "tests/testdata/SW/ts_storm_4.dfs0"
     df1 = mikeio.read(fn, items=0).to_dataframe()
-    df1 = df1.resample("2H").nearest()
+    df1 = df1.resample("2h").nearest()
     df1 = df1.rename(columns={df1.columns[0]: "mr1"})
     df2 = df1.copy().rename(columns=dict(mr1="mr2")) - 1
 
@@ -68,6 +68,32 @@ def mr2():
 def mr3():
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast_v3.dfsu"
     return ms.model_result(fn, item=0, name="SW_3")
+
+
+def test_properties_after_match(o1, mr1):
+    cmp = ms.match(o1, mr1)
+    assert cmp.n_models == 1
+    assert cmp.n_points == 386
+    assert cmp.x == 4.242
+    assert cmp.y == 52.6887
+    assert cmp.z is None
+    assert cmp.name == "HKNA"
+    assert cmp.gtype == "point"
+    assert cmp.mod_names == ["SW_1"]
+
+
+def test_properties_after_match_ts(o1):
+    fn = "tests/testdata/SW/HKNA_Hm0.dfs0"
+    mr = ms.PointModelResult(fn, item=0, name="SW_1")
+    cmp = ms.match(o1, mr)
+    assert cmp.n_models == 1
+    assert cmp.n_points == 564
+    assert cmp.x == 4.242
+    assert cmp.y == 52.6887
+    assert cmp.z is None
+    assert cmp.name == "HKNA"
+    assert cmp.gtype == "point"
+    assert cmp.mod_names == ["SW_1"]
 
 
 # TODO remove in v1.1
@@ -214,14 +240,16 @@ def test_small_multi_model_shifted_time_match():
     # observation has four timesteps, but only three of them are in the Simple model and three in the NotSimple model
     # the number of overlapping points for all three datasets are 2, but three if we look at the models individually
 
-    cmp1 = ms.match(obs=obs, mod=mod)
-    assert cmp1.n_points == 3
+    with pytest.warns(UserWarning):
+        cmp1 = ms.match(obs=obs, mod=mod)
+        cmp1 = ms.match(obs=obs, mod=mod)
+        assert cmp1.n_points == 3
 
-    cmp2 = ms.match(obs=obs, mod=mod2)
-    assert cmp2.n_points == 3
+        cmp2 = ms.match(obs=obs, mod=mod2)
+        assert cmp2.n_points == 3
 
-    mcmp = ms.match(obs=obs, mod=[mod, mod2])
-    assert mcmp.n_points == 2
+        mcmp = ms.match(obs=obs, mod=[mod, mod2])
+        assert mcmp.n_points == 2
 
 
 def test_matched_data_single_model():
@@ -387,7 +415,7 @@ def test_wind_directions():
             "obs": [359, 91, 181, 268],
             "mod": [0, 90, 180, 270],
         },
-        index=pd.date_range("2017-01-01", periods=4, freq="H"),
+        index=pd.date_range("2017-01-01", periods=4, freq="h"),
     )
 
     cc = ms.from_matched(
@@ -426,11 +454,13 @@ def test_obs_and_mod_can_not_have_same_aux_item_names():
     obs = ms.PointObservation(obs_df, item="wl", aux_items=["wind_speed"])
     mod = ms.PointModelResult(mod_df, item="wl", aux_items=["wind_speed"])
 
-    with pytest.raises(ValueError, match="wind_speed"):
-        ms.match(obs=obs, mod=mod)
+    with pytest.warns(match="_model"):
+        cmp = ms.match(obs=obs, mod=mod)
+    assert "wind_speed" in cmp
+    assert "wind_speed_mod" in cmp  # renamed
 
 
-def test_mod_aux_items_must_be_unique():
+def test_mod_aux_items_overlapping_names():
     obs_df = pd.DataFrame(
         {"wl": [1.0, 2.0, 3.0], "wind_speed": [1.0, 2.0, 3.0]},
         index=pd.date_range("2017-01-01", periods=3),
@@ -454,17 +484,16 @@ def test_mod_aux_items_must_be_unique():
         mod2_df, item="wl", aux_items=["wind_speed"], name="remote"
     )
 
-    with pytest.raises(ValueError) as e:
-        ms.match(obs=obs, mod=[mod, mod2])
+    # we don't care which model the aux data comes from
+    cmp = ms.match(obs=obs, mod=[mod, mod2])
 
-    assert "wind_speed" in str(e.value)
-    assert "remote" in str(e.value)
+    assert "wind_speed" in cmp
 
 
 def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
     o1 = ms.PointObservation(
         pd.DataFrame(
-            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
         ),
         name="o1",
         x=1,
@@ -472,7 +501,7 @@ def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
     )
     o2 = ms.PointObservation(
         pd.DataFrame(
-            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
         ),
         name="o2",
         x=2,
@@ -480,7 +509,7 @@ def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
     )
     m1 = ms.PointModelResult(
         pd.DataFrame(
-            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
         ),
         name="m1",
         x=1,
@@ -488,7 +517,7 @@ def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
     )
     m2 = ms.PointModelResult(
         pd.DataFrame(
-            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
         ),
         name="m2",
         x=2,
@@ -496,7 +525,7 @@ def test_multiple_obs_not_allowed_with_non_spatial_modelresults():
     )
     m3 = ms.PointModelResult(
         pd.DataFrame(
-            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="H", periods=2)
+            {"wl": [1.0, 2.0]}, index=pd.date_range("2000", freq="h", periods=2)
         ),
         name="m3",
         x=3,
@@ -539,3 +568,21 @@ def test_compare_model_vs_dummy_for_track(mr1, o3):
 
     # better than dummy 🙂
     assert cmp2.score()["SW_1"] == pytest.approx(0.3524703)
+
+
+def test_match_obs_model_pos_args_wrong_order_helpful_error_message():
+    # match is pretty helpful in converting strings or dataset
+    # so we need to use a ModelResult to trigger the error
+    mr = ms.PointModelResult(
+        data=pd.Series([0.0, 0.0], index=pd.date_range("1970", periods=2, freq="d")),
+        name="Zero",
+    )
+    obs = ms.PointObservation(
+        data=pd.Series(
+            [1.0, 2.0, 3.0], index=pd.date_range("1970", periods=3, freq="h")
+        ),
+        name="MyStation",
+    )
+
+    with pytest.raises(TypeError, match="order"):
+        ms.match(mr, obs)

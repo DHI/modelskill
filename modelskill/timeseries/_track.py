@@ -77,7 +77,8 @@ def _parse_track_input(
     ), "Could not construct TrackModelResult from provided data."
 
     if isinstance(data, (str, Path)):
-        assert Path(data).suffix == ".dfs0", "File must be a dfs0 file"
+        if Path(data).suffix != ".dfs0":
+            raise ValueError(f"File must be a dfs0 file, not {Path(data).suffix}")
         name = name or Path(data).stem
         data = mikeio.read(data)  # now mikeio.Dataset
     elif isinstance(data, mikeio.Dfs0):

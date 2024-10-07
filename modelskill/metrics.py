@@ -1,9 +1,9 @@
-"""The `metrics` module contains different skill metrics for evaluating the 
-difference between a model and an observation. 
+"""The `metrics` module contains different skill metrics for evaluating the
+difference between a model and an observation.
 
 * [bias][modelskill.metrics.bias]
 * [max_error][modelskill.metrics.max_error]
-* [root_mean_squared_error (rmse)][modelskill.metrics.root_mean_squared_error]    
+* [root_mean_squared_error (rmse)][modelskill.metrics.root_mean_squared_error]
 * [urmse][modelskill.metrics.urmse]
 * [mean_absolute_error (mae)][modelskill.metrics.mean_absolute_error]
 * [mean_absolute_percentage_error (mape)][modelskill.metrics.mean_absolute_percentage_error]
@@ -36,33 +36,33 @@ Examples
 >>> obs = np.array([0.3, 2.1, -1.0])
 >>> mod = np.array([0.0, 2.3, 1.0])
 >>> bias(obs, mod)
-0.6333333333333332
+np.float64(0.6333333333333332)
 >>> max_error(obs, mod)
-2.0
+np.float64(2.0)
 >>> rmse(obs, mod)
-1.173314393786536
+np.float64(1.173314393786536)
 >>> urmse(obs, mod)
-0.9877021593352702
+np.float64(0.9877021593352702)
 >>> mae(obs, mod)
-0.8333333333333331
+np.float64(0.8333333333333331)
 >>> mape(obs, mod)
-103.17460317460316
+np.float64(103.17460317460316)
 >>> nse(obs, mod)
-0.14786795048143053
+np.float64(0.14786795048143053)
 >>> r2(obs, mod)
-0.14786795048143053
+np.float64(0.14786795048143053)
 >>> mef(obs, mod)
-0.9231099877688299
+np.float64(0.9231099877688299)
 >>> si(obs, mod)
-0.8715019052958266
+np.float64(0.8715019052958266)
 >>> spearmanr(obs, mod)
-0.5
+np.float64(0.5)
 >>> willmott(obs, mod)
-0.7484604452865941
+np.float64(0.7484604452865941)
 >>> hit_ratio(obs, mod, a=0.5)
-0.6666666666666666
+np.float64(0.6666666666666666)
 >>> ev(obs, mod)
-0.39614855570839064
+np.float64(0.39614855570839064)
 """
 
 from __future__ import annotations
@@ -70,7 +70,7 @@ import inspect
 
 import sys
 import warnings
-from typing import Callable, Iterable, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Iterable, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -79,7 +79,7 @@ from scipy import stats
 from .settings import options
 
 
-def bias(obs, model) -> float:
+def bias(obs, model) -> Any:
     r"""Bias (mean error)
 
     $$
@@ -93,7 +93,7 @@ def bias(obs, model) -> float:
     return np.mean(model - obs)
 
 
-def max_error(obs, model) -> float:
+def max_error(obs, model) -> Any:
     r"""Max (absolute) error
 
     $$
@@ -109,7 +109,7 @@ def max_error(obs, model) -> float:
 
 def mae(
     obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None
-) -> float:
+) -> Any:
     """alias for mean_absolute_error"""
     assert obs.size == model.size
     return mean_absolute_error(obs, model, weights)
@@ -117,7 +117,7 @@ def mae(
 
 def mean_absolute_error(
     obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None
-) -> float:
+) -> Any:
     r"""Mean Absolute Error (MAE)
 
     $$
@@ -133,12 +133,12 @@ def mean_absolute_error(
     return error
 
 
-def mape(obs: np.ndarray, model: np.ndarray) -> float:
+def mape(obs: np.ndarray, model: np.ndarray) -> Any:
     """alias for mean_absolute_percentage_error"""
     return mean_absolute_percentage_error(obs, model)
 
 
-def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
+def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""Mean Absolute Percentage Error (MAPE)
 
     $$
@@ -161,7 +161,7 @@ def mean_absolute_percentage_error(obs: np.ndarray, model: np.ndarray) -> float:
 
 def urmse(
     obs: np.ndarray, model: np.ndarray, weights: Optional[np.ndarray] = None
-) -> float:
+) -> Any:
     r"""Unbiased Root Mean Squared Error (uRMSE)
 
     $$
@@ -190,7 +190,7 @@ def rmse(
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
     unbiased: bool = False,
-) -> float:
+) -> Any:
     """alias for root_mean_squared_error"""
     return root_mean_squared_error(obs, model, weights, unbiased)
 
@@ -200,7 +200,7 @@ def root_mean_squared_error(
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
     unbiased: bool = False,
-) -> float:
+) -> Any:
     r"""Root Mean Squared Error (RMSE)
 
     $$
@@ -234,12 +234,12 @@ def root_mean_squared_error(
     return error
 
 
-def nse(obs: np.ndarray, model: np.ndarray) -> float:
+def nse(obs: np.ndarray, model: np.ndarray) -> Any:
     """alias for nash_sutcliffe_efficiency"""
     return nash_sutcliffe_efficiency(obs, model)
 
 
-def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
+def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""Nash-Sutcliffe Efficiency (NSE)
 
     $$
@@ -259,12 +259,12 @@ def nash_sutcliffe_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
 
     if len(obs) == 0:
         return np.nan
-    error = 1 - (np.sum((obs - model) ** 2) / np.sum((obs - np.mean(obs)) ** 2))
+    error = 1 - (np.sum((obs - model) ** 2) / np.sum((obs - np.mean(obs)) ** 2))  # type: ignore
 
     return error
 
 
-def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
+def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""
     Kling-Gupta Efficiency (KGE)
 
@@ -304,12 +304,12 @@ def kling_gupta_efficiency(obs: np.ndarray, model: np.ndarray) -> float:
     return res
 
 
-def kge(obs: np.ndarray, model: np.ndarray) -> float:
+def kge(obs: np.ndarray, model: np.ndarray) -> Any:
     """alias for kling_gupta_efficiency"""
     return kling_gupta_efficiency(obs, model)
 
 
-def r2(obs: np.ndarray, model: np.ndarray) -> float:
+def r2(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""Coefficient of determination (R2)
 
     Pronounced 'R-squared'; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.
@@ -330,25 +330,25 @@ def r2(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.array([1.0,1.1,1.2,1.3,1.4])
     >>> model = np.array([1.09, 1.16, 1.3 , 1.38, 1.49])
     >>> r2(obs,model)
-    0.6379999999999998
+    np.float64(0.6379999999999998)
     """
     assert obs.size == model.size
     if len(obs) == 0:
         return np.nan
 
     residual = model - obs
-    SSr = np.sum(residual**2)
-    SSt = np.sum((obs - obs.mean()) ** 2)
+    SSr: Any = np.sum(residual**2)
+    SSt: Any = np.sum((obs - obs.mean()) ** 2)
 
     return 1 - SSr / SSt
 
 
-def mef(obs: np.ndarray, model: np.ndarray) -> float:
+def mef(obs: np.ndarray, model: np.ndarray) -> Any:
     """alias for model_efficiency_factor"""
     return model_efficiency_factor(obs, model)
 
 
-def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
+def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""Model Efficiency Factor (MEF)
 
     Scale independent RMSE, standardized by Stdev of observations
@@ -371,12 +371,12 @@ def model_efficiency_factor(obs: np.ndarray, model: np.ndarray) -> float:
     return rmse(obs, model) / obs.std()
 
 
-def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> float:
+def cc(obs: np.ndarray, model: np.ndarray, weights=None) -> Any:
     """alias for corrcoef"""
     return corrcoef(obs, model, weights)
 
 
-def corrcoef(obs, model, weights=None) -> float:
+def corrcoef(obs, model, weights=None) -> Any:
     r"""Pearson’s Correlation coefficient (CC)
 
     $$
@@ -403,12 +403,12 @@ def corrcoef(obs, model, weights=None) -> float:
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
 
-def rho(obs: np.ndarray, model: np.ndarray) -> float:
+def rho(obs: np.ndarray, model: np.ndarray) -> Any:
     """alias for spearmanr"""
     return spearmanr(obs, model)
 
 
-def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
+def spearmanr(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""Spearman rank correlation coefficient
 
     The rank correlation coefficient is similar to the Pearson correlation coefficient but
@@ -427,9 +427,9 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.linspace(-20, 20, 100)
     >>> mod = np.tanh(obs)
     >>> rho(obs, mod)
-    0.9999759973116955
+    np.float64(0.9999759973116955)
     >>> spearmanr(obs, mod)
-    0.9999759973116955
+    np.float64(0.9999759973116955)
 
     See Also
     --------
@@ -440,12 +440,12 @@ def spearmanr(obs: np.ndarray, model: np.ndarray) -> float:
     return scipy.stats.spearmanr(obs, model)[0]
 
 
-def si(obs: np.ndarray, model: np.ndarray) -> float:
+def si(obs: np.ndarray, model: np.ndarray) -> Any:
     """alias for scatter_index"""
     return scatter_index(obs, model)
 
 
-def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
+def scatter_index(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""Scatter index (SI)
 
     Which is the same as the unbiased-RMSE normalized by the absolute mean of the observations.
@@ -466,7 +466,7 @@ def scatter_index(obs: np.ndarray, model: np.ndarray) -> float:
     return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs))
 
 
-def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
+def scatter_index2(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""Alternative formulation of the scatter index (SI)
 
     $$
@@ -481,17 +481,17 @@ def scatter_index2(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
 
     return np.sqrt(
-        np.sum(((model - model.mean()) - (obs - obs.mean())) ** 2) / np.sum(obs**2)
+        np.sum(((model - model.mean()) - (obs - obs.mean())) ** 2) / np.sum(obs**2)  # type: ignore
     )
 
 
-def ev(obs: np.ndarray, model: np.ndarray) -> float:
+def ev(obs: np.ndarray, model: np.ndarray) -> Any:
     """alias for explained_variance"""
     assert obs.size == model.size
     return explained_variance(obs, model)
 
 
-def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
+def explained_variance(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""EV: Explained variance
 
      EV is the explained variance and measures the proportion
@@ -518,10 +518,10 @@ def explained_variance(obs: np.ndarray, model: np.ndarray) -> float:
     if len(obs) == 0:
         return np.nan
 
-    nominator = np.sum((obs - obs.mean()) ** 2) - np.sum(
+    nominator: Any = np.sum((obs - obs.mean()) ** 2) - np.sum(  # type: ignore
         ((obs - obs.mean()) - (model - model.mean())) ** 2
     )
-    denominator = np.sum((obs - obs.mean()) ** 2)
+    denominator: Any = np.sum((obs - obs.mean()) ** 2)
 
     return nominator / denominator
 
@@ -530,9 +530,9 @@ def pr(
     obs: pd.Series,
     model: np.ndarray,
     inter_event_level: float = 0.7,
-    AAP: int = 2,
-    inter_event_time="36h",
-) -> float:
+    AAP: Union[int, float] = 2,
+    inter_event_time: str = "36h",
+) -> Any:
     """alias for peak_ratio"""
     assert obs.size == model.size
     return peak_ratio(obs, model, inter_event_level, AAP, inter_event_time)
@@ -542,20 +542,20 @@ def peak_ratio(
     obs: pd.Series,
     model: np.ndarray,
     inter_event_level: float = 0.7,
-    AAP: int = 2,
-    inter_event_time="36h",
-) -> float:
+    AAP: Union[int, float] = 2,
+    inter_event_time: str = "36h",
+) -> Any:
     r"""Peak Ratio
 
-    PR is the mean of the individual ratios of identified peaks in the
-    model / identified peaks in the measurements. PR is calculated only for the joint-events,
+    PR is the mean of the largest-N individual ratios of identified peaks in the
+    model / identified peaks in the measurements (N number of events defined by AAP). PR is calculated only for the joint-events,
     ie, events that ocurr simulateneously within a window +/- 0.5*inter_event_time.
 
     Parameters
     ----------
     inter_event_level (float, optional)
         Inter-event level threshold (default: 0.7).
-    AAP (float, optional)
+    AAP (int or float, optional)
         Average Annual Peaks (ie, Number of peaks per year, on average). (default: 2)
     inter_event_time (str, optional)
             Maximum time interval between peaks (default: 36 hours).
@@ -577,23 +577,27 @@ def peak_ratio(
     dt_int = time[1:].values - time[0:-1].values
     dt_int_mode = float(stats.mode(dt_int, keepdims=False)[0]) / 1e9  # in seconds
     N_years = dt_int_mode / 24 / 3600 / 365.25 * len(time)
-    found_peaks = []
-    for data in [obs, model]:
-        peak_index, AAP_ = _partial_duration_series(
-            time,
-            data,
-            inter_event_level=inter_event_level,
-            AAP=AAP,
-            inter_event_time=inter_event_time,
-        )
-        peaks = data[peak_index]
-        peaks_sorted = peaks.sort_values(ascending=False)
-        found_peaks.append(
-            peaks_sorted[0 : max(1, min(round(AAP_ * N_years), np.sum(peaks)))]
-        )
-    found_peaks_obs = found_peaks[0]
-    found_peaks_mod = found_peaks[1]
+    peak_index, AAP_ = _partial_duration_series(
+        time,
+        obs,
+        inter_event_level=inter_event_level,
+        AAP=AAP,
+        inter_event_time=inter_event_time,
+    )
+    peaks = obs[peak_index]
+    found_peaks_obs = peaks.sort_values(ascending=False)
 
+    peak_index, _ = _partial_duration_series(
+        time,
+        model,
+        inter_event_level=inter_event_level,
+        AAP=AAP,
+        inter_event_time=inter_event_time,
+    )
+    peaks = model[peak_index]
+    found_peaks_mod = peaks.sort_values(ascending=False)
+
+    top_n_peaks = max(1, min(round(AAP_ * N_years), np.sum(peaks)))
     # Resample~ish, find peaks spread maximum Half the inter event time (if inter event =36, select data paired +/- 18h) (or inter_event) and then select
     indices_mod = (
         abs(found_peaks_obs.index.values[:, None] - found_peaks_mod.index.values)
@@ -603,8 +607,23 @@ def peak_ratio(
         abs(found_peaks_mod.index.values[:, None] - found_peaks_obs.index.values)
         < pd.Timedelta(inter_event_time) / 2
     ).any(axis=0)
+    # Find intersection (co-existing peaks, still a large number, O(1000s))
     obs_joint = found_peaks_obs.loc[indices_obs]
     mod_joint = found_peaks_mod.loc[indices_mod]
+    # Now we forget about time index, as peaks have been paired already.
+    df_filter = pd.DataFrame(
+        data={
+            "model": mod_joint.sort_index().values,
+            "observation": obs_joint.sort_index().values,
+        }
+    )
+    df_filter["Maximum"] = df_filter.max(axis=1)
+    df_filter.sort_values(by="Maximum", ascending=False, inplace=True)
+    # Finally we do the selection of the N- largest peaks from either model or measured
+    df_filter = df_filter.iloc[0:top_n_peaks, :]
+    # Rename to avoid further refactoring
+    obs_joint = df_filter.loc[:, "observation"]
+    mod_joint = df_filter.loc[:, "model"]
 
     if len(obs_joint) == 0 or len(mod_joint) == 0:
         return np.nan
@@ -612,7 +631,7 @@ def peak_ratio(
     return res
 
 
-def willmott(obs: np.ndarray, model: np.ndarray) -> float:
+def willmott(obs: np.ndarray, model: np.ndarray) -> Any:
     r"""Willmott's Index of Agreement
 
     A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.
@@ -629,7 +648,7 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])
     >>> model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])
     >>> willmott(obs, model)
-    0.9501403174479723
+    np.float64(0.9501403174479723)
 
     Notes
     ----------
@@ -641,13 +660,15 @@ def willmott(obs: np.ndarray, model: np.ndarray) -> float:
         return np.nan
 
     residual = model - obs
-    nominator = np.sum(residual**2)
-    denominator = np.sum((np.abs(model - obs.mean()) + np.abs(obs - obs.mean())) ** 2)
+    nominator: Any = np.sum(residual**2)
+    denominator: Any = np.sum(
+        (np.abs(model - obs.mean()) + np.abs(obs - obs.mean())) ** 2
+    )
 
     return 1 - nominator / denominator
 
 
-def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
+def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> Any:
     r"""Fraction within obs ± acceptable deviation
 
     $$
@@ -661,18 +682,18 @@ def hit_ratio(obs: np.ndarray, model: np.ndarray, a=0.1) -> float:
     >>> obs = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 1.4, 1.3])
     >>> model = np.array([1.02, 1.16, 1.3, 1.38, 1.49, 1.45, 1.32])
     >>> hit_ratio(obs, model, a=0.05)
-    0.2857142857142857
+    np.float64(0.2857142857142857)
     >>> hit_ratio(obs, model, a=0.1)
-    0.8571428571428571
+    np.float64(0.8571428571428571)
     >>> hit_ratio(obs, model, a=0.15)
-    1.0
+    np.float64(1.0)
     """
     assert obs.size == model.size
 
     return np.mean(np.abs(obs - model) < a)
 
 
-def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> float:
+def lin_slope(obs: np.ndarray, model: np.ndarray, reg_method="ols") -> Any:
     r"""Slope of the regression line.
 
     $$
@@ -715,11 +736,11 @@ def _linear_regression(
     return slope, intercept
 
 
-def _std_obs(obs: np.ndarray, model: np.ndarray) -> float:
+def _std_obs(obs: np.ndarray, model: np.ndarray) -> Any:
     return obs.std()
 
 
-def _std_mod(obs: np.ndarray, model: np.ndarray) -> float:
+def _std_mod(obs: np.ndarray, model: np.ndarray) -> Any:
     return model.std()
 
 
@@ -873,7 +894,7 @@ def _c_residual(obs: np.ndarray, model: np.ndarray) -> np.ndarray:
     return resi
 
 
-def c_bias(obs: np.ndarray, model: np.ndarray) -> float:
+def c_bias(obs: np.ndarray, model: np.ndarray) -> Any:
     """Circular bias (mean error)
 
     Parameters
@@ -897,7 +918,7 @@ def c_bias(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.array([10., 355., 170.])
     >>> mod = np.array([20., 5., -180.])
     >>> c_bias(obs, mod)
-    10.0
+    np.float64(10.0)
     """
     from scipy.stats import circmean
 
@@ -905,7 +926,7 @@ def c_bias(obs: np.ndarray, model: np.ndarray) -> float:
     return circmean(resi, low=-180.0, high=180.0)
 
 
-def c_max_error(obs: np.ndarray, model: np.ndarray) -> float:
+def c_max_error(obs: np.ndarray, model: np.ndarray) -> Any:
     """Circular max error
 
     Parameters
@@ -929,7 +950,7 @@ def c_max_error(obs: np.ndarray, model: np.ndarray) -> float:
     >>> obs = np.array([10., 350., 10.])
     >>> mod = np.array([20., 10., 350.])
     >>> c_max_error(obs, mod)
-    20.0
+    np.float64(20.0)
     """
 
     resi = _c_residual(obs, model)
@@ -945,7 +966,7 @@ def c_mean_absolute_error(
     obs: np.ndarray,
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
-) -> float:
+) -> Any:
     """Circular mean absolute error
 
     Parameters
@@ -975,7 +996,7 @@ def c_mae(
     obs: np.ndarray,
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
-) -> float:
+) -> Any:
     """alias for circular mean absolute error"""
     return c_mean_absolute_error(obs, model, weights)
 
@@ -984,7 +1005,7 @@ def c_root_mean_squared_error(
     obs: np.ndarray,
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
-) -> float:
+) -> Any:
     """Circular root mean squared error
 
     Parameters
@@ -1013,7 +1034,7 @@ def c_rmse(
     obs: np.ndarray,
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
-) -> float:
+) -> Any:
     """alias for circular root mean squared error"""
     return c_root_mean_squared_error(obs, model, weights)
 
@@ -1022,7 +1043,7 @@ def c_unbiased_root_mean_squared_error(
     obs: np.ndarray,
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
-) -> float:
+) -> Any:
     """Circular unbiased root mean squared error
 
     Parameters
@@ -1054,7 +1075,7 @@ def c_urmse(
     obs: np.ndarray,
     model: np.ndarray,
     weights: Optional[np.ndarray] = None,
-) -> float:
+) -> Any:
     """alias for circular unbiased root mean squared error"""
     return c_unbiased_root_mean_squared_error(obs, model, weights)
 

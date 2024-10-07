@@ -233,6 +233,7 @@ MOD_COLORS = (
 @dataclass
 class ItemSelection:
     "Utility class to keep track of observation, model and auxiliary items"
+
     obs: str
     model: Sequence[str]
     aux: Sequence[str]
@@ -271,7 +272,8 @@ class ItemSelection:
 
         Both integer and str are accepted as items. If str, it must be a key in data.
         """
-        assert len(items) > 1, "data must contain at least two items"
+        if len(items) < 2:
+            raise ValueError("data must contain at least two items")
         obs_name = _get_name(obs_item, items) if obs_item else items[0]
 
         # Check existance of items and convert to names
@@ -292,12 +294,12 @@ class ItemSelection:
         x_name = _get_name(x_item, items) if x_item is not None else None
         y_name = _get_name(y_item, items) if y_item is not None else None
 
-        assert len(mod_names) > 0, "no model items were found! Must be at least one"
-        assert obs_name not in mod_names, "observation item must not be a model item"
-        assert (
-            obs_name not in aux_names
-        ), "observation item must not be an auxiliary item"
-        assert isinstance(obs_name, str), "observation item must be a string"
+        if len(mod_names) == 0:
+            raise ValueError("no model items were found! Must be at least one")
+        if obs_name in mod_names:
+            raise ValueError("observation item must not be a model item")
+        if obs_name in aux_names:
+            raise ValueError("observation item must not be an auxiliary item")
 
         return ItemSelection(
             obs=obs_name, model=mod_names, aux=aux_names, x=x_name, y=y_name
@@ -409,7 +411,7 @@ def _matched_data_to_xarray(
     if z is not None:
         ds.coords["z"] = z
 
-    if np.isscalar(ds.coords["x"]):
+    if ds.coords["x"].size == 1:
         ds.attrs["gtype"] = str(GeometryType.POINT)
     else:
         ds.attrs["gtype"] = str(GeometryType.TRACK)
@@ -640,6 +642,9 @@ class Comparer(Scoreable):
         """List of model result names"""
         return list(self.raw_mod_data.keys())
 
+    def __contains__(self, key: str) -> bool:
+        return key in self.data.data_vars
+
     @property
     def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
@@ -777,6 +782,25 @@ class Comparer(Scoreable):
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
+    def __iadd__(self, other: Comparer):  # type: ignore
+        from ..matching import match_space_time
+
+        missing_models = set(self.mod_names) - set(other.mod_names)
+        if len(missing_models) == 0:
+            # same obs name and same model names
+            self.data = xr.concat([self.data, other.data], dim="time").drop_duplicates(
+                "time"
+            )
+        else:
+            self.raw_mod_data.update(other.raw_mod_data)
+            matched = match_space_time(
+                observation=self._to_observation(),
+                raw_mod_data=self.raw_mod_data,  # type: ignore
+            )
+            self.data = matched
+
+        return self
+
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection" | "Comparer":
@@ -787,23 +811,20 @@ class Comparer(Scoreable):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
         if isinstance(other, Comparer) and (self.name == other.name):
-            assert type(self) == type(other), "Must be same type!"
             missing_models = set(self.mod_names) - set(other.mod_names)
             if len(missing_models) == 0:
                 # same obs name and same model names
                 cmp = self.copy()
-                cmp.data = xr.concat([cmp.data, other.data], dim="time")
-                # cc.data = cc.data[
-                #    ~cc.data.time.to_index().duplicated(keep="last")
-                # ]  # 'first'
-                _, index = np.unique(cmp.data["time"], return_index=True)
-                cmp.data = cmp.data.isel(time=index)
+                cmp.data = xr.concat(
+                    [cmp.data, other.data], dim="time"
+                ).drop_duplicates("time")
 
             else:
                 raw_mod_data = self.raw_mod_data.copy()
                 raw_mod_data.update(other.raw_mod_data)  # TODO!
                 matched = match_space_time(
-                    observation=self._to_observation(), raw_mod_data=raw_mod_data  # type: ignore
+                    observation=self._to_observation(),
+                    raw_mod_data=raw_mod_data,  # type: ignore
                 )
                 cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
@@ -861,7 +882,9 @@ class Comparer(Scoreable):
             d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)  # type: ignore
 
             # Note: if user asks for a specific time, we also filter raw
-            raw_mod_data = {k: v.sel(time=slice(start, end)) for k, v in raw_mod_data.items()}  # type: ignore
+            raw_mod_data = {
+                k: v.sel(time=slice(start, end)) for k, v in raw_mod_data.items()
+            }  # type: ignore
         if time is not None:
             d = d.sel(time=time)
 
@@ -1014,7 +1037,8 @@ class Comparer(Scoreable):
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
+        if kwargs != {}:
+            raise AttributeError(f"Unknown keyword arguments: {kwargs}")
 
         cmp = self.sel(
             model=model,

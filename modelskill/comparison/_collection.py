@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 import os
 from pathlib import Path
 import tempfile
@@ -97,7 +98,15 @@ class ComparerCollection(Mapping, Scoreable):
 
     def __init__(self, comparers: Iterable[Comparer]) -> None:
         self._comparers: Dict[str, Comparer] = {}
-        self._insert_comparers(comparers)
+
+        for cmp in comparers:
+            if cmp.name in self._comparers:
+                # comparer with this name already exists!
+                # maybe the user is trying to add a new model
+                # or a new time period
+                self._comparers[cmp.name] += cmp
+            else:
+                self._comparers[cmp.name] = cmp
 
         self.plot = ComparerCollection.plotter(self)
         """Plot using the ComparerCollectionPlotter
@@ -109,15 +118,6 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.plot.taylor()
         >>> cc.plot.hist()
         """
-
-    def _insert_comparers(self, comparer: Union[Comparer, Iterable[Comparer]]) -> None:
-        if isinstance(comparer, Iterable):
-            for c in comparer:
-                self[c.name] = c
-        elif isinstance(comparer, Comparer):
-            self[comparer.name] = comparer
-        else:
-            pass
 
     @property
     def _name(self) -> str:
@@ -283,33 +283,14 @@ class ComparerCollection(Mapping, Scoreable):
 
         raise TypeError(f"Invalid type for __getitem__: {type(x)}")
 
-    def __setitem__(self, x: str, value: Comparer) -> None:
-        assert isinstance(
-            value, Comparer
-        ), f"comparer must be a Comparer, not {type(value)}"
-        if x in self._comparers:
-            # comparer with this name already exists!
-            # maybe the user is trying to add a new model
-            # or a new time period
-            self._comparers[x] = self._comparers[x] + value  # type: ignore
-        else:
-            self._comparers[x] = value
-
     def __len__(self) -> int:
         return len(self._comparers)
 
     def __iter__(self) -> Iterator[Comparer]:
         return iter(self._comparers.values())
 
-    def __copy__(self) -> "ComparerCollection":
-        cls = self.__class__
-        cp = cls.__new__(cls)
-        # TODO should this use deepcopy?
-        cp.__init__(list(self._comparers))  # type: ignore
-        return cp
-
     def copy(self) -> "ComparerCollection":
-        return self.__copy__()
+        return deepcopy(self)
 
     def __add__(
         self, other: Union["Comparer", "ComparerCollection"]

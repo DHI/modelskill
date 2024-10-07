@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, get_args
 
 import mikeio
+import numpy as np
 import pandas as pd
 
 from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
@@ -43,7 +44,6 @@ class DfsuModelResult(SpatialField):
         quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,
     ) -> None:
-
         filename = None
 
         assert isinstance(
@@ -51,7 +51,8 @@ class DfsuModelResult(SpatialField):
         ), "Could not construct DfsuModelResult from provided data"
 
         if isinstance(data, (str, Path)):
-            assert Path(data).suffix == ".dfsu", "File must be a dfsu file"
+            if Path(data).suffix != ".dfsu":
+                raise ValueError(f"File must be a dfsu file, not {Path(data).suffix}")
             name = name or Path(data).stem
             filename = str(data)
             data = mikeio.open(data)
@@ -169,7 +170,9 @@ class DfsuModelResult(SpatialField):
 
         method = spatial_method or "inverse_distance"
         assert method in ["nearest", "contained", "inverse_distance"]
-        n_nearest = 5 if method == "inverse_distance" else 1
+        n_nearest = (
+            min(5, self.data.geometry.n_elements) if method == "inverse_distance" else 1
+        )
 
         x, y, z = observation.x, observation.y, observation.z
         if not self._in_domain(x, y):
@@ -196,6 +199,10 @@ class DfsuModelResult(SpatialField):
                 elemids = self.data.geometry.find_nearest_elements(
                     x, y, n_nearest=n_nearest
                 )
+                # sort elemids, to ensure consistent results with all versions of mikeio
+                if isinstance(elemids, np.ndarray):
+                    elemids = np.sort(elemids)
+
                 ds = self.data.read(elements=elemids, items=self.sel_items.all)
                 ds_model = (
                     ds.interp(x=x, y=y, n_nearest=n_nearest) if n_nearest > 1 else ds

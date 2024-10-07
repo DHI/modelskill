@@ -100,6 +100,29 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
     assert not np.any(np.isnan(df))
 
 
+def test_score_two_elements():
+    mr = ms.model_result("tests/testdata/two_elements.dfsu", item=0)
+
+    obs_df = pd.DataFrame(
+        [2.0, 2.0], index=pd.date_range("2020-01-01", periods=2, freq="D")
+    )
+
+    # observation is in the center of the second element
+    obs = ms.PointObservation(obs_df, item=0, x=2.0, y=2.0, name="obs")
+
+    cc = ms.match(obs, mr, spatial_method="contained")
+
+    assert cc.score(metric=root_mean_squared_error)["two_elements"] == pytest.approx(
+        0.0
+    )
+
+    cc_default = ms.match(obs, mr)
+
+    assert cc_default.score(metric=root_mean_squared_error)[
+        "two_elements"
+    ] == pytest.approx(0.0)
+
+
 def test_score(modelresult_oresund_WL, klagshamn, drogden):
     mr = modelresult_oresund_WL
 
@@ -107,9 +130,9 @@ def test_score(modelresult_oresund_WL, klagshamn, drogden):
 
     assert cc.score(metric=root_mean_squared_error)[
         "Oresund2D_subset"
-    ] == pytest.approx(0.19870695)
+    ] == pytest.approx(0.198637164895926)
     sk = cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
-    sk.root_mean_squared_error.data.mean() == pytest.approx(0.19870695)
+    sk.root_mean_squared_error.data.mean() == pytest.approx(0.198637164895926)
 
 
 def test_weighted_score(modelresult_oresund_WL):
