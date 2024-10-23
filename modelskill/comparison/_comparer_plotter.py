@@ -48,7 +48,9 @@ class ComparerPlotter:
         self.comparer = comparer
         self.is_directional = comparer.quantity.is_directional
 
-    def __call__(self, *args, **kwargs) -> matplotlib.axes.Axes:
+    def __call__(
+        self, *args, **kwargs
+    ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
         """Plot scatter plot of modelled vs observed data"""
         return self.scatter(*args, **kwargs)
 
@@ -485,7 +487,7 @@ class ComparerPlotter:
         skill_table: Optional[Union[str, List[str], bool]] = None,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
-    ) -> matplotlib.axes.Axes:
+    ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
         """Scatter plot showing compared data: observation vs modelled
         Optionally, with density histogram.
 

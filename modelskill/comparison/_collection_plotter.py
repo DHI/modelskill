@@ -34,7 +34,7 @@ class ComparerCollectionPlotter:
         self.cc = cc
         self.is_directional = False
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(self, *args: Any, **kwds: Any) -> Axes | list[Axes]:
         return self.scatter(*args, **kwds)
 
     def scatter(
@@ -59,7 +59,7 @@ class ComparerCollectionPlotter:
         skill_table: Optional[Union[str, List[str], bool]] = None,
         ax: Optional[Axes] = None,
         **kwargs,
-    ) -> Axes:
+    ) -> Axes | list[Axes]:
         """Scatter plot showing compared data: observation vs modelled
         Optionally, with density histogram.
 
