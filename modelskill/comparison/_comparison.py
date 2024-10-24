@@ -949,6 +949,15 @@ class Comparer(Scoreable):
 
             dropped_cmp = dropped_cmp.sel(model=models_to_keep)
 
+        if (start is not None) or (end is not None):
+            raise NotImplementedError("start and end not implemented yet")
+
+        if time is not None:
+            raise NotImplementedError("time not implemented yet")
+
+        if area is not None:
+            raise NotImplementedError("area not implemented yet")
+
         return dropped_cmp
 
     def where(

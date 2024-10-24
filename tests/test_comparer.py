@@ -560,6 +560,12 @@ def test_pc_drop_model_last(pc):
 def test_pc_drop_model_error(pc):
     with pytest.raises(KeyError):
         pc.sel(model="m3")
+
+
+def test_tc_drop_model(tc):
+    assert False
+
+
 def test_pc_where(pc):
     pc2 = pc.where(pc.data.Observation > 2.5)
     assert pc2.n_points == 3
@@ -860,7 +866,6 @@ def test_plots_directional(pt_df):
 
 
 def test_from_matched_track_data():
-
     df = pd.DataFrame(
         {
             "lat": [55.0, 55.1],
