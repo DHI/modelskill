@@ -687,3 +687,93 @@ class ComparerCollectionPlotter:
             _ytick_directional(ax)
 
         return ax
+
+    def residual_hist(
+        self, bins=100, title=None, color=None, figsize=None, ax=None, **kwargs
+    ) -> Axes | list[Axes]:
+        """plot histogram of residual values
+
+        Parameters
+        ----------
+        bins : int, optional
+            specification of bins, by default 100
+        title : str, optional
+            plot title, default: Residuals, [name]
+        color : str, optional
+            residual color, by default "#8B8D8E"
+        figsize : tuple, optional
+            figure size, by default None
+        ax : Axes | list[Axes], optional
+            axes to plot on, by default None
+        **kwargs
+            other keyword arguments to plt.hist()
+
+        Returns
+        -------
+        Axes | list[Axes]
+        """
+        cc = self.cc
+
+        if cc.n_models == 1:
+            return self._residual_hist_one_model(
+                bins=bins,
+                title=title,
+                color=color,
+                figsize=figsize,
+                ax=ax,
+                mod_name=cc.mod_names[0],
+                **kwargs,
+            )
+
+        if ax is not None and len(ax) != len(cc.mod_names):
+            raise ValueError("Number of axes must match number of models")
+
+        axs = ax if ax is not None else [None] * len(cc.mod_names)
+
+        for i, mod_name in enumerate(cc.mod_names):
+            cc_model = cc.sel(model=mod_name)
+            ax_mod = cc_model.plot.residual_hist(
+                bins=bins,
+                title=title,
+                color=color,
+                figsize=figsize,
+                ax=axs[i],
+                **kwargs,
+            )
+            axs[i] = ax_mod
+
+        return axs
+
+    def _residual_hist_one_model(
+        self,
+        bins=100,
+        title=None,
+        color=None,
+        figsize=None,
+        ax=None,
+        mod_name=None,
+        **kwargs,
+    ) -> Axes:
+        """Residual histogram for one model only"""
+        _, ax = _get_fig_ax(ax, figsize)
+
+        df = self.cc.sel(model=mod_name)._to_long_dataframe()
+        residuals = df.mod_val.values - df.obs_val.values
+
+        default_color = "#8B8D8E"
+        color = default_color if color is None else color
+        title = (
+            _default_univarate_title(f"Residuals, Model {mod_name}", self.cc)
+            if title is None
+            else title
+        )
+        ax.hist(residuals, bins=bins, color=color, **kwargs)
+        ax.set_title(title)
+        ax.set_xlabel(f"Residuals of {self.cc._unit_text}")
+
+        if self.is_directional:
+            ticks = np.linspace(-180, 180, 9)
+            ax.set_xticks(ticks)
+            ax.set_xlim(-180, 180)
+
+        return ax
