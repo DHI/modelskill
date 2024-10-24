@@ -7,12 +7,15 @@ import warnings
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
 
+import numpy as np
 import pandas as pd
 
 from .. import metrics as mtr
 from ..utils import _get_idx
+from ..settings import options
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
+from ._comparer_plotter import quantiles_xy
 
 
 def _default_univarate_title(kind: str, cc: ComparerCollection) -> str:
@@ -591,6 +594,96 @@ class ComparerCollectionPlotter:
         ax.set_title(title)
 
         if self.is_directional:
+            _ytick_directional(ax)
+
+        return ax
+
+    def qq(
+        self,
+        quantiles: int | Sequence[float] | None = None,
+        *,
+        title=None,
+        ax=None,
+        figsize=None,
+        **kwargs,
+    ):
+        """Make quantile-quantile (q-q) plot of model data and observations.
+
+        Primarily used to compare multiple models.
+
+        Parameters
+        ----------
+        quantiles: (int, sequence), optional
+            number of quantiles for QQ-plot, by default None and will depend on the scatter data length (10, 100 or 1000)
+            if int, this is the number of points
+            if sequence (list of floats), represents the desired quantiles (from 0 to 1)
+        title : str, optional
+            plot title, default: "Q-Q plot for [observation name]"
+        ax : matplotlib.axes.Axes, optional
+            axes to plot on, by default None
+        figsize : tuple, optional
+            figure size, by default None
+        **kwargs
+            other keyword arguments to plt.plot()
+
+        Returns
+        -------
+        matplotlib axes
+
+        Examples
+        --------
+        >>> cc.plot.qq()
+
+        """
+        cc = self.cc
+
+        _, ax = _get_fig_ax(ax, figsize)
+
+        df = cc._to_long_dataframe()
+
+        xmin, xmax, ymin, ymax = np.inf, -np.inf, np.inf, -np.inf
+
+        for model in cc.mod_names:
+            df_model = df[df.model == model]
+
+            x = df_model.obs_val.values
+            y = df_model.mod_val.values
+            xq, yq = quantiles_xy(x, y, quantiles)
+
+            xmin = min([x.min(), xmin])
+            xmax = max([x.max(), xmax])
+            ymin = min([y.min(), ymin])
+            ymax = max([y.max(), ymax])
+
+            ax.plot(xq, yq, ".-", label=model, zorder=4, **kwargs)
+
+        # 1:1 line
+        ax.plot(
+            [xmin, xmax],
+            [ymin, ymax],
+            label=options.plot.scatter.oneone_line.label,
+            c=options.plot.scatter.oneone_line.color,
+            zorder=3,
+        )
+
+        ax.axis("square")
+        ax.set_xlim([xmin, xmax])
+        ax.set_ylim([ymin, ymax])
+        ax.minorticks_on()
+        ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
+
+        ax.legend()
+        ax.set_xlabel("Observation, " + cc._unit_text)
+        ax.set_ylabel("Model, " + cc._unit_text)
+        title = (
+            _default_univarate_title("Q-Q plot for ", self.cc)
+            if title is None
+            else title
+        )
+        ax.set_title(title)
+
+        if self.is_directional:
+            _xtick_directional(ax)
             _ytick_directional(ax)
 
         return ax
