@@ -907,6 +907,50 @@ class Comparer(Scoreable):
                 d = d.isel(time=mask)
         return Comparer.from_matched_data(data=d, raw_mod_data=raw_mod_data)
 
+    def drop(
+        self,
+        model: Optional[IdxOrNameTypes] = None,
+        start: Optional[TimeTypes] = None,
+        end: Optional[TimeTypes] = None,
+        time: Optional[TimeTypes] = None,
+        area: Optional[List[float]] = None,
+    ) -> "Comparer":
+        """Drop data based on model, time and/or area.
+
+        Parameters
+        ----------
+        model : str or int or list of str or list of int, optional
+            Model name or index. If None, all models are selected.
+        start : str or datetime, optional
+            Start time. If None, all times are selected.
+        end : str or datetime, optional
+            End time. If None, all times are selected.
+        time : str or datetime, optional
+            Time. If None, all times are selected.
+        area : list of float, optional
+            bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
+
+        Returns
+        -------
+        Comparer
+            New Comparer excluding specified data.
+        """
+        dropped_cmp = self
+
+        if model is not None:
+            if isinstance(model, (str, int)):
+                models = [model]
+            else:
+                models = list(model)
+            models_to_drop: List[str] = [_get_name(m, self.mod_names) for m in models]
+            models_to_keep: List[str] = [
+                m for m in self.mod_names if m not in models_to_drop
+            ]
+
+            dropped_cmp = dropped_cmp.sel(model=models_to_keep)
+
+        return dropped_cmp
+
     def where(
         self,
         cond: Union[bool, np.ndarray, xr.DataArray],
