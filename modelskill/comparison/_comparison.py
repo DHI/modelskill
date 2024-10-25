@@ -1278,6 +1278,26 @@ class Comparer(Scoreable):
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
+    def _save(self) -> xr.DataTree:
+        ds = self.data
+
+        # There is no need to save raw data for track data, since it is identical to the matched data
+        if self.gtype == "point":
+            dt = xr.DataTree()
+            dt["matched"] = ds
+
+            for key, ts_mod in self.raw_mod_data.items():
+                ts_mod = ts_mod.copy()
+                dt[f"raw_{key}"] = ts_mod.data
+
+            return dt
+        elif self.gtype == "track":
+            dt = xr.DataTree()
+            dt["matched"] = ds
+            return dt
+
+        raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
     def save(self, filename: Union[str, Path]) -> None:
         """Save to netcdf file
 
@@ -1286,24 +1306,30 @@ class Comparer(Scoreable):
         filename : str or Path
             filename
         """
-        ds = self.data
+        dt = self._save()
 
-        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
-        # an alternative strategy would be to use NetCDF groups
-        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
+        dt.to_netcdf(filename)
 
-        # There is no need to save raw data for track data, since it is identical to the matched data
-        if self.gtype == "point":
-            ds = self.data.copy()  # copy needed to avoid modifying self.data
+    @staticmethod
+    def _load(dt: xr.DataTree) -> "Comparer":
+        data = dt["matched"].to_dataset()
+        if dt.gtype == "point":
+            raw_mod_data: Dict[str, TimeSeries] = {}
 
-            for key, ts_mod in self.raw_mod_data.items():
-                ts_mod = ts_mod.copy()
-                #  rename time to unique name
-                ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
-                # da = ds_mod.to_xarray()[key]
-                ds["_raw_" + key] = ts_mod.data[key]
+            keys = [k for k in dt.groups if k[:4] == "raw_"]
+            for key in keys:
+                new_key = key[4:]
+                ds = dt[key]
+                ts = PointObservation(data=ds, name=new_key)
+                raw_mod_data[new_key] = ts
 
-        ds.to_netcdf(filename)
+            cmp = Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+        elif dt.gtype == "track":
+            cmp = Comparer(matched_data=data)
+        else:
+            raise NotImplementedError(f"Unknown gtype: {dt.gtype}")
+
+        return cmp
 
     @staticmethod
     def load(filename: Union[str, Path]) -> "Comparer":
