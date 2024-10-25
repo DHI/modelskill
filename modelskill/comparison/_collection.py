@@ -1,6 +1,5 @@
 from __future__ import annotations
 from copy import deepcopy
-import os
 from pathlib import Path
 from typing import (
     Any,
@@ -1080,25 +1079,11 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.nc")
         """
 
-        # folder = tempfile.TemporaryDirectory().name
-
-        # with zipfile.ZipFile(filename, "r") as zip:
-        #    for f in zip.namelist():
-        #        if f.endswith(".nc"):
-        #            zip.extract(f, path=folder)
-
         dt = xr.open_datatree(filename)
-        groups = dt.groups
+        groups = [x for x in dt.children]
         comparers = [Comparer._load(dt[group]) for group in groups]
 
         return ComparerCollection(comparers)
-
-    @staticmethod
-    def _load_comparer(folder: str, f: str) -> Comparer:
-        f = os.path.join(folder, f)
-        cmp = Comparer.load(f)
-        os.remove(f)
-        return cmp
 
     # =============== Deprecated methods ===============
 

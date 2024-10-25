@@ -1314,42 +1314,7 @@ class Comparer(Scoreable):
         dt.to_netcdf(filename)
 
     @staticmethod
-    def _load(dt: xr.DataTree) -> "Comparer":
-        data = dt["matched"].to_dataset()
-        if dt.gtype == "point":
-            raw_mod_data: Dict[str, TimeSeries] = {}
-
-            keys = [k for k in dt.groups if k[:4] == "raw_"]
-            for key in keys:
-                new_key = key[4:]
-                ds = dt[key]
-                ts = PointObservation(data=ds, name=new_key)
-                raw_mod_data[new_key] = ts
-
-            cmp = Comparer(matched_data=data, raw_mod_data=raw_mod_data)
-        elif dt.gtype == "track":
-            cmp = Comparer(matched_data=data)
-        else:
-            raise NotImplementedError(f"Unknown gtype: {dt.gtype}")
-
-        return cmp
-
-    @staticmethod
-    def load(filename: Union[str, Path]) -> "Comparer":
-        """Load from netcdf file
-
-        Parameters
-        ----------
-        filename : str or Path
-            filename
-
-        Returns
-        -------
-        Comparer
-        """
-        with xr.open_datatree(filename) as dt:
-            data = dt.load()
-
+    def _load(data: xr.DataTree | xr.DataArray) -> "Comparer":
         if data.gtype == "track":
             return Comparer(matched_data=data["matched"].to_dataset())
 
@@ -1369,6 +1334,24 @@ class Comparer(Scoreable):
 
         else:
             raise NotImplementedError(f"Unknown gtype: {data.gtype}")
+
+    @staticmethod
+    def load(filename: Union[str, Path]) -> "Comparer":
+        """Load from netcdf file
+
+        Parameters
+        ----------
+        filename : str or Path
+            filename
+
+        Returns
+        -------
+        Comparer
+        """
+        with xr.open_datatree(filename) as dt:
+            data = dt.load()
+
+        return Comparer._load(data)
 
     # =============== Deprecated methods ===============
 
