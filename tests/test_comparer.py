@@ -887,3 +887,13 @@ def test_from_matched_dfs0():
     assert float(
         gs.data.sel(x=-0.01, y=55.1, method="nearest").rmse.values
     ) == pytest.approx(0.0476569069177831)
+
+
+def test_save_and_load(pc: Comparer, tmp_path) -> None:
+    filename = tmp_path / "test.nc"
+    pc.save(filename)
+
+    pc2 = Comparer.load(filename)
+
+    assert pc2.name == pc.name
+    assert pc2.gtype == pc.gtype

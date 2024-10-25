@@ -1281,18 +1281,21 @@ class Comparer(Scoreable):
     def _save(self) -> xr.DataTree:
         ds = self.data
 
-        # There is no need to save raw data for track data, since it is identical to the matched data
         if self.gtype == "point":
             dt = xr.DataTree()
             dt["matched"] = ds
+            dt["raw"] = xr.DataTree()
 
             for key, ts_mod in self.raw_mod_data.items():
                 ts_mod = ts_mod.copy()
-                dt[f"raw_{key}"] = ts_mod.data
+                dt["raw"][key] = ts_mod.data
 
+            dt.attrs["gtype"] = "point"
             return dt
         elif self.gtype == "track":
+            # There is no need to save raw data for track data, since it is identical to the matched data
             dt = xr.DataTree()
+            dt.attrs["gtype"] = "track"
             dt["matched"] = ds
             return dt
 
@@ -1344,40 +1347,25 @@ class Comparer(Scoreable):
         -------
         Comparer
         """
-        with xr.open_dataset(filename) as ds:
-            data = ds.load()
+        with xr.open_datatree(filename) as dt:
+            data = dt.load()
 
         if data.gtype == "track":
-            return Comparer(matched_data=data)
+            return Comparer(matched_data=data["matched"].to_dataset())
 
         if data.gtype == "point":
             raw_mod_data: Dict[str, TimeSeries] = {}
 
-            for var in data.data_vars:
-                var_name = str(var)
-                if var_name[:5] == "_raw_":
-                    new_key = var_name[5:]  # remove prefix '_raw_'
-                    ds = data[[var_name]].rename(
-                        {"_time_raw_" + new_key: "time", var_name: new_key}
-                    )
-                    ts = PointObservation(data=ds, name=new_key)
-                    # TODO: name of time?
-                    # ts.name = new_key
-                    # df = (
-                    #     data[var_name]
-                    #     .to_dataframe()
-                    #     .rename(
-                    #         columns={"_time_raw_" + new_key: "time", var_name: new_key}
-                    #     )
-                    # )
-                    raw_mod_data[new_key] = ts
+            names = [x for x in data["raw"].children]
+            for var in names:
+                ds = data["raw"][var].to_dataset()
+                ts = PointObservation(data=ds, name=var)
 
-                    # data = data.drop(var_name).drop("_time_raw_" + new_key)
+                raw_mod_data[var] = ts
 
-            # filter variables, only keep the ones with a 'time' dimension
-            data = data[[v for v in data.data_vars if "time" in data[v].dims]]
-
-            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+            return Comparer(
+                matched_data=data["matched"].to_dataset(), raw_mod_data=raw_mod_data
+            )
 
         else:
             raise NotImplementedError(f"Unknown gtype: {data.gtype}")
