@@ -557,13 +557,14 @@ def test_pc_drop_model_last(pc):
     assert np.all(pc.raw_mod_data["m1"] == pc2.raw_mod_data["m1"])
 
 
-def test_pc_drop_model_error(pc):
-    with pytest.raises(KeyError):
-        pc.sel(model="m3")
-
-
 def test_tc_drop_model(tc):
-    assert False
+    tc2 = tc.drop(model="m2")
+    assert isinstance(tc2, type(tc))
+    assert tc2.n_models == tc.n_models - 1
+    assert "m2" not in tc2.mod_names
+    assert "m2" not in tc2.raw_mod_data
+    assert "m2" not in tc2.data
+    assert np.all(tc.data.m1 == tc2.data.m1)
 
 
 def test_pc_where(pc):

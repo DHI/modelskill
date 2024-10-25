@@ -910,25 +910,13 @@ class Comparer(Scoreable):
     def drop(
         self,
         model: Optional[IdxOrNameTypes] = None,
-        start: Optional[TimeTypes] = None,
-        end: Optional[TimeTypes] = None,
-        time: Optional[TimeTypes] = None,
-        area: Optional[List[float]] = None,
     ) -> "Comparer":
-        """Drop data based on model, time and/or area.
+        """Drop specified model(s) from the Comparer.
 
         Parameters
         ----------
         model : str or int or list of str or list of int, optional
             Model name or index. If None, all models are selected.
-        start : str or datetime, optional
-            Start time. If None, all times are selected.
-        end : str or datetime, optional
-            End time. If None, all times are selected.
-        time : str or datetime, optional
-            Time. If None, all times are selected.
-        area : list of float, optional
-            bbox: [x0, y0, x1, y1] or Polygon. If None, all areas are selected.
 
         Returns
         -------
@@ -948,15 +936,6 @@ class Comparer(Scoreable):
             ]
 
             dropped_cmp = dropped_cmp.sel(model=models_to_keep)
-
-        if (start is not None) or (end is not None):
-            raise NotImplementedError("start and end not implemented yet")
-
-        if time is not None:
-            raise NotImplementedError("time not implemented yet")
-
-        if area is not None:
-            raise NotImplementedError("area not implemented yet")
 
         return dropped_cmp
 
