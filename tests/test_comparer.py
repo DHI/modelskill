@@ -711,6 +711,8 @@ def test_to_dataframe_tc(tc):
 
 # ======================== plotting ========================
 
+PLOT_FUNCS_RETURNING_MANY_AX = ["scatter", "hist", "residual_hist"]
+
 
 @pytest.fixture(
     params=[
@@ -727,9 +729,18 @@ def test_to_dataframe_tc(tc):
 def pc_plot_function(pc, request):
     func = getattr(pc.plot, request.param)
     # special cases requiring a model to be selected
-    if request.param in ["scatter", "hist", "residual_hist"]:
+    if request.param in PLOT_FUNCS_RETURNING_MANY_AX:
         func = getattr(pc.sel(model=0).plot, request.param)
     return func
+
+
+@pytest.mark.parametrize("kind", PLOT_FUNCS_RETURNING_MANY_AX)
+def test_plots_returning_multiple_axes(pc, kind):
+    n_models = 2
+    func = getattr(pc.plot, kind)
+    ax = func()
+    assert len(ax) == n_models
+    assert all(isinstance(a, plt.Axes) for a in ax)
 
 
 def test_plot_returns_an_object(pc_plot_function):
@@ -824,7 +835,6 @@ def test_plots_directional(pt_df):
 
 
 def test_from_matched_track_data():
-
     df = pd.DataFrame(
         {
             "lat": [55.0, 55.1],
