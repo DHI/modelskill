@@ -2,7 +2,6 @@ from __future__ import annotations
 from copy import deepcopy
 import os
 from pathlib import Path
-import tempfile
 from typing import (
     Any,
     Callable,
@@ -18,7 +17,6 @@ from typing import (
     Tuple,
 )
 import warnings
-import zipfile
 import numpy as np
 import pandas as pd
 import xarray as xr
