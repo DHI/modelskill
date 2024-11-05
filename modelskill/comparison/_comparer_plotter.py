@@ -62,6 +62,7 @@ class ComparerPlotter:
         ax=None,
         figsize: Tuple[float, float] | None = None,
         backend: str = "matplotlib",
+        style: list | None = None,
         **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
