@@ -21,6 +21,7 @@ import numpy as np  # type: ignore
 from .. import metrics as mtr
 from ..utils import _get_idx
 import matplotlib.colors as colors
+from pandas.plotting._matplotlib.core import _color_in_style
 from ..plotting._misc import (
     _get_fig_ax,
     _xtick_directional,
@@ -62,7 +63,8 @@ class ComparerPlotter:
         ax=None,
         figsize: Tuple[float, float] | None = None,
         backend: str = "matplotlib",
-        style: list[str] | None = None,
+        style: list[str] | str | None = None,
+        color: list[str] | str | None = None,
         **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
@@ -81,8 +83,11 @@ class ComparerPlotter:
             use "plotly" (interactive) or "matplotlib" backend,
             by default "matplotlib"
         style: list of str, optional
-            containing line styles of the model results, if len(style) = num_models.
-            If len(style) = num_models + 1, the first argument will be used for the observations.
+            containing line styles of the model results.
+            by default None
+        color: list of str, optional
+            containing colors of the model results if len(colors) == num_models.
+            If len(colors) == num_models + 1, the first color will be used for the observations.
             by default None
         **kwargs
             other keyword arguments to fig.update_layout (plotly backend)
@@ -91,29 +96,47 @@ class ComparerPlotter:
         -------
         matplotlib.axes.Axes or plotly.graph_objects.Figure
         """
-        from ._comparison import MOD_COLORS
+        if style is None and color is None:
+            from ._comparison import MOD_COLORS
+
+            color = MOD_COLORS
+
+        if not isinstance(style, list):
+            style = [style]
+        if isinstance(color, str) or color is None:
+            color = [color]
 
         cmp = self.comparer
 
         if title is None:
             title = cmp.name
 
-        if style is not None and len(style) > cmp.n_models:
-            obs_style = style[0]
-            style = style[1:]
+        if len(color) > cmp.n_models:
+            obs_color = color[0]
+            color = color[1:]
+        elif len(style) < cmp.n_models:
+            raise ValueError(
+                "Number of styles in 'style' argument does not match the number of models in the comparer."
+            )
+        elif len(color) < cmp.n_models:
+            raise ValueError(
+                "Number of colors in 'color' argument does not match the number of models in the comparer."
+            )
+        else:
+            obs_color = cmp.data[cmp._obs_name].attrs["color"]
 
         if backend == "matplotlib":
             fig, ax = _get_fig_ax(ax, figsize)
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
                 mod = cmp.raw_mod_data[key]._values_as_series
-                mod.plot(ax=ax, color=MOD_COLORS[j])
+                mod.plot(ax=ax, style=style[j], color=color[j])
 
             ax.scatter(
                 cmp.time,
                 cmp.data[cmp._obs_name].values,
                 marker=".",
-                color=cmp.data[cmp._obs_name].attrs["color"],
+                color=obs_color,
             )
             ax.set_ylabel(cmp._unit_text)
             ax.legend([*cmp.mod_names, cmp._obs_name])
