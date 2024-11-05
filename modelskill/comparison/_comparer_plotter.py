@@ -62,7 +62,7 @@ class ComparerPlotter:
         ax=None,
         figsize: Tuple[float, float] | None = None,
         backend: str = "matplotlib",
-        style: list | None = None,
+        style: list[str] | None = None,
         **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
@@ -80,6 +80,10 @@ class ComparerPlotter:
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend,
             by default "matplotlib"
+        style: list of str, optional
+            containing line styles of the model results, if len(style) = num_models.
+            If len(style) = num_models + 1, the first argument will be used for the observations.
+            by default None
         **kwargs
             other keyword arguments to fig.update_layout (plotly backend)
 
@@ -93,6 +97,10 @@ class ComparerPlotter:
 
         if title is None:
             title = cmp.name
+
+        if style is not None and len(style) > cmp.n_models:
+            obs_style = style[0]
+            style = style[1:]
 
         if backend == "matplotlib":
             fig, ax = _get_fig_ax(ax, figsize)
