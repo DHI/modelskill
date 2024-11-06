@@ -887,3 +887,40 @@ def test_from_matched_dfs0():
     assert float(
         gs.data.sel(x=-0.01, y=55.1, method="nearest").rmse.values
     ) == pytest.approx(0.0476569069177831)
+
+
+def test_timeseriesplot_accepts_style_input(pc):
+    ax = pc.plot.timeseries(color=["red", "blue"])
+    with pytest.raises(
+        ValueError, match="'style' string with a color symbol and 'color'"
+    ):
+        ax = pc.plot.timeseries(color=["red", "blue"], style="b-")
+    ax = pc.plot.timeseries(color=["red"])
+    plt.show()
+    print("Hello")
+
+
+# ----------
+
+
+def pc2() -> Comparer:
+    """A comparer with fake point data"""
+    x, y = 10.0, 55.0
+    df = _get_track_df().drop(columns=["x", "y"])
+
+    data = df.to_xarray()
+    data.attrs["gtype"] = "point"
+    data.attrs["name"] = "fake point obs"
+    data.coords["x"] = x
+    data.coords["y"] = y
+    data.coords["z"] = np.nan
+    data = _set_attrs(data)
+
+    raw_data = {"m1": data[["m1"]], "m2": data[["m2"]]}
+
+    data = data.dropna(dim="time")
+
+    return Comparer(matched_data=data, raw_mod_data=raw_data)
+
+
+test_timeseriesplot_accepts_style_input(pc2())

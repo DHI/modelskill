@@ -184,3 +184,24 @@ def _format_skill_line(
     name = name.upper()
 
     return f"{name}", " =  ", f"{fvalue} {item_unit}"
+
+
+def _check_kwarg_and_convert_to_list(color, style, n_mod):
+    if not isinstance(style, list):
+        # If style is str or None, convert to list (for looping)
+        style = [style] * n_mod
+    if isinstance(color, str) or color is None:
+        # Same with color
+        color = [color] * n_mod
+
+    if len(color) < n_mod:  # too few colors given?
+        raise ValueError(
+            "Number of colors in 'color' argument does not match the number of models in the comparer."
+        )
+
+    if len(style) < n_mod and style[0] is not None:  # too few styles given?
+        raise ValueError(
+            "Number of styles in 'style' argument does not match the number of models in the comparer."
+        )
+
+    return color, style

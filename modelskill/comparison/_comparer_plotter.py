@@ -27,6 +27,7 @@ from ..plotting._misc import (
     _xtick_directional,
     _ytick_directional,
     quantiles_xy,
+    _check_kwarg_and_convert_to_list,
 )
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
@@ -96,33 +97,24 @@ class ComparerPlotter:
         -------
         matplotlib.axes.Axes or plotly.graph_objects.Figure
         """
-        if style is None and color is None:
+
+        cmp = self.comparer
+
+        if style is None and color is None:  # Use default values
             from ._comparison import MOD_COLORS
 
             color = MOD_COLORS
 
-        if not isinstance(style, list):
-            style = [style]
-        if isinstance(color, str) or color is None:
-            color = [color]
-
-        cmp = self.comparer
-
         if title is None:
             title = cmp.name
 
+        color, style = _check_kwarg_and_convert_to_list(color, style, cmp.n_models)
+
         if len(color) > cmp.n_models:
+            # If more colors than n_models is given, the first color is used for the observations
             obs_color = color[0]
             color = color[1:]
-        elif len(style) < cmp.n_models:
-            raise ValueError(
-                "Number of styles in 'style' argument does not match the number of models in the comparer."
-            )
-        elif len(color) < cmp.n_models:
-            raise ValueError(
-                "Number of colors in 'color' argument does not match the number of models in the comparer."
-            )
-        else:
+        else:  # use default value for observations
             obs_color = cmp.data[cmp._obs_name].attrs["color"]
 
         if backend == "matplotlib":
