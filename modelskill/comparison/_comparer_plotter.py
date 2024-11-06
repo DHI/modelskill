@@ -100,29 +100,38 @@ class ComparerPlotter:
 
         cmp = self.comparer
 
-        if style is None and color is None:  # Use default values
-            from ._comparison import MOD_COLORS
-
-            color = MOD_COLORS
-
         if title is None:
             title = cmp.name
 
+        if color is not None and style is not None:
+            raise ValueError(
+                "It is not possible to pass both the color argument and the style argument. Choose one."
+            )
+
+        # Color for observations:
+        obs_color = cmp.data[cmp._obs_name].attrs["color"]
+
+        if color is None and style is None:  # Use default values for colors
+            from ._comparison import MOD_COLORS
+
+            color = MOD_COLORS[: cmp.n_models]
+
         color, style = _check_kwarg_and_convert_to_list(color, style, cmp.n_models)
 
-        if len(color) > cmp.n_models:
-            # If more colors than n_models is given, the first color is used for the observations
+        if color is not None and len(color) > cmp.n_models:
+            # If more than n_models colors is given, the first color is used for the observations
             obs_color = color[0]
             color = color[1:]
-        else:  # use default value for observations
-            obs_color = cmp.data[cmp._obs_name].attrs["color"]
 
         if backend == "matplotlib":
             fig, ax = _get_fig_ax(ax, figsize)
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
                 mod = cmp.raw_mod_data[key]._values_as_series
-                mod.plot(ax=ax, style=style[j], color=color[j])
+                if style is not None:
+                    mod.plot(ax=ax, style=style[j])
+                else:
+                    mod.plot(ax=ax, color=color[j])
 
             ax.scatter(
                 cmp.time,

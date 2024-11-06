@@ -889,14 +889,15 @@ def test_from_matched_dfs0():
     ) == pytest.approx(0.0476569069177831)
 
 
-def test_timeseriesplot_accepts_style_input(pc):
+def test_timeseriesplot_accepts_style_color_input(pc):
     ax = pc.plot.timeseries(color=["red", "blue"])
-    with pytest.raises(
-        ValueError, match="'style' string with a color symbol and 'color'"
-    ):
-        ax = pc.plot.timeseries(color=["red", "blue"], style="b-")
-    ax = pc.plot.timeseries(color=["red"])
     plt.show()
+    ax = pc.plot.timeseries(style=["b-", "g--"])
+    plt.show()
+    with pytest.raises(ValueError, match="Choose one"):
+        ax = pc.plot.timeseries(color=["red", "blue"], style="b-")
+    # ax = pc.plot.timeseries(color=["red"])
+
     print("Hello")
 
 

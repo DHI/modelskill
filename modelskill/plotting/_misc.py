@@ -187,19 +187,21 @@ def _format_skill_line(
 
 
 def _check_kwarg_and_convert_to_list(color, style, n_mod):
-    if not isinstance(style, list):
-        # If style is str or None, convert to list (for looping)
+    if isinstance(style, str):
+        # If style is str, convert to list (for looping)
         style = [style] * n_mod
-    if isinstance(color, str) or color is None:
+    if isinstance(color, str):
         # Same with color
         color = [color] * n_mod
 
-    if len(color) < n_mod:  # too few colors given?
+    if color is not None and len(color) < n_mod:  # too few colors given?
         raise ValueError(
             "Number of colors in 'color' argument does not match the number of models in the comparer."
         )
 
-    if len(style) < n_mod and style[0] is not None:  # too few styles given?
+    if (
+        style is not None and len(style) < n_mod and style[0] is not None
+    ):  # too few styles given?
         raise ValueError(
             "Number of styles in 'style' argument does not match the number of models in the comparer."
         )
