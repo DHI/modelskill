@@ -132,6 +132,8 @@ class ComparerPlotter:
                     mod.plot(ax=ax, style=style[j])
                 else:
                     if color is None:
+                        from ._comparison import MOD_COLORS
+
                         color = MOD_COLORS
                     mod.plot(ax=ax, color=color[j])
 
