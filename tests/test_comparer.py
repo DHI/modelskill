@@ -908,29 +908,3 @@ def test_timeseriesplot_accepts_style_color_input(pc):
     assert ax.lines[0].get_color() == "blue"
     plt.show()
     print("Hello")
-
-
-# ----------
-
-
-def pc2() -> Comparer:
-    """A comparer with fake point data"""
-    x, y = 10.0, 55.0
-    df = _get_track_df().drop(columns=["x", "y"])
-
-    data = df.to_xarray()
-    data.attrs["gtype"] = "point"
-    data.attrs["name"] = "fake point obs"
-    data.coords["x"] = x
-    data.coords["y"] = y
-    data.coords["z"] = np.nan
-    data = _set_attrs(data)
-
-    raw_data = {"m1": data[["m1"]], "m2": data[["m2"]]}
-
-    data = data.dropna(dim="time")
-
-    return Comparer(matched_data=data, raw_mod_data=raw_data)
-
-
-test_timeseriesplot_accepts_style_color_input(pc2())
