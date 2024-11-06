@@ -189,10 +189,10 @@ def _format_skill_line(
 def _check_kwarg_and_convert_to_list(color, style, n_mod):
     if isinstance(style, str):
         # If style is str, convert to list (for looping)
-        style = [style] * n_mod
+        style = [style]
     if isinstance(color, str):
         # Same with color
-        color = [color] * n_mod
+        color = [color]
 
     if color is not None and len(color) < n_mod:  # too few colors given?
         raise ValueError(
