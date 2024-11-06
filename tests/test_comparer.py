@@ -890,14 +890,23 @@ def test_from_matched_dfs0():
 
 
 def test_timeseriesplot_accepts_style_color_input(pc):
+    # Check that it can take the inputs
     ax = pc.plot.timeseries(color=["red", "blue"])
-    plt.show()
     ax = pc.plot.timeseries(style=["b-", "g--"])
-    plt.show()
+    assert ax.lines[1].get_color() == "g"
+
+    # Check that errors are raised
     with pytest.raises(ValueError, match="Choose one"):
         ax = pc.plot.timeseries(color=["red", "blue"], style="b-")
-    # ax = pc.plot.timeseries(color=["red"])
+    with pytest.raises(ValueError, match="'color' argument"):
+        ax = pc.plot.timeseries(color=["red"])
+    with pytest.raises(ValueError, match="'style' argument"):
+        ax = pc.plot.timeseries(style=["b-"])
 
+    ax = pc.plot.timeseries(color=["red", "blue", "black"])
+    # first line is blue (red is for observations).
+    assert ax.lines[0].get_color() == "blue"
+    plt.show()
     print("Hello")
 
 
@@ -924,4 +933,4 @@ def pc2() -> Comparer:
     return Comparer(matched_data=data, raw_mod_data=raw_data)
 
 
-test_timeseriesplot_accepts_style_input(pc2())
+test_timeseriesplot_accepts_style_color_input(pc2())
