@@ -21,7 +21,6 @@ import numpy as np  # type: ignore
 from .. import metrics as mtr
 from ..utils import _get_idx
 import matplotlib.colors as colors
-from pandas.plotting._matplotlib.core import _color_in_style
 from ..plotting._misc import (
     _get_fig_ax,
     _xtick_directional,
