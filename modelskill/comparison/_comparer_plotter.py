@@ -122,6 +122,8 @@ class ComparerPlotter:
             # If more than n_models colors is given, the first color is used for the observations
             obs_color = color[0]
             color = color[1:]
+        elif color is None:
+            color = [color]
 
         if backend == "matplotlib":
             fig, ax = _get_fig_ax(ax, figsize)
