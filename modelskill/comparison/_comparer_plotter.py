@@ -111,10 +111,10 @@ class ComparerPlotter:
         # Color for observations:
         obs_color = cmp.data[cmp._obs_name].attrs["color"]
 
-        if color is None and style is None:  # Use default values for colors
-            from ._comparison import MOD_COLORS
+        # if color is None and style is None:  # Use default values for colors
+        #     from ._comparison import MOD_COLORS
 
-            color = MOD_COLORS[: cmp.n_models]
+        #     color = MOD_COLORS[: cmp.n_models]
 
         color, style = _check_kwarg_and_convert_to_list(color, style, cmp.n_models)
 
@@ -122,8 +122,6 @@ class ComparerPlotter:
             # If more than n_models colors is given, the first color is used for the observations
             obs_color = color[0]
             color = color[1:]
-        elif color is None:
-            color = [color]
 
         if backend == "matplotlib":
             fig, ax = _get_fig_ax(ax, figsize)
@@ -133,6 +131,8 @@ class ComparerPlotter:
                 if style is not None:
                     mod.plot(ax=ax, style=style[j])
                 else:
+                    if color is None:
+                        color = MOD_COLORS
                     mod.plot(ax=ax, color=color[j])
 
             ax.scatter(
