@@ -911,3 +911,43 @@ def test_from_matched_y_or_y_item_not_both():
             obs_item=3,
             mod_items=2,
         )
+
+
+def test_from_matched_track_with_no_xy_items():
+    # If no x and y items are specified and no other information is available,
+    # then we cannot assume that the data is track data!
+    df = pd.DataFrame(
+        {
+            "lat": [55.0, 55.1],
+            "lon": [-0.1, 0.01],
+            "c2": [1.2, 1.3],
+            "mike": [1.22, 1.3],
+        },
+    )
+    cmp = ms.from_matched(
+        data=df,
+        obs_item="c2",
+        mod_items="mike",
+    )
+    assert cmp.gtype == "point"
+
+
+def test_from_matched_non_scalar_xy_fails():
+    # There is a risk that the user has not understood x_item and y_item
+    # should be provided instead of x and y.
+    df = pd.DataFrame(
+        {
+            "lat": [55.0, 55.1],
+            "lon": [-0.1, 0.01],
+            "c2": [1.2, 1.3],
+            "mike": [1.22, 1.3],
+        },
+    )
+    with pytest.raises(ValueError):
+        ms.from_matched(
+            data=df,
+            obs_item="c2",
+            mod_items="mike",
+            x=df.lon,
+            y=df.lat,
+        )
