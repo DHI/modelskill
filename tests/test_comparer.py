@@ -943,7 +943,7 @@ def test_from_matched_non_scalar_xy_fails():
             "mike": [1.22, 1.3],
         },
     )
-    with pytest.raises(TypeError, match="must be a scalar"):
+    with pytest.raises(TypeError, match="must be scalar"):
         ms.from_matched(
             data=df,
             obs_item="c2",
