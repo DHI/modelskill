@@ -887,3 +887,27 @@ def test_from_matched_dfs0():
     assert float(
         gs.data.sel(x=-0.01, y=55.1, method="nearest").rmse.values
     ) == pytest.approx(0.0476569069177831)
+
+
+def test_from_matched_x_or_x_item_not_both():
+    with pytest.raises(ValueError, match="x and x_item cannot both be specified"):
+        ms.from_matched(
+            data="tests/testdata/matched_track_data.dfs0",
+            x=43.1,
+            x_item=0,
+            y_item=1,
+            obs_item=3,
+            mod_items=2,
+        )
+
+
+def test_from_matched_y_or_y_item_not_both():
+    with pytest.raises(ValueError, match="y and y_item cannot both be specified"):
+        ms.from_matched(
+            data="tests/testdata/matched_track_data.dfs0",
+            y=2.2,
+            x_item=0,
+            y_item=1,
+            obs_item=3,
+            mod_items=2,
+        )
