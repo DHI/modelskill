@@ -20,7 +20,7 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - user-guide/index.md
+      - user-guide/index.qmd
       - href: examples/index.qmd
         text: Examples
       - href: api/index.qmd
@@ -30,16 +30,16 @@ website:
     search: true
     contents: 
       - section: "User Guide"
-        href: user-guide/index.md
+        href: user-guide/index.qmd
         contents: 
          - user-guide/getting-started.qmd
-         - user-guide/overview.md
+         - user-guide/overview.qmd
          - user-guide/terminology.qmd
-         - user-guide/data-structures.md
+         - user-guide/data-structures.qmd
          - user-guide/workflow.qmd
-         - user-guide/matching.md
+         - user-guide/matching.qmd
+         - user-guide/selecting-data.qmd
          - user-guide/plotting.qmd
-         - user-guide/selecting-data.md
       - section: "Examples"
         href: examples/index.qmd
         contents:
@@ -52,45 +52,44 @@ website:
           - href: examples/Prematched_with_auxiliary.qmd
             text: Prematched with auxiliary
       - section: "API Reference"
-        collapsed: true
         href: api/index.qmd
-        contents:
-        - section: "Observation"
-          contents:
-            - api/observation.qmd
-            - api/PointObservation.qmd
-            - api/TrackObservation.qmd
-        - section: "Model Result"
-          contents:
-            - api/model_result.qmd
-            - api/PointModelResult.qmd
-            - api/TrackModelResult.qmd
-            - api/DfsuModelResult.qmd
-            - api/GridModelResult.qmd
-            - api/DummyModelResult.qmd
-        - section: "Matching"
-          contents:
-            - api/match.qmd
-            - api/from_matched.qmd
-        - section: "Comparer"
-          contents:
-            - api/Comparer.qmd
-            - api/comparison.ComparerPlotter.qmd
-            - api/ComparerCollection.qmd
-            - api/comparison.ComparerCollectionPlotter.qmd
-            - api/SkillTable.qmd
-        - section: "Plotting"
-          contents:
-            - api/plotting.qmd
-        - section: "Metrics"
-          contents:
-            - api/metrics.qmd
-        - section: "Settings"
-          contents:
-            - api/settings.qmd
-        - section: "Quantity"
-          contents:
-            - api/Quantity.qmd
+        # contents:
+        # - section: "Observation"
+        #   contents:
+        #     - api/observation.qmd
+        #     - api/PointObservation.qmd
+        #     - api/TrackObservation.qmd
+        # - section: "Model Result"
+        #   contents:
+        #     - api/model_result.qmd
+        #     - api/PointModelResult.qmd
+        #     - api/TrackModelResult.qmd
+        #     - api/DfsuModelResult.qmd
+        #     - api/GridModelResult.qmd
+        #     - api/DummyModelResult.qmd
+        # - section: "Matching"
+        #   contents:
+        #     - api/match.qmd
+        #     - api/from_matched.qmd
+        # - section: "Comparer"
+        #   contents:
+        #     - api/Comparer.qmd
+        #     - api/comparison.ComparerPlotter.qmd
+        #     - api/ComparerCollection.qmd
+        #     - api/comparison.ComparerCollectionPlotter.qmd
+        #     - api/SkillTable.qmd
+        # - section: "Plotting"
+        #   contents:
+        #     - api/plotting.qmd
+        # - section: "Metrics"
+        #   contents:
+        #     - api/metrics.qmd
+        # - section: "Settings"
+        #   contents:
+        #     - api/settings.qmd
+        # - section: "Quantity"
+        #   contents:
+        #     - api/Quantity.qmd
 
 
 filters:
@@ -192,5 +191,8 @@ quartodoc:
 
 format:
   html:
+    theme: cosmo
+    toc: true
+  ipynb: 
     theme: cosmo
     toc: true

@@ -46,7 +46,7 @@ Choose amongst different skill metrics, tables and charts
 
 ModelSkill is licensed under MIT and available on [GitHub](https://github.com/DHI/modelskill)
 
-[License](license.md)
+[License](license.qmd)
 
 :::
 

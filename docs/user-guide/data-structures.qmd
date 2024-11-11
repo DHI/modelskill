@@ -48,6 +48,3 @@ If `c` is a comparer object, then the following skill methods are available:
 * `c.mean_skill()` -> `SkillTable`
 * `c.gridded_skill()` -> `SkillGrid`
 
-
-### SkillTable
-
