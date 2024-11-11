@@ -45,7 +45,8 @@ classifiers = [
 
 [project.optional-dependencies]
 docs = ["quarto-cli==1.5.57",
-        "quartodoc==0.9.1"]
+        "quartodoc==0.9.1",
+        "netCDF4",]
 
 dev = ["pytest",
         "plotly >= 4.5",
