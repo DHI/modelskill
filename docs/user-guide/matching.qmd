@@ -23,31 +23,13 @@ If observation and model result are of the same geometry, the matching is done *
 
 In the most simple cases, one observation to one model result, the `match()` function can be used directly, without creating Observation and ModelResult objects first:
 
-```python
->>> cmp = ms.match('obs.dfs0', 'model.dfs0', obs_item='obs_WL', mod_item='WL')
+```{python}
+import modelskill as ms
+cmp = ms.match("../data/SW/HKNA_Hm0.dfs0", "../data/SW/HKNA_Hm0_Model.dfs0", gtype='point')
+cmp
 ```
 
 In all other cases, the observations and model results needs to be defined first.
-
-```python
->>> o = ms.observation('obs.dfs0', item='waterlevel')
->>> mr1 = ms.model_result('model1.dfs0', item='WL1')
->>> mr2 = ms.model_result('model2.dfs0', item='WL2')
->>> cmp = ms.match(o, [mr1, mr2])
-```
-
-In most cases, *several* observations needs to matched with several model results. This can be done by constructing a list of `Comparer` objects and then combining them into a `ComparerCollection`:
-
-```python
->>> cmps = []
->>> for o in observations:
->>>     mr1 = ...
->>>     mr2 = ...
->>>     cmps.append(ms.match(o, [mr1, mr2]))
->>> cc = ms.ComparerCollection(cmps)
-```
-
-
 
 ## Matching with dfsu or grid model result
 
@@ -55,12 +37,35 @@ If the model result is a SpatialField, i.e., either a `GridModelResult` or a `Df
 
 In this situation, *multiple* observations can be matched to the same model result, in which case the `match` function returns a `ComparerCollection` instead of a `Comparer` which is the returned object for single observation matching. 
 
-```python
->>> o1 = ms.observation('obs1.dfs0', item='waterlevel')
->>> o2 = ms.observation('obs2.dfs0', item='waterlevel')
->>> mr = ms.model_result('model.dfsu', item='WaterLevel')
->>> cc = ms.match([o1, o2], mr)   # returns a ComparerCollection
+```{python}
+o1 = ms.observation("../data/SW/HKNA_Hm0.dfs0", item=0,
+                    x=4.2420, y=52.6887,
+                    name="HKNA")
+mr_dfsu = ms.model_result("../data/SW/HKZN_local_2017_DutchCoast.dfsu", 
+                      item="Sign. Wave Height",
+                      name="HKZN_local")
+mr_nc = ms.model_result("../data/SW/CMEMS_DutchCoast_2017-10-28.nc", 
+                      item="VHM0",
+                      name="CMEMS")
+cmp = ms.match(o1, [mr_dfsu, mr_nc])
+cmp
 ```
+
+In most cases, *several* observations needs to matched with several model results. This can be done by constructing a list of `Comparer` objects and then combining them into a `ComparerCollection`:
+
+```{python}
+o2 = ms.observation("../data/SW/eur_Hm0.dfs0", item=0,
+                     x=3.2760, y=51.9990,
+                     name="EPL")
+                     
+observations = [o1, o2]
+cmps = []
+for o in observations:
+     cmps.append(ms.match(o, [mr_dfsu, mr_nc]))
+cc = ms.ComparerCollection(cmps)
+cc
+```
+
 
 Matching `PointObservation` with `SpatialField` model results consists of two steps: 
 
@@ -82,8 +87,8 @@ Extracting data for a specific point position from the flexible mesh dfsu files 
 
 The default (inverse_distance) is not necessarily the best method in all cases. When the extracted position is close to the model boundary, "contained" may be a better choice.
 
-```python
->>> cc = ms.match([o1, o2], mr_dfsu, spatial_method='contained')   
+```{python}
+cc = ms.match([o1, o2], mr_dfsu, spatial_method='contained')   
 ```
 
 ::: callout-note
@@ -96,8 +101,8 @@ The default (inverse_distance) is not necessarily the best method in all cases. 
 
 Extracting data from a GridModelResult is done through xarray's `interp()` function. The `spatial_method` argument of the `match()` function is passed on to the `interp()` function as the `method` argument. The default method is "linear" which is the recommended method for most cases. Close to land where the grid model result data is often missing, "nearest" may be a better choice.
 
-```python
->>> cc = ms.match([o1, o2], mr_netcdf, spatial_method='nearest')   
+```{python}
+cc = ms.match([o1, o2], mr_nc, spatial_method='nearest')   
 ```
 
 
