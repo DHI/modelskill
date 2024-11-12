@@ -90,12 +90,14 @@ cmp3.data.Observation.values
 
 Let's split the data based on wind direction sector and aggregate the skill calculation of the significant wave height predition for each sector.
 
+*Note: in this short example wind direction is between 274 and 353 degrees*
+
 ```{python}
-# Note: in this short example wind direction is between 274 and 353 degrees
 df = cmp.data.wind_dir.to_dataframe()
-cmp.data["windsector"] = pd.cut(df.wind_dir,
+windsectors = pd.cut(df.wind_dir,
                                 [255, 285, 315, 345, 360],
                                 labels=["W", "WNW", "NNW", "N"])
+cmp.data["windsector"] = windsectors.astype(str)
 ```
 
 ```{python}
