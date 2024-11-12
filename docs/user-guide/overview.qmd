@@ -16,9 +16,9 @@ If the observations and model results are not in the same data source (e.g. dfs0
 they will need to be defined and then matched in space and time with the `match()` function. 
 In simple cases, observations and model results can be defined directly in the `match()` function: 
 
-```python
+```{python}
 import modelskill as ms
-cmp = ms.match("obs.dfs0", "model.dfs0", obs_item="obs_WL", mod_item="WL")
+cmp = ms.match("../data/obs.dfs0", "../data/model.dfs0", obs_item="obs_WL", mod_item="WL")
 ```
 
 But in most cases, the observations and model results will need to be defined separately first.
@@ -28,9 +28,8 @@ But in most cases, the observations and model results will need to be defined se
 
 The observations can be defined as either a [`PointObservation`](`modelskill.PointObservation`) or a [`TrackObservation`](`modelskill.TrackObservation`) (a moving point). 
 
-```python
-o1 = ms.PointObservation("stn1.dfs0", item="obs_WL")
-o2 = ms.PointObservation("stn2.dfs0", item="obs_WL")
+```{python}
+o1 = ms.PointObservation("../data/obs.dfs0", item="obs_WL",x=366844.15, y=6154291.6)
 ```
 
 The `item` needs to be specified as either the item number or the item name if the input file contains multiple items. Several other parameters can be specified, such as the name of the observation, the x- and y-position, and the quantity type and unit of the observation. 
@@ -45,19 +44,17 @@ A model result will either be a simple point/track like the observations, or spa
 * [`GridModelResult`](`modelskill.GridModelResult`) - a spatial field from a dfs2/nc file or a Xarray Dataset
 * [`DfsuModelResult`](`modelskill.DfsuModelResult`) - a spatial field from a dfsu file
 
-```python
-mr1 = ms.PointModelResult("model.dfs0", item="WL_stn1")
-mr2 = ms.PointModelResult("model.dfs0", item="WL_stn2")
+```{python}
+mr1 = ms.PointModelResult("../data/model.dfs0", item="WL")
 ```
 
 ### Match observations and model results
 
 The `match()` function will interpolate the model results to the time (and space) of the observations and return a collection of `Comparer` objects that can be used for analysis. 
 
-```python
-cc1 = ms.match(o1, mr1)
-cc2 = ms.match(o2, mr2)
-cc = cc1 + cc2
+```{python}
+cc = ms.match(o1, mr1)
+cc
 ```
 
 
