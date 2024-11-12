@@ -24,6 +24,6 @@ coverage:
 	pytest --cov-report html --cov=$(LIB) tests/
 
 docs: FORCE
-	cd docs && quartodoc build && quarto render && cd -
+	cd docs && quartodoc build && quarto render && cd - || exit 1
 
 FORCE:
