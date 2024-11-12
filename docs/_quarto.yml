@@ -173,7 +173,6 @@ quartodoc:
     - title: Plotting
       desc: ""
       contents:
-      
       - name: plotting
         members: 
           - scatter
@@ -185,7 +184,46 @@ quartodoc:
     - title: Metrics  
       desc: ""
       contents:
-        - metrics
+      - name: metrics
+        members:
+          - r2
+          - rmse
+          - root_mean_squared_error
+          - c_rmse
+          - c_root_mean_squared_error
+          - urmse
+          # - unbiased_root_mean_squared_error
+          - c_urmse
+          - c_unbiased_root_mean_squared_error
+          - bias
+          - c_bias
+          - mae
+          - mean_absolute_error
+          - c_mae
+          - c_mean_absolute_error
+          - mape
+          - cc
+          - corrcoef
+          - rho
+          - spearmanr
+          - ev
+          - explained_variance
+          - nse
+          - nash_sutcliffe_efficiency
+          - kge
+          - kling_gupta_efficiency
+          - max_error
+          - c_max_error
+          - mef
+          - model_efficiency_factor
+          - si
+          - scatter_index
+          - pr
+          - peak_ratio
+          - willmott
+          - hit_ratio
+          - lin_slope
+
     - title: Settings
       desc: ""
       contents:
