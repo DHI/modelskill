@@ -34,4 +34,12 @@ docs: FORCE
     fi; \
     cd -
 
+clean:
+	rm -rf .pytest_cache
+	rm -rf .mypy_cache
+	rm -rf .coverage
+	rm -rf dist
+	rm -rf docs/_site
+
+
 FORCE:
