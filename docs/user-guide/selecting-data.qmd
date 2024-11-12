@@ -1,24 +1,41 @@
 # Selecting data
 
 
-The primary data filtering method of ModelSkill is the `sel()` method which is accesible on most ModelSkill data structures. The `sel()` method is a wrapper around `xarray.Dataset.sel()` and can be used to select data based on time, location and/or variable. The `sel()` method returns a new data structure of the same type with the selected data.
+The primary data filtering method of ModelSkill is the `sel()` method which is accesible on most ModelSkill data structures. The `sel()` method is a wrapper around [](`xarray.Dataset.sel`) and can be used to select data based on time, location and/or variable. The `sel()` method returns a new data structure of the same type with the selected data.
 
 
 ## TimeSeries data
 
-Point and track timeseries data of both observation and model result kinds are stored in `TimeSeries` objects which uses `xarray.Dataset` as data container. The `sel()` method can be used to select data based on time and returns a new `TimeSeries` object with the selected data.
+Point and track timeseries data of both observation and model result kinds are stored in [](`~modelskill.TimeSeries`) objects which uses [](`xarray.Dataset`) as data container. The [`sel()`](`modelskill.TimeSeries.sel`) method can be used to select data based on time and returns a new [](`~modelskill.TimeSeries`) object with the selected data.
 
-```python
-o = ms.observation('obs.nc', item='waterlevel')
-o_1month = o.sel(time=slice('2018-01-01', '2018-02-01'))
+```{python}
+import modelskill as ms
+o = ms.observation("../data/obs.nc", item="waterlevel", gtype='point')
+o_1month = o.sel(time=slice("2018-01-01", "2018-02-01"))
+o_1month
 ```
 
 
 ## Comparer objects
 
-`Comparer` and `ComparerCollection` contain matched data from observations and model results. The `sel()` method can be used to select data based on time, model, quantity or other criteria and returns a new comparer object with the selected data.
+[](`~modelskill.Comparer`) and [](`~modelskill.ComparerCollection`) contain matched data from observations and model results. The `sel()` method can be used to select data based on time, model, quantity or other criteria and returns a new comparer object with the selected data.
 
-```python
+```{python}
+#| code-fold: true
+#| code-summary: "Observation and model data"
+o = ms.observation("../data/SW/HKNA_Hm0.dfs0", item=0,
+                    x=4.2420, y=52.6887,
+                    name="HKNA")
+m1 = ms.model_result("../data/SW/HKZN_local_2017_DutchCoast.dfsu", 
+                      item="Sign. Wave Height",
+                      name="m1")
+m2 = ms.model_result("../data/SW/CMEMS_DutchCoast_2017-10-28.nc", 
+                      item="VHM0",
+                      name="m2")
+```
+
+
+```{python}
 cmp = ms.match(o, [m1, m2])
 cmp_1month = cmp.sel(time=slice('2018-01-01', '2018-02-01'))
 cmp_m1 = cmp.sel(model='m1')
@@ -28,9 +45,9 @@ cmp_m1 = cmp.sel(model='m1')
 
 ## Skill objects
 
-The `skill()` and `mean_skill()` methods return a `SkillTable` object with skill scores from comparing observation and model result data using different metrics (e.g. root mean square error). The data of the `SkillTable` object is stored in a (MultiIndex) `pandas.DataFrame` which can be accessed via the `data` attribute. The `sel()` method can be used to select specific rows and returns a new `SkillTable` object with the selected data.
+The [`skill()`](`modelskill.Comparer.skill`) and [`mean_skill()`](`modelskill.ComparerCollection.mean_skill`) methods return a [](`~modelskill.SkillTable`) object with skill scores from comparing observation and model result data using different metrics (e.g. root mean square error). The data of the [](`~modelskill.SkillTable`) object is stored in a (MultiIndex) [](`pandas.DataFrame`) which can be accessed via the `data` attribute. The `sel()` method can be used to select specific rows and returns a new [](`~modelskill.SkillTable`) object with the selected data.
 
-```python
+```{python}
 sk = cmp.skill()
 sk_m1 = sk.sel(model='m1')
 ```

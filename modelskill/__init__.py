@@ -42,6 +42,7 @@ from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
 from .comparison import ComparerCollection, Comparer
 from .skill import SkillTable
+from .timeseries import TimeSeries
 
 
 def load(filename: Union[str, Path]) -> ComparerCollection:
@@ -77,6 +78,7 @@ __all__ = [
     "observation",
     "PointObservation",
     "TrackObservation",
+    "TimeSeries",
     "match",
     "from_matched",
     "Comparer",

@@ -51,8 +51,9 @@ website:
             text: Metocean track comparison
           - href: examples/Prematched_with_auxiliary.qmd
             text: Prematched with auxiliary
-      - section: "API Reference"
-        href: api/index.qmd
+      #- section: "API Reference"
+      #  href: api/index.qmd
+        
         # contents:
         # - section: "Observation"
         #   contents:
@@ -115,6 +116,10 @@ quartodoc:
   sidebar: "_sidebar.yml"
 
   sections:
+    - title: Core
+      desc: ""
+      contents:
+        - TimeSeries
     - title: Observation
       desc: ""
       contents:
@@ -155,6 +160,7 @@ quartodoc:
         - name: ComparerCollection
           members:
             - skill
+            - mean_skill
             - gridded_skill
             - score
             - rename

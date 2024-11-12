@@ -18,7 +18,9 @@ In simple cases, observations and model results can be defined directly in the `
 
 ```{python}
 import modelskill as ms
-cmp = ms.match("../data/obs.dfs0", "../data/model.dfs0", obs_item="obs_WL", mod_item="WL")
+cmp = ms.match("../data/obs.dfs0", "../data/model.dfs0",
+               obs_item="obs_WL", mod_item="WL",
+               gtype='point')
 ```
 
 But in most cases, the observations and model results will need to be defined separately first.
