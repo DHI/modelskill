@@ -173,13 +173,11 @@ quartodoc:
     - title: Plotting
       desc: ""
       contents:
-      - name: plotting
-        members: 
-          - scatter
-          - wind_rose
-          - taylor_diagram
-          - spatial_overview
-          - temporal_coverage
+      - plotting.scatter
+      - plotting.wind_rose
+      - plotting.taylor_diagram
+      - plotting.spatial_overview
+      - plotting.temporal_coverage
         
     - title: Metrics  
       desc: ""
