@@ -116,7 +116,9 @@ def is_iterable_not_str(obj):
 def make_unique_index(
     df_index: pd.DatetimeIndex, offset_duplicates: float = 0.001, warn: bool = True
 ) -> pd.DatetimeIndex:
-    """Given a non-unique DatetimeIndex, create a unique index by adding
+    """Make index unique, by jittering.
+
+    Given a non-unique DatetimeIndex, create a unique index by adding
     milliseconds to duplicate entries
 
     Parameters

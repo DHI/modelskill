@@ -79,9 +79,10 @@ notebooks = [
 "Bug Tracker" = "https://github.com/DHI/modelskill/issues"
 
 
-[tool.ruff]
-# ignore line too long
-lint.ignore  = ["E501"]
+
+[tool.ruff.lint]
+ignore = ["E501"]
+select = ["D200", "D205"]
 
 [tool.mypy]
 python_version = "3.9"

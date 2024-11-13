@@ -68,7 +68,8 @@ def _get_deprecated_obs_var_args(kwargs):  # type: ignore
 
 
 class ComparerCollection(Mapping, Scoreable):
-    """
+    """Collection of comparers.
+
     Collection of comparers, constructed by calling the `modelskill.match`
     method or by initializing with a list of comparers.
 

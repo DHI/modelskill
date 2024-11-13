@@ -102,9 +102,6 @@ def _excel_to_dict(filename: Path) -> dict:
 
 
 def _remove_keys_w_nan_value(d: dict) -> dict:
-    """Loops through dicts in dict and removes all entries where value is NaN
-    e.g. x,y values of TrackObservations
-    """
     dout = {}
     for key, subdict in d.items():
         dout[key] = {k: v for k, v in subdict.items() if pd.Series(v).notna().all()}

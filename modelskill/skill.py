@@ -313,8 +313,9 @@ class DeprecatedSkillPlotter:
 
 
 class SkillArray:
-    """SkillArray object for visualization obtained by
-    selecting a single metric from a SkillTable.
+    """Visualize skill metric.
+
+    Obtained by selecting a single metric from a SkillTable.
 
     Examples
     --------
@@ -401,6 +402,8 @@ class SkillArray:
 
 class SkillTable:
     """
+    Visualize skill metrics.
+
     SkillTable object for visualization and analysis returned by
     the comparer's `skill` method. The object wraps the pd.DataFrame
     class which can be accessed from the attribute `data`.
@@ -679,7 +682,9 @@ class SkillTable:
     def sel(
         self, query: str | None = None, reduce_index: bool = True, **kwargs: Any
     ) -> SkillTable | SkillArray:
-        """Select a subset of the SkillTable by a query,
+        """Filter (select) specific models or observations.
+
+        Select a subset of the SkillTable by a query,
            (part of) the index, or specific columns
 
         Parameters

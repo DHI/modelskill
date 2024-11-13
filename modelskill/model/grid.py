@@ -149,7 +149,9 @@ class GridModelResult(SpatialField):
     def _extract_point(
         self, observation: PointObservation, spatial_method: Optional[str] = None
     ) -> PointModelResult:
-        """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
+        """Extract point.
+
+        Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a PointObservation. No time interpolation is done!"""
         method: str = spatial_method or "linear"
 
@@ -196,7 +198,9 @@ class GridModelResult(SpatialField):
     def _extract_track(
         self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult:
-        """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
+        """Extract track.
+
+        Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
         method: str = spatial_method or "linear"
 

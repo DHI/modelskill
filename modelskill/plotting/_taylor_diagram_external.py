@@ -1,4 +1,6 @@
 """
+Taylor diagram.
+
 Taylor diagram (Taylor, 2001) implementation.
 Note: If you have found these software useful for your research, I would
 appreciate an acknowledgment.
@@ -14,6 +16,7 @@ import matplotlib.pyplot as plt
 class TaylorDiagram:
     """
     Taylor diagram.
+
     Plot model standard deviation and correlation to reference (data)
     sample in a single-quadrant polar plot, with r=stddev and
     theta=arccos(correlation).
@@ -30,6 +33,8 @@ class TaylorDiagram:
         normalize_std=False,
     ):
         """
+        Create a Taylor diagram.
+
         Set up Taylor diagram axes, i.e. single quadrant polar
         plot, using `mpl_toolkits.axisartist.floating_axes`.
         Parameters:
@@ -119,6 +124,8 @@ class TaylorDiagram:
 
     def add_sample(self, stddev, corrcoef, *args, **kwargs):
         """
+        Add sample to the diagram.
+
         Add sample (*stddev*, *corrcoeff*) to the Taylor
         diagram. *args* and *kwargs* are directly propagated to the
         `Figure.plot` command.

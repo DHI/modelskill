@@ -110,6 +110,8 @@ class SkillGridArray(SkillGridMixin):
 
 class SkillGrid(SkillGridMixin):
     """
+    Spatially gridded skill data.
+
     Gridded skill object for analysis and visualization of spatially
     gridded skill data. The object wraps the xr.DataSet class
     which can be accessed from the attribute data.

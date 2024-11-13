@@ -83,7 +83,8 @@ def from_matched(
     x_item: str | int | None = None,
     y_item: str | int | None = None,
 ) -> Comparer:
-    """Create a Comparer from observation and model results that are already matched (aligned)
+    """Create a Comparer from data that is already matched (aligned).
+
     Parameters
     ----------
     data : [pd.DataFrame, str, Path, mikeio.Dfs0, mikeio.Dataset]
@@ -359,7 +360,8 @@ def match_space_time(
     raw_mod_data: Mapping[str, Alignable],
     max_model_gap: float | None = None,
 ) -> xr.Dataset:
-    """Match observation with one or more model results in time domain
+    """Match observation with one or more model results in time domain.
+
     and return as xr.Dataset in the format used by modelskill.Comparer
 
     Will interpolate model results to observation time.

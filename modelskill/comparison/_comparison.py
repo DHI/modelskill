@@ -264,7 +264,9 @@ class ItemSelection:
         x_item: str | int | None = None,
         y_item: str | int | None = None,
     ) -> ItemSelection:
-        """Parse items and return observation, model and auxiliary items
+        """Parse item selection.
+
+        Parse items and return observation, model and auxiliary items
         Default behaviour:
         - obs_item is first item
         - mod_items are all but obs_item and aux_items

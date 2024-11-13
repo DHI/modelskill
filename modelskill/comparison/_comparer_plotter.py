@@ -486,7 +486,8 @@ class ComparerPlotter:
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
     ) -> matplotlib.axes.Axes:
-        """Scatter plot showing compared data: observation vs modelled
+        """Scatter plot tailored for model-observation comparison.
+
         Optionally, with density histogram.
 
         Parameters
@@ -695,7 +696,9 @@ class ComparerPlotter:
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
     ):
-        """Taylor diagram showing model std and correlation to observation
+        """Taylor diagram for model skill comparison.
+
+        Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters

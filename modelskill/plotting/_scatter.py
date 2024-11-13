@@ -47,7 +47,9 @@ def scatter(
     ax: Optional[Axes] = None,
     **kwargs,
 ) -> Axes:
-    """Scatter plot showing compared data: observation vs modelled
+    """Scatter plot tailored for model skill comparison.
+
+    Scatter plot showing compared data: observation vs modelled
     Optionally, with density histogram.
 
     Parameters

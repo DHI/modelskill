@@ -60,7 +60,8 @@ class ComparerCollectionPlotter:
         ax: Optional[Axes] = None,
         **kwargs,
     ) -> Axes:
-        """Scatter plot showing compared data: observation vs modelled
+        """Scatter plot tailored for comparing model output with observations.
+
         Optionally, with density histogram.
 
         Parameters
@@ -466,7 +467,9 @@ class ComparerCollectionPlotter:
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
     ):
-        """Taylor diagram showing model std and correlation to observation
+        """Taylor diagram for model skill comparison.
+
+        Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
