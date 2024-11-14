@@ -130,6 +130,7 @@ def from_matched(
     Observation: stn_a, n_points=3
         Model: local, rmse=0.100
         Model: global, rmse=0.200
+
     """
     # pre-process if dfs0, or mikeio.Dataset
     if isinstance(data, (str, Path)):
