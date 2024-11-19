@@ -497,6 +497,7 @@ def test_plots_directional(cc):
         "kde",
         "hist",
         "taylor",
+        "box",
     ]
 )
 def cc_plot_function(cc, request):
