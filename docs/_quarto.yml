@@ -51,46 +51,46 @@ website:
             text: Metocean track comparison
           - href: examples/Prematched_with_auxiliary.qmd
             text: Prematched with auxiliary
-      #- section: "API Reference"
-      #  href: api/index.qmd
+      - section: "API Reference"
+        href: api/index.qmd
         
-        # contents:
-        # - section: "Observation"
-        #   contents:
-        #     - api/observation.qmd
-        #     - api/PointObservation.qmd
-        #     - api/TrackObservation.qmd
-        # - section: "Model Result"
-        #   contents:
-        #     - api/model_result.qmd
-        #     - api/PointModelResult.qmd
-        #     - api/TrackModelResult.qmd
-        #     - api/DfsuModelResult.qmd
-        #     - api/GridModelResult.qmd
-        #     - api/DummyModelResult.qmd
-        # - section: "Matching"
-        #   contents:
-        #     - api/match.qmd
-        #     - api/from_matched.qmd
-        # - section: "Comparer"
-        #   contents:
-        #     - api/Comparer.qmd
-        #     - api/comparison.ComparerPlotter.qmd
-        #     - api/ComparerCollection.qmd
-        #     - api/comparison.ComparerCollectionPlotter.qmd
-        #     - api/SkillTable.qmd
-        # - section: "Plotting"
-        #   contents:
-        #     - api/plotting.qmd
-        # - section: "Metrics"
-        #   contents:
-        #     - api/metrics.qmd
-        # - section: "Settings"
-        #   contents:
-        #     - api/settings.qmd
-        # - section: "Quantity"
-        #   contents:
-        #     - api/Quantity.qmd
+        contents:
+        - section: "Observation"
+          contents:
+            - api/observation.qmd
+            - api/PointObservation.qmd
+            - api/TrackObservation.qmd
+        - section: "Model Result"
+          contents:
+            - api/model_result.qmd
+            - api/PointModelResult.qmd
+            - api/TrackModelResult.qmd
+            - api/DfsuModelResult.qmd
+            - api/GridModelResult.qmd
+            - api/DummyModelResult.qmd
+        - section: "Matching"
+          contents:
+            - api/match.qmd
+            - api/from_matched.qmd
+        - section: "Comparer"
+          contents:
+            - api/Comparer.qmd
+            - api/comparison.ComparerPlotter.qmd
+            - api/ComparerCollection.qmd
+            - api/comparison.ComparerCollectionPlotter.qmd
+            - api/SkillTable.qmd
+        - section: "Plotting"
+          contents:
+            - api/plotting.qmd
+        - section: "Metrics"
+          contents:
+            - api/metrics.qmd
+        - section: "Settings"
+          contents:
+            - api/settings.qmd
+        - section: "Quantity"
+          contents:
+            - api/Quantity.qmd
 
 
 filters:
@@ -113,13 +113,10 @@ quartodoc:
     style: markdown
     display_name: relative
 
-  sidebar: "_sidebar.yml"
+  sidebar: api/_sidebar.yml
+  css: api/_styles-quartodoc.css
 
   sections:
-    - title: Core
-      desc: ""
-      contents:
-        - TimeSeries
     - title: Observation
       desc: ""
       contents:
@@ -222,19 +219,23 @@ quartodoc:
           - hit_ratio
           - lin_slope
 
-    - title: Settings
+    - title: Core
       desc: ""
       contents:
         - settings
-    - title: Quantity
-      desc: ""
-      contents:
+        - TimeSeries
         - Quantity
+
+metadata-files:
+  - api/_sidebar.yml
 
 format:
   html:
     theme: cosmo
     toc: true
+    css:
+      - api/_styles-quartodoc.css
+      - style.css
   ipynb: 
     theme: cosmo
     toc: true
