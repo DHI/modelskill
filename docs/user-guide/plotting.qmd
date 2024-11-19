@@ -28,7 +28,7 @@ mr.plot.hist();
 
 ## Temporal coverage
 
-The temporal coverage of observations and model results can be plotted using the [`temporal_coverage`](`modelskill.plotting.temporal_coverage`) function in the [`plotting`](`modelskill.plotting`) module:
+The temporal coverage of observations and model results can be plotted using the [`temporal_coverage`](`modelskill.plotting.temporal_coverage`) function:
 
 ```{python}
 # | code-fold: true
@@ -47,7 +47,7 @@ ms.plotting.temporal_coverage(obs=[o1, o2], mod=mr);
 
 ## Spatial overview
 
-The spatial coverage of observations and model results can be plotted using the [`spatial_overview`](`modelskill.plotting.spatial_overview`) function in the [`plotting`](`modelskill.plotting`) module:
+The spatial coverage of observations and model results can be plotted using the [`spatial_overview`](`modelskill.plotting.spatial_overview`) function:
 
 ```{python}
 ms.plotting.spatial_overview([o1, o2], mr);
@@ -86,7 +86,7 @@ The radial distance from the point to the observation point is the standard devi
 
 ## Directional data (e.g. wind or currents)
 
-Directional data can be plotted using the [`wind_rose`](`modelskill.plotting.wind_rose`) function in the [`plotting`](`modelskill.plotting`) module. The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:
+Directional data can be plotted using the [`wind_rose`](`modelskill.plotting.wind_rose`). The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:
 
 ```{python}
 import mikeio
