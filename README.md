@@ -3,6 +3,7 @@
 # ModelSkill: Flexible Model skill evaluation.
  ![Python version](https://img.shields.io/pypi/pyversions/modelskill.svg) 
 ![Python package](https://github.com/DHI/modelskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/modelskill.svg)](https://badge.fury.io/py/modelskill)
+![Downloads](https://img.shields.io/pypi/dm/modelskill)
 
 [ModelSkill](https://github.com/DHI/modelskill) is a python package for scoring [MIKE](https://www.mikepoweredbydhi.com) models (other models can be evaluated as well). 
 
