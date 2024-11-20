@@ -20,11 +20,12 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - user-guide/index.qmd
+      - href: user-guide/index.qmd
+        text: "User Guide"
       - href: examples/index.qmd
         text: Examples
       - href: api/index.qmd
-        text: API Reference
+        text: "API Reference"
   sidebar:
     style: docked
     search: true
@@ -53,7 +54,6 @@ website:
             text: Prematched with auxiliary
       - section: "API Reference"
         href: api/index.qmd
-        
         contents:
         - section: "Observation"
           contents:
@@ -73,24 +73,21 @@ website:
             - api/match.qmd
             - api/from_matched.qmd
         - section: "Comparer"
+          href: api/Comparer.qmd
           contents:
             - api/Comparer.qmd
             - api/comparison.ComparerPlotter.qmd
             - api/ComparerCollection.qmd
             - api/comparison.ComparerCollectionPlotter.qmd
             - api/SkillTable.qmd
-        - section: "Plotting"
-          contents:
-            - api/plotting.qmd
-        - section: "Metrics"
-          contents:
-            - api/metrics.qmd
-        - section: "Settings"
-          contents:
-            - api/settings.qmd
-        - section: "Quantity"
-          contents:
-            - api/Quantity.qmd
+        - text: "Plotting"
+          href: api/plotting.qmd
+        - text: "Metrics"
+          href: api/metrics.qmd
+        - text: "Settings"
+          href: api/settings.qmd
+        - text: "Quantity"
+          href: api/Quantity.qmd
 
 
 filters:
@@ -106,9 +103,11 @@ interlinks:
 quartodoc:
   options:
     include_inherited: true
+  out_index: _api_index.qmd
   style: pkgdown
   dir: api
   package: modelskill
+  title: API Reference
   renderer:
     style: markdown
     display_name: relative
