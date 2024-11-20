@@ -21,6 +21,7 @@ import numpy as np  # type: ignore
 from .. import metrics as mtr
 from ..utils import _get_idx
 import matplotlib.colors as colors
+import matplotlib.dates as mdates
 from ..plotting._misc import (
     _get_fig_ax,
     _xtick_directional,
@@ -98,7 +99,8 @@ class ComparerPlotter:
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
                 mod = cmp.raw_mod_data[key]._values_as_series
-                mod.plot(ax=ax, color=MOD_COLORS[j])
+                # mod.plot(ax=ax, color=MOD_COLORS[j])
+                ax.plot(mod.index, mod.values, color=MOD_COLORS[j])
 
             ax.scatter(
                 cmp.time,
@@ -112,6 +114,12 @@ class ComparerPlotter:
             if self.is_directional:
                 _ytick_directional(ax, ylim)
             ax.set_title(title)
+
+            # concise datetime labels
+            locator = mdates.AutoDateLocator(minticks=3, maxticks=12)
+            formatter = mdates.ConciseDateFormatter(locator)
+            ax.xaxis.set_major_locator(locator)
+            ax.xaxis.set_major_formatter(formatter)
             return ax
 
         elif backend == "plotly":  # pragma: no cover
