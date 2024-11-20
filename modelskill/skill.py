@@ -449,8 +449,6 @@ class SkillTable:
         self.data: pd.DataFrame = (
             data if isinstance(data, pd.DataFrame) else data.to_dataframe()
         )
-        # TODO remove in v1.1
-        self.plot = DeprecatedSkillPlotter(self)  # type: ignore
 
     # TODO: remove?
     @property
