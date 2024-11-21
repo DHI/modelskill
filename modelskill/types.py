@@ -10,10 +10,10 @@ import mikeio
 class GeometryType(Enum):
     """Geometry type (gtype) of data"""
 
-    POINT = auto()
-    TRACK = auto()
-    UNSTRUCTURED = auto()
-    GRID = auto()
+    POINT = "point"
+    TRACK = "track"
+    UNSTRUCTURED = "unstructured"
+    GRID = "grid"
 
     def __str__(self) -> str:
         return self.name.lower()
@@ -25,17 +25,17 @@ class GeometryType(Enum):
         Examples
         --------
         >>> GeometryType.from_string("point")
-        <GeometryType.POINT: 1>
+        <GeometryType.POINT: 'point'>
         >>> GeometryType.from_string("track")
-        <GeometryType.TRACK: 2>
+        <GeometryType.TRACK: 'track'>
         >>> GeometryType.from_string("unstructured")
-        <GeometryType.UNSTRUCTURED: 3>
+        <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("flexible mesh")
-        <GeometryType.UNSTRUCTURED: 3>
+        <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("dfsu")
-        <GeometryType.UNSTRUCTURED: 3>
+        GeometryType.from_string("flexible mesh")
         >>> GeometryType.from_string("grid")
-        <GeometryType.GRID: 4>
+        <GeometryType.GRID: 'grid'>
         """
 
         try:
