@@ -169,6 +169,7 @@ quartodoc:
     - title: Plotting
       desc: ""
       contents:
+      - plotting
       - plotting.scatter
       - plotting.wind_rose
       - plotting.taylor_diagram
