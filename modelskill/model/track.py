@@ -13,7 +13,9 @@ from ._base import Alignable
 
 
 class TrackModelResult(TimeSeries, Alignable):
-    """Construct a TrackModelResult from a dfs0 file,
+    """Model result for a track.
+
+    Construct a TrackModelResult from a dfs0 file,
     mikeio.Dataset, pandas.DataFrame or a xarray.Datasets
 
     Parameters

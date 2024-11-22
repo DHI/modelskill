@@ -1,3 +1,0 @@
-# Plotting
-
-::: modelskill.plotting

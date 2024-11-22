@@ -61,7 +61,8 @@ class ComparerCollectionPlotter:
         ax: Optional[Axes] = None,
         **kwargs,
     ) -> Axes | list[Axes]:
-        """Scatter plot showing compared data: observation vs modelled
+        """Scatter plot tailored for comparing model output with observations.
+
         Optionally, with density histogram.
 
         Parameters
@@ -467,7 +468,9 @@ class ComparerCollectionPlotter:
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
     ):
-        """Taylor diagram showing model std and correlation to observation
+        """Taylor diagram for model skill comparison.
+
+        Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
@@ -496,7 +499,7 @@ class ComparerCollectionPlotter:
         >>> cc.plot.taylor(observation="c2")
         >>> cc.plot.taylor(start="2017-10-28", figsize=(5,5))
 
-        References
+        Notes
         ----------
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """

@@ -1,0 +1,7 @@
+table.table {
+    width: auto;
+}
+
+.navbar-nav .nav-link.active {
+    color:#545555;
+}

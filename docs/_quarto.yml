@@ -1,0 +1,241 @@
+project:
+  type: website
+
+website:
+  title: "ModelSkill"
+  page-footer: "© 2024 DHI Group"
+  repo-url: https://github.com/DHI/modelskill
+  repo-actions: [edit]
+  repo-subdir: docs
+  page-navigation: true
+  
+  navbar:
+    tools:
+    - icon: github
+      menu:
+      - text: Source Code
+        url:  https://github.com/DHI/modelskill
+      - text: Report a Bug
+        url:  https://github.com/DHI/modelskill/issues
+    left:
+      - href: index.qmd
+        text: Home
+      - href: user-guide/index.qmd
+        text: "User Guide"
+      - href: examples/index.qmd
+        text: Examples
+      - href: api/index.qmd
+        text: "API Reference"
+  sidebar:
+    style: docked
+    search: true
+    contents: 
+      - section: "User Guide"
+        href: user-guide/index.qmd
+        contents: 
+         - user-guide/getting-started.qmd
+         - user-guide/overview.qmd
+         - user-guide/terminology.qmd
+         - user-guide/data-structures.qmd
+         - user-guide/workflow.qmd
+         - user-guide/matching.qmd
+         - user-guide/selecting-data.qmd
+         - user-guide/plotting.qmd
+      - section: "Examples"
+        href: examples/index.qmd
+        contents:
+          - href: examples/MIKE21HD_dfsu.qmd  
+            text: MIKE21 HD
+          - href: examples/Hydrology_Vistula_Catchment.qmd
+            text: Hydrology Vistula Catchment
+          - href: examples/Metocean_track_comparison.qmd
+            text: Metocean track comparison
+          - href: examples/Prematched_with_auxiliary.qmd
+            text: Prematched with auxiliary
+      - section: "API Reference"
+        href: api/index.qmd
+        contents:
+        - section: "Observation"
+          contents:
+            - api/observation.qmd
+            - api/PointObservation.qmd
+            - api/TrackObservation.qmd
+        - section: "Model Result"
+          contents:
+            - api/model_result.qmd
+            - api/PointModelResult.qmd
+            - api/TrackModelResult.qmd
+            - api/DfsuModelResult.qmd
+            - api/GridModelResult.qmd
+            - api/DummyModelResult.qmd
+        - section: "Matching"
+          contents:
+            - api/match.qmd
+            - api/from_matched.qmd
+        - section: "Comparer"
+          href: api/Comparer.qmd
+          contents:
+            - api/Comparer.qmd
+            - api/comparison.ComparerPlotter.qmd
+            - api/ComparerCollection.qmd
+            - api/comparison.ComparerCollectionPlotter.qmd
+            - api/SkillTable.qmd
+        - text: "Plotting"
+          href: api/plotting.qmd
+        - text: "Metrics"
+          href: api/metrics.qmd
+        - text: "Settings"
+          href: api/settings.qmd
+        - text: "Quantity"
+          href: api/Quantity.qmd
+
+
+filters:
+  - interlinks
+interlinks:
+  sources:
+      xarray: 
+        url: https://xarray.pydata.org/en/stable/
+      pandas: 
+        url: https://pandas.pydata.org/docs/
+
+
+quartodoc:
+  options:
+    include_inherited: true
+  out_index: _api_index.qmd
+  style: pkgdown
+  dir: api
+  package: modelskill
+  title: API Reference
+  renderer:
+    style: markdown
+    display_name: relative
+
+  sidebar: api/_sidebar.yml
+  css: api/_styles-quartodoc.css
+
+  sections:
+    - title: Observation
+      desc: ""
+      contents:
+        - observation
+        - PointObservation
+        - TrackObservation
+    - title: Model Result
+      desc: ""
+      contents:
+        - model_result
+        - PointModelResult
+        - TrackModelResult
+        - DfsuModelResult
+        - GridModelResult
+        - DummyModelResult
+    - title: Matching
+      desc: Matching classes and functions
+      contents:
+        - match
+        - from_matched
+    - title: Comparer
+      desc: ""
+      contents:
+        - name: Comparer
+          members:
+            - skill
+            - gridded_skill
+            - score
+            - rename
+            - sel
+            - where
+            - query
+            - to_dataframe
+            - save
+            - load
+        -  name : comparison.ComparerPlotter
+
+        - name: ComparerCollection
+          members:
+            - skill
+            - mean_skill
+            - gridded_skill
+            - score
+            - rename
+            - sel
+            - save
+            - load
+        - name : comparison.ComparerCollectionPlotter
+        - name: SkillTable
+    
+    - title: Plotting
+      desc: ""
+      contents:
+      - plotting
+      - plotting.scatter
+      - plotting.wind_rose
+      - plotting.taylor_diagram
+      - plotting.spatial_overview
+      - plotting.temporal_coverage
+        
+    - title: Metrics  
+      desc: ""
+      contents:
+      - name: metrics
+        members:
+          - r2
+          - rmse
+          - root_mean_squared_error
+          - c_rmse
+          - c_root_mean_squared_error
+          - urmse
+          # - unbiased_root_mean_squared_error
+          - c_urmse
+          - c_unbiased_root_mean_squared_error
+          - bias
+          - c_bias
+          - mae
+          - mean_absolute_error
+          - c_mae
+          - c_mean_absolute_error
+          - mape
+          - cc
+          - corrcoef
+          - rho
+          - spearmanr
+          - ev
+          - explained_variance
+          - nse
+          - nash_sutcliffe_efficiency
+          - kge
+          - kling_gupta_efficiency
+          - max_error
+          - c_max_error
+          - mef
+          - model_efficiency_factor
+          - si
+          - scatter_index
+          - pr
+          - peak_ratio
+          - willmott
+          - hit_ratio
+          - lin_slope
+
+    - title: Core
+      desc: ""
+      contents:
+        - settings
+        - TimeSeries
+        - Quantity
+
+metadata-files:
+  - api/_sidebar.yml
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    css:
+      - api/_styles-quartodoc.css
+      - style.css
+  ipynb: 
+    theme: cosmo
+    toc: true

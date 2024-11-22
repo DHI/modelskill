@@ -487,8 +487,9 @@ class ComparerPlotter:
         skill_table: Optional[Union[str, List[str], bool]] = None,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
-    ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
-        """Scatter plot showing compared data: observation vs modelled
+          ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
+        """Scatter plot tailored for model-observation comparison.
+
         Optionally, with density histogram.
 
         Parameters
@@ -697,7 +698,9 @@ class ComparerPlotter:
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
     ):
-        """Taylor diagram showing model std and correlation to observation
+        """Taylor diagram for model skill comparison.
+
+        Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
@@ -718,12 +721,21 @@ class ComparerPlotter:
         matplotlib.figure.Figure
 
         Examples
-        ------
-        >>> comparer.taylor()
-        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+        --------
+        ```{python}
+        #| echo: False
+        import modelskill as ms
+        o1 = ms.PointObservation('../data/SW/HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887)
+        mr = ms.DfsuModelResult('../data/SW/HKZN_local_2017_DutchCoast.dfsu', item=0)
+        cmp = ms.match(obs=o1, mod=mr)
+        ```
+        ```{python}
+        cmp.plot.taylor();
+        ```
 
-        References
-        ----------
+
+        Notes
+        -----
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
         cmp = self.comparer
@@ -752,6 +764,7 @@ class ComparerPlotter:
             for r in df.itertuples()
         ]
 
+        # TODO consistent return type with other plotting methods
         return taylor_diagram(
             obs_std=ref_std,
             points=pts,

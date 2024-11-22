@@ -1,4 +1,6 @@
 """
+Observed data.
+
 The `observation` module contains different types of Observation classes for
 fixed locations (PointObservation), or locations moving in space (TrackObservation).
 
@@ -32,7 +34,9 @@ def observation(
     gtype: Optional[Literal["point", "track"]] = None,
     **kwargs,
 ):
-    """A factory function for creating an appropriate observation object
+    """Create an appropriate observation object.
+
+    A factory function for creating an appropriate observation object
     based on the data and args.
 
     If 'x' or 'y' is given, a PointObservation is created.
