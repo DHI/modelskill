@@ -53,4 +53,3 @@ ModelSkill is licensed under MIT and available on [GitHub](https://github.com/DH
 :::
 
 
-![](images/scatter.png)
