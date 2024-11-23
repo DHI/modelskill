@@ -73,7 +73,7 @@ class DfsuModelResult(SpatialField):
             item = data.name
             self.sel_items = SelectedItems(values=data.name, aux=[])
             data = mikeio.Dataset({data.name: data})
-        elif isinstance(data, mikeio.dfsu.Dfsu2DH | mikeio.dfsu.Dfsu3D):
+        elif isinstance(data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D)):
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
