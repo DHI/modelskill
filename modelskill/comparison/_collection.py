@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import defaultdict
 from copy import deepcopy
 import os
 from pathlib import Path
@@ -21,6 +22,7 @@ import warnings
 import zipfile
 import numpy as np
 import pandas as pd
+import polars as pl
 
 
 from .. import metrics as mtr
@@ -531,29 +533,31 @@ class ComparerCollection(Mapping, Scoreable):
         df = cc._to_long_dataframe(attrs_keys=attrs_keys, observed=observed)
 
         res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
-        mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
-        res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
         res = self._append_xy_to_res(res, cc)
-        res = cc._add_as_col_if_not_in_index(df, skilldf=res)  # type: ignore
-        return SkillTable(res)
+        res = res.with_columns(pl.lit(cc.mod_names[0]).alias("model"))
+        res_pandas = res.to_pandas()
+        return SkillTable(res_pandas)
 
     def _to_long_dataframe(
         self, attrs_keys: Iterable[str] | None = None, observed: bool = False
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
         frames = []
         for cmp in self:
             frame = cmp._to_long_dataframe(attrs_keys=attrs_keys)
+
             if self.n_quantities > 1:
-                frame["quantity"] = cmp.quantity.name
+                frame = frame.with_columns(pl.lit(cmp.quantity.name).alias("quantity"))
             frames.append(frame)
-        res = pd.concat(frames)
 
-        cat_cols = res.select_dtypes(include=["object"]).columns
-        res[cat_cols] = res[cat_cols].astype("category")
+        # convert all floats to f64
+        frames = [
+            df.with_columns([pl.col(pl.Float32).cast(pl.Float64)]) for df in frames
+        ]
 
-        if observed:
-            res = res.loc[~(res == False).any(axis=1)]  # noqa
+        # TODO why doesn't all frames have the same columns?
+        res = pl.concat(frames, how="diagonal")
+
         return res
 
     @staticmethod
@@ -570,21 +574,21 @@ class ComparerCollection(Mapping, Scoreable):
         return agg_cols, attrs_keys
 
     @staticmethod
-    def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
+    def _append_xy_to_res(res: pl.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
         """skill() helper: Append x and y to res if possible"""
-        res["x"] = np.nan
-        res["y"] = np.nan
+        xs = defaultdict(lambda: np.nan)
+        ys = defaultdict(lambda: np.nan)
+        for cmp in cc:
+            if cmp.gtype == "point":
+                xs[cmp.name] = cmp.x
+                ys[cmp.name] = cmp.y
 
-        # for MultiIndex in res find "observation" level and
-        # insert x, y if gtype=point for that observation
-        if "observation" in res.index.names:
-            idx_names = res.index.names
-            res = res.reset_index()
-            for cmp in cc:
-                if cmp.gtype == "point":
-                    res.loc[res.observation == cmp.name, "x"] = cmp.x
-                    res.loc[res.observation == cmp.name, "y"] = cmp.y
-            res = res.set_index(idx_names)
+        # add x and y to res based on observation name based on the xs and ys dicts
+        res = res.with_columns(
+            pl.col("observation").map_elements(lambda name: xs.get(name)).alias("x"),
+            pl.col("observation").map_elements(lambda name: ys.get(name)).alias("y"),
+        )
+
         return res
 
     def _add_as_col_if_not_in_index(

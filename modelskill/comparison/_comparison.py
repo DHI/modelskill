@@ -19,6 +19,7 @@ import warnings
 from matplotlib.axes import Axes  # type: ignore
 import numpy as np
 import pandas as pd
+import polars as pl
 import xarray as xr
 from copy import deepcopy
 
@@ -975,14 +976,14 @@ class Comparer(Scoreable):
 
     def _to_long_dataframe(
         self, attrs_keys: Iterable[str] | None = None
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
 
         data = self.data.drop_vars("z", errors="ignore")
 
         # this step is necessary since we keep arbitrary derived data in the dataset, but not z
         # i.e. using a hardcoded whitelist of variables to keep is less flexible
-        id_vars = [v for v in data.variables if v not in self.mod_names]
+        id_vars = [str(v) for v in data.variables if v not in self.mod_names]
 
         attrs = (
             {key: data.attrs.get(key, False) for key in attrs_keys}
@@ -990,19 +991,24 @@ class Comparer(Scoreable):
             else {}
         )
 
+        df_pandas = data.to_dataframe().reset_index()
+        df_polars = pl.from_pandas(df_pandas)
         df = (
-            data.to_dataframe()
-            .reset_index()
-            .melt(
-                value_vars=self.mod_names,
-                var_name="model",
-                value_name="mod_val",
+            df_polars.melt(
                 id_vars=id_vars,
+                value_vars=self.mod_names,
+                variable_name="model",
+                value_name="mod_val",
             )
-            .rename(columns={self._obs_str: "obs_val"})
-            .assign(observation=self.name)
-            .assign(**attrs)
-            .astype({"model": "category", "observation": "category"})
+            .rename({self._obs_str: "obs_val"})
+            .with_columns(pl.lit(self.name).alias("observation"))
+            .with_columns([pl.lit(value).alias(key) for key, value in attrs.items()])
+            .with_columns(
+                [
+                    pl.col("model").cast(pl.Categorical),
+                    pl.col("observation").cast(pl.Categorical),
+                ]
+            )
         )
 
         return df
@@ -1074,10 +1080,14 @@ class Comparer(Scoreable):
 
         df = cmp._to_long_dataframe()
         res = _groupby_df(df, by=by, metrics=metrics)
-        res["x"] = np.nan if self.gtype == "track" else cmp.x
-        res["y"] = np.nan if self.gtype == "track" else cmp.y
-        res = self._add_as_col_if_not_in_index(df, skilldf=res)
-        return SkillTable(res)
+        if self.gtype == "track":
+            res = res.with_columns(pl.lit(np.nan).alias("x"), pl.lit(np.nan).alias("y"))
+        else:
+            res = res.with_columns(pl.lit(cmp.x).alias("x"), pl.lit(cmp.y).alias("y"))
+
+        res_pandas = res.to_pandas()
+
+        return SkillTable(res_pandas)
 
     def _add_as_col_if_not_in_index(
         self, df: pd.DataFrame, skilldf: pd.DataFrame

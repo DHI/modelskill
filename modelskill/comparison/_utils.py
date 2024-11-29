@@ -3,6 +3,7 @@ from typing import Callable, Optional, Iterable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
+import polars as pl
 
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
@@ -44,38 +45,31 @@ def _add_spatial_grid_to_df(
 
 
 def _groupby_df(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     *,
-    by: List[str | pd.Grouper],
+    by: List[str],
     metrics: List[Callable],
     n_min: Optional[int] = None,
-) -> pd.DataFrame:
-    def calc_metrics(group: pd.DataFrame) -> pd.Series:
-        # set index to time column (in most cases a DatetimeIndex, but not always)
-        group = group.set_index("time")
-
-        # TODO is n a metric or not?
-        row = {"n": len(group)}
-
-        for metric in metrics:
-            row[metric.__name__] = metric(group.obs_val, group.mod_val)
-        return pd.Series(row)
-
+) -> pl.DataFrame:
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
-    # sort=False to avoid re-ordering compared to original cc (also for performance)
-    res = df.groupby(by=by, observed=False, sort=False, group_keys=True)[
-        ["time", "obs_val", "mod_val"]
-    ].apply(calc_metrics)
-
-    if n_min:
-        # nan for all cols but n
-        cols = [col for col in res.columns if not col == "n"]
-        res.loc[res.n < n_min, cols] = np.nan
-
-    res["n"] = res["n"].fillna(0)
-    res = res.astype({"n": int})
+    # This is not very readable, but seems to be the only way to use user defined functions in polars
+    # the alternative is to create new metric functions that are based on polars exressions instead of numpy
+    res = df.group_by(by).agg(
+        [
+            pl.struct(["obs_val", "mod_val"])
+            .map_elements(
+                lambda combined, metric=metric: metric(
+                    combined.struct.field("obs_val").to_numpy(),
+                    combined.struct.field("mod_val").to_numpy(),
+                )
+            )
+            .alias(metric.__name__)
+            for metric in metrics
+        ]
+        + [pl.col("obs_val").count().alias("n")]
+    )
 
     return res
 
