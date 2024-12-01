@@ -535,8 +535,8 @@ class ComparerCollection(Mapping, Scoreable):
         res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
         res = self._append_xy_to_res(res, cc)
         res = res.with_columns(pl.lit(cc.mod_names[0]).alias("model"))
-        res_pandas = res.to_pandas()
-        return SkillTable(res_pandas)
+        # res_pandas = res.to_pandas()
+        return SkillTable(res)
 
     def _to_long_dataframe(
         self, attrs_keys: Iterable[str] | None = None, observed: bool = False

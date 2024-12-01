@@ -48,7 +48,7 @@ def _groupby_df(
     df: pl.DataFrame,
     *,
     by: List[str],
-    metrics: List[Callable],
+    metrics: List[str],
     n_min: Optional[int] = None,
 ) -> pl.DataFrame:
     if _dt_in_by(by):
@@ -56,20 +56,36 @@ def _groupby_df(
 
     # This is not very readable, but seems to be the only way to use user defined functions in polars
     # the alternative is to create new metric functions that are based on polars exressions instead of numpy
-    res = df.group_by(by).agg(
-        [
-            pl.struct(["obs_val", "mod_val"])
-            .map_elements(
-                lambda combined, metric=metric: metric(
-                    combined.struct.field("obs_val").to_numpy(),
-                    combined.struct.field("mod_val").to_numpy(),
-                )
-            )
-            .alias(metric.__name__)
-            for metric in metrics
-        ]
-        + [pl.col("obs_val").count().alias("n")]
-    )
+    # res = df.group_by(by).agg(
+    #     [
+    #         pl.struct(["obs_val", "mod_val"])
+    #         .map_elements(
+    #             lambda combined, metric=metric: metric(
+    #                 combined.struct.field("obs_val").to_numpy(),
+    #                 combined.struct.field("mod_val").to_numpy(),
+    #             )
+    #         )
+    #         .alias(metric.__name__)
+    #         for metric in metrics
+    #     ]
+    #     + [pl.col("obs_val").count().alias("n")]
+    # )
+
+    # create a list of polars expressions for calculating rmse, bias
+    metrics = ["rmse", "bias"]
+
+    obs = pl.col("obs_val")
+    mod = pl.col("mod_val")
+    diff = obs - mod
+
+    named_metrics: dict[str, pl.Expr] = {
+        "bias": diff.mean().alias("bias"),
+        "rmse": diff.pow(2).mean().sqrt().alias("rmse"),
+    }
+
+    sel_metrics = [named_metrics[metric] for metric in metrics]
+
+    res = df.group_by(by).agg(*sel_metrics)
 
     return res
 

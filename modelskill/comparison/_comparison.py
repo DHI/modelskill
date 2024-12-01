@@ -1085,9 +1085,9 @@ class Comparer(Scoreable):
         else:
             res = res.with_columns(pl.lit(cmp.x).alias("x"), pl.lit(cmp.y).alias("y"))
 
-        res_pandas = res.to_pandas()
+        # res_pandas = res.to_pandas()
 
-        return SkillTable(res_pandas)
+        return SkillTable(res)
 
     def _add_as_col_if_not_in_index(
         self, df: pd.DataFrame, skilldf: pd.DataFrame
