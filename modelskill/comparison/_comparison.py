@@ -1155,8 +1155,11 @@ class Comparer(Scoreable):
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
-        ser = df.reset_index().groupby("model", observed=True)[metric_name].mean()
-        score = {str(k): float(v) for k, v in ser.items()}
+        # ser = df.reset_index().groupby("model", observed=True)[metric_name].mean()
+        ser = df.group_by("model").mean().select(pl.col("model", metric_name))
+        # score = {str(k): float(v) for k, v in ser.items()}
+        # create a dict with the key for each model and the value for the metric
+        score = {str(k): float(v) for k, v in ser.rows()}
         return score
 
     def gridded_skill(

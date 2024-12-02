@@ -54,7 +54,6 @@ class SkillArrayPlotter:
         #    df = ser.unstack(level=level)
         # else:
         df = ser.to_frame()
-        # df = pl.DataFrame(ser).to_pandas()
         return df
 
     # TODO hide this for now until we are certain about the API
@@ -326,7 +325,6 @@ class SkillArray:
     >>> sk.rmse.plot.line()
     """
 
-    # TODO why a dataframe, and not a series?
     def __init__(self, data: pl.DataFrame) -> None:
         self.data = data
         # self._ser = data.iloc[:, -1]  # last column is the metric
