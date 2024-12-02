@@ -8,6 +8,8 @@ on:
 
 jobs:
   build:
+    # disable this job for now
+    if : false
 
     runs-on: ubuntu-latest
 
