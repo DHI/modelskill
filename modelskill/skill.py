@@ -774,7 +774,7 @@ class SkillTable:
                 sel_value = df.select(pl.col(key)).unique()[key][value]
                 predicates.append(pl.col(key) == sel_value)
 
-            elif isinstance(value, Iterable):
+            elif isinstance(value, Collection):
                 predicates.append(pl.col(key).is_in(value))
             else:
                 raise ValueError(f"Value {value} for key {key} is not valid")

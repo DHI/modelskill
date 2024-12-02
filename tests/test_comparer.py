@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import pandas as pd
+import polars as pl
 import xarray as xr
 import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
@@ -590,7 +591,7 @@ def test_add_tc_pc(pc, tc):
 def test_pc_to_long_dataframe(pc):
     # private method testing
     df = pc._to_long_dataframe()
-    assert isinstance(df, pd.DataFrame)
+    assert isinstance(df, pl.DataFrame)
     assert df.shape == (10, 7)
     assert "time" in df.columns
     assert "mod_val" in df.columns
@@ -599,26 +600,27 @@ def test_pc_to_long_dataframe(pc):
     assert "y" in df.columns
     assert "model" in df.columns
     assert "observation" in df.columns
-    assert df.mod_val.dtype == "float64"
-    assert df.obs_val.dtype == "float64"
-    assert df.x.dtype == "float64"
-    assert df.y.dtype == "float64"
-    assert df.model.dtype == "category"
-    assert df.observation.dtype == "category"
-    assert df.iloc[0].x == 10.0
-    assert df.iloc[0].y == 55.0
-    assert df.iloc[0].model == "m1"
-    assert df.iloc[9].model == "m2"
+    assert isinstance(df["mod_val"].dtype, pl.Float64)
+    assert isinstance(df["obs_val"].dtype, pl.Float64)
+    assert isinstance(df["x"].dtype, pl.Float64)
+    assert isinstance(df["y"].dtype, pl.Float64)
+    assert isinstance(df["model"].dtype, pl.Categorical)
+    assert isinstance(df["observation"].dtype, pl.Categorical)
+    assert df["x"][0] == 10.0
+    assert df["y"][0] == 55.0
+    assert df["model"][0] == "m1"
+    assert df["model"][9] == "m2"
 
 
 def test_pc_to_long_dataframe_add_col(pc):
     # private method testing
     pc.data["derived"] = pc.data.m1 + pc.data.m2
     df = pc._to_long_dataframe()
-    assert isinstance(df, pd.DataFrame)
+    assert isinstance(df, pl.DataFrame)
     assert df.shape == (10, 8)
     assert "derived" in df.columns
-    assert df.derived.dtype == "float64"
+    # assert df.derived.dtype == "float64"
+    assert isinstance(df["derived"].dtype, pl.Float64)
 
 
 def test_remove_bias():

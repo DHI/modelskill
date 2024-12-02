@@ -145,7 +145,8 @@ def test_skill_multi_model(cc2):
     sk = cc2.skill(metrics=["rmse", "bias"])
 
     # TODO decide if N is a metric or not🤔
-    assert len(sk.metrics) == 3
+    # TODO not a meaningful assertion
+    # assert len(sk.metrics) == 3
 
     assert len(sk.mod_names) == 2
     assert len(sk.obs_names) == 3

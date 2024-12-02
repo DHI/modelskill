@@ -76,15 +76,21 @@ def _groupby_df(
 
     obs = pl.col("obs_val")
     mod = pl.col("mod_val")
-    diff = obs - mod
+    residual = mod - obs
+    uresidual = residual - residual.mean()
 
-    named_metrics: dict[str, pl.Expr] = {
-        "bias": diff.mean().alias("bias"),
-        "rmse": diff.pow(2).mean().sqrt().alias("rmse"),
-        "mae": diff.abs().mean().alias("mae"),
+    NAMED_METRICS = {
+        "bias": residual.mean().alias("bias"),
+        "rmse": residual.pow(2).mean().sqrt().alias("rmse"),
+        "urmse": uresidual.pow(2).mean().sqrt().alias("urmse"),
+        "mae": residual.abs().mean().alias("mae"),
+        "r2": (1 - residual.pow(2).sum() / obs.sub(obs.mean()).pow(2).sum()).alias(
+            "r2"
+        ),
+        "cc": pl.corr("obs_val", "mod_val").alias("cc"),
     }
 
-    sel_metrics = [named_metrics[metric] for metric in metrics]
+    sel_metrics = [NAMED_METRICS[metric] for metric in metrics]
 
     res = df.group_by(by).agg(*sel_metrics)
 
