@@ -1060,7 +1060,13 @@ class Comparer(Scoreable):
         2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
-        metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
+
+        # TODO handle callable metric
+        # metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
+        if metrics is None:
+            # TODO use options
+            # metrics: list[str] = [m.__name__ for m in mtr.default_metrics]
+            metrics = ["bias", "rmse", "mae"]
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
@@ -1106,7 +1112,7 @@ class Comparer(Scoreable):
 
     def score(
         self,
-        metric: str | Callable = mtr.rmse,
+        metric: str | Callable = "rmse",
         **kwargs: Any,
     ) -> Dict[str, float]:
         """Model skill score
@@ -1136,7 +1142,8 @@ class Comparer(Scoreable):
         >>> cmp.score(metric="mape")
         {'mod': 11.567399646108198}
         """
-        metric = _parse_metric(metric)[0]
+        # TODO handle callable metric
+        # metric = _parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1250,9 +1257,9 @@ class Comparer(Scoreable):
         if "y" not in agg_cols:
             agg_cols.insert(0, "y")
 
-        df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
+        df = df.drop(["x", "y"]).rename(dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
-        ds = res.to_xarray().squeeze()
+        ds = res.to_pandas().to_xarray().squeeze()
 
         # change categorial index to coordinates
         for dim in ("x", "y"):

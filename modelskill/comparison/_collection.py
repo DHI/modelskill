@@ -525,7 +525,9 @@ class ComparerCollection(Mapping, Scoreable):
 
         ## ---- end of deprecated code ----
 
-        pmetrics = _parse_metric(metrics)
+        # pmetrics = _parse_metric(metrics)
+        # TODO don't use hardcoded metrics
+        pmetrics = ["bias", "rmse", "mae"]
 
         agg_cols = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
         agg_cols, attrs_keys = self._attrs_keys_in_by(agg_cols)
@@ -534,7 +536,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
         res = self._append_xy_to_res(res, cc)
-        res = res.with_columns(pl.lit(cc.mod_names[0]).alias("model"))
+        # res = res.with_columns(pl.lit(cc.mod_names[0]).alias("model"))
         # res_pandas = res.to_pandas()
         return SkillTable(res)
 
@@ -707,9 +709,9 @@ class ComparerCollection(Mapping, Scoreable):
         if "y" not in agg_cols:
             agg_cols.insert(0, "y")
 
-        df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
+        df = df.drop(["x", "y"]).rename(dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
-        ds = res.to_xarray().squeeze()
+        ds = res.to_pandas().to_xarray().squeeze()
 
         # change categorial index to coordinates
         for dim in ("x", "y"):

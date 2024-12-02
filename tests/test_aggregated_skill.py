@@ -248,7 +248,10 @@ def test_skill_sel_metrics_list(cc2):
 def test_skill_sel_multi_model(cc2):
     sk = cc2.skill(metrics=["rmse", "bias"])
     sk2 = sk.sel(model="SW_1")
-    assert len(sk2.mod_names) == 0  # no longer in index
+    assert len(sk2.mod_names) == 1
+
+    # Below doesn't make sense, there is always at least one observation, one model and one quantity
+    # assert len(sk2.mod_names) == 0  # no longer in index
     # assert not isinstance(s2.index, pd.MultiIndex)
     assert len(sk2) == 3
 
@@ -258,7 +261,7 @@ def test_skill_sel_multi_model(cc2):
     assert len(sk2) == 2
 
     sk2 = sk.sel(model=1, observation=["EPL"])
-    assert len(sk2.obs_names) == 0
+    assert len(sk2.obs_names) == 1
     # assert not isinstance(s2.index, pd.MultiIndex)
     assert len(sk2) == 1
 

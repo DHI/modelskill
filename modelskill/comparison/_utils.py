@@ -72,7 +72,7 @@ def _groupby_df(
     # )
 
     # create a list of polars expressions for calculating rmse, bias
-    metrics = ["rmse", "bias"]
+    # metrics = ["rmse", "bias"]
 
     obs = pl.col("obs_val")
     mod = pl.col("mod_val")
@@ -81,6 +81,7 @@ def _groupby_df(
     named_metrics: dict[str, pl.Expr] = {
         "bias": diff.mean().alias("bias"),
         "rmse": diff.pow(2).mean().sqrt().alias("rmse"),
+        "mae": diff.abs().mean().alias("mae"),
     }
 
     sel_metrics = [named_metrics[metric] for metric in metrics]

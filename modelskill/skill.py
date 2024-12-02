@@ -514,7 +514,8 @@ class SkillTable:
         assert "x" in self.data.columns
         assert "y" in self.data.columns
 
-        df = self.to_dataframe(drop_xy=False)
+        # df = self.to_dataframe(drop_xy=False)
+        df = self.data.to_pandas()
 
         gdf = gpd.GeoDataFrame(
             df,
@@ -747,19 +748,39 @@ class SkillTable:
 
         df = self.to_dataframe(drop_xy=False)
 
-        for key, value in kwargs.items():
-            if key in df.index.names:
-                df = self._sel_from_index(df, key, value)
-            else:
-                raise KeyError(
-                    f"Unknown index {key}. Valid index names are {df.index.names}"
-                )
+        # for key, value in kwargs.items():
+        #     if key in df.index.names:
+        #         df = self._sel_from_index(df, key, value)
+        #     else:
+        #         raise KeyError(
+        #             f"Unknown index {key}. Valid index names are {df.index.names}"
+        #         )
 
-        if isinstance(df, pd.Series):
-            return SkillArray(df)
-        if reduce_index and isinstance(df.index, pd.MultiIndex):
-            df = self._reduce_index(df)
-        return self.__class__(df)
+        # if isinstance(df, pd.Series):
+        #     return SkillArray(df)
+        # if reduce_index and isinstance(df.index, pd.MultiIndex):
+        #     df = self._reduce_index(df)
+        # return self.__class__(df)
+
+        # filter rows
+        # for key, value in kwargs.items():
+        # predicates = [pl.col(key) == value for key, value in kwargs.items()]
+        predicates = []
+        for key, value in kwargs.items():
+            if isinstance(value, str):
+                predicates.append(pl.col(key) == value)
+            elif isinstance(value, int):
+                # find the nth unique value in the column
+                sel_value = df.select(pl.col(key)).unique()[key][value]
+                predicates.append(pl.col(key) == sel_value)
+
+            elif isinstance(value, Iterable):
+                predicates.append(pl.col(key).is_in(value))
+            else:
+                raise ValueError(f"Value {value} for key {key} is not valid")
+
+        df_filtered = df.filter(*predicates)
+        return self.__class__(df_filtered)
 
     def _sel_from_index(
         self, df: pd.DataFrame, key: str, value: str | int
