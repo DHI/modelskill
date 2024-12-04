@@ -35,11 +35,11 @@ jobs:
     - name: Install modelskill
       run: |
         pip install .[test]
-    - name: Static type check
-      run: make typecheck
     - name: Test with pytest
       run: |
         pytest --cov=modelskill --ignore tests/notebooks/
+    - name: Static type check
+      run: make typecheck
     - name: Test docstrings with pytest
       run: |
         pytest ./modelskill/metrics.py --doctest-modules
