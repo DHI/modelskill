@@ -56,7 +56,7 @@ def observation(
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
     else:
-        geometry = GeometryType.from_string(gtype)
+        geometry = GeometryType(gtype)
 
     return _obs_class_lookup[geometry](
         data=data,
