@@ -24,6 +24,7 @@ class GeometryType(Enum):
 
         Examples
         --------
+        >>> from modelskill.types import GeometryType
         >>> GeometryType.from_string("point")
         <GeometryType.POINT: 'point'>
         >>> GeometryType.from_string("track")
@@ -33,7 +34,7 @@ class GeometryType(Enum):
         >>> GeometryType.from_string("flexible mesh")
         <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("dfsu")
-        GeometryType.from_string("flexible mesh")
+        <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("grid")
         <GeometryType.GRID: 'grid'>
         """
