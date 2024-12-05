@@ -79,7 +79,8 @@ def test_dfsu_properties(hd_oresund_2d):
 
 
 def test_dfsu_sw(sw_dutch_coast):
-    mr = ms.model_result(sw_dutch_coast, name="SW", item=0)
+    with pytest.warns(UserWarning):
+        mr = ms.model_result(sw_dutch_coast, name="SW", item=0)
 
     assert isinstance(mr, ms.DfsuModelResult)
 
@@ -124,8 +125,9 @@ def test_dfsu_dataarray(hd_oresund_2d):
     da = ds[0]
     assert isinstance(da, mikeio.DataArray)
 
-    mr = ms.model_result(da, name="Oresund")
-    assert mr.name == "Oresund"
+    with pytest.warns(UserWarning):
+        mr = ms.model_result(da, name="MIKE21")
+    assert mr.name == "MIKE21"
 
     mr.name = "Oresund2"
     assert mr.name == "Oresund2"
@@ -229,8 +231,12 @@ def test_dfsu_extract_track(sw_dutch_coast, Hm0_C2):
     assert mr_track1.n_points == 70
 
     da = mikeio.read(sw_dutch_coast)[0]
-    mr2 = ms.model_result(da, name="SW1")
-    mr_track2 = mr2.extract(Hm0_C2.copy())
+    mr2: ms.DfsuModelResult = ms.model_result(da, name="SW1")
+    assert mr2.data.items[0].name == "Sign. Wave Height"
+    before_repr = repr(mr2.data)
+    mr_track2: ms.TrackModelResult = mr2.extract(Hm0_C2.copy())
+    assert mr2.data.items[0].name == "Sign. Wave Height"
+    assert repr(mr2.data) == before_repr
     ds2 = mr_track2.data
 
     assert list(ds1.data_vars) == list(ds2.data_vars)
