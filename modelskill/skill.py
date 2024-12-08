@@ -3,6 +3,7 @@ import warnings
 from typing import Any, Iterable, Collection, overload, Hashable, TYPE_CHECKING
 import numpy as np
 import pandas as pd
+import polars as pl
 
 if TYPE_CHECKING:
     import geopandas as gpd
@@ -47,11 +48,12 @@ class SkillArrayPlotter:
                 kwargs["title"] = self.skillarray.name
 
     def _get_plot_df(self, level: int | str = 0) -> pd.DataFrame:
-        ser = self.skillarray._ser
-        if isinstance(ser.index, pd.MultiIndex):
-            df = ser.unstack(level=level)
-        else:
-            df = ser.to_frame()
+        # TODO refactor to avoid using private attribute _ser
+        ser = self.skillarray._ser.to_pandas()
+        # if isinstance(ser.index, pd.MultiIndex):
+        #    df = ser.unstack(level=level)
+        # else:
+        df = ser.to_frame()
         return df
 
     # TODO hide this for now until we are certain about the API
@@ -323,9 +325,10 @@ class SkillArray:
     >>> sk.rmse.plot.line()
     """
 
-    def __init__(self, data: pd.DataFrame) -> None:
+    def __init__(self, data: pl.DataFrame) -> None:
         self.data = data
-        self._ser = data.iloc[:, -1]  # last column is the metric
+        # self._ser = data.iloc[:, -1]  # last column is the metric
+        self._ser = data[data.columns[-1]]
 
         self.plot = SkillArrayPlotter(self)
         """Plot using the SkillArrayPlotter
@@ -445,18 +448,20 @@ class SkillTable:
     _one_is_best_metrics = ["lin_slope"]
     _zero_is_best_metrics = ["bias"]
 
-    def __init__(self, data: pd.DataFrame):
-        self.data: pd.DataFrame = (
-            data if isinstance(data, pd.DataFrame) else data.to_dataframe()
-        )
+    def __init__(self, data: pl.DataFrame):
+        # self.data: pd.DataFrame = (
+        #    data if isinstance(data, pd.DataFrame) else data.to_dataframe()
+        # )
+        self.data = data
         # TODO remove in v1.1
         self.plot = DeprecatedSkillPlotter(self)  # type: ignore
 
     # TODO: remove?
     @property
-    def _df(self) -> pd.DataFrame:
+    def _df(self) -> pl.DataFrame:
         """Data as DataFrame without x and y columns"""
-        return self.to_dataframe(drop_xy=True)
+        return self.data
+        # return self.to_dataframe(drop_xy=True)
 
     @property
     def metrics(self) -> Collection[str]:
@@ -467,7 +472,7 @@ class SkillTable:
     def __len__(self) -> int:
         return len(self._df)
 
-    def to_dataframe(self, drop_xy: bool = True) -> pd.DataFrame:
+    def to_dataframe(self, drop_xy: bool = True) -> pl.DataFrame:
         """Convert SkillTable to pd.DataFrame
 
         Parameters
@@ -481,9 +486,10 @@ class SkillTable:
             Skill data as pd.DataFrame
         """
         if drop_xy:
-            return self.data.drop(columns=["x", "y"], errors="ignore")
+            # return self.data.drop(columns=["x", "y"], errors="ignore")
+            return self.data.drop(["x", "y"])
         else:
-            return self.data.copy()
+            return self.data
 
     def to_geodataframe(self, crs: str = "EPSG:4326") -> gpd.GeoDataFrame:
         """Convert SkillTable to geopandas.GeoDataFrame
@@ -508,7 +514,8 @@ class SkillTable:
         assert "x" in self.data.columns
         assert "y" in self.data.columns
 
-        df = self.to_dataframe(drop_xy=False)
+        # df = self.to_dataframe(drop_xy=False)
+        df = self.data.to_pandas()
 
         gdf = gpd.GeoDataFrame(
             df,
@@ -535,15 +542,19 @@ class SkillTable:
     ) -> SkillArray | SkillTable:
         if isinstance(key, int):
             key = list(self.data.columns)[key]
+
+        if key not in self.data.columns:
+            raise KeyError(f"Key {key} not found in columns {self.data.columns}")
         result = self.data[key]
-        if isinstance(result, pd.Series):
+        if isinstance(result, pl.Series):
             # I don't think this should be necessary, but in some cases the input doesn't contain x and y
-            if "x" in self.data.columns and "y" in self.data.columns:
-                cols = ["x", "y", key]
-                return SkillArray(self.data[cols])
-            else:
-                return SkillArray(result.to_frame())
-        elif isinstance(result, pd.DataFrame):
+            # if "x" in self.data.columns and "y" in self.data.columns:
+            #    cols = ["x", "y", key]
+            #    return SkillArray(self.data[cols])
+            # else:
+            return SkillArray(result.to_frame())
+
+        elif isinstance(result, pl.DataFrame):
             return SkillTable(result)
         else:
             raise NotImplementedError("Unexpected type of result")
@@ -573,23 +584,23 @@ class SkillTable:
     def loc(self, *args, **kwargs):  # type: ignore
         return self.data.loc(*args, **kwargs)
 
-    def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
-        """Sort by index (level) e.g. sorting by observation
+    # def sort_index(self, *args, **kwargs) -> SkillTable:  # type: ignore
+    #     """Sort by index (level) e.g. sorting by observation
 
-        Wrapping pd.DataFrame.sort_index()
+    #     Wrapping pd.DataFrame.sort_index()
 
-        Returns
-        -------
-        SkillTable
-            A new SkillTable with sorted index
+    #     Returns
+    #     -------
+    #     SkillTable
+    #         A new SkillTable with sorted index
 
-        Examples
-        --------
-        >>> sk = cc.skill()
-        >>> sk.sort_index()
-        >>> sk.sort_index(level="observation")
-        """
-        return self.__class__(self.data.sort_index(*args, **kwargs))
+    #     Examples
+    #     --------
+    #     >>> sk = cc.skill()
+    #     >>> sk.sort_index()
+    #     >>> sk.sort_index(level="observation")
+    #     """
+    #     return self.__class__(self.data.sort_index(*args, **kwargs))
 
     def sort_values(self, *args, **kwargs) -> SkillTable:  # type: ignore
         """Sort by values e.g. sorting by rmse values
@@ -608,51 +619,67 @@ class SkillTable:
         >>> sk.sort_values("rmse", ascending=False)
         >>> sk.sort_values(["n", "rmse"])
         """
-        return self.__class__(self.data.sort_values(*args, **kwargs))
+        # return self.__class__(self.data.sort_values(*args, **kwargs))
+        return self.__class__(self.data.sort(*args, **kwargs))
 
-    def swaplevel(self, *args, **kwargs) -> SkillTable:  # type: ignore
-        """Swap the levels of the MultiIndex e.g. swapping 'model' and 'observation'
+    # def swaplevel(self, *args, **kwargs) -> SkillTable:  # type: ignore
+    #     """Swap the levels of the MultiIndex e.g. swapping 'model' and 'observation'
 
-        Wrapping pd.DataFrame.swaplevel()
+    #     Wrapping pd.DataFrame.swaplevel()
 
-        Returns
-        -------
-        SkillTable
-            A new SkillTable with swapped levels
+    #     Returns
+    #     -------
+    #     SkillTable
+    #         A new SkillTable with swapped levels
 
-        Examples
-        --------
-        >>> sk = cc.skill()
-        >>> sk.swaplevel().sort_index(level="observation")
-        >>> sk.swaplevel("model", "observation")
-        >>> sk.swaplevel(0, 1)
-        """
-        return self.__class__(self.data.swaplevel(*args, **kwargs))
+    #     Examples
+    #     --------
+    #     >>> sk = cc.skill()
+    #     >>> sk.swaplevel().sort_index(level="observation")
+    #     >>> sk.swaplevel("model", "observation")
+    #     >>> sk.swaplevel(0, 1)
+    #     """
+    #     return self.__class__(self.data.swaplevel(*args, **kwargs))
 
     @property
     def mod_names(self) -> list[str]:
         """List of model names (in index)"""
-        return self._get_index_level_by_name("model")
+        # return self._get_index_level_by_name("model")
+        return (
+            self._df["model"].unique().to_list() if "model" in self._df.columns else []
+        )
 
     @property
     def obs_names(self) -> list[str]:
         """List of observation names (in index)"""
-        return self._get_index_level_by_name("observation")
+        # return self._get_index_level_by_name("observation")
+        return (
+            self._df["observation"].unique().to_list()
+            if "observation" in self._df.columns
+            else []
+        )
 
     @property
     def quantity_names(self) -> list[str]:
         """List of quantity names (in index)"""
-        return self._get_index_level_by_name("quantity")
+        # return self._get_index_level_by_name("quantity")
+        return (
+            self._df["quantity"].unique().to_list()
+            if "quantity" in self._df.columns
+            else []
+        )
 
-    def _get_index_level_by_name(self, name: str) -> list[str]:
-        # Helper function to get unique values of a level in the index (e.g. model)
-        index = self._df.index
-        if name in index.names:
-            level = index.names.index(name)
-            return list(index.get_level_values(level).unique())
-        else:
-            return []
-            # raise ValueError(f"name {name} not in index {list(self.index.names)}")
+    # def _get_index_level_by_name(self, name: str) -> list[str]:
+    #     # Helper function to get unique values of a level in the index (e.g. model)
+    #     # index = self._df.index
+    #     # if name in index.names:
+    #     #    level = index.names.index(name)
+    #     #    return list(index.get_level_values(level).unique())
+    #     if name in self._df.columns:
+    #         return self._df[name].unique().to_list()
+    #     else:
+    #         return []
+    #         # raise ValueError(f"name {name} not in index {list(self.index.names)}")
 
     def query(self, query: str) -> SkillTable:
         """Select a subset of the SkillTable by a query string
@@ -721,19 +748,39 @@ class SkillTable:
 
         df = self.to_dataframe(drop_xy=False)
 
-        for key, value in kwargs.items():
-            if key in df.index.names:
-                df = self._sel_from_index(df, key, value)
-            else:
-                raise KeyError(
-                    f"Unknown index {key}. Valid index names are {df.index.names}"
-                )
+        # for key, value in kwargs.items():
+        #     if key in df.index.names:
+        #         df = self._sel_from_index(df, key, value)
+        #     else:
+        #         raise KeyError(
+        #             f"Unknown index {key}. Valid index names are {df.index.names}"
+        #         )
 
-        if isinstance(df, pd.Series):
-            return SkillArray(df)
-        if reduce_index and isinstance(df.index, pd.MultiIndex):
-            df = self._reduce_index(df)
-        return self.__class__(df)
+        # if isinstance(df, pd.Series):
+        #     return SkillArray(df)
+        # if reduce_index and isinstance(df.index, pd.MultiIndex):
+        #     df = self._reduce_index(df)
+        # return self.__class__(df)
+
+        # filter rows
+        # for key, value in kwargs.items():
+        # predicates = [pl.col(key) == value for key, value in kwargs.items()]
+        predicates = []
+        for key, value in kwargs.items():
+            if isinstance(value, str):
+                predicates.append(pl.col(key) == value)
+            elif isinstance(value, int):
+                # find the nth unique value in the column
+                sel_value = df.select(pl.col(key)).unique()[key][value]
+                predicates.append(pl.col(key) == sel_value)
+
+            elif isinstance(value, Collection):
+                predicates.append(pl.col(key).is_in(value))
+            else:
+                raise ValueError(f"Value {value} for key {key} is not valid")
+
+        df_filtered = df.filter(*predicates)
+        return self.__class__(df_filtered)
 
     def _sel_from_index(
         self, df: pd.DataFrame, key: str, value: str | int
@@ -764,14 +811,14 @@ class SkillTable:
             raise KeyError(f"Id {pos} is out of bounds for index {index_name} (0, {n})")
         return names[pos]
 
-    def _reduce_index(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Remove unnecessary levels of MultiIndex"""
-        df.index = df.index.remove_unused_levels()
-        levels_to_reset = []
-        for j, level in enumerate(df.index.levels):
-            if len(level) == 1:
-                levels_to_reset.append(j)
-        return df.reset_index(level=levels_to_reset)
+    # def _reduce_index(self, df: pd.DataFrame) -> pd.DataFrame:
+    #     """Remove unnecessary levels of MultiIndex"""
+    #     df.index = df.index.remove_unused_levels()
+    #     levels_to_reset = []
+    #     for j, level in enumerate(df.index.levels):
+    #         if len(level) == 1:
+    #             levels_to_reset.append(j)
+    #     return df.reset_index(level=levels_to_reset)
 
     def round(self, decimals: int = 3) -> SkillTable:
         """Round all values in SkillTable
@@ -789,7 +836,9 @@ class SkillTable:
             A new SkillTable with rounded values
         """
 
-        return self.__class__(self.data.round(decimals=decimals))
+        return self.__class__(
+            self.data.select(pl.col(pl.Float64, pl.Float32).round(decimals=decimals))
+        )
 
     def style(
         self,

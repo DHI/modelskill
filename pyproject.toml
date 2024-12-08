@@ -16,6 +16,8 @@ dependencies = [
     "xarray",
     "scipy",
     "jinja2",
+    "polars>=1.16.0",
+    "pyarrow>=18.1.0",
 ]
 
 authors = [
