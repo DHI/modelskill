@@ -100,6 +100,25 @@ def _groupby_df(
 
     res = df.group_by(by).agg(*sel_metrics)
 
+    # TODO handle n_min
+    #   if n_min:
+    #     # nan for all cols but n
+    #     cols = [col for col in res.columns if not col == "n"]
+    #     res.loc[res.n < n_min, cols] = np.nan
+
+    # set rows where n < n_min to Null
+
+    non_n_metrics = [m for m in metrics if m != "n"]
+
+    if n_min:
+        res = res.select(
+            pl.col("x"),
+            pl.col("y"),
+            pl.col("n"),
+            pl.when(pl.col("n") >= n_min).then(pl.col(*non_n_metrics)),
+        )
+        # TODO why not simply keep rows where n > n_min?
+        # res = res.filter(pl.col("n") > n_min)
     return res
 
 

@@ -248,7 +248,8 @@ def test_skill(comparer):
     c = comparer
     df = c.skill().to_dataframe()
 
-    assert df.loc["alti"].n == 532  # 544
+    # assert df.loc["alti"].n == 532  # 544
+    assert df[0, "n"] == 532  # 544
 
 
 # def test_extract_no_time_overlap(modelresult, observation_df):
@@ -314,13 +315,19 @@ def test_skill(comparer):
 
 
 def test_skill_vs_gridded_skill(comparer):
+    import polars as pl
+
     df = comparer.skill().to_dataframe()  # to compare to result of .skill()
     ds = comparer.gridded_skill(bins=1)  # force 1 bin only
 
-    assert df.loc["alti"].n == ds.data.n.values
-    assert df.loc["alti"].bias == ds.data.bias.values
+    row = df.filter(pl.col("observation") == "alti")
+    assert row[0, "n"] == ds.data.n.values
+    assert row[0, "bias"] == pytest.approx(ds.data.bias.values)
+    # assert df.loc["alti"].n == ds.data.n.values
+    # assert df.loc["alti"].bias == ds.data.bias.values
     assert ds.x.size == 1
     assert ds.y.size == 1
+
     # assert ds.coords._names == {"x","y"}  # TODO: Why return "observation" as by, when n_obs==1 but not "model"?
 
 
@@ -353,8 +360,9 @@ def test_gridded_skill_bins(comparer):
 #     assert ds.coords._names == {"y", "model", "x"}
 
 
-def test_gridded_skill_misc(comparer):
+def test_gridded_skill_misc(comparer: ms.Comparer) -> None:
     # miniumum n
+    # ds = comparer.gridded_skill(metrics=["bias", "rmse"], n_min=20)
     ds = comparer.gridded_skill(metrics=["bias", "rmse"], n_min=20)
     df = ds.to_dataframe()
     assert df.loc[df.n < 20, ["bias", "rmse"]].size == 30

@@ -1066,7 +1066,7 @@ class Comparer(Scoreable):
         if metrics is None:
             # TODO use options
             # metrics: list[str] = [m.__name__ for m in mtr.default_metrics]
-            metrics = ["bias", "rmse", "mae"]
+            metrics = ["n", "bias", "rmse", "mae"]
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
