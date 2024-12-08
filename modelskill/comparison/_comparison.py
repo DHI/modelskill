@@ -977,7 +977,7 @@ class Comparer(Scoreable):
     def _to_long_dataframe(
         self, attrs_keys: Iterable[str] | None = None
     ) -> pl.DataFrame:
-        """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
+        """Return a copy of the data as a long-format DataFrame (for groupby operations)"""
 
         data = self.data.drop_vars("z", errors="ignore")
 
@@ -1245,6 +1245,8 @@ class Comparer(Scoreable):
         )
 
         metrics = _parse_metric(metrics)
+        # TODO don't use hardcoded metrics
+        metrics = ["n", "bias", "rmse", "mae"]
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 
@@ -1259,7 +1261,7 @@ class Comparer(Scoreable):
 
         df = df.drop(["x", "y"]).rename(dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
-        ds = res.to_pandas().to_xarray().squeeze()
+        ds = res.to_pandas().set_index(["x", "y"]).to_xarray().squeeze()
 
         # change categorial index to coordinates
         for dim in ("x", "y"):

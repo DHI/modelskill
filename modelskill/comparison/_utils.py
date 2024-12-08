@@ -13,6 +13,10 @@ IdxOrNameTypes = Union[int, str, List[int], List[str]]
 def _add_spatial_grid_to_df(
     df: pd.DataFrame, bins, binsize: Optional[float]
 ) -> pd.DataFrame:
+    if isinstance(df, pl.DataFrame):
+        # convert to pandas
+        df = df.to_pandas()  # .set_index(["x", "y"])
+
     if binsize is None:
         # bins from bins
         if isinstance(bins, tuple):
@@ -41,7 +45,8 @@ def _add_spatial_grid_to_df(
     df["yBin"] = pd.cut(df.y, bins=bins_y)
     df["yBin"] = df["yBin"].apply(lambda x: x.mid)
 
-    return df
+    # TODO avoid using pandas
+    return pl.DataFrame(df.to_dict(orient="records"))
 
 
 def _groupby_df(
@@ -88,6 +93,7 @@ def _groupby_df(
             "r2"
         ),
         "cc": pl.corr("obs_val", "mod_val").alias("cc"),
+        "n": pl.col("obs_val").count().alias("n"),
     }
 
     sel_metrics = [NAMED_METRICS[metric] for metric in metrics]
