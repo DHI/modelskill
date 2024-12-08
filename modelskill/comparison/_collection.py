@@ -700,6 +700,9 @@ class ComparerCollection(Mapping, Scoreable):
 
         metrics = _parse_metric(metrics)
 
+        # TODO avoid hardcoded metrics
+        metrics = ["n", "bias", "rmse", "mae"]
+
         df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
 
@@ -711,11 +714,11 @@ class ComparerCollection(Mapping, Scoreable):
 
         df = df.drop(["x", "y"]).rename(dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
-        ds = res.to_pandas().to_xarray().squeeze()
+        ds = res.to_pandas().set_index(["x", "y", "model"]).to_xarray().squeeze()
 
         # change categorial index to coordinates
-        for dim in ("x", "y"):
-            ds[dim] = ds[dim].astype(float)
+        # for dim in ("x", "y"):
+        #    ds[dim] = ds[dim].astype(float)
         return SkillGrid(ds)
 
     def mean_skill(
