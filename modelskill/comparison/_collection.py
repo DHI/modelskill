@@ -556,10 +556,13 @@ class ComparerCollection(Mapping, Scoreable):
             frames.append(frame)
 
         # convert all ints and floats to f64
-        frames = [
-            df.with_columns([pl.col(pl.Float32, pl.Int32, pl.Int64).cast(pl.Float64)])
-            for df in frames
-        ]
+        import polars.selectors as cs
+
+        # frames = [
+        #    df.with_columns([pl.col(pl.Float32, pl.Int32, pl.Int64).cast(pl.Float64)])
+        #    for df in frames
+        # ]
+        frames = [df.with_columns(cs.numeric().cast(pl.Float64)) for df in frames]
 
         # TODO why doesn't all frames have the same columns?
         res = pl.concat(frames, how="diagonal")

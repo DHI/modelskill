@@ -307,7 +307,7 @@ class ComparerCollectionPlotter:
         """
         _, ax = _get_fig_ax(ax, figsize)
 
-        df = self.cc._to_long_dataframe()
+        df = self.cc._to_long_dataframe().to_pandas()
         ax = df["obs_val"].plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
         )
@@ -441,7 +441,7 @@ class ComparerCollectionPlotter:
         )
 
         cmp = self.cc
-        df = cmp._to_long_dataframe()
+        df = cmp._to_long_dataframe().to_pandas()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
         df["mod_val"].hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)
