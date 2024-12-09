@@ -208,8 +208,10 @@ class ComparerCollectionPlotter:
             raise ValueError("No data found in selection")
 
         df = cc_sel_mod._to_long_dataframe()
-        x = df.obs_val.values
-        y = df.mod_val.values
+        # x = df.obs_val.values
+        # y = df.mod_val.values
+        x = df["obs_val"]
+        y = df["mod_val"]
 
         # TODO why the first?
         unit_text = self.cc[0]._unit_text
@@ -239,7 +241,14 @@ class ComparerCollectionPlotter:
             quantiles = 0
             reg_method = False
 
-        skill_scores = skill.iloc[0].to_dict() if skill is not None else None
+        # skill_scores = skill.iloc[0].to_dict() if skill is not None else None
+
+        skill_scores = skill.to_dicts()[0] if skill is not None else None
+        # TODO can this be done in a better way?
+        # remove observation and model from skill scores
+        if skill_scores:
+            skill_scores.pop("observation", None)
+            skill_scores.pop("model", None)
 
         ax = scatter(
             x=x,
@@ -299,7 +308,7 @@ class ComparerCollectionPlotter:
         _, ax = _get_fig_ax(ax, figsize)
 
         df = self.cc._to_long_dataframe()
-        ax = df.obs_val.plot.kde(
+        ax = df["obs_val"].plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
         )
 
@@ -435,8 +444,8 @@ class ComparerCollectionPlotter:
         df = cmp._to_long_dataframe()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)
-        df.obs_val.hist(
+        df["mod_val"].hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)
+        df["obs_val"].hist(
             bins=bins,
             color=self.cc[0].data["Observation"].attrs["color"],
             ax=ax,
