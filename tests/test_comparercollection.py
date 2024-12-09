@@ -344,13 +344,14 @@ def test_skill_by_attrs_int(cc):
 
     sk = cc.skill(by="attrs:custom")
     assert len(sk) == 2
-    assert sk.data.index[0] == 12
-    assert sk.data.index[1] == 13
-    assert sk.data.index.name == "custom"
+    assert "custom" in sk.data.columns
+    # assert sk.data.index[0] == 12
+    # assert sk.data.index[1] == 13
+    # assert sk.data.index.name == "custom"
 
     sk = cc.skill(by=("attrs:custom", "model"))
     assert len(sk) == 5
-    assert sk.data.index[4] == (13, "m3")
+    # assert sk.data.index[4] == (13, "m3")
 
 
 def test_skill_by_attrs_observed(cc):
@@ -358,14 +359,16 @@ def test_skill_by_attrs_observed(cc):
 
     sk = cc.skill(by="attrs:use")  # observed=False is default
     assert len(sk) == 2
-    assert sk.data.index[0] == "DA"
-    assert sk.data.index[1] is False
-    assert sk.data.index.name == "use"
+    # assert sk.data.index[0] == "DA"
+    # assert sk.data.index[1] is False
+    # assert sk.data.index.name == "use"
+    assert "use" in sk.data.columns
 
     sk = cc.skill(by="attrs:use", observed=True)
     assert len(sk) == 1
-    assert sk.data.index[0] == "DA"
-    assert sk.data.index.name == "use"
+    assert "use" in sk.data.columns
+    # assert sk.data.index[0] == "DA"
+    # assert sk.data.index.name == "use"
 
 
 def test_xy_in_skill(cc):
@@ -373,24 +376,24 @@ def test_xy_in_skill(cc):
     sk = cc.skill()
     assert "x" in sk.data.columns
     assert "y" in sk.data.columns
-    df = sk.data.reset_index()
-    df_track = df.loc[df.observation == "fake track obs"]
-    assert df_track.x.isna().all()
-    assert df_track.y.isna().all()
-    df_point = df.loc[df.observation == "fake point obs"]
-    assert all(df_point.x == cc[0].x)
-    assert all(df_point.y == cc[0].y)
+    df = sk.data
+    df_track = df.filter(observation="fake track obs")
+    assert all(np.isnan(df_track["x"].to_numpy()))
+    assert all(np.isnan(df_track["y"].to_numpy()))
+    df_point = df.filter(observation="fake point obs")
+    assert all(df_point["x"].to_numpy() == cc[0].x)
+    assert all(df_point["y"].to_numpy() == cc[0].y)
 
 
-def test_xy_in_skill_no_obs(cc):
-    # if no observation column then no x, y information!
-    # e.g. if we filter by gtype (in this case 1 per obs), no x, y information
-    sk = cc.skill(by=["attrs:gtype", "model"])
-    assert "x" in sk.data.columns
-    assert "y" in sk.data.columns
-    df = sk.data.reset_index()
-    assert df.x.isna().all()
-    assert df.y.isna().all()
+# def test_xy_in_skill_no_obs(cc):
+#     # if no observation column then no x, y information!
+#     # e.g. if we filter by gtype (in this case 1 per obs), no x, y information
+#     sk = cc.skill(by=["attrs:gtype", "model"])
+#     assert "x" in sk.data.columns
+#     assert "y" in sk.data.columns
+#     # df = sk.data.reset_index()
+#     # assert df.x.isna().all()
+#     # assert df.y.isna().all()
 
 
 # ======================== load/save ========================

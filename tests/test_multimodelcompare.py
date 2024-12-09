@@ -127,8 +127,7 @@ def test_mm_skill_obs(cc):
 
 def test_mm_mean_skill_obs(cc):
     df = cc.sel(model=0, observation=[0, "c2"]).mean_skill().to_dataframe()
-    # assert pytest.approx(df.iloc[0].si) == 0.11113215
-    assert df[0, "si"] == pytest.approx(0.11113215)
+    assert df.filter(model="SW_1")[0, "si"] == pytest.approx(0.11113215)
 
 
 def test_mm_sel_missing_obs(cc, o1):
@@ -192,11 +191,11 @@ def test_mm_mean_skill_area_polygon(cc):
     # Any interior linear rings should be defined in opposite fashion compared to the exterior ring, in this case, clockwise
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
     sk = cc.sel(area=polygon).mean_skill()
-    assert pytest.approx(sk.loc["SW_2"].rmse) == 0.3349027897
+    assert sk.filter(model="SW_2")[0, "rmse"] == pytest.approx(0.3349027897)
 
     closed_polygon = ((6, 51), (0, 55), (0, 51), (6, 51))
     sk2 = cc.sel(area=closed_polygon).mean_skill()
-    assert pytest.approx(sk2.loc["SW_2"].rmse) == 0.3349027897
+    assert sk2.filter(model="SW_2")[0, "rmse"] == pytest.approx(0.3349027897)
 
     # TODO support for polygons with holes
 
@@ -217,14 +216,14 @@ def test_mm_sel_area_error(cc):
 
 
 def test_mm_skill_metrics(cc):
-    df = cc.sel(model="SW_1").skill(metrics=[mtr.mean_absolute_error]).to_dataframe()
-    assert df.mean_absolute_error.values.sum() > 0.0
+    df = cc.sel(model="SW_1").skill(metrics="mae").to_dataframe()
+    assert df["mae"].sum() > 0.0
 
-    sk = cc.sel(model="SW_1").skill(metrics=[mtr.bias, "rmse"])
-    assert pytest.approx(sk.loc["EPL"].bias) == -0.06659714
-    assert pytest.approx(sk.loc["EPL"].rmse) == 0.22359664
+    sk = cc.sel(model="SW_1").skill(metrics=["bias", "rmse"])
+    assert sk.filter(observation="EPL")[0, "bias"] == pytest.approx(-0.06659714)
+    assert sk.filter(observation="EPL")[0, "rmse"] == pytest.approx(0.22359664)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         cc.sel(model="SW_1").skill(metrics=["mean_se"])
     with pytest.raises(AttributeError):
         cc.sel(model="SW_1").skill(metrics=[mtr.fake])
@@ -235,20 +234,20 @@ def test_mm_skill_metrics(cc):
 def test_mm_mean_skill(cc):
     sk = cc.mean_skill()
     assert len(sk) == 2
-    assert sk.loc["SW_1"].rmse == pytest.approx(0.309118939)
+    assert sk.filter(model="SW_1")[0, "rmse"] == pytest.approx(0.309118939)
 
 
 def test_mm_mean_skill_weights_list(cc):
     sk = cc.mean_skill(weights=[0.2, 0.3, 1.0])
     assert len(sk) == 2
-    assert sk.loc["SW_1"].rmse == pytest.approx(0.3261788143)
+    assert sk.filter(model="SW_1")[0, "rmse"] == pytest.approx(0.3261788143)
 
     sk = cc.mean_skill(weights=[100000000000.0, 1.0, 1.0])
-    assert sk.loc["SW_1"].rmse < 1.0
+    assert sk.filter(model="SW_1")[0, "rmse"] < 1.0
 
     sk = cc.mean_skill(weights=1)
     assert len(sk) == 2
-    assert sk.loc["SW_1"].rmse == pytest.approx(0.309118939)
+    assert sk.filter(model="SW_1")[0, "rmse"] == pytest.approx(0.309118939)
 
     with pytest.raises(ValueError):
         # too many weights
@@ -258,18 +257,18 @@ def test_mm_mean_skill_weights_list(cc):
 def test_mm_mean_skill_weights_str(cc):
     sk = cc.mean_skill(weights="points")
     assert len(sk) == 2
-    assert sk.loc["SW_1"].rmse == pytest.approx(0.3367349)
+    assert sk.filter(model="SW_1")[0, "rmse"] == pytest.approx(0.3367349)
 
     sk = cc.mean_skill(weights="equal")
     assert len(sk) == 2
-    assert sk.loc["SW_1"].rmse == pytest.approx(0.309118939)
+    assert sk.filter(model="SW_1")[0, "rmse"] == pytest.approx(0.309118939)
 
 
 def test_mm_mean_skill_weights_dict(cc):
     sk = cc.mean_skill(weights={"EPL": 0.3, "c2": 1.0, "HKNA": 0.2})
     df = sk.to_dataframe()
     assert len(sk) == 2
-    assert df.loc["SW_1"].rmse == pytest.approx(0.3261788143)
+    assert df.filter(model="SW_1")[0, "rmse"] == pytest.approx(0.3261788143)
 
     # s2 = cc.mean_skill(weights=[0.3, 0.2, 1.0])
 
@@ -279,7 +278,7 @@ def test_mm_mean_skill_weights_dict(cc):
 
     df = cc.mean_skill(weights={"HKNA": 2.0}).to_dataframe()
     assert len(sk) == 2
-    assert df.loc["SW_1"].rmse == pytest.approx(0.319830126)
+    assert df.filter(model="SW_1")[0, "rmse"] == pytest.approx(0.319830126)
 
     # df2 = cc.mean_skill(weights={"EPL": 2.0, "c2": 1.0, "HKNA": 1.0}).to_dataframe()
 

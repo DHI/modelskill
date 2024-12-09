@@ -985,11 +985,7 @@ class Comparer(Scoreable):
         # i.e. using a hardcoded whitelist of variables to keep is less flexible
         id_vars = [str(v) for v in data.variables if v not in self.mod_names]
 
-        attrs = (
-            {key: data.attrs.get(key, False) for key in attrs_keys}
-            if attrs_keys
-            else {}
-        )
+        attrs = {key: data.attrs.get(key) for key in attrs_keys} if attrs_keys else {}
 
         df_pandas = data.to_dataframe().reset_index()
         df_polars = pl.from_pandas(df_pandas)
@@ -1062,11 +1058,11 @@ class Comparer(Scoreable):
         """
 
         # TODO handle callable metric
-        # metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
-        if metrics is None:
-            # TODO use options
-            # metrics: list[str] = [m.__name__ for m in mtr.default_metrics]
-            metrics = ["n", "bias", "rmse", "mae"]
+        metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
+        # if metrics is None:
+        #    # TODO use options
+        #    # metrics: list[str] = [m.__name__ for m in mtr.default_metrics]
+        #    metrics = ["n", "bias", "rmse", "mae"]
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore

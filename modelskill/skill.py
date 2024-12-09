@@ -4,6 +4,7 @@ from typing import Any, Iterable, Collection, overload, Hashable, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import polars as pl
+import xarray as xr
 
 if TYPE_CHECKING:
     import geopandas as gpd
@@ -218,7 +219,7 @@ class SkillArrayPlotter:
         """
 
         s = self.skillarray
-        ser = s._ser
+        ser = s._ser.to_pandas()
 
         errors = _validate_multi_index(ser.index)  # type: ignore
         if len(errors) > 0:
@@ -341,8 +342,8 @@ class SkillArray:
         >>> sk.rmse.plot.grid()
         """
 
-    def to_dataframe(self, drop_xy: bool = True) -> pd.DataFrame:
-        """Convert SkillArray to pd.DataFrame
+    def to_dataframe(self, drop_xy: bool = True) -> pl.DataFrame:
+        """Convert SkillArray to pl.DataFrame
 
         Parameters
         ----------
@@ -351,13 +352,14 @@ class SkillArray:
 
         Returns
         -------
-        pd.DataFrame
-            Skill data as pd.DataFrame
+        pl.DataFrame
+            Skill data as DataFrame
         """
         if drop_xy:
             return self._ser.to_frame()
         else:
-            return self.data.copy()
+            # return self.data.copy()
+            return self.data
 
     def __repr__(self) -> str:
         return repr(self.to_dataframe())
@@ -395,7 +397,7 @@ class SkillArray:
 
         gdf = gpd.GeoDataFrame(
             self._ser,
-            geometry=gpd.points_from_xy(self.data.x, self.data.y),
+            geometry=gpd.points_from_xy(self.data["x"], self.data["y"]),
             crs=crs,
         )
 
@@ -448,10 +450,12 @@ class SkillTable:
     _one_is_best_metrics = ["lin_slope"]
     _zero_is_best_metrics = ["bias"]
 
-    def __init__(self, data: pl.DataFrame):
+    def __init__(self, data: pl.DataFrame | xr.Dataset) -> None:
         # self.data: pd.DataFrame = (
         #    data if isinstance(data, pd.DataFrame) else data.to_dataframe()
         # )
+        if isinstance(data, xr.Dataset):
+            data = pl.from_pandas(data.to_dataframe().reset_index())
         self.data = data
         # TODO remove in v1.1
         self.plot = DeprecatedSkillPlotter(self)  # type: ignore
@@ -466,7 +470,9 @@ class SkillTable:
     @property
     def metrics(self) -> Collection[str]:
         """List of metrics (columns) in the SkillTable"""
-        return list(self._df.columns)
+        non_metrics = ["x", "y", "model", "observation", "quantity"]
+        return [col for col in self.data.columns if col not in non_metrics]
+        # return list(self._df.columns)
 
     # TODO: remove?
     def __len__(self) -> int:
@@ -487,7 +493,7 @@ class SkillTable:
         """
         if drop_xy:
             # return self.data.drop(columns=["x", "y"], errors="ignore")
-            return self.data.drop(["x", "y"])
+            return self.data.drop(["x", "y"], strict=False)
         else:
             return self.data
 
@@ -548,11 +554,11 @@ class SkillTable:
         result = self.data[key]
         if isinstance(result, pl.Series):
             # I don't think this should be necessary, but in some cases the input doesn't contain x and y
-            # if "x" in self.data.columns and "y" in self.data.columns:
-            #    cols = ["x", "y", key]
-            #    return SkillArray(self.data[cols])
-            # else:
-            return SkillArray(result.to_frame())
+            if "x" in self.data.columns and "y" in self.data.columns:
+                cols = ["x", "y", key]
+                return SkillArray(self.data.select(cols))
+            else:
+                return SkillArray(result.to_frame())
 
         elif isinstance(result, pl.DataFrame):
             return SkillTable(result)
@@ -681,27 +687,27 @@ class SkillTable:
     #         return []
     #         # raise ValueError(f"name {name} not in index {list(self.index.names)}")
 
-    def query(self, query: str) -> SkillTable:
-        """Select a subset of the SkillTable by a query string
+    # def query(self, query: str) -> SkillTable:
+    #     """Select a subset of the SkillTable by a query string
 
-        wrapping pd.DataFrame.query()
+    #     wrapping pd.DataFrame.query()
 
-        Parameters
-        ----------
-        query : str
-            string supported by pd.DataFrame.query()
+    #     Parameters
+    #     ----------
+    #     query : str
+    #         string supported by pd.DataFrame.query()
 
-        Returns
-        -------
-        SkillTable
-            A subset of the original SkillTable
+    #     Returns
+    #     -------
+    #     SkillTable
+    #         A subset of the original SkillTable
 
-        Examples
-        --------
-        >>> sk = cc.skill()
-        >>> sk_above_0p3 = sk.query("rmse>0.3")
-        """
-        return self.__class__(self.data.query(query))
+    #     Examples
+    #     --------
+    #     >>> sk = cc.skill()
+    #     >>> sk_above_0p3 = sk.query("rmse>0.3")
+    #     """
+    #     return self.__class__(self.data.query(query))
 
     def sel(
         self, query: str | None = None, reduce_index: bool = True, **kwargs: Any
@@ -876,7 +882,8 @@ class SkillTable:
         >>> sk.style(cmap="Blues", show_best=False)
         """
         # identity metric columns
-        float_cols = list(self._df.select_dtypes(include="number").columns)
+        df = self._df.to_pandas()
+        float_cols = list(df.select_dtypes(include="number").columns)
 
         if "precision" in kwargs:
             warnings.warn(
@@ -901,18 +908,18 @@ class SkillTable:
                         f"Invalid column name {column} (must be one of {float_cols})"
                     )
 
-        sdf = self._df.style.format(precision=decimals)
+        sdf = df.style.format(precision=decimals)
 
         # apply background gradient
         bg_cols = list(set(metrics) & set(float_cols))
         if "bias" in bg_cols:
-            mm = self._df.bias.abs().max()
+            mm = df.bias.abs().max()
             sdf = sdf.background_gradient(
                 subset=["bias"], cmap="coolwarm", vmin=-mm, vmax=mm
             )
             bg_cols.remove("bias")
         if "lin_slope" in bg_cols:
-            mm = (self._df.lin_slope - 1).abs().max()
+            mm = (df.lin_slope - 1).abs().max()
             sdf = sdf.background_gradient(
                 subset=["lin_slope"], cmap="coolwarm", vmin=(1 - mm), vmax=(1 + mm)
             )

@@ -1204,27 +1204,38 @@ def _parse_metric(
     metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
     *,
     directional: bool = False,
-) -> List[Callable]:
+) -> List[str]:
     if metric is None:
         if directional:
             return default_circular_metrics
         else:
             # could be a list of str!
-            return [get_metric(m) for m in options.metrics.list]
+            # return [get_metric(m) for m in options.metrics.list]
+            # TODO is n a metric or not?
+            res = [m.__name__ for m in options.metrics.list]
+            if "n" not in res:
+                res.append("n")
+            return res
 
     if isinstance(metric, str):
         metrics: list = [metric]
     elif callable(metric):
+        raise NotImplementedError("Custom metrics not yet supported")
         metrics = [metric]
     elif isinstance(metric, Iterable):
-        metrics = list(metric)
+        if "n" not in metric:
+            metrics = list(metric) + ["n"]
+        else:
+            metrics = list(metric)
 
     parsed_metrics = []
 
     for m in metrics:
         if isinstance(m, str):
-            parsed_metrics.append(get_metric(m))
+            parsed_metrics.append(m)
+            # parsed_metrics.append(get_metric(m))
         elif callable(m):
+            raise NotImplementedError("Custom metrics not yet supported")
             if len(inspect.signature(m).parameters) < 2:
                 raise ValueError(
                     "Metrics must have at least two arguments (obs, model)"

@@ -257,7 +257,7 @@ def test_skill(klagshamn, drogden):
 def test_skill_choose_metrics(klagshamn, drogden):
     mr = ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
-    cc = ms.match([klagshamn, drogden], mr)
+    cc: ms.ComparerCollection = ms.match([klagshamn, drogden], mr)
 
     df = cc.skill(metrics=["mae", "si"]).to_dataframe()
 
@@ -271,7 +271,7 @@ def test_skill_choose_metrics(klagshamn, drogden):
     assert "rmse" not in df.columns
 
 
-def test_skill_choose_metrics_back_defaults(cc):
+def test_skill_choose_metrics_back_defaults(cc: ms.ComparerCollection) -> None:
     df = cc.skill(metrics=["kge", "nse", "max_error"]).to_dataframe()
     assert "kge" in df.columns
     assert "rmse" not in df.columns

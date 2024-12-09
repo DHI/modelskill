@@ -59,30 +59,11 @@ def _groupby_df(
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
-    # This is not very readable, but seems to be the only way to use user defined functions in polars
-    # the alternative is to create new metric functions that are based on polars exressions instead of numpy
-    # res = df.group_by(by).agg(
-    #     [
-    #         pl.struct(["obs_val", "mod_val"])
-    #         .map_elements(
-    #             lambda combined, metric=metric: metric(
-    #                 combined.struct.field("obs_val").to_numpy(),
-    #                 combined.struct.field("mod_val").to_numpy(),
-    #             )
-    #         )
-    #         .alias(metric.__name__)
-    #         for metric in metrics
-    #     ]
-    #     + [pl.col("obs_val").count().alias("n")]
-    # )
-
-    # create a list of polars expressions for calculating rmse, bias
-    # metrics = ["rmse", "bias"]
-
     obs = pl.col("obs_val")
     mod = pl.col("mod_val")
     residual = mod - obs
     uresidual = residual - residual.mean()
+    r = pl.corr("obs_val", "mod_val")
 
     NAMED_METRICS = {
         "bias": residual.mean().alias("bias"),
@@ -92,8 +73,21 @@ def _groupby_df(
         "r2": (1 - residual.pow(2).sum() / obs.sub(obs.mean()).pow(2).sum()).alias(
             "r2"
         ),
+        "nse": (1 - residual.pow(2).sum() / obs.sub(obs.mean()).pow(2).sum()).alias(
+            "nse"
+        ),
         "cc": pl.corr("obs_val", "mod_val").alias("cc"),
         "n": pl.col("obs_val").count().alias("n"),
+        "si": (uresidual.pow(2).mean().sqrt() / obs.abs().mean()).alias("si"),
+        "max_error": residual.abs().max().alias("max_error"),
+        "kge": (
+            1
+            - (
+                (r - 1).pow(2)
+                + (mod.std() / obs.std() - 1.0).pow(2)
+                + (mod.mean() / obs.mean() - 1.0).pow(2).sqrt()
+            )
+        ).alias("kge"),
     }
 
     sel_metrics = [NAMED_METRICS[metric] for metric in metrics]
@@ -195,4 +189,7 @@ def _parse_groupby(
             res.append(pd.Grouper(key="time", freq=freq))
         else:
             res.append(col)
-    return res
+
+    ress = set(res)
+    ress.add("observation")
+    return list(ress)

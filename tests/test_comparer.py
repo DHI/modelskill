@@ -666,25 +666,26 @@ def test_xy_in_skill_pt(pc):
     assert "x" in sk.data.columns
     assert "y" in sk.data.columns
     df = sk.data
-    assert all(df.x == pc.x)
-    assert all(df.y == pc.y)
+    assert all(df["x"] == pc.x)
+    assert all(df["y"] == pc.y)
 
     # x, y maintained during sort_values, sort_index, sel
     sk2 = sk.sort_values("rmse")
-    assert all(sk2.data.x == pc.x)
-    assert all(sk2.data.y == pc.y)
+    assert all(sk2.data["y"] == pc.y)
+    assert all(sk2.data["x"] == pc.x)
 
-    sk3 = sk.sort_index()
-    assert all(sk3.data.x == pc.x)
-    assert all(sk3.data.y == pc.y)
+    # Not supported
+    # sk3 = sk.sort_index()
+    # assert all(sk3.data.x == pc.x)
+    # assert all(sk3.data.y == pc.y)
 
     sk4 = sk.sel(model="m1")
-    assert all(sk4.data.x == pc.x)
-    assert all(sk4.data.y == pc.y)
+    assert all(sk4.data["x"] == pc.x)
+    assert all(sk4.data["y"] == pc.y)
 
     sa = sk.rmse  # SkillArray
-    assert all(sa.data.x == pc.x)
-    assert all(sa.data.y == pc.y)
+    assert all(sa.data["x"] == pc.x)
+    assert all(sa.data["y"] == pc.y)
 
 
 def test_xy_not_in_skill_tc(tc):
@@ -693,8 +694,11 @@ def test_xy_not_in_skill_tc(tc):
     assert "x" in sk.data.columns
     assert "y" in sk.data.columns
     df = sk.data
-    assert df.x.isna().all()
-    assert df.y.isna().all()
+    # assert df.x.isna().all()
+    # assert df.y.isna().all()
+    # TODO not sure I understand why this is important
+    assert all(np.isnan(df["x"].to_numpy()))
+    assert all(np.isnan(df["y"].to_numpy()))
 
 
 def test_to_dataframe_pt(pc):

@@ -525,9 +525,9 @@ class ComparerCollection(Mapping, Scoreable):
 
         ## ---- end of deprecated code ----
 
-        # pmetrics = _parse_metric(metrics)
+        pmetrics = _parse_metric(metrics)
         # TODO don't use hardcoded metrics
-        pmetrics = ["n", "bias", "rmse", "urmse", "mae"]
+        # pmetrics = ["n", "bias", "rmse", "urmse", "mae"]
 
         agg_cols = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
         agg_cols, attrs_keys = self._attrs_keys_in_by(agg_cols)
@@ -566,6 +566,9 @@ class ComparerCollection(Mapping, Scoreable):
 
         # TODO why doesn't all frames have the same columns?
         res = pl.concat(frames, how="diagonal")
+        if observed:
+            # res = res.loc[~(res == False).any(axis=1)]  # noqa
+            res = res.filter(pl.col(attrs_keys).is_not_null())
 
         return res
 
@@ -708,7 +711,7 @@ class ComparerCollection(Mapping, Scoreable):
         metrics = _parse_metric(metrics)
 
         # TODO avoid hardcoded metrics
-        metrics = ["n", "bias", "rmse", "mae"]
+        # metrics = ["n", "bias", "rmse", "mae"]
 
         df = cmp._to_long_dataframe()
         df = _add_spatial_grid_to_df(df=df, bins=bins, binsize=binsize)
@@ -721,7 +724,12 @@ class ComparerCollection(Mapping, Scoreable):
 
         df = df.drop(["x", "y"]).rename(dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
-        ds = res.to_pandas().set_index(["x", "y", "model"]).to_xarray().squeeze()
+        ds = (
+            res.to_pandas()
+            .set_index(["x", "y", "model", "observation"])
+            .to_xarray()
+            .squeeze()
+        )
 
         # change categorial index to coordinates
         # for dim in ("x", "y"):
@@ -806,10 +814,10 @@ class ComparerCollection(Mapping, Scoreable):
         qnt_names = cc.quantity_names
 
         # skill assessment
-        # pmetrics = _parse_metric(metrics)
+        pmetrics = _parse_metric(metrics)
 
         # TODO avoid hardcoded metrics
-        pmetrics = ["n", "bias", "rmse", "mae"]
+        # pmetrics = ["n", "bias", "rmse", "mae"]
         sk = cc.skill(metrics=pmetrics)
         if sk is None:
             return None
@@ -824,8 +832,11 @@ class ComparerCollection(Mapping, Scoreable):
         if weights is None:
             skilldf = skilldf.with_columns(pl.col("n").alias("weights"))
         else:
+            wdict = {o: w for o, w in zip(sk.obs_names, weights)}
             skilldf = skilldf.with_columns(
-                pl.lit(np.tile(weights, len(mod_names))).alias("weights")
+                pl.col("observation")
+                .map_elements(lambda name: wdict.get(name))
+                .alias("weights")
             )
 
         # def weighted_mean(x: Any) -> Any:
@@ -940,7 +951,7 @@ class ComparerCollection(Mapping, Scoreable):
             else:
                 # by = [mod_names[0]] * len(skilldf)
                 by = None
-        return by
+        return list(set(by))
 
     # TODO add useful type hints
     def _parse_weights(self, weights: Any, observations: Any) -> Any:
@@ -988,7 +999,7 @@ class ComparerCollection(Mapping, Scoreable):
 
     def score(
         self,
-        metric: str | Callable = mtr.rmse,
+        metric: str | Callable = "rmse",
         **kwargs: Any,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
@@ -1073,17 +1084,11 @@ class ComparerCollection(Mapping, Scoreable):
         ## ---- end of deprecated code ----
 
         sk = cmp.mean_skill(weights=weights, metrics=[metric])
-        metric_name = metric if isinstance(metric, str) else metric.__name__
+        assert isinstance(metric, str)
+
         return {
-            row["model"]: row[metric_name]
-            for row in sk.select(["model", metric_name]).to_dicts()
+            r["model"]: r[metric] for r in sk.select(["model", metric]).rows(named=True)
         }
-        # df = sk.to_dataframe()
-
-        # ser = df[metric_name]
-        # score = {str(col): float(value) for col, value in ser.items()}
-
-        # return score
 
     def save(self, filename: Union[str, Path]) -> None:
         """Save the ComparerCollection to a zip file.
