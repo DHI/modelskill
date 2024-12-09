@@ -473,7 +473,7 @@ class SkillTable:
         return len(self._df)
 
     def to_dataframe(self, drop_xy: bool = True) -> pl.DataFrame:
-        """Convert SkillTable to pd.DataFrame
+        """Convert SkillTable to pl.DataFrame
 
         Parameters
         ----------
@@ -482,8 +482,8 @@ class SkillTable:
 
         Returns
         -------
-        pd.DataFrame
-            Skill data as pd.DataFrame
+        pl.DataFrame
+            Skill data as DataFrame
         """
         if drop_xy:
             # return self.data.drop(columns=["x", "y"], errors="ignore")

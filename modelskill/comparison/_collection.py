@@ -527,17 +527,20 @@ class ComparerCollection(Mapping, Scoreable):
 
         # pmetrics = _parse_metric(metrics)
         # TODO don't use hardcoded metrics
-        pmetrics = ["bias", "rmse", "mae"]
+        pmetrics = ["n", "bias", "rmse", "urmse", "mae"]
 
         agg_cols = _parse_groupby(by, n_mod=cc.n_models, n_qnt=cc.n_quantities)
         agg_cols, attrs_keys = self._attrs_keys_in_by(agg_cols)
 
         df = cc._to_long_dataframe(attrs_keys=attrs_keys, observed=observed)
+        assert "model" in df.columns
 
         res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
         res = self._append_xy_to_res(res, cc)
-        # res = res.with_columns(pl.lit(cc.mod_names[0]).alias("model"))
-        # res_pandas = res.to_pandas()
+
+        # TODO this should not be necessary
+        if "model" not in res.columns:
+            res = res.with_columns(pl.lit(cc.mod_names[0]).alias("model"))
         return SkillTable(res)
 
     def _to_long_dataframe(
@@ -552,9 +555,10 @@ class ComparerCollection(Mapping, Scoreable):
                 frame = frame.with_columns(pl.lit(cmp.quantity.name).alias("quantity"))
             frames.append(frame)
 
-        # convert all floats to f64
+        # convert all ints and floats to f64
         frames = [
-            df.with_columns([pl.col(pl.Float32).cast(pl.Float64)]) for df in frames
+            df.with_columns([pl.col(pl.Float32, pl.Int32, pl.Int64).cast(pl.Float64)])
+            for df in frames
         ]
 
         # TODO why doesn't all frames have the same columns?
@@ -582,8 +586,8 @@ class ComparerCollection(Mapping, Scoreable):
         ys = defaultdict(lambda: np.nan)
         for cmp in cc:
             if cmp.gtype == "point":
-                xs[cmp.name] = cmp.x
-                ys[cmp.name] = cmp.y
+                xs[cmp.name] = float(cmp.x)
+                ys[cmp.name] = float(cmp.y)
 
         # add x and y to res based on observation name based on the xs and ys dicts
         res = res.with_columns(
@@ -793,39 +797,63 @@ class ComparerCollection(Mapping, Scoreable):
         ## ---- end of deprecated code ----
 
         df = cc._to_long_dataframe()  # TODO: remove
+        assert "model" in df.columns
         mod_names = cc.mod_names
         # obs_names = cmp.obs_names  # df.observation.unique()
         qnt_names = cc.quantity_names
 
         # skill assessment
-        pmetrics = _parse_metric(metrics)
+        # pmetrics = _parse_metric(metrics)
+
+        # TODO avoid hardcoded metrics
+        pmetrics = ["n", "bias", "rmse", "mae"]
         sk = cc.skill(metrics=pmetrics)
         if sk is None:
             return None
         skilldf = sk.to_dataframe()
+        assert "model" in skilldf.columns
 
         # weights
         weights = cc._parse_weights(weights, sk.obs_names)
-        skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
-        )
+        # skilldf["weights"] = (
+        #    skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
+        # )
+        if weights is None:
+            skilldf = skilldf.with_columns(pl.col("n").alias("weights"))
+        else:
+            skilldf = skilldf.with_columns(
+                pl.lit(np.tile(weights, len(mod_names))).alias("weights")
+            )
 
-        def weighted_mean(x: Any) -> Any:
-            return np.average(x, weights=skilldf.loc[x.index, "weights"])
+        # def weighted_mean(x: Any) -> Any:
+        #    return np.average(x, weights=skilldf.loc[x.index, "weights"])
+        # weighted_mean = pl.
 
         # group by
         by = cc._mean_skill_by(skilldf, mod_names, qnt_names)  # type: ignore
-        agg = {"n": "sum"}
-        for metric in pmetrics:  # type: ignore
-            agg[metric.__name__] = weighted_mean  # type: ignore
-        res = skilldf.groupby(by, observed=False).agg(agg)
+        # agg = {"n": "sum"}
+        # for metric in pmetrics:  # type: ignore
+        #    agg[metric.__name__] = weighted_mean  # type: ignore
+        # (pl.col("values") * pl.col("weights")).sum() / pl.col("weights").sum()).alias("weighted_mean")
+        exprs = [
+            (pl.col(metric) * pl.col("weights")).sum() / pl.col("weights").sum()
+            for metric in pmetrics
+        ]
+        # res = skilldf.groupby(by, observed=False).agg(agg)
+
+        # Numpy ufuncs are supported, e.g.
+        # df.select(np.log(pl.all()).name.suffix("_log"))
+        res = skilldf.group_by(by).agg(exprs)
+
+        # res = skilldf.group_by(by).agg(np.average(pl.all(), weights=pl.col("weights")))
 
         # TODO is this correct?
-        res.index.name = "model"
+        # res.index.name = "model"
 
         # output
-        res = cc._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])  # type: ignore
-        return SkillTable(res.astype({"n": int}))
+        # res = cc._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])  # type: ignore
+        return SkillTable(res)
+        # return SkillTable(res.astype({"n": int}))
 
     # def mean_skill_points(
     #     self,
@@ -895,7 +923,8 @@ class ComparerCollection(Mapping, Scoreable):
     #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
     def _mean_skill_by(self, skilldf, mod_names, qnt_names):  # type: ignore
-        by = []
+        # TODO clean up this mess
+        by = ["model"]
         if len(mod_names) > 1:
             by.append("model")
         if len(qnt_names) > 1:
@@ -906,9 +935,11 @@ class ComparerCollection(Mapping, Scoreable):
             elif "model" in skilldf:
                 by.append("model")
             else:
-                by = [mod_names[0]] * len(skilldf)
+                # by = [mod_names[0]] * len(skilldf)
+                by = None
         return by
 
+    # TODO add useful type hints
     def _parse_weights(self, weights: Any, observations: Any) -> Any:
         if observations is None:
             observations = self.obs_names
@@ -1039,13 +1070,17 @@ class ComparerCollection(Mapping, Scoreable):
         ## ---- end of deprecated code ----
 
         sk = cmp.mean_skill(weights=weights, metrics=[metric])
-        df = sk.to_dataframe()
-
         metric_name = metric if isinstance(metric, str) else metric.__name__
-        ser = df[metric_name]
-        score = {str(col): float(value) for col, value in ser.items()}
+        return {
+            row["model"]: row[metric_name]
+            for row in sk.select(["model", metric_name]).to_dicts()
+        }
+        # df = sk.to_dataframe()
 
-        return score
+        # ser = df[metric_name]
+        # score = {str(col): float(value) for col, value in ser.items()}
+
+        # return score
 
     def save(self, filename: Union[str, Path]) -> None:
         """Save the ComparerCollection to a zip file.

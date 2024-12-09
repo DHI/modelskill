@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import polars as pl
 import pytest
 
 import modelskill as ms
@@ -79,26 +80,22 @@ def test_mm_skill(cc):
     df = cc.sel(start="2017-10-27 00:01").skill().to_dataframe()
 
     # mod: ['SW_1', 'SW_2'], obs: ['HKNA', 'EPL', 'c2']
-    assert df.iloc[3].name[0] == "SW_2"
-    assert df.iloc[3].name[1] == "HKNA"
-    assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
-
-    # TODO remove in v1.1
-    with pytest.warns(FutureWarning):
-        df = cc.skill(start="2017-10-27 00:01").to_dataframe()
-
-    assert df.iloc[3].name[0] == "SW_2"
-    assert df.iloc[3].name[1] == "HKNA"
-    assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
+    assert "SW_1" in df["model"]
+    assert "SW_2" in df["model"]
+    assert df.filter(pl.col("model") == "SW_2", observation="HKNA")[
+        0, "mae"
+    ] == pytest.approx(0.214476, 1e-5)
 
 
 def test_mm_skill_model(cc):
     df = cc.sel(model="SW_1").skill().to_dataframe()
-    assert df.loc["EPL"].n == 67
-    assert df.loc["c2"].n == 113
+    assert df.filter(observation="EPL")[0, "n"] == 67
+    assert df.filter(observation="c2")[0, "n"] == 113
 
     df2 = cc.sel(model=-2).skill().to_dataframe()
-    assert df2.loc["c2"].rmse == df.loc["c2"].rmse
+    r1 = df.filter(observation="c2")[0, "rmse"]
+    r2 = df2.filter(observation="c2")[0, "rmse"]
+    assert r1 == r2
 
 
 def test_mm_sel_missing_model(cc):
@@ -113,22 +110,25 @@ def test_mm_sel_missing_model(cc):
 
 
 def test_mm_skill_obs(cc):
-    with pytest.warns(FutureWarning):
-        sk = cc.skill(observation="c2")
-        assert len(sk) == 2
-        assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
+    # with pytest.warns(FutureWarning):
+    #    sk = cc.skill(observation="c2")
+    #    assert len(sk) == 2
+    #    assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
 
     sk = cc.sel(observation="c2").skill()
     assert len(sk) == 2
-    assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
+    assert sk.filter(pl.col("model") == "SW_2")[0, "bias"] == pytest.approx(0.081431053)
 
     sk2 = cc.sel(observation=-1).skill()
-    assert pytest.approx(sk2.loc["SW_2"].bias) == 0.081431053
+    assert sk2.filter(pl.col("model") == "SW_2")[0, "bias"] == pytest.approx(
+        0.081431053
+    )
 
 
 def test_mm_mean_skill_obs(cc):
     df = cc.sel(model=0, observation=[0, "c2"]).mean_skill().to_dataframe()
-    assert pytest.approx(df.iloc[0].si) == 0.11113215
+    # assert pytest.approx(df.iloc[0].si) == 0.11113215
+    assert df[0, "si"] == pytest.approx(0.11113215)
 
 
 def test_mm_sel_missing_obs(cc, o1):
@@ -145,27 +145,27 @@ def test_mm_sel_missing_obs(cc, o1):
 def test_mm_skill_start_end(cc):
     # TODO should we keep these tests?
     sk = cc.sel(model="SW_1", start="2017").skill()
-    assert sk.loc["EPL"].n == 67
+    assert sk.filter(observation="EPL")[0, "n"] == 67
     sk = cc.sel(model="SW_1", end="2017-10-28 00:00:00").skill()
-    assert sk.loc["EPL"].n == 25
+    assert sk.filter(observation="EPL")[0, "n"] == 25
     sk = cc.sel(model="SW_1", start="2017-10-28 00:00:01").skill()
-    assert sk.loc["EPL"].n == 42
+    assert sk.filter(observation="EPL")[0, "n"] == 42
 
 
 def test_mm_skill_area_bbox(cc):
     bbox = [0.5, 52.5, 5, 54]
     sk = cc.sel(model="SW_1", area=bbox).skill()
-    assert pytest.approx(sk.loc["HKNA"].urmse) == 0.293498777
+    assert sk.filter(observation="HKNA")[0, "urmse"] == pytest.approx(0.293498777)
     bbox = np.array([0.5, 52.5, 5, 54])
     sk = cc.sel(model="SW_1", area=bbox).skill()
-    assert pytest.approx(sk.loc["HKNA"].urmse) == 0.293498777
+    assert sk.filter(observation="HKNA")[0, "urmse"] == pytest.approx(0.293498777)
 
 
 def test_mm_skill_area_polygon(cc):
     polygon = np.array([[6, 51], [0, 55], [0, 51], [6, 51]])
     sk = cc.sel(model="SW_2", area=polygon).skill()
     assert "HKNA" not in sk.obs_names
-    assert sk.to_dataframe().iloc[1].n == 66
+    assert sk.filter(pl.col("observation") == "c2")[0, "n"] == 66
 
     # "this is not the indexing you want..."
     # assert pytest.approx(s.iloc[0].r2) == 0.9271339372
