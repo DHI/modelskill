@@ -19,6 +19,7 @@ import warnings
 from matplotlib.axes import Axes  # type: ignore
 import numpy as np
 import pandas as pd
+import polars as pl
 import xarray as xr
 from copy import deepcopy
 
@@ -975,34 +976,35 @@ class Comparer(Scoreable):
 
     def _to_long_dataframe(
         self, attrs_keys: Iterable[str] | None = None
-    ) -> pd.DataFrame:
-        """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
+    ) -> pl.DataFrame:
+        """Return a copy of the data as a long-format DataFrame (for groupby operations)"""
 
         data = self.data.drop_vars("z", errors="ignore")
 
         # this step is necessary since we keep arbitrary derived data in the dataset, but not z
         # i.e. using a hardcoded whitelist of variables to keep is less flexible
-        id_vars = [v for v in data.variables if v not in self.mod_names]
+        id_vars = [str(v) for v in data.variables if v not in self.mod_names]
 
-        attrs = (
-            {key: data.attrs.get(key, False) for key in attrs_keys}
-            if attrs_keys
-            else {}
-        )
+        attrs = {key: data.attrs.get(key) for key in attrs_keys} if attrs_keys else {}
 
+        df_pandas = data.to_dataframe().reset_index()
+        df_polars = pl.from_pandas(df_pandas)
         df = (
-            data.to_dataframe()
-            .reset_index()
-            .melt(
-                value_vars=self.mod_names,
-                var_name="model",
-                value_name="mod_val",
+            df_polars.melt(
                 id_vars=id_vars,
+                value_vars=self.mod_names,
+                variable_name="model",
+                value_name="mod_val",
             )
-            .rename(columns={self._obs_str: "obs_val"})
-            .assign(observation=self.name)
-            .assign(**attrs)
-            .astype({"model": "category", "observation": "category"})
+            .rename({self._obs_str: "obs_val"})
+            .with_columns(pl.lit(self.name).alias("observation"))
+            .with_columns([pl.lit(value).alias(key) for key, value in attrs.items()])
+            .with_columns(
+                [
+                    pl.col("model").cast(pl.Categorical),
+                    pl.col("observation").cast(pl.Categorical),
+                ]
+            )
         )
 
         return df
@@ -1054,7 +1056,13 @@ class Comparer(Scoreable):
         2017-10-28   0   NaN   NaN    NaN   NaN   NaN   NaN   NaN
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
+
+        # TODO handle callable metric
         metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
+        # if metrics is None:
+        #    # TODO use options
+        #    # metrics: list[str] = [m.__name__ for m in mtr.default_metrics]
+        #    metrics = ["n", "bias", "rmse", "mae"]
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
@@ -1074,9 +1082,13 @@ class Comparer(Scoreable):
 
         df = cmp._to_long_dataframe()
         res = _groupby_df(df, by=by, metrics=metrics)
-        res["x"] = np.nan if self.gtype == "track" else cmp.x
-        res["y"] = np.nan if self.gtype == "track" else cmp.y
-        res = self._add_as_col_if_not_in_index(df, skilldf=res)
+        if self.gtype == "track":
+            res = res.with_columns(pl.lit(np.nan).alias("x"), pl.lit(np.nan).alias("y"))
+        else:
+            res = res.with_columns(pl.lit(cmp.x).alias("x"), pl.lit(cmp.y).alias("y"))
+
+        # res_pandas = res.to_pandas()
+
         return SkillTable(res)
 
     def _add_as_col_if_not_in_index(
@@ -1096,7 +1108,7 @@ class Comparer(Scoreable):
 
     def score(
         self,
-        metric: str | Callable = mtr.rmse,
+        metric: str | Callable = "rmse",
         **kwargs: Any,
     ) -> Dict[str, float]:
         """Model skill score
@@ -1126,7 +1138,8 @@ class Comparer(Scoreable):
         >>> cmp.score(metric="mape")
         {'mod': 11.567399646108198}
         """
-        metric = _parse_metric(metric)[0]
+        # TODO handle callable metric
+        # metric = _parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
@@ -1145,8 +1158,11 @@ class Comparer(Scoreable):
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
-        ser = df.reset_index().groupby("model", observed=True)[metric_name].mean()
-        score = {str(k): float(v) for k, v in ser.items()}
+        # ser = df.reset_index().groupby("model", observed=True)[metric_name].mean()
+        ser = df.group_by("model").mean().select(pl.col("model", metric_name))
+        # score = {str(k): float(v) for k, v in ser.items()}
+        # create a dict with the key for each model and the value for the metric
+        score = {str(k): float(v) for k, v in ser.rows()}
         return score
 
     def gridded_skill(
@@ -1225,6 +1241,8 @@ class Comparer(Scoreable):
         )
 
         metrics = _parse_metric(metrics)
+        # TODO don't use hardcoded metrics
+        metrics = ["n", "bias", "rmse", "mae"]
         if cmp.n_points == 0:
             raise ValueError("No data to compare")
 
@@ -1237,9 +1255,9 @@ class Comparer(Scoreable):
         if "y" not in agg_cols:
             agg_cols.insert(0, "y")
 
-        df = df.drop(columns=["x", "y"]).rename(columns=dict(xBin="x", yBin="y"))
+        df = df.drop(["x", "y"]).rename(dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
-        ds = res.to_xarray().squeeze()
+        ds = res.to_pandas().set_index(["x", "y"]).to_xarray().squeeze()
 
         # change categorial index to coordinates
         for dim in ("x", "y"):

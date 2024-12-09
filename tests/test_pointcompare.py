@@ -1,10 +1,12 @@
 import pytest
 import numpy as np
 import pandas as pd
+import polars as pl
 import xarray as xr
 
 import modelskill as ms
-from modelskill.metrics import root_mean_squared_error, mean_absolute_error
+
+# from modelskill.metrics import root_mean_squared_error, mean_absolute_error
 from modelskill.comparison import Comparer
 
 
@@ -97,10 +99,11 @@ def test_skill_from_observation_with_missing_values(modelresult_oresund_WL):
     mr = modelresult_oresund_WL
     cmp = ms.match(o1, mr)
     df = cmp.skill().to_dataframe()
-    assert not np.any(np.isnan(df))
+    # assert not np.any(np.isnan(df))
+    assert df.null_count().to_numpy().sum() == 0
 
 
-def test_score_two_elements():
+def test_score_two_elements() -> None:
     mr = ms.model_result("tests/testdata/two_elements.dfsu", item=0)
 
     obs_df = pd.DataFrame(
@@ -110,29 +113,24 @@ def test_score_two_elements():
     # observation is in the center of the second element
     obs = ms.PointObservation(obs_df, item=0, x=2.0, y=2.0, name="obs")
 
-    cc = ms.match(obs, mr, spatial_method="contained")
+    cmp: ms.Comparer = ms.match(obs, mr, spatial_method="contained")
 
-    assert cc.score(metric=root_mean_squared_error)["two_elements"] == pytest.approx(
-        0.0
-    )
+    assert cmp.score()["two_elements"] == pytest.approx(0.0)
 
-    cc_default = ms.match(obs, mr)
+    cmp_default: ms.Comparer = ms.match(obs, mr)
 
-    assert cc_default.score(metric=root_mean_squared_error)[
-        "two_elements"
-    ] == pytest.approx(0.0)
+    assert cmp_default.score()["two_elements"] == pytest.approx(0.0)
 
 
-def test_score(modelresult_oresund_WL, klagshamn, drogden):
+def test_score(modelresult_oresund_WL, klagshamn, drogden) -> None:
     mr = modelresult_oresund_WL
 
-    cc = ms.match([klagshamn, drogden], mr)
+    cc: ms.ComparerCollection = ms.match([klagshamn, drogden], mr)
 
-    assert cc.score(metric=root_mean_squared_error)[
-        "Oresund2D_subset"
-    ] == pytest.approx(0.198637164895926)
-    sk = cc.skill(metrics=[root_mean_squared_error, mean_absolute_error])
-    sk.root_mean_squared_error.data.mean() == pytest.approx(0.198637164895926)
+    assert cc.score()["Oresund2D_subset"] == pytest.approx(0.198637164895926)
+    sk = cc.skill(metrics=["rmse", "mae"])
+    # TODO is it appropriate to reach this deep into the data?
+    sk.rmse.data.mean()[0, 0] == pytest.approx(0.198637164895926)
 
 
 def test_weighted_score(modelresult_oresund_WL):
@@ -249,17 +247,17 @@ def test_skill(klagshamn, drogden):
     cc = ms.match([klagshamn, drogden], mr)
 
     df = cc.skill().to_dataframe()
-    assert df.loc["Klagshamn"].n == 71
+    assert df.filter(pl.col("observation") == "Klagshamn")[0, "n"] == 71
 
     # Filtered skill
     df = cc.sel(observation="Klagshamn").skill().to_dataframe()
-    assert df.loc["Klagshamn"].n == 71
+    assert df.filter(pl.col("observation") == "Klagshamn")[0, "n"] == 71
 
 
 def test_skill_choose_metrics(klagshamn, drogden):
     mr = ms.model_result("tests/testdata/Oresund2D_subset.dfsu", item=0)
 
-    cc = ms.match([klagshamn, drogden], mr)
+    cc: ms.ComparerCollection = ms.match([klagshamn, drogden], mr)
 
     df = cc.skill(metrics=["mae", "si"]).to_dataframe()
 
@@ -273,7 +271,7 @@ def test_skill_choose_metrics(klagshamn, drogden):
     assert "rmse" not in df.columns
 
 
-def test_skill_choose_metrics_back_defaults(cc):
+def test_skill_choose_metrics_back_defaults(cc: ms.ComparerCollection) -> None:
     df = cc.skill(metrics=["kge", "nse", "max_error"]).to_dataframe()
     assert "kge" in df.columns
     assert "rmse" not in df.columns

@@ -3,6 +3,7 @@ from typing import Callable, Optional, Iterable, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
+import polars as pl
 
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
@@ -12,6 +13,10 @@ IdxOrNameTypes = Union[int, str, List[int], List[str]]
 def _add_spatial_grid_to_df(
     df: pd.DataFrame, bins, binsize: Optional[float]
 ) -> pd.DataFrame:
+    if isinstance(df, pl.DataFrame):
+        # convert to pandas
+        df = df.to_pandas()  # .set_index(["x", "y"])
+
     if binsize is None:
         # bins from bins
         if isinstance(bins, tuple):
@@ -40,43 +45,74 @@ def _add_spatial_grid_to_df(
     df["yBin"] = pd.cut(df.y, bins=bins_y)
     df["yBin"] = df["yBin"].apply(lambda x: x.mid)
 
-    return df
+    # TODO avoid using pandas
+    return pl.DataFrame(df.to_dict(orient="records"))
 
 
 def _groupby_df(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     *,
-    by: List[str | pd.Grouper],
-    metrics: List[Callable],
+    by: List[str],
+    metrics: List[str],
     n_min: Optional[int] = None,
-) -> pd.DataFrame:
-    def calc_metrics(group: pd.DataFrame) -> pd.Series:
-        # set index to time column (in most cases a DatetimeIndex, but not always)
-        group = group.set_index("time")
-
-        # TODO is n a metric or not?
-        row = {"n": len(group)}
-
-        for metric in metrics:
-            row[metric.__name__] = metric(group.obs_val, group.mod_val)
-        return pd.Series(row)
-
+) -> pl.DataFrame:
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
-    # sort=False to avoid re-ordering compared to original cc (also for performance)
-    res = df.groupby(by=by, observed=False, sort=False, group_keys=True)[
-        ["time", "obs_val", "mod_val"]
-    ].apply(calc_metrics)
+    obs = pl.col("obs_val")
+    mod = pl.col("mod_val")
+    residual = mod - obs
+    uresidual = residual - residual.mean()
+    r = pl.corr("obs_val", "mod_val")
+
+    NAMED_METRICS = {
+        "bias": residual.mean().alias("bias"),
+        "rmse": residual.pow(2).mean().sqrt().alias("rmse"),
+        "urmse": uresidual.pow(2).mean().sqrt().alias("urmse"),
+        "mae": residual.abs().mean().alias("mae"),
+        "r2": (1 - residual.pow(2).sum() / obs.sub(obs.mean()).pow(2).sum()).alias(
+            "r2"
+        ),
+        "nse": (1 - residual.pow(2).sum() / obs.sub(obs.mean()).pow(2).sum()).alias(
+            "nse"
+        ),
+        "cc": pl.corr("obs_val", "mod_val").alias("cc"),
+        "n": pl.col("obs_val").count().alias("n"),
+        "si": (uresidual.pow(2).mean().sqrt() / obs.abs().mean()).alias("si"),
+        "max_error": residual.abs().max().alias("max_error"),
+        "kge": (
+            1
+            - (
+                (r - 1).pow(2)
+                + (mod.std() / obs.std() - 1.0).pow(2)
+                + (mod.mean() / obs.mean() - 1.0).pow(2).sqrt()
+            )
+        ).alias("kge"),
+    }
+
+    sel_metrics = [NAMED_METRICS[metric] for metric in metrics]
+
+    res = df.group_by(by).agg(*sel_metrics)
+
+    # TODO handle n_min
+    #   if n_min:
+    #     # nan for all cols but n
+    #     cols = [col for col in res.columns if not col == "n"]
+    #     res.loc[res.n < n_min, cols] = np.nan
+
+    # set rows where n < n_min to Null
+
+    non_n_metrics = [m for m in metrics if m != "n"]
 
     if n_min:
-        # nan for all cols but n
-        cols = [col for col in res.columns if not col == "n"]
-        res.loc[res.n < n_min, cols] = np.nan
-
-    res["n"] = res["n"].fillna(0)
-    res = res.astype({"n": int})
-
+        res = res.select(
+            pl.col("x"),
+            pl.col("y"),
+            pl.col("n"),
+            pl.when(pl.col("n") >= n_min).then(pl.col(*non_n_metrics)),
+        )
+        # TODO why not simply keep rows where n > n_min?
+        # res = res.filter(pl.col("n") > n_min)
     return res
 
 
@@ -153,4 +189,7 @@ def _parse_groupby(
             res.append(pd.Grouper(key="time", freq=freq))
         else:
             res.append(col)
-    return res
+
+    ress = set(res)
+    ress.add("observation")
+    return list(ress)

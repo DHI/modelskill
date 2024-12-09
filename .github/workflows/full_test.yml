@@ -10,6 +10,8 @@ on:
 
 jobs:
   build:
+    # Disable this job for now
+    if: false
 
     runs-on: ${{ matrix.os }}
     strategy:

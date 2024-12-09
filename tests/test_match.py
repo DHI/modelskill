@@ -306,7 +306,7 @@ def test_matched_data_not_time_index():
 
     # skill metrics do not care about time
     sk = cmp.skill(metrics="mae")
-    assert sk.loc["sensor_a", "mae"] == pytest.approx(1.0)
+    assert sk.filter(observation="sensor_a")[0, "mae"] == pytest.approx(1.0)
 
     cmp.plot.timeseries()
 
