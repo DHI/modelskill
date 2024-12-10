@@ -97,7 +97,21 @@ def _groupby_df(
 
     sel_metrics = [NAMED_METRICS[metric] for metric in metrics]
 
-    res = df.group_by(by).agg(*sel_metrics)
+    temporal_aggregation = False
+    for group in by:
+        if "freq:" in group:
+            temporal_aggregation = True
+            _, every = group.split(":")
+
+    if temporal_aggregation:
+        by = [b for b in by if "freq:" not in b]
+        res = (
+            df.sort("time")
+            .group_by_dynamic("time", every=every, group_by=by)
+            .agg(*sel_metrics)
+        )
+    else:
+        res = df.group_by(by).agg(*sel_metrics)
 
     # TODO handle n_min
     #   if n_min:
@@ -189,11 +203,11 @@ def _parse_groupby(
 
     res = []
     for col in cols:
-        if col[:5] == "freq:":
-            freq = col.split(":")[1]
-            res.append(pd.Grouper(key="time", freq=freq))
-        else:
-            res.append(col)
+        # if col[:5] == "freq:":
+        #    freq = col.split(":")[1]
+        #    res.append(pd.Grouper(key="time", freq=freq))
+        # else:
+        res.append(col)
 
     ress = set(res)
     ress.add("observation")
