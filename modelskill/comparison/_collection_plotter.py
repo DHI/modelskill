@@ -515,7 +515,8 @@ class ComparerCollectionPlotter:
                 "aggregate_observations=False is only possible if normalize_std=True!"
             )
 
-        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        # metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        metrics = ["_std_obs", "_std_mod", "cc"]
         skill_func = self.cc.mean_skill if aggregate_observations else self.cc.skill
         sk = skill_func(
             metrics=metrics,  # type: ignore
@@ -523,7 +524,7 @@ class ComparerCollectionPlotter:
         if sk is None:
             return
 
-        df = sk.to_dataframe()
+        df = sk.to_dataframe().to_pandas()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
@@ -573,7 +574,7 @@ class ComparerCollectionPlotter:
         """
         _, ax = _get_fig_ax(ax, figsize)
 
-        df = self.cc._to_long_dataframe()
+        df = self.cc._to_long_dataframe().to_pandas()
 
         unique_obs_cols = ["time", "x", "y", "observation"]
         df = df.set_index(unique_obs_cols)

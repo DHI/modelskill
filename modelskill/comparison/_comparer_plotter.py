@@ -729,17 +729,18 @@ class ComparerPlotter:
         cmp = self.comparer
 
         # TODO consider if this round-trip  via mtr is necessary to get the std:s
-        metrics: List[Callable] = [
-            mtr._std_obs,
-            mtr._std_mod,
-            mtr.cc,
-        ]
+        # metrics: List[Callable] = [
+        #    mtr._std_obs,
+        #    mtr._std_mod,
+        #    mtr.cc,
+        # ]
+        metrics = ["_std_obs", "_std_mod", "cc"]
 
         sk = cmp.skill(metrics=metrics)
 
         if sk is None:  # TODO
             return
-        df = sk.to_dataframe()
+        df = sk.to_dataframe().to_pandas()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         df = df[["_std_obs", "_std_mod", "cc"]].copy()

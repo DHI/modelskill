@@ -306,12 +306,14 @@ def test_filter_by_attrs_custom(cc):
 def test_skill_by_attrs_gtype(cc):
     sk = cc.skill(by="attrs:gtype")
     assert len(sk) == 2
-    assert sk.data.index[0] == "point"
-    assert sk.data.index[1] == "track"
-    assert sk.data.index.name == "gtype"
+    assert "point" in sk.data["gtype"]
+    assert "track" in sk.data["gtype"]
 
 
 def test_skill_by_freq(cc):
+    # TODO this will challenging to support with the same API, e.g. Pandas freq
+    # temporal aggreation in polars forces you to use a numeric value, e.g. 1d, 1w
+    # e.g. df.sort("time").group_by_dynamic("time", every="1d").agg(
     skd = cc.skill(by="freq:D")
     assert len(skd) == 7
 

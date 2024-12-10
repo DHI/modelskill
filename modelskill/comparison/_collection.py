@@ -1087,7 +1087,8 @@ class ComparerCollection(Mapping, Scoreable):
         assert isinstance(metric, str)
 
         return {
-            r["model"]: r[metric] for r in sk.select(["model", metric]).rows(named=True)
+            r["model"]: r[metric]
+            for r in sk.sort("model").select(["model", metric]).rows(named=True)
         }
 
     def save(self, filename: Union[str, Path]) -> None:
@@ -1280,11 +1281,12 @@ class ComparerCollection(Mapping, Scoreable):
                 "aggregate_observations=False is only possible if normalize_std=True!"
             )
 
-        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        # metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        metrics = ["_std_obs", "_std_mod", "cc"]
         skill_func = cmp.mean_skill if aggregate_observations else cmp.skill
         sk = skill_func(metrics=metrics)
 
-        df = sk.to_dataframe()
+        df = sk.to_dataframe().to_pandas()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):

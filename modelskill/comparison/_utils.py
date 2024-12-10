@@ -88,6 +88,11 @@ def _groupby_df(
                 + (mod.mean() / obs.mean() - 1.0).pow(2).sqrt()
             )
         ).alias("kge"),
+        "_std_obs": pl.col("obs_val").std().alias("_std_obs"),
+        "_std_mod": pl.col("mod_val").std().alias("_std_mod"),
+        "lin_slope": (pl.cov("obs_val", "mod_val") / pl.col("obs_val").var()).alias(
+            "lin_slope"
+        ),
     }
 
     sel_metrics = [NAMED_METRICS[metric] for metric in metrics]
