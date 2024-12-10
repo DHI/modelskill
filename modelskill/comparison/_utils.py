@@ -210,5 +210,8 @@ def _parse_groupby(
         res.append(col)
 
     ress = set(res)
-    ress.add("observation")
+    # TODO it seems like observation should not always be added
+    if len(ress) == 0:
+        ress.add("observation")
+    # ress.add("observation")
     return list(ress)

@@ -311,12 +311,8 @@ def test_skill_by_attrs_gtype(cc):
 
 
 def test_skill_by_freq(cc):
-    # TODO this will challenging to support with the same API, e.g. Pandas freq
-    # temporal aggreation in polars forces you to use a numeric value, e.g. 1d, 1w
-    # e.g. df.sort("time").group_by_dynamic("time", every="1d").agg(
     skd = cc.skill(by="freq:1d")
-    # assert len(skd) == 7
-    assert len(skd) == 10
+    assert len(skd) == 7
 
     skw = cc.skill(by="freq:1w")
     assert len(skw) == 2

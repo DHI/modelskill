@@ -586,8 +586,11 @@ class ComparerCollection(Mapping, Scoreable):
         return agg_cols, attrs_keys
 
     @staticmethod
-    def _append_xy_to_res(res: pl.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
+    def _append_xy_to_res(res: pl.DataFrame, cc: ComparerCollection) -> pl.DataFrame:
         """skill() helper: Append x and y to res if possible"""
+
+        if "observation" not in res.columns:
+            return res
         xs = defaultdict(lambda: np.nan)
         ys = defaultdict(lambda: np.nan)
         for cmp in cc:
