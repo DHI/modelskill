@@ -518,8 +518,9 @@ class ComparerPlotter:
         show_density: bool, optional
             show the data density as a colormap of the scatter, by default
             None. If both `show_density` and `show_hist` are None, then
-            `show_density` is used by default. For binning the data, the
-            kword `bins=Float` is used.
+            `show_density` is used by default. If number of points is less
+            than 200, then `show_density` is False as default.
+            For binning the data, the kword `bins=Float` is used.
         norm : matplotlib.colors norm
             colormap normalization. If None, defaults to
             matplotlib.colors.PowerNorm(vmin=1, gamma=0.5)
