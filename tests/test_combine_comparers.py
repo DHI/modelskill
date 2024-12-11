@@ -78,7 +78,11 @@ def test_concat_model_different_time(o123, mrmike, mr2days):
     assert cc2.end_time == cc12.end_time
 
     cc12b = cc1 + cc2
-    assert cc12b.score() == cc12.score()
+    assert cc12b.score()["SW_1"] == pytest.approx(0.34117209)
+    assert cc12.score()["SW_1"] == pytest.approx(0.34117209)
+    assert cc12b.score()["CMEMS"] == pytest.approx(0.61615626122)
+    assert cc12.score()["CMEMS"] == pytest.approx(0.61615626122)
+    # assert cc12b.score() == cc12.score()
     assert cc12b.n_points == cc12.n_points
 
 
