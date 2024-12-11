@@ -23,8 +23,8 @@ from ._misc import quantiles_xy, sample_points, format_skill_table, _get_fig_ax
 
 
 def scatter(
-    x: np.ndarray,
-    y: np.ndarray,
+    x: np.ndarray | pd.Series,
+    y: np.ndarray | pd.Series,
     *,
     bins: int | float = 120,
     quantiles: int | Sequence[float] | None = None,

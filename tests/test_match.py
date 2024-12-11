@@ -306,7 +306,7 @@ def test_matched_data_not_time_index():
 
     # skill metrics do not care about time
     sk = cmp.skill(metrics="mae")
-    assert sk.loc["sensor_a", "mae"] == pytest.approx(1.0)
+    assert sk.filter(observation="sensor_a")[0, "mae"] == pytest.approx(1.0)
 
     cmp.plot.timeseries()
 
@@ -425,7 +425,8 @@ def test_wind_directions():
     )
     # default metrics *are* directional
     df = cc.skill().to_dataframe()
-    assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
+    # assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
+    assert df.filter(observation="obs")[0, "c_rmse"] == pytest.approx(1.322875655532)
 
 
 def test_specifying_mod_item_not_allowed_twice(o1, mr1):

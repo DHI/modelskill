@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
-from .. import metrics as mtr
 from ..utils import _get_idx
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
@@ -208,8 +207,10 @@ class ComparerCollectionPlotter:
             raise ValueError("No data found in selection")
 
         df = cc_sel_mod._to_long_dataframe()
-        x = df.obs_val.values
-        y = df.mod_val.values
+        # x = df.obs_val.values
+        # y = df.mod_val.values
+        x = df["obs_val"]
+        y = df["mod_val"]
 
         # TODO why the first?
         unit_text = self.cc[0]._unit_text
@@ -239,7 +240,14 @@ class ComparerCollectionPlotter:
             quantiles = 0
             reg_method = False
 
-        skill_scores = skill.iloc[0].to_dict() if skill is not None else None
+        # skill_scores = skill.iloc[0].to_dict() if skill is not None else None
+
+        skill_scores = skill.to_dicts()[0] if skill is not None else None
+        # TODO can this be done in a better way?
+        # remove observation and model from skill scores
+        if skill_scores:
+            skill_scores.pop("observation", None)
+            skill_scores.pop("model", None)
 
         ax = scatter(
             x=x,
@@ -298,8 +306,8 @@ class ComparerCollectionPlotter:
         """
         _, ax = _get_fig_ax(ax, figsize)
 
-        df = self.cc._to_long_dataframe()
-        ax = df.obs_val.plot.kde(
+        df = self.cc._to_long_dataframe().to_pandas()
+        ax = df["obs_val"].plot.kde(
             ax=ax, linestyle="dashed", label="Observation", **kwargs
         )
 
@@ -432,11 +440,11 @@ class ComparerCollectionPlotter:
         )
 
         cmp = self.cc
-        df = cmp._to_long_dataframe()
+        df = cmp._to_long_dataframe().to_pandas()
         kwargs["alpha"] = alpha
         kwargs["density"] = density
-        df.mod_val.hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)
-        df.obs_val.hist(
+        df["mod_val"].hist(bins=bins, color=MOD_COLORS[mod_idx], ax=ax, **kwargs)
+        df["obs_val"].hist(
             bins=bins,
             color=self.cc[0].data["Observation"].attrs["color"],
             ax=ax,
@@ -506,7 +514,8 @@ class ComparerCollectionPlotter:
                 "aggregate_observations=False is only possible if normalize_std=True!"
             )
 
-        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        # metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
+        metrics = ["_std_obs", "_std_mod", "cc"]
         skill_func = self.cc.mean_skill if aggregate_observations else self.cc.skill
         sk = skill_func(
             metrics=metrics,  # type: ignore
@@ -514,7 +523,7 @@ class ComparerCollectionPlotter:
         if sk is None:
             return
 
-        df = sk.to_dataframe()
+        df = sk.to_dataframe().to_pandas()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
@@ -564,7 +573,7 @@ class ComparerCollectionPlotter:
         """
         _, ax = _get_fig_ax(ax, figsize)
 
-        df = self.cc._to_long_dataframe()
+        df = self.cc._to_long_dataframe().to_pandas()
 
         unique_obs_cols = ["time", "x", "y", "observation"]
         df = df.set_index(unique_obs_cols)

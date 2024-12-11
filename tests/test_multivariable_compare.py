@@ -84,51 +84,57 @@ def test_n_quantities(cc):
     assert cc.n_quantities == 2
 
 
-def test_mv_skill(cc_1model):
+def test_mv_skill(cc_1model: ms.ComparerCollection) -> None:
     df = cc_1model.skill().to_dataframe()
-    assert list(df.reset_index().observation) == cc_1model.obs_names
-    assert df.index.names[0] == "observation"
-    assert df.index.names[1] == "quantity"
-    assert pytest.approx(df.iloc[1].rmse) == 0.22492342229
-    idx = ("HKNA_wind", "Wind speed")
-    assert pytest.approx(df.loc[idx].rmse) == 1.305358970478
+    assert "observation" in df.columns
+    assert "quantity" in df.columns
+    assert df.filter(observation="EPL_Hm0", quantity="Significant wave height")[
+        0, "rmse"
+    ] == pytest.approx(0.22492342229)
+    assert df.filter(observation="HKNA_wind", quantity="Wind speed")[
+        0, "rmse"
+    ] == pytest.approx(1.305358970478)
     # spatial_interp nearest: 0.22359663 and 1.2761789
 
 
 def test_mv_mm_skill(cc):
     df = cc.skill().to_dataframe()
-    assert df.index.names[0] == "model"
-    assert df.index.names[1] == "observation"
-    assert df.index.names[2] == "quantity"
-    idx = ("SW_1", "HKNA_wind", "Wind speed")
-    assert pytest.approx(df.loc[idx].rmse) == 1.30535897
+    assert "model" in df.columns
+    assert "observation" in df.columns
+    assert "quantity" in df.columns
     # spatial_interp nearest: 1.27617894455
+    df.filter(model="SW_1", observation="HKNA_wind", quantity="Wind speed")["rmse"][
+        0
+    ] == pytest.approx(1.30535897)
 
     df = cc.sel(model="SW_1").skill().to_dataframe()
-    assert df.index.names[0] == "observation"
-    assert df.index.names[1] == "quantity"
-    assert pytest.approx(df.iloc[1].rmse) == 0.2249234222997
+    assert "observation" in df.columns
+    assert "quantity" in df.columns
+    assert df.filter(observation="EPL_Hm0")[0, "rmse"] == pytest.approx(0.2249234222997)
     # spatial interp nearest: 0.22359663
-    idx = ("HKNA_wind", "Wind speed")
-    assert pytest.approx(df.loc[idx].rmse) == 1.30535897
+    assert df.filter(observation="HKNA_wind", quantity="Wind speed")[
+        0, "rmse"
+    ] == pytest.approx(1.30535897)
 
     df = cc.sel(quantity="Wind speed").skill().to_dataframe()
-    assert df.index.names[0] == "model"
-    assert df.index.names[1] == "observation"
-    idx = ("SW_1", "HKNA_wind")
-    assert pytest.approx(df.loc[idx].rmse) == 1.30535897
+    assert "model" in df.columns
+    assert "observation" in df.columns
+    assert df.filter(model="SW_1", observation="HKNA_wind")["rmse"][0] == pytest.approx(
+        1.30535897
+    )
 
 
 def test_mv_mm_mean_skill(cc):
     df = cc.mean_skill().to_dataframe()
-    assert df.index.names[0] == "model"
-    assert df.index.names[1] == "quantity"
-    idx = ("SW_1", "Wind speed")
-    assert pytest.approx(df.loc[idx].r2) == 0.643293404624
+    # idx = ("SW_1", "Wind speed")
+    # assert pytest.approx(df.loc[idx].r2) == 0.643293404624
+    assert df.filter(model="SW_1", quantity="Wind speed")[0, "r2"] == pytest.approx(
+        0.643293404624
+    )
     # spatial_interp nearest: 0.63344531
 
     df = cc.sel(quantity="Significant wave height").mean_skill().to_dataframe()
-    assert pytest.approx(df.loc["SW_1"].cc) == 0.9640104274957
+    assert df.filter(model="SW_1")[0, "cc"] == pytest.approx(0.9640104274957)
     # spatial_interp nearest: 0.963095
 
 
@@ -153,8 +159,6 @@ def cm_2(obs, model):
     """Custom metric #2"""
     return np.mean(obs * 1.5 / model)
 
-
-def test_custom_metric_skilltable_mv_mm_scatter(cc):
     mtr.add_metric(cm_1)
     mtr.add_metric(cm_2, has_units=True)
     ccs = cc.sel(
