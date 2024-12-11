@@ -159,8 +159,6 @@ def cm_2(obs, model):
     """Custom metric #2"""
     return np.mean(obs * 1.5 / model)
 
-
-def test_custom_metric_skilltable_mv_mm_scatter(cc):
     mtr.add_metric(cm_1)
     mtr.add_metric(cm_2, has_units=True)
     ccs = cc.sel(

@@ -1239,7 +1239,7 @@ def _parse_metric(
                     "Metrics must have at least two arguments (obs, model)"
                 )
             parsed_metrics.append(m)
-            raise NotImplementedError("Custom metrics not yet supported")
+            # raise NotImplementedError("Custom metrics not yet supported")
         else:
             raise TypeError(f"metric {m} must be a string or callable")
 

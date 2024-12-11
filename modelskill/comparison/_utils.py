@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import polars as pl
 
+from modelskill.metrics import get_metric
+
 
 TimeTypes = Union[str, np.datetime64, pd.Timestamp, datetime]
 IdxOrNameTypes = Union[int, str, List[int], List[str]]
@@ -95,7 +97,9 @@ def _groupby_df(
         ),
     }
 
-    sel_metrics = [NAMED_METRICS[metric] for metric in metrics]
+    sel_metrics = [
+        NAMED_METRICS[metric] for metric in metrics if metric in NAMED_METRICS
+    ]
 
     temporal_aggregation = False
     for group in by:
@@ -113,13 +117,25 @@ def _groupby_df(
     else:
         res = df.group_by(by).agg(*sel_metrics)
 
-    # TODO handle n_min
-    #   if n_min:
-    #     # nan for all cols but n
-    #     cols = [col for col in res.columns if not col == "n"]
-    #     res.loc[res.n < n_min, cols] = np.nan
+    # handle custom metrics supplies as python functions
+    custom_metrics = [get_metric(m) for m in metrics if m not in NAMED_METRICS]
 
-    # set rows where n < n_min to Null
+    if len(custom_metrics) > 0:
+        cres = df.group_by(by).agg(
+            [
+                pl.struct(["obs_val", "mod_val"])
+                .map_elements(
+                    lambda combined, metric=metric: metric(
+                        # TODO this doesn't work with peak_ratio which expects a pd.Series with a DateTimeIndex
+                        combined.struct.field("obs_val").to_numpy(),
+                        combined.struct.field("mod_val").to_numpy(),
+                    )
+                )
+                .alias(metric.__name__)
+                for metric in custom_metrics
+            ]
+        )
+        res = res.join(cres, on=by)
 
     non_n_metrics = [m for m in metrics if m != "n"]
 
