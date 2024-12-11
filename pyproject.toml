@@ -27,7 +27,7 @@ authors = [
 description="Compare results from simulations with observations."
 license="MIT"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Development Status :: 5 - Production/Stable",
