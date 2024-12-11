@@ -45,23 +45,6 @@ def cc2(o1, o2, o3) -> ms.ComparerCollection:
     return ms.match([o1, o2, o3], [mr1, mr2])
 
 
-def test_spatial_skill_deprecated(cmp1) -> None:
-    with pytest.warns(FutureWarning, match="gridded_skill"):
-        ss = cmp1.spatial_skill()
-    assert isinstance(ss.data, xr.Dataset)
-    assert len(ss.x) == 5
-    assert len(ss.y) == 5
-    assert len(ss.mod_names) == 0
-    assert len(ss.obs_names) == 0
-    df = ss.to_dataframe()
-    assert isinstance(df, pd.DataFrame)
-    # assert "Coordinates:" in repr(ss)
-    assert "y: 5" in repr(ss)
-    assert "x: 5" in repr(ss)
-    assert ss.coords is not None
-    assert ss.n is not None
-
-
 def test_gridded_skill_multi_model(cc2) -> None:
     gs = cc2.gridded_skill(bins=3, metrics=["rmse", "bias"])
     assert len(gs.x) == 3
@@ -97,23 +80,13 @@ def test_gridded_skill_plot(cmp1) -> None:
     gs = cmp1.gridded_skill(metrics=["rmse", "bias"])
     gs.bias.plot()
 
-    with pytest.warns(FutureWarning, match="deprecated"):
-        gs.plot("bias")
-
 
 def test_gridded_skill_plot_multi_model(cc2) -> None:
     gs = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
     gs["bias"].plot()
-
-    with pytest.warns(FutureWarning, match="deprecated"):
-        gs["rmse"].plot(model="SW_1")
 
 
 def test_gridded_skill_plot_multi_model_fails(cc2) -> None:
     gs = cc2.gridded_skill(by=["model"], metrics=["rmse", "bias"])
     with pytest.raises(KeyError):
         gs["bad_metric"]
-
-    with pytest.raises(ValueError):
-        with pytest.warns(FutureWarning, match="deprecated"):
-            gs.rmse.plot(model="bad_model")

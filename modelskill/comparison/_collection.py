@@ -1059,38 +1059,15 @@ class ComparerCollection(Mapping, Scoreable):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        if model is None:
-            models = self.mod_names
-        else:
-            # TODO: these two lines looks familiar, extract to function
-            models = [model] if np.isscalar(model) else model  # type: ignore
-            models = [_get_name(m, self.mod_names) for m in models]  # type: ignore
-
-        cmp = self.sel(
-            model=models,  # deprecated
-            observation=observation,  # deprecated
-            quantity=variable,  # deprecated
-            start=start,  # deprecated
-            end=end,  # deprecated
-            area=area,  # deprecated
-        )
+        cmp = self
 
         if cmp.n_points == 0:
             raise ValueError("Dataset is empty, no data to compare.")
 
-        ## ---- end of deprecated code ----
-
         sk = cmp.mean_skill(weights=weights, metrics=[metric])
         assert isinstance(metric, str)
 
-        return {
-            r["model"]: r[metric]
-            for r in sk.sort("model").select(["model", metric]).rows(named=True)
-        }
+        return {k: v for k, v in sk.sort("model").select(["model", metric]).rows()}
 
     def save(self, filename: Union[str, Path]) -> None:
         """Save the ComparerCollection to a zip file.

@@ -372,9 +372,6 @@ def test_gridded_skill_misc(comparer: ms.Comparer) -> None:
 def test_hist(comparer):
     cmp = comparer
 
-    with pytest.warns(FutureWarning):
-        cmp.hist()
-
     cmp.plot.hist(bins=np.linspace(0, 7, num=15))
 
     cmp.plot.hist(bins=10)

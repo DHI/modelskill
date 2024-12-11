@@ -55,12 +55,13 @@ def _groupby_df(
     df: pl.DataFrame,
     *,
     by: List[str],
-    metrics: List[str],
+    metrics: List[str | Callable],
     n_min: Optional[int] = None,
 ) -> pl.DataFrame:
     if _dt_in_by(by):
         df, by = _add_dt_to_df(df, by)
 
+    # TODO extract method
     obs = pl.col("obs_val")
     mod = pl.col("mod_val")
     residual = mod - obs
@@ -98,7 +99,7 @@ def _groupby_df(
     }
 
     sel_metrics = [
-        NAMED_METRICS[metric] for metric in metrics if metric in NAMED_METRICS
+        NAMED_METRICS[str(metric)] for metric in metrics if metric in NAMED_METRICS
     ]
 
     temporal_aggregation = False
@@ -122,7 +123,7 @@ def _groupby_df(
             return metric
         return get_metric(metric)
 
-    # handle custom metrics supplies as python functions
+    # This is a bit of a hack to allow for peak_ratio which is special, since it uses datetime information
     PR = False
     if "peak_ratio" in metrics:
         metrics.remove("peak_ratio")
@@ -130,62 +131,74 @@ def _groupby_df(
     custom_metrics = [_get_metric(m) for m in metrics if m not in NAMED_METRICS]
 
     if len(custom_metrics) > 0:
-        cres = df.group_by(by).agg(
-            [
-                pl.struct(["obs_val", "mod_val"])
-                .map_elements(
-                    lambda combined, metric=metric: metric(
-                        # TODO this doesn't work with peak_ratio which expects a pd.Series with a DateTimeIndex
-                        combined.struct.field("obs_val").to_numpy(),
-                        combined.struct.field("mod_val").to_numpy(),
-                    )
-                )
-                .alias(metric.__name__)
-                for metric in custom_metrics
-            ]
-        )
+        cres = _calculate_custom_metrics(df, by, custom_metrics)
         res = res.join(cres, on=by)
 
     if PR:
-        from modelskill.metrics import peak_ratio
-
-        # peak ratio expects a pd.Series with a DateTimeIndex
-        # TODO reconsider this approach
-        expr = (
-            pl.struct(["time", "obs_val", "mod_val"])
-            .map_elements(
-                lambda combined: peak_ratio(
-                    pd.Series(
-                        combined.struct.field("obs_val").to_numpy(),
-                        index=pd.DatetimeIndex(
-                            combined.struct.field("time").to_pandas()
-                        ),
-                    ),
-                    pd.Series(
-                        combined.struct.field("mod_val").to_numpy(),
-                        index=pd.DatetimeIndex(
-                            combined.struct.field("time").to_pandas()
-                        ),
-                    ),
-                )
-            )
-            .alias("peak_ratio")
-        )
-        pres = df.group_by(by).agg(expr)
+        pres = _calculate_peak_ratio(df, by)
         res = res.join(pres, on=by)
 
-    non_n_metrics = [m for m in metrics if m != "n"]
-
     if n_min:
+        # TODO why not simply keep rows where n > n_min?
+        # res = res.filter(pl.col("n") > n_min)
+
+        # This seems convoluted
+
+        non_n_metrics = [m for m in metrics if m != "n"]
+
         res = res.select(
             pl.col("x"),
             pl.col("y"),
             pl.col("n"),
-            pl.when(pl.col("n") >= n_min).then(pl.col(*non_n_metrics)),
+            pl.when(pl.col("n") >= n_min).then(pl.col(*non_n_metrics)),  # type: ignore
         )
-        # TODO why not simply keep rows where n > n_min?
-        # res = res.filter(pl.col("n") > n_min)
+
     return res
+
+
+def _calculate_custom_metrics(
+    df: pl.DataFrame, by: List[str], custom_metrics: List[Callable]
+) -> pl.DataFrame:
+    cres = df.group_by(by).agg(
+        [
+            pl.struct(["obs_val", "mod_val"])
+            .map_elements(
+                lambda combined, metric=metric: metric(  # type: ignore
+                    # TODO this doesn't work with peak_ratio which expects a pd.Series with a DateTimeIndex
+                    combined.struct.field("obs_val").to_numpy(),
+                    combined.struct.field("mod_val").to_numpy(),
+                )
+            )
+            .alias(metric.__name__)
+            for metric in custom_metrics
+        ]
+    )
+    return cres
+
+
+def _calculate_peak_ratio(df: pl.DataFrame, by: List[str]) -> pl.DataFrame:
+    from modelskill.metrics import peak_ratio
+
+    # peak ratio expects a pd.Series with a DateTimeIndex
+    # TODO reconsider this approach
+    expr = (
+        pl.struct(["time", "obs_val", "mod_val"])
+        .map_elements(
+            lambda combined: peak_ratio(  # type: ignore
+                pd.Series(
+                    combined.struct.field("obs_val").to_numpy(),
+                    index=pd.DatetimeIndex(combined.struct.field("time").to_pandas()),
+                ),
+                pd.Series(
+                    combined.struct.field("mod_val").to_numpy(),
+                    index=pd.DatetimeIndex(combined.struct.field("time").to_pandas()),
+                ),
+            )
+        )
+        .alias("peak_ratio")
+    )
+    pres = df.group_by(by).agg(expr)
+    return pres
 
 
 def _dt_in_by(by):
@@ -195,21 +208,22 @@ def _dt_in_by(by):
     return False
 
 
-ALLOWED_DT = [
-    "year",
-    "quarter",
-    "month",
+EXPRS = {
+    "year": pl.col("time").dt.year(),
+    "quarter": pl.col("time").dt.quarter(),
+    "month": pl.col("time").dt.month(),
     # "month_name", # TODO available in polars-xdt
-    "day",
-    "day_of_year",
-    "dayofyear",
-    "day_of_week",
-    "dayofweek",
-    "hour",
-    "minute",
-    "second",
-    "weekday",
-]
+    "day": pl.col("time").dt.day(),
+    "day_of_week": pl.col("time").dt.weekday(),
+    "dayofweek": pl.col("time").dt.weekday(),
+    "day_of_year": pl.col("time").dt.ordinal_day(),
+    "hour": pl.col("time").dt.hour(),
+    "minute": pl.col("time").dt.minute(),
+    "second": pl.col("time").dt.second(),
+    "weekday": pl.col("time").dt.weekday(),
+}
+
+ALLOWED_DT = list(EXPRS.keys())
 
 
 def _add_dt_to_df(df: pl.DataFrame, by: List[str]) -> Tuple[pl.DataFrame, List[str]]:
@@ -223,19 +237,6 @@ def _add_dt_to_df(df: pl.DataFrame, by: List[str]) -> Tuple[pl.DataFrame, List[s
                 raise ValueError(
                     f"Invalid Pandas dt accessor: {dt_str}. Allowed values are: {ALLOWED_DT}"
                 )
-            EXPRS = {
-                "year": pl.col("time").dt.year(),
-                "quarter": pl.col("time").dt.quarter(),
-                "month": pl.col("time").dt.month(),
-                "day": pl.col("time").dt.day(),
-                "day_of_week": pl.col("time").dt.weekday(),
-                "dayofweek": pl.col("time").dt.weekday(),
-                "day_of_year": pl.col("time").dt.ordinal_day(),
-                "hour": pl.col("time").dt.hour(),
-                "minute": pl.col("time").dt.minute(),
-                "second": pl.col("time").dt.second(),
-                "weekday": pl.col("time").dt.weekday(),
-            }
 
             if dt_str in df.columns:
                 raise ValueError(

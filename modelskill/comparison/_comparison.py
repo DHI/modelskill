@@ -1054,12 +1054,7 @@ class Comparer(Scoreable):
         2017-10-29  41  0.33  0.41   0.25  0.36  0.96  0.06  0.99
         """
 
-        # TODO handle callable metric
         metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
-        # if metrics is None:
-        #    # TODO use options
-        #    # metrics: list[str] = [m.__name__ for m in mtr.default_metrics]
-        #    metrics = ["n", "bias", "rmse", "mae"]
 
         # TODO remove in v1.1
         model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
@@ -1084,24 +1079,7 @@ class Comparer(Scoreable):
         else:
             res = res.with_columns(pl.lit(cmp.x).alias("x"), pl.lit(cmp.y).alias("y"))
 
-        # res_pandas = res.to_pandas()
-
         return SkillTable(res)
-
-    def _add_as_col_if_not_in_index(
-        self, df: pd.DataFrame, skilldf: pd.DataFrame
-    ) -> pd.DataFrame:
-        """Add a field to skilldf if unique in df"""
-        FIELDS = ("observation", "model")
-
-        for field in FIELDS:
-            if (field == "model") and (self.n_models <= 1):
-                continue
-            if field not in skilldf.index.names:
-                unames = df[field].unique()
-                if len(unames) == 1:
-                    skilldf.insert(loc=0, column=field, value=unames[0])
-        return skilldf
 
     def score(
         self,
@@ -1140,26 +1118,15 @@ class Comparer(Scoreable):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
         sk = self.skill(
             by=["model", "observation"],
             metrics=[metric],
-            model=model,  # deprecated
-            start=start,  # deprecated
-            end=end,  # deprecated
-            area=area,  # deprecated
         )
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
-        # ser = df.reset_index().groupby("model", observed=True)[metric_name].mean()
         ser = df.group_by("model").mean().select(pl.col("model", metric_name))
-        # score = {str(k): float(v) for k, v in ser.items()}
-        # create a dict with the key for each model and the value for the metric
-        score = {str(k): float(v) for k, v in ser.rows()}
+        score = {k: float(v) for k, v in ser.rows()}
         return score
 
     def gridded_skill(
@@ -1226,16 +1193,7 @@ class Comparer(Scoreable):
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        )
+        cmp = self
 
         metrics = _parse_metric(metrics)
         # TODO don't use hardcoded metrics

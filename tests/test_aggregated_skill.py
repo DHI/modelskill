@@ -239,10 +239,7 @@ def test_skill_sel(cc1):
 
 def test_skill_sel_metrics_str(cc1):
     sk = cc1.skill(metrics=["rmse", "bias"])
-
-    with pytest.warns(FutureWarning, match="deprecated"):
-        s2 = sk.sel(metrics="rmse")
-    assert s2.name == "rmse"
+    assert "rmse" in sk.metrics
 
 
 # def test_skill_sel_metrics_list(cc2):

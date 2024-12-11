@@ -551,7 +551,10 @@ class SkillTable:
 
         if key not in self.data.columns:
             raise KeyError(f"Key {key} not found in columns {self.data.columns}")
-        result = self.data[key]
+        if isinstance(key, str):
+            result = self.data[key]
+        elif isinstance(key, Iterable):
+            return SkillTable(self.data.select(key))  # type: ignore
         if isinstance(result, pl.Series):
             # I don't think this should be necessary, but in some cases the input doesn't contain x and y
             if "x" in self.data.columns and "y" in self.data.columns:
@@ -559,9 +562,6 @@ class SkillTable:
                 return SkillArray(self.data.select(cols))
             else:
                 return SkillArray(result.to_frame())
-
-        elif isinstance(result, pl.DataFrame):
-            return SkillTable(result)
         else:
             raise NotImplementedError("Unexpected type of result")
 

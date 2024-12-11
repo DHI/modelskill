@@ -1204,7 +1204,7 @@ def _parse_metric(
     metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
     *,
     directional: bool = False,
-) -> List[str]:
+) -> Any:
     if metric is None:
         if directional:
             return default_circular_metrics
