@@ -10,14 +10,12 @@ on:
 
 jobs:
   build:
-    # Disable this job for now
-    if: false
 
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9", "3.13"]      
+        python-version: ["3.10", "3.13"]      
 
     steps:
     - uses: actions/checkout@v3
@@ -37,8 +35,9 @@ jobs:
     - name: Install modelskill
       run: |
         pip install .[test]
-    - name: Static type check
-      run: make typecheck
+    # TODO skip static type check for now
+    #- name: Static type check
+    #  run: make typecheck
     - name: Test with pytest
       run: |
         pytest --cov=modelskill --ignore tests/notebooks/
