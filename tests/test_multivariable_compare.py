@@ -110,10 +110,10 @@ def test_mv_mm_skill(cc):
     df = cc.sel(model="SW_1").skill().to_dataframe()
     assert "observation" in df.columns
     assert "quantity" in df.columns
-    assert df["rmse"][1] == pytest.approx(0.2249234222997)
+    assert df.filter(observation="EPL_Hm0")[0, "rmse"] == pytest.approx(0.2249234222997)
     # spatial interp nearest: 0.22359663
-    assert df.filter(observation="HKNA_wind", quantity="Wind speed")["rmse"][
-        0
+    assert df.filter(observation="HKNA_wind", quantity="Wind speed")[
+        0, "rmse"
     ] == pytest.approx(1.30535897)
 
     df = cc.sel(quantity="Wind speed").skill().to_dataframe()

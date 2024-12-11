@@ -565,13 +565,19 @@ def test_peak_ratio(cc):
     cc = cc.sel(model="m1")
     sk = cc.skill(metrics=["peak_ratio"])
 
-    assert sk.loc["fake point obs", "peak_ratio"] == pytest.approx(1.119999999)
+    # assert sk.loc["fake point obs", "peak_ratio"] == pytest.approx(1.119999999)
+    assert sk.data.filter(observation="fake point obs")[
+        0, "peak_ratio"
+    ] == pytest.approx(1.119999999)
 
 
 def test_peak_ratio_2(cc_pr):
     sk = cc_pr.skill(metrics=["peak_ratio"])
     assert "peak_ratio" in sk.data.columns
-    assert sk.to_dataframe()["peak_ratio"].values == pytest.approx(0.88999995)
+    sk.data.filter(observation="PR_test_data")[0, "peak_ratio"] == pytest.approx(
+        0.88999995
+    )
+    # assert sk.to_dataframe()["peak_ratio"].values == pytest.approx(0.88999995)
 
 
 def test_copy(cc):

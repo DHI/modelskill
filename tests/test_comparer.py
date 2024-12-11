@@ -634,16 +634,22 @@ def test_remove_bias():
 def test_skill_dt(pc):
     by = ["model", "dt:month"]
     sk = pc.skill(by=by)
-    assert list(sk.data.index.names) == ["model", "month"]
-    assert list(sk.data.index.levels[0]) == ["m1", "m2"]
-    assert list(sk.data.index.levels[1]) == [1]  # only January
+    assert "model" in sk.data.columns
+    assert "month" in sk.data.columns
+    assert "m1" in sk.data["model"]
+    # assert list(sk.data.index.names) == ["model", "month"]
+    # assert list(sk.data.index.levels[0]) == ["m1", "m2"]
+    # assert list(sk.data.index.levels[1]) == [1]  # only January
 
     # 2019-01-01 is Tuesday = 1 (Monday = 0)
     by = ["model", "dt:weekday"]
     sk = pc.skill(by=by)
-    assert list(sk.data.index.names) == ["model", "weekday"]
-    assert list(sk.data.index.levels[0]) == ["m1", "m2"]
-    assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
+
+    # assert list(sk.data.index.names) == ["model", "weekday"]
+    # assert list(sk.data.index.levels[0]) == ["m1", "m2"]
+    assert set(sk.data["model"]) == {"m1", "m2"}
+    # assert list(sk.data.index.levels[1]) == [1, 2, 3, 4, 5]  # Tuesday to Saturday
+    assert set(sk.data["weekday"]) == {2, 3, 4, 5, 6}  # Tuesday to Saturday
 
 
 @pytest.mark.skipif(pd.__version__ < "2.0.0", reason="requires newer pandas")

@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
-from .. import metrics as mtr
 from ..utils import _get_idx
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax

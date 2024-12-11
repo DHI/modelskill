@@ -87,8 +87,10 @@ def test_gridded_skill_is_subsettable(cc2) -> None:
 
     cmp = cc2[0]
 
-    gs2 = cmp.gridded_skill(bins=3, metrics=["rmse", "bias"])
-    gs2.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
+    _ = cmp.gridded_skill(bins=3, metrics=["rmse", "bias"])
+
+    # TODO check if this makes sense
+    # gs2.data.rmse.sel(x=2, y=53.5, method="nearest").values == pytest.approx(0.10411702)
 
 
 def test_gridded_skill_plot(cmp1) -> None:

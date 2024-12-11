@@ -223,7 +223,7 @@ def test_mm_skill_metrics(cc):
     assert sk.filter(observation="EPL")[0, "bias"] == pytest.approx(-0.06659714)
     assert sk.filter(observation="EPL")[0, "rmse"] == pytest.approx(0.22359664)
 
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         cc.sel(model="SW_1").skill(metrics=["mean_se"])
     with pytest.raises(AttributeError):
         cc.sel(model="SW_1").skill(metrics=[mtr.fake])

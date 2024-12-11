@@ -7,7 +7,6 @@ from typing import (
     Tuple,
     Sequence,
     TYPE_CHECKING,
-    Callable,
 )
 import warnings
 
@@ -18,7 +17,6 @@ if TYPE_CHECKING:
 
 import numpy as np  # type: ignore
 
-from .. import metrics as mtr
 from ..utils import _get_idx
 import matplotlib.colors as colors
 from ..plotting._misc import (

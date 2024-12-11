@@ -425,7 +425,8 @@ def test_wind_directions():
     )
     # default metrics *are* directional
     df = cc.skill().to_dataframe()
-    assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
+    # assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
+    assert df.filter(observation="obs")[0, "c_rmse"] == pytest.approx(1.322875655532)
 
 
 def test_specifying_mod_item_not_allowed_twice(o1, mr1):

@@ -117,8 +117,17 @@ def _groupby_df(
     else:
         res = df.group_by(by).agg(*sel_metrics)
 
+    def _get_metric(metric: Callable | str) -> Callable:
+        if callable(metric):
+            return metric
+        return get_metric(metric)
+
     # handle custom metrics supplies as python functions
-    custom_metrics = [get_metric(m) for m in metrics if m not in NAMED_METRICS]
+    PR = False
+    if "peak_ratio" in metrics:
+        metrics.remove("peak_ratio")
+        PR = True
+    custom_metrics = [_get_metric(m) for m in metrics if m not in NAMED_METRICS]
 
     if len(custom_metrics) > 0:
         cres = df.group_by(by).agg(
@@ -136,6 +145,34 @@ def _groupby_df(
             ]
         )
         res = res.join(cres, on=by)
+
+    if PR:
+        from modelskill.metrics import peak_ratio
+
+        # peak ratio expects a pd.Series with a DateTimeIndex
+        # TODO reconsider this approach
+        expr = (
+            pl.struct(["time", "obs_val", "mod_val"])
+            .map_elements(
+                lambda combined: peak_ratio(
+                    pd.Series(
+                        combined.struct.field("obs_val").to_numpy(),
+                        index=pd.DatetimeIndex(
+                            combined.struct.field("time").to_pandas()
+                        ),
+                    ),
+                    pd.Series(
+                        combined.struct.field("mod_val").to_numpy(),
+                        index=pd.DatetimeIndex(
+                            combined.struct.field("time").to_pandas()
+                        ),
+                    ),
+                )
+            )
+            .alias("peak_ratio")
+        )
+        pres = df.group_by(by).agg(expr)
+        res = res.join(pres, on=by)
 
     non_n_metrics = [m for m in metrics if m != "n"]
 
@@ -162,7 +199,7 @@ ALLOWED_DT = [
     "year",
     "quarter",
     "month",
-    "month_name",
+    # "month_name", # TODO available in polars-xdt
     "day",
     "day_of_year",
     "dayofyear",
@@ -175,10 +212,8 @@ ALLOWED_DT = [
 ]
 
 
-def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[str]]:
-    ser = df["time"]
+def _add_dt_to_df(df: pl.DataFrame, by: List[str]) -> Tuple[pl.DataFrame, List[str]]:
     assert isinstance(by, list)
-    # by = [by] if isinstance(by, str) else by
 
     for j, b in enumerate(by):
         assert isinstance(b, str)
@@ -188,13 +223,28 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
                 raise ValueError(
                     f"Invalid Pandas dt accessor: {dt_str}. Allowed values are: {ALLOWED_DT}"
                 )
-            ser = ser.dt.__getattribute__(dt_str)
+            EXPRS = {
+                "year": pl.col("time").dt.year(),
+                "quarter": pl.col("time").dt.quarter(),
+                "month": pl.col("time").dt.month(),
+                "day": pl.col("time").dt.day(),
+                "day_of_week": pl.col("time").dt.weekday(),
+                "dayofweek": pl.col("time").dt.weekday(),
+                "day_of_year": pl.col("time").dt.ordinal_day(),
+                "hour": pl.col("time").dt.hour(),
+                "minute": pl.col("time").dt.minute(),
+                "second": pl.col("time").dt.second(),
+                "weekday": pl.col("time").dt.weekday(),
+            }
+
             if dt_str in df.columns:
                 raise ValueError(
                     f"Cannot use datetime attribute {dt_str} as it already exists in the dataframe."
                 )
-            df[dt_str] = ser
-            by[j] = dt_str  # remove 'dt:' prefix
+            # df[dt_str] = ser
+            # by[j] = dt_str  # remove 'dt:' prefix
+            df = df.with_columns(EXPRS[dt_str].alias(dt_str))
+            by[j] = dt_str
     # by = by[0] if len(by) == 1 else by
     return df, by
 

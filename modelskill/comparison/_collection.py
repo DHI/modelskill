@@ -25,7 +25,6 @@ import pandas as pd
 import polars as pl
 
 
-from .. import metrics as mtr
 from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
@@ -727,12 +726,11 @@ class ComparerCollection(Mapping, Scoreable):
 
         df = df.drop(["x", "y"]).rename(dict(xBin="x", yBin="y"))
         res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
-        ds = (
-            res.to_pandas()
-            .set_index(["x", "y", "model", "observation"])
-            .to_xarray()
-            .squeeze()
-        )
+
+        potential_cols = ["x", "y", "model", "observation"]
+        cols = [c for c in potential_cols if c in res.columns]
+
+        ds = res.to_pandas().set_index(cols).to_xarray().squeeze()
 
         # change categorial index to coordinates
         # for dim in ("x", "y"):
