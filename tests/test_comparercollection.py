@@ -321,13 +321,13 @@ def test_skill_by_freq(cc):
 def test_skill_by_attrs_gtype_and_mod(cc):
     sk = cc.skill(by=["attrs:gtype", "model"])
     assert len(sk) == 5
-    assert sk.data.index[0] == ("point", "m1")
-    assert sk.data.index[1] == ("point", "m2")
-    assert sk.data.index[2] == ("track", "m1")
-    assert sk.data.index[3] == ("track", "m2")
-    assert sk.data.index[4] == ("track", "m3")
-    assert sk.data.index.names[0] == "gtype"
-    assert sk.data.index.names[1] == "model"
+    assert "gtype" in sk.data.columns
+    assert "model" in sk.data.columns
+    assert "point" in sk.data["gtype"]
+    assert "track" in sk.data["gtype"]
+    assert "m1" in sk.data["model"]
+    assert "m2" in sk.data["model"]
+    assert "m3" in sk.data["model"]
 
     # TODO: observed=True doesn't work on model
     # sk2 = cc.skill(by=["attrs:gtype", "model"], observed=True)

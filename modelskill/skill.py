@@ -774,7 +774,10 @@ class SkillTable:
         predicates = []
         for key, value in kwargs.items():
             if isinstance(value, str):
-                predicates.append(pl.col(key) == value)
+                if key in self.data.columns:
+                    predicates.append(pl.col(key) == value)
+                else:
+                    raise KeyError(f"Column {value} not found in SkillTable")
             elif isinstance(value, int):
                 # find the nth unique value in the column
                 sel_value = df.select(pl.col(key)).unique()[key][value]

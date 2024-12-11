@@ -1220,7 +1220,6 @@ def _parse_metric(
     if isinstance(metric, str):
         metrics: list = [metric]
     elif callable(metric):
-        raise NotImplementedError("Custom metrics not yet supported")
         metrics = [metric]
     elif isinstance(metric, Iterable):
         if "n" not in metric:
@@ -1235,12 +1234,12 @@ def _parse_metric(
             parsed_metrics.append(m)
             # parsed_metrics.append(get_metric(m))
         elif callable(m):
-            raise NotImplementedError("Custom metrics not yet supported")
             if len(inspect.signature(m).parameters) < 2:
                 raise ValueError(
                     "Metrics must have at least two arguments (obs, model)"
                 )
             parsed_metrics.append(m)
+            raise NotImplementedError("Custom metrics not yet supported")
         else:
             raise TypeError(f"metric {m} must be a string or callable")
 

@@ -292,7 +292,7 @@ def test_skill_sel_fail(cc2):
     with pytest.raises(KeyError):
         sk.sel(quantity="Hm0")
 
-    with pytest.raises(KeyError):
+    with pytest.raises(IndexError):
         sk.sel(model=99)
 
 

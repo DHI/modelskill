@@ -331,7 +331,7 @@ def test_skill_vs_gridded_skill(comparer):
     # assert ds.coords._names == {"x","y"}  # TODO: Why return "observation" as by, when n_obs==1 but not "model"?
 
 
-def test_gridded_skill_bins(comparer):
+def test_gridded_skill_bins(comparer: ms.Comparer) -> None:
     # default
     ds = comparer.gridded_skill(metrics=["bias"])
     assert len(ds.x) == 5
