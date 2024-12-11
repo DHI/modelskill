@@ -990,20 +990,17 @@ class Comparer(Scoreable):
         df_pandas = data.to_dataframe().reset_index()
         df_polars = pl.from_pandas(df_pandas)
         df = (
-            df_polars.melt(
-                id_vars=id_vars,
-                value_vars=self.mod_names,
+            df_polars.unpivot(
+                index=id_vars,
+                on=self.mod_names,
                 variable_name="model",
                 value_name="mod_val",
             )
             .rename({self._obs_str: "obs_val"})
-            .with_columns(pl.lit(self.name).alias("observation"))
-            .with_columns([pl.lit(value).alias(key) for key, value in attrs.items()])
             .with_columns(
-                [
-                    pl.col("model").cast(pl.Categorical),
-                    pl.col("observation").cast(pl.Categorical),
-                ]
+                pl.lit(self.name).alias("observation").cast(pl.Categorical),
+                pl.col("model").cast(pl.Categorical),
+                *[pl.lit(value).alias(key) for key, value in attrs.items()],
             )
         )
 
