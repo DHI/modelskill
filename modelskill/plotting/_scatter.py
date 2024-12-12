@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Literal, Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
-import warnings
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -122,12 +121,6 @@ def scatter(
     matplotlib.axes.Axes
         The axes on which the scatter plot was drawn.
     """
-    if "skill_df" in kwargs:
-        warnings.warn(
-            "The `skill_df` keyword argument is deprecated. Use `skill_scores` instead.",
-            FutureWarning,
-        )
-        skill_scores = kwargs.pop("skill_df").to_dict("records")[0]
 
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
