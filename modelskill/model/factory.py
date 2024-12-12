@@ -110,6 +110,8 @@ def _guess_gtype(data: Any) -> GeometryType:
         elif file_ext == ".nc":
             # could also be point or track, but we don't know
             return GeometryType.GRID
+        elif file_ext == ".dfs2":
+            return GeometryType.GRID
         else:
             raise ValueError(
                 "Could not guess gtype from file extension, please specify gtype, e.g. gtype='track'"

@@ -41,6 +41,22 @@ def trackobs_c2_hm0():
     )
 
 
+def test_grid_from_dfs2():
+    mr = ms.model_result("tests/testdata/SW/ERA5_DutchCoast.dfs2", item="swh")
+    assert mr.quantity.name == "swh"
+    assert mr.quantity.unit == "meter"
+
+
+def test_grid_from_dfs_explicit():
+    mr = ms.GridModelResult(
+        "tests/testdata/SW/ERA5_DutchCoast.dfs2",
+        item="swh",
+        quantity=ms.Quantity("Significant height", unit="meter"),
+    )
+    assert mr.quantity.name == "Significant height"
+    assert mr.quantity.unit == "meter"
+
+
 def test_grid_from_nc(mr_ERA5_pp1d):
     mr = mr_ERA5_pp1d
     assert mr.name == "ERA5_DutchCoast"

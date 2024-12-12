@@ -369,6 +369,27 @@ def _matched_data_to_xarray(
     cols = list(df.columns)
     items = ItemSelection.parse(cols, obs_item, mod_items, aux_items, x_item, y_item)
 
+    # check that x and x_item is not both specified (same for y and y_item)
+    if (x is not None) and (x_item is not None):
+        raise ValueError("x and x_item cannot both be specified")
+    if (y is not None) and (y_item is not None):
+        raise ValueError("y and y_item cannot both be specified")
+
+    if x is not None:
+        try:
+            x = float(x)
+        except TypeError:
+            raise TypeError(
+                f"x must be scalar, not {type(x)}; if x is a coordinate variable, use x_item"
+            )
+    if y is not None:
+        try:
+            y = float(y)
+        except TypeError:
+            raise TypeError(
+                f"y must be scalar, not {type(y)}; if y is a coordinate variable, use y_item"
+            )
+
     # check that items.obs and items.model are numeric
     if not np.issubdtype(df[items.obs].dtype, np.number):
         raise ValueError(
