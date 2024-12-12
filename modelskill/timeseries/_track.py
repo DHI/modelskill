@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import get_args, Optional, List, Sequence
+from typing import Literal, get_args, Optional, List, Sequence
 import warnings
 import pandas as pd
 import xarray as xr
@@ -68,7 +68,7 @@ def _parse_track_input(
     quantity: Optional[Quantity],
     x_item: str | int | None,
     y_item: str | int | None,
-    keep_duplicates: bool | str,
+    keep_duplicates: Literal["first", "last", False] = "first",
     offset_duplicates: float = 0.001,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> xr.Dataset:
