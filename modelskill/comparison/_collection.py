@@ -257,7 +257,6 @@ class ComparerCollection(Mapping, Scoreable):
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
-        variable: Optional[IdxOrNameTypes] = None,  # obsolete
         **kwargs: Any,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
