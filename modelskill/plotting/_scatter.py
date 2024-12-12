@@ -162,7 +162,7 @@ def scatter(
             "if `show_hist=True` then `show_density` must be either `False` or `None`"
         )
 
-    if (not show_points) and show_density:
+    if (show_points is False) and show_density:
         raise ValueError(
             "if `show_points=False` then `show_density` must be either "
             "`False` or `None`; density is a property (the color) of the points!"
