@@ -56,7 +56,7 @@ def observation(
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
     else:
-        geometry = GeometryType.from_string(gtype)
+        geometry = GeometryType(gtype)
 
     return _obs_class_lookup[geometry](
         data=data,
@@ -311,7 +311,7 @@ class TrackObservation(Observation):
         weight: float = 1.0,
         x_item: Optional[int | str] = 0,
         y_item: Optional[int | str] = 1,
-        keep_duplicates: bool | str = "first",
+        keep_duplicates: Literal["first", "last", False] = "first",
         offset_duplicates: float = 0.001,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,

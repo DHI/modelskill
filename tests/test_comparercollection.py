@@ -493,6 +493,9 @@ def test_plots_directional(cc):
     assert ax.get_xlim() == (0.0, 360.0)
 
 
+PLOT_FUNCS_RETURNING_MANY_AX = ["scatter", "hist", "residual_hist"]
+
+
 @pytest.fixture(
     params=[
         "scatter",
@@ -500,6 +503,8 @@ def test_plots_directional(cc):
         "hist",
         "taylor",
         "box",
+        "qq",
+        "residual_hist",
     ]
 )
 def cc_plot_function(cc, request):
@@ -511,13 +516,22 @@ def cc_plot_function(cc, request):
 
     func = getattr(cc.plot, request.param)
     # special cases require selecting a model
-    if request.param in ["scatter", "hist"]:
+    if request.param in PLOT_FUNCS_RETURNING_MANY_AX:
 
         def func(**kwargs):
             wrapped_func = getattr(cc.sel(model=[0]).plot, request.param)
             return wrapped_func(**kwargs)
 
     return func
+
+
+@pytest.mark.parametrize("kind", PLOT_FUNCS_RETURNING_MANY_AX)
+def test_plots_returning_multiple_axes(pc, kind):
+    n_models = 2
+    func = getattr(pc.plot, kind)
+    ax = func()
+    assert len(ax) == n_models
+    assert all(isinstance(a, plt.Axes) for a in ax)
 
 
 def test_plot_returns_an_object(cc_plot_function):
