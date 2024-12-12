@@ -136,6 +136,7 @@ def scatter(
         norm = colors.PowerNorm(vmin=1, gamma=0.5)
 
     x_sample, y_sample = sample_points(x, y, show_points)
+    show_points = len(x_sample) > 0
     xq, yq = quantiles_xy(x, y, quantiles)
 
     if show_hist is None and show_density is None:
