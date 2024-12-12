@@ -140,9 +140,7 @@ def scatter(
 
     if show_hist is None and show_density is None:
         # Default: points density
-        show_density = True
-        if len(x_sample) < 200:  # or nbins?
-            show_density = False
+        show_density = len(x_sample) >= 200
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
