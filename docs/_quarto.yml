@@ -26,68 +26,77 @@ website:
         text: Examples
       - href: api/index.qmd
         text: "API Reference"
-  sidebar:
-    style: docked
-    search: true
-    contents: 
-      - section: "User Guide"
-        href: user-guide/index.qmd
-        contents: 
-         - user-guide/getting-started.qmd
-         - user-guide/overview.qmd
-         - user-guide/terminology.qmd
-         - user-guide/data-structures.qmd
-         - user-guide/workflow.qmd
-         - user-guide/matching.qmd
-         - user-guide/selecting-data.qmd
-         - user-guide/plotting.qmd
-      - section: "Examples"
-        href: examples/index.qmd
-        contents:
-          - href: examples/MIKE21HD_dfsu.qmd  
-            text: MIKE21 HD
-          - href: examples/Hydrology_Vistula_Catchment.qmd
-            text: Hydrology Vistula Catchment
-          - href: examples/Metocean_track_comparison.qmd
-            text: Metocean track comparison
-          - href: examples/Prematched_with_auxiliary.qmd
-            text: Prematched with auxiliary
-      - section: "API Reference"
-        href: api/index.qmd
-        contents:
-        - section: "Observation"
-          contents:
-            - api/observation.qmd
-            - api/PointObservation.qmd
-            - api/TrackObservation.qmd
-        - section: "Model Result"
-          contents:
-            - api/model_result.qmd
-            - api/PointModelResult.qmd
-            - api/TrackModelResult.qmd
-            - api/DfsuModelResult.qmd
-            - api/GridModelResult.qmd
-            - api/DummyModelResult.qmd
-        - section: "Matching"
-          contents:
-            - api/match.qmd
-            - api/from_matched.qmd
-        - section: "Comparer"
-          href: api/Comparer.qmd
-          contents:
-            - api/Comparer.qmd
-            - api/comparison.ComparerPlotter.qmd
-            - api/ComparerCollection.qmd
-            - api/comparison.ComparerCollectionPlotter.qmd
-            - api/SkillTable.qmd
-        - text: "Plotting"
-          href: api/plotting.qmd
-        - text: "Metrics"
-          href: api/metrics.qmd
-        - text: "Settings"
-          href: api/settings.qmd
-        - text: "Quantity"
-          href: api/Quantity.qmd
+
+  sidebar:  
+    - title: Home
+      style: docked
+      contents: 
+        - index.qmd
+
+    - title: "User Guide"
+      contents: 
+        - user-guide/index.qmd
+        - user-guide/getting-started.qmd
+        - user-guide/overview.qmd
+        - user-guide/terminology.qmd
+        - user-guide/data-structures.qmd
+        - user-guide/workflow.qmd
+        - user-guide/matching.qmd
+        - user-guide/selecting-data.qmd
+        - user-guide/plotting.qmd
+
+    - title: "Examples"
+      contents:
+        - href: examples/index.qmd
+        - href: examples/MIKE21HD_dfsu.qmd  
+          text: MIKE21 HD
+        - href: examples/Hydrology_Vistula_Catchment.qmd
+          text: Hydrology Vistula Catchment
+        - href: examples/Metocean_track_comparison.qmd
+          text: Metocean track comparison
+        - href: examples/Prematched_with_auxiliary.qmd
+          text: Prematched with auxiliary
+    
+    # - title: "API Reference"    
+    #   href: api/index.qmd
+    #   contents:
+    #     - subtitle: "Observation"
+    #       href: api/observation/index.qmd
+    #       contents:
+    #         - api/observation.qmd
+    #         - api/PointObservation.qmd
+    #         - api/TrackObservation.qmd
+    #     - subtitle: "Model Result"
+    #       href: api/model/index.qmd
+    #       contents:
+    #         - api/model_result.qmd
+    #         - api/PointModelResult.qmd
+    #         - api/TrackModelResult.qmd
+    #         - api/DfsuModelResult.qmd
+    #         - api/GridModelResult.qmd
+    #         - api/DummyModelResult.qmd
+    #     - subtitle: "Matching"
+    #       contents:
+    #         - api/match.qmd
+    #         - api/from_matched.qmd
+    #     - subtitle: "Comparer"
+    #       href: api/Comparer.qmd
+    #       contents:
+    #         - api/Comparer.qmd
+    #         - text: "ComparerPlotter"
+    #           href: api/comparison.ComparerPlotter.qmd
+    #         - api/ComparerCollection.qmd
+    #         - text: "ComparerCollectionPlotter"
+    #           href: api/comparison.ComparerCollectionPlotter.qmd
+    #         - api/SkillTable.qmd
+        # - text: "Plotting"
+        #   href: api/plotting.qmd
+        # - text: "Metrics"
+        #   href: api/metrics.qmd
+        # - text: "Settings"
+        #   href: api/settings.qmd
+        # - text: "Quantity"
+        #   href: api/Quantity.qmd
 
 
 filters:
@@ -136,6 +145,7 @@ quartodoc:
       contents:
         - match
         - from_matched
+        - from_config
     - title: Comparer
       desc: ""
       contents:

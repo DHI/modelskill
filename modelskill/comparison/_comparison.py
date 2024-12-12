@@ -411,7 +411,7 @@ class Comparer(Scoreable):
     """
     Comparer class for comparing model and observation data.
 
-    The `Comparer` class is the main class of the ModelSkill package. It is returned by [`match()`](matching.md/#modelskill.match), [`from_matched()`](matching.md/#modelskill.from_matched) or as an element in a [`ComparerCollection`](comparercollection.md). It holds the *matched* observation and model data for a *single* observation and has methods for plotting and skill assessment.
+    The `Comparer` class is the main class of the ModelSkill package. It is returned by [`match()`](`modelskill.match`), [`from_matched()`](`modelskill.from_matched`) or as an element in a [`ComparerCollection`](`modelskill.ComparerCollection`). It holds the *matched* observation and model data for a *single* observation and has methods for plotting and skill assessment.
 
     Main functionality:
 
