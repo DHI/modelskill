@@ -8,6 +8,7 @@ website:
   repo-actions: [edit]
   repo-subdir: docs
   page-navigation: true
+  bread-crumbs: false
   
   navbar:
     tools:
@@ -125,116 +126,178 @@ quartodoc:
   css: api/_styles-quartodoc.css
 
   sections:
-    - title: Observation
-      desc: ""
+    - title: Modules
+      desc: "Modelskill modulues"
       contents:
-        - observation
-        - PointObservation
-        - TrackObservation
-    - title: Model Result
-      desc: ""
-      contents:
-        - model_result
-        - PointModelResult
-        - TrackModelResult
-        - DfsuModelResult
-        - GridModelResult
-        - DummyModelResult
-    - title: Matching
-      desc: Matching classes and functions
-      contents:
-        - match
-        - from_matched
-        - from_config
-    - title: Comparer
-      desc: ""
-      contents:
-        - name: Comparer
+        - obs
+        - name: model
           members:
-            - skill
-            - gridded_skill
-            - score
-            - rename
-            - sel
-            - where
-            - query
-            - to_dataframe
-            - save
-            - load
-        -  name : comparison.ComparerPlotter
+            - model_result
+            - PointModelResult
+            - TrackModelResult
+            - DfsuModelResult
+            - GridModelResult
+            - DummyModelResult
 
-        - name: ComparerCollection
+        - matching
+        - name: comparison
           members:
-            - skill
-            - mean_skill
-            - gridded_skill
-            - score
-            - rename
-            - sel
-            - save
-            - load
-        - name : comparison.ComparerCollectionPlotter
-        - name: SkillTable
-    
-    - title: Plotting
-      desc: ""
-      contents:
-      - plotting
-      - plotting.scatter
-      - plotting.wind_rose
-      - plotting.taylor_diagram
-      - plotting.spatial_overview
-      - plotting.temporal_coverage
-        
-    - title: Metrics  
-      desc: ""
-      contents:
-      - name: metrics
-        members:
-          - r2
-          - rmse
-          - root_mean_squared_error
-          - c_rmse
-          - c_root_mean_squared_error
-          - urmse
-          # - unbiased_root_mean_squared_error
-          - c_urmse
-          - c_unbiased_root_mean_squared_error
-          - bias
-          - c_bias
-          - mae
-          - mean_absolute_error
-          - c_mae
-          - c_mean_absolute_error
-          - mape
-          - cc
-          - corrcoef
-          - rho
-          - spearmanr
-          - ev
-          - explained_variance
-          - nse
-          - nash_sutcliffe_efficiency
-          - kge
-          - kling_gupta_efficiency
-          - max_error
-          - c_max_error
-          - mef
-          - model_efficiency_factor
-          - si
-          - scatter_index
-          - pr
-          - peak_ratio
-          - willmott
-          - hit_ratio
-          - lin_slope
-
-    - title: Core
-      desc: ""
-      contents:
+            - Comparer
+            - ComparerCollection
+            - ComparerPlotter
+            - ComparerCollectionPlotter
+        - skill
+        - name: metrics
+          members:
+            - r2
+            - rmse
+            - root_mean_squared_error
+            - c_rmse
+            - c_root_mean_squared_error
+            - urmse
+            - c_urmse
+            - c_unbiased_root_mean_squared_error
+            - bias
+            - c_bias
+            - mae
+            - mean_absolute_error
+            - c_mae
+            - c_mean_absolute_error
+            - mape
+            - cc
+            - corrcoef
+            - rho
+            - spearmanr
+            - ev
+            - explained_variance
+            - nse
+            - nash_sutcliffe_efficiency
+            - kge
+            - kling_gupta_efficiency
+            - max_error
+            - c_max_error
+            - mef
+            - model_efficiency_factor
+            - si
+            - scatter_index
+            - pr
+            - peak_ratio
+            - willmott
+            - hit_ratio
+            - lin_slope
+        - plotting
+        - quantity
         - settings
-        - TimeSeries
-        - Quantity
+    # - title: Observation
+    #   desc: ""
+    #   contents:
+    #     - observation
+    #     - PointObservation
+    #     - TrackObservation
+    # - title: Model Result
+    #   desc: ""
+    #   contents:
+    #     - model_result
+    #     - PointModelResult
+    #     - TrackModelResult
+    #     - DfsuModelResult
+    #     - GridModelResult
+    #     - DummyModelResult
+    # - title: Matching
+    #   desc: Matching classes and functions
+    #   contents:
+    #     - match
+    #     - from_matched
+    #     - from_config
+    # - title: Comparer
+    #   desc: ""
+    #   contents:
+    #     - name: Comparer
+    #       members:
+    #         - skill
+    #         - gridded_skill
+    #         - score
+    #         - rename
+    #         - sel
+    #         - where
+    #         - query
+    #         - to_dataframe
+    #         - save
+    #         - load
+    #     -  name : comparison.ComparerPlotter
+
+    #     - name: ComparerCollection
+    #       members:
+    #         - skill
+    #         - mean_skill
+    #         - gridded_skill
+    #         - score
+    #         - rename
+    #         - sel
+    #         - save
+    #         - load
+    #     - name : comparison.ComparerCollectionPlotter
+    #     - name: SkillTable
+    
+    # - title: Plotting
+    #   desc: ""
+    #   contents:
+    #   - plotting
+    #   - plotting.scatter
+    #   - plotting.wind_rose
+    #   - plotting.taylor_diagram
+    #   - plotting.spatial_overview
+    #   - plotting.temporal_coverage
+        
+    # - title: Metrics  
+    #   desc: ""
+    #   contents:
+    #   - metrics
+    #     # members:
+    #     #   - r2
+    #     #   - rmse
+    #     #   - root_mean_squared_error
+    #     #   - c_rmse
+    #     #   - c_root_mean_squared_error
+    #     #   - urmse
+    #     #   # - unbiased_root_mean_squared_error
+    #     #   - c_urmse
+    #     #   - c_unbiased_root_mean_squared_error
+    #     #   - bias
+    #     #   - c_bias
+    #     #   - mae
+    #     #   - mean_absolute_error
+    #     #   - c_mae
+    #     #   - c_mean_absolute_error
+    #     #   - mape
+    #     #   - cc
+    #     #   - corrcoef
+    #     #   - rho
+    #     #   - spearmanr
+    #     #   - ev
+    #     #   - explained_variance
+    #     #   - nse
+    #     #   - nash_sutcliffe_efficiency
+    #     #   - kge
+    #     #   - kling_gupta_efficiency
+    #     #   - max_error
+    #     #   - c_max_error
+    #     #   - mef
+    #     #   - model_efficiency_factor
+    #     #   - si
+    #     #   - scatter_index
+    #     #   - pr
+    #     #   - peak_ratio
+    #     #   - willmott
+    #     #   - hit_ratio
+    #     #   - lin_slope
+
+    # - title: Core
+    #   desc: ""
+    #   contents:
+    #     - settings
+    #     - TimeSeries
+    #     - Quantity
 
 metadata-files:
   - api/_sidebar.yml
