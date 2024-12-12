@@ -751,24 +751,7 @@ class ComparerCollection(Mapping, Scoreable):
     #     >>> cc.mean_skill_points()
     #     """
 
-    #     # TODO remove in v1.1
-    #     model, start, end, area = _get_deprecated_args(kwargs)
-    #     observation, variable = _get_deprecated_obs_var_args(kwargs)
-    #     assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-    #     # filter data
-    #     cmp = self.sel(
-    #         model=model,
-    #         observation=observation,
-    #         variable=variable,
-    #         start=start,
-    #         end=end,
-    #         area=area,
-    #     )
-    #     if cmp.n_points == 0:
-    #         warnings.warn("No data!")
-    #         return None
-
+    #     cmp = self
     #     dfall = cmp.to_dataframe()
     #     dfall["observation"] = "all"
 

@@ -475,7 +475,7 @@ class ComparerCollectionPlotter:
         Examples
         ------
         >>> cc.plot.taylor()
-        >>> cc.plot.taylor(observation="c2")
+        >>> cc.sel(observation="c2").plot.taylor()
         >>> cc.plot.taylor(start="2017-10-28", figsize=(5,5))
 
         References

@@ -81,7 +81,7 @@ class SkillGridArray(SkillGridMixin):
         --------
         >>> gs = cc.gridded_skill()
         >>> gs["bias"].plot()
-        >>> gs.rmse.plot(model='SW_1')
+        >>> gs.sel(model='SW_1').rmse.plot()
         >>> gs.r2.plot(cmap='YlOrRd', figsize=(10,10))
         """
         da = self.data
