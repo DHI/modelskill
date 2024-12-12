@@ -715,6 +715,10 @@ class SkillTable:
 
         if isinstance(df, pd.Series):
             return SkillArray(df)
+        if not isinstance(reduce_index, bool):
+            raise TypeError(
+                "reduce_index must be a boolean not " + str(type(reduce_index))
+            )
         if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
         return self.__class__(df)
