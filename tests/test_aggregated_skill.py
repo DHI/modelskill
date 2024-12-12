@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 import polars as pl
 import pandas as pd
