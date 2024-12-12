@@ -20,7 +20,7 @@ dependencies = [
 
 authors = [
   { name = "Jesper Sandvig Mariegaard", email="jem@dhigroup.com" },
-  { name="Henrik Andersson",email="jan@dhigroup.com"},
+  { name="Henrik Andersson", email="jan@dhigroup.com" },
 ]
 description="Compare results from simulations with observations."
 license="MIT"
@@ -32,7 +32,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -79,7 +78,7 @@ notebooks = [
 lint.ignore  = ["E501"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.11"
 ignore_missing_imports = true
 warn_unreachable = false
 no_implicit_optional = true
