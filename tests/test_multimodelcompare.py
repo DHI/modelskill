@@ -110,11 +110,6 @@ def test_mm_sel_missing_model(cc):
 
 
 def test_mm_skill_obs(cc):
-    # with pytest.warns(FutureWarning):
-    #    sk = cc.skill(observation="c2")
-    #    assert len(sk) == 2
-    #    assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
-
     sk = cc.sel(observation="c2").skill()
     assert len(sk) == 2
     assert sk.filter(pl.col("model") == "SW_2")[0, "bias"] == pytest.approx(0.081431053)

@@ -45,7 +45,7 @@ def sk_df2():
 
 
 @pytest.fixture
-def cc1():
+def cmp1() -> ms.Comparer:
     fn = "tests/testdata/NorthSeaHD_and_windspeed.dfsu"
     mr = ms.model_result(fn, item=0, name="HD")
     fn = "tests/testdata/altimetry_NorthSea_20171027.csv"
@@ -123,8 +123,8 @@ def test_skill_table_from_xarray(sk_df2):
     assert set(sk.metrics) == set(["n", "bias", "rmse", "corr"])  # note: no "x", "y"
 
 
-def test_skill(cc1):
-    sk = cc1.skill()
+def test_skill(cmp1):
+    sk = cmp1.skill()
 
     # TODO a minimal skill assesment consists of 1 observation, 1 model and 1 variable
     # in this case model and variable is implict since we only have one of each, but why do we have one observation, seems inconsistent
@@ -138,10 +138,9 @@ def test_skill(cc1):
     assert "bias" in repr(sk)
 
 
-def test_skill_bad_args(cc1):
-    # is there a better error type?
-    with pytest.raises(AttributeError):
-        cc1.skill(nonexisting_arg=1)
+def test_skill_bad_args(cmp1: ms.Comparer):
+    with pytest.raises(TypeError):
+        cmp1.skill(nonexisting_arg=1)  # type: ignore
 
 
 def test_skill_multi_model(cc2):
@@ -229,26 +228,18 @@ def test_skill_mm_sort(cc2):
     assert sk4[-1, "observation"] == "HKNA"
 
 
-def test_skill_sel(cc1):
-    sk = cc1.skill(metrics=["rmse", "bias"])
+def test_skill_sel(cmp1):
+    sk = cmp1.skill(metrics=["rmse", "bias"])
     s2 = sk.sel(observation="alti")
     assert len(s2) == 1
     assert "rmse" in sk.metrics
     assert "bias" in sk.metrics
 
 
-def test_skill_sel_metrics_str(cc1):
-    sk = cc1.skill(metrics=["rmse", "bias"])
+def test_skill_sel_metrics_str(cmp1):
+    sk = cmp1.skill(metrics=["rmse", "bias"])
+
     assert "rmse" in sk.metrics
-
-
-# def test_skill_sel_metrics_list(cc2):
-#     sk = cc2.skill(metrics=["rmse", "bias"])
-
-#     #with pytest.warns(FutureWarning, match="deprecated"):
-#     #    s2 = sk.sel(metrics=["rmse", "n"])
-#     assert "n" in sk.metrics
-#     assert "bias" not in sk.metrics
 
 
 def test_skill_sel_multi_model(cc2):
@@ -293,8 +284,8 @@ def test_skill_sel_fail(cc2):
         sk.sel(model=99)
 
 
-def test_skill_plot_bar(cc1):
-    sk = cc1.skill(metrics=["rmse", "bias"])
+def test_skill_plot_bar(cmp1):
+    sk = cmp1.skill(metrics=["rmse", "bias"])
     sk["bias"].plot.bar()
 
 
@@ -306,8 +297,8 @@ def test_skill_plot_bar_multi_model(cc2):
         sk["bad_metric"].plot.bar()
 
 
-def test_skill_plot_line(cc1):
-    sk = cc1.skill(metrics=["rmse", "bias"])
+def test_skill_plot_line(cmp1):
+    sk = cmp1.skill(metrics=["rmse", "bias"])
     sk["bias"].plot.line()
     sk["bias"].plot.line(title="Skill")
 

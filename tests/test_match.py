@@ -96,16 +96,6 @@ def test_properties_after_match_ts(o1):
     assert cmp.mod_names == ["SW_1"]
 
 
-# TODO remove in v1.1
-def test_compare_multi_obs_multi_model_is_deprecated(o1, o2, o3, mr1, mr2):
-    with pytest.warns(FutureWarning, match="match"):
-        cc = ms.compare([o1, o2, o3], [mr1, mr2])
-    assert cc.n_models == 2
-    assert cc.n_observations == 3
-    assert cc["c2"].n_points == 113
-    assert cc["HKNA"].name == "HKNA"
-
-
 def test_match_multi_obs_multi_model(o1, o2, o3, mr1, mr2):
     cc = ms.match([o1, o2, o3], [mr1, mr2])
     assert cc.n_models == 2

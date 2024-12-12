@@ -26,12 +26,13 @@ import polars as pl
 
 
 from ..plotting import taylor_diagram, TaylorPoint
+from .. import metrics as mtr
 
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 
-from ..utils import _get_idx, _get_name
+from ..utils import _get_name
 from ._comparison import Comparer, Scoreable
 from ..metrics import _parse_metric
 from ._utils import (
@@ -41,31 +42,6 @@ from ._utils import (
     IdxOrNameTypes,
     TimeTypes,
 )
-from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
-
-
-def _get_deprecated_obs_var_args(kwargs):  # type: ignore
-    observation, variable = None, None
-
-    # Don't bother refactoring this, it will be removed in v1.1
-    if "observation" in kwargs:
-        observation = kwargs.pop("observation")
-        if observation is not None:
-            warnings.warn(
-                f"The 'observation' argument is deprecated, use 'sel(observation='{observation}') instead",
-                FutureWarning,
-            )
-
-    if "variable" in kwargs:
-        variable = kwargs.pop("variable")
-
-        if variable is not None:
-            warnings.warn(
-                f"The 'variable' argument is deprecated, use 'sel(quantity='{variable}') instead",
-                FutureWarning,
-            )
-
-    return observation, variable
 
 
 class ComparerCollection(Mapping, Scoreable):
@@ -129,25 +105,9 @@ class ComparerCollection(Mapping, Scoreable):
         return self[0]._unit_text
 
     @property
-    def n_comparers(self) -> int:
-        warnings.warn(
-            "cc.n_comparers is deprecated, use len(cc) instead",
-            FutureWarning,
-        )
-        return len(self)
-
-    @property
     def n_points(self) -> int:
         """number of compared points"""
         return sum([c.n_points for c in self._comparers.values()])
-
-    @property
-    def start(self) -> pd.Timestamp:
-        warnings.warn(
-            "start is deprecated, use start_time instead",
-            FutureWarning,
-        )
-        return self.start_time
 
     @property
     def start_time(self) -> pd.Timestamp:
@@ -156,14 +116,6 @@ class ComparerCollection(Mapping, Scoreable):
         for cmp in self._comparers.values():
             starts.append(cmp.time[0])
         return min(starts)
-
-    @property
-    def end(self) -> pd.Timestamp:
-        warnings.warn(
-            "end is deprecated, use end_time instead",
-            FutureWarning,
-        )
-        return self.end_time
 
     @property
     def end_time(self) -> pd.Timestamp:
@@ -308,7 +260,6 @@ class ComparerCollection(Mapping, Scoreable):
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
-        variable: Optional[IdxOrNameTypes] = None,  # obsolete
         **kwargs: Any,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
@@ -340,12 +291,6 @@ class ComparerCollection(Mapping, Scoreable):
         ComparerCollection
             New ComparerCollection with selected data.
         """
-        if variable is not None:
-            warnings.warn(
-                "variable is deprecated, use quantity instead",
-                FutureWarning,
-            )
-            quantity = variable
         # TODO is this really necessary to do both in ComparerCollection and Comparer?
         if model is not None:
             if isinstance(model, (str, int)):
@@ -447,7 +392,6 @@ class ComparerCollection(Mapping, Scoreable):
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         observed: bool = False,
-        **kwargs: Any,
     ) -> SkillTable:
         """Aggregated skill assessment of model(s)
 
@@ -505,24 +449,7 @@ class ComparerCollection(Mapping, Scoreable):
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
         """
-
-        # TODO remove in v1.1 ----------
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cc = self.sel(
-            model=model,
-            observation=observation,
-            quantity=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-        if cc.n_points == 0:
-            raise ValueError("Dataset is empty, no data to compare.")
-
-        ## ---- end of deprecated code ----
+        cc = self
 
         pmetrics = _parse_metric(metrics)
         # TODO don't use hardcoded metrics
@@ -691,24 +618,7 @@ class ComparerCollection(Mapping, Scoreable):
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
-
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self.sel(
-            model=model,
-            observation=observation,
-            quantity=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-
-        if cmp.n_points == 0:
-            raise ValueError("Dataset is empty, no data to compare.")
-
-        ## ---- end of deprecated code ----
+        cmp = self
 
         metrics = _parse_metric(metrics)
 
@@ -789,24 +699,7 @@ class ComparerCollection(Mapping, Scoreable):
         >>> sk = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        # filter data
-        cc = self.sel(
-            model=model,  # deprecated
-            observation=observation,  # deprecated
-            quantity=variable,  # deprecated
-            start=start,  # deprecated
-            end=end,  # deprecated
-            area=area,  # deprecated
-        )
-        if cc.n_points == 0:
-            raise ValueError("Dataset is empty, no data to compare.")
-
-        ## ---- end of deprecated code ----
+        cc = self
 
         df = cc._to_long_dataframe()  # TODO: remove
         assert "model" in df.columns
@@ -912,24 +805,7 @@ class ComparerCollection(Mapping, Scoreable):
     #     >>> cc.mean_skill_points()
     #     """
 
-    #     # TODO remove in v1.1
-    #     model, start, end, area = _get_deprecated_args(kwargs)
-    #     observation, variable = _get_deprecated_obs_var_args(kwargs)
-    #     assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-    #     # filter data
-    #     cmp = self.sel(
-    #         model=model,
-    #         observation=observation,
-    #         variable=variable,
-    #         start=start,
-    #         end=end,
-    #         area=area,
-    #     )
-    #     if cmp.n_points == 0:
-    #         warnings.warn("No data!")
-    #         return None
-
+    #     cmp = self
     #     dfall = cmp.to_dataframe()
     #     dfall["observation"] = "all"
 

@@ -7,7 +7,7 @@ exclude = ["notebooks", "tests"]
 
 [project]
 name="modelskill"
-version="1.1.dev0"
+version="1.1.0"
 dependencies = [
     "numpy  > 1.24.4",
     "pandas >= 1.4",
@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 authors = [
-  { name = "Jesper Sandvig Mariegaard", email="jem@dhigroup.com" },
+  { name="Jesper Sandvig Mariegaard", email="jem@dhigroup.com" },
   { name="Henrik Andersson", email="jan@dhigroup.com" },
 ]
 description="Compare results from simulations with observations."

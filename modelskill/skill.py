@@ -709,9 +709,7 @@ class SkillTable:
     #     """
     #     return self.__class__(self.data.query(query))
 
-    def sel(
-        self, query: str | None = None, reduce_index: bool = True, **kwargs: Any
-    ) -> SkillTable | SkillArray:
+    def sel(self, reduce_index: bool = True, **kwargs: Any) -> SkillTable | SkillArray:
         """Select a subset of the SkillTable by a query,
            (part of) the index, or specific columns
 
@@ -737,20 +735,6 @@ class SkillTable:
         >>> sk_SW1 = sk.sel(model = "SW_1")
         >>> sk2 = sk.sel(observation = ["EPL", "HKNA"])
         """
-        if query is not None:
-            warnings.warn(
-                "s.sel(query=...) is deprecated, use s.query(...) instead",
-                FutureWarning,
-            )
-            return self.query(query)
-
-        for key, value in kwargs.items():
-            if key == "metrics" or key == "columns":
-                warnings.warn(
-                    f"s.sel({key}=...) is deprecated, use getitem s[...] instead",
-                    FutureWarning,
-                )
-                return self[value]  # type: ignore
 
         df = self.to_dataframe(drop_xy=False)
 
