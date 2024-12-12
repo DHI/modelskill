@@ -55,7 +55,7 @@ class DfsuModelResult(SpatialField):
                 raise ValueError(f"File must be a dfsu file, not {Path(data).suffix}")
             name = name or Path(data).stem
             filename = str(data)
-            data = mikeio.open(data)
+            data = mikeio.open(data)  # type: ignore
 
         elif isinstance(data, (mikeio.DataArray, mikeio.Dataset)):
             pass
@@ -73,7 +73,7 @@ class DfsuModelResult(SpatialField):
             item = data.name
             self.sel_items = SelectedItems(values=data.name, aux=[])
             data = mikeio.Dataset({data.name: data})
-        elif isinstance(data, mikeio.dfsu.Dfsu2DH | mikeio.dfsu.Dfsu3D):
+        elif isinstance(data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D)):
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
@@ -192,7 +192,7 @@ class DfsuModelResult(SpatialField):
             if isinstance(self.data, mikeio.Dataset):
                 ds_model = self.data.isel(element=elemids)
             else:  # Dfsu
-                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
+                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)  # type: ignore
         else:
             if z is not None:
                 raise NotImplementedError(
