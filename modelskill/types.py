@@ -69,6 +69,7 @@ UnstructuredType = Union[
     str,
     Path,
     mikeio.dfsu.Dfsu2DH,
+    mikeio.dfsu.Dfsu3D,
     mikeio.Dataset,
     mikeio.DataArray,
 ]

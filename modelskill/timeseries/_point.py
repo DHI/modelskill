@@ -86,7 +86,7 @@ def _parse_point_input(
         sel_items = PointItem(values=item_name, aux=[])
 
         if isinstance(data, mikeio.DataArray):
-            data = mikeio.Dataset(data)
+            data = mikeio.Dataset([data])
         elif isinstance(data, pd.Series):
             data = data.to_frame()
         elif isinstance(data, xr.DataArray):
