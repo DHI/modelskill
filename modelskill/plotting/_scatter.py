@@ -158,7 +158,7 @@ def scatter(
     x_trend = np.array([xlim[0], xlim[1]])
 
     if show_hist and show_density:
-        raise TypeError(
+        raise ValueError(
             "if `show_hist=True` then `show_density` must be either `False` or `None`"
         )
 
