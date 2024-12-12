@@ -446,13 +446,14 @@ def _scatter_plotly(
             )
         )
 
-    if show_points is None or show_points:
+    if show_points:
         if show_density:
             c = z
             cbar = dict(thickness=20, title="# of points")
         else:
             c = "black"
             cbar = None
+
         data.append(
             go.Scatter(
                 x=x_sample,
