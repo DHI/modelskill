@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Callable,
 )
-import warnings
 
 if TYPE_CHECKING:
     import matplotlib.figure
@@ -154,7 +153,6 @@ class ComparerPlotter:
         self,
         bins: int | Sequence = 100,
         *,
-        model: str | int | None = None,
         title: str | None = None,
         ax=None,
         figsize: Tuple[float, float] | None = None,
@@ -194,15 +192,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        if model is None:
-            mod_names = cmp.mod_names
-        else:
-            warnings.warn(
-                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.hist()",
-                FutureWarning,
-            )
-            model_list = [model] if isinstance(model, (str, int)) else model
-            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+        mod_names = cmp.mod_names
 
         axes = []
         for mod_name in mod_names:
@@ -495,7 +485,7 @@ class ComparerPlotter:
         Parameters
         ----------
         bins: (int, float, sequence), optional
-            bins for the 2D histogram on the background. By default 20 bins.
+            bins for the 2D histogram on the background. By default 120 bins.
             if int, represents the number of bins of 2D
             if float, represents the bin size
             if sequence (list of int or float), represents the bin edges
@@ -519,8 +509,9 @@ class ComparerPlotter:
         show_density: bool, optional
             show the data density as a colormap of the scatter, by default
             None. If both `show_density` and `show_hist` are None, then
-            `show_density` is used by default. For binning the data, the
-            kword `bins=Float` is used.
+            `show_density` is used by default. If number of points is less
+            than 200, then `show_density` is False as default.
+            For binning the data, the kword `bins=Float` is used.
         norm : matplotlib.colors norm
             colormap normalization. If None, defaults to
             matplotlib.colors.PowerNorm(vmin=1, gamma=0.5)
@@ -564,15 +555,8 @@ class ComparerPlotter:
         """
 
         cmp = self.comparer
-        if model is None:
-            mod_names = cmp.mod_names
-        else:
-            warnings.warn(
-                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.scatter()",
-                FutureWarning,
-            )
-            model_list = [model] if isinstance(model, (str, int)) else model
-            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+
+        mod_names = cmp.mod_names
 
         axes = []
         for mod_name in mod_names:

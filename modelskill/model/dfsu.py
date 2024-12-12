@@ -1,7 +1,7 @@
 from __future__ import annotations
 import inspect
 from pathlib import Path
-from typing import Optional, get_args
+from typing import Literal, Optional, get_args, cast
 
 import mikeio
 import numpy as np
@@ -55,7 +55,7 @@ class DfsuModelResult(SpatialField):
                 raise ValueError(f"File must be a dfsu file, not {Path(data).suffix}")
             name = name or Path(data).stem
             filename = str(data)
-            data = mikeio.open(data)
+            data = mikeio.open(data)  # type: ignore
 
         elif isinstance(data, (mikeio.DataArray, mikeio.Dataset)):
             pass
@@ -73,7 +73,7 @@ class DfsuModelResult(SpatialField):
             item = data.name
             self.sel_items = SelectedItems(values=data.name, aux=[])
             data = mikeio.Dataset({data.name: data})
-        else:
+        elif isinstance(data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D)):
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
@@ -85,7 +85,10 @@ class DfsuModelResult(SpatialField):
         if isinstance(data, mikeio.Dataset):
             data = data[self.sel_items.all]
 
-        self.data: mikeio.dfsu.Dfsu2DH | mikeio.Dataset = data
+        assert isinstance(
+            data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D, mikeio.Dataset)
+        )
+        self.data = data
         self.name = name or str(item)
         self.quantity = (
             Quantity.from_mikeio_iteminfo(item_info) if quantity is None else quantity
@@ -191,7 +194,7 @@ class DfsuModelResult(SpatialField):
             if isinstance(self.data, mikeio.Dataset):
                 ds_model = self.data.isel(element=elemids)
             else:  # Dfsu
-                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)
+                ds_model = self.data.read(elements=elemids, items=self.sel_items.all)  # type: ignore
         else:
             if z is not None:
                 raise NotImplementedError(
@@ -228,6 +231,16 @@ class DfsuModelResult(SpatialField):
             aux_items=self.sel_items.aux,
         )
 
+    def _check_interpolation_method(
+        self, method: str
+    ) -> Literal["nearest", "inverse_distance"]:
+        if method in ("nearest", "inverse_distance"):
+            return cast(Literal["nearest", "inverse_distance"], method)
+        else:
+            raise ValueError(
+                f"Interpolation method for DfsuModelResult must be 'nearest' or 'inverse_distance'. Not {method}."
+            )
+
     def _extract_track(
         self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult:
@@ -245,7 +258,7 @@ class DfsuModelResult(SpatialField):
             raise NotImplementedError(
                 "spatial method 'contained' (=isel) not implemented for track extraction in MIKE IO"
             )
-        assert method in ["nearest", "inverse_distance"]
+        method = self._check_interpolation_method(method)
 
         assert isinstance(
             self.data, (mikeio.dfsu.Dfsu2DH, mikeio.DataArray, mikeio.Dataset)

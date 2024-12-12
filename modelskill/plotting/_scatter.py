@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Literal, Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
-import warnings
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -79,8 +78,8 @@ def scatter(
         show the data density as a 2d histogram, by default None
     show_density: bool, optional
         show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
-        are None, then `show_density` is used by default.
-        for binning the data, the previous kword `bins=Float` is used
+        are None, then `show_density` is used by default. If number of points is less than 200, then `show_density`
+        is False by default. For binning the data, the previous kword `bins=Float` is used
     norm : matplotlib.colors.Normalize
         colormap normalization
         If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
@@ -136,16 +135,6 @@ def scatter(
     ms.plotting.scatter(x, y, skill_table=True)
     ```
     """
-    if "skill_df" in kwargs:
-        warnings.warn(
-            "The `skill_df` keyword argument is deprecated. Use `skill_scores` instead.",
-            FutureWarning,
-        )
-        skill_scores = kwargs.pop("skill_df").to_dict("records")[0]
-
-    if show_hist is None and show_density is None:
-        # Default: points density
-        show_density = True
 
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
@@ -154,7 +143,12 @@ def scatter(
         norm = colors.PowerNorm(vmin=1, gamma=0.5)
 
     x_sample, y_sample = sample_points(x, y, show_points)
+    show_points = len(x_sample) > 0
     xq, yq = quantiles_xy(x, y, quantiles)
+
+    if show_hist is None and show_density is None:
+        # Default: points density
+        show_density = len(x_sample) >= 200
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
@@ -172,8 +166,14 @@ def scatter(
     x_trend = np.array([xlim[0], xlim[1]])
 
     if show_hist and show_density:
-        raise TypeError(
+        raise ValueError(
             "if `show_hist=True` then `show_density` must be either `False` or `None`"
+        )
+
+    if (show_points is False) and show_density:
+        raise ValueError(
+            "if `show_points=False` then `show_density` must be either "
+            "`False` or `None`; density is a property (the color) of the points!"
         )
 
     z = None

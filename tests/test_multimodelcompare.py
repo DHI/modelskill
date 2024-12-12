@@ -83,10 +83,6 @@ def test_mm_skill(cc):
     assert df.iloc[3].name[1] == "HKNA"
     assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
 
-    # TODO remove in v1.1
-    with pytest.warns(FutureWarning):
-        df = cc.skill(start="2017-10-27 00:01").to_dataframe()
-
     assert df.iloc[3].name[0] == "SW_2"
     assert df.iloc[3].name[1] == "HKNA"
     assert pytest.approx(df.iloc[3].mae, 1e-5) == 0.214476
@@ -113,11 +109,6 @@ def test_mm_sel_missing_model(cc):
 
 
 def test_mm_skill_obs(cc):
-    with pytest.warns(FutureWarning):
-        sk = cc.skill(observation="c2")
-        assert len(sk) == 2
-        assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
-
     sk = cc.sel(observation="c2").skill()
     assert len(sk) == 2
     assert pytest.approx(sk.loc["SW_2"].bias) == 0.081431053
@@ -296,15 +287,6 @@ def test_mm_mean_skill_weights_dict(cc):
 
 
 def test_mm_scatter(cc):
-    with pytest.warns(FutureWarning):
-        cc.sel(model="SW_2").scatter(start="2017-10-28")
-
-    with pytest.warns(FutureWarning):
-        cc.sel(model="SW_2")[0].scatter(start="2017-10-28")
-
-    with pytest.warns(FutureWarning):
-        cc.sel(model="SW_2").scatter()
-
     # scatter is the default plot
     ax = cc.sel(model="SW_2").plot()
     assert "SW_2" in ax.get_title()
@@ -371,9 +353,6 @@ def test_custom_metric_skilltable_mm_scatter(cc):
 
 
 def test_mm_kde(cc):
-    with pytest.warns(FutureWarning):
-        cc.kde()
-
     ax = cc.sel(model="SW_2").plot.kde()
     assert ax is not None
     # TODO more informative test
@@ -385,9 +364,6 @@ def test_mm_hist(cc):
 
 
 def test_mm_taylor(cc):
-    with pytest.warns(FutureWarning):
-        cc.taylor()
-
     cc.sel(model="SW_1", observation=[0, 1]).plot.taylor()
     cc.sel(model="SW_2").plot.taylor(normalize_std=True)
     cc.sel(model="SW_2").plot.taylor(figsize=(4, 4))

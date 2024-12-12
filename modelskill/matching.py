@@ -292,34 +292,6 @@ def match(
     return ComparerCollection(clist)
 
 
-def compare(
-    obs,
-    mod,
-    *,
-    obs_item=None,
-    mod_item=None,
-    gtype=None,
-    max_model_gap=None,
-) -> ComparerCollection:
-    warnings.warn("compare is deprecated. Use match instead.", FutureWarning)
-    observations = [obs] if isinstance(obs, get_args(ObsInputType)) else obs
-    assert isinstance(observations, Iterable)
-
-    clist = [
-        _single_obs_compare(
-            o,
-            mod,
-            obs_item=obs_item,
-            mod_item=mod_item,
-            gtype=gtype,
-            max_model_gap=max_model_gap,
-        )
-        for o in observations
-    ]
-
-    return ComparerCollection(clist)
-
-
 def _single_obs_compare(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],

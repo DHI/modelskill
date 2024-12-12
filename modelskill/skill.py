@@ -709,20 +709,6 @@ class SkillTable:
         >>> sk_SW1 = sk.sel(model = "SW_1")
         >>> sk2 = sk.sel(observation = ["EPL", "HKNA"])
         """
-        if query is not None:
-            warnings.warn(
-                "s.sel(query=...) is deprecated, use s.query(...) instead",
-                FutureWarning,
-            )
-            return self.query(query)
-
-        for key, value in kwargs.items():
-            if key == "metrics" or key == "columns":
-                warnings.warn(
-                    f"s.sel({key}=...) is deprecated, use getitem s[...] instead",
-                    FutureWarning,
-                )
-                return self[value]  # type: ignore
 
         df = self.to_dataframe(drop_xy=False)
 
@@ -736,6 +722,10 @@ class SkillTable:
 
         if isinstance(df, pd.Series):
             return SkillArray(df)
+        if not isinstance(reduce_index, bool):
+            raise TypeError(
+                "reduce_index must be a boolean not " + str(type(reduce_index))
+            )
         if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
         return self.__class__(df)

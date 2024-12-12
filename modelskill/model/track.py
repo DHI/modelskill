@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Optional, Sequence
+from typing import Any, Literal, Optional, Sequence
 import warnings
 
 import numpy as np
@@ -52,7 +52,7 @@ class TrackModelResult(TimeSeries, Alignable):
         quantity: Optional[Quantity] = None,
         x_item: str | int = 0,
         y_item: str | int = 1,
-        keep_duplicates: str | bool = "first",
+        keep_duplicates: Literal["first", "last", False] = "first",
         aux_items: Optional[Sequence[int | str]] = None,
     ) -> None:
         if not self._is_input_validated(data):

@@ -15,8 +15,6 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
 )
-import warnings
-from matplotlib.axes import Axes  # type: ignore
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -56,7 +54,6 @@ class Scoreable(Protocol):
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        **kwargs: Any,
     ) -> SkillTable: ...
 
     def gridded_skill(
@@ -147,49 +144,6 @@ def _is_observation(da: xr.DataArray) -> bool:
 
 def _is_model(da: xr.DataArray) -> bool:
     return str(da.attrs["kind"]) == "model"
-
-
-# TODO remove in v1.1
-def _get_deprecated_args(kwargs):  # type: ignore
-    model, start, end, area = None, None, None, None
-
-    # Don't bother refactoring this, it will be removed in v1.1
-    if "model" in kwargs:
-        model = kwargs.pop("model")
-        if model is not None:
-            warnings.warn(
-                f"The 'model' argument is deprecated, use 'sel(model='{model}')' instead",
-                FutureWarning,
-            )
-
-    if "start" in kwargs:
-        start = kwargs.pop("start")
-
-        if start is not None:
-            warnings.warn(
-                f"The 'start' argument is deprecated, use 'sel(start={start})' instead",
-                FutureWarning,
-            )
-
-    if "end" in kwargs:
-        end = kwargs.pop("end")
-
-        if end is not None:
-            warnings.warn(
-                f"The 'end' argument is deprecated, use 'sel(end={end})' instead",
-                FutureWarning,
-            )
-
-    if "area" in kwargs:
-        area = kwargs.pop("area")
-
-        if area is not None:
-            warnings.warn(
-                f"The 'area' argument is deprecated, use 'sel(area={area})' instead",
-                FutureWarning,
-            )
-
-    return model, start, end, area
 
 
 def _validate_metrics(metrics: Iterable[Any]) -> None:
@@ -1032,7 +986,6 @@ class Comparer(Scoreable):
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        **kwargs: Any,
     ) -> SkillTable:
         """Skill assessment of model(s)
 
@@ -1077,17 +1030,7 @@ class Comparer(Scoreable):
         """
         metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        if kwargs != {}:
-            raise AttributeError(f"Unknown keyword arguments: {kwargs}")
-
-        cmp = self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        )
+        cmp = self
         if cmp.n_points == 0:
             raise ValueError("No data selected for skill assessment")
 
@@ -1151,17 +1094,11 @@ class Comparer(Scoreable):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         sk = self.skill(
             by=["model", "observation"],
             metrics=[metric],
-            model=model,  # deprecated
-            start=start,  # deprecated
-            end=end,  # deprecated
-            area=area,  # deprecated
         )
         df = sk.to_dataframe()
 
@@ -1234,16 +1171,7 @@ class Comparer(Scoreable):
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        )
+        cmp = self
 
         metrics = _parse_metric(metrics)
         if cmp.n_points == 0:
@@ -1397,133 +1325,3 @@ class Comparer(Scoreable):
 
         else:
             raise NotImplementedError(f"Unknown gtype: {data.gtype}")
-
-    # =============== Deprecated methods ===============
-
-    def spatial_skill(
-        self,
-        bins=5,
-        binsize=None,
-        by=None,
-        metrics=None,
-        n_min=None,
-        **kwargs,
-    ):
-        # deprecated
-        warnings.warn(
-            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
-        )
-        return self.gridded_skill(
-            bins=bins,
-            binsize=binsize,
-            by=by,
-            metrics=metrics,
-            n_min=n_min,
-            **kwargs,
-        )
-
-    # TODO remove plotting methods in v1.1
-    def scatter(
-        self,
-        *,
-        bins=120,
-        quantiles=None,
-        fit_to_quantiles=False,
-        show_points=None,
-        show_hist=None,
-        show_density=None,
-        norm=None,
-        backend="matplotlib",
-        figsize=(8, 8),
-        xlim=None,
-        ylim=None,
-        reg_method="ols",
-        title=None,
-        xlabel=None,
-        ylabel=None,
-        skill_table=None,
-        **kwargs,
-    ):
-        warnings.warn(
-            "This method is deprecated, use plot.scatter instead", FutureWarning
-        )
-
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-
-        # self.plot.scatter(
-        self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        ).plot.scatter(
-            bins=bins,
-            quantiles=quantiles,
-            fit_to_quantiles=fit_to_quantiles,
-            show_points=show_points,
-            show_hist=show_hist,
-            show_density=show_density,
-            norm=norm,
-            backend=backend,
-            figsize=figsize,
-            xlim=xlim,
-            ylim=ylim,
-            reg_method=reg_method,
-            title=title,
-            xlabel=xlabel,
-            ylabel=ylabel,
-            **kwargs,
-        )
-
-    def taylor(
-        self,
-        normalize_std=False,
-        figsize=(7, 7),
-        marker="o",
-        marker_size=6.0,
-        title="Taylor diagram",
-        **kwargs,
-    ):
-        warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
-
-        self.plot.taylor(
-            normalize_std=normalize_std,
-            figsize=figsize,
-            marker=marker,
-            marker_size=marker_size,
-            title=title,
-            **kwargs,
-        )
-
-    def hist(
-        self, *, model=None, bins=100, title=None, density=True, alpha=0.5, **kwargs
-    ):
-        warnings.warn("hist is deprecated. Use plot.hist instead.", FutureWarning)
-        return self.plot.hist(
-            model=model, bins=bins, title=title, density=density, alpha=alpha, **kwargs
-        )
-
-    def kde(self, ax=None, **kwargs) -> Axes:
-        warnings.warn("kde is deprecated. Use plot.kde instead.", FutureWarning)
-
-        return self.plot.kde(ax=ax, **kwargs)
-
-    def plot_timeseries(
-        self, title=None, *, ylim=None, figsize=None, backend="matplotlib", **kwargs
-    ):
-        warnings.warn(
-            "plot_timeseries is deprecated. Use plot.timeseries instead.", FutureWarning
-        )
-
-        return self.plot.timeseries(
-            title=title, ylim=ylim, figsize=figsize, backend=backend, **kwargs
-        )
-
-    def residual_hist(self, bins=100, title=None, color=None, **kwargs):
-        warnings.warn(
-            "residual_hist is deprecated. Use plot.residual_hist instead.",
-            FutureWarning,
-        )
-
-        return self.plot.residual_hist(bins=bins, title=title, color=color, **kwargs)
