@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Any, List, Literal, Union, Optional, Tuple, Sequence, TYPE_CHECKING
 from matplotlib.axes import Axes
 import matplotlib.colors as colors
-import warnings
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
@@ -41,7 +40,6 @@ class ComparerCollectionPlotter:
     def scatter(
         self,
         *,
-        model=None,
         bins: int | float = 120,
         quantiles: int | Sequence[float] | None = None,
         fit_to_quantiles: bool = False,
@@ -138,19 +136,8 @@ class ComparerCollectionPlotter:
         """
 
         cc = self.cc
-        if model is None:
-            mod_names = cc.mod_names
-        else:
-            warnings.warn(
-                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.scatter()",
-                FutureWarning,
-            )
 
-            model_list = [model] if isinstance(model, (str, int)) else model
-            mod_names = [
-                self.cc.mod_names[_get_idx(m, self.cc.mod_names)] for m in model_list
-            ]
-
+        mod_names = cc.mod_names
         axes = []
         for mod_name in mod_names:
             ax_mod = self._scatter_one_model(
@@ -380,17 +367,8 @@ class ComparerCollectionPlotter:
         pandas.Series.hist
         matplotlib.axes.Axes.hist
         """
-        if model is None:
-            mod_names = self.cc.mod_names
-        else:
-            warnings.warn(
-                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.hist()",
-                FutureWarning,
-            )
-            model_list = [model] if isinstance(model, (str, int)) else model
-            mod_names = [
-                self.cc.mod_names[_get_idx(m, self.cc.mod_names)] for m in model_list
-            ]
+
+        mod_names = self.cc.mod_names
 
         axes = []
         for mod_name in mod_names:

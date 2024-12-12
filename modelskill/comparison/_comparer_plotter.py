@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Callable,
 )
-import warnings
 
 if TYPE_CHECKING:
     import matplotlib.figure
@@ -154,7 +153,6 @@ class ComparerPlotter:
         self,
         bins: int | Sequence = 100,
         *,
-        model: str | int | None = None,
         title: str | None = None,
         ax=None,
         figsize: Tuple[float, float] | None = None,
@@ -194,15 +192,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        if model is None:
-            mod_names = cmp.mod_names
-        else:
-            warnings.warn(
-                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.hist()",
-                FutureWarning,
-            )
-            model_list = [model] if isinstance(model, (str, int)) else model
-            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+        mod_names = cmp.mod_names
 
         axes = []
         for mod_name in mod_names:
@@ -564,15 +554,8 @@ class ComparerPlotter:
         """
 
         cmp = self.comparer
-        if model is None:
-            mod_names = cmp.mod_names
-        else:
-            warnings.warn(
-                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.scatter()",
-                FutureWarning,
-            )
-            model_list = [model] if isinstance(model, (str, int)) else model
-            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+
+        mod_names = cmp.mod_names
 
         axes = []
         for mod_name in mod_names:

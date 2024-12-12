@@ -1,7 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Literal, Optional, Any
-import warnings
 
 import pandas as pd
 import xarray as xr
@@ -60,31 +59,6 @@ def model_result(
         aux_items=aux_items,
         **kwargs,
     )
-
-
-class ModelResult:
-    def __new__(
-        cls,
-        data: DataInputType,
-        *,
-        gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        # deprecated
-        warnings.warn(
-            FutureWarning(
-                "Use model_result or an explicit class instead, e.g. PointModelResult"
-            )
-        )
-        if gtype is None:
-            geometry = _guess_gtype(data)
-        else:
-            geometry = GeometryType.from_string(gtype)
-
-        return _modelresult_lookup[geometry](
-            data=data,
-            **kwargs,
-        )
 
 
 def _guess_gtype(data: Any) -> GeometryType:

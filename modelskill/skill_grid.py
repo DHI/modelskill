@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Any, Iterable, overload, Hashable, TYPE_CHECKING
-import warnings
 import xarray as xr
 
 if TYPE_CHECKING:
@@ -69,13 +68,11 @@ class SkillGridArray(SkillGridMixin):
         ]
         return "\n".join(out)
 
-    def plot(self, model: str | None = None, **kwargs: Any) -> Axes:
+    def plot(self, **kwargs: Any) -> Axes:
         """wrapper for xArray DataArray plot function
 
         Parameters
         ----------
-        model : str, optional
-            Name of model to plot, by default all models
         **kwargs
             keyword arguments passed to xr.DataArray plot()
             e.g. figsize
@@ -87,16 +84,7 @@ class SkillGridArray(SkillGridMixin):
         >>> gs.rmse.plot(model='SW_1')
         >>> gs.r2.plot(cmap='YlOrRd', figsize=(10,10))
         """
-        if model is None:
-            da = self.data
-        else:
-            warnings.warn(
-                "model argument is deprecated, use sel(model=...)",
-                FutureWarning,
-            )
-            if model not in self.mod_names:
-                raise ValueError(f"model {model} not in model list ({self.mod_names})")
-            da = self.data.sel({"model": model})
+        da = self.data
 
         extra_dims = [d for d in da.coords.dims if d not in ["x", "y"]]
         if len(extra_dims) == 2:
@@ -213,15 +201,6 @@ class SkillGrid(SkillGridMixin):
         sel_data = self.data.sel(model=model)
         assert isinstance(sel_data, xr.Dataset)
         return SkillGrid(sel_data)
-
-    def plot(self, metric: str, model: str | None = None, **kwargs: Any) -> Axes:
-        warnings.warn(
-            "plot() is deprecated and will be removed in a future version. ",
-            FutureWarning,
-        )
-        if metric not in self.metrics:
-            raise ValueError(f"metric {metric} not found in {self.metrics}")
-        return self[metric].plot(model=model, **kwargs)
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert gridded skill data to pandas DataFrame
