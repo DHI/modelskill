@@ -494,7 +494,7 @@ class ComparerPlotter:
         Parameters
         ----------
         bins: (int, float, sequence), optional
-            bins for the 2D histogram on the background. By default 20 bins.
+            bins for the 2D histogram on the background. By default 120 bins.
             if int, represents the number of bins of 2D
             if float, represents the bin size
             if sequence (list of int or float), represents the bin edges
@@ -518,8 +518,9 @@ class ComparerPlotter:
         show_density: bool, optional
             show the data density as a colormap of the scatter, by default
             None. If both `show_density` and `show_hist` are None, then
-            `show_density` is used by default. For binning the data, the
-            kword `bins=Float` is used.
+            `show_density` is used by default. If number of points is less
+            than 200, then `show_density` is False as default.
+            For binning the data, the kword `bins=Float` is used.
         norm : matplotlib.colors norm
             colormap normalization. If None, defaults to
             matplotlib.colors.PowerNorm(vmin=1, gamma=0.5)
@@ -763,7 +764,7 @@ class ComparerPlotter:
 
     def residual_hist(
         self, bins=100, title=None, color=None, figsize=None, ax=None, **kwargs
-    ) -> matplotlib.axes.Axes:
+    ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
         """plot histogram of residual values
 
         Parameters
@@ -776,20 +777,67 @@ class ComparerPlotter:
             residual color, by default "#8B8D8E"
         figsize : tuple, optional
             figure size, by default None
-        ax : matplotlib.axes.Axes, optional
+        ax : matplotlib.axes.Axes | list[matplotlib.axes.Axes], optional
             axes to plot on, by default None
         **kwargs
             other keyword arguments to plt.hist()
 
         Returns
         -------
-        matplotlib.axes.Axes
+        matplotlib.axes.Axes | list[matplotlib.axes.Axes]
         """
+        cmp = self.comparer
+
+        if cmp.n_models == 1:
+            return self._residual_hist_one_model(
+                bins=bins,
+                title=title,
+                color=color,
+                figsize=figsize,
+                ax=ax,
+                mod_name=cmp.mod_names[0],
+                **kwargs,
+            )
+
+        if ax is not None and len(ax) != len(cmp.mod_names):
+            raise ValueError("Number of axes must match number of models")
+
+        axs = ax if ax is not None else [None] * len(cmp.mod_names)
+
+        for i, mod_name in enumerate(cmp.mod_names):
+            cmp_model = cmp.sel(model=mod_name)
+            ax_mod = cmp_model.plot.residual_hist(
+                bins=bins,
+                title=title,
+                color=color,
+                figsize=figsize,
+                ax=axs[i],
+                **kwargs,
+            )
+            axs[i] = ax_mod
+
+        return axs
+
+    def _residual_hist_one_model(
+        self,
+        bins=100,
+        title=None,
+        color=None,
+        figsize=None,
+        ax=None,
+        mod_name=None,
+        **kwargs,
+    ) -> matplotlib.axes.Axes:
+        """Residual histogram for one model only"""
         _, ax = _get_fig_ax(ax, figsize)
 
         default_color = "#8B8D8E"
         color = default_color if color is None else color
-        title = f"Residuals, {self.comparer.name}" if title is None else title
+        title = (
+            f"Residuals, Observation: {self.comparer.name}, Model: {mod_name}"
+            if title is None
+            else title
+        )
         ax.hist(self.comparer._residual, bins=bins, color=color, **kwargs)
         ax.set_title(title)
         ax.set_xlabel(f"Residuals of {self.comparer._unit_text}")

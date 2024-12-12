@@ -53,7 +53,7 @@ def _xyticks(n_sectors=8, lim=None):
 
 
 def sample_points(
-    x: np.ndarray, y: np.ndarray, include: bool | int | float | None = None
+    x: np.ndarray, y: np.ndarray, show_points: bool | int | float | None = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Sample points to be plotted
 
@@ -72,35 +72,37 @@ def sample_points(
 
     assert len(x) == len(y), "x and y must have same length"
 
-    if include is True:
+    if show_points is True:
         return x, y
 
-    if include is None:
+    if show_points is None:
         if len(x) < 5e4:
             return x, y
         else:
-            include = 50000
+            show_points = 50000
             warnings.warn(
-                message=f"Showing only {include} points in plot. Set `include` to True to show all points."
+                message=f"Showing only {show_points} points in plot. Set `show_points` to True to show all points."
             )
     else:
-        if not isinstance(include, (bool, int, float)):
-            raise TypeError(f"'subset' must be bool, int or float, not {type(include)}")
+        if not isinstance(show_points, (bool, int, float)):
+            raise TypeError(
+                f"'show_points' must be bool, int or float, not {type(show_points)}"
+            )
 
-    if include is False:
+    if show_points is False:
         return np.array([]), np.array([])
 
-    if isinstance(include, float):
-        if not 0 <= include <= 1:
-            raise ValueError("`include` fraction must be in [0,1]")
+    if isinstance(show_points, float):
+        if not 0 <= show_points <= 1:
+            raise ValueError("`show_points` fraction must be in [0,1]")
 
-        n_samples = int(len(x) * include)
-    elif isinstance(include, int):
-        if include < 0:
-            raise ValueError("`include` must be positive integer")
-        if include > len(x):
-            include = len(x)
-        n_samples = include
+        n_samples = int(len(x) * show_points)
+    elif isinstance(show_points, int):
+        if show_points < 0:
+            raise ValueError("`show_points` must be positive integer")
+        if show_points > len(x):
+            show_points = len(x)
+        n_samples = show_points
 
     np.random.seed(20)  # TODO should this be a parameter?
     ran_index = np.random.choice(range(len(x)), n_samples, replace=False)

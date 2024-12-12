@@ -754,6 +754,8 @@ def test_to_dataframe_tc(tc):
 
 # ======================== plotting ========================
 
+PLOT_FUNCS_RETURNING_MANY_AX = ["scatter", "hist", "residual_hist"]
+
 
 @pytest.fixture(
     params=[
@@ -770,9 +772,18 @@ def test_to_dataframe_tc(tc):
 def pc_plot_function(pc, request):
     func = getattr(pc.plot, request.param)
     # special cases requiring a model to be selected
-    if request.param in ["scatter", "hist", "residual_hist"]:
+    if request.param in PLOT_FUNCS_RETURNING_MANY_AX:
         func = getattr(pc.sel(model=0).plot, request.param)
     return func
+
+
+@pytest.mark.parametrize("kind", PLOT_FUNCS_RETURNING_MANY_AX)
+def test_plots_returning_multiple_axes(pc, kind):
+    n_models = 2
+    func = getattr(pc.plot, kind)
+    ax = func()
+    assert len(ax) == n_models
+    assert all(isinstance(a, plt.Axes) for a in ax)
 
 
 def test_plot_returns_an_object(pc_plot_function):
@@ -919,3 +930,67 @@ def test_from_matched_dfs0():
     assert float(
         gs.data.sel(x=-0.01, y=55.1, method="nearest").rmse.values
     ) == pytest.approx(0.0476569069177831)
+
+
+def test_from_matched_x_or_x_item_not_both():
+    with pytest.raises(ValueError, match="x and x_item cannot both be specified"):
+        ms.from_matched(
+            data="tests/testdata/matched_track_data.dfs0",
+            x=43.1,
+            x_item=0,
+            y_item=1,
+            obs_item=3,
+            mod_items=2,
+        )
+
+
+def test_from_matched_y_or_y_item_not_both():
+    with pytest.raises(ValueError, match="y and y_item cannot both be specified"):
+        ms.from_matched(
+            data="tests/testdata/matched_track_data.dfs0",
+            y=2.2,
+            x_item=0,
+            y_item=1,
+            obs_item=3,
+            mod_items=2,
+        )
+
+
+def test_from_matched_track_with_no_xy_items():
+    # If no x and y items are specified and no other information is available,
+    # then we cannot assume that the data is track data!
+    df = pd.DataFrame(
+        {
+            "lat": [55.0, 55.1],
+            "lon": [-0.1, 0.01],
+            "c2": [1.2, 1.3],
+            "mike": [1.22, 1.3],
+        },
+    )
+    cmp = ms.from_matched(
+        data=df,
+        obs_item="c2",
+        mod_items="mike",
+    )
+    assert cmp.gtype == "point"
+
+
+def test_from_matched_non_scalar_xy_fails():
+    # There is a risk that the user has not understood x_item and y_item
+    # should be provided instead of x and y.
+    df = pd.DataFrame(
+        {
+            "lat": [55.0, 55.1],
+            "lon": [-0.1, 0.01],
+            "c2": [1.2, 1.3],
+            "mike": [1.22, 1.3],
+        },
+    )
+    with pytest.raises(TypeError, match="must be scalar"):
+        ms.from_matched(
+            data=df,
+            obs_item="c2",
+            mod_items="mike",
+            x=df.lon,
+            y=df.lat,
+        )
