@@ -52,7 +52,7 @@ def model_result(
     if gtype is None:
         geometry = _guess_gtype(data)
     else:
-        geometry = GeometryType.from_string(gtype)
+        geometry = GeometryType(gtype)
 
     return _modelresult_lookup[geometry](
         data=data,
