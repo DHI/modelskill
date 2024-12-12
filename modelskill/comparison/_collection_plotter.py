@@ -67,7 +67,7 @@ class ComparerCollectionPlotter:
         Parameters
         ----------
         bins: (int, float, sequence), optional
-            bins for the 2D histogram on the background. By default 20 bins.
+            bins for the 2D histogram on the background. By default 120 bins.
             if int, represents the number of bins of 2D
             if float, represents the bin size
             if sequence (list of int or float), represents the bin edges
