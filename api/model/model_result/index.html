@@ -1381,7 +1381,7 @@
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="k">if</span> <span class="n">gtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="n">geometry</span> <span class="o">=</span> <span class="n">_guess_gtype</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="n">geometry</span> <span class="o">=</span> <span class="n">GeometryType</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">gtype</span><span class="p">)</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="n">geometry</span> <span class="o">=</span> <span class="n">GeometryType</span><span class="p">(</span><span class="n">gtype</span><span class="p">)</span>
 </span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>
 </span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="k">return</span> <span class="n">_modelresult_lookup</span><span class="p">[</span><span class="n">geometry</span><span class="p">](</span>
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>        <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
