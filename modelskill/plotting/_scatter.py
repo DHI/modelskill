@@ -162,6 +162,12 @@ def scatter(
             "if `show_hist=True` then `show_density` must be either `False` or `None`"
         )
 
+    if (not show_points) and show_density:
+        raise ValueError(
+            "if `show_points=False` then `show_density` must be either "
+            "`False` or `None`; density is a property (the color) of the points!"
+        )
+
     z = None
     if show_density and len(x_sample) > 0:
         if not isinstance(bins, (float, int)):
