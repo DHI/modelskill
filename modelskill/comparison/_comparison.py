@@ -1073,7 +1073,7 @@ class Comparer(Scoreable):
         by = _parse_groupby(by, n_mod=cmp.n_models, n_qnt=1)
 
         df = cmp._to_long_dataframe()
-        res = _groupby_df(df, by=by, metrics=metrics)
+        res = _groupby_df(df, by=by, metrics=metrics)  # type: ignore
         if self.gtype == "track":
             res = res.with_columns(pl.lit(np.nan).alias("x"), pl.lit(np.nan).alias("y"))
         else:
@@ -1120,7 +1120,7 @@ class Comparer(Scoreable):
 
         sk = self.skill(
             by=["model", "observation"],
-            metrics=[metric],
+            metrics=[metric],  # type: ignore
         )
         df = sk.to_dataframe()
 

@@ -565,7 +565,7 @@ class ComparerCollection(Mapping, Scoreable):
 
         # TODO why doesn't all frames have the same columns?
         res = pl.concat(frames, how="diagonal")
-        if observed:
+        if observed and attrs_keys is not None:
             # res = res.loc[~(res == False).any(axis=1)]  # noqa
             res = res.filter(pl.col(attrs_keys).is_not_null())
 
@@ -725,7 +725,7 @@ class ComparerCollection(Mapping, Scoreable):
             agg_cols.insert(0, "y")
 
         df = df.drop(["x", "y"]).rename(dict(xBin="x", yBin="y"))
-        res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)
+        res = _groupby_df(df, by=agg_cols, metrics=metrics, n_min=n_min)  # type: ignore
 
         potential_cols = ["x", "y", "model", "observation"]
         cols = [c for c in potential_cols if c in res.columns]

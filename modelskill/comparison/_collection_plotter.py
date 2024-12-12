@@ -654,10 +654,10 @@ class ComparerCollectionPlotter:
         xmin, xmax, ymin, ymax = np.inf, -np.inf, np.inf, -np.inf
 
         for model in cc.mod_names:
-            df_model = df[df.model == model]
+            df_model = df.filter(model=model)
 
-            x = df_model.obs_val.values
-            y = df_model.mod_val.values
+            x = df_model["obs_val"].to_numpy()
+            y = df_model["mod_val"].to_numpy()
             xq, yq = quantiles_xy(x, y, quantiles)
 
             xmin = min([x.min(), xmin])
@@ -768,7 +768,7 @@ class ComparerCollectionPlotter:
         _, ax = _get_fig_ax(ax, figsize)
 
         df = self.cc.sel(model=mod_name)._to_long_dataframe()
-        residuals = df.mod_val.values - df.obs_val.values
+        residuals = (df["mod_val"] - df["obs_val"]).to_numpy()
 
         default_color = "#8B8D8E"
         color = default_color if color is None else color

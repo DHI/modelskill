@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Optional, Iterable, List, Tuple, Union
+from typing import Callable, Optional, Iterable, List, Sequence, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -54,8 +54,8 @@ def _add_spatial_grid_to_df(
 def _groupby_df(
     df: pl.DataFrame,
     *,
-    by: List[str],
-    metrics: List[str | Callable],
+    by: Sequence[str],
+    metrics: Sequence[str | Callable],
     n_min: Optional[int] = None,
 ) -> pl.DataFrame:
     if _dt_in_by(by):
@@ -126,7 +126,7 @@ def _groupby_df(
     # This is a bit of a hack to allow for peak_ratio which is special, since it uses datetime information
     PR = False
     if "peak_ratio" in metrics:
-        metrics.remove("peak_ratio")
+        metrics = [m for m in metrics if m != "peak_ratio"]
         PR = True
     custom_metrics = [_get_metric(m) for m in metrics if m not in NAMED_METRICS]
 
@@ -157,7 +157,7 @@ def _groupby_df(
 
 
 def _calculate_custom_metrics(
-    df: pl.DataFrame, by: List[str], custom_metrics: List[Callable]
+    df: pl.DataFrame, by: Sequence[str], custom_metrics: Sequence[Callable]
 ) -> pl.DataFrame:
     cres = df.group_by(by).agg(
         [
@@ -176,7 +176,7 @@ def _calculate_custom_metrics(
     return cres
 
 
-def _calculate_peak_ratio(df: pl.DataFrame, by: List[str]) -> pl.DataFrame:
+def _calculate_peak_ratio(df: pl.DataFrame, by: Sequence[str]) -> pl.DataFrame:
     from modelskill.metrics import peak_ratio
 
     # peak ratio expects a pd.Series with a DateTimeIndex
@@ -226,7 +226,9 @@ EXPRS = {
 ALLOWED_DT = list(EXPRS.keys())
 
 
-def _add_dt_to_df(df: pl.DataFrame, by: List[str]) -> Tuple[pl.DataFrame, List[str]]:
+def _add_dt_to_df(
+    df: pl.DataFrame, by: Sequence[str]
+) -> Tuple[pl.DataFrame, List[str]]:
     assert isinstance(by, list)
 
     for j, b in enumerate(by):
