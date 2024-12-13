@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>API Reference – ModelSkill</title>
+<title>terminology – ModelSkill</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,7 +30,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../api/obs.html" rel="next">
+<link href="../user-guide/data-structures.html" rel="next">
+<link href="../user-guide/overview.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -40,6 +41,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<link href="../site_libs/quarto-contrib/fontawesome6-0.1.0/all.css" rel="stylesheet">
+<link href="../site_libs/quarto-contrib/fontawesome6-0.1.0/latex-fontsize.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -95,7 +98,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../user-guide/index.html"> 
+    <a class="nav-link active" href="../user-guide/index.html" aria-current="page"> 
 <span class="menu-text">User Guide</span></a>
   </li>  
   <li class="nav-item">
@@ -103,7 +106,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Examples</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../api/index.html" aria-current="page"> 
+    <a class="nav-link" href="../api/index.html"> 
 <span class="menu-text">API Reference</span></a>
   </li>  
 </ul>
@@ -133,7 +136,7 @@ ul.task-list li input[type="checkbox"] {
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">API Reference</h1>
+          <h1 class="quarto-secondary-nav-title"></h1>
         </a>     
     </div>
   </nav>
@@ -146,172 +149,56 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">API Reference</span></a>
+  <a href="../user-guide/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">User Guide</span></a>
   </div>
 </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../api/obs.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Observations</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/observation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">observation</span></a>
+  <a href="../user-guide/getting-started.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Getting started</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/PointObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">PointObservation</span></a>
+  <a href="../user-guide/overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/TrackObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">TrackObservation</span></a>
+  <a href="../user-guide/terminology.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Terminology</span></a>
   </div>
 </li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../api/model.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Model Result</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/model_result.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">model_result</span></a>
+  <a href="../user-guide/data-structures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data Structures</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/PointModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">PointModelResult</span></a>
+  <a href="../user-guide/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/TrackModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">TrackModelResult</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/DfsuModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">DfsuModelResult</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/GridModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">GridModelResult</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/DummyModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">DummyModelResult</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+  <a href="../user-guide/matching.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Matching</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/match.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">match</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/from_matched.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">from_matched</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../api/comparison.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Comparison</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/Comparer.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Comparer</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/comparison.ComparerPlotter.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ComparerPlotter</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/ComparerCollection.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ComparerCollection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/comparison.ComparerCollectionPlotter.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ComparerCollectionPlotter</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/SkillTable.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SkillTable</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/plotting.html" class="sidebar-item-text sidebar-link">
+  <a href="../user-guide/selecting-data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selecting data</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/plotting.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Plotting</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/metrics.qmd" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Metrics</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/settings.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Settings</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/Quantity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Quantity</span></a>
   </div>
 </li>
     </ul>
@@ -320,50 +207,149 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
-    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.ipynb" download="index.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></div>
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#terminology" id="toc-terminology" class="nav-link active" data-scroll-target="#terminology">Terminology</a>
+  <ul class="collapse">
+  <li><a href="#skill" id="toc-skill" class="nav-link" data-scroll-target="#skill"><i class="fa-solid fa-ruler" aria-label="ruler"></i> Skill</a></li>
+  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation"><i class="fa-solid fa-check" aria-label="check"></i> Validation</a></li>
+  <li><a href="#calibration" id="toc-calibration" class="nav-link" data-scroll-target="#calibration"><i class="fa-solid fa-sliders" aria-label="sliders"></i> Calibration</a></li>
+  <li><a href="#performance" id="toc-performance" class="nav-link" data-scroll-target="#performance"><i class="fa-solid fa-ruler" aria-label="ruler"></i> Performance</a></li>
+  <li><a href="#timeseries" id="toc-timeseries" class="nav-link" data-scroll-target="#timeseries"><i class="fa-solid fa-chart-line" aria-label="chart-line"></i> Timeseries</a></li>
+  <li><a href="#observation" id="toc-observation" class="nav-link" data-scroll-target="#observation"><i class="fa-solid fa-temperature-half" aria-label="temperature-half"></i> Observation</a></li>
+  <li><a href="#measurement" id="toc-measurement" class="nav-link" data-scroll-target="#measurement"><i class="fa-solid fa-temperature-half" aria-label="temperature-half"></i> Measurement</a></li>
+  <li><a href="#model-result" id="toc-model-result" class="nav-link" data-scroll-target="#model-result"><i class="fa-solid fa-database" aria-label="database"></i> Model result</a></li>
+  <li><a href="#metric" id="toc-metric" class="nav-link" data-scroll-target="#metric"><i class="fa-solid fa-ruler" aria-label="ruler"></i> Metric</a></li>
+  <li><a href="#score" id="toc-score" class="nav-link" data-scroll-target="#score"><i class="fa-solid fa-ruler" aria-label="ruler"></i> Score</a></li>
+  <li><a href="#matched-data" id="toc-matched-data" class="nav-link" data-scroll-target="#matched-data">Matched data</a></li>
+  <li><a href="#match" id="toc-match" class="nav-link" data-scroll-target="#match"><i class="fa-solid fa-link" aria-label="link"></i> match()</a></li>
+  <li><a href="#comparer" id="toc-comparer" class="nav-link" data-scroll-target="#comparer">Comparer</a></li>
+  <li><a href="#comparercollection" id="toc-comparercollection" class="nav-link" data-scroll-target="#comparercollection">ComparerCollection</a></li>
+  <li><a href="#connector" id="toc-connector" class="nav-link" data-scroll-target="#connector">Connector</a></li>
+  <li><a href="#abbreviations" id="toc-abbreviations" class="nav-link" data-scroll-target="#abbreviations">Abbreviations</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/user-guide/terminology.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="terminology.ipynb" download="terminology.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title d-none d-lg-block">API Reference</h1>
-</div>
 
 
 
-<div class="quarto-title-meta">
+<section id="terminology" class="level1">
+<h1>Terminology</h1>
+<p>ModelSkill is a library for assessing the skill of numerical models. It provides tools for comparing model results with observations, plotting the results and calculating validation metrics. This page defines some of the key terms used in the documentation.</p>
+<section id="skill" class="level2">
+<h2 class="anchored" data-anchor-id="skill"><i class="fa-solid fa-ruler" aria-label="ruler"></i> Skill</h2>
+<p><strong>Skill</strong> refers to the ability of a numerical model to accurately represent the real-world phenomenon it aims to simulate. It is a measure of how well the model performs in reproducing the observed system. Skill can be assessed using various metrics, such as accuracy, precision, and reliability, depending on the specific goals of the model and the nature of the data. In ModelSkill, <a href="../api/Comparer.html#modelskill.Comparer.skill"><code>skill</code></a> is also a specific method on <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> objects that returns a <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> with aggregated skill scores per observation and model for a list of selected <code>metrics</code>.</p>
+</section>
+<section id="validation" class="level2">
+<h2 class="anchored" data-anchor-id="validation"><i class="fa-solid fa-check" aria-label="check"></i> Validation</h2>
+<p><strong>Validation</strong> is the process of assessing the model’s performance by comparing its output to real-world observations or data collected from the system being modeled. It helps ensure that the model accurately represents the system it simulates. Validation is typically performed before the model is used for prediction or decision-making.</p>
+</section>
+<section id="calibration" class="level2">
+<h2 class="anchored" data-anchor-id="calibration"><i class="fa-solid fa-sliders" aria-label="sliders"></i> Calibration</h2>
+<p><strong>Calibration</strong> is the process of adjusting the model’s parameters or settings to improve its performance. It involves fine-tuning the model to better match observed data. Calibration aims to reduce discrepancies between model predictions and actual measurements. At the end of the calibration process, the calibrated model should be validated with independent data.</p>
+</section>
+<section id="performance" class="level2">
+<h2 class="anchored" data-anchor-id="performance"><i class="fa-solid fa-ruler" aria-label="ruler"></i> Performance</h2>
+<p><strong>Performance</strong> is a measure of how well a numerical model operates in reproducing the observed system. It can be assessed using various metrics, such as accuracy, precision, and reliability, depending on the specific goals of the model and the nature of the data. In this context, <strong>performance</strong> is synonymous with <strong>skill</strong>.</p>
+</section>
+<section id="timeseries" class="level2">
+<h2 class="anchored" data-anchor-id="timeseries"><i class="fa-solid fa-chart-line" aria-label="chart-line"></i> Timeseries</h2>
+<p>A <strong>timeseries</strong> is a sequence of data points in time. In ModelSkill, The data can either be from <a href="#observation">observations</a> or <a href="#model-result">model results</a>. Timeseries can univariate or multivariate; ModelSkill primarily supports univariate timeseries. Multivariate timeseries can be assessed one variable at a time. Timeseries can also have different spatial dimensions, such as point, track, line, or area.</p>
+</section>
+<section id="observation" class="level2">
+<h2 class="anchored" data-anchor-id="observation"><i class="fa-solid fa-temperature-half" aria-label="temperature-half"></i> Observation</h2>
+<p>An <strong>observation</strong> refers to real-world data or measurements collected from the system you are modeling. Observations serve as a reference for assessing the model’s performance. These data points are used to compare with the model’s predictions during validation and calibration. Observations are usually based on field measurements or laboratory experiments, but for the purposes of model validation, they can also be derived from other models (e.g.&nbsp;a reference model). ModelSkill supports <a href="../api/PointModelResult.html#modelskill.PointModelResult">point</a> and <a href="../api/TrackModelResult.html#modelskill.TrackModelResult">track</a> observation types.</p>
+</section>
+<section id="measurement" class="level2">
+<h2 class="anchored" data-anchor-id="measurement"><i class="fa-solid fa-temperature-half" aria-label="temperature-half"></i> Measurement</h2>
+<p>A <strong>measurement</strong> is called <a href="#observation">observation</a> in ModelSkill.</p>
+</section>
+<section id="model-result" class="level2">
+<h2 class="anchored" data-anchor-id="model-result"><i class="fa-solid fa-database" aria-label="database"></i> Model result</h2>
+<p>A <strong>model result</strong> is the output of any type of numerical model. It is the data generated by the model during a simulation. Model results can be compared with observations to assess the model’s performance. In the context of validation, the term “model result” is often used interchangeably with “model output” or “model prediction”. ModelSkill supports <a href="../api/PointModelResult.html#modelskill.PointModelResult">point</a>, <a href="../api/TrackModelResult.html#modelskill.TrackModelResult">track</a>, <a href="../api/DfsuModelResult.html#modelskill.DfsuModelResult">dfsu</a> and <a href="../api/GridModelResult.html#modelskill.GridModelResult">grid</a> model result types.</p>
+</section>
+<section id="metric" class="level2">
+<h2 class="anchored" data-anchor-id="metric"><i class="fa-solid fa-ruler" aria-label="ruler"></i> Metric</h2>
+<p>A <strong>metric</strong> is a quantitative measure (a mathematical expression) used to evaluate the performance of a numerical model. Metrics provide a standardized way to assess the model’s accuracy, precision, and other attributes. A metric aggregates the skill of a model into a single number. See list of <code>metrics</code> supported by ModelSkill.</p>
+</section>
+<section id="score" class="level2">
+<h2 class="anchored" data-anchor-id="score"><i class="fa-solid fa-ruler" aria-label="ruler"></i> Score</h2>
+<p>A <strong>score</strong> is a numerical value that summarizes the model’s performance based on chosen metrics. Scores can be used to rank or compare different models or model configurations. In the context of validation, the “skill score” or “validation score” often quantifies the model’s overall performance. The score of a model is a single number, calculated as a weighted average for all time-steps, observations and variables. If you want to perform automated calibration, you can use the score as the objective function. In ModelSkill, <a href="../api/ComparerCollection.html#modelskill.ComparerCollection.score"><code>score</code></a> is also a specific method on <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> objects that returns a single number aggregated score using a specific <a href="#metric">metric</a>.</p>
+</section>
+<section id="matched-data" class="level2">
+<h2 class="anchored" data-anchor-id="matched-data">Matched data</h2>
+<p>In ModelSkill, observations and model results are <em>matched</em> when they refer to the same positions in space and time. If the <a href="#observation">observations</a> and <a href="#model-result">model results</a> are already matched, the <a href="../api/from_matched.html#modelskill.from_matched"><code>from_matched</code></a> function can be used to create a <a href="#comparer">Comparer</a> directly. Otherwise, the <a href="#match">match</a> function can be used to match the observations and model results in space and time.</p>
+</section>
+<section id="match" class="level2">
+<h2 class="anchored" data-anchor-id="match"><i class="fa-solid fa-link" aria-label="link"></i> match()</h2>
+<p>The function <a href="../api/match.html#modelskill.match"><code>match</code></a> is used to match a model result with observations. It returns a <a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> object or a <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><code>ComparerCollection</code></a> object.</p>
+</section>
+<section id="comparer" class="level2">
+<h2 class="anchored" data-anchor-id="comparer">Comparer</h2>
+<p>A <a href="../api/Comparer.html#modelskill.Comparer"><strong>Comparer</strong></a> is an object that stores the matched observation and model result data for a <em>single</em> observation. It is used to calculate validation metrics and generate plots. A Comparer can be created using the <a href="../api/match.html#modelskill.match"><code>match</code></a> function.</p>
+</section>
+<section id="comparercollection" class="level2">
+<h2 class="anchored" data-anchor-id="comparercollection">ComparerCollection</h2>
+<p>A <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><strong>ComparerCollection</strong></a> is a collection of <a href="#comparer">Comparer</a>s. It is used to compare <em>multiple</em> observations with one or more model results. A ComparerCollection can be created using the <a href="../api/match.html#modelskill.match"><code>match</code></a> function or by passing a list of Comparers to the <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><code>ComparerCollection</code></a> constructor.</p>
+</section>
+<section id="connector" class="level2">
+<h2 class="anchored" data-anchor-id="connector">Connector</h2>
+<p>In past versions of FMSkill/ModelSkill, the Connector class was used to connect observations and model results. This class has been deprecated and is no longer in use.</p>
+</section>
+<section id="abbreviations" class="level2">
+<h2 class="anchored" data-anchor-id="abbreviations">Abbreviations</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Abbreviation</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>ms</code></td>
+<td>ModelSkill</td>
+</tr>
+<tr class="even">
+<td><code>o</code> or <code>obs</code></td>
+<td>Observation</td>
+</tr>
+<tr class="odd">
+<td><code>mr</code> or <code>mod</code></td>
+<td>Model result</td>
+</tr>
+<tr class="even">
+<td><code>cmp</code></td>
+<td><code>Comparer</code></td>
+</tr>
+<tr class="odd">
+<td><code>cc</code></td>
+<td><code>ComparerCollection</code></td>
+</tr>
+<tr class="even">
+<td><code>sk</code></td>
+<td><code>SkillTable</code></td>
+</tr>
+<tr class="odd">
+<td><code>mtr</code></td>
+<td>Metric</td>
+</tr>
+<tr class="even">
+<td><code>q</code></td>
+<td><code>Quantity</code></td>
+</tr>
+</tbody>
+</table>
 
-    
-  
-    
-  </div>
-  
 
-
-</header>
-
-
-<p>Obtain a comparer object in one of the following ways:</p>
-<ul>
-<li>From matched data with <a href="../api/from_matched.html#modelskill.from_matched">from_matched()</a></li>
-<li>After defining <a href="observation/index.qmd">observation</a>s and <a href="model/index.qmd">model result</a>s using the <a href="../api/match.html#modelskill.match">match()</a> function.</li>
-<li>From a config file with <a href="../api/from_config.html#modelskill.from_config">from_config()</a></li>
-</ul>
-<p>Do analysis and plotting with the returned <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> (a single observation) or <a href="../api/ComparerCollection.html#modelskill.ComparerCollection">ComparerCollection</a> (multiple observations):</p>
-<ul>
-<li><a href="../api/ComparerCollection.html#modelskill.ComparerCollection.skill">skill()</a> - returns a <a href="../api/SkillTable.html#modelskill.SkillTable">SkillTable</a> with the skill scores</li>
-<li>plot using the various plot methods of the comparer objects
-<ul>
-<li><code>plot.scatter()</code></li>
-<li><code>plot.timeseries()</code></li>
-<li><code>plot.kde()</code></li>
-<li><code>plot.qq()</code></li>
-<li><code>plot.hist()</code></li>
-</ul></li>
-</ul>
-
-
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -788,10 +774,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
+      <a href="../user-guide/overview.html" class="pagination-link" aria-label="Overview">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Overview</span>
+      </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../api/obs.html" class="pagination-link" aria-label="Observations">
-        <span class="nav-page-text">Observations</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../user-guide/data-structures.html" class="pagination-link" aria-label="Data Structures">
+        <span class="nav-page-text">Data Structures</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
@@ -803,7 +792,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     </div>   
     <div class="nav-footer-center">
 <p>© 2024 DHI Group</p>
-<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/user-guide/terminology.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>

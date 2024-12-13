@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>API Reference – ModelSkill</title>
+<title>quantity – ModelSkill</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -30,7 +64,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../api/obs.html" rel="next">
+<link href="../api/settings.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -133,7 +167,7 @@ ul.task-list li input[type="checkbox"] {
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">API Reference</h1>
+          <h1 class="quarto-secondary-nav-title">Quantity</h1>
         </a>     
     </div>
   </nav>
@@ -146,7 +180,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/index.html" class="sidebar-item-text sidebar-link active">
+  <a href="../api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API Reference</span></a>
   </div>
 </li>
@@ -310,7 +344,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/Quantity.html" class="sidebar-item-text sidebar-link">
+  <a href="../api/Quantity.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Quantity</span></a>
   </div>
 </li>
@@ -320,14 +354,28 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
-    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.ipynb" download="index.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></div>
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#parameters" id="toc-parameters" class="nav-link active" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
+  <ul class="collapse">
+  <li><a href="#modelskill.Quantity.from_cf_attrs" id="toc-modelskill.Quantity.from_cf_attrs" class="nav-link" data-scroll-target="#modelskill.Quantity.from_cf_attrs">from_cf_attrs</a></li>
+  <li><a href="#modelskill.Quantity.from_mikeio_eum_name" id="toc-modelskill.Quantity.from_mikeio_eum_name" class="nav-link" data-scroll-target="#modelskill.Quantity.from_mikeio_eum_name">from_mikeio_eum_name</a></li>
+  <li><a href="#modelskill.Quantity.from_mikeio_iteminfo" id="toc-modelskill.Quantity.from_mikeio_iteminfo" class="nav-link" data-scroll-target="#modelskill.Quantity.from_mikeio_iteminfo">from_mikeio_iteminfo</a></li>
+  <li><a href="#modelskill.Quantity.is_compatible" id="toc-modelskill.Quantity.is_compatible" class="nav-link" data-scroll-target="#modelskill.Quantity.is_compatible">is_compatible</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/Quantity.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="Quantity.ipynb" download="Quantity.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block">API Reference</h1>
+<h1 class="title d-none d-lg-block">Quantity</h1>
 </div>
 
 
@@ -344,26 +392,226 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>Obtain a comparer object in one of the following ways:</p>
-<ul>
-<li>From matched data with <a href="../api/from_matched.html#modelskill.from_matched">from_matched()</a></li>
-<li>After defining <a href="observation/index.qmd">observation</a>s and <a href="model/index.qmd">model result</a>s using the <a href="../api/match.html#modelskill.match">match()</a> function.</li>
-<li>From a config file with <a href="../api/from_config.html#modelskill.from_config">from_config()</a></li>
-</ul>
-<p>Do analysis and plotting with the returned <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> (a single observation) or <a href="../api/ComparerCollection.html#modelskill.ComparerCollection">ComparerCollection</a> (multiple observations):</p>
-<ul>
-<li><a href="../api/ComparerCollection.html#modelskill.ComparerCollection.skill">skill()</a> - returns a <a href="../api/SkillTable.html#modelskill.SkillTable">SkillTable</a> with the skill scores</li>
-<li>plot using the various plot methods of the comparer objects
-<ul>
-<li><code>plot.scatter()</code></li>
-<li><code>plot.timeseries()</code></li>
-<li><code>plot.kde()</code></li>
-<li><code>plot.qq()</code></li>
-<li><code>plot.hist()</code></li>
-</ul></li>
-</ul>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Quantity(<span class="va">self</span>, name, unit, is_directional<span class="op">=</span><span class="va">False</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Quantity of data</p>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 7%">
+<col style="width: 68%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>name</td>
+<td>str</td>
+<td>Name of the quantity</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>unit</td>
+<td>str</td>
+<td>Unit of the quantity</td>
+<td><em>required</em></td>
+</tr>
+<tr class="odd">
+<td>is_directional</td>
+<td>bool</td>
+<td>Whether the quantity is directional (e.g.&nbsp;Wind Direction), by default False</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
+<div id="ec9cfbe7" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill <span class="im">import</span> Quantity</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>wl <span class="op">=</span> Quantity(name<span class="op">=</span><span class="st">"Water Level"</span>, unit<span class="op">=</span><span class="st">"meter"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>wl</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="1">
+<pre><code>Quantity(name='Water Level', unit='meter')</code></pre>
+</div>
+</div>
+<div id="bdcab4a8" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>wl.name</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">'Water Level'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="2">
+<pre><code>'Water Level'</code></pre>
+</div>
+</div>
+<div id="7c45342c" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>wl.unit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<pre><code>'meter'</code></pre>
+</div>
+</div>
+<div id="48f114ae" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>wl.is_compatible(wl)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<pre><code>True</code></pre>
+</div>
+</div>
+<div id="796cd644" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>Quantity(name<span class="op">=</span><span class="st">"Wind Direction"</span>, unit<span class="op">=</span><span class="st">"degree"</span>, is_directional<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="5">
+<pre><code>Quantity(name='Wind Direction', unit='degree', is_directional=True)</code></pre>
+</div>
+</div>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.Quantity.from_cf_attrs">from_cf_attrs</a></td>
+<td>Create a Quantity from a CF compliant attributes dictionary</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.Quantity.from_mikeio_eum_name">from_mikeio_eum_name</a></td>
+<td>Create a Quantity from a name recognized by mikeio</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.Quantity.from_mikeio_iteminfo">from_mikeio_iteminfo</a></td>
+<td>Create a Quantity from mikeio ItemInfo</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.Quantity.is_compatible">is_compatible</a></td>
+<td>Check if the quantity is compatible with another quantity</td>
+</tr>
+</tbody>
+</table>
+<section id="modelskill.Quantity.from_cf_attrs" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.Quantity.from_cf_attrs">from_cf_attrs</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>Quantity.from_cf_attrs(attrs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create a Quantity from a CF compliant attributes dictionary</p>
+<p>If units is “degree”, “degrees” or “Degree true”, the quantity is assumed to be directional. Based on https://codes.ecmwf.int/grib/param-db/ and https://cfconventions.org/Data/cf-standard-names/current/build/cf-standard-name-table.html</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>attrs</td>
+<td>Mapping[str, str]</td>
+<td>Attributes dictionary</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples-1" class="level4 doc-section doc-section-examples">
+<h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples-1">Examples</h4>
+<div id="72ca6904" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>Quantity.from_cf_attrs({<span class="st">'long_name'</span>: <span class="st">'Water Level'</span>, <span class="st">'units'</span>: <span class="st">'meter'</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="6">
+<pre><code>Quantity(name='Water Level', unit='meter')</code></pre>
+</div>
+</div>
+<div id="f9094aef" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>Quantity.from_cf_attrs({<span class="st">'long_name'</span>: <span class="st">'Wind direction'</span>, <span class="st">'units'</span>: <span class="st">'degree'</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<pre><code>Quantity(name='Wind direction', unit='degree', is_directional=True)</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="modelskill.Quantity.from_mikeio_eum_name" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.Quantity.from_mikeio_eum_name">from_mikeio_eum_name</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>Quantity.from_mikeio_eum_name(type_name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create a Quantity from a name recognized by mikeio</p>
+<section id="parameters-2" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>type_name</td>
+<td>str</td>
+<td>Name of the quantity</td>
+<td><em>required</em></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples-2" class="level4 doc-section doc-section-examples">
+<h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples-2">Examples</h4>
+<div id="a9e831a9" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>Quantity.from_mikeio_eum_name(<span class="st">"Water Level"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/modelskill/quantity.py:166: UserWarning:
+
+unit='meter' was automatically set for type_name='Water Level'
+</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<pre><code>Quantity(name='Water Level', unit='meter')</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="modelskill.Quantity.from_mikeio_iteminfo" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.Quantity.from_mikeio_iteminfo">from_mikeio_iteminfo</h3>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>Quantity.from_mikeio_iteminfo(iteminfo)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create a Quantity from mikeio ItemInfo</p>
+<p>If the unit is “degree”, the quantity is assumed to be directional.</p>
+</section>
+<section id="modelskill.Quantity.is_compatible" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.Quantity.is_compatible">is_compatible</h3>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>Quantity.is_compatible(other)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Check if the quantity is compatible with another quantity</p>
+<section id="examples-3" class="level4 doc-section doc-section-examples">
+<h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples-3">Examples</h4>
+<div id="ed8c6737" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>wl <span class="op">=</span> Quantity(name<span class="op">=</span><span class="st">"Water Level"</span>, unit<span class="op">=</span><span class="st">"meter"</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>ws <span class="op">=</span> Quantity(name<span class="op">=</span><span class="st">"Wind Speed"</span>, unit<span class="op">=</span><span class="st">"meter per second"</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>wl.is_compatible(ws)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="9">
+<pre><code>False</code></pre>
+</div>
+</div>
+<div id="7125a765" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>uq <span class="op">=</span> Quantity(name<span class="op">=</span><span class="st">"Undefined"</span>, unit<span class="op">=</span><span class="st">"Undefined"</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>wl.is_compatible(uq)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="10">
+<pre><code>True</code></pre>
+</div>
+</div>
 
 
+</section>
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -788,11 +1036,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
+      <a href="../api/settings.html" class="pagination-link" aria-label="Settings">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Settings</span>
+      </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../api/obs.html" class="pagination-link" aria-label="Observations">
-        <span class="nav-page-text">Observations</span> <i class="bi bi-arrow-right-short"></i>
-      </a>
   </div>
 </nav>
 </div> <!-- /content -->
@@ -803,7 +1051,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     </div>   
     <div class="nav-footer-center">
 <p>© 2024 DHI Group</p>
-<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/Quantity.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>

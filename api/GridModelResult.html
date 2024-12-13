@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>API Reference – ModelSkill</title>
+<title>gridmodelresult – ModelSkill</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -30,7 +64,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../api/obs.html" rel="next">
+<link href="../api/DummyModelResult.html" rel="next">
+<link href="../api/DfsuModelResult.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -133,7 +168,7 @@ ul.task-list li input[type="checkbox"] {
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">API Reference</h1>
+          <h1 class="quarto-secondary-nav-title"></h1>
         </a>     
     </div>
   </nav>
@@ -146,7 +181,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/index.html" class="sidebar-item-text sidebar-link active">
+  <a href="../api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API Reference</span></a>
   </div>
 </li>
@@ -214,7 +249,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/GridModelResult.html" class="sidebar-item-text sidebar-link">
+  <a href="../api/GridModelResult.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">GridModelResult</span></a>
   </div>
 </li>
@@ -320,50 +355,173 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
-    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.ipynb" download="index.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></div>
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#modelskill.GridModelResult" id="toc-modelskill.GridModelResult" class="nav-link active" data-scroll-target="#modelskill.GridModelResult">GridModelResult</a>
+  <ul class="collapse">
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
+  <ul class="collapse">
+  <li><a href="#modelskill.GridModelResult.extract" id="toc-modelskill.GridModelResult.extract" class="nav-link" data-scroll-target="#modelskill.GridModelResult.extract">extract</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/GridModelResult.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="GridModelResult.ipynb" download="GridModelResult.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title d-none d-lg-block">API Reference</h1>
-</div>
 
 
 
-<div class="quarto-title-meta">
+<section id="modelskill.GridModelResult" class="level1">
+<h1>GridModelResult</h1>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>GridModelResult(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    data,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    item<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    quantity<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    aux_items<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Construct a GridModelResult from a file or xarray.Dataset.</p>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 17%">
+<col style="width: 69%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>data</td>
+<td>types.GridType</td>
+<td>the input data or file path</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>name</td>
+<td>str</td>
+<td>The name of the model result, by default None (will be set to file name or item name)</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>item</td>
+<td>str or int</td>
+<td>If multiple items/arrays are present in the input an item must be given (as either an index or a string), by default None</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>quantity</td>
+<td>Quantity</td>
+<td>Model quantity, for MIKE files this is inferred from the EUM information</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>aux_items</td>
+<td>Optional[list[int | str]]</td>
+<td>Auxiliary items, by default None</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.GridModelResult.extract">extract</a></td>
+<td>Extract ModelResult at observation positions</td>
+</tr>
+</tbody>
+</table>
+<section id="modelskill.GridModelResult.extract" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.GridModelResult.extract">extract</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>GridModelResult.extract(observation, spatial_method<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Extract ModelResult at observation positions</p>
+<p>Note: this method is typically not called directly, but through the match() method.</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 24%">
+<col style="width: 59%">
+<col style="width: 7%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>observation</td>
+<td><pointobservation> or <trackobservation></trackobservation></pointobservation></td>
+<td>positions (and times) at which modelresult should be extracted</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>spatial_method</td>
+<td>Optional[str]</td>
+<td>method in xarray.Dataset.interp, typically either “nearest” or “linear”, by default None = ‘linear’</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 55%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>PointModelResult or TrackModelResult</td>
+<td>extracted modelresult</td>
+</tr>
+</tbody>
+</table>
 
-    
-  
-    
-  </div>
-  
 
-
-</header>
-
-
-<p>Obtain a comparer object in one of the following ways:</p>
-<ul>
-<li>From matched data with <a href="../api/from_matched.html#modelskill.from_matched">from_matched()</a></li>
-<li>After defining <a href="observation/index.qmd">observation</a>s and <a href="model/index.qmd">model result</a>s using the <a href="../api/match.html#modelskill.match">match()</a> function.</li>
-<li>From a config file with <a href="../api/from_config.html#modelskill.from_config">from_config()</a></li>
-</ul>
-<p>Do analysis and plotting with the returned <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> (a single observation) or <a href="../api/ComparerCollection.html#modelskill.ComparerCollection">ComparerCollection</a> (multiple observations):</p>
-<ul>
-<li><a href="../api/ComparerCollection.html#modelskill.ComparerCollection.skill">skill()</a> - returns a <a href="../api/SkillTable.html#modelskill.SkillTable">SkillTable</a> with the skill scores</li>
-<li>plot using the various plot methods of the comparer objects
-<ul>
-<li><code>plot.scatter()</code></li>
-<li><code>plot.timeseries()</code></li>
-<li><code>plot.kde()</code></li>
-<li><code>plot.qq()</code></li>
-<li><code>plot.hist()</code></li>
-</ul></li>
-</ul>
-
-
+</section>
+</section>
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -788,10 +946,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
+      <a href="../api/DfsuModelResult.html" class="pagination-link" aria-label="DfsuModelResult">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">DfsuModelResult</span>
+      </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../api/obs.html" class="pagination-link" aria-label="Observations">
-        <span class="nav-page-text">Observations</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../api/DummyModelResult.html" class="pagination-link" aria-label="DummyModelResult">
+        <span class="nav-page-text">DummyModelResult</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
@@ -803,7 +964,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     </div>   
     <div class="nav-footer-center">
 <p>© 2024 DHI Group</p>
-<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/GridModelResult.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>

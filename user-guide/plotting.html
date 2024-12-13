@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>API Reference – ModelSkill</title>
+<title>plotting – ModelSkill</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,17 +20,51 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="../site_libs/quarto-nav/headroom.min.js"></script>
 <script src="../site_libs/clipboard/clipboard.min.js"></script>
 <script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../api/obs.html" rel="next">
+<link href="../user-guide/selecting-data.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -67,6 +101,9 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
 
 <link rel="stylesheet" href="../api/_styles-quartodoc.css">
@@ -95,7 +132,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="../user-guide/index.html"> 
+    <a class="nav-link active" href="../user-guide/index.html" aria-current="page"> 
 <span class="menu-text">User Guide</span></a>
   </li>  
   <li class="nav-item">
@@ -103,7 +140,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Examples</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="../api/index.html" aria-current="page"> 
+    <a class="nav-link" href="../api/index.html"> 
 <span class="menu-text">API Reference</span></a>
   </li>  
 </ul>
@@ -133,7 +170,7 @@ ul.task-list li input[type="checkbox"] {
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">API Reference</h1>
+          <h1 class="quarto-secondary-nav-title">Plotting</h1>
         </a>     
     </div>
   </nav>
@@ -146,172 +183,56 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/index.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">API Reference</span></a>
+  <a href="../user-guide/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">User Guide</span></a>
   </div>
 </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../api/obs.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Observations</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/observation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">observation</span></a>
+  <a href="../user-guide/getting-started.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Getting started</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/PointObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">PointObservation</span></a>
+  <a href="../user-guide/overview.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/TrackObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">TrackObservation</span></a>
+  <a href="../user-guide/terminology.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Terminology</span></a>
   </div>
 </li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../api/model.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Model Result</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/model_result.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">model_result</span></a>
+  <a href="../user-guide/data-structures.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data Structures</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/PointModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">PointModelResult</span></a>
+  <a href="../user-guide/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
+        <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/TrackModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">TrackModelResult</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/DfsuModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">DfsuModelResult</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/GridModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">GridModelResult</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/DummyModelResult.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">DummyModelResult</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+  <a href="../user-guide/matching.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Matching</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/match.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">match</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/from_matched.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">from_matched</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a href="../api/comparison.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Comparison</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/Comparer.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Comparer</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/comparison.ComparerPlotter.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ComparerPlotter</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/ComparerCollection.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ComparerCollection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/comparison.ComparerCollectionPlotter.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ComparerCollectionPlotter</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/SkillTable.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SkillTable</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/plotting.html" class="sidebar-item-text sidebar-link">
+  <a href="../user-guide/selecting-data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selecting data</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/plotting.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Plotting</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/metrics.qmd" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Metrics</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/settings.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Settings</span></a>
-  </div>
-</li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../api/Quantity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Quantity</span></a>
   </div>
 </li>
     </ul>
@@ -320,14 +241,25 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
-    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.ipynb" download="index.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></div>
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#plotting-observations-and-model-results" id="toc-plotting-observations-and-model-results" class="nav-link active" data-scroll-target="#plotting-observations-and-model-results">Plotting observations and model results</a></li>
+  <li><a href="#temporal-coverage" id="toc-temporal-coverage" class="nav-link" data-scroll-target="#temporal-coverage">Temporal coverage</a></li>
+  <li><a href="#spatial-overview" id="toc-spatial-overview" class="nav-link" data-scroll-target="#spatial-overview">Spatial overview</a></li>
+  <li><a href="#compared-data" id="toc-compared-data" class="nav-link" data-scroll-target="#compared-data">Compared data</a></li>
+  <li><a href="#taylor-diagrams" id="toc-taylor-diagrams" class="nav-link" data-scroll-target="#taylor-diagrams">Taylor diagrams</a></li>
+  <li><a href="#directional-data-e.g.-wind-or-currents" id="toc-directional-data-e.g.-wind-or-currents" class="nav-link" data-scroll-target="#directional-data-e.g.-wind-or-currents">Directional data (e.g.&nbsp;wind or currents)</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/user-guide/plotting.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="plotting.ipynb" download="plotting.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title d-none d-lg-block">API Reference</h1>
+<h1 class="title d-none d-lg-block">Plotting</h1>
 </div>
 
 
@@ -344,26 +276,212 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>Obtain a comparer object in one of the following ways:</p>
-<ul>
-<li>From matched data with <a href="../api/from_matched.html#modelskill.from_matched">from_matched()</a></li>
-<li>After defining <a href="observation/index.qmd">observation</a>s and <a href="model/index.qmd">model result</a>s using the <a href="../api/match.html#modelskill.match">match()</a> function.</li>
-<li>From a config file with <a href="../api/from_config.html#modelskill.from_config">from_config()</a></li>
-</ul>
-<p>Do analysis and plotting with the returned <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> (a single observation) or <a href="../api/ComparerCollection.html#modelskill.ComparerCollection">ComparerCollection</a> (multiple observations):</p>
-<ul>
-<li><a href="../api/ComparerCollection.html#modelskill.ComparerCollection.skill">skill()</a> - returns a <a href="../api/SkillTable.html#modelskill.SkillTable">SkillTable</a> with the skill scores</li>
-<li>plot using the various plot methods of the comparer objects
-<ul>
-<li><code>plot.scatter()</code></li>
-<li><code>plot.timeseries()</code></li>
-<li><code>plot.kde()</code></li>
-<li><code>plot.qq()</code></li>
-<li><code>plot.hist()</code></li>
-</ul></li>
-</ul>
+<section id="plotting-observations-and-model-results" class="level2">
+<h2 class="anchored" data-anchor-id="plotting-observations-and-model-results">Plotting observations and model results</h2>
+<p>PointObservations and PointModelResults can be plotted using their <code>plot</code> accessor:</p>
+<div id="656048cc" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Observation and model data</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>o <span class="op">=</span> ms.PointObservation(<span class="st">'../data/SW/HKNA_Hm0.dfs0'</span>, item<span class="op">=</span><span class="dv">0</span>, x<span class="op">=</span><span class="fl">4.2420</span>, y<span class="op">=</span><span class="fl">52.6887</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.PointModelResult(<span class="st">'../data/SW/ts_storm_4.dfs0'</span>, item<span class="op">=</span><span class="dv">0</span>) <span class="co"># </span><span class="al">TODO</span><span class="co"> coords</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="37ff59a8" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>o.plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-3-output-1.png" width="576" height="434" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="90f06a31" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>mr.plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-4-output-1.png" width="589" height="479" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="6537b488" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>mr.plot.hist()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-5-output-1.png" width="566" height="449" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="temporal-coverage" class="level2">
+<h2 class="anchored" data-anchor-id="temporal-coverage">Temporal coverage</h2>
+<p>The temporal coverage of observations and model results can be plotted using the <a href="../api/plotting.temporal_coverage.html#modelskill.plotting.temporal_coverage"><code>temporal_coverage</code></a> function:</p>
+<div id="0a58b203" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Observation and model data</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>o1 <span class="op">=</span> ms.PointObservation(<span class="st">'../data/SW/HKNA_Hm0.dfs0'</span>, item<span class="op">=</span><span class="dv">0</span>, x<span class="op">=</span><span class="fl">4.2420</span>, y<span class="op">=</span><span class="fl">52.6887</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>o2 <span class="op">=</span> ms.TrackObservation(<span class="st">"../data/SW/Alti_c2_Dutch.dfs0"</span>, item<span class="op">=</span><span class="dv">3</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.DfsuModelResult(<span class="st">'../data/SW/HKZN_local_2017_DutchCoast.dfsu'</span>, item<span class="op">=</span><span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>With a few observation and model result objects, the temporal coverage can be plotted:</p>
+<div id="3d85fd5e" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.temporal_coverage(obs<span class="op">=</span>[o1, o2], mod<span class="op">=</span>mr)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-7-output-1.png" width="770" height="200" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="spatial-overview" class="level2">
+<h2 class="anchored" data-anchor-id="spatial-overview">Spatial overview</h2>
+<p>The spatial coverage of observations and model results can be plotted using the <a href="../api/plotting.spatial_overview.html#modelskill.plotting.spatial_overview"><code>spatial_overview</code></a> function:</p>
+<div id="161e1124" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.spatial_overview([o1, o2], mr)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-8-output-1.png" width="463" height="431" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="compared-data" class="level2">
+<h2 class="anchored" data-anchor-id="compared-data">Compared data</h2>
+<p>The <code>plot</code> accessor on a Comparer or ComparerCollection object can be used to plot the compared data:</p>
+<div id="abefe418" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.match(obs<span class="op">=</span>o1, mod<span class="op">=</span>mr)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<pre><code>&lt;Comparer&gt;
+Quantity: Significant wave height [m]
+Observation: HKNA_Hm0, n_points=386
+Model(s):
+0: HKZN_local_2017_DutchCoast</code></pre>
+</div>
+</div>
+<div id="5d995fd9" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-10-output-1.png" width="576" height="479" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="873e5e2d" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.scatter()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-11-output-1.png" width="687" height="624" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="taylor-diagrams" class="level2">
+<h2 class="anchored" data-anchor-id="taylor-diagrams">Taylor diagrams</h2>
+<p>A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean squared error. The <code>taylor</code> plot can be accessed through the Comparer <a href="../api/comparison.ComparerPlotter.html#modelskill.comparison.ComparerPlotter"><code>plot</code></a> accessor or the ComparerCollection <a href="../api/comparison.ComparerCollectionPlotter.html#modelskill.comparison.ComparerCollectionPlotter"><code>plot</code></a> accessor:</p>
+<div id="42319b78" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.taylor()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="11">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-12-output-1.png" width="620" height="642" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The radial distance from the point to the observation point is the standard deviation ratio, the angle is the correlation coefficient and the distance from the observation point to the model point is the root mean square error ratio. The closer the model point is to the observation point, the better the model result matches the observation. The closer the model point is to the origin, the better the model result matches the observation in terms of standard deviation and root mean square error. The closer the model point is to the horizontal axis, the better the model result matches the observation in terms of correlation.</p>
+</section>
+<section id="directional-data-e.g.-wind-or-currents" class="level2">
+<h2 class="anchored" data-anchor-id="directional-data-e.g.-wind-or-currents">Directional data (e.g.&nbsp;wind or currents)</h2>
+<p>Directional data can be plotted using the <a href="../api/plotting.wind_rose.html#modelskill.plotting.wind_rose"><code>wind_rose</code></a>. The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:</p>
+<div id="4919fbe6" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mikeio</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> mikeio.read(<span class="st">"../data/wave_dir.dfs0"</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> ds[[<span class="dv">0</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">3</span>]].to_dataframe()</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>df.<span class="bu">round</span>(<span class="dv">2</span>).head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="12">
+<div>
 
 
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">China_Model: Sign. Wave Height</th>
+<th data-quarto-table-cell-role="th">China_Model: Mean Wave Direction</th>
+<th data-quarto-table-cell-role="th">China_Measured: Sign. Wave Height</th>
+<th data-quarto-table-cell-role="th">China_Measured: Mean Wave Direction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2006-12-20 22:00:00</td>
+<td>0.30</td>
+<td>320.58</td>
+<td>0.25</td>
+<td>330.39</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2006-12-20 23:00:00</td>
+<td>0.43</td>
+<td>316.24</td>
+<td>0.23</td>
+<td>329.59</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2006-12-21 00:00:00</td>
+<td>0.38</td>
+<td>316.11</td>
+<td>0.20</td>
+<td>321.02</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2006-12-21 01:00:00</td>
+<td>0.37</td>
+<td>315.34</td>
+<td>0.18</td>
+<td>311.00</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2006-12-21 02:00:00</td>
+<td>0.41</td>
+<td>313.36</td>
+<td>0.18</td>
+<td>300.78</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div id="7054fbd2" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.wind_rose(df, figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">6</span>))<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="plotting_files/figure-html/cell-14-output-1.png" width="856" height="513" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+
+
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -788,11 +906,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
+      <a href="../user-guide/selecting-data.html" class="pagination-link" aria-label="Selecting data">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Selecting data</span>
+      </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../api/obs.html" class="pagination-link" aria-label="Observations">
-        <span class="nav-page-text">Observations</span> <i class="bi bi-arrow-right-short"></i>
-      </a>
   </div>
 </nav>
 </div> <!-- /content -->
@@ -803,7 +921,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     </div>   
     <div class="nav-footer-center">
 <p>© 2024 DHI Group</p>
-<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/user-guide/plotting.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>

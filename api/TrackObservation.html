@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>API Reference – ModelSkill</title>
+<title>trackobservation – ModelSkill</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -30,7 +64,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../api/obs.html" rel="next">
+<link href="../api/model.html" rel="next">
+<link href="../api/PointObservation.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -133,7 +168,7 @@ ul.task-list li input[type="checkbox"] {
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title">API Reference</h1>
+          <h1 class="quarto-secondary-nav-title"></h1>
         </a>     
     </div>
   </nav>
@@ -146,7 +181,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/index.html" class="sidebar-item-text sidebar-link active">
+  <a href="../api/index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">API Reference</span></a>
   </div>
 </li>
@@ -173,7 +208,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/TrackObservation.html" class="sidebar-item-text sidebar-link">
+  <a href="../api/TrackObservation.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">TrackObservation</span></a>
   </div>
 </li>
@@ -320,50 +355,339 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
-    <div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.ipynb" download="index.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></div>
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#modelskill.TrackObservation" id="toc-modelskill.TrackObservation" class="nav-link active" data-scroll-target="#modelskill.TrackObservation">TrackObservation</a>
+  <ul class="collapse">
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
+  <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
+  <ul class="collapse">
+  <li><a href="#modelskill.TrackObservation.equals" id="toc-modelskill.TrackObservation.equals" class="nav-link" data-scroll-target="#modelskill.TrackObservation.equals">equals</a></li>
+  <li><a href="#modelskill.TrackObservation.sel" id="toc-modelskill.TrackObservation.sel" class="nav-link" data-scroll-target="#modelskill.TrackObservation.sel">sel</a></li>
+  <li><a href="#modelskill.TrackObservation.to_dataframe" id="toc-modelskill.TrackObservation.to_dataframe" class="nav-link" data-scroll-target="#modelskill.TrackObservation.to_dataframe">to_dataframe</a></li>
+  <li><a href="#modelskill.TrackObservation.trim" id="toc-modelskill.TrackObservation.trim" class="nav-link" data-scroll-target="#modelskill.TrackObservation.trim">trim</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/TrackObservation.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="TrackObservation.ipynb" download="TrackObservation.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title d-none d-lg-block">API Reference</h1>
-</div>
 
 
 
-<div class="quarto-title-meta">
+<section id="modelskill.TrackObservation" class="level1">
+<h1>TrackObservation</h1>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>TrackObservation(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    data,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    item<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    name<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    weight<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    x_item<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    y_item<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    keep_duplicates<span class="op">=</span><span class="st">'first'</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    quantity<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    aux_items<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    attrs<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Class for observation with locations moving in space, e.g.&nbsp;satellite altimetry</p>
+<p>The data needs in addition to the datetime of each single observation point also, x and y coordinates.</p>
+<p>Create TrackObservation from dfs0 or DataFrame</p>
+<section id="parameters" class="level2 doc-section doc-section-parameters">
+<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 16%">
+<col style="width: 74%">
+<col style="width: 3%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>data</td>
+<td>(str, Path, mikeio.Dataset, pd.DataFrame, xr.Dataset)</td>
+<td>path to dfs0 file or object with track data</td>
+<td><em>required</em></td>
+</tr>
+<tr class="even">
+<td>item</td>
+<td>(str, int)</td>
+<td>item name or index of values, by default None if data contains more than one item, item must be given</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>name</td>
+<td>str</td>
+<td>user-defined name for easy identification in plots etc, by default file basename</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>x_item</td>
+<td>(str, int)</td>
+<td>item name or index of x-coordinate, by default 0</td>
+<td><code>0</code></td>
+</tr>
+<tr class="odd">
+<td>y_item</td>
+<td>(str, int)</td>
+<td>item name or index of y-coordinate, by default 1</td>
+<td><code>1</code></td>
+</tr>
+<tr class="even">
+<td>keep_duplicates</td>
+<td>(str, bool)</td>
+<td>strategy for handling duplicate timestamps (xarray.Dataset.drop_duplicates): “first” to keep first occurrence, “last” to keep last occurrence, False to drop all duplicates, “offset” to add milliseconds to consecutive duplicates, by default “first”</td>
+<td><code>'first'</code></td>
+</tr>
+<tr class="odd">
+<td>quantity</td>
+<td>Quantity</td>
+<td>The quantity of the observation, for validation with model results For MIKE dfs files this is inferred from the EUM information</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>aux_items</td>
+<td>list</td>
+<td>list of names or indices of auxiliary items, by default None</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>attrs</td>
+<td>dict</td>
+<td>additional attributes to be added to the data, by default None</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>weight</td>
+<td>float</td>
+<td>weighting factor for skill scores, by default 1.0</td>
+<td><code>1.0</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">import</span> modelskill <span class="im">as</span> ms</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o1 <span class="op">=</span> ms.TrackObservation(<span class="st">"track.dfs0"</span>, item<span class="op">=</span><span class="dv">2</span>, name<span class="op">=</span><span class="st">"c2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o1 <span class="op">=</span> ms.TrackObservation(<span class="st">"track.dfs0"</span>, item<span class="op">=</span><span class="st">"wind_speed"</span>, name<span class="op">=</span><span class="st">"c2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o1 <span class="op">=</span> ms.TrackObservation(<span class="st">"lon_after_lat.dfs0"</span>, item<span class="op">=</span><span class="st">"wl"</span>, x_item<span class="op">=</span><span class="dv">1</span>, y_item<span class="op">=</span><span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o1 <span class="op">=</span> ms.TrackObservation(<span class="st">"track_wl.dfs0"</span>, item<span class="op">=</span><span class="st">"wl"</span>, x_item<span class="op">=</span><span class="st">"lon"</span>, y_item<span class="op">=</span><span class="st">"lat"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> df <span class="op">=</span> pd.DataFrame(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>...         {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>...             <span class="st">"t"</span>: pd.date_range(<span class="st">"2010-01-01"</span>, freq<span class="op">=</span><span class="st">"10s"</span>, periods<span class="op">=</span>n),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>...             <span class="st">"x"</span>: np.linspace(<span class="dv">0</span>, <span class="dv">10</span>, n),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>...             <span class="st">"y"</span>: np.linspace(<span class="dv">45000</span>, <span class="dv">45100</span>, n),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>...             <span class="st">"swh"</span>: [<span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">0.5</span>, <span class="fl">0.3</span>],</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>...         }</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>... )</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> df <span class="op">=</span> df.set_index(<span class="st">"t"</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> df</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                    x        y  swh</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>t</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="dv">2010</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span> <span class="dv">00</span>:<span class="dv">00</span>:<span class="dv">00</span>   <span class="fl">0.0</span>  <span class="fl">45000.0</span>  <span class="fl">0.1</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="dv">2010</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span> <span class="dv">00</span>:<span class="dv">00</span>:<span class="dv">10</span>   <span class="fl">2.5</span>  <span class="fl">45025.0</span>  <span class="fl">0.3</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="dv">2010</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span> <span class="dv">00</span>:<span class="dv">00</span>:<span class="dv">20</span>   <span class="fl">5.0</span>  <span class="fl">45050.0</span>  <span class="fl">0.4</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="dv">2010</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span> <span class="dv">00</span>:<span class="dv">00</span>:<span class="dv">30</span>   <span class="fl">7.5</span>  <span class="fl">45075.0</span>  <span class="fl">0.5</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="dv">2010</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span><span class="op">-</span><span class="dv">0</span><span class="er">1</span> <span class="dv">00</span>:<span class="dv">00</span>:<span class="dv">40</span>  <span class="fl">10.0</span>  <span class="fl">45100.0</span>  <span class="fl">0.3</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> t1 <span class="op">=</span> TrackObservation(df, name<span class="op">=</span><span class="st">"fake"</span>)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> t1.n_points</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="dv">5</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> t1.values</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>array([<span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">0.5</span>, <span class="fl">0.3</span>])</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> t1.time</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>DatetimeIndex([<span class="st">'2010-01-01 00:00:00'</span>, <span class="st">'2010-01-01 00:00:10'</span>,</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>           <span class="st">'2010-01-01 00:00:20'</span>, <span class="st">'2010-01-01 00:00:30'</span>,</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>           <span class="st">'2010-01-01 00:00:40'</span>],</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>          dtype<span class="op">=</span><span class="st">'datetime64[ns]'</span>, name<span class="op">=</span><span class="st">'t'</span>, freq<span class="op">=</span><span class="va">None</span>)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> t1.x</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>array([ <span class="fl">0.</span> ,  <span class="fl">2.5</span>,  <span class="fl">5.</span> ,  <span class="fl">7.5</span>, <span class="fl">10.</span> ])</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> t1.y</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>array([<span class="fl">45000.</span>, <span class="fl">45025.</span>, <span class="fl">45050.</span>, <span class="fl">45075.</span>, <span class="fl">45100.</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="attributes" class="level2">
+<h2 class="anchored" data-anchor-id="attributes">Attributes</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.TrackObservation.attrs">attrs</a></td>
+<td>Attributes of the observation</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.TrackObservation.gtype">gtype</a></td>
+<td>Geometry type</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.TrackObservation.n_points">n_points</a></td>
+<td>Number of data points</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.TrackObservation.name">name</a></td>
+<td>Name of time series (value item name)</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.TrackObservation.plot">plot</a></td>
+<td>Plot using the ComparerPlotter</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.TrackObservation.quantity">quantity</a></td>
+<td>Quantity of time series</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.TrackObservation.time">time</a></td>
+<td>Time index</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.TrackObservation.values">values</a></td>
+<td>Values as numpy array</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.TrackObservation.weight">weight</a></td>
+<td>Weighting factor for skill scores</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.TrackObservation.x">x</a></td>
+<td>x-coordinate</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.TrackObservation.y">y</a></td>
+<td>y-coordinate</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="methods" class="level2">
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.TrackObservation.equals">equals</a></td>
+<td>Check if two TimeSeries are equal</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.TrackObservation.sel">sel</a></td>
+<td>Select data by label</td>
+</tr>
+<tr class="odd">
+<td><a href="#modelskill.TrackObservation.to_dataframe">to_dataframe</a></td>
+<td>Convert matched data to pandas DataFrame</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.TrackObservation.trim">trim</a></td>
+<td>Trim observation data to a given time interval</td>
+</tr>
+</tbody>
+</table>
+<section id="modelskill.TrackObservation.equals" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.TrackObservation.equals">equals</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>TrackObservation.equals(other)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Check if two TimeSeries are equal</p>
+</section>
+<section id="modelskill.TrackObservation.sel" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.TrackObservation.sel">sel</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>TrackObservation.sel(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Select data by label</p>
+</section>
+<section id="modelskill.TrackObservation.to_dataframe" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.TrackObservation.to_dataframe">to_dataframe</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>TrackObservation.to_dataframe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Convert matched data to pandas DataFrame</p>
+<p>Include x, y coordinates only if gtype=track</p>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>pd.DataFrame</td>
+<td>data as a pandas DataFrame</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="modelskill.TrackObservation.trim" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.TrackObservation.trim">trim</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>TrackObservation.trim(start_time<span class="op">=</span><span class="va">None</span>, end_time<span class="op">=</span><span class="va">None</span>, <span class="bu">buffer</span><span class="op">=</span><span class="st">'1s'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Trim observation data to a given time interval</p>
+<section id="parameters-1" class="level4 doc-section doc-section-parameters">
+<h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 12%">
+<col style="width: 15%">
+<col style="width: 60%">
+<col style="width: 11%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>start_time</td>
+<td>pd.Timestamp</td>
+<td>start time</td>
+<td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>end_time</td>
+<td>pd.Timestamp</td>
+<td>end time</td>
+<td><code>None</code></td>
+</tr>
+<tr class="odd">
+<td>buffer</td>
+<td>str</td>
+<td>buffer time around start and end time, by default “1s”</td>
+<td><code>'1s'</code></td>
+</tr>
+</tbody>
+</table>
 
-    
-  
-    
-  </div>
-  
 
-
-</header>
-
-
-<p>Obtain a comparer object in one of the following ways:</p>
-<ul>
-<li>From matched data with <a href="../api/from_matched.html#modelskill.from_matched">from_matched()</a></li>
-<li>After defining <a href="observation/index.qmd">observation</a>s and <a href="model/index.qmd">model result</a>s using the <a href="../api/match.html#modelskill.match">match()</a> function.</li>
-<li>From a config file with <a href="../api/from_config.html#modelskill.from_config">from_config()</a></li>
-</ul>
-<p>Do analysis and plotting with the returned <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> (a single observation) or <a href="../api/ComparerCollection.html#modelskill.ComparerCollection">ComparerCollection</a> (multiple observations):</p>
-<ul>
-<li><a href="../api/ComparerCollection.html#modelskill.ComparerCollection.skill">skill()</a> - returns a <a href="../api/SkillTable.html#modelskill.SkillTable">SkillTable</a> with the skill scores</li>
-<li>plot using the various plot methods of the comparer objects
-<ul>
-<li><code>plot.scatter()</code></li>
-<li><code>plot.timeseries()</code></li>
-<li><code>plot.kde()</code></li>
-<li><code>plot.qq()</code></li>
-<li><code>plot.hist()</code></li>
-</ul></li>
-</ul>
-
-
+</section>
+</section>
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -788,10 +1112,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
+      <a href="../api/PointObservation.html" class="pagination-link" aria-label="PointObservation">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">PointObservation</span>
+      </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../api/obs.html" class="pagination-link" aria-label="Observations">
-        <span class="nav-page-text">Observations</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../api/model.html" class="pagination-link" aria-label="Model Result">
+        <span class="nav-page-text">Model Result</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
@@ -803,7 +1130,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     </div>   
     <div class="nav-footer-center">
 <p>© 2024 DHI Group</p>
-<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
+<div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/api/TrackObservation.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></div>
     <div class="nav-footer-right">
       &nbsp;
     </div>
