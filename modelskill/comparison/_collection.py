@@ -42,12 +42,18 @@ from ._utils import (
 
 
 class ComparerCollection(Mapping, Scoreable):
-    """
+    """Collection of comparers.
+
     Collection of comparers, constructed by calling the `modelskill.match`
     method or by initializing with a list of comparers.
 
     NOTE: In case of multiple model results with different time coverage,
     only the _overlapping_ time period will be used! (intersection)
+
+    Parameters
+    ----------
+    comparers : list of Comparer
+        list of comparers
 
     Examples
     --------
@@ -820,6 +826,7 @@ class ComparerCollection(Mapping, Scoreable):
     def score(
         self,
         metric: str | Callable = mtr.rmse,
+        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         **kwargs: Any,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
@@ -867,8 +874,6 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.score(weights='points', metric="mape")
         {'mod': 8.414442957854142}
         """
-
-        weights = kwargs.pop("weights", None)
 
         metric = _parse_metric(metric)[0]
 

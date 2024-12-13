@@ -165,7 +165,9 @@ class DfsuModelResult(SpatialField):
     def _extract_point(
         self, observation: PointObservation, spatial_method: Optional[str] = None
     ) -> PointModelResult:
-        """Spatially extract a PointModelResult from a DfsuModelResult
+        """Extract point.
+
+        Spatially extract a PointModelResult from a DfsuModelResult
         given a PointObservation. No time interpolation is done!
 
         Note: 'inverse_distance' method uses 5 nearest points and is the default.
@@ -242,7 +244,9 @@ class DfsuModelResult(SpatialField):
     def _extract_track(
         self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult:
-        """Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
+        """Extract track.
+
+        Extract a TrackModelResult from a DfsuModelResult (when data is a Dfsu object),
         given a TrackObservation.
 
         Wraps MIKEIO's extract_track method (which has the default method='nearest').

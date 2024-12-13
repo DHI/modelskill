@@ -1,3 +1,0 @@
-# Quantity
-
-::: modelskill.quantity.Quantity

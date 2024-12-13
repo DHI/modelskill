@@ -146,3 +146,7 @@ streamlit_app.py
 notes.md
 
 notebooks/Untitled.ipynb
+
+docs/_site/
+docs/_extensions/
+docs/api/*.qmd

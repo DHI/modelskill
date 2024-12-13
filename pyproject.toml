@@ -5,6 +5,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.sdist]
 exclude = ["notebooks", "tests"]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [project]
 name="modelskill"
 version="1.2.dev0"
@@ -41,11 +44,13 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+docs = ["quarto-cli==1.5.57",
+        "quartodoc==0.9.1",
+        "netCDF4",
+        "plotly >= 4.5",
+        ]
+
 dev = ["pytest",
-        "mkdocs==1.6.0",
-        "mkdocs-material==9.5.32",
-        "mkdocstrings==0.25.2",
-        "mkdocstrings-python==1.10.8",
         "plotly >= 4.5",
         "ruff==0.6.2",]
 
@@ -73,9 +78,10 @@ notebooks = [
 "Bug Tracker" = "https://github.com/DHI/modelskill/issues"
 
 
-[tool.ruff]
-# ignore line too long
-lint.ignore  = ["E501"]
+
+[tool.ruff.lint]
+ignore = ["E501"]
+select = ["D200", "D205"]
 
 [tool.mypy]
 python_version = "3.9"

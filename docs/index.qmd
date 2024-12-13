@@ -1,0 +1,55 @@
+---
+toc: false
+---
+
+
+![](https://raw.githubusercontent.com/DHI/modelskill/main/images/logo/modelskill.svg)
+
+
+# ModelSkill: Assess the skill of your simulations
+![OS](https://img.shields.io/badge/OS-Windows%20%7C%20Linux-blue)
+![Python version](https://img.shields.io/pypi/pyversions/modelskill.svg)
+![PyPI version](https://badge.fury.io/py/modelskill.svg)
+
+
+
+
+::: {.grid}
+
+
+::: {.g-col-6}
+## {{< fa clock >}} **Set up in 5 minutes**
+
+Install **ModelSkill** with [`pip`](https://pypi.org/project/modelskill/) and get up
+and running in minutes
+
+[**Getting started**](user-guide/getting-started.qmd)
+
+
+## {{< fa brands python >}} **It's just Python**
+
+Focus on your modelling and less on generate a validation report
+
+[**API Reference**](api/index.qmd)
+
+:::
+
+::: {.g-col-6}
+
+## {{< fa solid ruler >}} **Made to measure**
+
+Choose amongst different skill metrics, tables and charts
+
+[**Metrics**](api/metrics.qmd)
+
+## {{< fa scale-balanced >}} **Open Source, MIT**
+
+ModelSkill is licensed under MIT and available on [GitHub](https://github.com/DHI/modelskill)
+
+[**License**](license.qmd)
+
+:::
+
+:::
+
+

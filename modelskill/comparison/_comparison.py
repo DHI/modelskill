@@ -218,7 +218,9 @@ class ItemSelection:
         x_item: str | int | None = None,
         y_item: str | int | None = None,
     ) -> ItemSelection:
-        """Parse items and return observation, model and auxiliary items
+        """Parse item selection.
+
+        Parse items and return observation, model and auxiliary items
         Default behaviour:
         - obs_item is first item
         - mod_items are all but obs_item and aux_items
@@ -409,8 +411,27 @@ class Comparer(Scoreable):
     """
     Comparer class for comparing model and observation data.
 
-    Typically, the Comparer is part of a ComparerCollection,
-    created with the `match` function.
+    The `Comparer` class is the main class of the ModelSkill package. It is returned by [`match()`](`modelskill.match`), [`from_matched()`](`modelskill.from_matched`) or as an element in a [`ComparerCollection`](`modelskill.ComparerCollection`). It holds the *matched* observation and model data for a *single* observation and has methods for plotting and skill assessment.
+
+    Main functionality:
+
+    * selecting/filtering data
+        - [`sel()`](`modelskill.Comparer.sel`)
+        - [`query()`](`modelskill.Comparer.query`)
+    * skill assessment
+        - [`skill()`](`modelskill.Comparer.skill`)
+        - [`gridded_skill()`](`modelskill.Comparer.gridded_skill`) (for track observations)
+    * plotting
+        - [`plot.timeseries()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.timeseries`)
+        - [`plot.scatter()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.scatter`)
+        - [`plot.kde()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.kde`)
+        - [`plot.qq()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.qq`)
+        - [`plot.hist()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.hist`)
+        - [`plot.box()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.box`)
+    * load/save/export data
+        - [`load()`](`modelskill.Comparer.load`)
+        - [`save()`](`modelskill.Comparer.save`)
+        - [`to_dataframe()`](`modelskill.Comparer.to_dataframe`)
 
     Parameters
     ----------

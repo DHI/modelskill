@@ -1,0 +1,114 @@
+---
+title: Hydrology example from the Vistula catchment in Poland
+jupyter: python3
+---
+
+
+The Vistula catchment is the largest catchment in Poland, with an area of 194,424 km2. This notebook shows how a hydrolgoical model can evaluated using ModelSkill.  
+
+
+```{python}
+from pathlib import Path
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import modelskill as ms
+```
+
+```{python}
+fldr = Path("../data/Vistula")
+df = pd.read_csv(fldr / "stations.csv", index_col=0)
+df
+```
+
+```{python}
+def get_comparer(df, mods, id):
+    """Get a Comparer object for a given model and station id"""
+    q = ms.Quantity(name="Discharge", unit="m3/s")
+
+    # create Observation object
+    fp = fldr / mods[0] / f"{id}.csv"
+    dfd = pd.read_csv(fp, index_col=0, parse_dates=True)
+    o = ms.PointObservation(dfd, item="Qobs", name=df.loc[id].Station,
+                            x=df.loc[id].Long, y=df.loc[id].Lat, quantity=q)
+    
+    # create ModelResult objects
+    mm = []
+    for m in mods:
+        fp = fldr / m / f"{id}.csv"
+        dfd = pd.read_csv(fp, index_col=0, parse_dates=True)
+        mm.append(ms.PointModelResult(dfd, item="Qsim", name=m, quantity=q))
+    
+    return ms.match(obs=o, mod=mm)
+```
+
+## Compare a single observation with two model results
+
+```{python}
+cmp = get_comparer(df, ["sim1","sim2"], df.index[0])
+cmp
+```
+
+### Plots
+
+timeseries, scatter, boxplot, hist, kde, qq, taylor
+
+```{python}
+cmp.plot.timeseries();
+```
+
+```{python}
+cmp.sel(model="sim1").plot.scatter();
+```
+
+### Summary statistics
+
+```{python}
+# set default metrics
+ms.options.metrics.list = ["kge", "cc"]
+```
+
+```{python}
+cmp.skill().round(3)
+```
+
+### Statistics aggregated by month
+
+```{python}
+cmp.data["month"] = cmp.time.to_series().dt.month
+```
+
+```{python}
+cmp.skill(by=["model","month"]) #["kge"].plot.bar();
+```
+
+```{python}
+cmp.skill(by=["model","month"])["kge"].plot.line()
+plt.xlabel("Month")
+plt.xticks(np.arange(1,13), ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]);
+```
+
+## Compare multiple observations with two model results
+
+```{python}
+# loop through all stations in df and create a Comparer for each
+cmps = []
+for id in df.index:
+   try:
+      cmps.append(get_comparer(df, ["sim1","sim2"], id))
+   except ValueError as e:
+      pass
+cc = ms.ComparerCollection(cmps)
+cc   
+```
+
+```{python}
+cc.skill(by=["model","observation"], metrics="kge")["kge"].plot.barh();
+```
+
+```{python}
+# Average skill over all stations, weighted by sqrt(area)
+area = df.set_index("Station").loc[cc.obs_names].Area
+cc.mean_skill(weights=np.sqrt(area)).round(3)
+```
+

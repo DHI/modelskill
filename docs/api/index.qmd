@@ -1,0 +1,19 @@
+---
+title: API Reference
+---
+
+Obtain a comparer object in one of the following ways: 
+
+- From matched data with [from_matched()](`modelskill.from_matched`)
+- After defining [observation](observation/index.qmd)s and [model result](model/index.qmd)s using the [match()](`modelskill.match`) function.
+- From a config file with [from_config()](`modelskill.from_config`)
+
+Do analysis and plotting with the returned [Comparer](`modelskill.Comparer`) (a single observation) or [ComparerCollection](`modelskill.ComparerCollection`) (multiple observations):
+
+- [skill()](`modelskill.ComparerCollection.skill`) - returns a [SkillTable](`modelskill.SkillTable`) with the skill scores
+- plot using the various plot methods of the comparer objects
+    * `plot.scatter()`
+    * `plot.timeseries()`
+    * `plot.kde()`
+    * `plot.qq()`
+    * `plot.hist()`

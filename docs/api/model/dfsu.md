@@ -1,3 +1,0 @@
-# DfsuModelResult
-
-::: modelskill.DfsuModelResult

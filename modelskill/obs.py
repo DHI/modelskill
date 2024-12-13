@@ -1,10 +1,12 @@
 """
-The `observation` module contains different types of Observation classes for
-fixed locations (PointObservation), or locations moving in space (TrackObservation).
+# Observations
 
-Examples
---------
->>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
+ModelSkill supports two types of observations:
+
+* [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
+* [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
+
+An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
 
 from __future__ import annotations
@@ -32,7 +34,9 @@ def observation(
     gtype: Optional[Literal["point", "track"]] = None,
     **kwargs,
 ):
-    """A factory function for creating an appropriate observation object
+    """Create an appropriate observation object.
+
+    A factory function for creating an appropriate observation object
     based on the data and args.
 
     If 'x' or 'y' is given, a PointObservation is created.

@@ -46,7 +46,9 @@ def scatter(
     ax: Optional[Axes] = None,
     **kwargs,
 ) -> Axes:
-    """Scatter plot showing compared data: observation vs modelled
+    """Scatter plot tailored for model skill comparison.
+
+    Scatter plot showing compared data: observation vs modelled
     Optionally, with density histogram.
 
     Parameters
@@ -120,6 +122,18 @@ def scatter(
     -------
     matplotlib.axes.Axes
         The axes on which the scatter plot was drawn.
+
+    Examples
+    --------
+    ```{python}
+    import numpy as np
+    import modelskill as ms
+
+    x = np.linspace(0, 10, 1000)
+    y = x + np.random.normal(size=1000)
+
+    ms.plotting.scatter(x, y, skill_table=True)
+    ```
     """
 
     if len(x) != len(y):
