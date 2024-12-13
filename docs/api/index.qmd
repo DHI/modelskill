@@ -5,7 +5,7 @@ title: API Reference
 Obtain a comparer object in one of the following ways: 
 
 - From matched data with [from_matched()](`modelskill.from_matched`)
-- After defining [observation](observation/index.qmd)s and [model result](model/index.qmd)s using the [match()](`modelskill.match`) function.
+- After defining [observation](obs.qmd)s and [model result](model.qmd)s using the [match()](`modelskill.match`) function.
 - From a config file with [from_config()](`modelskill.from_config`)
 
 Do analysis and plotting with the returned [Comparer](`modelskill.Comparer`) (a single observation) or [ComparerCollection](`modelskill.ComparerCollection`) (multiple observations):
