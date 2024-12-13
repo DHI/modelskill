@@ -40,13 +40,13 @@ Focus on your modelling and less on generate a validation report
 
 Choose amongst different skill metrics, tables and charts
 
-[Metrics](`modelskill.metrics`)
+[**Metrics**](api/metrics.qmd)
 
 ## {{< fa scale-balanced >}} **Open Source, MIT**
 
 ModelSkill is licensed under MIT and available on [GitHub](https://github.com/DHI/modelskill)
 
-[License](license.qmd)
+[**License**](license.qmd)
 
 :::
 
