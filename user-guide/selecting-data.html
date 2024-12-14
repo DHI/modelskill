@@ -275,7 +275,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="timeseries-data" class="level2">
 <h2 class="anchored" data-anchor-id="timeseries-data">TimeSeries data</h2>
 <p>Point and track timeseries data of both observation and model result kinds are stored in <a href="../api/TimeSeries.html#modelskill.TimeSeries"><code>TimeSeries</code></a> objects which uses <a href="https://xarray.pydata.org/en/stable/generated/xarray.Dataset.html#xarray.Dataset"><code>xarray.Dataset</code></a> as data container. The <a href="../api/TimeSeries.html#modelskill.TimeSeries.sel"><code>sel()</code></a> method can be used to select data based on time and returns a new <a href="../api/TimeSeries.html#modelskill.TimeSeries"><code>TimeSeries</code></a> object with the selected data.</p>
-<div id="7898d239" class="cell" data-execution_count="1">
+<div id="674d507c" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>o <span class="op">=</span> ms.observation(<span class="st">"../data/obs.nc"</span>, item<span class="op">=</span><span class="st">"waterlevel"</span>, gtype<span class="op">=</span><span class="st">'point'</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>o_1month <span class="op">=</span> o.sel(time<span class="op">=</span><span class="bu">slice</span>(<span class="st">"2018-01-01"</span>, <span class="st">"2018-02-01"</span>))</span>
@@ -291,7 +291,7 @@ Quantity:  []</code></pre>
 <section id="comparer-objects" class="level2">
 <h2 class="anchored" data-anchor-id="comparer-objects">Comparer objects</h2>
 <p><a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> and <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><code>ComparerCollection</code></a> contain matched data from observations and model results. The <code>sel()</code> method can be used to select data based on time, model, quantity or other criteria and returns a new comparer object with the selected data.</p>
-<div id="0941f3d2" class="cell" data-execution_count="2">
+<div id="689553e8" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Observation and model data</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>o <span class="op">=</span> ms.observation(<span class="st">"../data/SW/HKNA_Hm0.dfs0"</span>, item<span class="op">=</span><span class="dv">0</span>,</span>
@@ -305,7 +305,7 @@ Quantity:  []</code></pre>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>                      name<span class="op">=</span><span class="st">"m2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="b7d22586" class="cell" data-execution_count="3">
+<div id="6d0188f3" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.match(o, [m1, m2])</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>cmp_1month <span class="op">=</span> <span class="bu">cmp</span>.sel(time<span class="op">=</span><span class="bu">slice</span>(<span class="st">'2018-01-01'</span>, <span class="st">'2018-02-01'</span>))</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>cmp_m1 <span class="op">=</span> <span class="bu">cmp</span>.sel(model<span class="op">=</span><span class="st">'m1'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -314,7 +314,7 @@ Quantity:  []</code></pre>
 <section id="skill-objects" class="level2">
 <h2 class="anchored" data-anchor-id="skill-objects">Skill objects</h2>
 <p>The <a href="../api/Comparer.html#modelskill.Comparer.skill"><code>skill()</code></a> and <a href="../api/ComparerCollection.html#modelskill.ComparerCollection.mean_skill"><code>mean_skill()</code></a> methods return a <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object with skill scores from comparing observation and model result data using different metrics (e.g.&nbsp;root mean square error). The data of the <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object is stored in a (MultiIndex) <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame"><code>pandas.DataFrame</code></a> which can be accessed via the <code>data</code> attribute. The <code>sel()</code> method can be used to select specific rows and returns a new <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object with the selected data.</p>
-<div id="35bfc3d4" class="cell" data-execution_count="4">
+<div id="7ef2a912" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>sk <span class="op">=</span> <span class="bu">cmp</span>.skill()</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sk_m1 <span class="op">=</span> sk.sel(model<span class="op">=</span><span class="st">'m1'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
