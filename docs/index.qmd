@@ -29,7 +29,7 @@ and running in minutes
 
 ## {{< fa brands python >}} **It's just Python**
 
-Focus on your modelling and less on generate a validation report
+Spend more time modeling and less time worrying about validation
 
 [**API Reference**](api/index.qmd)
 
@@ -39,13 +39,13 @@ Focus on your modelling and less on generate a validation report
 
 ## {{< fa solid ruler >}} **Made to measure**
 
-Choose amongst different skill metrics, tables and charts
+Choose amongst different skill metrics, tables and visualizations
 
 [**Metrics**](api/metrics.qmd)
 
 ## {{< fa scale-balanced >}} **Open Source, MIT**
 
-ModelSkill is licensed under MIT and available on [GitHub](https://github.com/DHI/modelskill)
+ModelSkill is licensed under MIT and the source code is available on [GitHub](https://github.com/DHI/modelskill)
 
 [**License**](license.qmd)
 
