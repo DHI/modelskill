@@ -33,7 +33,7 @@ In all other cases, the observations and model results needs to be defined first
 
 ## Matching with dfsu or grid model result
 
-If the model result is a SpatialField, i.e., either a `GridModelResult` or a `DfsuModelResult`, and the observation is of lower dimension (e.g. point), then the model result needs to be *extracted* before matching can be done. This can be done "offline" before using ModelSkill, e.g., using [MIKE](https://www.mikepoweredbydhi.com/) tools or [MIKE IO](https://github.com/DHI/mikeio), or as part of the matching process using ModelSkill. We will here focus on the latter. 
+If the model result is a SpatialField, i.e., either a `GridModelResult` or a `DfsuModelResult`, and the observation is of lower dimension (e.g. point), then the model result needs to be *extracted* before matching can be done. This can be done "offline" before using ModelSkill, e.g., using [MIKE](https://www.mikepoweredbydhi.com/) tools or [MIKE IO](https://dhi.github.io/mikeio), or as part of the matching process using ModelSkill. We will here focus on the latter. 
 
 In this situation, *multiple* observations can be matched to the same model result, in which case the `match` function returns a `ComparerCollection` instead of a `Comparer` which is the returned object for single observation matching. 
 
