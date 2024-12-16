@@ -1,3 +1,8 @@
+---
+format-links: false
+---
+
+
 # User Guide
 
 ModelSkill compares model results with observations. The workflow can be split in two phases:
