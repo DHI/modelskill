@@ -54,7 +54,7 @@ mr = ms.DfsuModelResult("../data/SW/HKZN_local_2017_DutchCoast.dfsu",
 
 ## {{< fa link >}} Match observations and ModelResults
 
-This [match()](`modelskill.matching.match`) method returns a [Comparer](`modelskill.Comparer`) (a single observation) or a
+The [match()](`modelskill.matching.match`) function returns a [Comparer](`modelskill.Comparer`) (a single observation) or a
 [ComparerCollection](`modelskill.ComparerCollection`) (multiple observations)
 for further analysis and plotting.
 
@@ -67,7 +67,7 @@ cc
 
 ## {{< fa ruler >}} Do analysis, plotting, etc with a Comparer
 
-The object returned by the `match()` method is a *Comparer*/*ComparerCollection*. It holds the matched observation and model data and has methods for plotting and
+The object returned by the `match()` function is a *Comparer*/*ComparerCollection*. It holds the matched observation and model data and has methods for plotting and
 skill assessment.
 
 The primary comparer methods are:
