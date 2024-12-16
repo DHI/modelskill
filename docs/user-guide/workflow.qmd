@@ -63,6 +63,7 @@ cc = ms.match([hkna, c2], mr)
 cc
 ```
 
+See [matching page](matching.qmd) for more information.
 
 
 ## {{< fa ruler >}} Do analysis, plotting, etc with a Comparer
