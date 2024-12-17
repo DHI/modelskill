@@ -138,6 +138,9 @@ def scatter(
     ms.plotting.scatter(x, y, skill_table=True)
     ```
     ```{python}
+    ms.plotting.scatter(x, y, show_density=False, show_hist=True, cmap="Reds")
+    ```
+    ```{python}
     ms.plotting.scatter(x, y, quantiles=0, title="Hide quantiles")
     ```
     ```{python}
