@@ -46,6 +46,7 @@ website:
         - user-guide/matching.qmd
         - user-guide/selecting-data.qmd
         - user-guide/plotting.qmd
+        - user-guide/statistics.qmd
 
     - title: "Examples"
       contents:
@@ -81,6 +82,7 @@ website:
           contents:
             - api/match.qmd
             - api/from_matched.qmd
+            - api/from_config.qmd
         - section: "Comparison"
           href: api/comparison.qmd
           contents:
@@ -153,7 +155,7 @@ quartodoc:
         - GridModelResult
         - DummyModelResult
     - title: Matching
-      desc: Matching classes and functions
+      desc: Matching functions
       contents:
         - match
         - from_matched
