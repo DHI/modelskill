@@ -93,6 +93,12 @@ website:
             - api/SkillTable.qmd
         - text: "Plotting"
           href: api/plotting.qmd
+          contents:
+            - api/plotting.scatter.qmd
+            - api/plotting.wind_rose.qmd
+            - api/plotting.taylor_diagram.qmd
+            - api/plotting.spatial_overview.qmd
+            - api/plotting.temporal_coverage.qmd
         - text: "Metrics"
           href: api/metrics.qmd
         - text: "Settings"
