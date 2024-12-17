@@ -49,7 +49,10 @@ def scatter(
     """Scatter plot tailored for model skill comparison.
 
     Scatter plot showing compared data: observation vs modelled
-    Optionally, with density histogram.
+    Optionally, with density histogram or denisty color coding of points.
+
+    Note: can be called directly but is often called through the plot
+    accessor on a Comparer/CompararCollection cmp.plot.scatter()
 
     Parameters
     ----------
