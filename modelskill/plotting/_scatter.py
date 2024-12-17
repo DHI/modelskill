@@ -137,6 +137,12 @@ def scatter(
 
     ms.plotting.scatter(x, y, skill_table=True)
     ```
+    ```{python}
+    ms.plotting.scatter(x, y, quantiles=0, title="Hide quantiles")
+    ```
+    ```{python}
+    ms.plotting.scatter(x, y, xlim=(0,4), ylim=(0,4), show_density=False)
+    ```
     """
 
     if len(x) != len(y):
