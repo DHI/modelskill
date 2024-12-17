@@ -73,11 +73,58 @@ sk_m1
 This filters the `SkillTable` to include results for the model named "m1". See more about filtering on the [Selecting data page](selecting-data.qmd).
 
 
+
+## Sorting a SkillTable
+
+The [](`~modelskill.SkillTable`) supports sorting by index or values, and swapping levels in a MultiIndex to reorganize the data.
+
+**Example 4: Sorting by index**
+```{python}
+sk_sorted = sk.sort_index()
+sk_sorted
+```
+
+This sorts the `SkillTable` by its index levels.
+
+**Example 5: Sorting by a specific index level**
+```{python}
+sk_sorted_obs = sk.sort_index(level="observation")
+sk_sorted_obs
+```
+
+Here, the table is sorted specifically by the `observation` level in the index.
+
+**Example 6: Sorting by values**
+```{python}
+sk_sorted_values = sk.sort_values("rmse")
+sk_sorted_values
+```
+
+This sorts the table by the `rmse` column in ascending order.
+
+**Example 7: Sorting by multiple values**
+```{python}
+sk_sorted_multi = sk.sort_values(["n", "rmse"], ascending=[True, False])
+sk_sorted_multi
+```
+
+Here, the table is sorted first by column `n` (ascending) and then by `rmse` (descending).
+
+**Example 8: Swapping index levels**
+```{python}
+sk_swapped = sk.swaplevel("model", "observation").sort_index()
+sk_swapped
+```
+
+This swaps the `model` and `observation` levels in the MultiIndex and sorts the resulting table.
+
+
+
 ## Rounding and Formatting
 
 The `round()` method can be used to round all skill values to a specified number of decimal places, making the table more readable.
 
-**Example 4: Rounding skill values**
+**Example 9: Rounding skill values**
 ```{python}
 sk.round(decimals=2)
 ```
@@ -87,36 +134,69 @@ This rounds all values in the [](`~modelskill.SkillTable`) to two decimal places
 
 ## Visualizing Skill Metrics
 
-The [](`~modelskill.SkillTable`) integrates plotting capabilities, allowing you to quickly visualize skill metrics. Individual metrics can be accessed as columns and plotted using pandas-style plotting.
+The [](`~modelskill.SkillTable`) integrates table styling and plotting capabilities, allowing you to quickly visualize skill metrics. 
 
-**Example 5: Plotting a bar chart for RMSE**
-```{python}
-sk.rmse.plot.bar(figsize=(5,3))
-```
-
-This creates a bar chart showing RMSE values for each model-observation pair.
-
-**Example 6: Styling the SkillTable**
+**Example 10: Styling the SkillTable**
 ```{python}
 sk.style()
 ```
 
 The `style()` method applies color-based styling to the table, making it easier to identify high and low values.
 
+Individual metrics can be accessed as columns and plotted using pandas-style plotting.
+
+**Example 11: Plotting a bar chart for RMSE**
+```{python}
+sk.rmse.plot.bar(figsize=(5,3))
+```
+
+This creates a bar chart showing RMSE values for each model-observation pair.
+
+
+**Example 12: Line plot**
+```{python}
+sk_by3hr = cc.skill(by=['model','freq:3h'])
+sk_by3hr.rmse.plot.line(title="RMSE in 3 hour groups")
+```
+
+This generates a line plot showing RMSE values over the index.
+
+**Example 13: Bar chart**
+```{python}
+sk.rmse.plot.bar()
+```
+
+This creates a bar chart showing RMSE values for each model-observation pair.
+
+**Example 14: Horizontal bar chart**
+```{python}
+sk.rmse.plot.barh()
+```
+
+This generates a horizontal bar chart for RMSE values.
+
+**Example 15: Colored grid**
+```{python}
+sk.rmse.plot.grid()
+```
+
+This produces a colored grid representation of the skill metrics, which can help identify patterns.
+
+
 
 ## Exporting a SkillTable
 
-For further analysis, the [](`~modelskill.SkillTable`) can be converted to a standard `pandas.DataFrame` or a GeoDataFrame for spatial data.
+For further analysis, the [](`~modelskill.SkillTable`) can be converted to a standard [](`pandas.DataFrame`) or a GeoDataFrame for spatial data.
 
-**Example 7: Converting to DataFrame**
+**Example 16: Converting to DataFrame**
 ```{python}
 df = sk.to_dataframe()
 df
 ```
 
-This converts the [](`~modelskill.SkillTable`) into a `pandas.DataFrame` for additional processing.
+This converts the [](`~modelskill.SkillTable`) into a [](`pandas.DataFrame`) for additional processing.
 
-**Example 8: Converting to GeoDataFrame**
+**Example 17: Converting to GeoDataFrame**
 ```{python}
 gdf = sk.to_geodataframe()
 gdf
@@ -131,8 +211,14 @@ The [](`~modelskill.SkillTable`) object provides tools to filter, format, and vi
 
 - **`sel()`**: Select specific models or observations.
 - **`query()`**: Apply flexible condition-based filtering.
+- **`sort_index()`**: Sort the table by index levels.
+- **`sort_values()`**: Sort the table by specific metric values.
+- **`swaplevel()`**: Swap levels in the MultiIndex for reorganization.
 - **`round()`**: Round skill values to improve readability.
-- **`plot()`**: Visualize metrics using bar or line charts.
+- **`plot.line()`**: Generate a line plot for skill metrics.
+- **`plot.bar()`**: Visualize metrics as a bar chart.
+- **`plot.barh()`**: Create a horizontal bar chart.
+- **`plot.grid()`**: Display a colored grid of skill metrics.
 - **`style()`**: Apply color-based formatting for easy interpretation.
 - **`to_dataframe()`**: Export to `pandas.DataFrame`.
 - **`to_geodataframe()`**: Export to `GeoDataFrame` for spatial analysis.
