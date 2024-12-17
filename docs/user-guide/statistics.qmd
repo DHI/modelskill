@@ -1,0 +1,140 @@
+# Skill Statistics
+
+The [](`~modelskill.Comparer`) and [](`~modelskill.ComparerCollection`) objects in ModelSkill allow for detailed performance evaluation of models through skill metrics. These metrics are organized in a [](`~modelskill.SkillTable`) object, which can be further filtered, analyzed, and visualized to gain insights into model accuracy and reliability.
+
+
+```{python}
+#| code-fold: true
+#| code-summary: "Construct comparer from observation and model data"
+import modelskill as ms
+o1 = ms.observation("../data/SW/HKNA_Hm0.dfs0", item=0,
+                    x=4.2420, y=52.6887,
+                    name="HKNA")
+o2 = ms.observation("../data/SW/eur_Hm0.dfs0", item=0,
+                    x=3.2760, y=51.9990, 
+                    name="EPL")
+m1 = ms.model_result("../data/SW/HKZN_local_2017_DutchCoast.dfsu", 
+                      item="Sign. Wave Height",
+                      name="m1")
+m2 = ms.model_result("../data/SW/CMEMS_DutchCoast_2017-10-28.nc", 
+                      item="VHM0",
+                      name="m2")
+```
+
+```{python}
+cc = ms.match([o1, o2], [m1, m2])
+cc
+```
+
+
+## Generating a SkillTable
+
+The [](`~modelskill.ComparerCollection.skill`) and [](`~modelskill.ComparerCollection.mean_skill`) methods generate a [](`~modelskill.SkillTable`) by comparing observations and model results using various skill metrics. It supports grouping and aggregation through the `by` parameter.
+
+**Syntax:** `ComparerCollection.skill(by=None, metrics=None)`
+
+| Parameter    | Type                 | Description                                                                                   | Default         |
+|--------------|----------------------|-----------------------------------------------------------------------------------------------|-----------------|
+| `by`         | str or list          | Group by column names, temporal bins (e.g., `freq:M` for monthly), or attributes like `attrs`. | None            |
+| `metrics`    | list                 | List of metrics (e.g., `rmse`, `bias`). Default uses predefined metrics.                      | None            |
+         |
+
+
+**Example 1: Generating a SkillTable**
+```{python}
+sk = cc.skill(metrics=["bias", "rmse", "si"])
+sk
+```
+
+This generates a `SkillTable` containing metrics for all observations and models.
+
+
+**Example 2: Grouping skill scores**
+```{python}
+sk_by6hr = cc.skill(by=['model','freq:6h'], 
+                    metrics=["bias", "mae"]
+                    )
+sk_by6hr
+```
+
+Here, skill scores are grouped by 6 hour (`freq:6h`), but it could also be by month or year, making it possible to analyze performance trends over time.
+
+
+## Filtering a SkillTable
+
+The [](`~modelskill.SkillTable`) object supports several methods for filtering and refining data. The `sel()` method allows selection of specific models or observations, while the `query()` method enables flexible condition-based filtering.
+
+**Example 3: Selecting a specific model**
+```{python}
+sk_m1 = sk.sel(model='m1')
+sk_m1
+```
+
+This filters the `SkillTable` to include results for the model named "m1". See more about filtering on the [Selecting data page](selecting-data.qmd).
+
+
+## Rounding and Formatting
+
+The `round()` method can be used to round all skill values to a specified number of decimal places, making the table more readable.
+
+**Example 4: Rounding skill values**
+```{python}
+sk.round(decimals=2)
+```
+
+This rounds all values in the [](`~modelskill.SkillTable`) to two decimal places.
+
+
+## Visualizing Skill Metrics
+
+The [](`~modelskill.SkillTable`) integrates plotting capabilities, allowing you to quickly visualize skill metrics. Individual metrics can be accessed as columns and plotted using pandas-style plotting.
+
+**Example 5: Plotting a bar chart for RMSE**
+```{python}
+sk.rmse.plot.bar(figsize=(5,3))
+```
+
+This creates a bar chart showing RMSE values for each model-observation pair.
+
+**Example 6: Styling the SkillTable**
+```{python}
+sk.style()
+```
+
+The `style()` method applies color-based styling to the table, making it easier to identify high and low values.
+
+
+## Exporting a SkillTable
+
+For further analysis, the [](`~modelskill.SkillTable`) can be converted to a standard `pandas.DataFrame` or a GeoDataFrame for spatial data.
+
+**Example 7: Converting to DataFrame**
+```{python}
+df = sk.to_dataframe()
+df
+```
+
+This converts the [](`~modelskill.SkillTable`) into a `pandas.DataFrame` for additional processing.
+
+**Example 8: Converting to GeoDataFrame**
+```{python}
+gdf = sk.to_geodataframe()
+gdf
+```
+
+This converts the table to a [`GeoDataFrame`](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.html), enabling spatial analysis of model performance.
+
+
+## Summary of Key Methods
+
+The [](`~modelskill.SkillTable`) object provides tools to filter, format, and visualize skill metrics efficiently:
+
+- **`sel()`**: Select specific models or observations.
+- **`query()`**: Apply flexible condition-based filtering.
+- **`round()`**: Round skill values to improve readability.
+- **`plot()`**: Visualize metrics using bar or line charts.
+- **`style()`**: Apply color-based formatting for easy interpretation.
+- **`to_dataframe()`**: Export to `pandas.DataFrame`.
+- **`to_geodataframe()`**: Export to `GeoDataFrame` for spatial analysis.
+
+By combining these methods, you can analyze model performance in detail, identify trends, and communicate results effectively.
