@@ -32,10 +32,11 @@ def _validate_multi_index(index, min_levels=2, max_levels=2):  # type: ignore
 class SkillArrayPlotter:
     """SkillArrayPlotter object for visualization of a single metric (SkillArray)
 
-    plot.line() : line plot
-    plot.bar() : bar chart
-    plot.barh() : horizontal bar chart
-    plot.grid() : colored grid
+    * plot.line() : line plot
+    * plot.bar() : bar chart
+    * plot.barh() : horizontal bar chart
+    * plot.grid() : colored grid
+
     """
 
     def __init__(self, skillarray: "SkillArray") -> None:
