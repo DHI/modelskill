@@ -68,15 +68,6 @@ mrCMEMS = ms.model_result(fn, item="VHM0", name='CMEMS')
 mrCMEMS
 ```
 
-## Grib file ModelResult
-
-```{python}
-fn = r"../data/SW/NWW3_hs_201710.grib"
-```
-
-```{python}
-#mr3 = ModelResult(fn, name='WW3', engine='cfgrib') # not yet supported
-```
 
 ## Connect multiple models and observations and extract
 
