@@ -44,11 +44,28 @@ from ._utils import (
 class ComparerCollection(Mapping, Scoreable):
     """Collection of comparers.
 
-    Collection of comparers, constructed by calling the `modelskill.match`
-    method or by initializing with a list of comparers.
+    The `ComparerCollection` is one of the main objects of the `modelskill` package. It is a collection of [`Comparer`](`modelskill.Comparer`) objects and created either by the [`match()`](`modelskill.match`) function, by passing a list of Comparers to the [`ComparerCollection`](`modelskill.ComparerCollection`) constructor, or by reading a config file using the [`from_config()`](`modelskill.from_config`) function.
 
     NOTE: In case of multiple model results with different time coverage,
     only the _overlapping_ time period will be used! (intersection)
+
+    Main functionality:
+
+    * selecting/filtering data
+        - `__get_item__()` - get a single Comparer, e.g., `cc[0]` or `cc['obs1']`
+        - [`sel()`](`modelskill.ComparerCollection.sel`)
+        - [`query()`](`modelskill.ComparerCollection.query`)
+    * skill assessment
+        - [`skill()`](`modelskill.ComparerCollection.skill`)
+        - [`mean_skill()`](`modelskill.ComparerCollection.mean_skill`)
+        - [`gridded_skill()`](`modelskill.ComparerCollection.gridded_skill`) (for track observations)
+    * plotting
+        - [`plot.scatter()`](`modelskill.comparison._collection_plotter.ComparerCollectionPlotter.scatter`)
+        - [`plot.kde()`](`modelskill.comparison._collection_plotter.ComparerCollectionPlotter.kde`)
+        - [`plot.hist()`](`modelskill.comparison._collection_plotter.ComparerCollectionPlotter.hist`)
+    * load/save/export data
+        - [`load()`](`modelskill.ComparerCollection.load`)
+        - [`save()`](`modelskill.ComparerCollection.save`)
 
     Parameters
     ----------
