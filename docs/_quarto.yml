@@ -91,10 +91,18 @@ website:
               href: api/comparison.ComparerPlotter.qmd
             - api/ComparerCollection.qmd
             - text: "ComparerCollectionPlotter"
-              href: api/comparison.ComparerCollectionPlotter.qmd
+              href: api/comparison.ComparerCollectionPlotter.qmd            
+        - section: "Skill"
+          contents:            
             - api/SkillTable.qmd
-            - api/skill.SkillArrayPlotter.qmd            
-            - api/skill_grid.SkillGrid.qmd
+            - text: "SkillArray"
+              href: api/skill.SkillArray.qmd
+            - text: "SkillArrayPlotter"
+              href: api/skill.SkillArrayPlotter.qmd
+            - text: "SkillGrid"
+              href: api/skill_grid.SkillGrid.qmd
+            - text: "SkillGridArray"
+              href: api/skill_grid.SkillGridArray.qmd
         - text: "Plotting"
           href: api/plotting.qmd
           contents:
@@ -192,9 +200,15 @@ quartodoc:
             - save
             - load
         - name: comparison.ComparerCollectionPlotter
+
+    - title: Skill
+      desc: ""
+      contents:
         - name: SkillTable
+        - name: skill.SkillArray
         - name: skill.SkillArrayPlotter
         - name: skill_grid.SkillGrid
+        - name: skill_grid.SkillGridArray
     
     - title: Plotting
       desc: ""
