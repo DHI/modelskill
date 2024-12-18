@@ -1,11 +1,12 @@
-import numpy as np
-import pytest
-import pandas as pd
-import xarray as xr
 import matplotlib.pyplot as plt
-from modelskill.comparison import Comparer
-from modelskill import __version__
+import numpy as np
+import pandas as pd
+import pytest
+import xarray as xr
+
 import modelskill as ms
+from modelskill import __version__
+from modelskill.comparison import Comparer
 
 
 @pytest.fixture
@@ -887,6 +888,26 @@ def test_from_matched_dfs0():
     assert float(
         gs.data.sel(x=-0.01, y=55.1, method="nearest").rmse.values
     ) == pytest.approx(0.0476569069177831)
+
+
+def test_timeseriesplot_accepts_style_color_input(pc):
+    # Check that it can take the inputs
+    ax = pc.plot.timeseries(color=["red", "blue"])
+    ax = pc.plot.timeseries(style=["b-", "g--"])
+    assert ax.lines[1].get_color() == "g"
+
+    # Check that errors are raised
+    with pytest.raises(ValueError, match="Choose one"):
+        ax = pc.plot.timeseries(color=["red", "blue"], style="b-")
+    with pytest.raises(ValueError, match="'color' argument"):
+        ax = pc.plot.timeseries(color=["red"])
+    with pytest.raises(ValueError, match="'style' argument"):
+        ax = pc.plot.timeseries(style=["b-"])
+
+    ax = pc.plot.timeseries(color=["red", "blue", "black"])
+    # first line is blue (red is for observations).
+    assert ax.lines[0].get_color() == "blue"
+    plt.show()
 
 
 def test_from_matched_x_or_x_item_not_both():

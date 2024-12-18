@@ -25,6 +25,7 @@ from ..plotting._misc import (
     _xtick_directional,
     _ytick_directional,
     quantiles_xy,
+    _check_kwarg_and_convert_to_list,
 )
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
@@ -61,6 +62,8 @@ class ComparerPlotter:
         ax=None,
         figsize: Tuple[float, float] | None = None,
         backend: str = "matplotlib",
+        style: list[str] | str | None = None,
+        color: list[str] | tuple | str | None = None,
         **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
@@ -78,6 +81,14 @@ class ComparerPlotter:
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend,
             by default "matplotlib"
+        style: list of str, optional
+            containing line styles of the model results. Cannot be passed together with color input.
+            by default None
+        color: list of str, optional
+            containing colors of the model results.
+            If len(colors) == num_models + 1, the first color will be used for the observations.
+            Cannot be passed together with style input.
+            by default None
         **kwargs
             other keyword arguments to fig.update_layout (plotly backend)
 
@@ -85,6 +96,7 @@ class ComparerPlotter:
         -------
         matplotlib.axes.Axes or plotly.graph_objects.Figure
         """
+
         from ._comparison import MOD_COLORS
 
         cmp = self.comparer
@@ -92,18 +104,43 @@ class ComparerPlotter:
         if title is None:
             title = cmp.name
 
+        if color is not None and style is not None:
+            raise ValueError(
+                "It is not possible to pass both the color argument and the style argument. Choose one."
+            )
+
+        # Color for observations:
+        obs_color = cmp.data[cmp._obs_name].attrs["color"]
+
+        # if color is None and style is None:  # Use default values for colors
+        #     from ._comparison import MOD_COLORS
+
+        #     color = MOD_COLORS[: cmp.n_models]
+
+        color, style = _check_kwarg_and_convert_to_list(color, style, cmp.n_models)
+
+        if color is not None and len(color) > cmp.n_models:
+            # If more than n_models colors is given, the first color is used for the observations
+            obs_color = color[0]
+            color = color[1:]
+
         if backend == "matplotlib":
             fig, ax = _get_fig_ax(ax, figsize)
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
                 mod = cmp.raw_mod_data[key]._values_as_series
-                mod.plot(ax=ax, color=MOD_COLORS[j])
+                if style is not None:
+                    mod.plot(ax=ax, style=style[j])
+                else:
+                    if color is None:
+                        color = MOD_COLORS
+                    mod.plot(ax=ax, color=color[j])
 
             ax.scatter(
                 cmp.time,
                 cmp.data[cmp._obs_name].values,
                 marker=".",
-                color=cmp.data[cmp._obs_name].attrs["color"],
+                color=obs_color,
             )
             ax.set_ylabel(cmp._unit_text)
             ax.legend([*cmp.mod_names, cmp._obs_name])
