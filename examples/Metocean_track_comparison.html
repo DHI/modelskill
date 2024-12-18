@@ -255,14 +255,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <p>Comparing MIKE 21 HD dfsu model result with satellite track observation of surface elevation.</p>
 <p>This notebook also includes gridded spatial skill assessments.</p>
-<div id="66050aaa" class="cell" data-execution_count="1">
+<div id="26b56fd5" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="extract-track-data" class="level2">
 <h2 class="anchored" data-anchor-id="extract-track-data">Extract track data</h2>
-<div id="63ab73ab" class="cell" data-execution_count="2">
+<div id="1fcd9a6c" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.model_result(<span class="st">'../data/NorthSeaHD_and_windspeed.dfsu'</span>,</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                     name<span class="op">=</span><span class="st">'HD'</span>, item<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>mr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -273,7 +273,7 @@ Quantity: Surface Elevation [m]</code></pre>
 </div>
 </div>
 <p>In this case, the track observations are stored in a csv file, which we can read in using pandas. Any file format that can be read into a pandas dataframe can be used here.</p>
-<div id="68509578" class="cell" data-execution_count="3">
+<div id="f17cd97b" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">'../data/altimetry_NorthSea_20171027.csv'</span>,</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                  index_col<span class="op">=</span><span class="dv">0</span>, parse_dates<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -348,7 +348,7 @@ Quantity: Surface Elevation [m]</code></pre>
 </div>
 </div>
 <p>Csv files have no metadata on which quantity it contains, we add this manually, consistent with the model result, using the <a href="../api/TrackObservation.html#modelskill.TrackObservation"><code>TrackObservation</code></a> class.</p>
-<div id="da76e78d" class="cell" data-execution_count="4">
+<div id="c11f5f04" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>o1 <span class="op">=</span> ms.TrackObservation(df, item<span class="op">=</span><span class="st">"surface_elevation"</span>, name<span class="op">=</span><span class="st">'alti'</span>,</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                         quantity<span class="op">=</span>ms.Quantity(name<span class="op">=</span><span class="st">"Surface Elevation"</span>, unit<span class="op">=</span><span class="st">"meter"</span>)) </span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>o1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -364,7 +364,7 @@ Time: 2017-10-26 04:37:37 - 2017-10-30 20:54:47
 Quantity: Surface Elevation [meter]</code></pre>
 </div>
 </div>
-<div id="71ca7856" class="cell" data-execution_count="5">
+<div id="0f6780f1" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.spatial_overview(o1, mr)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -374,7 +374,7 @@ Quantity: Surface Elevation [meter]</code></pre>
 </div>
 </div>
 </div>
-<div id="4d44db12" class="cell" data-execution_count="6">
+<div id="eebc75c0" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.match(o1, mr)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="6">
@@ -385,7 +385,7 @@ Model(s):
 0: HD</code></pre>
 </div>
 </div>
-<div id="90edaebd" class="cell" data-execution_count="7">
+<div id="87ff448f" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.scatter()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -399,7 +399,7 @@ Model(s):
 <section id="extract-track-from-dfs0" class="level2">
 <h2 class="anchored" data-anchor-id="extract-track-from-dfs0">Extract track from dfs0</h2>
 <p>Using the <a href="../api/TrackModelResult.html#modelskill.TrackModelResult"><code>TrackModelResult</code></a> class.</p>
-<div id="86a04377" class="cell" data-execution_count="8">
+<div id="52986b75" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.TrackModelResult(<span class="st">'../data/NorthSeaHD_extracted_track.dfs0'</span>,</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                          name<span class="op">=</span><span class="st">'HD'</span>, item<span class="op">=</span><span class="dv">2</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>mr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -415,7 +415,7 @@ Time: 2017-10-26 04:37:37 - 2017-10-30 20:54:47
 Quantity: Undefined [undefined]</code></pre>
 </div>
 </div>
-<div id="2315d1a6" class="cell" data-execution_count="9">
+<div id="cebefa16" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">'../data/altimetry_NorthSea_20171027.csv'</span>,</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                  index_col<span class="op">=</span><span class="dv">0</span>, parse_dates<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>o1 <span class="op">=</span> ms.TrackObservation(df, item<span class="op">=</span><span class="dv">2</span>, name<span class="op">=</span><span class="st">'alti'</span>,</span>
@@ -433,7 +433,7 @@ Time: 2017-10-26 04:37:37 - 2017-10-30 20:54:47
 Quantity: Surface Elevation [meter]</code></pre>
 </div>
 </div>
-<div id="aa852e54" class="cell" data-execution_count="10">
+<div id="acf5206d" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.match(o1, mr)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="10">
@@ -444,7 +444,7 @@ Model(s):
 0: HD</code></pre>
 </div>
 </div>
-<div id="065099b0" class="cell" data-execution_count="11">
+<div id="015c32b7" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.scatter()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -458,7 +458,7 @@ Model(s):
 <section id="gridded-skill" class="level2">
 <h2 class="anchored" data-anchor-id="gridded-skill">Gridded skill</h2>
 <p>Load model, load observation, add observation to model and extract.</p>
-<div id="43c9c196" class="cell" data-execution_count="12">
+<div id="eeda4158" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.model_result(<span class="st">'../data/NorthSeaHD_and_windspeed.dfsu'</span>,</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                     name<span class="op">=</span><span class="st">'HD'</span>, item<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -483,7 +483,7 @@ Model(s):
 </div>
 </div>
 <p>Get metrics binned by a regular spatial grid, returns xarray Dataset</p>
-<div id="8ffe4b25" class="cell" data-execution_count="13">
+<div id="010c9540" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>gs <span class="op">=</span> <span class="bu">cmp</span>.gridded_skill(metrics<span class="op">=</span>[<span class="st">'bias'</span>])</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>gs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="13">
@@ -491,7 +491,7 @@ Model(s):
 Dimensions: (x: 5, y: 5)</code></pre>
 </div>
 </div>
-<div id="6f9d16ca" class="cell" data-execution_count="14">
+<div id="7e0db9cd" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(ncols<span class="op">=</span><span class="dv">2</span>, nrows<span class="op">=</span><span class="dv">1</span>, figsize <span class="op">=</span> (<span class="dv">10</span>, <span class="dv">5</span>))</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>gs.n.plot(ax<span class="op">=</span>axes[<span class="dv">0</span>])</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>gs.bias.plot(ax<span class="op">=</span>axes[<span class="dv">1</span>])<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -506,7 +506,7 @@ Dimensions: (x: 5, y: 5)</code></pre>
 </section>
 <section id="minimum-number-of-observations" class="level2">
 <h2 class="anchored" data-anchor-id="minimum-number-of-observations">Minimum number of observations</h2>
-<div id="fd96bda3" class="cell" data-execution_count="15">
+<div id="991d6de8" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>gs <span class="op">=</span> <span class="bu">cmp</span>.gridded_skill(metrics<span class="op">=</span>[<span class="st">'bias'</span>], n_min<span class="op">=</span><span class="dv">25</span>)</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(ncols<span class="op">=</span><span class="dv">2</span>, nrows<span class="op">=</span><span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">5</span>))</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>gs.n.plot(ax<span class="op">=</span>axes[<span class="dv">0</span>])</span>
@@ -523,17 +523,17 @@ Dimensions: (x: 5, y: 5)</code></pre>
 <section id="multiple-bins---gridded-skill-for-water-level-categories" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-bins---gridded-skill-for-water-level-categories">Multiple bins - gridded skill for water level categories</h2>
 <p>Get data from comparer as dataframe and add a water level category as a new column.</p>
-<div id="ba2fafd7" class="cell" data-execution_count="16">
+<div id="d17af8d5" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>dftmp <span class="op">=</span> <span class="bu">cmp</span>.data.to_dataframe()</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>dftmp[<span class="st">"wl category"</span>] <span class="op">=</span> <span class="st">'high'</span></span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>dftmp.loc[dftmp[<span class="st">'HD'</span>]<span class="op">&lt;</span><span class="dv">0</span>, <span class="st">"wl category"</span>] <span class="op">=</span> <span class="st">'low'</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Add the “wl category” to the comparer’s data structure.</p>
-<div id="d1ed9290" class="cell" data-execution_count="17">
+<div id="bc17b98b" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.data[<span class="st">"wl category"</span>] <span class="op">=</span> dftmp[<span class="st">"wl category"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now aggregate the data by the new column (and x and y):</p>
-<div id="9e7a7a76" class="cell" data-execution_count="18">
+<div id="f6d93a49" class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>gs <span class="op">=</span> <span class="bu">cmp</span>.gridded_skill(by<span class="op">=</span>[<span class="st">'wl category'</span>], metrics<span class="op">=</span>[<span class="st">'bias'</span>], n_min<span class="op">=</span><span class="dv">5</span>)</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>gs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="18">
@@ -541,7 +541,7 @@ Dimensions: (x: 5, y: 5)</code></pre>
 Dimensions: (x: 5, y: 5)</code></pre>
 </div>
 </div>
-<div id="b35aed00" class="cell" data-execution_count="19">
+<div id="e2c03ec9" class="cell" data-execution_count="19">
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>gs.bias.plot()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -555,7 +555,7 @@ Dimensions: (x: 5, y: 5)</code></pre>
 <section id="multiple-observations" class="level2">
 <h2 class="anchored" data-anchor-id="multiple-observations">Multiple observations</h2>
 <p>Add fake 2nd observation to model</p>
-<div id="c7b24707" class="cell" data-execution_count="20">
+<div id="3a986b91" class="cell" data-execution_count="20">
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>df2 <span class="op">=</span> df.copy()</span>
@@ -572,7 +572,7 @@ Removed 22 duplicate timestamps with keep=first
 </div>
 </div>
 <p>Extract, gridded skill, add attrs, plot.</p>
-<div id="6815b798" class="cell" data-execution_count="21">
+<div id="376cb859" class="cell" data-execution_count="21">
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> <span class="bu">cmp</span> <span class="op">+</span> cmp2</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>gs <span class="op">=</span> <span class="bu">cmp</span>.gridded_skill(metrics<span class="op">=</span>[<span class="st">'bias'</span>], n_min<span class="op">=</span><span class="dv">20</span>)</span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>gs.bias.data.attrs <span class="op">=</span> <span class="bu">dict</span>(long_name<span class="op">=</span><span class="st">"Bias of surface elevation"</span>, units<span class="op">=</span><span class="st">"m"</span>)</span>

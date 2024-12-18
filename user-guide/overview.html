@@ -284,7 +284,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="matching" class="level2">
 <h2 class="anchored" data-anchor-id="matching">Matching</h2>
 <p>If the observations and model results are not in the same data source (e.g.&nbsp;dfs0 file), they will need to be defined and then matched in space and time with the <code>match()</code> function. In simple cases, observations and model results can be defined directly in the <code>match()</code> function:</p>
-<div id="9b5f7a39" class="cell" data-execution_count="1">
+<div id="87655676" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.match(<span class="st">"../data/obs.dfs0"</span>, <span class="st">"../data/model.dfs0"</span>,</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>               obs_item<span class="op">=</span><span class="st">"obs_WL"</span>, mod_item<span class="op">=</span><span class="st">"WL"</span>,</span>
@@ -294,7 +294,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="define-observations" class="level3">
 <h3 class="anchored" data-anchor-id="define-observations">Define observations</h3>
 <p>The observations can be defined as either a <a href="../api/PointObservation.html#modelskill.PointObservation"><code>PointObservation</code></a> or a <a href="../api/TrackObservation.html#modelskill.TrackObservation"><code>TrackObservation</code></a> (a moving point).</p>
-<div id="0f8e7b9c" class="cell" data-execution_count="2">
+<div id="55ae7ff1" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>o1 <span class="op">=</span> ms.PointObservation(<span class="st">"../data/obs.dfs0"</span>, item<span class="op">=</span><span class="st">"obs_WL"</span>,x<span class="op">=</span><span class="fl">366844.15</span>, y<span class="op">=</span><span class="fl">6154291.6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The <code>item</code> needs to be specified as either the item number or the item name if the input file contains multiple items. Several other parameters can be specified, such as the name of the observation, the x- and y-position, and the quantity type and unit of the observation.</p>
@@ -308,14 +308,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><a href="../api/GridModelResult.html#modelskill.GridModelResult"><code>GridModelResult</code></a> - a spatial field from a dfs2/nc file or a Xarray Dataset</li>
 <li><a href="../api/DfsuModelResult.html#modelskill.DfsuModelResult"><code>DfsuModelResult</code></a> - a spatial field from a dfsu file</li>
 </ul>
-<div id="68216fb5" class="cell" data-execution_count="3">
+<div id="0e9d1070" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>mr1 <span class="op">=</span> ms.PointModelResult(<span class="st">"../data/model.dfs0"</span>, item<span class="op">=</span><span class="st">"WL"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="match-observations-and-model-results" class="level3">
 <h3 class="anchored" data-anchor-id="match-observations-and-model-results">Match observations and model results</h3>
 <p>The <code>match()</code> function will interpolate the model results to the time (and space) of the observations and return a collection of <code>Comparer</code> objects that can be used for analysis.</p>
-<div id="6aa0a20e" class="cell" data-execution_count="4">
+<div id="4ee6b994" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match(o1, mr1)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>cc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
