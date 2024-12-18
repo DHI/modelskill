@@ -4,7 +4,7 @@ jupyter: python3
 ---
 
 
-The Vistula catchment is the largest catchment in Poland, with an area of 194,424 km2. This notebook shows how a hydrolgoical model can evaluated using ModelSkill.  
+The Vistula catchment is the largest catchment in Poland, with an area of 194,424 km2. This notebook shows how a hydrological model can evaluated using ModelSkill.  
 
 
 ```{python}

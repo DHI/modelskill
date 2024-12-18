@@ -1,3 +1,8 @@
+---
+format-links: false
+---
+
+
 # Terminology
 
 ModelSkill is a library for assessing the skill of numerical models. It provides tools for comparing model results with observations, plotting the results and calculating validation metrics. This page defines some of the key terms used in the documentation.

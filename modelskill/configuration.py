@@ -30,8 +30,11 @@ def from_config(
 
     Examples
     --------
+    ```{python}
     >>> import modelskill as ms
-    >>> cc = ms.from_config('Oresund.yml')
+    >>> cc = ms.from_config('../data/conf.yml')
+    >>> cc
+    ```
     """
     if isinstance(conf, (str, Path)):
         p = Path(conf)

@@ -1,0 +1,60 @@
+---
+title: Custom Metrics 
+jupyter: python3
+---
+
+ModelSkill comes with many metrics to choose from, but you can also define your own. 
+
+```{python}
+import numpy as np
+import modelskill as ms
+```
+
+```{python}
+fn = '../data/SW/HKZN_local_2017_DutchCoast.dfsu'
+mr = ms.model_result(fn, name='HKZN_local', item=0)
+o1 = ms.PointObservation('../data/SW/HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
+o2 = ms.PointObservation("../data/SW/eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
+o3 = ms.TrackObservation("../data/SW/Alti_c2_Dutch.dfs0", item=3, name="c2")
+cc = ms.match([o1, o2, o3], mr)
+cc
+```
+
+Standard set of metrics
+
+```{python}
+cc.skill()
+```
+
+Some metrics has parameters, which require a bit special treatment.
+
+```{python}
+from modelskill.metrics import hit_ratio
+
+def hit_ratio_05_pct(obs, model):
+    return hit_ratio(obs, model, 0.5) * 100
+
+def hit_ratio_01_pct(obs, model):
+    return hit_ratio(obs, model, 0.1) * 100
+
+
+cc.skill(metrics=[hit_ratio_05_pct, hit_ratio_01_pct])
+```
+
+And you are always free to specify your own special metric or import metrics from other libraries, e.g. scikit-learn.
+
+```{python}
+def my_special_metric_with_long_descriptive_name(obs, model):
+
+    res = obs - model
+
+    res_clipped = np.clip(res,0,np.inf)
+
+    return np.mean(np.abs(res_clipped))
+
+# short alias to avoid long column names in output
+def mcae(obs, model): return my_special_metric_with_long_descriptive_name(obs, model)
+
+cc.skill(metrics=mcae)
+```
+

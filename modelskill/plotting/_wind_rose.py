@@ -201,10 +201,10 @@ def wind_rose(
     --------
     ```{python}
     import mikeio
-    from modelskill.plotting import wind_rose
+    import modelskill as ms
     ds = mikeio.read("../data/wave_dir.dfs0")
     df = ds[[0, 2, 1, 3]].to_dataframe()
-    wind_rose(df)
+    ms.plotting.wind_rose(df)
     ```
     """
     if hasattr(data, "to_numpy"):

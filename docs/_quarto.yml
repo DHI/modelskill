@@ -46,6 +46,7 @@ website:
         - user-guide/matching.qmd
         - user-guide/selecting-data.qmd
         - user-guide/plotting.qmd
+        - user-guide/statistics.qmd
 
     - title: "Examples"
       contents:
@@ -56,9 +57,17 @@ website:
           text: Hydrology Vistula Catchment
         - href: examples/Metocean_track_comparison.qmd
           text: Metocean track comparison
+        - href: examples/Gridded_NetCDF_ModelResult.qmd
+          text: Gridded NetCDF ModelResult
         - href: examples/Prematched_with_auxiliary.qmd
           text: Prematched with auxiliary
-    
+        - href: examples/Skill_vs_dummy.qmd
+          text: Compare with dummy results
+        - href: examples/Metrics_custom_metric.qmd
+          text: Custom metric
+        - href: examples/Directional_data_comparison.qmd
+          text: Directional data comparison
+
     - title: "API Reference"
       contents:
         - href: api/index.qmd
@@ -81,6 +90,7 @@ website:
           contents:
             - api/match.qmd
             - api/from_matched.qmd
+            - api/from_config.qmd
         - section: "Comparison"
           href: api/comparison.qmd
           contents:
@@ -89,10 +99,26 @@ website:
               href: api/comparison.ComparerPlotter.qmd
             - api/ComparerCollection.qmd
             - text: "ComparerCollectionPlotter"
-              href: api/comparison.ComparerCollectionPlotter.qmd
+              href: api/comparison.ComparerCollectionPlotter.qmd            
+        - section: "Skill"
+          contents:            
             - api/SkillTable.qmd
+            - text: "SkillArray"
+              href: api/skill.SkillArray.qmd
+            - text: "SkillArrayPlotter"
+              href: api/skill.SkillArrayPlotter.qmd
+            - text: "SkillGrid"
+              href: api/skill_grid.SkillGrid.qmd
+            - text: "SkillGridArray"
+              href: api/skill_grid.SkillGridArray.qmd
         - text: "Plotting"
           href: api/plotting.qmd
+          contents:
+            - api/plotting.scatter.qmd
+            - api/plotting.wind_rose.qmd
+            - api/plotting.taylor_diagram.qmd
+            - api/plotting.spatial_overview.qmd
+            - api/plotting.temporal_coverage.qmd
         - text: "Metrics"
           href: api/metrics.qmd
         - text: "Settings"
@@ -147,7 +173,7 @@ quartodoc:
         - GridModelResult
         - DummyModelResult
     - title: Matching
-      desc: Matching classes and functions
+      desc: Matching functions
       contents:
         - match
         - from_matched
@@ -181,8 +207,16 @@ quartodoc:
             - sel
             - save
             - load
-        - name : comparison.ComparerCollectionPlotter
+        - name: comparison.ComparerCollectionPlotter
+
+    - title: Skill
+      desc: ""
+      contents:
         - name: SkillTable
+        - name: skill.SkillArray
+        - name: skill.SkillArrayPlotter
+        - name: skill_grid.SkillGrid
+        - name: skill_grid.SkillGridArray
     
     - title: Plotting
       desc: ""

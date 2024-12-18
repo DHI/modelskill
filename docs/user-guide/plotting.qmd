@@ -2,7 +2,7 @@
 
 ## Plotting observations and model results
 
-PointObservations and PointModelResults can be plotted using their `plot` accessor:
+[](`~modelskill.PointObservation`)s and [](`~modelskill.PointModelResult`)s can be plotted using their `plot` accessor:
 
 ```{python}
 # | code-fold: true
@@ -56,7 +56,7 @@ ms.plotting.spatial_overview([o1, o2], mr);
 
 ## Compared data
 
-The `plot` accessor on a Comparer or ComparerCollection object can be used to plot the compared data:
+The `plot` accessor on a [](`~modelskill.Comparer`) or [](`~modelskill.ComparerCollection`) object can be used to plot the compared data:
 
 ```{python}
 cmp = ms.match(obs=o1, mod=mr)

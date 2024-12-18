@@ -1,8 +1,8 @@
 # Getting started
 
 
-This page describes the typical ModelSkill workflow for comparing model
-results and observations. 
+This page describes a simple ModelSkill workflow when model
+results and observations are already matched. See [workflow page](workflow.qmd) for a more elaborate workflow.   
 
 ## Installation
 
@@ -32,7 +32,7 @@ A time series plot is a common way to visualize the comparison.
 cmp.plot.timeseries()
 ```
 
-Another more quantitative way to compare the model and observations is to use a scatter plot, which optionally includes a skill table ([Definition of the metrics](`modelskill.metrics`)).
+Another more quantitative way to analyze the compared data is to use a scatter plot, which optionally includes a skill table ([Definition of the metrics](`modelskill.metrics`)).
 
 ```{python}
 cmp.plot.scatter(skill_table=True)

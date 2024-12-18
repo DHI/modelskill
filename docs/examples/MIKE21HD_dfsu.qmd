@@ -16,6 +16,11 @@ mr = ms.model_result('../data/Oresund2D.dfsu',
 mr
 ```
 
+
+```{python}
+mr.data.geometry.plot(cmap="Blues_r");
+```
+
 ```{python}
 mr.data.geometry.projection
 ```
@@ -33,7 +38,7 @@ o1
 Confirm that the observation is correctly located in the model domain.
 
 ```{python}
-ms.plotting.spatial_overview(o1, mr, figsize=(8, 8));
+ms.plotting.spatial_overview(o1, mr, figsize=(4, 4));
 ```
 
 Match the observed data to the model result (interpolate the model result to the observation points).

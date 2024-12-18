@@ -1,6 +1,6 @@
 # Matching 
 
-Once observations and model results have been defined, the next step is to match them. This is done using the `match()` function which handles the allignment of the observation and model result data in space and time. Note that if the data is already matched, the `from_matched()` function can be used to create a `Comparer` directly from the matched data and the matching described here is not needed.
+Once observations and model results have been defined, the next step is to match them. This is done using the [](`~modelskill.match`) function which handles the allignment of the observation and model result data in space and time. Note that if the data is already matched, the [](`~modelskill.from_matched`)  function can be used to create a [](`~modelskill.Comparer`)  directly from the matched data and the matching described here is not needed.
 
 ::: {.callout-important title="Important"}
 The observation is considered the *truth* and the model result data is therefore interpolated to the observation data positions.
@@ -14,14 +14,14 @@ The matching process will be different depending on the geometry of observation 
 
 ## Temporal matching
 
-Temporal matching is done by interpolating the model result data to the observation data time points; it is carried out after spatial matching when applicable. The interpolation is *linear* in time and done inside the `match()` function.
+Temporal matching is done by interpolating the model result data to the observation data time points; it is carried out after spatial matching when applicable. The interpolation is *linear* in time and done inside the [](`~modelskill.match`) function.
 
 
 ## Matching of time series
 
-If observation and model result are of the same geometry, the matching is done *one* observation at a time. Several model results can be matched to the same observation. The result of the matching process is a `Comparer` object which contains the matched data. 
+If observation and model result are of the same geometry, the matching is done *one* observation at a time. Several model results can be matched to the same observation. The result of the matching process is a [](`~modelskill.Comparer`) object which contains the matched data. 
 
-In the most simple cases, one observation to one model result, the `match()` function can be used directly, without creating Observation and ModelResult objects first:
+In the most simple cases, one observation to one model result, the [](`~modelskill.match`) function can be used directly, without creating Observation and ModelResult objects first:
 
 ```{python}
 import modelskill as ms
@@ -33,9 +33,9 @@ In all other cases, the observations and model results needs to be defined first
 
 ## Matching with dfsu or grid model result
 
-If the model result is a SpatialField, i.e., either a `GridModelResult` or a `DfsuModelResult`, and the observation is of lower dimension (e.g. point), then the model result needs to be *extracted* before matching can be done. This can be done "offline" before using ModelSkill, e.g., using [MIKE](https://www.mikepoweredbydhi.com/) tools or [MIKE IO](https://github.com/DHI/mikeio), or as part of the matching process using ModelSkill. We will here focus on the latter. 
+If the model result is a SpatialField, i.e., either a [](`~modelskill.GridModelResult`) or a [](`~modelskill.DfsuModelResult`), and the observation is of lower dimension (e.g. point), then the model result needs to be *extracted* before matching can be done. This can be done "offline" before using ModelSkill, e.g., using [MIKE](https://www.mikepoweredbydhi.com/) tools or [MIKE IO](https://dhi.github.io/mikeio), or as part of the matching process using ModelSkill. We will here focus on the latter. 
 
-In this situation, *multiple* observations can be matched to the same model result, in which case the `match` function returns a `ComparerCollection` instead of a `Comparer` which is the returned object for single observation matching. 
+In this situation, *multiple* observations can be matched to the same model result, in which case the [](`~modelskill.match`) function returns a [](`~modelskill.ComparerCollection`) instead of a [](`~modelskill.Comparer`) which is the returned object for single observation matching. 
 
 ```{python}
 o1 = ms.observation("../data/SW/HKNA_Hm0.dfs0", item=0,
@@ -51,7 +51,7 @@ cmp = ms.match(o1, [mr_dfsu, mr_nc])
 cmp
 ```
 
-In most cases, *several* observations needs to matched with several model results. This can be done by constructing a list of `Comparer` objects and then combining them into a `ComparerCollection`:
+In most cases, *several* observations needs to matched with several model results. This can be done by constructing a list of [](`~modelskill.Comparer`) objects and then combining them into a [](`~modelskill.ComparerCollection`):
 
 ```{python}
 o2 = ms.observation("../data/SW/eur_Hm0.dfs0", item=0,
@@ -67,19 +67,19 @@ cc
 ```
 
 
-Matching `PointObservation` with `SpatialField` model results consists of two steps: 
+Matching [](`~modelskill.PointObservation`) with `SpatialField` model results consists of two steps: 
 
 1. Extracting data from the model result at the spatial position of the observation, which returns a PointModelResult
 2. Matching the extracted data with the observation data in time
 
-Matching `TrackObservation` with `SpatialField` model results is for technical reasons handled in *one* step, i.e., the data is extracted in both space and time.
+Matching [](`~modelskill.TrackObservation`) with `SpatialField` model results is for technical reasons handled in *one* step, i.e., the data is extracted in both space and time.
 
-The spatial matching method (selection or interpolation) can be specified using the `spatial_method` argument of the `match()` function. The default method depends on the type of observation and model result as specified in the sections below.
+The spatial matching method (selection or interpolation) can be specified using the `spatial_method` argument of the [](`~modelskill.match`) function. The default method depends on the type of observation and model result as specified in the sections below.
 
 
 ### Extracting data from a DfsuModelResult
 
-Extracting data for a specific point position from the flexible mesh dfsu files can be done in several ways (specified by the `spatial_method` argument of the `match()` function): 
+Extracting data for a specific point position from the flexible mesh dfsu files can be done in several ways (specified by the `spatial_method` argument of the [](`~modelskill.match`) function): 
 
 * Selection of the "contained" element 
 * Selection of the "nearest" element (often the same as the contained element, but not always)
@@ -99,7 +99,7 @@ cc = ms.match([o1, o2], mr_dfsu, spatial_method='contained')
 
 ### Extracting data from a GridModelResult
 
-Extracting data from a GridModelResult is done through xarray's `interp()` function. The `spatial_method` argument of the `match()` function is passed on to the `interp()` function as the `method` argument. The default method is "linear" which is the recommended method for most cases. Close to land where the grid model result data is often missing, "nearest" may be a better choice.
+Extracting data from a GridModelResult is done through xarray's `interp()` function. The `spatial_method` argument of the [](`~modelskill.match`) function is passed on to the `interp()` function as the `method` argument. The default method is "linear" which is the recommended method for most cases. Close to land where the grid model result data is often missing, "nearest" may be a better choice.
 
 ```{python}
 cc = ms.match([o1, o2], mr_nc, spatial_method='nearest')   
@@ -108,9 +108,9 @@ cc = ms.match([o1, o2], mr_nc, spatial_method='nearest')
 
 ## Event-based matching and handling of gaps
 
-If the model result data contains gaps either because only events are stored or because of missing data, the `max_model_gap` argument of the `match()` function can be used to specify the maximum allowed gap (in seconds) in the model result data. This will avoid interpolating model data over long gaps in the model result data!
+If the model result data contains gaps either because only events are stored or because of missing data, the `max_model_gap` argument of the [](`~modelskill.match`) function can be used to specify the maximum allowed gap (in seconds) in the model result data. This will avoid interpolating model data over long gaps in the model result data!
 
 
 ## Multiple model results with different temporal coverage
 
-If the model results have different temporal coverage, the `match()` function will only match the overlapping time period to ensure that the model results are comparable. The `Comparer` object will contain the matched data for the overlapping period only.
+If the model results have different temporal coverage, the [](`~modelskill.match`) function will only match the overlapping time period to ensure that the model results are comparable. The [](`~modelskill.Comparer`) object will contain the matched data for the overlapping period only.
