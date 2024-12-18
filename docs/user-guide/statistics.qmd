@@ -197,9 +197,8 @@ df
 This converts the [](`~modelskill.SkillTable`) into a [](`pandas.DataFrame`) for additional processing.
 
 **Example 17: Converting to GeoDataFrame**
-```{python}
+```python
 gdf = sk.to_geodataframe()
-gdf
 ```
 
 This converts the table to a [`GeoDataFrame`](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.html), enabling spatial analysis of model performance.
