@@ -1,27 +1,33 @@
-from __future__ import annotations
 import warnings
-from collections import namedtuple
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import matplotlib.figure
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Iterable, Optional
+from matplotlib.axes import Axes
+import matplotlib.figure
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from ._taylor_diagram_external import TaylorDiagram
 
-TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size")
+
+@dataclass
+class TaylorPoint:
+    name: str
+    obs_std: float
+    std: float
+    cc: float
+    marker: str
+    marker_size: float
 
 
 def taylor_diagram(
-    obs_std,
-    points,
-    figsize=(7, 7),
-    obs_text="Observations",
-    normalize_std=False,
-    ax=None,
-    title="Taylor diagram",
+    obs_std: float,
+    points: Iterable[TaylorPoint],
+    figsize: tuple[float, float] | float | int = (7, 7),
+    obs_text: str = "Observations",
+    normalize_std: bool = False,
+    ax: Optional[Axes] = None,
+    title: str = "Taylor diagram",
 ) -> matplotlib.figure.Figure:
     """
     Plot a Taylor diagram using the given observations and points.
@@ -47,7 +53,7 @@ def taylor_diagram(
             The matplotlib figure object
     """
 
-    if np.isscalar(figsize):
+    if isinstance(figsize, (float, int)):
         figsize = (figsize, figsize)
     elif figsize[0] != figsize[1]:
         warnings.warn(
@@ -69,10 +75,8 @@ def taylor_diagram(
         points = [points]
     for p in points:
         assert isinstance(p, TaylorPoint)
-        m = "o" if p.marker is None else p.marker
-        ms = "6" if p.marker_size is None else p.marker_size
         std = p.std / p.obs_std if normalize_std else p.std
-        td.add_sample(std, p.cc, marker=m, ms=ms, ls="", label=p.name)
+        td.add_sample(std, p.cc, marker=p.marker, ms=p.marker_size, ls="", label=p.name)
         # marker=f"${1}$",
         # td.add_sample(0.2, 0.8, marker="+", ms=15, mew=1.2, ls="", label="m2")
     td.add_grid()

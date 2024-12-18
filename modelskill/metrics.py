@@ -9,13 +9,13 @@ from typing import Any, Callable, Iterable, List, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from numpy.typing import ArrayLike
+from numpy.typing import NDArray
 from scipy import stats
 
 from .settings import options
 
 
-def bias(obs: ArrayLike, model: ArrayLike) -> Any:
+def bias(obs: NDArray, model: NDArray) -> Any:
     r"""Bias (mean error)
 
     $$
@@ -29,7 +29,7 @@ def bias(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.mean(model - obs)
 
 
-def max_error(obs: ArrayLike, model: ArrayLike) -> Any:
+def max_error(obs: NDArray, model: NDArray) -> Any:
     r"""Max (absolute) error
 
     $$
@@ -43,14 +43,14 @@ def max_error(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.max(np.abs(model - obs))
 
 
-def mae(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -> Any:
+def mae(obs: NDArray, model: NDArray, weights: Optional[NDArray] = None) -> Any:
     """alias for mean_absolute_error"""
     assert obs.size == model.size
     return mean_absolute_error(obs, model, weights)
 
 
 def mean_absolute_error(
-    obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None
+    obs: NDArray, model: NDArray, weights: Optional[NDArray] = None
 ) -> Any:
     r"""Mean Absolute Error (MAE)
 
@@ -67,12 +67,12 @@ def mean_absolute_error(
     return error
 
 
-def mape(obs: ArrayLike, model: ArrayLike) -> Any:
+def mape(obs: NDArray, model: NDArray) -> Any:
     """alias for mean_absolute_percentage_error"""
     return mean_absolute_percentage_error(obs, model)
 
 
-def mean_absolute_percentage_error(obs: ArrayLike, model: ArrayLike) -> Any:
+def mean_absolute_percentage_error(obs: NDArray, model: NDArray) -> Any:
     r"""Mean Absolute Percentage Error (MAPE)
 
     $$
@@ -93,7 +93,7 @@ def mean_absolute_percentage_error(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.mean(np.abs((obs - model) / obs)) * 100
 
 
-def urmse(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -> Any:
+def urmse(obs: NDArray, model: NDArray, weights: Optional[NDArray] = None) -> Any:
     r"""Unbiased Root Mean Squared Error (uRMSE)
 
     $$
@@ -118,9 +118,9 @@ def urmse(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None)
 
 
 def rmse(
-    obs: ArrayLike,
-    model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    obs: NDArray,
+    model: NDArray,
+    weights: Optional[NDArray] = None,
     unbiased: bool = False,
 ) -> Any:
     """alias for root_mean_squared_error"""
@@ -128,9 +128,9 @@ def rmse(
 
 
 def root_mean_squared_error(
-    obs: ArrayLike,
-    model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    obs: NDArray,
+    model: NDArray,
+    weights: Optional[NDArray] = None,
     unbiased: bool = False,
 ) -> Any:
     r"""Root Mean Squared Error (RMSE)
@@ -166,12 +166,12 @@ def root_mean_squared_error(
     return error
 
 
-def nse(obs: ArrayLike, model: ArrayLike) -> Any:
+def nse(obs: NDArray, model: NDArray) -> Any:
     """alias for nash_sutcliffe_efficiency"""
     return nash_sutcliffe_efficiency(obs, model)
 
 
-def nash_sutcliffe_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
+def nash_sutcliffe_efficiency(obs: NDArray, model: NDArray) -> Any:
     r"""Nash-Sutcliffe Efficiency (NSE)
 
     $$
@@ -196,7 +196,7 @@ def nash_sutcliffe_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
     return error
 
 
-def kling_gupta_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
+def kling_gupta_efficiency(obs: NDArray, model: NDArray) -> Any:
     r"""
     Kling-Gupta Efficiency (KGE)
 
@@ -236,12 +236,12 @@ def kling_gupta_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
     return res
 
 
-def kge(obs: ArrayLike, model: ArrayLike) -> Any:
+def kge(obs: NDArray, model: NDArray) -> Any:
     """alias for kling_gupta_efficiency"""
     return kling_gupta_efficiency(obs, model)
 
 
-def r2(obs: ArrayLike, model: ArrayLike) -> Any:
+def r2(obs: NDArray, model: NDArray) -> Any:
     r"""Coefficient of determination (R2)
 
     Pronounced 'R-squared'; the proportion of the variation in the dependent variable that is predictable from the independent variable(s), i.e. the proportion of explained variance.
@@ -275,12 +275,12 @@ def r2(obs: ArrayLike, model: ArrayLike) -> Any:
     return 1 - SSr / SSt
 
 
-def mef(obs: ArrayLike, model: ArrayLike) -> Any:
+def mef(obs: NDArray, model: NDArray) -> Any:
     """alias for model_efficiency_factor"""
     return model_efficiency_factor(obs, model)
 
 
-def model_efficiency_factor(obs: ArrayLike, model: ArrayLike) -> Any:
+def model_efficiency_factor(obs: NDArray, model: NDArray) -> Any:
     r"""Model Efficiency Factor (MEF)
 
     Scale independent RMSE, standardized by Stdev of observations
@@ -303,7 +303,7 @@ def model_efficiency_factor(obs: ArrayLike, model: ArrayLike) -> Any:
     return rmse(obs, model) / obs.std()
 
 
-def cc(obs: ArrayLike, model: ArrayLike, weights=None) -> Any:
+def cc(obs: NDArray, model: NDArray, weights=None) -> Any:
     """alias for corrcoef"""
     return corrcoef(obs, model, weights)
 
@@ -335,12 +335,12 @@ def corrcoef(obs, model, weights=None) -> Any:
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
 
-def rho(obs: ArrayLike, model: ArrayLike) -> Any:
+def rho(obs: NDArray, model: NDArray) -> Any:
     """alias for spearmanr"""
     return spearmanr(obs, model)
 
 
-def spearmanr(obs: ArrayLike, model: ArrayLike) -> Any:
+def spearmanr(obs: NDArray, model: NDArray) -> Any:
     r"""Spearman rank correlation coefficient
 
     The rank correlation coefficient is similar to the Pearson correlation coefficient but
@@ -372,12 +372,12 @@ def spearmanr(obs: ArrayLike, model: ArrayLike) -> Any:
     return scipy.stats.spearmanr(obs, model)[0]
 
 
-def si(obs: ArrayLike, model: ArrayLike) -> Any:
+def si(obs: NDArray, model: NDArray) -> Any:
     """alias for scatter_index"""
     return scatter_index(obs, model)
 
 
-def scatter_index(obs: ArrayLike, model: ArrayLike) -> Any:
+def scatter_index(obs: NDArray, model: NDArray) -> Any:
     r"""Scatter index (SI)
 
     Which is the same as the unbiased-RMSE normalized by the absolute mean of the observations.
@@ -398,7 +398,7 @@ def scatter_index(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs))
 
 
-def scatter_index2(obs: ArrayLike, model: ArrayLike) -> Any:
+def scatter_index2(obs: NDArray, model: NDArray) -> Any:
     r"""Alternative formulation of the scatter index (SI)
 
     $$
@@ -417,13 +417,13 @@ def scatter_index2(obs: ArrayLike, model: ArrayLike) -> Any:
     )
 
 
-def ev(obs: ArrayLike, model: ArrayLike) -> Any:
+def ev(obs: NDArray, model: NDArray) -> Any:
     """alias for explained_variance"""
     assert obs.size == model.size
     return explained_variance(obs, model)
 
 
-def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
+def explained_variance(obs: NDArray, model: NDArray) -> Any:
     r"""EV: Explained variance
 
      EV is the explained variance and measures the proportion
@@ -460,7 +460,7 @@ def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
 
 def pr(
     obs: pd.Series,
-    model: ArrayLike,
+    model: NDArray,
     inter_event_level: float = 0.7,
     AAP: Union[int, float] = 2,
     inter_event_time: str = "36h",
@@ -563,7 +563,7 @@ def peak_ratio(
     return res
 
 
-def willmott(obs: ArrayLike, model: ArrayLike) -> Any:
+def willmott(obs: NDArray, model: NDArray) -> Any:
     r"""Willmott's Index of Agreement
 
     A scaled representation of the predictive accuracy of the model against observations. A value of 1 indicates a perfect match, and 0 indicates no agreement at all.
@@ -600,7 +600,7 @@ def willmott(obs: ArrayLike, model: ArrayLike) -> Any:
     return 1 - nominator / denominator
 
 
-def hit_ratio(obs: ArrayLike, model: ArrayLike, a=0.1) -> Any:
+def hit_ratio(obs: NDArray, model: NDArray, a=0.1) -> Any:
     r"""Fraction within obs ± acceptable deviation
 
     $$
@@ -625,7 +625,7 @@ def hit_ratio(obs: ArrayLike, model: ArrayLike, a=0.1) -> Any:
     return np.mean(np.abs(obs - model) < a)
 
 
-def lin_slope(obs: ArrayLike, model: ArrayLike, reg_method="ols") -> Any:
+def lin_slope(obs: NDArray, model: NDArray, reg_method="ols") -> Any:
     r"""Slope of the regression line.
 
     $$
@@ -640,7 +640,7 @@ def lin_slope(obs: ArrayLike, model: ArrayLike, reg_method="ols") -> Any:
 
 
 def _linear_regression(
-    obs: ArrayLike, model: ArrayLike, reg_method="ols"
+    obs: NDArray, model: NDArray, reg_method="ols"
 ) -> Tuple[float, float]:
     if len(obs) == 0:
         return np.nan, np.nan  # TODO raise error?
@@ -668,11 +668,11 @@ def _linear_regression(
     return slope, intercept
 
 
-def _std_obs(obs: ArrayLike, model: ArrayLike) -> Any:
+def _std_obs(obs: NDArray, model: NDArray) -> Any:
     return obs.std()
 
 
-def _std_mod(obs: ArrayLike, model: ArrayLike) -> Any:
+def _std_mod(obs: NDArray, model: NDArray) -> Any:
     return model.std()
 
 
@@ -818,7 +818,7 @@ def _partial_duration_series(
 ## Circular metrics
 
 
-def _c_residual(obs: ArrayLike, model: ArrayLike) -> ArrayLike:
+def _c_residual(obs: NDArray, model: NDArray) -> NDArray:
     """Circular residual (0, 360) - output between -180 and 180"""
     assert obs.size == model.size
     resi = model - obs
@@ -826,14 +826,14 @@ def _c_residual(obs: ArrayLike, model: ArrayLike) -> ArrayLike:
     return resi
 
 
-def c_bias(obs: ArrayLike, model: ArrayLike) -> Any:
+def c_bias(obs: NDArray, model: NDArray) -> Any:
     """Circular bias (mean error)
 
     Parameters
     ----------
-    obs : ArrayLike
+    obs : NDArray
         Observation in degrees (0, 360)
-    model : ArrayLike
+    model : NDArray
         Model in degrees (0, 360)
 
     Notes
@@ -858,14 +858,14 @@ def c_bias(obs: ArrayLike, model: ArrayLike) -> Any:
     return circmean(resi, low=-180.0, high=180.0)
 
 
-def c_max_error(obs: ArrayLike, model: ArrayLike) -> Any:
+def c_max_error(obs: NDArray, model: NDArray) -> Any:
     """Circular max error
 
     Parameters
     ----------
-    obs : ArrayLike
+    obs : NDArray
         Observation in degrees (0, 360)
-    model : ArrayLike
+    model : NDArray
         Model in degrees (0, 360)
 
     Notes
@@ -895,19 +895,19 @@ def c_max_error(obs: ArrayLike, model: ArrayLike) -> Any:
 
 
 def c_mean_absolute_error(
-    obs: ArrayLike,
-    model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    obs: NDArray,
+    model: NDArray,
+    weights: Optional[NDArray] = None,
 ) -> Any:
     """Circular mean absolute error
 
     Parameters
     ----------
-    obs : ArrayLike
+    obs : NDArray
         Observation in degrees (0, 360)
-    model : ArrayLike
+    model : NDArray
         Model in degrees (0, 360)
-    weights : ArrayLike, optional
+    weights : NDArray, optional
         Weights, by default None
 
     Notes
@@ -925,28 +925,28 @@ def c_mean_absolute_error(
 
 
 def c_mae(
-    obs: ArrayLike,
-    model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    obs: NDArray,
+    model: NDArray,
+    weights: Optional[NDArray] = None,
 ) -> Any:
     """alias for circular mean absolute error"""
     return c_mean_absolute_error(obs, model, weights)
 
 
 def c_root_mean_squared_error(
-    obs: ArrayLike,
-    model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    obs: NDArray,
+    model: NDArray,
+    weights: Optional[NDArray] = None,
 ) -> Any:
     """Circular root mean squared error
 
     Parameters
     ----------
-    obs : ArrayLike
+    obs : NDArray
         Observation in degrees (0, 360)
-    model : ArrayLike
+    model : NDArray
         Model in degrees (0, 360)
-    weights : ArrayLike, optional
+    weights : NDArray, optional
         Weights, by default None
 
     Notes
@@ -963,28 +963,28 @@ def c_root_mean_squared_error(
 
 
 def c_rmse(
-    obs: ArrayLike,
-    model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    obs: NDArray,
+    model: NDArray,
+    weights: Optional[NDArray] = None,
 ) -> Any:
     """alias for circular root mean squared error"""
     return c_root_mean_squared_error(obs, model, weights)
 
 
 def c_unbiased_root_mean_squared_error(
-    obs: ArrayLike,
-    model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    obs: NDArray,
+    model: NDArray,
+    weights: Optional[NDArray] = None,
 ) -> Any:
     """Circular unbiased root mean squared error
 
     Parameters
     ----------
-    obs : ArrayLike
+    obs : NDArray
         Observation in degrees (0, 360)
-    model : ArrayLike
+    model : NDArray
         Model in degrees (0, 360)
-    weights : ArrayLike, optional
+    weights : NDArray, optional
         Weights, by default None
 
     Notes
@@ -1004,9 +1004,9 @@ def c_unbiased_root_mean_squared_error(
 
 
 def c_urmse(
-    obs: ArrayLike,
-    model: ArrayLike,
-    weights: Optional[ArrayLike] = None,
+    obs: NDArray,
+    model: NDArray,
+    weights: Optional[NDArray] = None,
 ) -> Any:
     """alias for circular unbiased root mean squared error"""
     return c_unbiased_root_mean_squared_error(obs, model, weights)
