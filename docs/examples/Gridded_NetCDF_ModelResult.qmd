@@ -1,0 +1,116 @@
+---
+title: Gridded NetCDF modelresults
+jupyter: python3
+---
+
+
+2D modelresults stored in NetCDF or Grib can be loaded to ModelSkill using xarray. In this way, MIKE 21 modelresults in dfsu format can easily be compared to model results from third party providers often stored in NetCDF. 
+
+
+```{python}
+import xarray as xr
+import modelskill as ms
+```
+
+## Observations
+
+```{python}
+o1 = ms.PointObservation('../data/SW/HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
+o2 = ms.PointObservation("../data/SW/eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
+o3 = ms.TrackObservation("../data/SW/Alti_c2_Dutch.dfs0", item=3, name="c2")
+```
+
+## MIKE ModelResult
+
+```{python}
+mrMIKE = ms.model_result('../data/SW/HKZN_local_2017_DutchCoast.dfsu', name='MIKE21SW', item=0)
+```
+
+## NetCDF ModelResult
+
+```{python}
+fn = "../data/SW/ERA5_DutchCoast.nc"
+xr.open_dataset(fn)
+```
+
+```{python}
+mrERA5 = ms.model_result(fn, item="swh", name='ERA5')
+```
+
+```{python}
+mrERA5
+```
+
+```{python}
+mrERA5.data  # mr contains the xr.Dataset
+```
+
+## Test extract from XArray
+
+1) Extract point 
+2) Extract track
+
+```{python}
+mrERA5.extract(o1, spatial_method="nearest").data.head()
+```
+
+```{python}
+mrERA5.extract(o3).data.head()
+```
+
+## Multi-file ModelResult
+
+Use mfdataset to load multiple files as a single ModelResult.
+
+```{python}
+fn = "../data/SW/CMEMS_DutchCoast_*.nc"
+mrCMEMS = ms.model_result(fn, item="VHM0", name='CMEMS')
+mrCMEMS
+```
+
+## Grib file ModelResult
+
+```{python}
+fn = r"../data/SW/NWW3_hs_201710.grib"
+```
+
+```{python}
+#mr3 = ModelResult(fn, name='WW3', engine='cfgrib') # not yet supported
+```
+
+## Connect multiple models and observations and extract
+
+```{python}
+ms.plotting.temporal_coverage(obs=[o1,o2,o3], mod=[mrERA5, mrCMEMS, mrMIKE])
+```
+
+```{python}
+# o1 is slightly outside the model domain of mrERA5, 
+# we therefore use "nearest" instead of the default spatial interpolation method  
+cc = ms.match(
+    obs=[o1, o2, o3], 
+    mod=[mrERA5, mrCMEMS, mrMIKE], 
+    spatial_method='nearest',
+)
+```
+
+## Analysis and plotting
+Which model is better? 
+
+```{python}
+sk = cc.skill()
+sk.swaplevel().sort_index(level="observation").style()
+```
+
+```{python}
+sk["urmse"].plot.bar(figsize=(6,3));
+```
+
+```{python}
+cc.mean_skill().style()
+```
+
+```{python}
+cc.plot.taylor(figsize=6)
+```
+

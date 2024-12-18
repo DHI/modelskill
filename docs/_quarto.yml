@@ -57,9 +57,17 @@ website:
           text: Hydrology Vistula Catchment
         - href: examples/Metocean_track_comparison.qmd
           text: Metocean track comparison
+        - href: examples/Gridded_NetCDF_ModelResult.qmd
+          text: Gridded NetCDF ModelResult
         - href: examples/Prematched_with_auxiliary.qmd
           text: Prematched with auxiliary
-    
+        - href: examples/Skill_vs_dummy.qmd
+          text: Compare with dummy results
+        - href: examples/Metrics_custom_metric.qmd
+          text: Custom metric
+        - href: examples/Directional_data_comparison.qmd
+          text: Directional data comparison
+
     - title: "API Reference"
       contents:
         - href: api/index.qmd
