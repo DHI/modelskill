@@ -241,8 +241,7 @@ def match(
 
     See Also
     --------
-    [from_matched][modelskill.from_matched]
-        Create a Comparer from observation and model results that are already matched
+    from_matched - Create a Comparer from observation and model results that are already matched
     """
     if isinstance(obs, get_args(ObsInputType)):
         return _single_obs_compare(
