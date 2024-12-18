@@ -138,6 +138,9 @@ def scatter(
     ms.plotting.scatter(x, y, skill_table=True)
     ```
     ```{python}
+    ms.plotting.scatter(x, y, show_hist=True, bins=20, cmap="OrRd")
+    ```
+    ```{python}
     ms.plotting.scatter(x, y, quantiles=0, title="Hide quantiles")
     ```
     ```{python}
@@ -276,6 +279,7 @@ def _scatter_matplotlib(
     skill_score_unit,
     fit_to_quantiles,
     ax,
+    cmap=None,
     **kwargs,
 ) -> matplotlib.axes.Axes:
     fig, ax = _get_fig_ax(ax, figsize)
@@ -295,9 +299,11 @@ def _scatter_matplotlib(
         if show_density:
             c = z
             norm_ = norm
+            cmap_ = cmap
         else:
             c = "0.25"
             norm_ = None
+            cmap_ = None
         ax.scatter(
             x_sample,
             y_sample,
@@ -308,6 +314,7 @@ def _scatter_matplotlib(
             label=options.plot.scatter.points.label,
             zorder=1,
             norm=norm_,
+            cmap=cmap_,
             **kwargs,
         )
     if len(xq) > 0:
@@ -351,6 +358,7 @@ def _scatter_matplotlib(
             zorder=0.5,
             norm=norm,
             alpha=options.plot.scatter.points.alpha,
+            cmap=cmap,
             **kwargs,
         )
 
@@ -363,7 +371,7 @@ def _scatter_matplotlib(
     ax.minorticks_on()
     ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
     max_cbar = None
-    cmap = kwargs.get("cmap", None)
+    # cmap = kwargs.get("cmap", None)
     if show_hist or (show_density and show_points):
         try:
             cbar = fig.colorbar(
