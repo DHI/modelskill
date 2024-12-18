@@ -199,6 +199,12 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Plotting</span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skill Statistics</span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -235,8 +241,8 @@ ul.task-list li input[type="checkbox"] {
 <p>All objects share some common principles:</p>
 <ul>
 <li>The data container is accesssible via the <code>data</code> attribute.</li>
-<li>The data container is an <code>xarray</code> object (except for the <code>SkillTable</code> object, which is a <code>pandas</code> object).</li>
-<li>The main data selection method is <code>sel</code>, which is a wrapper around <code>xarray.Dataset.sel</code>.</li>
+<li>The data container is an <code>xarray</code> object (except for the <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object, which is a <code>pandas</code> object).</li>
+<li>The main data selection method is <code>sel</code>, which is a wrapper around <a href="https://xarray.pydata.org/en/stable/generated/xarray.Dataset.sel.html#xarray.Dataset.sel"><code>xarray.Dataset.sel</code></a>.</li>
 <li>All plotting are accessible via the <code>plot</code> accessor of the object.</li>
 </ul>
 <section id="observations-and-model-results" class="level2">
@@ -253,13 +259,13 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="comparer-objects" class="level2">
 <h2 class="anchored" data-anchor-id="comparer-objects">Comparer objects</h2>
-<p>Comparer objects are results of a matching procedure (between observations and model results) or constructed directly from already matched data. A comparison of a <em>single</em> observation and one or more model results are stored in a <code>Comparer</code> object. A comparison of <em>multiple</em> observations and one or more model results are stored in a <code>ComparerCollection</code> object which is a collection of <code>Comparer</code> objects.</p>
-<p>The matched data in a <code>Comparer</code> is stored in an <a href="https://xarray.pydata.org/en/stable/generated/xarray.Dataset.html#xarray.Dataset"><code>xarray.Dataset</code></a> which can be accessed via the <code>data</code> attribute. The Dataset has an attribute <code>gtype</code> which is a string describing the type of data (e.g.&nbsp;<code>point</code>, <code>track</code>). The first DataArray in the Dataset is the observation data, the next DataArrays are model result data and optionally additional DataArrays are auxilliarye data. Each of the DataArrays have a <code>kind</code> attribute with either <code>observation</code>, <code>model</code> or <code>aux</code>.</p>
-<p>Both <code>Comparer</code> and <code>ComparerCollection</code> have a <code>plot</code> accessor for plotting the data (e.g.&nbsp;<code>cmp.plot.timeseries()</code> or <code>cmp.plot.scatter()</code>).</p>
+<p>Comparer objects are results of a matching procedure (between observations and model results) or constructed directly from already matched data. A comparison of a <em>single</em> observation and one or more model results are stored in a <a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> object. A comparison of <em>multiple</em> observations and one or more model results are stored in a <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><code>ComparerCollection</code></a> object which is a collection of <a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> objects.</p>
+<p>The matched data in a <a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> is stored in an <a href="https://xarray.pydata.org/en/stable/generated/xarray.Dataset.html#xarray.Dataset"><code>xarray.Dataset</code></a> which can be accessed via the <code>data</code> attribute. The Dataset has an attribute <code>gtype</code> which is a string describing the type of data (e.g.&nbsp;<code>point</code>, <code>track</code>). The first DataArray in the Dataset is the observation data, the next DataArrays are model result data and optionally additional DataArrays are auxilliarye data. Each of the DataArrays have a <code>kind</code> attribute with either <code>observation</code>, <code>model</code> or <code>aux</code>.</p>
+<p>Both <a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> and <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><code>ComparerCollection</code></a> have a <code>plot</code> accessor for plotting the data (e.g.&nbsp;<code>cmp.plot.timeseries()</code> or <code>cmp.plot.scatter()</code>).</p>
 </section>
 <section id="skill-objects" class="level2">
 <h2 class="anchored" data-anchor-id="skill-objects">Skill objects</h2>
-<p>Calling a skill method on a comparer object will return a skill object with skill scores (statistics) from comparing observation and model result data using different metrics (e.g.&nbsp;root mean square error). Two skill objects are currently implemented: <code>SkillTable</code> and <code>SkillGrid</code>. The first is relevant for all ModelSkill users while the latter is relevant for users of the track data (e.g.&nbsp;MetOcean studies using satellite altimetry data).</p>
+<p>Calling a skill method on a comparer object will return a skill object with skill scores (statistics) from comparing observation and model result data using different metrics (e.g.&nbsp;root mean square error). Two skill objects are currently implemented: <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> and <code>SkillGrid</code>. The first is relevant for all ModelSkill users while the latter is relevant for users of the track data (e.g.&nbsp;MetOcean studies using satellite altimetry data).</p>
 <p>If <code>c</code> is a comparer object, then the following skill methods are available:</p>
 <ul>
 <li><code>c.skill()</code> -&gt; <code>SkillTable</code></li>

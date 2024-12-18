@@ -64,6 +64,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
+<link href="../user-guide/statistics.html" rel="next">
 <link href="../user-guide/selecting-data.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -235,6 +236,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Plotting</span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skill Statistics</span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -278,8 +285,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="plotting-observations-and-model-results" class="level2">
 <h2 class="anchored" data-anchor-id="plotting-observations-and-model-results">Plotting observations and model results</h2>
-<p>PointObservations and PointModelResults can be plotted using their <code>plot</code> accessor:</p>
-<div id="96c127a6" class="cell" data-execution_count="1">
+<p><a href="../api/PointObservation.html#modelskill.PointObservation"><code>PointObservation</code></a>s and <a href="../api/PointModelResult.html#modelskill.PointModelResult"><code>PointModelResult</code></a>s can be plotted using their <code>plot</code> accessor:</p>
+<div id="47780db7" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Observation and model data</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
@@ -287,7 +294,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.PointModelResult(<span class="st">'../data/SW/ts_storm_4.dfs0'</span>, item<span class="op">=</span><span class="dv">0</span>) <span class="co"># </span><span class="al">TODO</span><span class="co"> coords</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="ae1aefb7" class="cell" data-execution_count="2">
+<div id="8cb25aa1" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>o.plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -297,7 +304,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="3074b961" class="cell" data-execution_count="3">
+<div id="d1f0ca3e" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>mr.plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -307,7 +314,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="25cddda3" class="cell" data-execution_count="4">
+<div id="42481a70" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>mr.plot.hist()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -321,7 +328,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="temporal-coverage" class="level2">
 <h2 class="anchored" data-anchor-id="temporal-coverage">Temporal coverage</h2>
 <p>The temporal coverage of observations and model results can be plotted using the <a href="../api/plotting.temporal_coverage.html#modelskill.plotting.temporal_coverage"><code>temporal_coverage</code></a> function:</p>
-<div id="7482c7de" class="cell" data-execution_count="5">
+<div id="3d7c1fc4" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Observation and model data</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>o1 <span class="op">=</span> ms.PointObservation(<span class="st">'../data/SW/HKNA_Hm0.dfs0'</span>, item<span class="op">=</span><span class="dv">0</span>, x<span class="op">=</span><span class="fl">4.2420</span>, y<span class="op">=</span><span class="fl">52.6887</span>)</span>
@@ -330,7 +337,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>With a few observation and model result objects, the temporal coverage can be plotted:</p>
-<div id="c8b52494" class="cell" data-execution_count="6">
+<div id="5005062d" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.temporal_coverage(obs<span class="op">=</span>[o1, o2], mod<span class="op">=</span>mr)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -344,7 +351,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="spatial-overview" class="level2">
 <h2 class="anchored" data-anchor-id="spatial-overview">Spatial overview</h2>
 <p>The spatial coverage of observations and model results can be plotted using the <a href="../api/plotting.spatial_overview.html#modelskill.plotting.spatial_overview"><code>spatial_overview</code></a> function:</p>
-<div id="2027a577" class="cell" data-execution_count="7">
+<div id="d380a8a4" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.spatial_overview([o1, o2], mr)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -357,8 +364,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="compared-data" class="level2">
 <h2 class="anchored" data-anchor-id="compared-data">Compared data</h2>
-<p>The <code>plot</code> accessor on a Comparer or ComparerCollection object can be used to plot the compared data:</p>
-<div id="dc54f33c" class="cell" data-execution_count="8">
+<p>The <code>plot</code> accessor on a <a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> or <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><code>ComparerCollection</code></a> object can be used to plot the compared data:</p>
+<div id="fbc04764" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.match(obs<span class="op">=</span>o1, mod<span class="op">=</span>mr)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="8">
@@ -369,7 +376,7 @@ Model(s):
 0: HKZN_local_2017_DutchCoast</code></pre>
 </div>
 </div>
-<div id="1b33fe75" class="cell" data-execution_count="9">
+<div id="ce8d1ed0" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -379,7 +386,7 @@ Model(s):
 </div>
 </div>
 </div>
-<div id="64d1a87e" class="cell" data-execution_count="10">
+<div id="6aac74dc" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.scatter()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -393,7 +400,7 @@ Model(s):
 <section id="taylor-diagrams" class="level2">
 <h2 class="anchored" data-anchor-id="taylor-diagrams">Taylor diagrams</h2>
 <p>A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean squared error. The <code>taylor</code> plot can be accessed through the Comparer <a href="../api/comparison.ComparerPlotter.html#modelskill.comparison.ComparerPlotter"><code>plot</code></a> accessor or the ComparerCollection <a href="../api/comparison.ComparerCollectionPlotter.html#modelskill.comparison.ComparerCollectionPlotter"><code>plot</code></a> accessor:</p>
-<div id="5bcc3a75" class="cell" data-execution_count="11">
+<div id="bd741648" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.taylor()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="11">
 <div>
@@ -408,7 +415,7 @@ Model(s):
 <section id="directional-data-e.g.-wind-or-currents" class="level2">
 <h2 class="anchored" data-anchor-id="directional-data-e.g.-wind-or-currents">Directional data (e.g.&nbsp;wind or currents)</h2>
 <p>Directional data can be plotted using the <a href="../api/plotting.wind_rose.html#modelskill.plotting.wind_rose"><code>wind_rose</code></a>. The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:</p>
-<div id="ca5807a3" class="cell" data-execution_count="12">
+<div id="41f845b5" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mikeio</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> mikeio.read(<span class="st">"../data/wave_dir.dfs0"</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> ds[[<span class="dv">0</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">3</span>]].to_dataframe()</span>
@@ -469,7 +476,7 @@ Model(s):
 </div>
 </div>
 </div>
-<div id="517ea27b" class="cell" data-execution_count="13">
+<div id="dfd3f905" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>ms.plotting.wind_rose(df, figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">6</span>))<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -911,6 +918,9 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       </a>          
   </div>
   <div class="nav-page nav-page-next">
+      <a href="../user-guide/statistics.html" class="pagination-link" aria-label="Skill Statistics">
+        <span class="nav-page-text">Skill Statistics</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
   </div>
 </nav>
 </div> <!-- /content -->

@@ -198,6 +198,12 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Plotting</span></a>
   </div>
 </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../user-guide/statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Skill Statistics</span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -210,7 +216,7 @@ ul.task-list li input[type="checkbox"] {
   <ul>
   <li><a href="#user-guide" id="toc-user-guide" class="nav-link active" data-scroll-target="#user-guide">User Guide</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/user-guide/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.ipynb" download="index.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/DHI/modelskill/edit/main/docs/user-guide/index.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -223,7 +229,7 @@ ul.task-list li input[type="checkbox"] {
 <p>ModelSkill compares model results with observations. The workflow can be split in two phases:</p>
 <ol type="1">
 <li><a href="../user-guide/matching.html">Matching</a> - making sure that observations and model results are in the same space and time</li>
-<li>Analysis - <a href="../user-guide/plotting.html">plots</a> and <a href="../user-guide/skill.html">statistics</a> of the matched data</li>
+<li>Analysis - <a href="../user-guide/plotting.html">plots</a> and <a href="../user-guide/statistics.html">statistics</a> of the matched data</li>
 </ol>
 <p>If the observations and model results are already matched (i.e.&nbsp;are stored in the same data source), the <code>from_matched()</code> function can be used to go directly to the analysis phase. If not, the <code>match()</code> function can be used to match the observations and model results in space and time.</p>
 
