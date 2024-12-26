@@ -1,2 +1,6 @@
+import modelskill as ms
+
+
 def vistula():
-    return 1
+    fn = "./data/vistula.msk"
+    return ms.load(fn)
