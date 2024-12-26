@@ -1,2 +1,2 @@
 def vistula():
-    pass
+    return 1
