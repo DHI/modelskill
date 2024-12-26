@@ -1,4 +1,23 @@
+"""
+Toy datasets for testing and demonstration purposes
+
+Examples
+--------
+```{python}
+>>> import modelskill as ms
+>>> cc = ms.data.vistula()
+>>> cc
+```
+```{python}
+>>> cc = ms.data.oresund()
+>>> cc
+```
+"""
+
 import modelskill as ms
+from pathlib import Path
+
+_DATA_ROOT = Path(__file__).parent.parent / "data"
 
 
 def vistula():
@@ -9,8 +28,7 @@ def vistula():
     ComparerCollection
         _description_
     """
-    fn = "./data/vistula.msk"
-    return ms.load(fn)
+    return ms.load(_DATA_ROOT / "vistula.msk")
 
 
 def oresund():
@@ -21,5 +39,4 @@ def oresund():
     ComparerCollection
         _description_
     """
-    fn = "./data/oresund.msk"
-    return ms.load(fn)
+    return ms.load(_DATA_ROOT / "oresund.msk")
