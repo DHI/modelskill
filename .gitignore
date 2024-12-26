@@ -130,7 +130,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-/data/
+# ignore data except for .msk files
+data/*
+!data/*.msk
 tests/testdata/tmp
 /tmp/
 
