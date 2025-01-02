@@ -606,5 +606,5 @@ def test_plot_temporal_coverage(cc):
     ax = cc.plot.temporal_coverage()
     # TODO add more sensible assertions
     lines = ax.get_lines()
-    assert len(lines) == 2  # 1 point, 1 track
+    assert len(lines) == 4  # 1 point, 1 track, 2 models
     assert ax is not None

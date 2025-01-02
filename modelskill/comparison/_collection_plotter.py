@@ -792,7 +792,7 @@ class ComparerCollectionPlotter:
 
     def temporal_coverage(
         self,
-        # limit_to_model_period: bool = True,
+        limit_to_model_period: bool = True,
         marker: str = "_",
         ax: Any | None = None,
         figsize: Any | None = None,
@@ -802,6 +802,9 @@ class ComparerCollectionPlotter:
 
         Parameters
         ----------
+        limit_to_model_period : bool, optional
+            Show temporal coverage only for period covered
+            by the model, by default True
         marker : str, optional
             plot marker for observations, by default "_"
         ax: matplotlib.axes, optional
@@ -815,9 +818,14 @@ class ComparerCollectionPlotter:
         from ..obs import observation
 
         obs = [cmp._to_observation() for cmp in self.cc]
-        # TODO add model time period
-        # mod = [cmp._to_model() for cmp in self.cc]
+        mod = self.cc[0]._to_model()
 
         return temporal_coverage(
-            obs, marker=marker, ax=ax, figsize=figsize, title=title
+            obs=obs,
+            mod=mod,
+            limit_to_model_period=limit_to_model_period,
+            marker=marker,
+            ax=ax,
+            figsize=figsize,
+            title=title,
         )

@@ -20,10 +20,12 @@ import pandas as pd
 import xarray as xr
 from copy import deepcopy
 
+
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation
+from ..model import PointModelResult
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
@@ -777,6 +779,16 @@ class Comparer(Scoreable):
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
+    def _to_model(self) -> List[PointModelResult]:
+        """Convert to ModelResult"""
+        from ..model import model_result
+
+        mods = [
+            model_result(self.data[m], gtype=self.data[m].attrs.get("gtype", "point"))
+            for m in self.mod_names
+        ]
+        return mods
 
     def __iadd__(self, other: Comparer):  # type: ignore
         from ..matching import match_space_time
