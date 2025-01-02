@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import Literal, Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
 
 if TYPE_CHECKING:
@@ -301,37 +302,37 @@ def _scatter_matplotlib(
             norm=norm_,
             **kwargs,
         )
-    if len(xq) > 0:
-        ax.plot(
-            xq,
-            yq,
-            options.plot.scatter.quantiles.marker,
-            label=options.plot.scatter.quantiles.label,
-            c=options.plot.scatter.quantiles.color,
-            zorder=4,
-            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
-            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
-            markersize=options.plot.scatter.quantiles.markersize,
-            **settings.get_option("plot.scatter.quantiles.kwargs"),
-        )
+    # if len(xq) > 0:
+    #     ax.plot(
+    #         xq,
+    #         yq,
+    #         options.plot.scatter.quantiles.marker,
+    #         label=options.plot.scatter.quantiles.label,
+    #         c=options.plot.scatter.quantiles.color,
+    #         zorder=4,
+    #         markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+    #         markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
+    #         markersize=options.plot.scatter.quantiles.markersize,
+    #         **settings.get_option("plot.scatter.quantiles.kwargs"),
+    #     )
 
-    if reg_method:
-        if fit_to_quantiles:
-            slope, intercept = _linear_regression(
-                obs=xq, model=yq, reg_method=reg_method
-            )
-        else:
-            slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
+    # if reg_method:
+    #     if fit_to_quantiles:
+    #         slope, intercept = _linear_regression(
+    #             obs=xq, model=yq, reg_method=reg_method
+    #         )
+    #     else:
+    #         slope, intercept = _linear_regression(obs=x, model=y, reg_method=reg_method)
 
-        ax.plot(
-            x_trend,
-            intercept + slope * x_trend,
-            **settings.get_option("plot.scatter.reg_line.kwargs"),
-            label=_reglabel(
-                slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
-            ),
-            zorder=2,
-        )
+    #     ax.plot(
+    #         x_trend,
+    #         intercept + slope * x_trend,
+    #         **settings.get_option("plot.scatter.reg_line.kwargs"),
+    #         label=_reglabel(
+    #             slope=slope, intercept=intercept, fit_to_quantiles=fit_to_quantiles
+    #         ),
+    #         zorder=2,
+    #     )
 
     if show_hist:
         ax.hist2d(
@@ -374,9 +375,46 @@ def _scatter_matplotlib(
 
     ax.set_title(title)
     # Add skill table
-    if skill_scores is not None:
-        _plot_summary_table(skill_scores, skill_score_unit, max_cbar=max_cbar)
-    return ax
+    # if skill_scores is not None:
+    #    _plot_summary_table(skill_scores, skill_score_unit, max_cbar=max_cbar)
+    return ScatterPlot(ax=ax, x=x, y=y)
+
+
+@dataclass
+class ScatterPlot:
+    ax: matplotlib.axes.Axes
+    x: np.ndarray
+    y: np.ndarray
+
+    def reg_line(self, reg_method: str | bool = "ols") -> ScatterPlot:
+        slope, intercept = _linear_regression(
+            obs=self.x, model=self.y, reg_method=reg_method
+        )
+        x_trend = np.array([self.ax.get_xlim()[0], self.ax.get_xlim()[1]])
+        self.ax.plot(
+            x_trend,
+            intercept + slope * x_trend,
+            **settings.get_option("plot.scatter.reg_line.kwargs"),
+            label=_reglabel(slope=slope, intercept=intercept, fit_to_quantiles=False),
+            zorder=2,
+        )
+        return self
+
+    def qq(self, quantiles: int | Sequence[float] | None = None) -> ScatterPlot:
+        xq = xq, yq = quantiles_xy(self.x, self.y, quantiles)
+        self.ax.plot(
+            xq,
+            yq,
+            options.plot.scatter.quantiles.marker,
+            label=options.plot.scatter.quantiles.label,
+            c=options.plot.scatter.quantiles.color,
+            zorder=4,
+            markeredgecolor=options.plot.scatter.quantiles.markeredgecolor,
+            markeredgewidth=options.plot.scatter.quantiles.markeredgewidth,
+            markersize=options.plot.scatter.quantiles.markersize,
+            **settings.get_option("plot.scatter.quantiles.kwargs"),
+        )
+        return self
 
 
 def _scatter_plotly(
