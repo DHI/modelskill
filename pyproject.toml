@@ -2,13 +2,9 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.sdist]
-exclude = ["notebooks", "tests"]
-
 [tool.hatch.build]
 include = [
     "modelskill/**/*",
-    "data/**/*",
 ]
 
 [tool.hatch.metadata]
