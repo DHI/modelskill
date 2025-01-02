@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Optional, Sequence, Tuple, TYPE_CHECKING
+from typing import Optional, Sequence, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -11,7 +11,7 @@ from ._misc import _get_ax
 
 
 def spatial_overview(
-    obs: List[Observation],
+    obs: Sequence[Observation],
     mod=None,
     ax=None,
     figsize: Optional[Tuple] = None,
@@ -59,7 +59,6 @@ def spatial_overview(
     mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]  # type: ignore
 
     ax = _get_ax(ax=ax, figsize=figsize)
-    offset_x = 1  # TODO: better default
 
     for m in mod:
         # TODO: support Gridded ModelResults
@@ -70,15 +69,11 @@ def spatial_overview(
         if hasattr(m, "data") and hasattr(m.data, "geometry"):
             # mod_name = m.name  # TODO: better support for multiple models
             m = m.data.geometry
-        if hasattr(m, "node_coordinates"):
-            xn = m.node_coordinates[:, 0]
-            offset_x = 0.02 * (max(xn) - min(xn))
         m.plot.outline(ax=ax)
 
     for o in obs:
         if isinstance(o, PointObservation):
             ax.scatter(x=o.x, y=o.y, marker="x")
-            ax.annotate(o.name, (o.x + offset_x, o.y))  # type: ignore
         elif isinstance(o, TrackObservation):
             if o.n_points < 10000:
                 ax.scatter(x=o.x, y=o.y, c=o.values, marker=".", cmap="Reds")
@@ -89,6 +84,14 @@ def spatial_overview(
             raise ValueError(
                 f"Could not show observation {o}. Only PointObservation and TrackObservation supported."
             )
+
+    xlim = ax.get_xlim()
+    offset_x = 0.02 * (xlim[1] - xlim[0])
+
+    for o in obs:
+        if isinstance(o, PointObservation):
+            # TODO adjust xlim to accomodate text
+            ax.annotate(o.name, (o.x + offset_x, o.y))  # type: ignore
 
     if not title:
         title = "Spatial coverage"

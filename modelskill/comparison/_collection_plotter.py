@@ -759,3 +759,65 @@ class ComparerCollectionPlotter:
             ax.set_xlim(-180, 180)
 
         return ax
+
+    def spatial_overview(
+        self,
+        ax=None,
+        figsize: Optional[Tuple] = None,
+        title: Optional[str] = None,
+    ) -> Axes:
+        """Plot observation points on a map showing the model domain
+
+        Parameters
+        ----------
+        ax: matplotlib.axes, optional
+            Adding to existing axis, instead of creating new fig
+        figsize : (float, float), optional
+            figure size, by default None
+        title: str, optional
+            plot title, default empty
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            The matplotlib axes object
+        """
+        from ..plotting import spatial_overview
+        from ..obs import observation
+
+        obs = [cmp._to_observation() for cmp in self.cc]
+        # TODO how to add model domain(s)
+
+        return spatial_overview(obs, ax=ax, figsize=figsize, title=title)
+
+    def temporal_coverage(
+        self,
+        # limit_to_model_period: bool = True,
+        marker: str = "_",
+        ax: Any | None = None,
+        figsize: Any | None = None,
+        title: Any | None = None,
+    ) -> Axes:
+        """Plot graph showing temporal coverage for all observations and models
+
+        Parameters
+        ----------
+        marker : str, optional
+            plot marker for observations, by default "_"
+        ax: matplotlib.axes, optional
+            Adding to existing axis, instead of creating new fig
+        figsize : Tuple(float, float), optional
+            size of figure, by default (7, 0.45*n_lines)
+        title: str, optional
+            plot title, default empty
+        """
+        from ..plotting import temporal_coverage
+        from ..obs import observation
+
+        obs = [cmp._to_observation() for cmp in self.cc]
+        # TODO add model time period
+        # mod = [cmp._to_model() for cmp in self.cc]
+
+        return temporal_coverage(
+            obs, marker=marker, ax=ax, figsize=figsize, title=title
+        )
