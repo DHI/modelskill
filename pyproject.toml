@@ -82,7 +82,7 @@ notebooks = [
 
 [tool.ruff.lint]
 ignore = ["E501"]
-select = ["D200", "D205"]
+select = ["E4", "E7", "E9", "F","D200", "D205"]
 
 [tool.mypy]
 python_version = "3.9"
