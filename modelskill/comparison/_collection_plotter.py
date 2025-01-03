@@ -783,7 +783,6 @@ class ComparerCollectionPlotter:
             The matplotlib axes object
         """
         from ..plotting import spatial_overview
-        from ..obs import observation
 
         obs = [cmp._to_observation() for cmp in self.cc]
         # TODO how to add model domain(s)
@@ -815,7 +814,6 @@ class ComparerCollectionPlotter:
             plot title, default empty
         """
         from ..plotting import temporal_coverage
-        from ..obs import observation
 
         obs = [cmp._to_observation() for cmp in self.cc]
         mod = self.cc[0]._to_model()
