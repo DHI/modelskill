@@ -12,7 +12,7 @@ from ._misc import _get_ax
 
 def spatial_overview(
     obs: Sequence[Observation],
-    mod=None,
+    mod=None,  # TODO add type hint
     ax=None,
     figsize: Optional[Tuple] = None,
     title: Optional[str] = None,
@@ -69,6 +69,8 @@ def spatial_overview(
         if hasattr(m, "data") and hasattr(m.data, "geometry"):
             # mod_name = m.name  # TODO: better support for multiple models
             m = m.data.geometry
+
+        # TODO this is not supported for all model types
         m.plot.outline(ax=ax)
 
     for o in obs:
