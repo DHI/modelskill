@@ -11,8 +11,8 @@ include = [
 allow-direct-references = true
 
 [project]
-name="modelskill"
-version="1.2.dev0"
+name = "modelskill"
+version = "1.2.dev0"
 dependencies = [
     "numpy  > 1.24.4",
     "pandas >= 1.4",
@@ -25,11 +25,11 @@ dependencies = [
 ]
 
 authors = [
-  { name="Jesper Sandvig Mariegaard", email="jem@dhigroup.com" },
-  { name="Henrik Andersson", email="jan@dhigroup.com" },
+    { name = "Jesper Sandvig Mariegaard", email = "jem@dhigroup.com" },
+    { name = "Henrik Andersson", email = "jan@dhigroup.com" },
 ]
-description="Compare results from simulations with observations."
-license="MIT"
+description = "Compare results from simulations with observations."
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -46,45 +46,36 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-docs = ["quarto-cli==1.5.57",
-        "quartodoc==0.9.1",
-        "netCDF4",
-        "plotly >= 4.5",
-        "dask",
-        ]
+docs = [
+    "quarto-cli==1.5.57",
+    "quartodoc==0.9.1",
+    "netCDF4",
+    "plotly >= 4.5",
+    "dask",
+]
 
-dev = ["pytest",
-        "plotly >= 4.5",
-        "ruff==0.6.2",]
+dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2"]
 
-test =  [
-            "pytest",
-            "pytest-cov", 
-            "openpyxl",
-            "dask",
-            "mypy",
-            "types-PyYAML",
-            "geopandas",
-        ]
+test = [
+    "pytest",
+    "pytest-cov",
+    "openpyxl",
+    "dask",
+    "mypy",
+    "types-PyYAML",
+    "geopandas",
+]
 
-notebooks = [
-            "nbformat",
-            "nbconvert",
-            "jupyter",
-            "plotly",
-            "shapely",
-            "seaborn",
-        ]
+notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
 [project.urls]
 "Homepage" = "https://github.com/DHI/modelskill"
 "Bug Tracker" = "https://github.com/DHI/modelskill/issues"
 
 
-
 [tool.ruff.lint]
 ignore = ["E501"]
-select = ["D200", "D205"]
+select = ["E4", "E7", "E9", "F", "D200", "D205"]
 
 [tool.mypy]
 python_version = "3.9"

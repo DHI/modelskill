@@ -477,7 +477,7 @@ class ComparerPlotter:
         skill_table: Optional[Union[str, List[str], bool]] = None,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
-          ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
+    ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
         """Scatter plot tailored for model-observation comparison.
 
         Optionally, with density histogram.
