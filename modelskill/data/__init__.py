@@ -14,8 +14,6 @@ Examples
 ```
 """
 
-# from pathlib import Path
-# _DATA_ROOT = Path(__file__).parent.parent / "data"
 from importlib.resources import files
 
 import modelskill as ms
@@ -30,7 +28,6 @@ def vistula() -> ComparerCollection:
     ComparerCollection
     """
     fn = str(files("modelskill.data") / "vistula.msk")
-    # fn = _DATA_ROOT / "vistula.msk"
     return ms.load(fn)
 
 
@@ -42,5 +39,4 @@ def oresund() -> ComparerCollection:
     ComparerCollection
     """
     fn = str(files("modelskill.data") / "oresund.msk")
-    # fn = _DATA_ROOT / "oresund.msk"
     return ms.load(fn)
