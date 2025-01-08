@@ -8,6 +8,8 @@ import modelskill as ms
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from modelskill.model.point import PointModelResult
+
 # use non-interactive backend for testing
 mpl.use("Agg")
 
@@ -451,6 +453,7 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
 
     # for now, we just test if the raw_mod_data is full length
     assert len(cc2["fake point obs"].raw_mod_data["m1"]) == 6
+    assert cc2["fake point obs"].raw_mod_data["m1"].name == "m1"
 
 
 # ======================== plotting ========================

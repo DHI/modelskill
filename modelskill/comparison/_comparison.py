@@ -24,6 +24,7 @@ from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation
+from ..model import PointModelResult
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
@@ -437,7 +438,7 @@ class Comparer(Scoreable):
     ----------
     matched_data : xr.Dataset
         Matched data
-    raw_mod_data : dict of modelskill.TimeSeries, optional
+    raw_mod_data : dict of modelskill.PointModelResult, optional
         Raw model data. If None, observation and modeldata must be provided.
 
     Examples
@@ -452,14 +453,14 @@ class Comparer(Scoreable):
     """
 
     data: xr.Dataset
-    raw_mod_data: Dict[str, TimeSeries]
+    raw_mod_data: Dict[str, PointModelResult]
     _obs_str = "Observation"
     plotter = ComparerPlotter
 
     def __init__(
         self,
         matched_data: xr.Dataset,
-        raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
+        raw_mod_data: Optional[Dict[str, PointModelResult]] = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
@@ -467,7 +468,7 @@ class Comparer(Scoreable):
             if raw_mod_data is not None
             else {
                 # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
-                key: TimeSeries(self.data[[key]])
+                key: PointModelResult(self.data[[key]], name=key)
                 for key, value in matched_data.data_vars.items()
                 if value.attrs["kind"] == "model"
             }
@@ -506,7 +507,7 @@ class Comparer(Scoreable):
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
+        raw_mod_data: Optional[Dict[str, PointModelResult]] = None,
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
@@ -1295,7 +1296,7 @@ class Comparer(Scoreable):
             return Comparer(matched_data=data)
 
         if data.gtype == "point":
-            raw_mod_data: Dict[str, TimeSeries] = {}
+            raw_mod_data: Dict[str, PointModelResult] = {}
 
             for var in data.data_vars:
                 var_name = str(var)
@@ -1304,19 +1305,9 @@ class Comparer(Scoreable):
                     ds = data[[var_name]].rename(
                         {"_time_raw_" + new_key: "time", var_name: new_key}
                     )
-                    ts = PointObservation(data=ds, name=new_key)
-                    # TODO: name of time?
-                    # ts.name = new_key
-                    # df = (
-                    #     data[var_name]
-                    #     .to_dataframe()
-                    #     .rename(
-                    #         columns={"_time_raw_" + new_key: "time", var_name: new_key}
-                    #     )
-                    # )
-                    raw_mod_data[new_key] = ts
+                    ts = PointModelResult(data=ds, name=new_key)
 
-                    # data = data.drop(var_name).drop("_time_raw_" + new_key)
+                    raw_mod_data[new_key] = ts
 
             # filter variables, only keep the ones with a 'time' dimension
             data = data[[v for v in data.data_vars if "time" in data[v].dims]]
