@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>observation – ModelSkill</title>
+<title>data – ModelSkill</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -64,8 +64,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../api/PointObservation.html" rel="next">
-<link href="../api/obs.html" rel="prev">
+<link href="../api/Quantity.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
 <script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -168,7 +167,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
         <a class="flex-grow-1 no-decor" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-          <h1 class="quarto-secondary-nav-title"></h1>
+          <h1 class="quarto-secondary-nav-title">data</h1>
         </a>     
     </div>
   </nav>
@@ -196,7 +195,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/observation.html" class="sidebar-item-text sidebar-link active">
+  <a href="../api/observation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">observation</span></a>
   </div>
 </li>
@@ -427,7 +426,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../api/data.html" class="sidebar-item-text sidebar-link">
+  <a href="../api/data.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Data</span></a>
   </div>
 </li>
@@ -441,72 +440,147 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#modelskill.observation" id="toc-modelskill.observation" class="nav-link active" data-scroll-target="#modelskill.observation">observation</a>
+  <li><a href="#examples" id="toc-examples" class="nav-link active" data-scroll-target="#examples">Examples</a></li>
+  <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
-  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
-  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
+  <li><a href="#modelskill.data.oresund" id="toc-modelskill.data.oresund" class="nav-link" data-scroll-target="#modelskill.data.oresund">oresund</a></li>
+  <li><a href="#modelskill.data.vistula" id="toc-modelskill.data.vistula" class="nav-link" data-scroll-target="#modelskill.data.vistula">vistula</a></li>
   </ul></li>
   </ul>
-<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="observation.ipynb" download="observation.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="data.ipynb" download="data.ipynb"><i class="bi bi-journal-code"></i>Jupyter</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title d-none d-lg-block">data</h1>
+</div>
 
 
 
-<section id="modelskill.observation" class="level1">
-<h1>observation</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>observation(data, <span class="op">*</span>, gtype<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Create an appropriate observation object.</p>
-<p>A factory function for creating an appropriate observation object based on the data and args.</p>
-<p>If ‘x’ or ‘y’ is given, a PointObservation is created. If ‘x_item’ or ‘y_item’ is given, a TrackObservation is created.</p>
-<section id="parameters" class="level2 doc-section doc-section-parameters">
-<h2 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h2>
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><code>data</code></p>
+<p>Toy datasets for testing and demonstration purposes</p>
+<section id="examples" class="level2 doc-section doc-section-examples">
+<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
+<div id="9b86b209" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">import</span> modelskill <span class="im">as</span> ms</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> cc <span class="op">=</span> ms.data.vistula()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> cc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="1">
+<pre><code>&lt;ComparerCollection&gt;
+Comparers:
+0: Tczew - Discharge [m3/s]
+1: Krasnystaw - Discharge [m3/s]
+2: Sandomierz - Discharge [m3/s]
+3: Szczucin - Discharge [m3/s]
+4: Nowy Sacz - Discharge [m3/s]
+5: Tryncza - Discharge [m3/s]
+6: Ptaki - Discharge [m3/s]
+7: Suraz - Discharge [m3/s]</code></pre>
+</div>
+</div>
+<div id="37a3466c" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> cc <span class="op">=</span> ms.data.oresund()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> cc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="2">
+<pre><code>&lt;ComparerCollection&gt;
+Comparers:
+0: Drogden - Surface Elevation [meter]
+1: Barseback - Surface Elevation [meter]
+2: Helsingborg - Surface Elevation [meter]
+3: Kobenhavn - Surface Elevation [meter]
+4: Koege - Surface Elevation [meter]
+5: MalmoHamn - Surface Elevation [meter]
+6: Vedbaek - Surface Elevation [meter]</code></pre>
+</div>
+</div>
+</section>
+<section id="functions" class="level2">
+<h2 class="anchored" data-anchor-id="functions">Functions</h2>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 6%">
-<col style="width: 29%">
-<col style="width: 55%">
-<col style="width: 7%">
-</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#modelskill.data.oresund">oresund</a></td>
+<td>Oresund water level data for Jan-June 2022 compared with MIKE21 model</td>
+</tr>
+<tr class="even">
+<td><a href="#modelskill.data.vistula">vistula</a></td>
+<td>5-year daily discharge data for Vistula catchment, Poland</td>
+</tr>
+</tbody>
+</table>
+<section id="modelskill.data.oresund" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.data.oresund">oresund</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>data.oresund()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Oresund water level data for Jan-June 2022 compared with MIKE21 model</p>
+<p>Contains water level data for 7 stations along the Oresund strait with metadata about the country in the attrs dictionary.</p>
+<p>The dataset contains additional ERA5 wind-components U10 and V10 aux data.</p>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
 <thead>
 <tr class="header">
 <th>Name</th>
 <th>Type</th>
 <th>Description</th>
-<th>Default</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>data</td>
-<td>DataInputType</td>
-<td>The data to be used for creating the Observation object.</td>
-<td><em>required</em></td>
-</tr>
-<tr class="even">
-<td>gtype</td>
-<td>Optional[Literal['point', 'track']]</td>
-<td>The geometry type of the data. If not specified, it will be guessed from the data.</td>
-<td><code>None</code></td>
-</tr>
-<tr class="odd">
-<td>**kwargs</td>
 <td></td>
-<td>Additional keyword arguments to be passed to the Observation constructor.</td>
-<td><code>{}</code></td>
+<td>ComparerCollection</td>
+<td></td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="examples" class="level2 doc-section doc-section-examples">
-<h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> <span class="im">import</span> modelskill <span class="im">as</span> ms</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o_pt <span class="op">=</span> ms.observation(df, item<span class="op">=</span><span class="dv">0</span>, x<span class="op">=</span><span class="dv">366844</span>, y<span class="op">=</span><span class="dv">6154291</span>, name<span class="op">=</span><span class="st">"Klagshamn"</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> o_tr <span class="op">=</span> ms.observation(<span class="st">"lon_after_lat.dfs0"</span>, item<span class="op">=</span><span class="st">"wl"</span>, x_item<span class="op">=</span><span class="dv">1</span>, y_item<span class="op">=</span><span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="modelskill.data.vistula" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.data.vistula">vistula</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>data.vistula()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>5-year daily discharge data for Vistula catchment, Poland</p>
+<p>Contains discharge data for 8 stations along the Vistula river compared with two hydrological models “sim1” and “sim2”.</p>
+<p>The dataset additionally contains precipitation data as aux data and metadata about the river and the catchment area in the attrs dictionary.</p>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ComparerCollection</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 
 
+</section>
 </section>
 </section>
 
@@ -933,14 +1007,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../api/obs.html" class="pagination-link" aria-label="Observations">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Observations</span>
+      <a href="../api/Quantity.html" class="pagination-link" aria-label="Quantity">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Quantity</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../api/PointObservation.html" class="pagination-link" aria-label="PointObservation">
-        <span class="nav-page-text">PointObservation</span> <i class="bi bi-arrow-right-short"></i>
-      </a>
   </div>
 </nav>
 </div> <!-- /content -->
