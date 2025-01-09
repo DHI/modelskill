@@ -1250,35 +1250,42 @@ class Comparer(Scoreable):
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def save(self, filename: Union[str, Path]) -> None:
-        """Save to netcdf file
+        """Save to duckdb file
 
         Parameters
         ----------
         filename : str or Path
             filename
         """
+        ext = Path(filename).suffix
         ds = self.data
+        if ext == ".db":
+            import duckdb
 
-        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
-        # an alternative strategy would be to use NetCDF groups
-        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
+            con = duckdb.connect(filename)
+            # TODO figure out how to save the x, y, z coordinates and other attributes later
+            df = ds.to_dataframe().drop(columns=["x", "y", "z"]).reset_index()  # noqa
+            duckdb.sql("CREATE TABLE data AS SELECT * FROM df", connection=con)
+            con.close()
+        elif ext == ".nc":
+            if self.gtype == "point":
+                ds = self.data.copy()  # copy needed to avoid modifying self.data
 
-        # There is no need to save raw data for track data, since it is identical to the matched data
-        if self.gtype == "point":
-            ds = self.data.copy()  # copy needed to avoid modifying self.data
+                for key, ts_mod in self.raw_mod_data.items():
+                    ts_mod = ts_mod.copy()
+                    #  rename time to unique name
+                    ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
+                    # da = ds_mod.to_xarray()[key]
+                    ds["_raw_" + key] = ts_mod.data[key]
 
-            for key, ts_mod in self.raw_mod_data.items():
-                ts_mod = ts_mod.copy()
-                #  rename time to unique name
-                ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
-                # da = ds_mod.to_xarray()[key]
-                ds["_raw_" + key] = ts_mod.data[key]
+            ds.to_netcdf(filename)
 
-        ds.to_netcdf(filename)
+        else:
+            raise NotImplementedError(f"Unknown extension: {ext}")
 
     @staticmethod
     def load(filename: Union[str, Path]) -> "Comparer":
-        """Load from netcdf file
+        """Load from duckdb file
 
         Parameters
         ----------
@@ -1289,30 +1296,57 @@ class Comparer(Scoreable):
         -------
         Comparer
         """
-        with xr.open_dataset(filename) as ds:
-            data = ds.load()
 
-        if data.gtype == "track":
-            return Comparer(matched_data=data)
+        # get extension
+        ext = Path(filename).suffix
 
-        if data.gtype == "point":
-            raw_mod_data: Dict[str, PointModelResult] = {}
+        if ext == ".db":
+            import duckdb
 
-            for var in data.data_vars:
-                var_name = str(var)
-                if var_name[:5] == "_raw_":
-                    new_key = var_name[5:]  # remove prefix '_raw_'
-                    ds = data[[var_name]].rename(
-                        {"_time_raw_" + new_key: "time", var_name: new_key}
-                    )
-                    ts = PointModelResult(data=ds, name=new_key)
+            con = duckdb.connect(filename)
+            df = duckdb.sql("SELECT * FROM data", connection=con).df().set_index("time")
 
-                    raw_mod_data[new_key] = ts
+            # convert pandas dataframe to xarray dataset
+            ds = xr.Dataset.from_dataframe(df)
 
-            # filter variables, only keep the ones with a 'time' dimension
-            data = data[[v for v in data.data_vars if "time" in data[v].dims]]
+            # set observation attribute
+            ds.Observation.attrs["kind"] = "observation"
 
-            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+            # set model attributes
+            for key in ds.data_vars:
+                if key != "Observation":
+                    ds[key].attrs["kind"] = "model"
 
+            # TODO figure out aux variables
+
+            return Comparer(matched_data=ds)
+        elif ext == ".nc":
+            with xr.open_dataset(filename) as ds:
+                data = ds.load()
+
+            if data.gtype == "track":
+                return Comparer(matched_data=data)
+
+            if data.gtype == "point":
+                raw_mod_data: Dict[str, PointModelResult] = {}
+
+                for var in data.data_vars:
+                    var_name = str(var)
+                    if var_name[:5] == "_raw_":
+                        new_key = var_name[5:]  # remove prefix '_raw_'
+                        ds = data[[var_name]].rename(
+                            {"_time_raw_" + new_key: "time", var_name: new_key}
+                        )
+                        ts = PointModelResult(data=ds, name=new_key)
+
+                        raw_mod_data[new_key] = ts
+
+                # filter variables, only keep the ones with a 'time' dimension
+                data = data[[v for v in data.data_vars if "time" in data[v].dims]]
+
+                return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
+
+            else:
+                raise NotImplementedError(f"Unknown gtype: {data.gtype}")
         else:
-            raise NotImplementedError(f"Unknown gtype: {data.gtype}")
+            raise NotImplementedError(f"Unknown extension: {ext}")

@@ -951,3 +951,14 @@ def test_from_matched_non_scalar_xy_fails():
             x=df.lon,
             y=df.lat,
         )
+
+
+def test_save_load(pc, tmp_path) -> None:
+    fp = tmp_path / "test.db"
+
+    pc.save(fp)
+    pc2 = Comparer.load(fp)
+
+    assert "m1" in pc2.mod_names
+    assert "m2" in pc2.mod_names
+    assert pc2.n_points == 5
