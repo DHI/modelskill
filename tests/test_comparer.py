@@ -962,3 +962,10 @@ def test_save_load(pc, tmp_path) -> None:
     assert "m1" in pc2.mod_names
     assert "m2" in pc2.mod_names
     assert pc2.n_points == 5
+    assert pc2.data.m1.attrs["kind"] == "model"
+    assert pc2.data.m2.attrs["kind"] == "model"
+    assert pc2.data.Observation.attrs["kind"] == "observation"
+
+    # TODO global attrs
+
+    # TODO raw_mod_data

@@ -1265,7 +1265,15 @@ class Comparer(Scoreable):
             con = duckdb.connect(filename)
             # TODO figure out how to save the x, y, z coordinates and other attributes later
             df = ds.to_dataframe().drop(columns=["x", "y", "z"]).reset_index()  # noqa
-            duckdb.sql("CREATE TABLE data AS SELECT * FROM df", connection=con)
+            duckdb.sql("CREATE TABLE matched_data AS SELECT * FROM df", connection=con)
+
+            attr_dict = {key: str(ds[key].attrs) for key in ds.data_vars}
+            attr_df = pd.DataFrame(attr_dict.items(), columns=["key", "value"])  # noqa
+
+            # attr_df["global", "key"] = str(ds.attrs)
+
+            duckdb.sql("CREATE TABLE attrs AS SELECT * FROM attr_df", connection=con)
+
             con.close()
         elif ext == ".nc":
             if self.gtype == "point":
@@ -1304,18 +1312,20 @@ class Comparer(Scoreable):
             import duckdb
 
             con = duckdb.connect(filename)
-            df = duckdb.sql("SELECT * FROM data", connection=con).df().set_index("time")
+            df = (
+                duckdb.sql("SELECT * FROM matched_data", connection=con)
+                .df()
+                .set_index("time")
+            )
 
             # convert pandas dataframe to xarray dataset
             ds = xr.Dataset.from_dataframe(df)
 
-            # set observation attribute
-            ds.Observation.attrs["kind"] = "observation"
-
-            # set model attributes
-            for key in ds.data_vars:
-                if key != "Observation":
-                    ds[key].attrs["kind"] = "model"
+            attrs = duckdb.sql("SELECT * FROM attrs", connection=con).df()
+            for row in attrs.iterrows():
+                key = row[1]["key"]
+                value = row[1]["value"]
+                ds[key].attrs = eval(value)
 
             # TODO figure out aux variables
 
