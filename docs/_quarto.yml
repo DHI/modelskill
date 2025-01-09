@@ -125,6 +125,8 @@ website:
           href: api/settings.qmd
         - text: "Quantity"
           href: api/Quantity.qmd
+        - text: "Data"
+          href: api/data.qmd
 
 
 filters:
@@ -277,6 +279,7 @@ quartodoc:
         - settings
         - TimeSeries
         - Quantity
+        - data
 
 #metadata-files:
 #  - api/_sidebar.yml

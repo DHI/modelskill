@@ -38,6 +38,7 @@ from .matching import from_matched, match
 from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
 from . import plotting
+from . import data
 from .comparison import ComparerCollection, Comparer
 from .skill import SkillTable
 from .timeseries import TimeSeries
@@ -89,4 +90,5 @@ __all__ = [
     "load_style",
     "plotting",
     "from_config",
+    "data",
 ]
