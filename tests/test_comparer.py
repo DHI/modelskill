@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from modelskill.comparison import Comparer
 from modelskill import __version__
 import modelskill as ms
+from modelskill.model.point import PointModelResult
 
 
 @pytest.fixture
@@ -966,6 +967,7 @@ def test_save_load(pc, tmp_path) -> None:
     assert pc2.data.m2.attrs["kind"] == "model"
     assert pc2.data.Observation.attrs["kind"] == "observation"
 
-    # TODO global attrs
-
-    # TODO raw_mod_data
+    assert pc2.name == "fake point obs"
+    assert pc2.gtype == "point"
+    assert len(pc2.raw_mod_data["m1"]) == 6
+    assert isinstance(pc2.raw_mod_data["m2"], PointModelResult)
