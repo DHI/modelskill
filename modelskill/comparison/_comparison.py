@@ -1321,19 +1321,27 @@ class Comparer(Scoreable):
             f"CREATE TABLE {prefix}.attrs AS SELECT * FROM attr_df", connection=con
         )
 
+        # time can either be an integer or a timestamp
+        # TODO make sure we have the correct type
+        if str(list(self.raw_mod_data.values())[0].data.time.dtype) == "datetime64[ns]":
+            time_type = "TIMESTAMP_NS"
+        else:
+            time_type = "BIGINT"
+
+        con.sql(
+            f"CREATE TABLE {prefix}.raw_data (time {time_type}, value DOUBLE, model TEXT)",
+        )
         for key, value in self.raw_mod_data.items():
             rdf = (  # noqa
                 value.data.to_dataframe()
                 .reset_index()
                 .drop(columns=["x", "y", "z"], errors="ignore")
-            )
-
-            # sanitize key
-            key = key.replace(" ", "_").replace(".", "_")
-            # TODO this is not a proper solution, figure out a different way to store the raw data
+                .assign(model=key)
+                .rename(columns={key: "value"})
+            )[["time", "value", "model"]]
 
             duckdb.sql(
-                f"CREATE TABLE {prefix}.raw_{key} AS SELECT * FROM rdf",
+                f"INSERT INTO {prefix}.raw_data SELECT * FROM rdf",
                 connection=con,
             )
 
@@ -1397,19 +1405,32 @@ class Comparer(Scoreable):
 
         raw_mod_data = {}
 
-        tables = con.sql("SHOW ALL TABLES").df()
-        my_tables = tables[tables["schema"] == name]["name"].to_list()
-        raw_tables = [t for t in my_tables if "raw_" in t]
-        for table in raw_tables:
-            key = table[4:]
+        # tables = con.sql("SHOW ALL TABLES").df()
+        # my_tables = tables[tables["schema"] == name]["name"].to_list()
+        # raw_tables = [t for t in my_tables if "raw_" in t]
+        # for table in raw_tables:
+        #     key = table[4:]
+        #     rdf = (
+        #         duckdb.sql(f"SELECT * FROM {name}.{table}", connection=con)
+        #         .df()
+        #         .set_index("time")
+        #     )
+        #     rds = xr.Dataset.from_dataframe(rdf)
+        #     rds.attrs = ds.attrs
+        #     raw_mod_data[key] = PointModelResult(data=rds)
+        raw_df = con.sql(f"SELECT * FROM {name}.raw_data").df()
+
+        models = raw_df["model"].unique()
+        for model in models:
+            # some pandas magic to get the right format
             rdf = (
-                duckdb.sql(f"SELECT * FROM {name}.{table}", connection=con)
-                .df()
+                raw_df[raw_df["model"] == model]
                 .set_index("time")
+                .rename(columns={"value": model})[[model]]
             )
             rds = xr.Dataset.from_dataframe(rdf)
             rds.attrs = ds.attrs
-            raw_mod_data[key] = PointModelResult(data=rds)
+            raw_mod_data[model] = PointModelResult(data=rds)
 
         return Comparer(matched_data=ds, raw_mod_data=raw_mod_data)
 
