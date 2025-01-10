@@ -1259,13 +1259,16 @@ class Comparer(Scoreable):
         """
         ext = Path(filename).suffix
 
-        match ext:
-            case ".db":
-                self._save_to_duckdb(filename, name)
-            case ".nc":
-                self._save_to_netcdf(filename)
-            case _:
-                raise NotImplementedError(f"Unknown extension: {ext}")
+        # match ext:
+        #    case ".db":
+        if ext == ".db":
+            self._save_to_duckdb(filename, name)
+        elif ext == ".nc":
+            #    case ".nc":
+            self._save_to_netcdf(filename)
+        else:
+            #    case _:
+            raise NotImplementedError(f"Unknown extension: {ext}")
 
     def _save_to_netcdf(self, filename) -> None:
         ds = self.data
@@ -1353,13 +1356,16 @@ class Comparer(Scoreable):
         # get extension
         ext = Path(filename).suffix
 
-        match ext:
-            case ".db":
-                return Comparer._load_from_duckdb(filename, name)
-            case ".nc":
-                return Comparer._load_from_netcdf(filename)
-            case _:
-                raise NotImplementedError(f"Unknown extension: {ext}")
+        # match ext:
+        #    case ".db":
+        if ext == ".db":
+            return Comparer._load_from_duckdb(filename, name)
+        elif ext == ".nc":
+            #    case ".nc":
+            return Comparer._load_from_netcdf(filename)
+        else:
+            #    case _:
+            raise NotImplementedError(f"Unknown extension: {ext}")
 
     @staticmethod
     def _load_from_duckdb(filename, name: Optional[str]) -> "Comparer":
