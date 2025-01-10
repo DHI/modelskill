@@ -412,7 +412,8 @@ def test_save_and_load_preserves_order_of_comparers(tmp_path):
     assert cc[1].name == "alpha"
     assert cc[2].name == "bravo"
 
-    fn = tmp_path / "test_cc.msk"
+    # fn = tmp_path / "test_cc.msk"
+    fn = tmp_path / "test_cc.db"
     cc.save(fn)
 
     cc2 = modelskill.load(fn)
@@ -422,7 +423,7 @@ def test_save_and_load_preserves_order_of_comparers(tmp_path):
 
 
 def test_save(cc: modelskill.ComparerCollection, tmp_path):
-    fn = tmp_path / "test_cc.msk"
+    fn = tmp_path / "test_cc.db"
     assert cc[0].data.attrs["modelskill_version"] == modelskill.__version__
     cc.save(fn)
 
@@ -434,7 +435,8 @@ def test_save(cc: modelskill.ComparerCollection, tmp_path):
 
 
 def test_load_from_root_module(cc, tmp_path):
-    fn = tmp_path / "test_cc.msk"
+    # fn = tmp_path / "test_cc.msk"
+    fn = tmp_path / "test_cc.db"
     cc.save(fn)
 
     cc2 = modelskill.load(fn)
@@ -442,7 +444,8 @@ def test_load_from_root_module(cc, tmp_path):
 
 
 def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
-    fn = tmp_path / "test_cc.msk"
+    # fn = tmp_path / "test_cc.msk"
+    fn = tmp_path / "test_cc.db"
     assert len(cc["fake point obs"].raw_mod_data["m1"]) == 6
     cc.save(fn)
 

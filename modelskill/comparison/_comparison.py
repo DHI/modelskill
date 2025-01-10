@@ -1249,7 +1249,7 @@ class Comparer(Scoreable):
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
-    def save(self, filename: Union[str, Path]) -> None:
+    def save(self, filename: Union[str, Path], name: Optional[str] = None) -> None:
         """Save to duckdb file
 
         Parameters
@@ -1261,7 +1261,7 @@ class Comparer(Scoreable):
 
         match ext:
             case ".db":
-                self._save_to_duckdb(filename)
+                self._save_to_duckdb(filename, name)
             case ".nc":
                 self._save_to_netcdf(filename)
             case _:
@@ -1284,33 +1284,60 @@ class Comparer(Scoreable):
     def _save_to_duckdb(
         self,
         filename: Union[str, Path],
+        name: Optional[str] = None,
     ) -> None:
         import duckdb
 
         ds = self.data
 
+        # create a name without whitespace
+        # prefix = self.name.replace(" ", "_")
+        if name is None:
+            prefix = "s0"
+        else:
+            prefix = f"s{name}"
+
         con = duckdb.connect(filename)
         # TODO figure out how to save the x, y, z coordinates
-        df = ds.to_dataframe().drop(columns=["x", "y", "z"]).reset_index()  # noqa
+        df = (  # noqa
+            ds.to_dataframe()
+            .drop(columns=["x", "y", "z"], errors="ignore")
+            .reset_index()
+        )
 
-        # TODO use self.name as prefix in table name to allow for multiple Comparers in the same db
-        duckdb.sql("CREATE TABLE matched_data AS SELECT * FROM df", connection=con)
+        duckdb.sql("CREATE SCHEMA IF NOT EXISTS " + prefix, connection=con)
+
+        duckdb.sql(
+            f"CREATE TABLE {prefix}.matched_data AS SELECT * FROM df", connection=con
+        )
 
         attr_dict = {key: str(ds[key].attrs) for key in ds.data_vars}
         attr_dict["global"] = str(ds.attrs)
         attr_df = pd.DataFrame(attr_dict.items(), columns=["key", "value"])  # noqa
-        duckdb.sql("CREATE TABLE attrs AS SELECT * FROM attr_df", connection=con)
+        duckdb.sql(
+            f"CREATE TABLE {prefix}.attrs AS SELECT * FROM attr_df", connection=con
+        )
 
         for key, value in self.raw_mod_data.items():
             rdf = (  # noqa
-                value.data.to_dataframe().reset_index().drop(columns=["x", "y", "z"])
+                value.data.to_dataframe()
+                .reset_index()
+                .drop(columns=["x", "y", "z"], errors="ignore")
             )
-            duckdb.sql(f"CREATE TABLE raw_{key} AS SELECT * FROM rdf", connection=con)
+
+            # sanitize key
+            key = key.replace(" ", "_").replace(".", "_")
+            # TODO this is not a proper solution, figure out a different way to store the raw data
+
+            duckdb.sql(
+                f"CREATE TABLE {prefix}.raw_{key} AS SELECT * FROM rdf",
+                connection=con,
+            )
 
         con.close()
 
     @staticmethod
-    def load(filename: Union[str, Path]) -> "Comparer":
+    def load(filename: Union[str, Path], name: Optional[str] = None) -> "Comparer":
         """Load from duckdb file
 
         Parameters
@@ -1328,19 +1355,24 @@ class Comparer(Scoreable):
 
         match ext:
             case ".db":
-                return Comparer._load_from_duckdb(filename)
+                return Comparer._load_from_duckdb(filename, name)
             case ".nc":
                 return Comparer._load_from_netcdf(filename)
             case _:
                 raise NotImplementedError(f"Unknown extension: {ext}")
 
     @staticmethod
-    def _load_from_duckdb(filename) -> "Comparer":
+    def _load_from_duckdb(filename, name: Optional[str]) -> "Comparer":
         import duckdb
 
         con = duckdb.connect(filename)
+        # table_names = con.sql("SHOW ALL TABLES").df()["name"].to_list()
+
+        if name is None:
+            name = con.sql("SHOW ALL TABLES").df()["schema"].to_list()[0]
+
         df = (
-            duckdb.sql("SELECT * FROM matched_data", connection=con)
+            duckdb.sql(f"SELECT * FROM {name}.matched_data", connection=con)
             .df()
             .set_index("time")
         )
@@ -1348,7 +1380,7 @@ class Comparer(Scoreable):
         # convert pandas dataframe to xarray dataset
         ds = xr.Dataset.from_dataframe(df)
 
-        attrs = duckdb.sql("SELECT * FROM attrs", connection=con).df()
+        attrs = duckdb.sql(f"SELECT * FROM {name}.attrs", connection=con).df()
         for row in attrs.iterrows():
             key = row[1]["key"]
             value = row[1]["value"]
@@ -1358,16 +1390,20 @@ class Comparer(Scoreable):
                 ds[key].attrs = eval(value)
 
         raw_mod_data = {}
-        table_names = con.sql("SHOW TABLES").df()["name"].to_list()
-        raw_tables = [t for t in table_names if t[:4] == "raw_"]
+
+        tables = con.sql("SHOW ALL TABLES").df()
+        my_tables = tables[tables["schema"] == name]["name"].to_list()
+        raw_tables = [t for t in my_tables if "raw_" in t]
         for table in raw_tables:
             key = table[4:]
             rdf = (
-                duckdb.sql(f"SELECT * FROM {table}", connection=con)
+                duckdb.sql(f"SELECT * FROM {name}.{table}", connection=con)
                 .df()
                 .set_index("time")
             )
-            raw_mod_data[key] = PointModelResult(data=rdf)
+            rds = xr.Dataset.from_dataframe(rdf)
+            rds.attrs = ds.attrs
+            raw_mod_data[key] = PointModelResult(data=rds)
 
         return Comparer(matched_data=ds, raw_mod_data=raw_mod_data)
 

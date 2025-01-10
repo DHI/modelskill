@@ -393,10 +393,13 @@ def test_save_comparercollection(o1, o3, tmp_path):
 
     cc = ms.match([o1, o3], da)
 
-    fn = tmp_path / "cc.msk"
+    # fn = tmp_path / "cc.msk"
+    fn = tmp_path / "cc.db"
     cc.save(fn)
 
     assert fn.exists()
+
+    # TODO check that we can load it again and that it is the same
 
 
 def test_wind_directions():

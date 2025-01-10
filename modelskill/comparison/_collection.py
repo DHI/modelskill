@@ -932,18 +932,28 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.save("my_comparer_collection.msk")
         """
 
-        files = []
-        no = 0
-        for name, cmp in self._comparers.items():
-            cmp_fn = f"{no}_{name}.nc"
-            cmp.save(cmp_fn)
-            files.append(cmp_fn)
-            no += 1
+        ext = Path(filename).suffix
 
-        with zipfile.ZipFile(filename, "w") as zip:
-            for f in files:
-                zip.write(f)
-                os.remove(f)
+        if ext == ".db":
+            no = 0
+            for cmp in self:
+                cmp.save(filename, name=str(no))
+                # cmp.save(filename)
+                no += 1
+
+        else:
+            files = []
+            no = 0
+            for name, cmp in self._comparers.items():
+                cmp_fn = f"{no}_{name}.nc"
+                cmp.save(cmp_fn)
+                files.append(cmp_fn)
+                no += 1
+
+            with zipfile.ZipFile(filename, "w") as zip:
+                for f in files:
+                    zip.write(f)
+                    os.remove(f)
 
     @staticmethod
     def load(filename: Union[str, Path]) -> "ComparerCollection":
@@ -965,6 +975,18 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc.save("my_comparer_collection.msk")
         >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.msk")
         """
+
+        ext = Path(filename).suffix
+
+        if ext == ".db":
+            import duckdb
+
+            con = duckdb.connect(filename)
+            schemas = sorted(set(con.sql("SHOW ALL TABLES").df()["schema"].to_list()))
+
+            cmps = [Comparer.load(filename, name=s) for s in schemas]
+
+            return ComparerCollection(cmps)
 
         folder = tempfile.TemporaryDirectory().name
 
