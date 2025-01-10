@@ -7,7 +7,6 @@ on:
   push:
     branches: [ main]
   pull_request:
-    branches: [ main ]
 
 jobs:
   build:
@@ -16,31 +15,31 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10"]      
+        python-version: ["3.10", "3.13"]      
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+    - uses: astral-sh/ruff-action@v2 # Fail fast if there are any linting errors
+      with:
+        version: 0.6.2
+        src: "modelskill"
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest pytest-cov
+        pip install pytest pytest-cov
         
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Install fmskill
+    - name: Install modelskill
       run: |
         pip install .[test]
     - name: Test with pytest
       run: |
-        pytest --cov=fmskill --ignore tests/notebooks/
+        pytest --cov=modelskill --ignore tests/notebooks/
+    - name: Static type check
+      run: make typecheck
     - name: Test docstrings with pytest
       run: |
-        pytest ./fmskill/metrics.py --doctest-modules
+        pytest ./modelskill/metrics.py --doctest-modules

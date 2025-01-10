@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = [
+    "modelskill/**/*",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[project]
+name = "modelskill"
+version = "1.2.dev0"
+dependencies = [
+    "numpy  > 1.24.4",
+    "pandas >= 1.4",
+    "mikeio >= 1.2",
+    "matplotlib",
+    "xarray",
+    "netCDF4",
+    "scipy",
+    "jinja2",
+]
+
+authors = [
+    { name = "Jesper Sandvig Mariegaard", email = "jem@dhigroup.com" },
+    { name = "Henrik Andersson", email = "jan@dhigroup.com" },
+]
+description = "Compare results from simulations with observations."
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+docs = [
+    "quarto-cli==1.5.57",
+    "quartodoc==0.9.1",
+    "netCDF4",
+    "plotly >= 4.5",
+    "dask",
+]
+
+dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2"]
+
+test = [
+    "pytest",
+    "pytest-cov",
+    "openpyxl",
+    "dask",
+    "mypy",
+    "types-PyYAML",
+    "geopandas",
+]
+
+notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
+
+[project.urls]
+"Homepage" = "https://github.com/DHI/modelskill"
+"Bug Tracker" = "https://github.com/DHI/modelskill/issues"
+
+
+[tool.ruff.lint]
+ignore = ["E501"]
+select = ["E4", "E7", "E9", "F", "D200", "D205"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+warn_unreachable = false
+no_implicit_optional = true

@@ -13,6 +13,9 @@ observations:
     item: 0
     x: 355568.0
     y: 6156863.0
+    quantity: 
+      name: Water Level
+      unit: m
 # This station is not reliable
 # - item: 0
 # observation:

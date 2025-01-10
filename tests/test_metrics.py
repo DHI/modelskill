@@ -1,11 +1,30 @@
+from typing import Callable
 import pytest
 import numpy as np
+import mikeio
+import pandas as pd
+import modelskill.metrics as mtr
 
-import fmskill.metrics as mtr
+
+@pytest.fixture
+def obs_series() -> pd.Series:
+    return (
+        mikeio.read("./tests/testdata/PR_test_data.dfs0", items=0)
+        .to_dataframe()
+        .iloc[:, 0]
+    )
+
+
+@pytest.fixture
+def mod_series() -> pd.Series:
+    return (
+        mikeio.read("./tests/testdata/PR_test_data.dfs0", items=1)
+        .to_dataframe()
+        .iloc[:, 0]
+    )
 
 
 def test_nse_optimal():
-
     np.random.seed(42)
     obs = np.random.uniform(size=100)
 
@@ -13,7 +32,6 @@ def test_nse_optimal():
 
 
 def test_kge_optimal():
-
     np.random.seed(42)
     obs = np.random.uniform(size=100)
 
@@ -21,7 +39,6 @@ def test_kge_optimal():
 
 
 def test_kge_suboptimal():
-
     obs = np.array([1.0, 0.5, 0])
     mod = np.array([1.0, 0.0, 0.5])
 
@@ -29,7 +46,6 @@ def test_kge_suboptimal():
 
 
 def test_kge_no_variation_in_obs_returns_nan():
-
     obs = np.ones(10)
     np.random.seed(42)
     mod = np.random.uniform(size=10)
@@ -38,7 +54,6 @@ def test_kge_no_variation_in_obs_returns_nan():
 
 
 def test_kge_bad():
-
     np.random.seed(42)
     obs = np.random.normal(loc=10.0, scale=1.0, size=1000)
     mod = np.random.normal(scale=0.1, size=1000)
@@ -60,7 +75,6 @@ def test_kge_climatology_model():
 
 
 def test_nse_suboptimal():
-
     obs = np.array([1.0, 0.5, 0])
     mod = np.array([1.0, 0.0, 0.5])
 
@@ -68,7 +82,6 @@ def test_nse_suboptimal():
 
 
 def test_mef_suboptimal():
-
     obs = np.array([1.0, 0.5, 0])
     mod = np.array([1.0, 0.0, 0.5])
 
@@ -109,7 +122,6 @@ def test_mae():
 
 
 def test_corrcoef():
-
     obs = np.arange(100)
     mod = obs + 1.0
 
@@ -121,7 +133,6 @@ def test_corrcoef():
 
 
 def test_scatter_index():
-
     obs = np.arange(100)
     mod = obs + 1.0
 
@@ -131,7 +142,6 @@ def test_scatter_index():
 
 
 def test_r2():
-
     obs = np.arange(100)
     mod = obs + 1.0
 
@@ -141,7 +151,6 @@ def test_r2():
 
 
 def test_mape():
-
     obs = np.arange(1, 100)
     mod = obs + 1.0
 
@@ -174,3 +183,76 @@ def test_willmott():
     mod = np.array([1.0, 0.0, 0.5])  # mean 0.5
 
     assert mtr.willmott(obs, mod) == pytest.approx(1 - 0.5 / 1.5)
+
+
+def test_ev():
+    obs = np.arange(100)
+    mod = obs + 1.0
+    ev = mtr.ev(obs, mod)
+
+    assert ev == 1.0
+
+
+def test_pr(obs_series: pd.Series, mod_series: pd.Series) -> None:
+    # Obs needs to be a series as the mode of the time index is used.
+    # Will use the same data for a real test of ev
+    obs = obs_series
+    mod = mod_series
+
+    pr = mtr.pr(obs, mod)
+
+    assert pr == pytest.approx(0.889999947851914)
+
+
+def test_pr_2(obs_series, mod_series):
+    # Obs needs to be a series as the mode of the time index is used.
+    # Will use the same data for a real test of ev
+    obs = obs_series
+    mod = mod_series
+
+    pr = mtr.pr(obs, mod, AAP=8, inter_event_level=0.2)
+
+    assert pr == pytest.approx(0.947499960537655)
+
+
+def test_metric_has_dimension():
+    # the following metrics are dimensionless
+
+    assert not mtr.metric_has_units("nse")
+    assert not mtr.metric_has_units(mtr.nash_sutcliffe_efficiency)
+    assert not mtr.metric_has_units("kge")
+    assert not mtr.metric_has_units("r2")
+
+    # while these metrics are in units of the observations
+    assert mtr.metric_has_units("mae")
+    assert mtr.metric_has_units("bias")
+    assert mtr.metric_has_units("rmse")
+    assert mtr.metric_has_units(mtr.rmse)
+
+    with pytest.raises(ValueError):
+        mtr.metric_has_units("unknown")
+
+
+def test_add_metric_is_not_a_valid_metric():
+    assert not mtr.is_valid_metric("add_metric")
+    assert mtr.is_valid_metric("nse")
+
+
+def test_get_metric():
+    rmse = mtr.get_metric("rmse")
+    assert isinstance(rmse, Callable)
+
+
+def test_parse_metric_custom_fun():
+    def my_metric(obs, model):
+        return 1.0
+
+    assert mtr._parse_metric(my_metric) == [my_metric]
+
+
+def test_parse_bad_metric():
+    def not_a_metric(obs):
+        return 1.0
+
+    with pytest.raises(ValueError):
+        mtr._parse_metric(not_a_metric)

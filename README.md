@@ -1,17 +1,18 @@
-<img src="https://raw.githubusercontent.com/DHI/fmskill/main/images/logo/mike-fm-skill-rgb.svg" width="300">
+<img src="https://raw.githubusercontent.com/DHI/modelskill/main/images/logo/modelskill.svg" width="300">
 
-# FMskill: Compare MIKE FM results with observations.
- ![Python version](https://img.shields.io/pypi/pyversions/fmskill.svg) 
-![Python package](https://github.com/DHI/fmskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/fmskill.svg)](https://badge.fury.io/py/fmskill)
+# ModelSkill: Flexible Model skill evaluation.
+ ![Python version](https://img.shields.io/pypi/pyversions/modelskill.svg) 
+![Python package](https://github.com/DHI/modelskill/actions/workflows/full_test.yml/badge.svg) [![PyPI version](https://badge.fury.io/py/modelskill.svg)](https://badge.fury.io/py/modelskill)
+![Downloads](https://img.shields.io/pypi/dm/modelskill)
 
-[FMskill](https://github.com/DHI/fmskill) is a python package for scoring [MIKE FM](https://www.mikepoweredbydhi.com/products/mike-21-3) models. 
+[ModelSkill](https://github.com/DHI/modelskill) is a python package for scoring [MIKE](https://www.mikepoweredbydhi.com) models (other models can be evaluated as well). 
 
-Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html). Contribute with new ideas in the [discussion](https://github.com/DHI/fmskill/discussions), report an [issue](https://github.com/DHI/fmskill/issues) or browse the [API documentation](https://dhi.github.io/fmskill/api.html). Access observational data (e.g. altimetry data) from the sister library [WatObs](https://github.com/DHI/watobs). 
+Contribute with new ideas in the [discussion](https://github.com/DHI/modelskill/discussions), report an [issue](https://github.com/DHI/modelskill/issues) or browse the [documentation](https://dhi.github.io/modelskill/). Access observational data (e.g. altimetry data) from the sister library [WatObs](https://github.com/DHI/watobs). 
 
 
 ## Use cases
 
-[FMskill](https://github.com/DHI/fmskill) would like to be your companion during the different phases of a MIKE FM modelling workflow.
+[ModelSkill](https://github.com/DHI/modelskill) would like to be your companion during the different phases of a MIKE modelling workflow.
 
 * Model setup - exploratory phase   
 * Model calibration
@@ -19,36 +20,35 @@ Read more about the [vision and scope](https://dhi.github.io/fmskill/vision.html
 
 ## Installation
 
-From [pypi](https://pypi.org/project/fmskill/):
+From [pypi](https://pypi.org/project/modelskill/):
 
-`> pip install fmskill`
+`> pip install modelskill`
 
 Or the development version:
 
-`> pip install https://github.com/DHI/fmskill/archive/main.zip`
+`> pip install https://github.com/DHI/modelskill/archive/main.zip`
 
 
 ## Example notebooks
 
-* [Quick_and_dirty_compare.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Quick_and_dirty_compare.ipynb)
-* [SW_DutchCoast.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/SW_DutchCoast.ipynb)
-* [Multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_model_comparison.ipynb)
-* [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
-* [Track_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Track_comparison.ipynb) (including global wave model example)
-* [Spatial_skill.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Spatial_skill.ipynb) (satellite tracks, skill aggregated on spatial bins)
-* [NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/NetCDF_ModelResult.ipynb)
-* [Combine_comparers.ipynb](https://nbviewer.jupyter.org/github/DHI/fmskill/blob/main/notebooks/Combine_comparers.ipynb)
+
+* [Hydrology_Vistula_Catchment.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Hydrology_Vistula_Catchment.ipynb)
+* [Metocean_multi_model_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Metocean_multi_model_comparison.ipynb)
+* [Multi_variable_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Multi_variable_comparison.ipynb)
+* [Metocean_track_comparison_global.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Metocean_track_comparison_global.ipynb) 
+* [Gridded_NetCDF_ModelResult.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Gridded_NetCDF_ModelResult.ipynb)
+* [Directional_data_comparison.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Directional_data_comparison.ipynb)
+* [Combine_comparers.ipynb](https://nbviewer.jupyter.org/github/DHI/modelskill/blob/main/notebooks/Combine_comparers.ipynb)
 
 
 ## Workflow
 
 1. Define **ModelResults**
 2. Define **Observations**
-3. **Connect** Observations and ModelResults
-4. **Extract** ModelResults at Observation positions
-5. Do plotting, statistics, reporting using a **Comparer**
+3. **Match** Observations and ModelResults
+4. Do plotting, statistics, reporting using the **Comparer**
 
-Read more about the workflow in the [getting started guide](https://dhi.github.io/fmskill/getting_started.html).
+Read more about the workflow in the [getting started guide](https://dhi.github.io/modelskill/user-guide/getting-started/).
 
 
 ## Example of use
@@ -56,26 +56,23 @@ Read more about the workflow in the [getting started guide](https://dhi.github.i
 Start by defining model results and observations:
 
 ```python
->>> from fmskill.model import ModelResult
->>> from fmskill.observation import PointObservation, TrackObservation
->>> mr = ModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
->>> HKNA = PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
->>> EPL = PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
->>> c2 = TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
+>>> import modelskill as ms
+>>> mr = ms.DfsuModelResult("HKZN_local_2017_DutchCoast.dfsu", name="HKZN_local", item=0)
+>>> HKNA = ms.PointObservation("HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
+>>> EPL = ms.PointObservation("eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
+>>> c2 = ms.TrackObservation("Alti_c2_Dutch.dfs0", item=3, name="c2")
 ```
 
 Then, connect observations and model results, and extract data at observation points:
 
 ```python
->>> from fmskill import Connector
->>> con = Connector([HKNA, EPL, c2], mr)
->>> comparer = con.extract()
+>>> cc = ms.match([HKNA, EPL, c2], mr)
 ```
 
-With the comparer, all sorts of skill assessments and plots can be made:
+With the comparer object, cc, all sorts of skill assessments and plots can be made:
 
 ```python
->>> comparer.skill().round(2)
+>>> cc.skill().round(2)
                n  bias  rmse  urmse   mae    cc    si    r2
 observation                                                
 HKNA         385 -0.20  0.35   0.29  0.25  0.97  0.09  0.99
@@ -86,41 +83,27 @@ c2           113 -0.00  0.35   0.35  0.29  0.97  0.12  0.99
 ### Overview of observation locations
 
 ```python
-con.plot_observation_positions(figsize=(7,7))
+ms.plotting.spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
 ```
 
-![map](https://raw.githubusercontent.com/DHI/fmskill/main/images/map.png)
+![map](https://raw.githubusercontent.com/DHI/modelskill/main/images/map.png)
 
 
 
 ### Scatter plot
 
 ```python
-comparer.scatter()
+cc.plot.scatter()
 ```
 
-![scatter](https://raw.githubusercontent.com/DHI/fmskill/main/images/scatter.png)
+![scatter](https://raw.githubusercontent.com/DHI/modelskill/main/images/scatter.png)
 
 ### Timeseries plot
 
 Timeseries plots can either be static and report-friendly ([matplotlib](https://matplotlib.org/)) or interactive with zoom functionality ([plotly](https://plotly.com/python/)).
 
 ```python
-comparer["HKNA"].plot_timeseries(width=1000, backend="plotly")
+cc["HKNA"].plot.timeseries(width=1000, backend="plotly")
 ```
 
-![timeseries](https://raw.githubusercontent.com/DHI/fmskill/main/images/plotly_timeseries.png)
-
-
-## Automated reporting
-
-With a few lines of code, it will be possible to generate an automated report.
-
-```python
-from fmskill.report import Reporter
-
-rep = Reporter(mr)
-rep.to_markdown()
-```
-
-[Very basic first example report](https://github.com/DHI/fmskill/blob/main/notebooks/HKZN_local/HKZN_local.md)
+![timeseries](https://raw.githubusercontent.com/DHI/modelskill/main/images/plotly_timeseries.png)

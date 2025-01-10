@@ -1,0 +1,24 @@
+plot.scatter.legend.bbox:
+  alpha: 0.99
+  facecolor: w
+plot.scatter.legend.fontsize: 14
+plot.scatter.legend.kwargs:
+  bbox_to_anchor: [1.2,0.1]
+  edgecolor: k
+  loc: center left
+plot.scatter.oneone_line.color: darkorange
+plot.scatter.oneone_line.label: 1:1 (45°)
+plot.scatter.points.alpha: 0.9
+plot.scatter.points.label: Data
+plot.scatter.points.size: 10.0
+plot.scatter.quantiles.color: [0,0,0,0]
+plot.scatter.quantiles.label: Quantiles (0.0 - 100.0%)
+plot.scatter.quantiles.marker: o
+plot.scatter.quantiles.markeredgecolor: [0, 0.596078431372549, 0.8588235294117647]
+plot.scatter.quantiles.markeredgewidth: 1.2
+plot.scatter.quantiles.markersize: 3.5
+plot.scatter.reg_line.kwargs:
+  color: [0, 0.596078431372549, 0.8588235294117647]
+  dashes: [2,5]
+plot.rcParams:
+  mathtext.default: regular
