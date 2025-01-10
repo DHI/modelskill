@@ -2,16 +2,16 @@ import os
 import tempfile
 import streamlit as st
 import mikeio
-import fmskill
+import modelskill
+import matplotlib
 
 """
-# FMskill Drag and Drop
+# ModelSkill Drag and Drop
 """
 
 tmp_folder = tempfile.mkdtemp()
 
 with st.sidebar:
-    
     obs = st.file_uploader("Observation", type="dfs0")
 
     if obs:
@@ -33,15 +33,22 @@ with st.sidebar:
         items = [item.name for item in dfs.items]
         mod_item = st.selectbox(label="Item", options=items)
 
+    metrics = st.multiselect(
+        "Metrics",
+        ["bias", "rmse", "mae", "cc", "r2"],
+        default=["bias", "rmse", "mae", "cc", "r2"],
+    )
+
 if mod and obs:
+    c = modelskill.match(fn_obs, fn_mod, obs_item=obs_item, mod_item=mod_item)
 
-    c = fmskill.compare(fn_obs, fn_mod, obs_item=obs_item, mod_item=mod_item)
-
-    df = c.skill().to_dataframe()
+    df = c.skill(metrics=metrics).to_dataframe()
     st.dataframe(df)
 
-    fig_ts = c.plot_timeseries(backend="plotly", return_fig=True)
-    st.plotly_chart(fig_ts)
+    c.plot.timeseries()
+    fig = matplotlib.pyplot.gcf()
+    st.pyplot(fig)
 
-    fig_sc = c.scatter(backend="plotly", return_fig=True)
-    st.plotly_chart(fig_sc)
+    c.plot.scatter()
+    fig_sc = matplotlib.pyplot.gcf()
+    st.pyplot(fig_sc)
