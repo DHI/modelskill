@@ -19,7 +19,7 @@ with st.sidebar:
         with open(fn_obs, "wb") as f:
             f.write(obs.getvalue())
 
-        dfs = mikeio.open(fn_obs)
+        dfs: mikeio.Dfs0 = mikeio.open(fn_obs)  # type: ignore
         items = [item.name for item in dfs.items]
         obs_item = st.selectbox(label="Item", options=items)
 
@@ -29,9 +29,9 @@ with st.sidebar:
         fn_mod = os.path.join(tmp_folder, "mod.dfs0")
         with open(fn_mod, "wb") as f:
             f.write(mod.getvalue())
-        dfs = mikeio.open(fn_mod)
-        items = [item.name for item in dfs.items]
-        mod_item = st.selectbox(label="Item", options=items)
+        mdfs: mikeio.Dfs0 = mikeio.open(fn_mod)  # type: ignore
+        mitems = [item.name for item in mdfs.items]
+        mod_item = st.selectbox(label="Item", options=mitems)
 
     metrics = st.multiselect(
         "Metrics",
@@ -40,15 +40,22 @@ with st.sidebar:
     )
 
 if mod and obs:
-    c = modelskill.match(fn_obs, fn_mod, obs_item=obs_item, mod_item=mod_item)
+    c: modelskill.Comparer = modelskill.match(
+        fn_obs, fn_mod, obs_item=obs_item, mod_item=mod_item
+    )  # type: ignore
 
-    df = c.skill(metrics=metrics).to_dataframe()
-    st.dataframe(df)
+    tabskill, tabts, tabscatter = st.tabs(["Skill", "Time series", "Scatter"])
 
-    c.plot.timeseries()
-    fig = matplotlib.pyplot.gcf()
-    st.pyplot(fig)
+    with tabskill:
+        df = c.skill(metrics=metrics).to_dataframe()
+        st.dataframe(df)
 
-    c.plot.scatter()
-    fig_sc = matplotlib.pyplot.gcf()
-    st.pyplot(fig_sc)
+    with tabts:
+        c.plot.timeseries()
+        fig = matplotlib.pyplot.gcf()
+        st.pyplot(fig)
+
+    with tabscatter:
+        c.plot.scatter()
+        fig_sc = matplotlib.pyplot.gcf()
+        st.pyplot(fig_sc)
