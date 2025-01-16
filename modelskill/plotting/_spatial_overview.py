@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Tuple, TYPE_CHECKING
+from typing import Optional, Iterable, Sequence, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.axes
+    from ..model import DfsuModelResult
+    from mikeio import GeometryFM2D
 
 from ..model.point import PointModelResult
 from ..model.track import TrackModelResult
@@ -11,8 +13,8 @@ from ._misc import _get_ax
 
 
 def spatial_overview(
-    obs: Sequence[Observation],
-    mod=None,  # TODO add type hint
+    obs: Observation | Iterable[Observation],
+    mod: Optional[DfsuModelResult | GeometryFM2D] = None,
     ax=None,
     figsize: Optional[Tuple] = None,
     title: Optional[str] = None,
@@ -23,7 +25,7 @@ def spatial_overview(
     ----------
     obs: list[Observation]
         List of observations to be shown on map
-    mod : Union[ModelResult, mikeio.GeometryFM], optional
+    mod : DfsuModelResult, optional
         Model domain to be shown as outline
     ax: matplotlib.axes, optional
         Adding to existing axis, instead of creating new fig
@@ -55,23 +57,24 @@ def spatial_overview(
     ms.plotting.spatial_overview([o1, o2], [mr1, mr2])
     ```
     """
-    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]  # type: ignore
-    mod = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]  # type: ignore
+    obs = [] if obs is None else list(obs) if isinstance(obs, Iterable) else [obs]  # type: ignore
 
     ax = _get_ax(ax=ax, figsize=figsize)
 
-    for m in mod:
-        # TODO: support Gridded ModelResults
-        if isinstance(m, (PointModelResult, TrackModelResult)):
+    # TODO: support Gridded ModelResults
+    if mod is not None:
+        if isinstance(mod, (PointModelResult, TrackModelResult)):
             raise ValueError(
-                f"Model type {type(m)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
+                f"Model type {type(mod)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
             )
-        if hasattr(m, "data") and hasattr(m.data, "geometry"):
+        if hasattr(mod, "data") and hasattr(mod.data, "geometry"):
             # mod_name = m.name  # TODO: better support for multiple models
-            m = m.data.geometry
+            g = mod.data.geometry
+        else:
+            g = mod
 
-        # TODO this is not supported for all model types
-        m.plot.outline(ax=ax)
+            # TODO this is not supported for all model types
+        g.plot.outline(ax=ax)  # type: ignore
 
     for o in obs:
         if isinstance(o, PointObservation):
