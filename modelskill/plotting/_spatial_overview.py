@@ -14,7 +14,12 @@ from ._misc import _get_ax
 
 def spatial_overview(
     obs: Observation | Iterable[Observation],
-    mod: Optional[DfsuModelResult | GeometryFM2D] = None,
+    mod: Optional[
+        DfsuModelResult
+        | GeometryFM2D
+        | Iterable[DfsuModelResult]
+        | Iterable[GeometryFM2D]
+    ] = None,
     ax=None,
     figsize: Optional[Tuple] = None,
     title: Optional[str] = None,
@@ -57,20 +62,21 @@ def spatial_overview(
     ```
     """
     obs = [] if obs is None else list(obs) if isinstance(obs, Iterable) else [obs]  # type: ignore
+    mods = [] if mod is None else list(mod) if isinstance(mod, Iterable) else [mod]  # type: ignore
 
     ax = _get_ax(ax=ax, figsize=figsize)
 
     # TODO: support Gridded ModelResults
-    if mod is not None:
-        if isinstance(mod, (PointModelResult, TrackModelResult)):
+    for m in mods:
+        if isinstance(m, (PointModelResult, TrackModelResult)):
             raise ValueError(
-                f"Model type {type(mod)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
+                f"Model type {type(m)} not supported. Only DfsuModelResult and mikeio.GeometryFM supported!"
             )
-        if hasattr(mod, "data") and hasattr(mod.data, "geometry"):
+        if hasattr(m, "data") and hasattr(m.data, "geometry"):
             # mod_name = m.name  # TODO: better support for multiple models
-            g = mod.data.geometry
+            g = m.data.geometry
         else:
-            g = mod
+            g = m
 
             # TODO this is not supported for all model types
         g.plot.outline(ax=ax)  # type: ignore
