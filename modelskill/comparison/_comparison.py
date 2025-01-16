@@ -20,6 +20,7 @@ import pandas as pd
 import xarray as xr
 from copy import deepcopy
 
+
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
@@ -778,6 +779,10 @@ class Comparer(Scoreable):
             )
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
+    def _to_model(self) -> list[PointModelResult]:
+        mods = list(self.raw_mod_data.values())
+        return mods
 
     def __iadd__(self, other: Comparer):  # type: ignore
         from ..matching import match_space_time
