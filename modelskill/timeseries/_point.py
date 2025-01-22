@@ -132,6 +132,7 @@ def _parse_point_input(
         ds = data
 
     assert isinstance(ds, xr.Dataset)
+    name = ds.attrs.get("name", name)
 
     name = name or item_name
     name = _validate_data_var_name(name)
