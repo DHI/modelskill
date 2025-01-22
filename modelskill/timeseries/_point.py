@@ -45,6 +45,7 @@ def _parse_point_items(
 
     # check that there are no duplicates
     res = PointItem(values=item, aux=aux_items_str)
+    # TODO move validation to PointItem
     if len(set(res.all)) != len(res.all):
         raise ValueError(f"Duplicate items! {res.all}")
 
@@ -66,6 +67,7 @@ def _parse_point_input(
         data, get_args(PointType)
     ), f"Could not construct object from provided data of type {type(data)}"
 
+    # TODO refactor and create separate methods for each input type
     if isinstance(data, (str, Path)):
         suffix = Path(data).suffix
         if suffix == ".dfs0":
