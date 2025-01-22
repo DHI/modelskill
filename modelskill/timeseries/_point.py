@@ -68,11 +68,15 @@ def _parse_point_input(
 
     if isinstance(data, (str, Path)):
         suffix = Path(data).suffix
-        name = name or Path(data).stem
         if suffix == ".dfs0":
+            name = name or Path(data).stem
+            # TODO avoid changing type of data
             data = mikeio.read(data)  # now mikeio.Dataset
         elif suffix == ".nc":
+            stem = Path(data).stem
+            # TODO avoid changing type of data
             data = xr.open_dataset(data)
+            name = name or data.attrs.get("name") or stem
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
 
@@ -132,7 +136,6 @@ def _parse_point_input(
         ds = data
 
     assert isinstance(ds, xr.Dataset)
-    name = ds.attrs.get("name", name)
 
     name = name or item_name
     name = _validate_data_var_name(name)
