@@ -962,10 +962,3 @@ class ComparerCollection(Mapping, Scoreable):
         comparers = [Comparer._load(dt[group]) for group in groups]
 
         return ComparerCollection(comparers)
-
-    @staticmethod
-    def _load_comparer(folder: str, f: str) -> Comparer:
-        f = os.path.join(folder, f)
-        cmp = Comparer.load(f)
-        os.remove(f)
-        return cmp
