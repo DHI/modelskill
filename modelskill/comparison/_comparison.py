@@ -1272,29 +1272,6 @@ class Comparer(Scoreable):
 
         raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
-    def _save(self) -> xr.DataTree:
-        ds = self.data
-
-        if self.gtype == "point":
-            dt = xr.DataTree()
-            dt["matched"] = ds
-            dt["raw"] = xr.DataTree()
-
-            for key, ts_mod in self.raw_mod_data.items():
-                ts_mod = ts_mod.copy()
-                dt["raw"][key] = ts_mod.data
-
-            dt.attrs["gtype"] = "point"
-            return dt
-        elif self.gtype == "track":
-            # There is no need to save raw data for track data, since it is identical to the matched data
-            dt = xr.DataTree()
-            dt.attrs["gtype"] = "track"
-            dt["matched"] = ds
-            return dt
-
-        raise NotImplementedError(f"Unknown gtype: {self.gtype}")
-
     def save(self, filename: Union[str, Path]) -> None:
         """Save to netcdf file
 
@@ -1313,12 +1290,12 @@ class Comparer(Scoreable):
             return Comparer(matched_data=data["matched"].to_dataset())
 
         if data.gtype == "point":
-            raw_mod_data: Dict[str, TimeSeries] = {}
+            raw_mod_data: Dict[str, PointModelResult] = {}
 
             names = [x for x in data["raw"].children]
             for var in names:
                 ds = data["raw"][var].to_dataset()
-                ts = PointObservation(data=ds, name=var)
+                ts = PointModelResult(data=ds, name=var)
 
                 raw_mod_data[var] = ts
 

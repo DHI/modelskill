@@ -640,7 +640,7 @@ def _plot_summary_table(
         ## Render, and get width
         # plt.draw() # TOOO this causes an error and I have no idea why it is here
         dx = (
-            dx
+            dx  # type: ignore
             + figure_transform.inverted().transform(
                 [text_col_i.get_window_extent().bounds[2], 0]
             )[0]
