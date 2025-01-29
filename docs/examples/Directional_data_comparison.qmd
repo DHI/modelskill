@@ -1,0 +1,49 @@
+---
+title: Comparing Directional Data (e.g. wind direction)
+jupyter: python3
+---
+
+
+Comparing directional data is easy from version 1.0 if the quantity is defined as directional. This happens automatically if data is loaded from a dfs file with EUM unit in "degrees" or if loaded from a xarray dataset with attribute "units" set to "degrees". The quantity can also be created as directional manually by `ms.Quantity(..., is_directional=True)`.
+
+In the below example, the EUM unit is "degrees".
+
+
+```{python}
+import modelskill as ms
+import mikeio
+```
+
+```{python}
+fn = "../data/wave_dir.dfs0"
+ds = mikeio.read(fn)
+ds
+```
+
+```{python}
+cmp = ms.from_matched(ds, obs_item=3, mod_items=[2])
+cmp
+```
+
+```{python}
+cmp.quantity
+```
+
+Circular metrics are used to compare directional data if the quantity is defined as directional. 
+
+```{python}
+cmp.skill(metrics=["c_rmse","c_max_error"]).round(1)
+```
+
+```{python}
+cmp.plot.timeseries(figsize=(8,5));
+```
+
+```{python}
+cmp.plot.kde();   # note: the KDE estimate is not directional! (yet)
+```
+
+```{python}
+cmp.plot.scatter();  # note: regression line and Q-Q are not shown 
+```
+

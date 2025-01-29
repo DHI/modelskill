@@ -24,6 +24,22 @@ coverage:
 	pytest --cov-report html --cov=$(LIB) tests/
 
 docs: FORCE
-	mkdocs build
+	set -e; \
+	cd docs; \
+	quartodoc build; \
+	quarto render; \
+	if [ ! -f _site/index.html ]; then \
+        echo "Error: index.html not found. Quarto render failed."; \
+        exit 1; \
+    fi; \
+    cd -
+
+clean:
+	rm -rf .pytest_cache
+	rm -rf .mypy_cache
+	rm -rf .coverage
+	rm -rf dist
+	rm -rf docs/_site
+
 
 FORCE:

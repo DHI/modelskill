@@ -32,10 +32,11 @@ def _validate_multi_index(index, min_levels=2, max_levels=2):  # type: ignore
 class SkillArrayPlotter:
     """SkillArrayPlotter object for visualization of a single metric (SkillArray)
 
-    plot.line() : line plot
-    plot.bar() : bar chart
-    plot.barh() : horizontal bar chart
-    plot.grid() : colored grid
+    * plot.line() : line plot
+    * plot.bar() : bar chart
+    * plot.barh() : horizontal bar chart
+    * plot.grid() : colored grid
+
     """
 
     def __init__(self, skillarray: "SkillArray") -> None:
@@ -313,8 +314,9 @@ class DeprecatedSkillPlotter:
 
 
 class SkillArray:
-    """SkillArray object for visualization obtained by
-    selecting a single metric from a SkillTable.
+    """Visualize skill metric.
+
+    Obtained by selecting a single metric from a SkillTable.
 
     Examples
     --------
@@ -401,6 +403,8 @@ class SkillArray:
 
 class SkillTable:
     """
+    Visualize skill metrics.
+
     SkillTable object for visualization and analysis returned by
     the comparer's `skill` method. The object wraps the pd.DataFrame
     class which can be accessed from the attribute `data`.
@@ -679,7 +683,9 @@ class SkillTable:
     def sel(
         self, query: str | None = None, reduce_index: bool = True, **kwargs: Any
     ) -> SkillTable | SkillArray:
-        """Select a subset of the SkillTable by a query,
+        """Filter (select) specific models or observations.
+
+        Select a subset of the SkillTable by a query,
            (part of) the index, or specific columns
 
         Parameters
@@ -704,20 +710,6 @@ class SkillTable:
         >>> sk_SW1 = sk.sel(model = "SW_1")
         >>> sk2 = sk.sel(observation = ["EPL", "HKNA"])
         """
-        if query is not None:
-            warnings.warn(
-                "s.sel(query=...) is deprecated, use s.query(...) instead",
-                FutureWarning,
-            )
-            return self.query(query)
-
-        for key, value in kwargs.items():
-            if key == "metrics" or key == "columns":
-                warnings.warn(
-                    f"s.sel({key}=...) is deprecated, use getitem s[...] instead",
-                    FutureWarning,
-                )
-                return self[value]  # type: ignore
 
         df = self.to_dataframe(drop_xy=False)
 
@@ -731,6 +723,10 @@ class SkillTable:
 
         if isinstance(df, pd.Series):
             return SkillArray(df)
+        if not isinstance(reduce_index, bool):
+            raise TypeError(
+                "reduce_index must be a boolean not " + str(type(reduce_index))
+            )
         if reduce_index and isinstance(df.index, pd.MultiIndex):
             df = self._reduce_index(df)
         return self.__class__(df)

@@ -130,22 +130,22 @@ def _dirhist2d(
 def wind_rose(
     data,
     *,
-    labels=("Measurement", "Model"),
-    mag_step: Optional[float] = None,
+    labels: tuple[str, str] = ("Measurement", "Model"),
+    mag_step: float | None = None,
     n_sectors: int = 16,
-    calm_threshold: Optional[float] = None,  # TODO rename to vmin?
-    calm_size: Optional[float] = None,
+    calm_threshold: float | None = None,  # TODO rename to vmin?
+    calm_size: float | None = None,
     calm_text: str = "Calm",
     r_step: float = 0.1,
-    r_max: Optional[float] = None,
+    r_max: float | None = None,
     legend: bool = True,
     cmap1: str = "viridis",
     cmap2: str = "Greys",
-    mag_bins: Optional[List[float]] = None,
-    max_bin: Optional[float] = None,  # TODO rename to vmax?
-    n_dir_labels: Optional[int] = None,
+    mag_bins: list[float] | None = None,
+    max_bin: float | None = None,  # TODO rename to vmax?
+    n_dir_labels: int | None = None,
     secondary_dir_step_factor: float = 2.0,
-    figsize: Tuple[float, float] = (8, 8),
+    figsize: tuple[float, float] = (8, 8),
     ax=None,
     title=None,
 ) -> matplotlib.axes.Axes:
@@ -196,6 +196,16 @@ def wind_rose(
     -------
     matplotlib.axes.Axes
         Matplotlib axis with the plot
+
+    Examples
+    --------
+    ```{python}
+    import mikeio
+    import modelskill as ms
+    ds = mikeio.read("../data/wave_dir.dfs0")
+    df = ds[[0, 2, 1, 3]].to_dataframe()
+    ms.plotting.wind_rose(df)
+    ```
     """
     if hasattr(data, "to_numpy"):
         data = data.to_numpy()

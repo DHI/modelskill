@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 from pathlib import Path
 from typing import Union, List, Optional
 from dataclasses import dataclass
@@ -10,10 +10,10 @@ import mikeio
 class GeometryType(Enum):
     """Geometry type (gtype) of data"""
 
-    POINT = auto()
-    TRACK = auto()
-    UNSTRUCTURED = auto()
-    GRID = auto()
+    POINT = "point"
+    TRACK = "track"
+    UNSTRUCTURED = "unstructured"
+    GRID = "grid"
 
     def __str__(self) -> str:
         return self.name.lower()
@@ -24,18 +24,19 @@ class GeometryType(Enum):
 
         Examples
         --------
+        >>> from modelskill.types import GeometryType
         >>> GeometryType.from_string("point")
-        <GeometryType.POINT: 1>
+        <GeometryType.POINT: 'point'>
         >>> GeometryType.from_string("track")
-        <GeometryType.TRACK: 2>
+        <GeometryType.TRACK: 'track'>
         >>> GeometryType.from_string("unstructured")
-        <GeometryType.UNSTRUCTURED: 3>
+        <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("flexible mesh")
-        <GeometryType.UNSTRUCTURED: 3>
+        <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("dfsu")
-        <GeometryType.UNSTRUCTURED: 3>
+        <GeometryType.UNSTRUCTURED: 'unstructured'>
         >>> GeometryType.from_string("grid")
-        <GeometryType.GRID: 4>
+        <GeometryType.GRID: 'grid'>
         """
 
         try:
@@ -68,6 +69,7 @@ UnstructuredType = Union[
     str,
     Path,
     mikeio.dfsu.Dfsu2DH,
+    mikeio.dfsu.Dfsu3D,
     mikeio.Dataset,
     mikeio.DataArray,
 ]

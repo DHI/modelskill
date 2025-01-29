@@ -15,8 +15,6 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
 )
-import warnings
-from matplotlib.axes import Axes  # type: ignore
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -26,6 +24,7 @@ from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation
+from ..model import PointModelResult
 from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
@@ -56,7 +55,6 @@ class Scoreable(Protocol):
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        **kwargs: Any,
     ) -> SkillTable: ...
 
     def gridded_skill(
@@ -149,49 +147,6 @@ def _is_model(da: xr.DataArray) -> bool:
     return str(da.attrs["kind"]) == "model"
 
 
-# TODO remove in v1.1
-def _get_deprecated_args(kwargs):  # type: ignore
-    model, start, end, area = None, None, None, None
-
-    # Don't bother refactoring this, it will be removed in v1.1
-    if "model" in kwargs:
-        model = kwargs.pop("model")
-        if model is not None:
-            warnings.warn(
-                f"The 'model' argument is deprecated, use 'sel(model='{model}')' instead",
-                FutureWarning,
-            )
-
-    if "start" in kwargs:
-        start = kwargs.pop("start")
-
-        if start is not None:
-            warnings.warn(
-                f"The 'start' argument is deprecated, use 'sel(start={start})' instead",
-                FutureWarning,
-            )
-
-    if "end" in kwargs:
-        end = kwargs.pop("end")
-
-        if end is not None:
-            warnings.warn(
-                f"The 'end' argument is deprecated, use 'sel(end={end})' instead",
-                FutureWarning,
-            )
-
-    if "area" in kwargs:
-        area = kwargs.pop("area")
-
-        if area is not None:
-            warnings.warn(
-                f"The 'area' argument is deprecated, use 'sel(area={area})' instead",
-                FutureWarning,
-            )
-
-    return model, start, end, area
-
-
 def _validate_metrics(metrics: Iterable[Any]) -> None:
     for m in metrics:
         if isinstance(m, str):
@@ -264,7 +219,9 @@ class ItemSelection:
         x_item: str | int | None = None,
         y_item: str | int | None = None,
     ) -> ItemSelection:
-        """Parse items and return observation, model and auxiliary items
+        """Parse item selection.
+
+        Parse items and return observation, model and auxiliary items
         Default behaviour:
         - obs_item is first item
         - mod_items are all but obs_item and aux_items
@@ -369,6 +326,27 @@ def _matched_data_to_xarray(
     cols = list(df.columns)
     items = ItemSelection.parse(cols, obs_item, mod_items, aux_items, x_item, y_item)
 
+    # check that x and x_item is not both specified (same for y and y_item)
+    if (x is not None) and (x_item is not None):
+        raise ValueError("x and x_item cannot both be specified")
+    if (y is not None) and (y_item is not None):
+        raise ValueError("y and y_item cannot both be specified")
+
+    if x is not None:
+        try:
+            x = float(x)
+        except TypeError:
+            raise TypeError(
+                f"x must be scalar, not {type(x)}; if x is a coordinate variable, use x_item"
+            )
+    if y is not None:
+        try:
+            y = float(y)
+        except TypeError:
+            raise TypeError(
+                f"y must be scalar, not {type(y)}; if y is a coordinate variable, use y_item"
+            )
+
     # check that items.obs and items.model are numeric
     if not np.issubdtype(df[items.obs].dtype, np.number):
         raise ValueError(
@@ -434,14 +412,33 @@ class Comparer(Scoreable):
     """
     Comparer class for comparing model and observation data.
 
-    Typically, the Comparer is part of a ComparerCollection,
-    created with the `match` function.
+    The `Comparer` class is the main class of the ModelSkill package. It is returned by [`match()`](`modelskill.match`), [`from_matched()`](`modelskill.from_matched`) or as an element in a [`ComparerCollection`](`modelskill.ComparerCollection`). It holds the *matched* observation and model data for a *single* observation and has methods for plotting and skill assessment.
+
+    Main functionality:
+
+    * selecting/filtering data
+        - [`sel()`](`modelskill.Comparer.sel`)
+        - [`query()`](`modelskill.Comparer.query`)
+    * skill assessment
+        - [`skill()`](`modelskill.Comparer.skill`)
+        - [`gridded_skill()`](`modelskill.Comparer.gridded_skill`) (for track observations)
+    * plotting
+        - [`plot.timeseries()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.timeseries`)
+        - [`plot.scatter()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.scatter`)
+        - [`plot.kde()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.kde`)
+        - [`plot.qq()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.qq`)
+        - [`plot.hist()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.hist`)
+        - [`plot.box()`](`modelskill.comparison._comparer_plotter.ComparerPlotter.box`)
+    * load/save/export data
+        - [`load()`](`modelskill.Comparer.load`)
+        - [`save()`](`modelskill.Comparer.save`)
+        - [`to_dataframe()`](`modelskill.Comparer.to_dataframe`)
 
     Parameters
     ----------
     matched_data : xr.Dataset
         Matched data
-    raw_mod_data : dict of modelskill.TimeSeries, optional
+    raw_mod_data : dict of modelskill.PointModelResult, optional
         Raw model data. If None, observation and modeldata must be provided.
 
     Examples
@@ -456,14 +453,14 @@ class Comparer(Scoreable):
     """
 
     data: xr.Dataset
-    raw_mod_data: Dict[str, TimeSeries]
+    raw_mod_data: Dict[str, PointModelResult]
     _obs_str = "Observation"
     plotter = ComparerPlotter
 
     def __init__(
         self,
         matched_data: xr.Dataset,
-        raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
+        raw_mod_data: Optional[Dict[str, PointModelResult]] = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
@@ -471,7 +468,7 @@ class Comparer(Scoreable):
             if raw_mod_data is not None
             else {
                 # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
-                key: TimeSeries(self.data[[key]])
+                key: PointModelResult(self.data[[key]], name=key)
                 for key, value in matched_data.data_vars.items()
                 if value.attrs["kind"] == "model"
             }
@@ -510,7 +507,7 @@ class Comparer(Scoreable):
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[Dict[str, TimeSeries]] = None,
+        raw_mod_data: Optional[Dict[str, PointModelResult]] = None,
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
@@ -990,7 +987,6 @@ class Comparer(Scoreable):
         self,
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        **kwargs: Any,
     ) -> SkillTable:
         """Skill assessment of model(s)
 
@@ -1035,17 +1031,7 @@ class Comparer(Scoreable):
         """
         metrics = _parse_metric(metrics, directional=self.quantity.is_directional)
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        if kwargs != {}:
-            raise AttributeError(f"Unknown keyword arguments: {kwargs}")
-
-        cmp = self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        )
+        cmp = self
         if cmp.n_points == 0:
             raise ValueError("No data selected for skill assessment")
 
@@ -1109,17 +1095,11 @@ class Comparer(Scoreable):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         sk = self.skill(
             by=["model", "observation"],
             metrics=[metric],
-            model=model,  # deprecated
-            start=start,  # deprecated
-            end=end,  # deprecated
-            area=area,  # deprecated
         )
         df = sk.to_dataframe()
 
@@ -1192,16 +1172,7 @@ class Comparer(Scoreable):
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self.sel(
-            model=model,
-            start=start,
-            end=end,
-            area=area,
-        )
+        cmp = self
 
         metrics = _parse_metric(metrics)
         if cmp.n_points == 0:
@@ -1277,6 +1248,29 @@ class Comparer(Scoreable):
             return df[cols]
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
+    def _save(self) -> xr.DataTree:
+        ds = self.data
+
+        if self.gtype == "point":
+            dt = xr.DataTree()
+            dt["matched"] = ds
+            dt["raw"] = xr.DataTree()
+
+            for key, ts_mod in self.raw_mod_data.items():
+                ts_mod = ts_mod.copy()
+                dt["raw"][key] = ts_mod.data
+
+            dt.attrs["gtype"] = "point"
+            return dt
+        elif self.gtype == "track":
+            # There is no need to save raw data for track data, since it is identical to the matched data
+            dt = xr.DataTree()
+            dt.attrs["gtype"] = "track"
+            dt["matched"] = ds
+            return dt
+
+        raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
     def _save(self) -> xr.DataTree:
         ds = self.data

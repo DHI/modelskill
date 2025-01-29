@@ -8,6 +8,8 @@ import modelskill as ms
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from modelskill.model.point import PointModelResult
+
 # use non-interactive backend for testing
 mpl.use("Agg")
 
@@ -451,6 +453,7 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
 
     # for now, we just test if the raw_mod_data is full length
     assert len(cc2["fake point obs"].raw_mod_data["m1"]) == 6
+    assert cc2["fake point obs"].raw_mod_data["m1"].name == "m1"
 
 
 # ======================== plotting ========================
@@ -491,6 +494,9 @@ def test_plots_directional(cc):
     assert ax.get_xlim() == (0.0, 360.0)
 
 
+PLOT_FUNCS_RETURNING_MANY_AX = ["scatter", "hist", "residual_hist"]
+
+
 @pytest.fixture(
     params=[
         "scatter",
@@ -498,6 +504,8 @@ def test_plots_directional(cc):
         "hist",
         "taylor",
         "box",
+        "qq",
+        "residual_hist",
     ]
 )
 def cc_plot_function(cc, request):
@@ -509,13 +517,22 @@ def cc_plot_function(cc, request):
 
     func = getattr(cc.plot, request.param)
     # special cases require selecting a model
-    if request.param in ["scatter", "hist"]:
+    if request.param in PLOT_FUNCS_RETURNING_MANY_AX:
 
         def func(**kwargs):
             wrapped_func = getattr(cc.sel(model=[0]).plot, request.param)
             return wrapped_func(**kwargs)
 
     return func
+
+
+@pytest.mark.parametrize("kind", PLOT_FUNCS_RETURNING_MANY_AX)
+def test_plots_returning_multiple_axes(pc, kind):
+    n_models = 2
+    func = getattr(pc.plot, kind)
+    ax = func()
+    assert len(ax) == n_models
+    assert all(isinstance(a, plt.Axes) for a in ax)
 
 
 def test_plot_returns_an_object(cc_plot_function):

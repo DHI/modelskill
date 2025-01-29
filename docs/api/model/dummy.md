@@ -1,3 +1,0 @@
-# DummyModelResult
-
-::: modelskill.DummyModelResult

@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional, Sequence, get_args
 
+import mikeio
 import pandas as pd
 import xarray as xr
 
@@ -51,7 +52,14 @@ class GridModelResult(SpatialField):
                 ds = xr.open_mfdataset(data)
             else:
                 assert Path(data).exists(), f"{data}: File does not exist."
-                ds = xr.open_dataset(data)
+                fp = Path(data)
+                if fp.suffix == ".dfs2":
+                    # how robust is it to rely on Dataset.to_xarray()?
+                    ds = mikeio.read(data).to_xarray()
+                    for v in ds.data_vars:
+                        ds[v].attrs["long_name"] = ds[v].name
+                else:
+                    ds = xr.open_dataset(data)
 
         elif isinstance(data, Sequence) and all(
             isinstance(file, (str, Path)) for file in data
@@ -149,7 +157,9 @@ class GridModelResult(SpatialField):
     def _extract_point(
         self, observation: PointObservation, spatial_method: Optional[str] = None
     ) -> PointModelResult:
-        """Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
+        """Extract point.
+
+        Spatially extract a PointModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a PointObservation. No time interpolation is done!"""
         method: str = spatial_method or "linear"
 
@@ -196,7 +206,9 @@ class GridModelResult(SpatialField):
     def _extract_track(
         self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult:
-        """Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
+        """Extract track.
+
+        Extract a TrackModelResult from a GridModelResult (when data is a xarray.Dataset),
         given a TrackObservation."""
         method: str = spatial_method or "linear"
 

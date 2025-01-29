@@ -83,7 +83,8 @@ def from_matched(
     x_item: str | int | None = None,
     y_item: str | int | None = None,
 ) -> Comparer:
-    """Create a Comparer from observation and model results that are already matched (aligned)
+    """Create a Comparer from data that is already matched (aligned).
+
     Parameters
     ----------
     data : [pd.DataFrame, str, Path, mikeio.Dfs0, mikeio.Dataset]
@@ -129,6 +130,7 @@ def from_matched(
     Observation: stn_a, n_points=3
         Model: local, rmse=0.100
         Model: global, rmse=0.200
+
     """
     # pre-process if dfs0, or mikeio.Dataset
     if isinstance(data, (str, Path)):
@@ -239,8 +241,7 @@ def match(
 
     See Also
     --------
-    [from_matched][modelskill.from_matched]
-        Create a Comparer from observation and model results that are already matched
+    from_matched - Create a Comparer from observation and model results that are already matched
     """
     if isinstance(obs, get_args(ObsInputType)):
         return _single_obs_compare(
@@ -290,34 +291,6 @@ def match(
     return ComparerCollection(clist)
 
 
-def compare(
-    obs,
-    mod,
-    *,
-    obs_item=None,
-    mod_item=None,
-    gtype=None,
-    max_model_gap=None,
-) -> ComparerCollection:
-    warnings.warn("compare is deprecated. Use match instead.", FutureWarning)
-    observations = [obs] if isinstance(obs, get_args(ObsInputType)) else obs
-    assert isinstance(observations, Iterable)
-
-    clist = [
-        _single_obs_compare(
-            o,
-            mod,
-            obs_item=obs_item,
-            mod_item=mod_item,
-            gtype=gtype,
-            max_model_gap=max_model_gap,
-        )
-        for o in observations
-    ]
-
-    return ComparerCollection(clist)
-
-
 def _single_obs_compare(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
@@ -359,7 +332,8 @@ def match_space_time(
     raw_mod_data: Mapping[str, Alignable],
     max_model_gap: float | None = None,
 ) -> xr.Dataset:
-    """Match observation with one or more model results in time domain
+    """Match observation with one or more model results in time domain.
+
     and return as xr.Dataset in the format used by modelskill.Comparer
 
     Will interpolate model results to observation time.
