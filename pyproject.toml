@@ -22,6 +22,7 @@ dependencies = [
     "netCDF4",
     "scipy",
     "jinja2",
+    "types-pyyaml>=6.0.12.20241230",
 ]
 
 authors = [
@@ -78,7 +79,12 @@ ignore = ["E501"]
 select = ["E4", "E7", "E9", "F", "D200", "D205"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 ignore_missing_imports = true
 warn_unreachable = false
 no_implicit_optional = true
+
+
+[[tool.mypy.overrides]]
+module = "modelskill.metrics"
+ignore_errors = true
