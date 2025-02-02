@@ -1319,7 +1319,36 @@ class Comparer(Scoreable):
         -------
         Comparer
         """
-        with xr.open_datatree(filename) as dt:
-            data = dt.load()
+        try:
+            with xr.open_datatree(filename) as dt:
+                data = dt.load()
+                return Comparer._load(data)
+        except KeyError:
+            return Comparer._load_legacy(filename)
 
-        return Comparer._load(data)
+    @staticmethod
+    def _load_legacy(filename: str | Path):
+        with xr.open_dataset(filename) as ds:
+            data = ds.load()
+
+        if data.gtype == "track":
+            return Comparer(matched_data=data)
+
+        if data.gtype == "point":
+            raw_mod_data: Dict[str, PointModelResult] = {}
+
+            for var in data.data_vars:
+                var_name = str(var)
+                if var_name[:5] == "_raw_":
+                    new_key = var_name[5:]  # remove prefix '_raw_'
+                    ds = data[[var_name]].rename(
+                        {"_time_raw_" + new_key: "time", var_name: new_key}
+                    )
+                    ts = PointModelResult(data=ds, name=new_key)
+
+                    raw_mod_data[new_key] = ts
+
+            # filter variables, only keep the ones with a 'time' dimension
+            data = data[[v for v in data.data_vars if "time" in data[v].dims]]
+
+            return Comparer(matched_data=data, raw_mod_data=raw_mod_data)

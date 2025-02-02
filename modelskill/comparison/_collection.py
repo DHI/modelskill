@@ -937,7 +937,7 @@ class ComparerCollection(Mapping, Scoreable):
         dt.to_netcdf(filename)
 
     @staticmethod
-    def load(filename: Union[str, Path]) -> "ComparerCollection":
+    def load(filename: Union[str, Path], method: str = "tree") -> "ComparerCollection":
         """Load a ComparerCollection from a NetCDF file.
 
         Parameters
@@ -957,8 +957,35 @@ class ComparerCollection(Mapping, Scoreable):
         >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.nc")
         """
 
-        dt = xr.open_datatree(filename)
-        groups = [x for x in dt.children]
-        comparers = [Comparer._load(dt[group]) for group in groups]
+        if method == "tree":
+            dt = xr.open_datatree(filename)
+            groups = [x for x in dt.children]
+            comparers = [Comparer._load(dt[group]) for group in groups]
 
-        return ComparerCollection(comparers)
+            return ComparerCollection(comparers)
+        else:
+            import tempfile
+            import os
+            import zipfile
+
+            folder = tempfile.TemporaryDirectory().name
+
+            with zipfile.ZipFile(filename, "r") as zip:
+                for f in zip.namelist():
+                    if f.endswith(".nc"):
+                        zip.extract(f, path=folder)
+
+            comparers = [
+                ComparerCollection._load_comparer(folder, f)
+                for f in sorted(os.listdir(folder))
+            ]
+            return ComparerCollection(comparers)
+
+    @staticmethod
+    def _load_comparer(folder: str, f: str) -> Comparer:
+        import os
+
+        f = os.path.join(folder, f)
+        cmp = Comparer.load(f)
+        os.remove(f)
+        return cmp
