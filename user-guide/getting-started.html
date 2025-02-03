@@ -287,7 +287,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="skill-assessment" class="level2">
 <h2 class="anchored" data-anchor-id="skill-assessment">Skill assessment</h2>
 <p>The simplest use-case for skill assessment is when you have a dataset of matched model results and observations in tabular format.</p>
-<div id="0958c13a" class="cell" data-execution_count="1">
+<div id="b7745469" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"../data/Vistula/sim1/6158100.csv"</span>, parse_dates<span class="op">=</span><span class="va">True</span>, index_col<span class="op">=</span><span class="st">"Date"</span>)</span>
@@ -348,7 +348,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="b8c8be02" class="cell" data-execution_count="2">
+<div id="96b3c2b4" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.from_matched(df, obs_item<span class="op">=</span><span class="st">"Qobs"</span>, mod_items<span class="op">=</span><span class="st">"Qsim"</span>, quantity<span class="op">=</span>ms.Quantity(<span class="st">"Discharge"</span>, <span class="st">"m3/s"</span>))</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="2">
@@ -360,7 +360,7 @@ Model(s):
 </div>
 </div>
 <p>A time series plot is a common way to visualize the comparison.</p>
-<div id="9a3dee80" class="cell" data-execution_count="3">
+<div id="3fa84a01" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.timeseries()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -371,7 +371,7 @@ Model(s):
 </div>
 </div>
 <p>Another more quantitative way to analyze the compared data is to use a scatter plot, which optionally includes a skill table (<a href="../api/metrics.html#modelskill.metrics">Definition of the metrics</a>).</p>
-<div id="cddb79ec" class="cell" data-execution_count="4">
+<div id="b50d5a14" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.scatter(skill_table<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -382,7 +382,7 @@ Model(s):
 </div>
 </div>
 <p>The skill table can also be produced in tabular format, including specifing other metrics.</p>
-<div id="ce96573e" class="cell" data-execution_count="5">
+<div id="67a23e00" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill(metrics<span class="op">=</span>[<span class="st">"bias"</span>, <span class="st">"mae"</span>, <span class="st">"rmse"</span>, <span class="st">"kge"</span>, <span class="st">"si"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div>
