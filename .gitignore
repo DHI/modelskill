@@ -148,6 +148,7 @@ streamlit_app.py
 notes.md
 
 notebooks/Untitled.ipynb
+.envrc
 
 docs/_site/
 docs/_extensions/

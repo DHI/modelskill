@@ -1249,6 +1249,29 @@ class Comparer(Scoreable):
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
+    def _save(self) -> xr.DataTree:
+        ds = self.data
+
+        if self.gtype == "point":
+            dt = xr.DataTree()
+            dt["matched"] = ds
+            dt["raw"] = xr.DataTree()
+
+            for key, ts_mod in self.raw_mod_data.items():
+                ts_mod = ts_mod.copy()
+                dt["raw"][key] = ts_mod.data
+
+            dt.attrs["gtype"] = "point"
+            return dt
+        elif self.gtype == "track":
+            # There is no need to save raw data for track data, since it is identical to the matched data
+            dt = xr.DataTree()
+            dt.attrs["gtype"] = "track"
+            dt["matched"] = ds
+            return dt
+
+        raise NotImplementedError(f"Unknown gtype: {self.gtype}")
+
     def save(self, filename: Union[str, Path]) -> None:
         """Save to netcdf file
 
@@ -1257,24 +1280,31 @@ class Comparer(Scoreable):
         filename : str or Path
             filename
         """
-        ds = self.data
+        dt = self._save()
 
-        # add self.raw_mod_data to ds with prefix 'raw_' to avoid name conflicts
-        # an alternative strategy would be to use NetCDF groups
-        # https://docs.xarray.dev/en/stable/user-guide/io.html#groups
+        dt.to_netcdf(filename)
 
-        # There is no need to save raw data for track data, since it is identical to the matched data
-        if self.gtype == "point":
-            ds = self.data.copy()  # copy needed to avoid modifying self.data
+    @staticmethod
+    def _load(data: xr.DataTree | xr.DataArray) -> "Comparer":
+        if data.gtype == "track":
+            return Comparer(matched_data=data["matched"].to_dataset())
 
-            for key, ts_mod in self.raw_mod_data.items():
-                ts_mod = ts_mod.copy()
-                #  rename time to unique name
-                ts_mod.data = ts_mod.data.rename({"time": "_time_raw_" + key})
-                # da = ds_mod.to_xarray()[key]
-                ds["_raw_" + key] = ts_mod.data[key]
+        if data.gtype == "point":
+            raw_mod_data: Dict[str, PointModelResult] = {}
 
-        ds.to_netcdf(filename)
+            names = [x for x in data["raw"].children]
+            for var in names:
+                ds = data["raw"][var].to_dataset()
+                ts = PointModelResult(data=ds, name=var)
+
+                raw_mod_data[var] = ts
+
+            return Comparer(
+                matched_data=data["matched"].to_dataset(), raw_mod_data=raw_mod_data
+            )
+
+        else:
+            raise NotImplementedError(f"Unknown gtype: {data.gtype}")
 
     @staticmethod
     def load(filename: Union[str, Path]) -> "Comparer":
@@ -1289,6 +1319,15 @@ class Comparer(Scoreable):
         -------
         Comparer
         """
+        try:
+            with xr.open_datatree(filename) as dt:
+                data = dt.load()
+                return Comparer._load(data)
+        except KeyError:
+            return Comparer._load_legacy(filename)
+
+    @staticmethod
+    def _load_legacy(filename: str | Path):
         with xr.open_dataset(filename) as ds:
             data = ds.load()
 
@@ -1313,6 +1352,3 @@ class Comparer(Scoreable):
             data = data[[v for v in data.data_vars if "time" in data[v].dims]]
 
             return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
-
-        else:
-            raise NotImplementedError(f"Unknown gtype: {data.gtype}")

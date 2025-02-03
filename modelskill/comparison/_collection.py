@@ -1,8 +1,6 @@
 from __future__ import annotations
 from copy import deepcopy
-import os
 from pathlib import Path
-import tempfile
 from typing import (
     Any,
     Callable,
@@ -18,9 +16,9 @@ from typing import (
     Tuple,
 )
 import warnings
-import zipfile
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 
 from .. import metrics as mtr
@@ -917,42 +915,35 @@ class ComparerCollection(Mapping, Scoreable):
         return score
 
     def save(self, filename: Union[str, Path]) -> None:
-        """Save the ComparerCollection to a zip file.
+        """Save the ComparerCollection to a hierarchical NetCDF file.
 
-        Each comparer is stored as a netcdf file in the zip file.
+        Each comparer is stored as a netcdf group.
 
         Parameters
         ----------
         filename : str or Path
-            Filename of the zip file.
+            Filename of the nc file.
 
         Examples
         --------
         >>> cc = ms.match(obs, mod)
-        >>> cc.save("my_comparer_collection.msk")
+        >>> cc.save("my_comparer_collection.nc")
         """
-
-        files = []
-        no = 0
+        dt = xr.DataTree()
         for name, cmp in self._comparers.items():
-            cmp_fn = f"{no}_{name}.nc"
-            cmp.save(cmp_fn)
-            files.append(cmp_fn)
-            no += 1
+            dtc = cmp._save()
+            dt[name] = dtc
 
-        with zipfile.ZipFile(filename, "w") as zip:
-            for f in files:
-                zip.write(f)
-                os.remove(f)
+        dt.to_netcdf(filename)
 
     @staticmethod
-    def load(filename: Union[str, Path]) -> "ComparerCollection":
-        """Load a ComparerCollection from a zip file.
+    def load(filename: Union[str, Path], method: str = "tree") -> "ComparerCollection":
+        """Load a ComparerCollection from a NetCDF file.
 
         Parameters
         ----------
         filename : str or Path
-            Filename of the zip file.
+            Filename of the nc file.
 
         Returns
         -------
@@ -962,25 +953,38 @@ class ComparerCollection(Mapping, Scoreable):
         Examples
         --------
         >>> cc = ms.match(obs, mod)
-        >>> cc.save("my_comparer_collection.msk")
-        >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.msk")
+        >>> cc.save("my_comparer_collection.nc")
+        >>> cc2 = ms.ComparerCollection.load("my_comparer_collection.nc")
         """
 
-        folder = tempfile.TemporaryDirectory().name
+        if method == "tree":
+            dt = xr.open_datatree(filename)
+            groups = [x for x in dt.children]
+            comparers = [Comparer._load(dt[group]) for group in groups]
 
-        with zipfile.ZipFile(filename, "r") as zip:
-            for f in zip.namelist():
-                if f.endswith(".nc"):
-                    zip.extract(f, path=folder)
+            return ComparerCollection(comparers)
+        else:
+            import tempfile
+            import os
+            import zipfile
 
-        comparers = [
-            ComparerCollection._load_comparer(folder, f)
-            for f in sorted(os.listdir(folder))
-        ]
-        return ComparerCollection(comparers)
+            folder = tempfile.TemporaryDirectory().name
+
+            with zipfile.ZipFile(filename, "r") as zip:
+                for f in zip.namelist():
+                    if f.endswith(".nc"):
+                        zip.extract(f, path=folder)
+
+            comparers = [
+                ComparerCollection._load_comparer(folder, f)
+                for f in sorted(os.listdir(folder))
+            ]
+            return ComparerCollection(comparers)
 
     @staticmethod
     def _load_comparer(folder: str, f: str) -> Comparer:
+        import os
+
         f = os.path.join(folder, f)
         cmp = Comparer.load(f)
         os.remove(f)
