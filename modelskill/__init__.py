@@ -45,12 +45,12 @@ from .timeseries import TimeSeries
 
 
 def load(filename: Union[str, Path]) -> ComparerCollection:
-    """Load a ComparerCollection from a zip file.
+    """Load a ComparerCollection from a netcdf file.
 
     Parameters
     ----------
     filename : str or Path
-        Filename of the zip file.
+        Filename of the nc file.
 
     Returns
     -------
@@ -60,8 +60,8 @@ def load(filename: Union[str, Path]) -> ComparerCollection:
     Examples
     --------
     >>> cc = ms.match(obs, mod)
-    >>> cc.save("my_comparer_collection.msk")
-    >>> cc2 = ms.load("my_comparer_collection.msk")"""
+    >>> cc.save("my_comparer_collection.nc")
+    >>> cc2 = ms.load("my_comparer_collection.nc")"""
 
     return ComparerCollection.load(filename)
 
