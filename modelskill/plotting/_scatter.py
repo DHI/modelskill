@@ -624,7 +624,7 @@ def _plot_summary_border(
     plt.gca().add_patch(bbox)
 
 
-def _get_cbar_width(ax, cbar=None) -> float:
+def _get_cbar_width(ax, cbar=None) -> float | None:
     plt.draw()
     # If colorbar, get extents from colorbar label:
     if cbar is not None:
@@ -655,7 +655,7 @@ def _plot_summary_table(
     # Plot table
     fontsize = options.plot.scatter.skill_table.fontsize
     ## Data
-    table_data = format_skill_table(skill_scores, unit=units)
+    table_data = format_skill_table(skill_scores, unit=units, sep="=")
     ## To get sizing, we plot a dummy table
     table_dummy = ax.table(
         table_data.values,
@@ -667,11 +667,16 @@ def _plot_summary_table(
     renderer = ax.figure.canvas.get_renderer()
     for col_idx in range(table_data.values.shape[1]):  # Iterate over columns
         max_width = 0
+
         for row_idx in range(table_data.values.shape[0]):  # Iterate over rows
             cell = table_dummy[row_idx, col_idx]  # Get the cell object safely
             text = cell.get_text()
             bbox = text.get_window_extent(renderer, dpi=ax.figure.dpi)
-            max_width = max(max_width, bbox.width + cell.PAD * ax.figure.dpi * 2)
+            if col_idx != 1:  # Seoerator column
+                padding = cell.PAD * ax.figure.dpi * 2
+            else:
+                padding = 0
+            max_width = max(max_width, bbox.width + padding)
             height = bbox.height
         col_widths.append(max_width)
 

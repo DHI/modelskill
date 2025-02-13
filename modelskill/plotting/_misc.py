@@ -151,12 +151,14 @@ def quantiles_xy(
     return np.quantile(x, q=q), np.quantile(y, q=q)
 
 
-def format_skill_table(skill_scores: Mapping[str, float], unit: str) -> pd.DataFrame:
+def format_skill_table(
+    skill_scores: Mapping[str, float], unit: str, sep: str = " =  "
+) -> pd.DataFrame:
     # select metrics columns
     accepted_columns = defined_metrics | {"n"}
     kv = {k: v for k, v in skill_scores.items() if k in accepted_columns}
 
-    lines = [_format_skill_line(key, value, unit) for key, value in kv.items()]
+    lines = [_format_skill_line(key, value, unit, sep=sep) for key, value in kv.items()]
 
     # TODO add sign and unit columns
     df = pd.DataFrame(lines, columns=["name", "sep", "value"])
@@ -164,9 +166,7 @@ def format_skill_table(skill_scores: Mapping[str, float], unit: str) -> pd.DataF
 
 
 def _format_skill_line(
-    name: str,
-    value: float | int,
-    unit: str,
+    name: str, value: float | int, unit: str, sep: str = (" =  ",)
 ) -> Tuple[str, str, str]:
     precision: int = 2
     item_unit = " "
@@ -185,4 +185,4 @@ def _format_skill_line(
 
     name = name.upper()
 
-    return f"{name}", " =  ", f"{fvalue} {item_unit}"
+    return f"{name}", sep, f"{fvalue} {item_unit}"
