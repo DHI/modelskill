@@ -166,7 +166,7 @@ def format_skill_table(
 
 
 def _format_skill_line(
-    name: str, value: float | int, unit: str, sep: str = (" =  ",)
+    name: str, value: float | int, unit: str, sep: str = " =  "
 ) -> Tuple[str, str, str]:
     precision: int = 2
     item_unit = " "
