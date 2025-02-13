@@ -401,7 +401,7 @@ def _scatter_matplotlib(
             legend.get_bbox_to_anchor().extents[0:2]
         )
         # If legend is outside the figure, move it to the right of the colorbar
-        if legend_loc[0] > 1:
+        if legend_loc[0] > 1.0:
             legend.set_bbox_to_anchor((cbar_width + legend_loc[0], legend_loc[1]))
 
     # Add skill table
