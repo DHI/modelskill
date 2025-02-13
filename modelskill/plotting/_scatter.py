@@ -372,7 +372,6 @@ def _scatter_matplotlib(
     ax.set_ylim([ylim[0], ylim[1]])
     ax.minorticks_on()
     ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
-    max_cbar = None
     cbar = None
     # cmap = kwargs.get("cmap", None)
     if show_hist or (show_density and show_points):
@@ -384,8 +383,6 @@ def _scatter_matplotlib(
                 pad=0.04,
                 alpha=options.plot.scatter.points.alpha,
             )
-            ticks = cbar.ax.get_yticks()
-            max_cbar = ticks[-1]
             cbar.set_label("# points")
             cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
