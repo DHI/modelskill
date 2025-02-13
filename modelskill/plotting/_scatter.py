@@ -362,7 +362,9 @@ def _scatter_matplotlib(
             **kwargs,
         )
 
-    ax.legend(**settings.get_option("plot.scatter.legend.kwargs"))
+    legend_kwargs = settings.get_option("plot.scatter.legend.kwargs")
+    legend_kwargs["prop"] = {"size": options.plot.scatter.legend.fontsize}
+    legend = ax.legend(**legend_kwargs)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.axis("square")
@@ -371,6 +373,7 @@ def _scatter_matplotlib(
     ax.minorticks_on()
     ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
     max_cbar = None
+    cbar = None
     # cmap = kwargs.get("cmap", None)
     if show_hist or (show_density and show_points):
         try:
@@ -385,14 +388,33 @@ def _scatter_matplotlib(
             max_cbar = ticks[-1]
             cbar.set_label("# points")
             cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
         except ValueError:
             # too few points to make a colorbar
             pass
 
-    ax.set_title(title)
+    cbar_width = _get_cbar_width(ax, cbar)
+
+    ## Offset legend
+    if cbar_width is not None:
+        legend_loc = ax.transAxes.inverted().transform(
+            legend.get_bbox_to_anchor().extents[0:2]
+        )
+        # If legend is outside the figure, move it to the right of the colorbar
+        if legend_loc[0] > 1:
+            legend.set_bbox_to_anchor((cbar_width + legend_loc[0], legend_loc[1]))
+
     # Add skill table
     if skill_scores is not None:
-        _plot_summary_table(skill_scores, skill_score_unit, max_cbar=max_cbar)
+        _plot_summary_table(
+            skill_scores,
+            skill_score_unit,
+            ax,
+            cbar_width=cbar_width,
+        )
+
+    ax.set_title(title)
+
     return ax
 
 
@@ -576,6 +598,7 @@ def _plot_summary_border(
     dx,
     dy,
     borderpad=0.01,
+    zorder=0,
 ) -> None:
     ## Load settings
     bbox_kwargs = {}
@@ -597,66 +620,112 @@ def _plot_summary_border(
         dy + borderpad * 2,
         transform=figure_transform,
         clip_on=False,
+        zorder=zorder,
         **bbox_kwargs,
     )
 
     plt.gca().add_patch(bbox)
 
 
-def _plot_summary_table(
-    skill_scores: Mapping[str, float], units: str, max_cbar: Optional[float] = None
-) -> None:
-    table = format_skill_table(skill_scores, units)
-    cols = ["name", "sep", "value"]
-    text_cols = ["\n".join(table[col]) for col in cols]
-
-    if max_cbar is None:
-        x = 0.93
-    elif max_cbar < 1e3:
-        x = 0.99
-    elif max_cbar < 1e4:
-        x = 1.01
-    elif max_cbar < 1e5:
-        x = 1.03
-    elif max_cbar < 1e6:
-        x = 1.05
+def _get_cbar_width(ax, cbar=None) -> float:
+    plt.draw()
+    # If colorbar, get extents from colorbar label:
+    if cbar is not None:
+        label = cbar.ax.yaxis.get_label()
+        if label is not None:
+            x_extent_right = ax.transAxes.inverted().transform(
+                label.get_window_extent()
+            )[1][0]
+        else:
+            # If no label, get max value from colorbar ticks
+            x_extent_right = cbar.bbox.transformed(ax.transAxes.inverted()).extents[2]
+        return x_extent_right - 1
     else:
-        # When more than 1e6 samples, matplotlib changes to scientific notation
-        x = 0.97
+        return None
 
-    fig = plt.gcf()
-    figure_transform = fig.transFigure.get_affine()
 
-    # General text settings
-    txt_settings = dict(
-        fontsize=options.plot.scatter.legend.fontsize,
+def _plot_summary_table(
+    skill_scores: Mapping[str, float],
+    units: str,
+    ax,
+    cbar_width: Optional[float] = None,
+) -> None:
+    # If colorbar, get extents from colorbar label:
+    x0 = options.plot.scatter.skill_table.x_position
+    if x0 > 1 and cbar_width is not None:
+        x0 = cbar_width + x0
+
+    # Plot table
+    fontsize = options.plot.scatter.skill_table.fontsize
+    ## Data
+    table_data = format_skill_table(skill_scores, unit=units)
+    ## To get sizing, we plot a dummy table
+    table_dummy = ax.table(
+        table_data.values,
     )
+    table_dummy.auto_set_font_size(False)
+    table_dummy.set_fontsize(fontsize)
 
-    # Column 1
-    text_columns = []
-    dx = 0
-    for ti in text_cols:
-        text_col_i = fig.text(x + dx, 0.6, ti, **txt_settings)
-        ## Render, and get width
-        # plt.draw() # TOOO this causes an error and I have no idea why it is here
-        dx = (
-            dx
-            + figure_transform.inverted().transform(
-                [text_col_i.get_window_extent().bounds[2], 0]
-            )[0]
-        )
-        text_columns.append(text_col_i)
+    col_widths = []
+    renderer = ax.figure.canvas.get_renderer()
+    for col_idx in range(table_data.values.shape[1]):  # Iterate over columns
+        max_width = 0
+        for row_idx in range(table_data.values.shape[0]):  # Iterate over rows
+            cell = table_dummy[row_idx, col_idx]  # Get the cell object safely
+            text = cell.get_text()
+            bbox = text.get_window_extent(renderer, dpi=ax.figure.dpi)
+            max_width = max(max_width, bbox.width + cell.PAD * ax.figure.dpi * 2)
+            height = bbox.height
+        col_widths.append(max_width)
+
+    # Remove dummy table
+    table_dummy.remove()
+
+    # Normalize widths
+    ## These are the widths in axes coordinates
+    widths_axTrans = [
+        (
+            ax.transAxes.inverted().transform((width, height))
+            - ax.transAxes.inverted().transform((0, 0))
+        )[0]
+        for width in col_widths
+    ]
+    ## This is the height (assuming all the same)
+    height_axTrans = (
+        ax.transAxes.inverted().transform((0, height))
+        - ax.transAxes.inverted().transform((0, 0))
+    )[1]
+
+    line_spacing = options.plot.scatter.skill_table.line_spacing
+    line_padding = options.plot.scatter.skill_table.line_padding
+    table_height = height_axTrans * line_spacing * table_data.values.shape[0]
+    table_height_padded = table_height + line_padding * 2
+    table1 = ax.table(
+        table_data.values,
+        loc="lower left",
+        cellLoc="left",
+        colWidths=col_widths,
+        edges="open",
+        bbox=[
+            x0,
+            1 - table_height - line_padding,
+            np.sum(widths_axTrans),
+            table_height,
+        ],
+    )
+    table1.auto_set_font_size(False)
+    table1.set_fontsize(fontsize)
 
     # Plot border
-    ## Define coordintes
-    x0, y0 = figure_transform.inverted().transform(
-        text_columns[0].get_window_extent().bounds[0:2]
+    _plot_summary_border(
+        ax.transAxes,
+        x0,
+        1 - table_height_padded,
+        np.sum(widths_axTrans),
+        table_height_padded,
+        borderpad=0,
+        zorder=table1.get_zorder() - 1,
     )
-    _, dy = figure_transform.inverted().transform(
-        (0, text_columns[0].get_window_extent().bounds[3])
-    )
-
-    _plot_summary_border(figure_transform, x0, y0, dx, dy)
 
 
 def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):
