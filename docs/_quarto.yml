@@ -207,6 +207,7 @@ quartodoc:
             - score
             - rename
             - sel
+            - query
             - save
             - load
         - name: comparison.ComparerCollectionPlotter
