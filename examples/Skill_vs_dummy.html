@@ -269,7 +269,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>It is easy to be convinced that a model is good if it has a low error.</p>
 <p>But it is always a good idea to compare your model to a baseline, to see if it is actually better than just predicting the mean.</p>
 <p>This can be done easily in <code>modelskill</code> thanks to the <code>DummyModelResult</code> class.</p>
-<div id="0ffc4061" class="cell" data-execution_count="1">
+<div id="d0c78565" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>fn <span class="op">=</span> <span class="st">'../data/Oresund2D.dfsu'</span></span>
@@ -281,7 +281,7 @@ Time: 2018-03-04 00:00:00 - 2018-03-10 22:40:00
 Quantity: Surface Elevation [m]</code></pre>
 </div>
 </div>
-<div id="1f0210fd" class="cell" data-execution_count="2">
+<div id="c2c60350" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fn <span class="op">=</span> <span class="st">'../data/smhi_2095_klagshamn.dfs0'</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>obs <span class="op">=</span> ms.PointObservation(fn, x<span class="op">=</span><span class="fl">366844.15</span>, y<span class="op">=</span><span class="fl">6154291.6</span>, item<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>obs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -292,26 +292,16 @@ Time: 2015-01-01 01:00:00 - 2020-09-28 00:00:00
 Quantity: Water Level [m]</code></pre>
 </div>
 </div>
-<div id="c6e7eb94" class="cell" data-execution_count="3">
+<div id="72e07ff7" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>dmr <span class="op">=</span> ms.DummyModelResult(data<span class="op">=</span><span class="fl">0.0</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>dmr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <pre><code>DummyModelResult(name='dummy', data=0.0, strategy='constant')</code></pre>
 </div>
 </div>
-<div id="07053ba4" class="cell" data-execution_count="4">
+<div id="4a72a233" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.match(obs<span class="op">=</span>obs, mod<span class="op">=</span>[mr, dmr]).remove_bias()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill().<span class="bu">round</span>(<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/mikeio/spatial/_FM_geometry.py:848: FutureWarning:
-
-boundary_polylines is renamed to boundary_polygons
-
-/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/mikeio/spatial/_FM_geometry.py:848: FutureWarning:
-
-boundary_polylines is renamed to boundary_polygons
-</code></pre>
-</div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
 
@@ -374,8 +364,8 @@ boundary_polylines is renamed to boundary_polygons
 </div>
 </div>
 </div>
-<div id="a4706670" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill().rmse.plot.barh(title<span class="op">=</span><span class="st">"Better than predicting 0.0"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="710153a9" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill().rmse.plot.barh(title<span class="op">=</span><span class="st">"Better than predicting 0.0"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -386,22 +376,16 @@ boundary_polylines is renamed to boundary_polygons
 </div>
 <p>Above we created a DummyModelResult which always predicts 0.0.</p>
 <p>But we can be even more lazy and just use the <code>DummyModelResult</code> with the <code>mean</code> strategy, which will predict the mean of the observed values.</p>
-<div id="09120cdc" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>dmr2 <span class="op">=</span> ms.DummyModelResult(strategy<span class="op">=</span><span class="st">'mean'</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>dmr2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="39eb8942" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>dmr2 <span class="op">=</span> ms.DummyModelResult(strategy<span class="op">=</span><span class="st">'mean'</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>dmr2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="6">
 <pre><code>DummyModelResult(name='dummy', data=None, strategy='mean')</code></pre>
 </div>
 </div>
-<div id="13caa503" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>cmp2 <span class="op">=</span> ms.match(obs<span class="op">=</span>obs, mod<span class="op">=</span>[mr, dmr2]).remove_bias()</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>cmp2.skill().<span class="bu">round</span>(<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>/opt/hostedtoolcache/Python/3.11.11/x64/lib/python3.11/site-packages/mikeio/spatial/_FM_geometry.py:848: FutureWarning:
-
-boundary_polylines is renamed to boundary_polygons
-</code></pre>
-</div>
+<div id="60a38322" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>cmp2 <span class="op">=</span> ms.match(obs<span class="op">=</span>obs, mod<span class="op">=</span>[mr, dmr2]).remove_bias()</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>cmp2.skill().<span class="bu">round</span>(<span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
 <div>
 
