@@ -15,6 +15,7 @@ from ..settings import options
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
 from ._comparer_plotter import quantiles_xy
+from ..metrics import _parse_metric
 
 
 def _default_univarate_title(kind: str, cc: ComparerCollection) -> str:
@@ -212,8 +213,14 @@ class ComparerCollectionPlotter:
 
         skill = None
         skill_score_unit = None
+        skill_score_names = None
         if skill_table:
             metrics = None if skill_table is True else skill_table
+            if isinstance(metrics, dict):
+                skill_score_names = {
+                    _parse_metric(v)[0].__name__: k for k, v in skill_table.items()
+                }
+                metrics = list(metrics.values())
 
             # TODO why is this here?
             if isinstance(self, ComparerCollectionPlotter) and len(cc_sel_mod) == 1:
@@ -252,6 +259,7 @@ class ComparerCollectionPlotter:
             ylabel=ylabel,
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
+            skill_score_names=skill_score_names,
             ax=ax,
             **kwargs,
         )
