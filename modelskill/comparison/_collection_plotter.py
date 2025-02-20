@@ -200,7 +200,7 @@ class ComparerCollectionPlotter:
         title: Optional[str],
         xlabel: Optional[str],
         ylabel: Optional[str],
-        skill_table: Optional[Union[str, List[str], bool]],
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
         ax,
         **kwargs,
     ):
@@ -231,7 +231,7 @@ class ComparerCollectionPlotter:
             metrics = None if skill_table is True else skill_table
             if isinstance(metrics, dict):
                 skill_score_names = {
-                    _parse_metric(v)[0].__name__: k for k, v in skill_table.items()
+                    _parse_metric(v)[0].__name__: k for k, v in metrics.items()
                 }
                 metrics = list(metrics.values())
 
