@@ -152,13 +152,24 @@ def quantiles_xy(
 
 
 def format_skill_table(
-    skill_scores: Mapping[str, float], unit: str, sep: str = " =  "
+    skill_scores: Mapping[str, float],
+    unit: str,
+    sep: str = " =  ",
+    skill_score_names: Optional[Mapping[str, str]] = None,
 ) -> pd.DataFrame:
     # select metrics columns
     accepted_columns = defined_metrics | {"n"}
     kv = {k: v for k, v in skill_scores.items() if k in accepted_columns}
+    if skill_score_names is None:
+        skill_score_names = {}
+    mapped_names = {
+        k: skill_score_names[k] if k in skill_score_names else None for k in kv.keys()
+    }
 
-    lines = [_format_skill_line(key, value, unit, sep=sep) for key, value in kv.items()]
+    lines = [
+        _format_skill_line(key, value, unit, sep=sep, mapped_name=mapped_names[key])
+        for key, value in kv.items()
+    ]
 
     # TODO add sign and unit columns
     df = pd.DataFrame(lines, columns=["name", "sep", "value"])
@@ -166,16 +177,20 @@ def format_skill_table(
 
 
 def _format_skill_line(
-    name: str, value: float | int | str, unit: str, sep: str = " =  "
+    metric_name: str,
+    value: float | int | str,
+    unit: str,
+    sep: str = " =  ",
+    mapped_name: str = None,
 ) -> Tuple[str, str, str]:
     precision: int = 2
     item_unit = " "
     fvalue = str(value)
 
-    if name == "n":
+    if metric_name == "n":
         fvalue = str(int(value))
     else:
-        if metric_has_units(metric=name):
+        if metric_has_units(metric=metric_name):
             # if statistic has dimensions, then add units
             item_unit = unit_display_name(unit)
 
@@ -185,7 +200,9 @@ def _format_skill_line(
             fvalue = f"{rounded_value:{fmt}}"
         else:
             fvalue = str(value)
-
-    name = name.upper()
+    if mapped_name:
+        name = mapped_name
+    else:
+        name = metric_name.upper()
 
     return f"{name}", sep, f"{fvalue} {item_unit}"

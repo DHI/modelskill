@@ -28,6 +28,7 @@ from ..plotting._misc import (
 )
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
+from ..metrics import _parse_metric
 
 
 class ComparerPlotter:
@@ -628,9 +629,15 @@ class ComparerPlotter:
 
         skill = None
         skill_score_unit = None
+        skill_score_names = None
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
+            if isinstance(metrics, dict):
+                skill_score_names = {
+                    _parse_metric(v)[0].__name__: k for k, v in skill_table.items()
+                }
+                metrics = list(metrics.values())
             skill = cmp_sel_mod.skill(metrics=metrics)  # type: ignore
             try:
                 skill_score_unit = unit_text.split("[")[1].split("]")[0]
@@ -664,6 +671,7 @@ class ComparerPlotter:
             ylabel=ylabel,
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
+            skill_score_names=skill_score_names,
             **kwargs,
         )
 
