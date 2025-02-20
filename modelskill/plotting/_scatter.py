@@ -661,7 +661,7 @@ def _plot_summary_table(
     units: str,
     ax,
     cbar_width: Optional[float] = None,
-    skill_score_names: Optional[Sequence[str]] = None,
+    skill_score_names: Optional[Mapping[str, str]] = None,
 ) -> None:
     # If colorbar, get extents from colorbar label:
     x0 = options.plot.scatter.skill_table.x_position

@@ -181,7 +181,7 @@ def _format_skill_line(
     value: float | int | str,
     unit: str,
     sep: str = " =  ",
-    mapped_name: str = None,
+    mapped_name: Optional[str] = None,
 ) -> Tuple[str, str, str]:
     precision: int = 2
     item_unit = " "
