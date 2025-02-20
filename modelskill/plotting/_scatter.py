@@ -17,7 +17,7 @@ import pandas as pd
 import modelskill.settings as settings
 from modelskill.settings import options
 
-from ..metrics import _linear_regression
+from ..metrics import _linear_regression, _parse_metric
 from ._misc import quantiles_xy, sample_points, format_skill_table, _get_fig_ax
 
 
@@ -227,8 +227,10 @@ def scatter(
         cmp = from_matched(df)
         metrics = None if skill_table is True else skill_table
         if isinstance(metrics, dict):
+            skill_score_names = {
+                _parse_metric(v)[0].__name__: k for k, v in skill_table.items()
+            }
             metrics = list(metrics.values())
-            skill_score_names = list(metrics.keys())
         skill = cmp.skill(metrics=metrics)
         skill_scores = skill.to_dict("records")[0]
 
