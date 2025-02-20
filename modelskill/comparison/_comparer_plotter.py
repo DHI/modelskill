@@ -8,6 +8,7 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
     Callable,
+    Mapping,
 )
 
 if TYPE_CHECKING:
