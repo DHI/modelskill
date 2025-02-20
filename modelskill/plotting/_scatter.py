@@ -40,7 +40,7 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_table: Optional[str | Sequence[str] | bool] = False,
+    skill_table: Optional[str | Sequence[str] | Mapping[str, str] | bool] = False,
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: Optional[str] = "",
     skill_score_names: Optional[Mapping[str, str]] = None,
@@ -107,10 +107,11 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
-    skill_table: str, List[str], bool, optional
+    skill_table: str, List[str], dict[str,str], bool, optional
         calculate skill scores and show in box next to the plot,
         True will show default metrics, list of metrics will show
         these skill scores, by default False,
+        mapping can be used to rename the metrics in the table.
         Note: cannot be used together with skill_scores argument
     skill_scores : dict[str, float], optional
         dictionary with skill scores to be shown in box next to
