@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from matplotlib.colors import Colormap
 
 from .plotting._misc import _get_fig_ax
+from .metrics import small_is_best, large_is_best
 
 
 # TODO remove ?
@@ -423,29 +424,7 @@ class SkillTable:
     >>> sk.rmse.plot.bar()
     """
 
-    _large_is_best_metrics = [
-        "cc",
-        "corrcoef",
-        "r2",
-        "spearmanr",
-        "rho",
-        "nash_sutcliffe_efficiency",
-        "nse",
-        "kge",
-    ]
-    _small_is_best_metrics = [
-        "mae",
-        "mape",
-        "mean_absolute_error",
-        "mean_absolute_percentage_error",
-        "rmse",
-        "root_mean_squared_error",
-        "urmse",
-        "scatter_index",
-        "si",
-        "mef",
-        "model_efficiency_factor",
-    ]
+    # TODO move to metrics
     _one_is_best_metrics = ["lin_slope"]
     _zero_is_best_metrics = ["bias"]
 
@@ -864,19 +843,16 @@ class SkillTable:
                 subset=["lin_slope"], cmap="coolwarm", vmin=(1 - mm), vmax=(1 + mm)
             )
             bg_cols.remove("lin_slope")
+        scols = [m for m in bg_cols if small_is_best(m)]
+        lcols = [m for m in bg_cols if large_is_best(m)]
         if len(bg_cols) > 0:
-            cols = list(set(self._small_is_best_metrics) & set(bg_cols))
-            sdf = sdf.background_gradient(subset=cols, cmap=cmap)
-
-            cols = list(set(self._large_is_best_metrics) & set(bg_cols))
+            sdf = sdf.background_gradient(subset=scols, cmap=cmap)
             cmap_r = self._reverse_colormap(cmap)  # type: ignore
-            sdf = sdf.background_gradient(subset=cols, cmap=cmap_r)
+            sdf = sdf.background_gradient(subset=lcols, cmap=cmap_r)
 
         if show_best:
-            cols = list(set(self._large_is_best_metrics) & set(float_cols))
-            sdf = sdf.apply(self._style_max, subset=cols)
-            cols = list(set(self._small_is_best_metrics) & set(float_cols))
-            sdf = sdf.apply(self._style_min, subset=cols)
+            sdf = sdf.apply(self._style_max, subset=lcols)
+            sdf = sdf.apply(self._style_min, subset=scols)
             cols = list(set(self._one_is_best_metrics) & set(float_cols))
             sdf = sdf.apply(self._style_one_best, subset=cols)
             if "bias" in float_cols:

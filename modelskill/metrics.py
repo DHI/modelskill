@@ -1176,5 +1176,38 @@ def _parse_metric(
     return parsed_metrics
 
 
+_large_is_best_metrics = [
+    "cc",
+    "corrcoef",
+    "r2",
+    "spearmanr",
+    "rho",
+    "nash_sutcliffe_efficiency",
+    "nse",
+    "kge",
+]
+_small_is_best_metrics = [
+    "mae",
+    "mape",
+    "mean_absolute_error",
+    "mean_absolute_percentage_error",
+    "rmse",
+    "root_mean_squared_error",
+    "urmse",
+    "scatter_index",
+    "si",
+    "mef",
+    "model_efficiency_factor",
+]
+
+
+def large_is_best(metric: str) -> bool:
+    return metric in _large_is_best_metrics
+
+
+def small_is_best(metric: str) -> bool:
+    return metric in _small_is_best_metrics
+
+
 # TODO add non-metric functions to __all__
 __all__ = [str(m) for m in defined_metrics]
