@@ -15,6 +15,17 @@ from scipy import stats
 from .settings import options
 
 
+def metric(best=None):
+    """Decorator to attach a 'best' attribute to metric functions."""
+
+    def decorator(func):
+        func.best = best  # Set the best value
+        return func
+
+    return decorator
+
+
+@metric(best=0)
 def bias(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Bias (mean error)
 
@@ -29,6 +40,7 @@ def bias(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.mean(model - obs)
 
 
+@metric(best="-")
 def max_error(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Max (absolute) error
 
@@ -43,12 +55,14 @@ def max_error(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.max(np.abs(model - obs))
 
 
+@metric(best="-")
 def mae(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -> Any:
     """alias for mean_absolute_error"""
     assert obs.size == model.size
     return mean_absolute_error(obs, model, weights)
 
 
+@metric(best="-")
 def mean_absolute_error(
     obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None
 ) -> Any:
@@ -67,11 +81,13 @@ def mean_absolute_error(
     return error
 
 
+@metric(best="-")
 def mape(obs: ArrayLike, model: ArrayLike) -> Any:
     """alias for mean_absolute_percentage_error"""
     return mean_absolute_percentage_error(obs, model)
 
 
+@metric(best="-")
 def mean_absolute_percentage_error(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Mean Absolute Percentage Error (MAPE)
 
@@ -93,6 +109,7 @@ def mean_absolute_percentage_error(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.mean(np.abs((obs - model) / obs)) * 100
 
 
+@metric(best="-")
 def urmse(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None) -> Any:
     r"""Unbiased Root Mean Squared Error (uRMSE)
 
@@ -117,6 +134,7 @@ def urmse(obs: ArrayLike, model: ArrayLike, weights: Optional[ArrayLike] = None)
     return root_mean_squared_error(obs, model, weights, unbiased=True)
 
 
+@metric(best="-")
 def rmse(
     obs: ArrayLike,
     model: ArrayLike,
@@ -127,6 +145,7 @@ def rmse(
     return root_mean_squared_error(obs, model, weights, unbiased)
 
 
+@metric(best="-")
 def root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
@@ -166,11 +185,13 @@ def root_mean_squared_error(
     return error
 
 
+@metric(best="+")
 def nse(obs: ArrayLike, model: ArrayLike) -> Any:
     """alias for nash_sutcliffe_efficiency"""
     return nash_sutcliffe_efficiency(obs, model)
 
 
+@metric(best="+")
 def nash_sutcliffe_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Nash-Sutcliffe Efficiency (NSE)
 
@@ -196,6 +217,7 @@ def nash_sutcliffe_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
     return error
 
 
+@metric(best="+")
 def kling_gupta_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""
     Kling-Gupta Efficiency (KGE)
@@ -236,11 +258,13 @@ def kling_gupta_efficiency(obs: ArrayLike, model: ArrayLike) -> Any:
     return res
 
 
+@metric(best="+")
 def kge(obs: ArrayLike, model: ArrayLike) -> Any:
     """alias for kling_gupta_efficiency"""
     return kling_gupta_efficiency(obs, model)
 
 
+@metric(best="+")
 def r2(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Coefficient of determination (R2)
 
@@ -275,11 +299,13 @@ def r2(obs: ArrayLike, model: ArrayLike) -> Any:
     return 1 - SSr / SSt
 
 
+@metric(best="-")
 def mef(obs: ArrayLike, model: ArrayLike) -> Any:
     """alias for model_efficiency_factor"""
     return model_efficiency_factor(obs, model)
 
 
+@metric(best="-")
 def model_efficiency_factor(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Model Efficiency Factor (MEF)
 
@@ -303,11 +329,13 @@ def model_efficiency_factor(obs: ArrayLike, model: ArrayLike) -> Any:
     return rmse(obs, model) / obs.std()
 
 
+@metric(best="+")
 def cc(obs: ArrayLike, model: ArrayLike, weights=None) -> Any:
     """alias for corrcoef"""
     return corrcoef(obs, model, weights)
 
 
+@metric(best="+")
 def corrcoef(obs, model, weights=None) -> Any:
     r"""Pearson’s Correlation coefficient (CC)
 
@@ -335,11 +363,13 @@ def corrcoef(obs, model, weights=None) -> Any:
         return C[0, 1] / np.sqrt(C[0, 0] * C[1, 1])
 
 
+@metric(best="+")
 def rho(obs: ArrayLike, model: ArrayLike) -> Any:
     """alias for spearmanr"""
     return spearmanr(obs, model)
 
 
+@metric(best="+")
 def spearmanr(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Spearman rank correlation coefficient
 
@@ -372,11 +402,13 @@ def spearmanr(obs: ArrayLike, model: ArrayLike) -> Any:
     return scipy.stats.spearmanr(obs, model)[0]
 
 
+@metric(best="-")
 def si(obs: ArrayLike, model: ArrayLike) -> Any:
     """alias for scatter_index"""
     return scatter_index(obs, model)
 
 
+@metric(best="-")
 def scatter_index(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Scatter index (SI)
 
@@ -398,6 +430,7 @@ def scatter_index(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.sqrt(np.mean(residual**2)) / np.mean(np.abs(obs))
 
 
+@metric(best="-")
 def scatter_index2(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Alternative formulation of the scatter index (SI)
 
@@ -417,12 +450,14 @@ def scatter_index2(obs: ArrayLike, model: ArrayLike) -> Any:
     )
 
 
+@metric(best="+")
 def ev(obs: ArrayLike, model: ArrayLike) -> Any:
     """alias for explained_variance"""
     assert obs.size == model.size
     return explained_variance(obs, model)
 
 
+@metric(best="+")
 def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""EV: Explained variance
 
@@ -458,6 +493,7 @@ def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
     return nominator / denominator
 
 
+@metric(best=1)
 def pr(
     obs: pd.Series,
     model: ArrayLike,
@@ -470,6 +506,7 @@ def pr(
     return peak_ratio(obs, model, inter_event_level, AAP, inter_event_time)
 
 
+@metric(best=1)
 def peak_ratio(
     obs: pd.Series,
     model: pd.Series,
@@ -563,6 +600,7 @@ def peak_ratio(
     return res
 
 
+@metric(best="+")
 def willmott(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Willmott's Index of Agreement
 
@@ -600,6 +638,7 @@ def willmott(obs: ArrayLike, model: ArrayLike) -> Any:
     return 1 - nominator / denominator
 
 
+@metric(best="+")
 def hit_ratio(obs: ArrayLike, model: ArrayLike, a=0.1) -> Any:
     r"""Fraction within obs ± acceptable deviation
 
@@ -625,6 +664,7 @@ def hit_ratio(obs: ArrayLike, model: ArrayLike, a=0.1) -> Any:
     return np.mean(np.abs(obs - model) < a)
 
 
+@metric(best=1)
 def lin_slope(obs: ArrayLike, model: ArrayLike, reg_method="ols") -> Any:
     r"""Slope of the regression line.
 
@@ -826,6 +866,7 @@ def _c_residual(obs: ArrayLike, model: ArrayLike) -> ArrayLike:
     return resi
 
 
+@metric(best="-")
 def c_bias(obs: ArrayLike, model: ArrayLike) -> Any:
     """Circular bias (mean error)
 
@@ -858,6 +899,7 @@ def c_bias(obs: ArrayLike, model: ArrayLike) -> Any:
     return circmean(resi, low=-180.0, high=180.0)
 
 
+@metric(best="-")
 def c_max_error(obs: ArrayLike, model: ArrayLike) -> Any:
     """Circular max error
 
@@ -894,6 +936,7 @@ def c_max_error(obs: ArrayLike, model: ArrayLike) -> Any:
     return np.max(circular_diffs)
 
 
+@metric(best="-")
 def c_mean_absolute_error(
     obs: ArrayLike,
     model: ArrayLike,
@@ -924,6 +967,7 @@ def c_mean_absolute_error(
     return np.average(np.abs(resi), weights=weights)
 
 
+@metric(best="-")
 def c_mae(
     obs: ArrayLike,
     model: ArrayLike,
@@ -933,6 +977,7 @@ def c_mae(
     return c_mean_absolute_error(obs, model, weights)
 
 
+@metric(best="-")
 def c_root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
@@ -962,6 +1007,7 @@ def c_root_mean_squared_error(
     return np.sqrt(np.average(residual**2, weights=weights))
 
 
+@metric(best="-")
 def c_rmse(
     obs: ArrayLike,
     model: ArrayLike,
@@ -971,6 +1017,7 @@ def c_rmse(
     return c_root_mean_squared_error(obs, model, weights)
 
 
+@metric(best="-")
 def c_unbiased_root_mean_squared_error(
     obs: ArrayLike,
     model: ArrayLike,
@@ -1003,6 +1050,7 @@ def c_unbiased_root_mean_squared_error(
     return np.sqrt(np.average(residual**2, weights=weights))
 
 
+@metric(best="-")
 def c_urmse(
     obs: ArrayLike,
     model: ArrayLike,
@@ -1176,37 +1224,45 @@ def _parse_metric(
     return parsed_metrics
 
 
-_large_is_best_metrics = [
-    "cc",
-    "corrcoef",
-    "r2",
-    "spearmanr",
-    "rho",
-    "nash_sutcliffe_efficiency",
-    "nse",
-    "kge",
-]
-_small_is_best_metrics = [
-    "mae",
-    "mape",
-    "mean_absolute_error",
-    "mean_absolute_percentage_error",
-    "rmse",
-    "root_mean_squared_error",
-    "urmse",
-    "scatter_index",
-    "si",
-    "mef",
-    "model_efficiency_factor",
-]
+# _large_is_best_metrics = [
+#     "cc",
+#     "corrcoef",
+#     "r2",
+#     "spearmanr",
+#     "rho",
+#     "nash_sutcliffe_efficiency",
+#     "nse",
+#     "kge",
+# ]
+# _small_is_best_metrics = [
+#     "mae",
+#     "mape",
+#     "mean_absolute_error",
+#     "mean_absolute_percentage_error",
+#     "rmse",
+#     "root_mean_squared_error",
+#     "urmse",
+#     "scatter_index",
+#     "si",
+#     "mef",
+#     "model_efficiency_factor",
+# ]
 
 
 def large_is_best(metric: str) -> bool:
-    return metric in _large_is_best_metrics
+    try:
+        func = get_metric(metric)
+        return getattr(func, "best", None) == "+"
+    except ValueError:
+        return False
 
 
 def small_is_best(metric: str) -> bool:
-    return metric in _small_is_best_metrics
+    try:
+        func = get_metric(metric)
+        return getattr(func, "best", None) == "-"
+    except ValueError:
+        return False
 
 
 # TODO add non-metric functions to __all__
