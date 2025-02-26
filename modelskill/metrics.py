@@ -15,11 +15,23 @@ from scipy import stats
 from .settings import options
 
 
+def add_metric(metric: Callable, has_units: bool = False) -> None:
+    defined_metrics.add(metric.__name__)
+    if has_units:
+        METRICS_WITH_DIMENSION.add(metric.__name__)
+
+    setattr(sys.modules[__name__], metric.__name__, metric)
+
+
+defined_metrics: Set[str] = set()
+
+
 def metric(best=None):
     """Decorator to attach a 'best' attribute to metric functions."""
 
     def decorator(func):
-        func.best = best  # Set the best value
+        add_metric(func)
+        func.best = best
         return func
 
     return decorator
@@ -1112,26 +1124,6 @@ def metric_has_units(metric: Union[str, Callable]) -> bool:
     return name in METRICS_WITH_DIMENSION
 
 
-NON_METRICS = set(
-    [
-        "metric_has_units",
-        "get_metric",
-        "is_valid_metric",
-        "add_metric",
-        "Callable",
-        "Optional",
-        "Set",
-        "Tuple",
-        "List",
-        "Iterable",
-        "Union",
-        "_c_residual",
-        "_linear_regression",
-        "_partial_duration_series",
-    ]
-)
-
-
 def is_valid_metric(metric: Union[str, Callable]) -> bool:
     if hasattr(metric, "__name__"):
         name = metric.__name__
@@ -1151,41 +1143,6 @@ def get_metric(metric: Union[str, Callable]) -> Callable:
         raise ValueError(
             f"Metric {metric} not defined. Choose from {defined_metrics} or use `add_metric` to add a custom metric."
         )
-
-
-def add_metric(metric: Callable, has_units: bool = False) -> None:
-    """Adds a metric to the metric list. Useful for custom metrics.
-
-    Some metrics are dimensionless, others have the same dimension as the observations.
-
-    Parameters
-    ----------
-    metric : str or callable
-        Metric name or function
-    has_units : bool
-        True if metric has a dimension, False otherwise. Default:False
-
-    Returns
-    -------
-    None
-
-    Examples
-    --------
-    >>> add_metric(hit_ratio)
-    >>> add_metric(rmse,True)
-    """
-    defined_metrics.add(metric.__name__)
-    if has_units:
-        METRICS_WITH_DIMENSION.add(metric.__name__)
-
-    # add the function to the module
-    setattr(sys.modules[__name__], metric.__name__, metric)
-
-
-defined_metrics: Set[str] = (
-    set([func for func in dir() if callable(getattr(sys.modules[__name__], func))])
-    - NON_METRICS
-)
 
 
 def _parse_metric(
@@ -1222,31 +1179,6 @@ def _parse_metric(
             raise TypeError(f"metric {m} must be a string or callable")
 
     return parsed_metrics
-
-
-# _large_is_best_metrics = [
-#     "cc",
-#     "corrcoef",
-#     "r2",
-#     "spearmanr",
-#     "rho",
-#     "nash_sutcliffe_efficiency",
-#     "nse",
-#     "kge",
-# ]
-# _small_is_best_metrics = [
-#     "mae",
-#     "mape",
-#     "mean_absolute_error",
-#     "mean_absolute_percentage_error",
-#     "rmse",
-#     "root_mean_squared_error",
-#     "urmse",
-#     "scatter_index",
-#     "si",
-#     "mef",
-#     "model_efficiency_factor",
-# ]
 
 
 def large_is_best(metric: str) -> bool:
