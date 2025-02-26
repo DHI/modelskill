@@ -3,7 +3,8 @@ project:
 
 website:
   title: "ModelSkill"
-  page-footer: "© 2024 DHI Group"
+  page-footer: "© 2025 DHI Group"
+  favicon: dhi.ico
   repo-url: https://github.com/DHI/modelskill
   repo-actions: [edit]
   repo-subdir: docs
