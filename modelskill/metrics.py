@@ -5,7 +5,18 @@ import inspect
 
 import sys
 import warnings
-from typing import Any, Callable, Iterable, List, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
@@ -13,6 +24,9 @@ from numpy.typing import ArrayLike
 from scipy import stats
 
 from .settings import options
+
+defined_metrics: Set[str] = set()
+metrics_with_units: Set[str] = set()
 
 
 def add_metric(metric: Callable, has_units: bool = False) -> None:
@@ -23,12 +37,22 @@ def add_metric(metric: Callable, has_units: bool = False) -> None:
     setattr(sys.modules[__name__], metric.__name__, metric)
 
 
-defined_metrics: Set[str] = set()
-metrics_with_units: Set[str] = set()
+F = TypeVar("F", bound=Callable)
 
 
-def metric(best: str | None = None, has_units: bool = False):
-    """Decorator to attach a 'best' attribute to metric functions."""
+def metric(
+    best: Literal["+", "-"] | None = None, has_units: bool = False
+) -> Callable[[F], F]:
+    """Decorator to indicate a function as a metric.
+
+    Parameters
+    ----------
+    best : {"+", "-"}, optional
+        Indicates whether a higher value ("+") or a lower value ("-") is better.
+        If None, no preference is specified.
+    has_units : bool, default False
+        Specifies whether the metric has physical units.
+    """
 
     def decorator(func):
         add_metric(func, has_units=has_units)
