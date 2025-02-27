@@ -188,6 +188,7 @@ quartodoc:
           members: []
         - name: Comparer
           members:
+            - plot
             - skill
             - gridded_skill
             - score
@@ -202,6 +203,7 @@ quartodoc:
 
         - name: ComparerCollection
           members:
+            - plot
             - skill
             - mean_skill
             - gridded_skill
