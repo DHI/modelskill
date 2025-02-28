@@ -1,7 +1,19 @@
 from __future__ import annotations
-from typing import Any, List, Literal, Union, Optional, Tuple, Sequence, TYPE_CHECKING
-from matplotlib.axes import Axes
+
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
+
 import matplotlib.colors as colors
+from matplotlib.axes import Axes
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
@@ -10,10 +22,11 @@ import numpy as np
 import pandas as pd
 
 from .. import metrics as mtr
-from ..utils import _get_idx
+from ..metrics import _parse_metric
+from ..plotting import TaylorPoint, scatter, taylor_diagram
+from ..plotting._misc import _get_fig_ax, _xtick_directional, _ytick_directional
 from ..settings import options
-from ..plotting import taylor_diagram, scatter, TaylorPoint
-from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
+from ..utils import _get_idx
 from ._comparer_plotter import quantiles_xy
 
 
@@ -58,7 +71,7 @@ class ComparerCollectionPlotter:
         title: Optional[str] = None,
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
-        skill_table: Optional[Union[str, List[str], bool]] = None,
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
         ax: Optional[Axes] = None,
         **kwargs,
     ) -> Axes | list[Axes]:
@@ -120,9 +133,10 @@ class ComparerCollectionPlotter:
             x-label text on plot, by default None
         ylabel : str, optional
             y-label text on plot, by default None
-        skill_table : str, List[str], bool, optional
+        skill_table: str, List[str], dict[str,str], bool, optional
             list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
-            This kword adds a box at the right of the scatter plot,
+            This kword adds a box at the right of the scatter plot.
+            mapping can be used to rename the metrics in the table.
             by default False
         ax : matplotlib axes, optional
             axes to plot on, by default None
@@ -186,7 +200,7 @@ class ComparerCollectionPlotter:
         title: Optional[str],
         xlabel: Optional[str],
         ylabel: Optional[str],
-        skill_table: Optional[Union[str, List[str], bool]],
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
         ax,
         **kwargs,
     ):
@@ -212,8 +226,14 @@ class ComparerCollectionPlotter:
 
         skill = None
         skill_score_unit = None
+        skill_score_names = None
         if skill_table:
             metrics = None if skill_table is True else skill_table
+            if isinstance(metrics, dict):
+                skill_score_names = {
+                    _parse_metric(v)[0].__name__: k for k, v in metrics.items()
+                }
+                metrics = list(metrics.values())
 
             # TODO why is this here?
             if isinstance(self, ComparerCollectionPlotter) and len(cc_sel_mod) == 1:
@@ -252,6 +272,7 @@ class ComparerCollectionPlotter:
             ylabel=ylabel,
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
+            skill_score_names=skill_score_names,
             ax=ax,
             **kwargs,
         )

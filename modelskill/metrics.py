@@ -1077,6 +1077,7 @@ NON_METRICS = set(
         "List",
         "Iterable",
         "Union",
+        "Any",
         "_c_residual",
         "_linear_regression",
         "_partial_duration_series",

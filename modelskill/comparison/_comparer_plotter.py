@@ -8,6 +8,7 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
     Callable,
+    Mapping,
 )
 
 if TYPE_CHECKING:
@@ -28,6 +29,7 @@ from ..plotting._misc import (
 )
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
+from ..metrics import _parse_metric
 
 
 class ComparerPlotter:
@@ -474,7 +476,7 @@ class ComparerPlotter:
         title: Optional[str] = None,
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
-        skill_table: Optional[Union[str, List[str], bool]] = None,
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
     ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
@@ -536,10 +538,11 @@ class ComparerPlotter:
             x-label text on plot, by default None
         ylabel : str, optional
             y-label text on plot, by default None
-        skill_table : str, List[str], bool, optional
+        skill_table : str, List[str], dict[str,str], bool, optional
             list of modelskill.metrics or boolean, if True then by default
             modelskill.options.metrics.list. This kword adds a box at the
             right of the scatter plot, by default False
+            mapping can be used to rename the metrics in the table.
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
         **kwargs
@@ -603,7 +606,7 @@ class ComparerPlotter:
         title: Optional[str],
         xlabel: Optional[str],
         ylabel: Optional[str],
-        skill_table: Optional[Union[str, List[str], bool]],
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
         **kwargs,
     ):
         """Scatter plot for one model only"""
@@ -628,9 +631,15 @@ class ComparerPlotter:
 
         skill = None
         skill_score_unit = None
+        skill_score_names = None
 
         if skill_table:
             metrics = None if skill_table is True else skill_table
+            if isinstance(metrics, dict):
+                skill_score_names = {
+                    _parse_metric(v)[0].__name__: k for k, v in metrics.items()
+                }
+                metrics = list(metrics.values())
             skill = cmp_sel_mod.skill(metrics=metrics)  # type: ignore
             try:
                 skill_score_unit = unit_text.split("[")[1].split("]")[0]
@@ -664,6 +673,7 @@ class ComparerPlotter:
             ylabel=ylabel,
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
+            skill_score_names=skill_score_names,
             **kwargs,
         )
 

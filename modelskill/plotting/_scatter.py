@@ -17,7 +17,7 @@ import pandas as pd
 import modelskill.settings as settings
 from modelskill.settings import options
 
-from ..metrics import _linear_regression
+from ..metrics import _linear_regression, _parse_metric
 from ._misc import quantiles_xy, sample_points, format_skill_table, _get_fig_ax
 
 
@@ -40,9 +40,10 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_table: Optional[str | Sequence[str] | bool] = False,
+    skill_table: Optional[str | Sequence[str] | Mapping[str, str] | bool] = False,
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: Optional[str] = "",
+    skill_score_names: Optional[Mapping[str, str]] = None,
     ax: Optional[Axes] = None,
     **kwargs,
 ) -> Axes:
@@ -106,10 +107,11 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
-    skill_table: str, List[str], bool, optional
+    skill_table: str, List[str], dict[str,str], bool, optional
         calculate skill scores and show in box next to the plot,
         True will show default metrics, list of metrics will show
         these skill scores, by default False,
+        mapping can be used to rename the metrics in the table.
         Note: cannot be used together with skill_scores argument
     skill_scores : dict[str, float], optional
         dictionary with skill scores to be shown in box next to
@@ -117,6 +119,9 @@ def scatter(
         Note: cannot be used together with skill_table argument
     skill_score_unit : str, optional
         unit for skill_scores, by default None
+    skill_score_names : dict[str, str], optional
+        dictionary to rename the skill scores in the table, by default None
+        key=display name, value=metric name
     ax : matplotlib.axes.Axes, optional
         axes to plot on, by default None
     **kwargs
@@ -221,6 +226,11 @@ def scatter(
         df = pd.DataFrame({"obs": x, "model": y})
         cmp = from_matched(df)
         metrics = None if skill_table is True else skill_table
+        if isinstance(metrics, dict):
+            skill_score_names = {
+                _parse_metric(v)[0].__name__: k for k, v in metrics.items()
+            }
+            metrics = list(metrics.values())
         skill = cmp.skill(metrics=metrics)
         skill_scores = skill.to_dict("records")[0]
 
@@ -247,6 +257,7 @@ def scatter(
         title=title,
         skill_scores=skill_scores,
         skill_score_unit=skill_score_unit,
+        skill_score_names=skill_score_names,
         fit_to_quantiles=fit_to_quantiles,
         ax=ax,
         **kwargs,
@@ -277,6 +288,7 @@ def _scatter_matplotlib(
     title,
     skill_scores,
     skill_score_unit,
+    skill_score_names,
     fit_to_quantiles,
     ax,
     cmap=None,
@@ -408,6 +420,7 @@ def _scatter_matplotlib(
             skill_score_unit,
             ax,
             cbar_width=cbar_width,
+            skill_score_names=skill_score_names,
         )
 
     ax.set_title(title)
@@ -439,6 +452,7 @@ def _scatter_plotly(
     title,
     skill_scores,
     skill_score_unit,
+    skill_score_names,
     fit_to_quantiles,
     **kwargs,
 ):
@@ -536,7 +550,11 @@ def _scatter_plotly(
     fig.update_yaxes(range=ylim, nticks=10)
 
     if skill_scores is not None:
-        table = format_skill_table(skill_scores=skill_scores, unit=skill_score_unit)
+        table = format_skill_table(
+            skill_scores=skill_scores,
+            unit=skill_score_unit,
+            skill_score_names=skill_score_names,
+        )
         lines = [
             f"{row['name']:<6} {row['sep']} {row['value']:<6}"
             for _, row in table.iterrows()
@@ -646,6 +664,7 @@ def _plot_summary_table(
     units: str,
     ax,
     cbar_width: Optional[float] = None,
+    skill_score_names: Optional[Mapping[str, str]] = None,
 ) -> None:
     # If colorbar, get extents from colorbar label:
     x0 = options.plot.scatter.skill_table.x_position
@@ -655,7 +674,9 @@ def _plot_summary_table(
     # Plot table
     fontsize = options.plot.scatter.skill_table.fontsize
     ## Data
-    table_data = format_skill_table(skill_scores, unit=units, sep="=")
+    table_data = format_skill_table(
+        skill_scores, unit=units, sep="=", skill_score_names=skill_score_names
+    )
     ## To get sizing, we plot a dummy table
     table_dummy = ax.table(
         table_data.values,

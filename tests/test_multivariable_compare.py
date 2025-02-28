@@ -1,5 +1,6 @@
 import pytest
 import matplotlib.pyplot as plt
+from matplotlib.table import Table
 import numpy as np
 
 import modelskill as ms
@@ -154,16 +155,65 @@ def cm_2(obs, model):
     return np.mean(obs * 1.5 / model)
 
 
+def cm_3(obs, model):
+    """Custom metric #2"""
+    val = np.mean(obs * 1.5 / model)
+    sign = "+" if val > 0 else "-"
+    return f"{sign}{val:.3f}"
+
+
 def test_custom_metric_skilltable_mv_mm_scatter(cc):
     mtr.add_metric(cm_1)
     mtr.add_metric(cm_2, has_units=True)
+    mtr.add_metric(cm_3)
     ccs = cc.sel(
         model="SW_1",
         quantity="Wind speed",
         observation="F16_wind",
     )
-    ccs.plot.scatter(skill_table=["bias", cm_1, "si", cm_2])
+
+    s = ccs.plot.scatter(skill_table=["bias", cm_1, "si", cm_2, cm_3])
     assert True
+
+    # Test str fmt
+    for child in s.get_children():
+        if isinstance(child, Table):
+            t = child
+            break
+    txt = t._cells[5, 2]._text._text
+    assert txt == "+1.293  "
+
+    plt.close("all")
+
+
+def test_custom_metric_skilltable_mv_mm_scatter_rename(cc):
+    mtr.add_metric(cm_1)
+    mtr.add_metric(cm_2, has_units=True)
+    mtr.add_metric(cm_3)
+    custom_name1 = "MyBias"
+    custom_name5 = "Custom_name"
+    ccs = cc.sel(
+        model="SW_1",
+        quantity="Wind speed",
+        observation="F16_wind",
+    )
+    s = ccs.plot.scatter(
+        skill_table={
+            custom_name1: "bias",
+            "CM_1": cm_1,
+            "SI": "si",
+            "CM_2": cm_2,
+            custom_name5: cm_3,
+        }
+    )
+    for child in s.get_children():
+        if isinstance(child, Table):
+            t = child
+            break
+
+    assert t._cells[1, 0]._text._text == custom_name1
+    assert t._cells[5, 0]._text._text == custom_name5
+
     plt.close("all")
 
 
