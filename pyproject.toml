@@ -67,6 +67,8 @@ test = [
     "geopandas",
 ]
 
+app = ["streamlit>=1.41.1"]
+
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
 [project.urls]
