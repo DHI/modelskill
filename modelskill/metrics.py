@@ -1192,20 +1192,28 @@ def _parse_metric(
     return parsed_metrics
 
 
-def large_is_best(metric: str) -> bool:
+def is_best(metric: str, expected: str | int) -> bool:
     try:
         func = get_metric(metric)
-        return getattr(func, "best", None) == "+"
+        return getattr(func, "best", None) == expected
     except ValueError:
         return False
 
 
-def small_is_best(metric: str) -> bool:
-    try:
-        func = get_metric(metric)
-        return getattr(func, "best", None) == "-"
-    except ValueError:
-        return False
+def large_is_best(metric):
+    return is_best(metric, "+")
+
+
+def small_is_best(metric):
+    return is_best(metric, "-")
+
+
+def zero_is_best(metric):
+    return is_best(metric, 0)
+
+
+def one_is_best(metric):
+    return is_best(metric, 1)
 
 
 # TODO add non-metric functions to __all__
