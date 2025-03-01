@@ -311,9 +311,11 @@ def test_matched_data_multiple_models():
         index=pd.date_range("2017-01-01", periods=4),
     )
 
-    cmp = ms.from_matched(df, obs_item="sensor_a")
+    cmp = ms.from_matched(df[["sensor_a", "cal_42", "cal_43"]])
     assert cmp.n_points == 4
     assert cmp.n_models == 2
+    assert cmp.sel(model="cal_42").mod_names == ["cal_42"]
+    assert cmp.sel(model=0).mod_names == ["cal_42"]
 
 
 def test_matched_data_multiple_models_additional_columns():
