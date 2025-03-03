@@ -31,11 +31,11 @@ Some metrics has parameters, which require a bit special treatment.
 ```{python}
 from modelskill.metrics import hit_ratio, metric
 
-@metric(best="-")
+@metric(best="+")
 def hit_ratio_05_pct(obs, model):
     return hit_ratio(obs, model, 0.5) * 100
 
-@metric(best="-")
+@metric(best="+")
 def hit_ratio_01_pct(obs, model):
     return hit_ratio(obs, model, 0.1) * 100
 
@@ -46,8 +46,8 @@ cc.skill(metrics=[hit_ratio_05_pct, hit_ratio_01_pct])
 And you are always free to specify your own special metric or import metrics from other libraries, e.g. scikit-learn.
 
 ```{python}
-@metric(best=["-"])
-def my_special_metric_with_long_descriptive_name(obs, model):
+@metric(best="-", has_units=True)
+def mcae(obs, model):
 
     res = obs - model
 
@@ -55,9 +55,6 @@ def my_special_metric_with_long_descriptive_name(obs, model):
 
     return np.mean(np.abs(res_clipped))
 
-# short alias to avoid long column names in output
-@metric(best="-")
-def mcae(obs, model): return my_special_metric_with_long_descriptive_name(obs, model)
 
 cc.skill(metrics=mcae).style()
 ```
