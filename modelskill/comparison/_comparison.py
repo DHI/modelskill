@@ -246,7 +246,9 @@ class ItemSelection:
                 mod_items = [mod_items]
             mod_names = [_get_name(m, items) for m in mod_items]
         else:
-            mod_names = list(set(items) - set(aux_names) - set([obs_name]))
+            mod_names = [
+                item for item in items if item not in aux_names and item != obs_name
+            ]
 
         x_name = _get_name(x_item, items) if x_item is not None else None
         y_name = _get_name(y_item, items) if y_item is not None else None
