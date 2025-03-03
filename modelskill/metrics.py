@@ -41,14 +41,15 @@ F = TypeVar("F", bound=Callable)
 
 
 def metric(
-    best: Literal["+", "-"] | None = None, has_units: bool = False
+    best: Literal["+", "-", 0, 1] | None = None, has_units: bool = False
 ) -> Callable[[F], F]:
     """Decorator to indicate a function as a metric.
 
     Parameters
     ----------
-    best : {"+", "-"}, optional
+    best : {"+", "-", 0, 1}, optional
         Indicates whether a higher value ("+") or a lower value ("-") is better.
+        Some "metrics" like bias or linear slope has a value where 0 or 1 is the best, and no direction.
         If None, no preference is specified.
     has_units : bool, default False
         Specifies whether the metric has physical units.
