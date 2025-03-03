@@ -247,7 +247,9 @@ class ItemSelection:
                 mod_items = [mod_items]
             mod_names = [_get_name(m, items) for m in mod_items]
         else:
-            mod_names = list(set(items) - set(aux_names) - set([obs_name]))
+            mod_names = [
+                item for item in items if item not in aux_names and item != obs_name
+            ]
 
         x_name = _get_name(x_item, items) if x_item is not None else None
         y_name = _get_name(y_item, items) if y_item is not None else None
@@ -491,19 +493,7 @@ class Comparer(Scoreable):
                 ), f"raw_mod_data[{k}] must be a TimeSeries object"
 
         self.plot = Comparer.plotter(self)
-        """Plot using the ComparerPlotter
-
-        Examples
-        --------
-        >>> cmp.plot.timeseries()
-        >>> cmp.plot.scatter()
-        >>> cmp.plot.qq()
-        >>> cmp.plot.hist()
-        >>> cmp.plot.kde()
-        >>> cmp.plot.box()
-        >>> cmp.plot.residual_hist()
-        >>> cmp.plot.taylor()        
-        """
+        """Plot using the [](`~modelskill.comparison.ComparerPlotter`)"""
 
     @staticmethod
     def from_matched_data(
