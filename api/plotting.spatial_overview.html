@@ -478,7 +478,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table">
 <colgroup>
 <col style="width: 7%">
-<col style="width: 35%">
+<col style="width: 34%">
 <col style="width: 46%">
 <col style="width: 10%">
 </colgroup>
@@ -493,13 +493,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td>obs</td>
-<td>List[Observation]</td>
+<td>Observation | Iterable[Observation]</td>
 <td>List of observations to be shown on map</td>
 <td><em>required</em></td>
 </tr>
 <tr class="even">
 <td>mod</td>
-<td>Union[ModelResult, mikeio.GeometryFM]</td>
+<td>DfsuModelResult</td>
 <td>Model domain to be shown as outline</td>
 <td><code>None</code></td>
 </tr>
@@ -549,16 +549,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="examples" class="level2 doc-section doc-section-examples">
 <h2 class="doc-section doc-section-examples anchored" data-anchor-id="examples">Examples</h2>
-<div id="075402aa" class="cell" data-execution_count="1">
+<div id="3ded4b16" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> Path(<span class="st">"../data/SW"</span>)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>o1 <span class="op">=</span> ms.PointObservation(p <span class="op">/</span> <span class="st">"HKNA_Hm0.dfs0"</span>, item<span class="op">=</span><span class="dv">0</span>, x<span class="op">=</span><span class="fl">4.2420</span>, y<span class="op">=</span><span class="fl">52.6887</span>, name<span class="op">=</span><span class="st">"HKNA"</span>)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>o2 <span class="op">=</span> ms.TrackObservation(p <span class="op">/</span> <span class="st">"Alti_c2_Dutch.dfs0"</span>, item<span class="op">=</span><span class="dv">3</span>, name<span class="op">=</span><span class="st">"c2"</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>mr1 <span class="op">=</span> ms.DfsuModelResult(p <span class="op">/</span> <span class="st">"HKZN_local_2017_DutchCoast.dfsu"</span>, name<span class="op">=</span><span class="st">'SW_1'</span>, item<span class="op">=</span><span class="dv">0</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>mr2 <span class="op">=</span> ms.DfsuModelResult(p<span class="op">/</span> <span class="st">"HKZN_local_2017_DutchCoast_v2.dfsu"</span>, name<span class="op">=</span><span class="st">'SW_2'</span>, item<span class="op">=</span><span class="dv">0</span>)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>ms.plotting.spatial_overview([o1, o2], [mr1, mr2])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.DfsuModelResult(p <span class="op">/</span> <span class="st">"HKZN_local_2017_DutchCoast.dfsu"</span>, name<span class="op">=</span><span class="st">'SW_1'</span>, item<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>ms.plotting.spatial_overview([o1, o2], mr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
