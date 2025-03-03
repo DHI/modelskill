@@ -274,13 +274,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<div id="18870c06" class="cell" data-execution_count="1">
+<div id="0406fb9b" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mikeio</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="a5c8589e" class="cell" data-execution_count="2">
+<div id="d68690ea" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>fn <span class="op">=</span> <span class="st">"../data/SW/eur_matched.dfs0"</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>mikeio.read(fn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="2">
@@ -296,24 +296,24 @@ items:
 </div>
 </div>
 <p>The function <code>from_matched()</code> takes a dataframe, a dfs0 or a mikeio.Dataset of already matched data and returns a Comparer object.</p>
-<div id="4e425965" class="cell" data-execution_count="3">
+<div id="4c593403" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.from_matched(fn, obs_item<span class="op">=</span><span class="dv">1</span>, mod_items<span class="op">=</span><span class="dv">0</span>, aux_items<span class="op">=</span>[<span class="dv">2</span>,<span class="dv">3</span>])</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.aux_names</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <pre><code>['Wind speed', 'Wind Direction']</code></pre>
 </div>
 </div>
-<div id="975fe264" class="cell" data-execution_count="4">
+<div id="403d3808" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">: we rename data_vars to avoid spaces in names</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> <span class="bu">cmp</span>.rename({<span class="st">"Wind speed"</span>: <span class="st">"wind_speed"</span>, <span class="st">"Wind Direction"</span>: <span class="st">"wind_dir"</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="b54937eb" class="cell" data-execution_count="5">
+<div id="b8c11e70" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.aux_names</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <pre><code>['wind_speed', 'wind_dir']</code></pre>
 </div>
 </div>
-<div id="dc34d7ec" class="cell" data-execution_count="6">
+<div id="6887aa6f" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="6">
 <pre><code>&lt;Comparer&gt;
@@ -325,7 +325,7 @@ Model(s):
  Auxiliary: wind_dir</code></pre>
 </div>
 </div>
-<div id="53f07e2a" class="cell" data-execution_count="7">
+<div id="56400215" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
 <div>
@@ -374,20 +374,20 @@ Model(s):
 </div>
 </div>
 </div>
-<div id="7c7278f6" class="cell" data-execution_count="8">
+<div id="98c8b9ba" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.scatter(quantiles<span class="op">=</span><span class="dv">0</span>, figsize<span class="op">=</span>(<span class="dv">6</span>,<span class="dv">6</span>))<span class="op">;</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Prematched_with_auxiliary_files/figure-html/cell-9-output-1.png" width="512" height="523" class="figure-img"></p>
+<p><img src="Prematched_with_auxiliary_files/figure-html/cell-9-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Prematched_with_auxiliary_files/figure-html/cell-9-output-2.png" width="589" height="479" class="figure-img"></p>
+<p><img src="Prematched_with_auxiliary_files/figure-html/cell-9-output-2.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -395,7 +395,7 @@ Model(s):
 <section id="filter" class="level2">
 <h2 class="anchored" data-anchor-id="filter">Filter</h2>
 <p>Filter on auxiliary data using <code>query()</code> or <code>where()</code>. Below, we consider only wave data when the wind speed is above 15 m/s.</p>
-<div id="a302ae8c" class="cell" data-execution_count="9">
+<div id="18217c4d" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.query(<span class="st">"wind_speed &gt; 15.0"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
 <pre><code>&lt;Comparer&gt;
@@ -407,7 +407,7 @@ Model(s):
  Auxiliary: wind_dir</code></pre>
 </div>
 </div>
-<div id="9ec5a905" class="cell" data-execution_count="10">
+<div id="48fb3599" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>cmp2 <span class="op">=</span> <span class="bu">cmp</span>.where(<span class="bu">cmp</span>.data.wind_speed<span class="op">&gt;</span><span class="fl">15.0</span>)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>cmp2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="10">
@@ -420,22 +420,22 @@ Model(s):
  Auxiliary: wind_dir</code></pre>
 </div>
 </div>
-<div id="c3c6d755" class="cell" data-execution_count="11">
+<div id="3dc2ec20" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># notice that the model data is kept, but the observations are filtered</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>cmp2.plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Prematched_with_auxiliary_files/figure-html/cell-12-output-1.png" width="589" height="479" class="figure-img"></p>
+<p><img src="Prematched_with_auxiliary_files/figure-html/cell-12-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>More auxiliary data can be added, e.g.&nbsp;as derived data from the original data.</p>
-<div id="23e85b59" class="cell" data-execution_count="12">
+<div id="413acb47" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.data[<span class="st">"residual"</span>] <span class="op">=</span> <span class="bu">cmp</span>.data[<span class="st">"Hm0, model"</span>] <span class="op">-</span> <span class="bu">cmp</span>.data[<span class="st">"Observation"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="8a2f219e" class="cell" data-execution_count="13">
+<div id="90ac3cfe" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>large_residuals <span class="op">=</span> np.<span class="bu">abs</span>(<span class="bu">cmp</span>.data.residual)<span class="op">&gt;</span><span class="fl">0.1</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>cmp3 <span class="op">=</span> <span class="bu">cmp</span>.where(large_residuals)</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>cmp3.plot.scatter(figsize<span class="op">=</span>(<span class="dv">6</span>,<span class="dv">6</span>))<span class="op">;</span></span>
@@ -443,19 +443,19 @@ Model(s):
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Prematched_with_auxiliary_files/figure-html/cell-14-output-1.png" width="512" height="523" class="figure-img"></p>
+<p><img src="Prematched_with_auxiliary_files/figure-html/cell-14-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Prematched_with_auxiliary_files/figure-html/cell-14-output-2.png" width="589" height="479" class="figure-img"></p>
+<p><img src="Prematched_with_auxiliary_files/figure-html/cell-14-output-2.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<div id="106735ea" class="cell" data-execution_count="14">
+<div id="e63fb409" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>cmp3.data.data_vars</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="14">
 <pre><code>Data variables:
@@ -466,7 +466,7 @@ Model(s):
     residual     (time) float64 320B 0.5101 0.6253 0.5495 ... 0.2907 0.2427</code></pre>
 </div>
 </div>
-<div id="d672c6aa" class="cell" data-execution_count="15">
+<div id="f8fbc765" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>cmp3.data.Observation.values</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="15">
 <pre><code>array([0.92000002, 1.02999997, 1.24000001, 1.34000003, 1.54999995,
@@ -484,14 +484,14 @@ Model(s):
 <h2 class="anchored" data-anchor-id="aggregate">Aggregate</h2>
 <p>Let’s split the data based on wind direction sector and aggregate the skill calculation of the significant wave height predition for each sector.</p>
 <p><em>Note: in this short example wind direction is between 274 and 353 degrees</em></p>
-<div id="6fd87611" class="cell" data-execution_count="16">
+<div id="9067b370" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> <span class="bu">cmp</span>.data.wind_dir.to_dataframe()</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>windsectors <span class="op">=</span> pd.cut(df.wind_dir,</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>                                [<span class="dv">255</span>, <span class="dv">285</span>, <span class="dv">315</span>, <span class="dv">345</span>, <span class="dv">360</span>],</span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>                                labels<span class="op">=</span>[<span class="st">"W"</span>, <span class="st">"WNW"</span>, <span class="st">"NNW"</span>, <span class="st">"N"</span>])</span>
 <span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.data[<span class="st">"windsector"</span>] <span class="op">=</span> windsectors.astype(<span class="bu">str</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="368cda28" class="cell" data-execution_count="17">
+<div id="d2c746cf" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill(by<span class="op">=</span><span class="st">"windsector"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="17">
 <div>
@@ -579,22 +579,22 @@ Model(s):
 </div>
 </div>
 </div>
-<div id="6c07bb02" class="cell" data-execution_count="18">
+<div id="ef6edf84" class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill(by<span class="op">=</span><span class="st">"windsector"</span>).rmse.plot.bar(title<span class="op">=</span><span class="st">"Hm0 RMSE by wind sector"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Prematched_with_auxiliary_files/figure-html/cell-19-output-1.png" width="579" height="473" class="figure-img"></p>
+<p><img src="Prematched_with_auxiliary_files/figure-html/cell-19-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<div id="e45a29af" class="cell" data-execution_count="19">
+<div id="bf8b6151" class="cell" data-execution_count="19">
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.where(<span class="bu">cmp</span>.data.windsector<span class="op">==</span><span class="st">"W"</span>).plot.timeseries()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Prematched_with_auxiliary_files/figure-html/cell-20-output-1.png" width="589" height="479" class="figure-img"></p>
+<p><img src="Prematched_with_auxiliary_files/figure-html/cell-20-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
