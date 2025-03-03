@@ -446,10 +446,8 @@ def test_obs_and_mod_can_not_have_same_aux_item_names():
     obs = ms.PointObservation(obs_df, item="wl", aux_items=["wind_speed"])
     mod = ms.PointModelResult(mod_df, item="wl", aux_items=["wind_speed"])
 
-    with pytest.warns(match="_model"):
-        cmp = ms.match(obs=obs, mod=mod)
-    assert "wind_speed" in cmp
-    assert "wind_speed_mod" in cmp  # renamed
+    with pytest.raises(ValueError, match="aux"):
+        ms.match(obs=obs, mod=mod)
 
 
 def test_mod_aux_items_overlapping_names():
@@ -476,7 +474,7 @@ def test_mod_aux_items_overlapping_names():
         mod2_df, item="wl", aux_items=["wind_speed"], name="remote"
     )
 
-    # we don't care which model the aux data comes from
+    # we don't care which model the aux data comes from, last one wins
     cmp = ms.match(obs=obs, mod=[mod, mod2])
 
     assert "wind_speed" in cmp
