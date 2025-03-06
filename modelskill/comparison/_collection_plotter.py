@@ -226,14 +226,9 @@ class ComparerCollectionPlotter:
 
         skill = None
         skill_score_unit = None
-        skill_score_names = None
+
         if skill_table:
             metrics = None if skill_table is True else skill_table
-            if isinstance(metrics, dict):
-                skill_score_names = {
-                    _parse_metric(v)[0].__name__: k for k, v in metrics.items()
-                }
-                metrics = list(metrics.values())
 
             # TODO why is this here?
             if isinstance(self, ComparerCollectionPlotter) and len(cc_sel_mod) == 1:
@@ -272,7 +267,6 @@ class ComparerCollectionPlotter:
             ylabel=ylabel,
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
-            skill_score_names=skill_score_names,
             ax=ax,
             **kwargs,
         )

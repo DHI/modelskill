@@ -41,7 +41,9 @@ F = TypeVar("F", bound=Callable)
 
 
 def metric(
-    best: Literal["+", "-", 0, 1] | None = None, has_units: bool = False
+    best: Literal["+", "-", 0, 1] | None = None,
+    has_units: bool = False,
+    display_name: Optional[str] = None,
 ) -> Callable[[F], F]:
     """Decorator to indicate a function as a metric.
 
@@ -53,12 +55,16 @@ def metric(
         If None, no preference is specified.
     has_units : bool, default False
         Specifies whether the metric has physical units.
+    display_name : str, default None
+        The display name of the metric, e.g., used in plots.
+        If None, the function name is used.
     """
 
     def decorator(func):
         add_metric(func, has_units=has_units)
         func.best = best
         func.has_units = has_units
+        func.display_name = display_name
         return func
 
     return decorator
@@ -303,7 +309,7 @@ def kge(obs: ArrayLike, model: ArrayLike) -> Any:
     return kling_gupta_efficiency(obs, model)
 
 
-@metric(best="+", has_units=False)
+@metric(best="+", has_units=False, display_name="R²")
 def r2(obs: ArrayLike, model: ArrayLike) -> Any:
     r"""Coefficient of determination (R2)
 
@@ -532,7 +538,7 @@ def explained_variance(obs: ArrayLike, model: ArrayLike) -> Any:
     return nominator / denominator
 
 
-@metric(best=1, has_units=False)
+@metric(best=1, has_units=False, display_name="$P_{ratio}$")
 def pr(
     obs: pd.Series,
     model: ArrayLike,
@@ -1215,6 +1221,16 @@ def zero_is_best(metric):
 
 def one_is_best(metric):
     return is_best(metric, 1)
+
+
+def get_display_name(metric):
+    if isinstance(metric, str) and metric == "n":
+        return "N"
+    metric = get_metric(metric)
+    if hasattr(metric, "display_name") and metric.display_name is not None:
+        return metric.display_name
+    else:
+        return metric.__name__.upper()
 
 
 # TODO add non-metric functions to __all__
