@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from datetime import timedelta
 from pathlib import Path
 from typing import (
@@ -361,7 +360,7 @@ def match_space_time(
 
     observation = observation.trim(period.start, period.end)
 
-    data = observation.data
+    data = observation.data.copy()
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: "Observation"})
 
@@ -369,11 +368,12 @@ def match_space_time(
         # TODO is `align` the correct name for this operation?
         aligned = mr.align(observation, max_gap=max_model_gap)
 
-        if overlapping_names := set(aligned.data_vars) & set(data.data_vars):
-            warnings.warn(
-                "Model result has overlapping variable names with observation. Renamed with suffix `_model`."
+        if overlapping := set(aligned.filter_by_attrs(kind="aux").data_vars) & set(
+            observation.data.filter_by_attrs(kind="aux").data_vars
+        ):
+            raise ValueError(
+                f"Aux variables are not allowed to have identical names. Choose either aux from obs or model. Overlapping: {overlapping}"
             )
-            aligned = aligned.rename({v: f"{v}_mod" for v in overlapping_names})
 
         for dv in aligned:
             data[dv] = aligned[dv]

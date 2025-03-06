@@ -243,16 +243,21 @@ def test_get_metric():
     assert isinstance(rmse, Callable)
 
 
-def test_parse_metric_custom_fun():
-    def my_metric(obs, model):
-        return 1.0
-
-    assert mtr._parse_metric(my_metric) == [my_metric]
+def test_rmse_small_is_best() -> None:
+    assert mtr.rmse.best == "-"
+    assert mtr.small_is_best("rmse")
 
 
-def test_parse_bad_metric():
-    def not_a_metric(obs):
-        return 1.0
+def test_rmse_has_units() -> None:
+    assert mtr.rmse.has_units
+    assert mtr.metric_has_units("rmse")
 
-    with pytest.raises(ValueError):
-        mtr._parse_metric(not_a_metric)
+
+def test_r2_large_is_best() -> None:
+    assert mtr.r2.best == "+"
+    assert mtr.large_is_best("r2")
+
+
+def test_r2_has_no_units() -> None:
+    assert not mtr.r2.has_units
+    assert not mtr.metric_has_units("r2")
