@@ -29,7 +29,6 @@ from ..plotting._misc import (
 )
 from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
-from ..metrics import _parse_metric
 
 
 class ComparerPlotter:

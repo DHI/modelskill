@@ -17,7 +17,7 @@ import pandas as pd
 import modelskill.settings as settings
 from modelskill.settings import options
 
-from ..metrics import _linear_regression, _parse_metric
+from ..metrics import _linear_regression
 from ._misc import quantiles_xy, sample_points, format_skill_table, _get_fig_ax
 
 

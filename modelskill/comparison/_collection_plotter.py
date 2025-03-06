@@ -22,7 +22,6 @@ import numpy as np
 import pandas as pd
 
 from .. import metrics as mtr
-from ..metrics import _parse_metric
 from ..plotting import TaylorPoint, scatter, taylor_diagram
 from ..plotting._misc import _get_fig_ax, _xtick_directional, _ytick_directional
 from ..settings import options
