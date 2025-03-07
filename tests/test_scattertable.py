@@ -111,7 +111,7 @@ def test_custom_metric_display_name(ccs):
         skill_table=[
             "bias",
             cm_1,
-            "si",
+            "r2",
             cm_2,
             cm_named,
         ]
@@ -123,7 +123,7 @@ def test_custom_metric_display_name(ccs):
 
     assert t._cells[1, 0]._text._text == "BIAS"
     assert t._cells[2, 0]._text._text == "CM_1"
-    assert t._cells[3, 0]._text._text == "SI"
+    assert t._cells[3, 0]._text._text == "R²"
     assert t._cells[4, 0]._text._text == "CM_2"
     assert t._cells[5, 0]._text._text == "MyBias"
 
