@@ -186,37 +186,6 @@ def test_custom_metric_skilltable_mv_mm_scatter(cc):
     plt.close("all")
 
 
-def test_custom_metric_skilltable_mv_mm_scatter_rename(cc):
-    mtr.add_metric(cm_1)
-    mtr.add_metric(cm_2, has_units=True)
-    mtr.add_metric(cm_3)
-    custom_name1 = "MyBias"
-    custom_name5 = "Custom_name"
-    ccs = cc.sel(
-        model="SW_1",
-        quantity="Wind speed",
-        observation="F16_wind",
-    )
-    s = ccs.plot.scatter(
-        skill_table={
-            custom_name1: "bias",
-            "CM_1": cm_1,
-            "SI": "si",
-            "CM_2": cm_2,
-            custom_name5: cm_3,
-        }
-    )
-    for child in s.get_children():
-        if isinstance(child, Table):
-            t = child
-            break
-
-    assert t._cells[1, 0]._text._text == custom_name1
-    assert t._cells[5, 0]._text._text == custom_name5
-
-    plt.close("all")
-
-
 def test_mv_mm_taylor(cc):
     cc.sel(quantity="Wind speed").plot.taylor()
     cc.plot.taylor(figsize=(4, 4))

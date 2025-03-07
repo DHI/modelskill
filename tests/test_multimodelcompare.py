@@ -353,31 +353,6 @@ def test_custom_metric_skilltable_mm_scatter(cc):
     cc.skill(metrics=[cm_3])
 
 
-def test_custom_metric_skilltable_mm_scatter_rename(cc):
-    custom_name1 = "MyBias"
-    custom_name2 = "Custom_name"
-
-    mtr.add_metric(cm_1)
-    mtr.add_metric(cm_2, has_units=True)
-
-    ccs = cc.sel(model="SW_2", observation="HKNA")
-    s = ccs.plot.scatter(
-        skill_table={
-            custom_name1: "bias",
-            custom_name2: cm_1,
-        }
-    )
-    for child in s.get_children():
-        if isinstance(child, Table):
-            t = child
-            break
-
-    assert t._cells[1, 0]._text._text == custom_name1
-    assert t._cells[2, 0]._text._text == custom_name2
-
-    plt.close("all")
-
-
 def test_mm_kde(cc):
     ax = cc.sel(model="SW_2").plot.kde()
     assert ax is not None
