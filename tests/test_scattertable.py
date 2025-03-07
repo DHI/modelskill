@@ -95,7 +95,7 @@ def cm_2(obs, model):
 
 
 @mtr.metric(display_name="MyBias")
-def cm_3(obs, model):
+def cm_named(obs, model):
     """Custom metric #2"""
     val = np.mean(obs * 1.5 / model)
     sign = "+" if val > 0 else "-"
@@ -105,7 +105,7 @@ def cm_3(obs, model):
 def test_custom_metric_display_name(ccs):
     mtr.add_metric(cm_1)
     mtr.add_metric(cm_2, has_units=True)
-    mtr.add_metric(cm_3)
+    mtr.add_metric(cm_named)
 
     s = ccs.plot.scatter(
         skill_table=[
@@ -113,7 +113,7 @@ def test_custom_metric_display_name(ccs):
             cm_1,
             "si",
             cm_2,
-            cm_3,
+            cm_named,
         ]
     )
     for child in s.get_children():
