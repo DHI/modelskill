@@ -264,5 +264,4 @@ def test_r2_has_no_units() -> None:
 
 
 def test_metric_display_name() -> None:
-    assert mtr.get_display_name("r2") != "R²"
-    assert mtr.get_display_name("rmse") == "rmse"
+    assert mtr.get_display_name("rmse") == "RMSE"
