@@ -133,7 +133,7 @@ def test_custom_metric_display_name(ccs):
 def test_custom_metric_result(ccs):
     mtr.add_metric(cm_1)
     mtr.add_metric(cm_2, has_units=True)
-    mtr.add_metric(cm_3)
+    mtr.add_metric(cm_named)
 
     s = ccs.plot.scatter(
         skill_table=[
@@ -141,7 +141,7 @@ def test_custom_metric_result(ccs):
             cm_1,
             "si",
             cm_2,
-            cm_3,
+            cm_named,
         ]
     )
     for child in s.get_children():
