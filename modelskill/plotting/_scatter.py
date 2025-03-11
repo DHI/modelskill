@@ -40,7 +40,7 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_table: Optional[str | Sequence[str] | bool] = False,
+    skill_table: Optional[str | Sequence[str] | Mapping[str, str] | bool] = False,
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: Optional[str] = "",
     ax: Optional[Axes] = None,
@@ -106,10 +106,11 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
-    skill_table: str, List[str], bool, optional
+    skill_table: str, List[str], dict[str,str], bool, optional
         calculate skill scores and show in box next to the plot,
         True will show default metrics, list of metrics will show
         these skill scores, by default False,
+        mapping can be used to rename the metrics in the table.
         Note: cannot be used together with skill_scores argument
     skill_scores : dict[str, float], optional
         dictionary with skill scores to be shown in box next to
@@ -536,7 +537,10 @@ def _scatter_plotly(
     fig.update_yaxes(range=ylim, nticks=10)
 
     if skill_scores is not None:
-        table = format_skill_table(skill_scores=skill_scores, unit=skill_score_unit)
+        table = format_skill_table(
+            skill_scores=skill_scores,
+            unit=skill_score_unit,
+        )
         lines = [
             f"{row['name']:<6} {row['sep']} {row['value']:<6}"
             for _, row in table.iterrows()
@@ -655,7 +659,11 @@ def _plot_summary_table(
     # Plot table
     fontsize = options.plot.scatter.skill_table.fontsize
     ## Data
-    table_data = format_skill_table(skill_scores, unit=units, sep="=")
+    table_data = format_skill_table(
+        skill_scores,
+        unit=units,
+        sep="=",
+    )
     ## To get sizing, we plot a dummy table
     table_dummy = ax.table(
         table_data.values,

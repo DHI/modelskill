@@ -261,3 +261,7 @@ def test_r2_large_is_best() -> None:
 def test_r2_has_no_units() -> None:
     assert not mtr.r2.has_units
     assert not mtr.metric_has_units("r2")
+
+
+def test_metric_display_name() -> None:
+    assert mtr.get_display_name("rmse") == "RMSE"

@@ -7,7 +7,7 @@ from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 
-from ..metrics import metric_has_units, defined_metrics
+from ..metrics import metric_has_units, defined_metrics, get_display_name
 from ..obs import unit_display_name
 
 
@@ -179,10 +179,13 @@ def _format_skill_line(
             # if statistic has dimensions, then add units
             item_unit = unit_display_name(unit)
 
-        rounded_value = np.round(value, precision)
-        fmt = f".{precision}f"
-        fvalue = f"{rounded_value:{fmt}}"
+        if isinstance(value, (float, int)):
+            rounded_value = np.round(value, precision)
+            fmt = f".{precision}f"
+            fvalue = f"{rounded_value:{fmt}}"
+        else:
+            fvalue = str(value)
 
-    name = name.upper()
+    name = get_display_name(name)
 
     return f"{name}", sep, f"{fvalue} {item_unit}"
