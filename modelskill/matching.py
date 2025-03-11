@@ -172,6 +172,7 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Comparer: ...
 
 
@@ -185,6 +186,7 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> ComparerCollection: ...
 
 
@@ -232,7 +234,7 @@ def match(
         - For GridModelResult, passed to xarray.interp() as method argument,
         by default 'linear'.
     obs_no_overlap: str, optional
-        How to handle observations with no overlap with model results
+        How to handle observations with no overlap with model results. One of: 'ignore', 'error', 'warn', by default 'error'.
 
     Returns
     -------
