@@ -1,11 +1,18 @@
 plot.scatter.legend.bbox:
   alpha: 0.99
   facecolor: w
-plot.scatter.legend.fontsize: 14
+plot.scatter.legend.fontsize: 10
 plot.scatter.legend.kwargs:
-  bbox_to_anchor: [1.2,0.1]
+  bbox_to_anchor: [1.05,0.0]
   edgecolor: k
-  loc: center left
+  loc: lower left
+  fancybox: False
+  borderpad: 0.4
+  borderaxespad : 0.0
+plot.scatter.skill_table.x_position: 1.05
+plot.scatter.skill_table.line_spacing : 1
+plot.scatter.skill_table.line_padding : 0.015
+plot.scatter.skill_table.fontsize : 12
 plot.scatter.oneone_line.color: darkorange
 plot.scatter.oneone_line.label: 1:1 (45°)
 plot.scatter.points.alpha: 0.9

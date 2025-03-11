@@ -1,3 +1,4 @@
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from platform import architecture
 from typing import Union
@@ -19,7 +20,12 @@ from typing import Union
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = "1.2.dev0"
+try:
+    # read version from installed package
+    __version__ = version("modelskill")
+except PackageNotFoundError:
+    # package is not installed
+    __version__ = "dev"
 
 if "64" not in architecture()[0]:
     raise Exception("This library has not been tested for a 32 bit system.")

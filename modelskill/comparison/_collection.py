@@ -99,15 +99,7 @@ class ComparerCollection(Mapping, Scoreable):
                 self._comparers[cmp.name] = cmp
 
         self.plot = ComparerCollection.plotter(self)
-        """Plot using the ComparerCollectionPlotter
-
-        Examples
-        --------
-        >>> cc.plot.scatter()
-        >>> cc.plot.kde()
-        >>> cc.plot.taylor()
-        >>> cc.plot.hist()
-        """
+        """Plot using the [](`~modelskill.comparison.ComparerCollectionPlotter`)"""
 
     @property
     def _name(self) -> str:

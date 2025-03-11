@@ -597,3 +597,17 @@ def test_copy(cc):
     assert cc2.end_time == pd.Timestamp("2019-01-07")
     assert cc2.obs_names == ["fake point obs", "fake track obs"]
     assert cc2.mod_names == ["m1", "m2", "m3"]
+
+
+def test_plot_spatial_overview(cc):
+    ax = cc.plot.spatial_overview()
+    # TODO add sensible assertions
+    assert ax is not None
+
+
+def test_plot_temporal_coverage(cc):
+    ax = cc.plot.temporal_coverage()
+    # TODO add more sensible assertions
+    lines = ax.get_lines()
+    assert len(lines) == 4  # 1 point, 1 track, 2 models
+    assert ax is not None
