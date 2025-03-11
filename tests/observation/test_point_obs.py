@@ -279,3 +279,16 @@ def test_point_observation_set_coords():
     )
 
     assert obs3d.z == -5
+
+
+def test_point_observation_from_netcdf_with_x_y_name():
+    obs = ms.PointObservation("tests/testdata/SW/HKNA_Hm0.nc")
+
+    assert obs.x == pytest.approx(4.242)
+    assert obs.y == pytest.approx(52.6887)
+    assert obs.name == "HKNA"
+    assert obs.quantity.unit == "m"
+    assert obs.quantity.name == "Hm0"
+
+    obs2 = ms.PointObservation("tests/testdata/SW/HKNA_Hm0.nc", name="A better name")
+    assert obs2.name == "A better name"
