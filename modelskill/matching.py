@@ -197,6 +197,7 @@ def match(
     gtype=None,
     max_model_gap=None,
     spatial_method: Optional[str] = None,
+    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ):
     """Match observation and model result data in space and time
 
@@ -230,6 +231,8 @@ def match(
         'inverse_distance' (with 5 nearest points), by default "inverse_distance".
         - For GridModelResult, passed to xarray.interp() as method argument,
         by default 'linear'.
+    obs_no_overlap: str, optional
+        How to handle observations with no overlap with model results
 
     Returns
     -------
@@ -251,6 +254,7 @@ def match(
             gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
+            obs_no_overlap=obs_no_overlap,
         )
 
     if isinstance(obs, Collection):
@@ -283,11 +287,14 @@ def match(
             gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
+            obs_no_overlap=obs_no_overlap,
         )
         for o in obs
     ]
 
-    return ComparerCollection(clist)
+    cmps = [c for c in clist if c is not None]
+
+    return ComparerCollection(cmps)
 
 
 def _single_obs_compare(
@@ -299,7 +306,8 @@ def _single_obs_compare(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
-) -> Comparer:
+    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+) -> Optional[Comparer]:
     """Compare a single observation with multiple models"""
     obs = _parse_single_obs(obs, obs_item, gtype=gtype)
 
@@ -307,8 +315,13 @@ def _single_obs_compare(
 
     raw_mod_data = {m.name: m.extract(obs, spatial_method) for m in mods}
     matched_data = match_space_time(
-        observation=obs, raw_mod_data=raw_mod_data, max_model_gap=max_model_gap
+        observation=obs,
+        raw_mod_data=raw_mod_data,
+        max_model_gap=max_model_gap,
+        obs_no_overlap=obs_no_overlap,
     )
+    if matched_data is None:
+        return None
     matched_data.attrs["weight"] = obs.weight
 
     # TODO where does this line belong?
@@ -330,7 +343,8 @@ def match_space_time(
     observation: Observation,
     raw_mod_data: Mapping[str, Alignable],
     max_model_gap: float | None = None,
-) -> xr.Dataset:
+    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+) -> Optional[xr.Dataset]:
     """Match observation with one or more model results in time domain.
 
     and return as xr.Dataset in the format used by modelskill.Comparer
@@ -352,13 +366,15 @@ def match_space_time(
 
     Returns
     -------
-    xr.Dataset
+    xr.Dataset or None
         Matched data in the format used by modelskill.Comparer
     """
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
-    observation = observation.trim(period.start, period.end)
+    observation = observation.trim(period.start, period.end, no_overlap=obs_no_overlap)
+    if len(observation.data.time) == 0:
+        return None
 
     data = observation.data.copy()
     data.attrs["name"] = observation.name
