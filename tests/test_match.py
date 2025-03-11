@@ -311,9 +311,11 @@ def test_matched_data_multiple_models():
         index=pd.date_range("2017-01-01", periods=4),
     )
 
-    cmp = ms.from_matched(df, obs_item="sensor_a")
+    cmp = ms.from_matched(df[["sensor_a", "cal_42", "cal_43"]])
     assert cmp.n_points == 4
     assert cmp.n_models == 2
+    assert cmp.sel(model="cal_42").mod_names == ["cal_42"]
+    assert cmp.sel(model=0).mod_names == ["cal_42"]
 
 
 def test_matched_data_multiple_models_additional_columns():
@@ -444,10 +446,8 @@ def test_obs_and_mod_can_not_have_same_aux_item_names():
     obs = ms.PointObservation(obs_df, item="wl", aux_items=["wind_speed"])
     mod = ms.PointModelResult(mod_df, item="wl", aux_items=["wind_speed"])
 
-    with pytest.warns(match="_model"):
-        cmp = ms.match(obs=obs, mod=mod)
-    assert "wind_speed" in cmp
-    assert "wind_speed_mod" in cmp  # renamed
+    with pytest.raises(ValueError, match="aux"):
+        ms.match(obs=obs, mod=mod)
 
 
 def test_mod_aux_items_overlapping_names():
@@ -474,7 +474,7 @@ def test_mod_aux_items_overlapping_names():
         mod2_df, item="wl", aux_items=["wind_speed"], name="remote"
     )
 
-    # we don't care which model the aux data comes from
+    # we don't care which model the aux data comes from, last one wins
     cmp = ms.match(obs=obs, mod=[mod, mod2])
 
     assert "wind_speed" in cmp

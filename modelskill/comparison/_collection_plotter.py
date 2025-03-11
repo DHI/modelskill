@@ -1,7 +1,19 @@
 from __future__ import annotations
-from typing import Any, List, Literal, Union, Optional, Tuple, Sequence, TYPE_CHECKING
-from matplotlib.axes import Axes
+
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
+
 import matplotlib.colors as colors
+from matplotlib.axes import Axes
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
@@ -10,10 +22,10 @@ import numpy as np
 import pandas as pd
 
 from .. import metrics as mtr
-from ..utils import _get_idx
+from ..plotting import TaylorPoint, scatter, taylor_diagram
+from ..plotting._misc import _get_fig_ax, _xtick_directional, _ytick_directional
 from ..settings import options
-from ..plotting import taylor_diagram, scatter, TaylorPoint
-from ..plotting._misc import _xtick_directional, _ytick_directional, _get_fig_ax
+from ..utils import _get_idx
 from ._comparer_plotter import quantiles_xy
 
 
@@ -58,7 +70,7 @@ class ComparerCollectionPlotter:
         title: Optional[str] = None,
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
-        skill_table: Optional[Union[str, List[str], bool]] = None,
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
         ax: Optional[Axes] = None,
         **kwargs,
     ) -> Axes | list[Axes]:
@@ -120,9 +132,10 @@ class ComparerCollectionPlotter:
             x-label text on plot, by default None
         ylabel : str, optional
             y-label text on plot, by default None
-        skill_table : str, List[str], bool, optional
+        skill_table: str, List[str], dict[str,str], bool, optional
             list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list.
-            This kword adds a box at the right of the scatter plot,
+            This kword adds a box at the right of the scatter plot.
+            mapping can be used to rename the metrics in the table.
             by default False
         ax : matplotlib axes, optional
             axes to plot on, by default None
@@ -186,7 +199,7 @@ class ComparerCollectionPlotter:
         title: Optional[str],
         xlabel: Optional[str],
         ylabel: Optional[str],
-        skill_table: Optional[Union[str, List[str], bool]],
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
         ax,
         **kwargs,
     ):
@@ -212,6 +225,7 @@ class ComparerCollectionPlotter:
 
         skill = None
         skill_score_unit = None
+
         if skill_table:
             metrics = None if skill_table is True else skill_table
 
@@ -759,3 +773,71 @@ class ComparerCollectionPlotter:
             ax.set_xlim(-180, 180)
 
         return ax
+
+    def spatial_overview(
+        self,
+        ax=None,
+        figsize: Optional[Tuple] = None,
+        title: Optional[str] = None,
+    ) -> Axes:
+        """Plot observation points on a map showing the model domain
+
+        Parameters
+        ----------
+        ax: matplotlib.axes, optional
+            Adding to existing axis, instead of creating new fig
+        figsize : (float, float), optional
+            figure size, by default None
+        title: str, optional
+            plot title, default empty
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            The matplotlib axes object
+        """
+        from ..plotting import spatial_overview
+
+        obs = [cmp._to_observation() for cmp in self.cc]
+        # TODO how to add model domain(s)
+
+        return spatial_overview(obs, ax=ax, figsize=figsize, title=title)
+
+    def temporal_coverage(
+        self,
+        limit_to_model_period: bool = True,
+        marker: str = "_",
+        ax: Any | None = None,
+        figsize: Any | None = None,
+        title: Any | None = None,
+    ) -> Axes:
+        """Plot graph showing temporal coverage for all observations and models
+
+        Parameters
+        ----------
+        limit_to_model_period : bool, optional
+            Show temporal coverage only for period covered
+            by the model, by default True
+        marker : str, optional
+            plot marker for observations, by default "_"
+        ax: matplotlib.axes, optional
+            Adding to existing axis, instead of creating new fig
+        figsize : Tuple(float, float), optional
+            size of figure, by default (7, 0.45*n_lines)
+        title: str, optional
+            plot title, default empty
+        """
+        from ..plotting import temporal_coverage
+
+        obs = [cmp._to_observation() for cmp in self.cc]
+        mod = self.cc[0]._to_model()
+
+        return temporal_coverage(
+            obs=obs,
+            mod=mod,
+            limit_to_model_period=limit_to_model_period,
+            marker=marker,
+            ax=ax,
+            figsize=figsize,
+            title=title,
+        )

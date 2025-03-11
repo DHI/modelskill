@@ -8,6 +8,7 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
     Callable,
+    Mapping,
 )
 
 if TYPE_CHECKING:
@@ -474,7 +475,7 @@ class ComparerPlotter:
         title: Optional[str] = None,
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
-        skill_table: Optional[Union[str, List[str], bool]] = None,
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
     ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
@@ -536,10 +537,11 @@ class ComparerPlotter:
             x-label text on plot, by default None
         ylabel : str, optional
             y-label text on plot, by default None
-        skill_table : str, List[str], bool, optional
+        skill_table : str, List[str], dict[str,str], bool, optional
             list of modelskill.metrics or boolean, if True then by default
             modelskill.options.metrics.list. This kword adds a box at the
             right of the scatter plot, by default False
+            mapping can be used to rename the metrics in the table.
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
         **kwargs
@@ -603,7 +605,7 @@ class ComparerPlotter:
         title: Optional[str],
         xlabel: Optional[str],
         ylabel: Optional[str],
-        skill_table: Optional[Union[str, List[str], bool]],
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
         **kwargs,
     ):
         """Scatter plot for one model only"""

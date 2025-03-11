@@ -3,7 +3,8 @@ project:
 
 website:
   title: "ModelSkill"
-  page-footer: "© 2024 DHI Group"
+  page-footer: "© 2025 DHI Group"
+  favicon: dhi.ico
   repo-url: https://github.com/DHI/modelskill
   repo-actions: [edit]
   repo-subdir: docs
@@ -187,6 +188,7 @@ quartodoc:
           members: []
         - name: Comparer
           members:
+            - plot
             - skill
             - gridded_skill
             - score
@@ -201,12 +203,14 @@ quartodoc:
 
         - name: ComparerCollection
           members:
+            - plot
             - skill
             - mean_skill
             - gridded_skill
             - score
             - rename
             - sel
+            - query
             - save
             - load
         - name: comparison.ComparerCollectionPlotter
