@@ -998,9 +998,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="caption-top table">
 <colgroup>
 <col style="width: 4%">
-<col style="width: 9%">
-<col style="width: 81%">
-<col style="width: 4%">
+<col style="width: 16%">
+<col style="width: 75%">
+<col style="width: 3%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -1103,8 +1103,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="even">
 <td>skill_table</td>
-<td>(str, List[str], bool)</td>
-<td>list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list. This kword adds a box at the right of the scatter plot, by default False</td>
+<td>Optional[Union[str, List[str], Mapping[str, str], bool]]</td>
+<td>list of modelskill.metrics or boolean, if True then by default modelskill.options.metrics.list. This kword adds a box at the right of the scatter plot. mapping can be used to rename the metrics in the table. by default False</td>
 <td><code>None</code></td>
 </tr>
 <tr class="odd">
