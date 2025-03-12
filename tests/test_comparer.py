@@ -889,6 +889,16 @@ def test_from_matched_dfs0():
     ) == pytest.approx(0.0476569069177831)
 
 
+def test_save_and_load(pc: Comparer, tmp_path) -> None:
+    filename = tmp_path / "test.nc"
+    pc.save(filename)
+
+    pc2 = Comparer.load(filename)
+
+    assert pc2.name == pc.name
+    assert pc2.gtype == pc.gtype
+
+
 def test_from_matched_x_or_x_item_not_both():
     with pytest.raises(ValueError, match="x and x_item cannot both be specified"):
         ms.from_matched(

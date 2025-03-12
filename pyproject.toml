@@ -18,7 +18,7 @@ dependencies = [
     "pandas >= 1.4",
     "mikeio >= 1.2",
     "matplotlib",
-    "xarray",
+    "xarray>=2024.10.0",
     "netCDF4",
     "scipy",
     "jinja2",
