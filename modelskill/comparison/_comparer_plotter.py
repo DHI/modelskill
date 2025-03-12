@@ -83,10 +83,10 @@ class ComparerPlotter:
             use "plotly" (interactive) or "matplotlib" backend,
             by default "matplotlib"
         style: list of str, optional
-            containing line styles of the model results. Cannot be passed together with color input.
+            Only for matplotlib backend. Containing line styles of the model results. Cannot be passed together with color input.
             by default None
         color: list of str, optional
-            containing colors of the model results.
+            Only for matplotlib backend. containing colors of the model results.
             If len(colors) == num_models + 1, the first color will be used for the observations.
             Cannot be passed together with style input.
             by default None
