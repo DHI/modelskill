@@ -8,4 +8,7 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+    "git.branchProtection": [
+        "main"
+    ],
 }

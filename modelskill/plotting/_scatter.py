@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Literal, Optional, Sequence, Tuple, Callable, TYPE_CHECKING, Mapping
-import warnings
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -41,14 +40,19 @@ def scatter(
     title: str = "",
     xlabel: str = "",
     ylabel: str = "",
-    skill_table: Optional[str | Sequence[str] | bool] = False,
+    skill_table: Optional[str | Sequence[str] | Mapping[str, str] | bool] = False,
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: Optional[str] = "",
     ax: Optional[Axes] = None,
     **kwargs,
 ) -> Axes:
-    """Scatter plot showing compared data: observation vs modelled
-    Optionally, with density histogram.
+    """Scatter plot tailored for model skill comparison.
+
+    Scatter plot showing compared data: observation vs modelled
+    Optionally, with density histogram or denisty color coding of points.
+
+    Note: can be called directly but is often called through the plot
+    accessor on a Comparer/CompararCollection cmp.plot.scatter()
 
     Parameters
     ----------
@@ -77,8 +81,8 @@ def scatter(
         show the data density as a 2d histogram, by default None
     show_density: bool, optional
         show the data density as a colormap of the scatter, by default None. If both `show_density` and `show_hist`
-        are None, then `show_density` is used by default.
-        for binning the data, the previous kword `bins=Float` is used
+        are None, then `show_density` is used by default. If number of points is less than 200, then `show_density`
+        is False by default. For binning the data, the previous kword `bins=Float` is used
     norm : matplotlib.colors.Normalize
         colormap normalization
         If None, defaults to matplotlib.colors.PowerNorm(vmin=1,gamma=0.5)
@@ -102,10 +106,11 @@ def scatter(
         x-label text on plot, by default None
     ylabel : str, optional
         y-label text on plot, by default None
-    skill_table: str, List[str], bool, optional
+    skill_table: str, List[str], dict[str,str], bool, optional
         calculate skill scores and show in box next to the plot,
         True will show default metrics, list of metrics will show
         these skill scores, by default False,
+        mapping can be used to rename the metrics in the table.
         Note: cannot be used together with skill_scores argument
     skill_scores : dict[str, float], optional
         dictionary with skill scores to be shown in box next to
@@ -121,17 +126,28 @@ def scatter(
     -------
     matplotlib.axes.Axes
         The axes on which the scatter plot was drawn.
-    """
-    if "skill_df" in kwargs:
-        warnings.warn(
-            "The `skill_df` keyword argument is deprecated. Use `skill_scores` instead.",
-            FutureWarning,
-        )
-        skill_scores = kwargs.pop("skill_df").to_dict("records")[0]
 
-    if show_hist is None and show_density is None:
-        # Default: points density
-        show_density = True
+    Examples
+    --------
+    ```{python}
+    import numpy as np
+    import modelskill as ms
+
+    x = np.linspace(0, 10, 1000)
+    y = x + np.random.normal(size=1000)
+
+    ms.plotting.scatter(x, y, skill_table=True)
+    ```
+    ```{python}
+    ms.plotting.scatter(x, y, show_hist=True, bins=20, cmap="OrRd")
+    ```
+    ```{python}
+    ms.plotting.scatter(x, y, quantiles=0, title="Hide quantiles")
+    ```
+    ```{python}
+    ms.plotting.scatter(x, y, xlim=(0,4), ylim=(0,4), show_density=False)
+    ```
+    """
 
     if len(x) != len(y):
         raise ValueError("x & y are not of equal length")
@@ -140,7 +156,12 @@ def scatter(
         norm = colors.PowerNorm(vmin=1, gamma=0.5)
 
     x_sample, y_sample = sample_points(x, y, show_points)
+    show_points = len(x_sample) > 0
     xq, yq = quantiles_xy(x, y, quantiles)
+
+    if show_hist is None and show_density is None:
+        # Default: points density
+        show_density = len(x_sample) >= 200
 
     xmin, xmax = x.min(), x.max()
     ymin, ymax = y.min(), y.max()
@@ -158,8 +179,14 @@ def scatter(
     x_trend = np.array([xlim[0], xlim[1]])
 
     if show_hist and show_density:
-        raise TypeError(
+        raise ValueError(
             "if `show_hist=True` then `show_density` must be either `False` or `None`"
+        )
+
+    if (show_points is False) and show_density:
+        raise ValueError(
+            "if `show_points=False` then `show_density` must be either "
+            "`False` or `None`; density is a property (the color) of the points!"
         )
 
     z = None
@@ -253,6 +280,7 @@ def _scatter_matplotlib(
     skill_score_unit,
     fit_to_quantiles,
     ax,
+    cmap=None,
     **kwargs,
 ) -> matplotlib.axes.Axes:
     fig, ax = _get_fig_ax(ax, figsize)
@@ -272,9 +300,11 @@ def _scatter_matplotlib(
         if show_density:
             c = z
             norm_ = norm
+            cmap_ = cmap
         else:
             c = "0.25"
             norm_ = None
+            cmap_ = None
         ax.scatter(
             x_sample,
             y_sample,
@@ -285,6 +315,7 @@ def _scatter_matplotlib(
             label=options.plot.scatter.points.label,
             zorder=1,
             norm=norm_,
+            cmap=cmap_,
             **kwargs,
         )
     if len(xq) > 0:
@@ -328,10 +359,13 @@ def _scatter_matplotlib(
             zorder=0.5,
             norm=norm,
             alpha=options.plot.scatter.points.alpha,
+            cmap=cmap,
             **kwargs,
         )
 
-    ax.legend(**settings.get_option("plot.scatter.legend.kwargs"))
+    legend_kwargs = settings.get_option("plot.scatter.legend.kwargs")
+    legend_kwargs["prop"] = {"size": options.plot.scatter.legend.fontsize}
+    legend = ax.legend(**legend_kwargs)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.axis("square")
@@ -339,8 +373,8 @@ def _scatter_matplotlib(
     ax.set_ylim([ylim[0], ylim[1]])
     ax.minorticks_on()
     ax.grid(which="both", axis="both", linewidth="0.2", color="k", alpha=0.6)
-    max_cbar = None
-    cmap = kwargs.get("cmap", None)
+    cbar = None
+    # cmap = kwargs.get("cmap", None)
     if show_hist or (show_density and show_points):
         try:
             cbar = fig.colorbar(
@@ -350,18 +384,35 @@ def _scatter_matplotlib(
                 pad=0.04,
                 alpha=options.plot.scatter.points.alpha,
             )
-            ticks = cbar.ax.get_yticks()
-            max_cbar = ticks[-1]
             cbar.set_label("# points")
             cbar.ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
         except ValueError:
             # too few points to make a colorbar
             pass
 
-    ax.set_title(title)
+    cbar_width = _get_cbar_width(ax, cbar)
+
+    ## Offset legend
+    if cbar_width is not None:
+        legend_loc = ax.transAxes.inverted().transform(
+            legend.get_bbox_to_anchor().extents[0:2]
+        )
+        # If legend is outside the figure, move it to the right of the colorbar
+        if legend_loc[0] > 1.0:
+            legend.set_bbox_to_anchor((cbar_width + legend_loc[0], legend_loc[1]))
+
     # Add skill table
     if skill_scores is not None:
-        _plot_summary_table(skill_scores, skill_score_unit, max_cbar=max_cbar)
+        _plot_summary_table(
+            skill_scores,
+            skill_score_unit,
+            ax,
+            cbar_width=cbar_width,
+        )
+
+    ax.set_title(title)
+
     return ax
 
 
@@ -486,7 +537,10 @@ def _scatter_plotly(
     fig.update_yaxes(range=ylim, nticks=10)
 
     if skill_scores is not None:
-        table = format_skill_table(skill_scores=skill_scores, unit=skill_score_unit)
+        table = format_skill_table(
+            skill_scores=skill_scores,
+            unit=skill_score_unit,
+        )
         lines = [
             f"{row['name']:<6} {row['sep']} {row['value']:<6}"
             for _, row in table.iterrows()
@@ -545,6 +599,7 @@ def _plot_summary_border(
     dx,
     dy,
     borderpad=0.01,
+    zorder=0,
 ) -> None:
     ## Load settings
     bbox_kwargs = {}
@@ -566,66 +621,121 @@ def _plot_summary_border(
         dy + borderpad * 2,
         transform=figure_transform,
         clip_on=False,
+        zorder=zorder,
         **bbox_kwargs,
     )
 
     plt.gca().add_patch(bbox)
 
 
-def _plot_summary_table(
-    skill_scores: Mapping[str, float], units: str, max_cbar: Optional[float] = None
-) -> None:
-    table = format_skill_table(skill_scores, units)
-    cols = ["name", "sep", "value"]
-    text_cols = ["\n".join(table[col]) for col in cols]
-
-    if max_cbar is None:
-        x = 0.93
-    elif max_cbar < 1e3:
-        x = 0.99
-    elif max_cbar < 1e4:
-        x = 1.01
-    elif max_cbar < 1e5:
-        x = 1.03
-    elif max_cbar < 1e6:
-        x = 1.05
+def _get_cbar_width(ax, cbar=None) -> float | None:
+    plt.draw()
+    # If colorbar, get extents from colorbar label:
+    if cbar is not None:
+        label = cbar.ax.yaxis.get_label()
+        if label is not None:
+            x_extent_right = ax.transAxes.inverted().transform(
+                label.get_window_extent()
+            )[1][0]
+        else:
+            # If no label, get max value from colorbar ticks
+            x_extent_right = cbar.bbox.transformed(ax.transAxes.inverted()).extents[2]
+        return x_extent_right - 1
     else:
-        # When more than 1e6 samples, matplotlib changes to scientific notation
-        x = 0.97
+        return None
 
-    fig = plt.gcf()
-    figure_transform = fig.transFigure.get_affine()
 
-    # General text settings
-    txt_settings = dict(
-        fontsize=options.plot.scatter.legend.fontsize,
+def _plot_summary_table(
+    skill_scores: Mapping[str, float],
+    units: str,
+    ax,
+    cbar_width: Optional[float] = None,
+) -> None:
+    # If colorbar, get extents from colorbar label:
+    x0 = options.plot.scatter.skill_table.x_position
+    if x0 > 1 and cbar_width is not None:
+        x0 = cbar_width + x0
+
+    # Plot table
+    fontsize = options.plot.scatter.skill_table.fontsize
+    ## Data
+    table_data = format_skill_table(
+        skill_scores,
+        unit=units,
+        sep="=",
     )
+    ## To get sizing, we plot a dummy table
+    table_dummy = ax.table(
+        table_data.values,
+    )
+    table_dummy.auto_set_font_size(False)
+    table_dummy.set_fontsize(fontsize)
 
-    # Column 1
-    text_columns = []
-    dx = 0
-    for ti in text_cols:
-        text_col_i = fig.text(x + dx, 0.6, ti, **txt_settings)
-        ## Render, and get width
-        # plt.draw() # TOOO this causes an error and I have no idea why it is here
-        dx = (
-            dx
-            + figure_transform.inverted().transform(
-                [text_col_i.get_window_extent().bounds[2], 0]
-            )[0]
-        )
-        text_columns.append(text_col_i)
+    col_widths = []
+    renderer = ax.figure.canvas.get_renderer()
+    for col_idx in range(table_data.values.shape[1]):  # Iterate over columns
+        max_width = 0
+
+        for row_idx in range(table_data.values.shape[0]):  # Iterate over rows
+            cell = table_dummy[row_idx, col_idx]  # Get the cell object safely
+            text = cell.get_text()
+            bbox = text.get_window_extent(renderer, dpi=ax.figure.dpi)
+            if col_idx != 1:  # Seoerator column
+                padding = cell.PAD * ax.figure.dpi * 2
+            else:
+                padding = 0
+            max_width = max(max_width, bbox.width + padding)
+            height = bbox.height
+        col_widths.append(max_width)
+
+    # Remove dummy table
+    table_dummy.remove()
+
+    # Normalize widths
+    ## These are the widths in axes coordinates
+    widths_axTrans = [
+        (
+            ax.transAxes.inverted().transform((width, height))
+            - ax.transAxes.inverted().transform((0, 0))
+        )[0]
+        for width in col_widths
+    ]
+    ## This is the height (assuming all the same)
+    height_axTrans = (
+        ax.transAxes.inverted().transform((0, height))
+        - ax.transAxes.inverted().transform((0, 0))
+    )[1]
+
+    line_spacing = options.plot.scatter.skill_table.line_spacing
+    line_padding = options.plot.scatter.skill_table.line_padding
+    table_height = height_axTrans * line_spacing * table_data.values.shape[0]
+    table_height_padded = table_height + line_padding * 2
+    table1 = ax.table(
+        table_data.values,
+        loc="lower left",
+        cellLoc="left",
+        colWidths=col_widths,
+        edges="open",
+        bbox=[
+            x0,
+            1 - table_height - line_padding,
+            np.sum(widths_axTrans),
+            table_height,
+        ],
+    )
+    table1.auto_set_font_size(False)
+    table1.set_fontsize(fontsize)
 
     # Plot border
-    ## Define coordintes
-    x0, y0 = figure_transform.inverted().transform(
-        text_columns[0].get_window_extent().bounds[0:2]
+    _plot_summary_border(
+        ax.transAxes,
+        x0,
+        1 - table_height_padded,
+        np.sum(widths_axTrans),
+        table_height_padded,
+        borderpad=0,
+        zorder=table1.get_zorder() - 1,
     )
-    _, dy = figure_transform.inverted().transform(
-        (0, text_columns[0].get_window_extent().bounds[3])
-    )
-
-    _plot_summary_border(figure_transform, x0, y0, dx, dy)
 
 
 def __scatter_density(x, y, binsize: float = 0.1, method: str = "linear"):

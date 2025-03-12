@@ -1,0 +1,101 @@
+# Plotting
+
+## Plotting observations and model results
+
+[](`~modelskill.PointObservation`)s and [](`~modelskill.PointModelResult`)s can be plotted using their `plot` accessor:
+
+```{python}
+# | code-fold: true
+# | code-summary: "Observation and model data"
+import modelskill as ms
+o = ms.PointObservation('../data/SW/HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887)
+mr = ms.PointModelResult('../data/SW/ts_storm_4.dfs0', item=0) # TODO coords
+```
+
+
+```{python}
+o.plot.timeseries();
+```
+
+```{python}
+mr.plot.timeseries();
+```
+
+```{python}
+mr.plot.hist();
+```
+
+
+## Temporal coverage
+
+The temporal coverage of observations and model results can be plotted using the [`temporal_coverage`](`modelskill.plotting.temporal_coverage`) function:
+
+```{python}
+# | code-fold: true
+# | code-summary: "Observation and model data"
+o1 = ms.PointObservation('../data/SW/HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887)
+o2 = ms.TrackObservation("../data/SW/Alti_c2_Dutch.dfs0", item=3)
+mr = ms.DfsuModelResult('../data/SW/HKZN_local_2017_DutchCoast.dfsu', item=0)
+```
+
+With a few observation and model result objects, the temporal coverage can be plotted:
+
+```{python}
+ms.plotting.temporal_coverage(obs=[o1, o2], mod=mr);
+```
+
+
+## Spatial overview
+
+The spatial coverage of observations and model results can be plotted using the [`spatial_overview`](`modelskill.plotting.spatial_overview`) function:
+
+```{python}
+ms.plotting.spatial_overview([o1, o2], mr);
+```
+
+
+## Compared data
+
+The `plot` accessor on a [](`~modelskill.Comparer`) or [](`~modelskill.ComparerCollection`) object can be used to plot the compared data:
+
+```{python}
+cmp = ms.match(obs=o1, mod=mr)
+cmp
+```
+
+```{python}
+cmp.plot.timeseries();
+```
+
+```{python}
+cmp.plot.scatter();
+```
+
+
+## Taylor diagrams
+
+A Taylor diagram shows how well a model result matches an observation in terms of correlation, standard deviation and root mean squared error. The `taylor` plot can be accessed through the Comparer [`plot`](`modelskill.comparison.ComparerPlotter`) accessor or the ComparerCollection [`plot`](`modelskill.comparison.ComparerCollectionPlotter`) accessor:
+
+```{python}
+cmp.plot.taylor()
+```
+
+
+The radial distance from the point to the observation point is the standard deviation ratio, the angle is the correlation coefficient and the distance from the observation point to the model point is the root mean square error ratio. The closer the model point is to the observation point, the better the model result matches the observation. The closer the model point is to the origin, the better the model result matches the observation in terms of standard deviation and root mean square error. The closer the model point is to the horizontal axis, the better the model result matches the observation in terms of correlation. 
+
+
+## Directional data (e.g. wind or currents)
+
+Directional data can be plotted using the [`wind_rose`](`modelskill.plotting.wind_rose`). The function takes an array-like structure with speed and direction as columns (from one or two sources) and plots a wind rose:
+
+```{python}
+import mikeio
+ds = mikeio.read("../data/wave_dir.dfs0")
+df = ds[[0,2,1,3]].to_dataframe()
+df.round(2).head()
+```
+
+```{python}
+ms.plotting.wind_rose(df, figsize=(12,6));
+```
+

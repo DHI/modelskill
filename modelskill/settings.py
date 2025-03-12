@@ -1,4 +1,6 @@
 """
+Global modelskill settings.
+
 The settings module holds package-wide configurables and provides
 a uniform API for working with them.
 
@@ -288,10 +290,6 @@ class OptionsContainer:
 
 
 def _select_options(pat: str) -> List[str]:
-    """
-    returns a list of keys matching `pat`
-    if pat=="all", returns all registered options
-    """
     # short-circuit for exact key
     if pat in _registered_options:
         return [pat]

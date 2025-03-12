@@ -1,0 +1,55 @@
+---
+title: Is my model better than predicting the mean?
+jupyter: python3
+---
+
+
+It is easy to be convinced that a model is good if it has a low error.
+
+But it is always a good idea to compare your model to a baseline, to see if it is actually better than just predicting the mean.
+
+This can be done easily in `modelskill` thanks to the `DummyModelResult` class.
+
+
+```{python}
+import modelskill as ms
+
+fn = '../data/Oresund2D.dfsu'
+mr = ms.model_result(fn, item='Surface elevation')
+mr
+```
+
+```{python}
+fn = '../data/smhi_2095_klagshamn.dfs0'
+obs = ms.PointObservation(fn, x=366844.15, y=6154291.6, item=0)
+obs
+```
+
+```{python}
+dmr = ms.DummyModelResult(data=0.0)
+dmr
+```
+
+```{python}
+cmp = ms.match(obs=obs, mod=[mr, dmr]).remove_bias()
+cmp.skill().round(3)
+```
+
+```{python}
+cmp.skill().rmse.plot.barh(title="Better than predicting 0.0");
+```
+
+Above we created a DummyModelResult which always predicts 0.0.
+
+But we can be even more lazy and just use the `DummyModelResult` with the `mean` strategy, which will predict the mean of the observed values.
+
+```{python}
+dmr2 = ms.DummyModelResult(strategy='mean')
+dmr2
+```
+
+```{python}
+cmp2 = ms.match(obs=obs, mod=[mr, dmr2]).remove_bias()
+cmp2.skill().round(3)
+```
+

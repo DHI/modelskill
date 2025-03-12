@@ -68,11 +68,13 @@ def _parse_point_input(
 
     if isinstance(data, (str, Path)):
         suffix = Path(data).suffix
-        name = name or Path(data).stem
         if suffix == ".dfs0":
+            name = name or Path(data).stem
             data = mikeio.read(data)  # now mikeio.Dataset
         elif suffix == ".nc":
+            stem = Path(data).stem
             data = xr.open_dataset(data)
+            name = name or data.attrs.get("name") or stem
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
 
@@ -86,7 +88,7 @@ def _parse_point_input(
         sel_items = PointItem(values=item_name, aux=[])
 
         if isinstance(data, mikeio.DataArray):
-            data = mikeio.Dataset(data)
+            data = mikeio.Dataset([data])
         elif isinstance(data, pd.Series):
             data = data.to_frame()
         elif isinstance(data, xr.DataArray):

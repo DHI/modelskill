@@ -13,7 +13,9 @@ from ._base import Alignable
 
 
 class PointModelResult(TimeSeries, Alignable):
-    """Construct a PointModelResult from a 0d data source:
+    """Model result for a single point location.
+
+    Construct a PointModelResult from a 0d data source:
     dfs0 file, mikeio.Dataset/DataArray, pandas.DataFrame/Series
     or xarray.Dataset/DataArray
 

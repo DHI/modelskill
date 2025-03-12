@@ -64,7 +64,6 @@ def test_plot_temporal_coverage_settings(o1, o2, o3, mr1, mr2):
 def test_plot_spatial_overview(o1, o2, o3, mr1):
     ms.plotting.spatial_overview([o1, o2, o3], mr1)
     ms.plotting.spatial_overview(o1, mr1, figsize=(3, 6))
-    ms.plotting.spatial_overview([o1, o2, o3], mod=[], title="test")
     ms.plotting.spatial_overview(obs=[], mod=mr1, title="test")
     plt.close()
 
@@ -132,7 +131,7 @@ def x_y():
 def test_sample_points_bool_selects_all_points(x_y):
     x, y = x_y
 
-    x_sample, y_sample = sample_points(x, y, include=True)
+    x_sample, y_sample = sample_points(x, y, show_points=True)
     assert len(x_sample) == len(x)
     assert len(y_sample) == len(y)
 
@@ -140,7 +139,7 @@ def test_sample_points_bool_selects_all_points(x_y):
 def test_sample_points_bool_selects_no_points(x_y):
     x, y = x_y
 
-    x_sample, y_sample = sample_points(x, y, include=False)
+    x_sample, y_sample = sample_points(x, y, show_points=False)
     assert len(x_sample) == 0
     assert len(y_sample) == 0
 
@@ -148,7 +147,7 @@ def test_sample_points_bool_selects_no_points(x_y):
 def test_sample_points_int_selects_n_points(x_y):
     x, y = x_y
 
-    x_sample, y_sample = sample_points(x, y, include=10)
+    x_sample, y_sample = sample_points(x, y, show_points=10)
     assert len(x_sample) == 10
     assert len(y_sample) == 10
 
@@ -156,7 +155,7 @@ def test_sample_points_int_selects_n_points(x_y):
 def test_sample_points_float_selects_fraction_points(x_y):
     x, y = x_y
 
-    x_sample, y_sample = sample_points(x, y, include=0.1)
+    x_sample, y_sample = sample_points(x, y, show_points=0.1)
     assert len(x_sample) == 10000
     assert len(y_sample) == 10000
 
@@ -165,22 +164,22 @@ def test_sample_points_float_raises_error(x_y):
     x, y = x_y
 
     with pytest.raises(ValueError):
-        sample_points(x, y, include=1.1)
+        sample_points(x, y, show_points=1.1)
 
     with pytest.raises(ValueError):
-        sample_points(x, y, include=-0.1)
+        sample_points(x, y, show_points=-0.1)
 
 
 def test_sample_points_negative_int_raises_error(x_y):
     x, y = x_y
 
     with pytest.raises(ValueError):
-        sample_points(x, y, include=-1)
+        sample_points(x, y, show_points=-1)
 
 
 def test_sample_points_large_int_uses_all_points(x_y):
     x, y = x_y
 
-    x_sample, y_sample = sample_points(x, y, include=1000000)
+    x_sample, y_sample = sample_points(x, y, show_points=1000000)
     assert len(x_sample) == len(x)
     assert len(y_sample) == len(y)

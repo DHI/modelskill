@@ -24,13 +24,12 @@ import pandas as pd
 
 
 from .. import metrics as mtr
-from ..plotting import taylor_diagram, TaylorPoint
 
 from ._collection_plotter import ComparerCollectionPlotter
 from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 
-from ..utils import _get_idx, _get_name
+from ..utils import _get_name
 from ._comparison import Comparer, Scoreable
 from ..metrics import _parse_metric
 from ._utils import (
@@ -40,40 +39,38 @@ from ._utils import (
     IdxOrNameTypes,
     TimeTypes,
 )
-from ._comparison import _get_deprecated_args  # TODO remove in v 1.1
-
-
-def _get_deprecated_obs_var_args(kwargs):  # type: ignore
-    observation, variable = None, None
-
-    # Don't bother refactoring this, it will be removed in v1.1
-    if "observation" in kwargs:
-        observation = kwargs.pop("observation")
-        if observation is not None:
-            warnings.warn(
-                f"The 'observation' argument is deprecated, use 'sel(observation='{observation}') instead",
-                FutureWarning,
-            )
-
-    if "variable" in kwargs:
-        variable = kwargs.pop("variable")
-
-        if variable is not None:
-            warnings.warn(
-                f"The 'variable' argument is deprecated, use 'sel(quantity='{variable}') instead",
-                FutureWarning,
-            )
-
-    return observation, variable
 
 
 class ComparerCollection(Mapping, Scoreable):
-    """
-    Collection of comparers, constructed by calling the `modelskill.match`
-    method or by initializing with a list of comparers.
+    """Collection of comparers.
+
+    The `ComparerCollection` is one of the main objects of the `modelskill` package. It is a collection of [`Comparer`](`modelskill.Comparer`) objects and created either by the [`match()`](`modelskill.match`) function, by passing a list of Comparers to the [`ComparerCollection`](`modelskill.ComparerCollection`) constructor, or by reading a config file using the [`from_config()`](`modelskill.from_config`) function.
 
     NOTE: In case of multiple model results with different time coverage,
     only the _overlapping_ time period will be used! (intersection)
+
+    Main functionality:
+
+    * selecting/filtering data
+        - `__get_item__()` - get a single Comparer, e.g., `cc[0]` or `cc['obs1']`
+        - [`sel()`](`modelskill.ComparerCollection.sel`)
+        - [`query()`](`modelskill.ComparerCollection.query`)
+    * skill assessment
+        - [`skill()`](`modelskill.ComparerCollection.skill`)
+        - [`mean_skill()`](`modelskill.ComparerCollection.mean_skill`)
+        - [`gridded_skill()`](`modelskill.ComparerCollection.gridded_skill`) (for track observations)
+    * plotting
+        - [`plot.scatter()`](`modelskill.comparison._collection_plotter.ComparerCollectionPlotter.scatter`)
+        - [`plot.kde()`](`modelskill.comparison._collection_plotter.ComparerCollectionPlotter.kde`)
+        - [`plot.hist()`](`modelskill.comparison._collection_plotter.ComparerCollectionPlotter.hist`)
+    * load/save/export data
+        - [`load()`](`modelskill.ComparerCollection.load`)
+        - [`save()`](`modelskill.ComparerCollection.save`)
+
+    Parameters
+    ----------
+    comparers : list of Comparer
+        list of comparers
 
     Examples
     --------
@@ -104,15 +101,7 @@ class ComparerCollection(Mapping, Scoreable):
                 self._comparers[cmp.name] = cmp
 
         self.plot = ComparerCollection.plotter(self)
-        """Plot using the ComparerCollectionPlotter
-
-        Examples
-        --------
-        >>> cc.plot.scatter()
-        >>> cc.plot.kde()
-        >>> cc.plot.taylor()
-        >>> cc.plot.hist()
-        """
+        """Plot using the [](`~modelskill.comparison.ComparerCollectionPlotter`)"""
 
     @property
     def _name(self) -> str:
@@ -128,25 +117,9 @@ class ComparerCollection(Mapping, Scoreable):
         return self[0]._unit_text
 
     @property
-    def n_comparers(self) -> int:
-        warnings.warn(
-            "cc.n_comparers is deprecated, use len(cc) instead",
-            FutureWarning,
-        )
-        return len(self)
-
-    @property
     def n_points(self) -> int:
         """number of compared points"""
         return sum([c.n_points for c in self._comparers.values()])
-
-    @property
-    def start(self) -> pd.Timestamp:
-        warnings.warn(
-            "start is deprecated, use start_time instead",
-            FutureWarning,
-        )
-        return self.start_time
 
     @property
     def start_time(self) -> pd.Timestamp:
@@ -155,14 +128,6 @@ class ComparerCollection(Mapping, Scoreable):
         for cmp in self._comparers.values():
             starts.append(cmp.time[0])
         return min(starts)
-
-    @property
-    def end(self) -> pd.Timestamp:
-        warnings.warn(
-            "end is deprecated, use end_time instead",
-            FutureWarning,
-        )
-        return self.end_time
 
     @property
     def end_time(self) -> pd.Timestamp:
@@ -307,7 +272,6 @@ class ComparerCollection(Mapping, Scoreable):
         end: Optional[TimeTypes] = None,
         time: Optional[TimeTypes] = None,
         area: Optional[List[float]] = None,
-        variable: Optional[IdxOrNameTypes] = None,  # obsolete
         **kwargs: Any,
     ) -> "ComparerCollection":
         """Select data based on model, time and/or area.
@@ -339,12 +303,6 @@ class ComparerCollection(Mapping, Scoreable):
         ComparerCollection
             New ComparerCollection with selected data.
         """
-        if variable is not None:
-            warnings.warn(
-                "variable is deprecated, use quantity instead",
-                FutureWarning,
-            )
-            quantity = variable
         # TODO is this really necessary to do both in ComparerCollection and Comparer?
         if model is not None:
             if isinstance(model, (str, int)):
@@ -446,7 +404,6 @@ class ComparerCollection(Mapping, Scoreable):
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         observed: bool = False,
-        **kwargs: Any,
     ) -> SkillTable:
         """Aggregated skill assessment of model(s)
 
@@ -504,24 +461,7 @@ class ComparerCollection(Mapping, Scoreable):
         2017-10-28  162 -0.07  0.19   0.18  0.16  0.96  0.06  1.00
         2017-10-29  163 -0.21  0.52   0.47  0.42  0.79  0.11  0.99
         """
-
-        # TODO remove in v1.1 ----------
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cc = self.sel(
-            model=model,
-            observation=observation,
-            quantity=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-        if cc.n_points == 0:
-            raise ValueError("Dataset is empty, no data to compare.")
-
-        ## ---- end of deprecated code ----
+        cc = self
 
         pmetrics = _parse_metric(metrics)
 
@@ -673,24 +613,7 @@ class ComparerCollection(Mapping, Scoreable):
         * x            (x) float64 -1.5 -0.5 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5
         * y            (y) float64 51.5 52.5 53.5 54.5 55.5 56.5
         """
-
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self.sel(
-            model=model,
-            observation=observation,
-            quantity=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-
-        if cmp.n_points == 0:
-            raise ValueError("Dataset is empty, no data to compare.")
-
-        ## ---- end of deprecated code ----
+        cmp = self
 
         metrics = _parse_metric(metrics)
 
@@ -764,24 +687,7 @@ class ComparerCollection(Mapping, Scoreable):
         >>> sk = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
 
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        # filter data
-        cc = self.sel(
-            model=model,  # deprecated
-            observation=observation,  # deprecated
-            quantity=variable,  # deprecated
-            start=start,  # deprecated
-            end=end,  # deprecated
-            area=area,  # deprecated
-        )
-        if cc.n_points == 0:
-            raise ValueError("Dataset is empty, no data to compare.")
-
-        ## ---- end of deprecated code ----
+        cc = self
 
         df = cc._to_long_dataframe()  # TODO: remove
         mod_names = cc.mod_names
@@ -860,24 +766,7 @@ class ComparerCollection(Mapping, Scoreable):
     #     >>> cc.mean_skill_points()
     #     """
 
-    #     # TODO remove in v1.1
-    #     model, start, end, area = _get_deprecated_args(kwargs)
-    #     observation, variable = _get_deprecated_obs_var_args(kwargs)
-    #     assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-    #     # filter data
-    #     cmp = self.sel(
-    #         model=model,
-    #         observation=observation,
-    #         variable=variable,
-    #         start=start,
-    #         end=end,
-    #         area=area,
-    #     )
-    #     if cmp.n_points == 0:
-    #         warnings.warn("No data!")
-    #         return None
-
+    #     cmp = self
     #     dfall = cmp.to_dataframe()
     #     dfall["observation"] = "all"
 
@@ -946,6 +835,7 @@ class ComparerCollection(Mapping, Scoreable):
     def score(
         self,
         metric: str | Callable = mtr.rmse,
+        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
         **kwargs: Any,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
@@ -994,8 +884,6 @@ class ComparerCollection(Mapping, Scoreable):
         {'mod': 8.414442957854142}
         """
 
-        weights = kwargs.pop("weights", None)
-
         metric = _parse_metric(metric)[0]
 
         if weights is None:
@@ -1004,30 +892,12 @@ class ComparerCollection(Mapping, Scoreable):
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        model, start, end, area = _get_deprecated_args(kwargs)  # type: ignore
-        observation, variable = _get_deprecated_obs_var_args(kwargs)  # type: ignore
         assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
-        if model is None:
-            models = self.mod_names
-        else:
-            # TODO: these two lines looks familiar, extract to function
-            models = [model] if np.isscalar(model) else model  # type: ignore
-            models = [_get_name(m, self.mod_names) for m in models]  # type: ignore
-
-        cmp = self.sel(
-            model=models,  # deprecated
-            observation=observation,  # deprecated
-            quantity=variable,  # deprecated
-            start=start,  # deprecated
-            end=end,  # deprecated
-            area=area,  # deprecated
-        )
+        cmp = self
 
         if cmp.n_points == 0:
             raise ValueError("Dataset is empty, no data to compare.")
-
-        ## ---- end of deprecated code ----
 
         sk = cmp.mean_skill(weights=weights, metrics=[metric])
         df = sk.to_dataframe()
@@ -1107,170 +977,3 @@ class ComparerCollection(Mapping, Scoreable):
         cmp = Comparer.load(f)
         os.remove(f)
         return cmp
-
-    # =============== Deprecated methods ===============
-
-    def spatial_skill(
-        self,
-        bins=5,
-        binsize=None,
-        by=None,
-        metrics=None,
-        n_min=None,
-        **kwargs,
-    ):
-        warnings.warn(
-            "spatial_skill is deprecated, use gridded_skill instead", FutureWarning
-        )
-        return self.gridded_skill(
-            bins=bins,
-            binsize=binsize,
-            by=by,
-            metrics=metrics,
-            n_min=n_min,
-            **kwargs,
-        )
-
-    def scatter(
-        self,
-        *,
-        bins=120,
-        quantiles=None,
-        fit_to_quantiles=False,
-        show_points=None,
-        show_hist=None,
-        show_density=None,
-        backend="matplotlib",
-        figsize=(8, 8),
-        xlim=None,
-        ylim=None,
-        reg_method="ols",
-        title=None,
-        xlabel=None,
-        ylabel=None,
-        skill_table=None,
-        **kwargs,
-    ):
-        warnings.warn("scatter is deprecated, use plot.scatter instead", FutureWarning)
-
-        # TODO remove in v1.1
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
-
-        # select model
-        mod_idx = _get_idx(model, self.mod_names)
-        mod_name = self.mod_names[mod_idx]
-
-        # select variable
-        qnt_idx = _get_idx(variable, self.quantity_names)
-        qnt_name = self.quantity_names[qnt_idx]
-
-        # filter data
-        cmp = self.sel(
-            model=mod_name,
-            observation=observation,
-            quantity=qnt_name,
-            start=start,
-            end=end,
-            area=area,
-        )
-
-        return cmp.plot.scatter(
-            bins=bins,
-            quantiles=quantiles,
-            fit_to_quantiles=fit_to_quantiles,
-            show_points=show_points,
-            show_hist=show_hist,
-            show_density=show_density,
-            backend=backend,
-            figsize=figsize,
-            xlim=xlim,
-            ylim=ylim,
-            reg_method=reg_method,
-            title=title,
-            xlabel=xlabel,
-            ylabel=ylabel,
-            skill_table=skill_table,
-            **kwargs,
-        )
-
-    def taylor(
-        self,
-        normalize_std=False,
-        aggregate_observations=True,
-        figsize=(7, 7),
-        marker="o",
-        marker_size=6.0,
-        title="Taylor diagram",
-        **kwargs,
-    ):
-        warnings.warn("taylor is deprecated, use plot.taylor instead", FutureWarning)
-
-        model, start, end, area = _get_deprecated_args(kwargs)
-        observation, variable = _get_deprecated_obs_var_args(kwargs)
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self.sel(
-            model=model,
-            observation=observation,
-            quantity=variable,
-            start=start,
-            end=end,
-            area=area,
-        )
-
-        if cmp.n_points == 0:
-            warnings.warn("No data!")
-            return
-
-        if (not aggregate_observations) and (not normalize_std):
-            raise ValueError(
-                "aggregate_observations=False is only possible if normalize_std=True!"
-            )
-
-        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
-        skill_func = cmp.mean_skill if aggregate_observations else cmp.skill
-        sk = skill_func(metrics=metrics)
-
-        df = sk.to_dataframe()
-        ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
-
-        if isinstance(df.index, pd.MultiIndex):
-            df.index = df.index.map("_".join)
-
-        df = df[["_std_obs", "_std_mod", "cc"]].copy()
-        df.columns = ["obs_std", "std", "cc"]
-        pts = [
-            TaylorPoint(
-                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
-            )
-            for r in df.itertuples()
-        ]
-
-        taylor_diagram(
-            obs_std=ref_std,
-            points=pts,
-            figsize=figsize,
-            normalize_std=normalize_std,
-            title=title,
-        )
-
-    def kde(self, ax=None, **kwargs):
-        warnings.warn("kde is deprecated, use plot.kde instead", FutureWarning)
-
-        return self.plot.kde(ax=ax, **kwargs)
-
-    def hist(
-        self,
-        model=None,
-        bins=100,
-        title=None,
-        density=True,
-        alpha=0.5,
-        **kwargs,
-    ):
-        warnings.warn("hist is deprecated, use plot.hist instead", FutureWarning)
-
-        return self.plot.hist(
-            model=model, bins=bins, title=title, density=density, alpha=alpha, **kwargs
-        )

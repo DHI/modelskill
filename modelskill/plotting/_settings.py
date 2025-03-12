@@ -32,6 +32,26 @@ register_option(
 )
 register_option("plot.scatter.legend.kwargs", {}, validator=settings.is_dict)
 register_option(
+    "plot.scatter.skill_table.x_position",
+    1.01,
+    validator=settings.is_float,
+)
+register_option(
+    "plot.scatter.skill_table.line_spacing",
+    1,
+    validator=settings.is_positive,
+)
+register_option(
+    "plot.scatter.skill_table.line_padding",
+    0.015,
+    validator=settings.is_float,
+)
+register_option(
+    "plot.scatter.skill_table.fontsize",
+    14,
+    validator=settings.is_positive,
+)
+register_option(
     "plot.scatter.reg_line.kwargs", {"color": "r"}, validator=settings.is_dict
 )
 register_option(

@@ -1,0 +1,62 @@
+# Getting started
+
+
+This page describes a simple ModelSkill workflow when model
+results and observations are already matched. See [workflow page](workflow.qmd) for a more elaborate workflow.   
+
+## Installation
+
+::: {.callout-tip}
+# Using uv
+[uv](https://docs.astral.sh/uv/) is an extremely fast Python package and project manager that is 10-100x faster than pip, and also makes it easy to install Python and manage projects. With uv, creating a virtual environment is as easy as uv venv.
+:::
+
+To install ModelSkill, run this command in a terminal:
+
+::: {.panel-tabset}
+## pip
+
+```bash
+pip install modelskill
+```
+
+## uv
+
+```bash
+uv pip install modelskill
+```
+:::
+
+## Skill assessment
+
+The simplest use-case for skill assessment is when you have a dataset of matched model results and observations in tabular format.
+
+```{python}
+import pandas as pd
+import modelskill as ms
+df = pd.read_csv("../data/Vistula/sim1/6158100.csv", parse_dates=True, index_col="Date")
+df.head()
+```
+
+```{python}
+cmp = ms.from_matched(df, obs_item="Qobs", mod_items="Qsim", quantity=ms.Quantity("Discharge", "m3/s"))
+cmp
+```
+
+A time series plot is a common way to visualize the comparison.
+
+```{python}
+cmp.plot.timeseries()
+```
+
+Another more quantitative way to analyze the compared data is to use a scatter plot, which optionally includes a skill table ([Definition of the metrics](`modelskill.metrics`)).
+
+```{python}
+cmp.plot.scatter(skill_table=True)
+```
+
+The skill table can also be produced in tabular format, including specifing other metrics.
+
+```{python}
+cmp.skill(metrics=["bias", "mae", "rmse", "kge", "si"])
+```

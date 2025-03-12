@@ -7,7 +7,7 @@ from matplotlib.axes import Axes
 import numpy as np
 import pandas as pd
 
-from ..metrics import metric_has_units, defined_metrics
+from ..metrics import metric_has_units, defined_metrics, get_display_name
 from ..obs import unit_display_name
 
 
@@ -53,7 +53,7 @@ def _xyticks(n_sectors=8, lim=None):
 
 
 def sample_points(
-    x: np.ndarray, y: np.ndarray, include: bool | int | float | None = None
+    x: np.ndarray, y: np.ndarray, show_points: bool | int | float | None = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Sample points to be plotted
 
@@ -72,35 +72,37 @@ def sample_points(
 
     assert len(x) == len(y), "x and y must have same length"
 
-    if include is True:
+    if show_points is True:
         return x, y
 
-    if include is None:
+    if show_points is None:
         if len(x) < 5e4:
             return x, y
         else:
-            include = 50000
+            show_points = 50000
             warnings.warn(
-                message=f"Showing only {include} points in plot. Set `include` to True to show all points."
+                message=f"Showing only {show_points} points in plot. Set `show_points` to True to show all points."
             )
     else:
-        if not isinstance(include, (bool, int, float)):
-            raise TypeError(f"'subset' must be bool, int or float, not {type(include)}")
+        if not isinstance(show_points, (bool, int, float)):
+            raise TypeError(
+                f"'show_points' must be bool, int or float, not {type(show_points)}"
+            )
 
-    if include is False:
+    if show_points is False:
         return np.array([]), np.array([])
 
-    if isinstance(include, float):
-        if not 0 <= include <= 1:
-            raise ValueError("`include` fraction must be in [0,1]")
+    if isinstance(show_points, float):
+        if not 0 <= show_points <= 1:
+            raise ValueError("`show_points` fraction must be in [0,1]")
 
-        n_samples = int(len(x) * include)
-    elif isinstance(include, int):
-        if include < 0:
-            raise ValueError("`include` must be positive integer")
-        if include > len(x):
-            include = len(x)
-        n_samples = include
+        n_samples = int(len(x) * show_points)
+    elif isinstance(show_points, int):
+        if show_points < 0:
+            raise ValueError("`show_points` must be positive integer")
+        if show_points > len(x):
+            show_points = len(x)
+        n_samples = show_points
 
     np.random.seed(20)  # TODO should this be a parameter?
     ran_index = np.random.choice(range(len(x)), n_samples, replace=False)
@@ -149,12 +151,14 @@ def quantiles_xy(
     return np.quantile(x, q=q), np.quantile(y, q=q)
 
 
-def format_skill_table(skill_scores: Mapping[str, float], unit: str) -> pd.DataFrame:
+def format_skill_table(
+    skill_scores: Mapping[str, float], unit: str, sep: str = " =  "
+) -> pd.DataFrame:
     # select metrics columns
     accepted_columns = defined_metrics | {"n"}
     kv = {k: v for k, v in skill_scores.items() if k in accepted_columns}
 
-    lines = [_format_skill_line(key, value, unit) for key, value in kv.items()]
+    lines = [_format_skill_line(key, value, unit, sep=sep) for key, value in kv.items()]
 
     # TODO add sign and unit columns
     df = pd.DataFrame(lines, columns=["name", "sep", "value"])
@@ -162,9 +166,7 @@ def format_skill_table(skill_scores: Mapping[str, float], unit: str) -> pd.DataF
 
 
 def _format_skill_line(
-    name: str,
-    value: float | int,
-    unit: str,
+    name: str, value: float | int, unit: str, sep: str = " =  "
 ) -> Tuple[str, str, str]:
     precision: int = 2
     item_unit = " "
@@ -177,10 +179,13 @@ def _format_skill_line(
             # if statistic has dimensions, then add units
             item_unit = unit_display_name(unit)
 
-        rounded_value = np.round(value, precision)
-        fmt = f".{precision}f"
-        fvalue = f"{rounded_value:{fmt}}"
+        if isinstance(value, (float, int)):
+            rounded_value = np.round(value, precision)
+            fmt = f".{precision}f"
+            fvalue = f"{rounded_value:{fmt}}"
+        else:
+            fvalue = str(value)
 
-    name = name.upper()
+    name = get_display_name(name)
 
-    return f"{name}", " =  ", f"{fvalue} {item_unit}"
+    return f"{name}", sep, f"{fvalue} {item_unit}"

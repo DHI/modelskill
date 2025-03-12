@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from datetime import timedelta
 from pathlib import Path
 from typing import (
@@ -83,7 +82,7 @@ def from_matched(
     x_item: str | int | None = None,
     y_item: str | int | None = None,
 ) -> Comparer:
-    """Create a Comparer from observation and model results that are already matched (aligned)
+    """Create a Comparer from data that is already matched (aligned).
 
     Parameters
     ----------
@@ -241,8 +240,7 @@ def match(
 
     See Also
     --------
-    [from_matched][modelskill.from_matched]
-        Create a Comparer from observation and model results that are already matched
+    from_matched - Create a Comparer from observation and model results that are already matched
     """
     if isinstance(obs, get_args(ObsInputType)):
         return _single_obs_compare(
@@ -292,34 +290,6 @@ def match(
     return ComparerCollection(clist)
 
 
-def compare(
-    obs,
-    mod,
-    *,
-    obs_item=None,
-    mod_item=None,
-    gtype=None,
-    max_model_gap=None,
-) -> ComparerCollection:
-    warnings.warn("compare is deprecated. Use match instead.", FutureWarning)
-    observations = [obs] if isinstance(obs, get_args(ObsInputType)) else obs
-    assert isinstance(observations, Iterable)
-
-    clist = [
-        _single_obs_compare(
-            o,
-            mod,
-            obs_item=obs_item,
-            mod_item=mod_item,
-            gtype=gtype,
-            max_model_gap=max_model_gap,
-        )
-        for o in observations
-    ]
-
-    return ComparerCollection(clist)
-
-
 def _single_obs_compare(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
@@ -361,7 +331,8 @@ def match_space_time(
     raw_mod_data: Mapping[str, Alignable],
     max_model_gap: float | None = None,
 ) -> xr.Dataset:
-    """Match observation with one or more model results in time domain
+    """Match observation with one or more model results in time domain.
+
     and return as xr.Dataset in the format used by modelskill.Comparer
 
     Will interpolate model results to observation time.
@@ -389,7 +360,7 @@ def match_space_time(
 
     observation = observation.trim(period.start, period.end)
 
-    data = observation.data
+    data = observation.data.copy()
     data.attrs["name"] = observation.name
     data = data.rename({observation.name: "Observation"})
 
@@ -397,11 +368,12 @@ def match_space_time(
         # TODO is `align` the correct name for this operation?
         aligned = mr.align(observation, max_gap=max_model_gap)
 
-        if overlapping_names := set(aligned.data_vars) & set(data.data_vars):
-            warnings.warn(
-                "Model result has overlapping variable names with observation. Renamed with suffix `_model`."
+        if overlapping := set(aligned.filter_by_attrs(kind="aux").data_vars) & set(
+            observation.data.filter_by_attrs(kind="aux").data_vars
+        ):
+            raise ValueError(
+                f"Aux variables are not allowed to have identical names. Choose either aux from obs or model. Overlapping: {overlapping}"
             )
-            aligned = aligned.rename({v: f"{v}_mod" for v in overlapping_names})
 
         for dv in aligned:
             data[dv] = aligned[dv]

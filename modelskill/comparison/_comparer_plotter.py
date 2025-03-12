@@ -8,8 +8,8 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
     Callable,
+    Mapping,
 )
-import warnings
 
 if TYPE_CHECKING:
     import matplotlib.figure
@@ -206,7 +206,6 @@ class ComparerPlotter:
         self,
         bins: int | Sequence = 100,
         *,
-        model: str | int | None = None,
         title: str | None = None,
         ax=None,
         figsize: Tuple[float, float] | None = None,
@@ -246,15 +245,7 @@ class ComparerPlotter:
         """
         cmp = self.comparer
 
-        if model is None:
-            mod_names = cmp.mod_names
-        else:
-            warnings.warn(
-                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.hist()",
-                FutureWarning,
-            )
-            model_list = [model] if isinstance(model, (str, int)) else model
-            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+        mod_names = cmp.mod_names
 
         axes = []
         for mod_name in mod_names:
@@ -536,17 +527,18 @@ class ComparerPlotter:
         title: Optional[str] = None,
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
-        skill_table: Optional[Union[str, List[str], bool]] = None,
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
     ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
-        """Scatter plot showing compared data: observation vs modelled
+        """Scatter plot tailored for model-observation comparison.
+
         Optionally, with density histogram.
 
         Parameters
         ----------
         bins: (int, float, sequence), optional
-            bins for the 2D histogram on the background. By default 20 bins.
+            bins for the 2D histogram on the background. By default 120 bins.
             if int, represents the number of bins of 2D
             if float, represents the bin size
             if sequence (list of int or float), represents the bin edges
@@ -570,8 +562,9 @@ class ComparerPlotter:
         show_density: bool, optional
             show the data density as a colormap of the scatter, by default
             None. If both `show_density` and `show_hist` are None, then
-            `show_density` is used by default. For binning the data, the
-            kword `bins=Float` is used.
+            `show_density` is used by default. If number of points is less
+            than 200, then `show_density` is False as default.
+            For binning the data, the kword `bins=Float` is used.
         norm : matplotlib.colors norm
             colormap normalization. If None, defaults to
             matplotlib.colors.PowerNorm(vmin=1, gamma=0.5)
@@ -596,10 +589,11 @@ class ComparerPlotter:
             x-label text on plot, by default None
         ylabel : str, optional
             y-label text on plot, by default None
-        skill_table : str, List[str], bool, optional
+        skill_table : str, List[str], dict[str,str], bool, optional
             list of modelskill.metrics or boolean, if True then by default
             modelskill.options.metrics.list. This kword adds a box at the
             right of the scatter plot, by default False
+            mapping can be used to rename the metrics in the table.
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
         **kwargs
@@ -615,15 +609,8 @@ class ComparerPlotter:
         """
 
         cmp = self.comparer
-        if model is None:
-            mod_names = cmp.mod_names
-        else:
-            warnings.warn(
-                "The 'model' keyword is deprecated! Instead, filter comparer before plotting cmp.sel(model=...).plot.scatter()",
-                FutureWarning,
-            )
-            model_list = [model] if isinstance(model, (str, int)) else model
-            mod_names = [cmp.mod_names[_get_idx(m, cmp.mod_names)] for m in model_list]
+
+        mod_names = cmp.mod_names
 
         axes = []
         for mod_name in mod_names:
@@ -670,7 +657,7 @@ class ComparerPlotter:
         title: Optional[str],
         xlabel: Optional[str],
         ylabel: Optional[str],
-        skill_table: Optional[Union[str, List[str], bool]],
+        skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
         **kwargs,
     ):
         """Scatter plot for one model only"""
@@ -749,7 +736,9 @@ class ComparerPlotter:
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
     ):
-        """Taylor diagram showing model std and correlation to observation
+        """Taylor diagram for model skill comparison.
+
+        Taylor diagram showing model std and correlation to observation
         in a single-quadrant polar plot, with r=std and theta=arccos(cc).
 
         Parameters
@@ -770,12 +759,21 @@ class ComparerPlotter:
         matplotlib.figure.Figure
 
         Examples
-        ------
-        >>> comparer.taylor()
-        >>> comparer.taylor(start="2017-10-28", figsize=(5,5))
+        --------
+        ```{python}
+        #| echo: False
+        import modelskill as ms
+        o1 = ms.PointObservation('../data/SW/HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887)
+        mr = ms.DfsuModelResult('../data/SW/HKZN_local_2017_DutchCoast.dfsu', item=0)
+        cmp = ms.match(obs=o1, mod=mr)
+        ```
+        ```{python}
+        cmp.plot.taylor();
+        ```
 
-        References
-        ----------
+
+        Notes
+        -----
         Copin, Y. (2018). https://gist.github.com/ycopin/3342888, Yannick Copin <yannick.copin@laposte.net>
         """
         cmp = self.comparer
@@ -804,6 +802,7 @@ class ComparerPlotter:
             for r in df.itertuples()
         ]
 
+        # TODO consistent return type with other plotting methods
         return taylor_diagram(
             obs_std=ref_std,
             points=pts,

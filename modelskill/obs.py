@@ -1,10 +1,12 @@
 """
-The `observation` module contains different types of Observation classes for
-fixed locations (PointObservation), or locations moving in space (TrackObservation).
+# Observations
 
-Examples
---------
->>> o1 = PointObservation("klagshamn.dfs0", item=0, x=366844, y=6154291, name="Klagshamn")
+ModelSkill supports two types of observations:
+
+* [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
+* [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
+
+An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
 
 from __future__ import annotations
@@ -32,7 +34,9 @@ def observation(
     gtype: Optional[Literal["point", "track"]] = None,
     **kwargs,
 ):
-    """A factory function for creating an appropriate observation object
+    """Create an appropriate observation object.
+
+    A factory function for creating an appropriate observation object
     based on the data and args.
 
     If 'x' or 'y' is given, a PointObservation is created.
@@ -56,7 +60,7 @@ def observation(
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
     else:
-        geometry = GeometryType.from_string(gtype)
+        geometry = GeometryType(gtype)
 
     return _obs_class_lookup[geometry](
         data=data,
@@ -311,18 +315,12 @@ class TrackObservation(Observation):
         weight: float = 1.0,
         x_item: Optional[int | str] = 0,
         y_item: Optional[int | str] = 1,
-        keep_duplicates: bool | str = "first",
-        offset_duplicates: float = 0.001,
+        keep_duplicates: Literal["first", "last", False] = "first",
         quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,
         attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
-            if offset_duplicates != 0.001:
-                warnings.warn(
-                    "The 'offset_duplicates' argument is deprecated, use 'keep_duplicates' argument.",
-                    FutureWarning,
-                )
             data = _parse_track_input(
                 data=data,
                 name=name,
@@ -331,7 +329,6 @@ class TrackObservation(Observation):
                 x_item=x_item,
                 y_item=y_item,
                 keep_duplicates=keep_duplicates,
-                offset_duplicates=offset_duplicates,
                 aux_items=aux_items,
             )
         assert isinstance(data, xr.Dataset)
