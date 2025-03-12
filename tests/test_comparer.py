@@ -899,9 +899,9 @@ def test_timeseriesplot_accepts_style_color_input(pc):
     # Check that errors are raised
     with pytest.raises(ValueError, match="Choose one"):
         ax = pc.plot.timeseries(color=["red", "blue"], style="b-")
-    with pytest.raises(ValueError, match="'color' argument"):
+    with pytest.raises(ValueError, match="number of models"):
         ax = pc.plot.timeseries(color=["red"])
-    with pytest.raises(ValueError, match="'style' argument"):
+    with pytest.raises(ValueError, match="number of models"):
         ax = pc.plot.timeseries(style=["b-"])
 
     ax = pc.plot.timeseries(color=["red", "blue", "black"])
