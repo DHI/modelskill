@@ -31,27 +31,38 @@ from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
 
 
-def _check_kwarg_and_convert_to_list(color, style, n_mod):
-    if isinstance(style, str):
-        # If style is str, convert to list (for looping)
-        style = [style]
-    if isinstance(color, str):
-        # Same with color
-        color = [color]
+# def _check_kwarg_and_convert_to_list(color, style, n_mod):
+#     if isinstance(style, str):
+#         # If style is str, convert to list (for looping)
+#         style = [style]
+#     if isinstance(color, str):
+#         # Same with color
+#         color = [color]
 
-    if color is not None and len(color) < n_mod:  # too few colors given?
+#     if color is not None and len(color) < n_mod:  # too few colors given?
+#         raise ValueError(
+#             "Number of colors in 'color' argument does not match the number of models in the comparer."
+#         )
+
+#     if (
+#         style is not None and len(style) < n_mod and style[0] is not None
+#     ):  # too few styles given?
+#         raise ValueError(
+#             "Number of styles in 'style' argument does not match the number of models in the comparer."
+#         )
+
+#     return color, style
+
+
+def _check_arg_length_match_nmodels(arg, n_mod):
+    if isinstance(arg, str):
+        # If arg is str, convert to list (for looping)
+        arg = [arg]
+    if arg is not None and len(arg) < n_mod:
         raise ValueError(
-            "Number of colors in 'color' argument does not match the number of models in the comparer."
+            f"Number of elements in {arg} does not match the number of models in the comparer."
         )
-
-    if (
-        style is not None and len(style) < n_mod and style[0] is not None
-    ):  # too few styles given?
-        raise ValueError(
-            "Number of styles in 'style' argument does not match the number of models in the comparer."
-        )
-
-    return color, style
+    return arg
 
 
 class ComparerPlotter:
@@ -139,8 +150,10 @@ class ComparerPlotter:
         #     from ._comparison import MOD_COLORS
 
         #     color = MOD_COLORS[: cmp.n_models]
+        color = _check_arg_length_match_nmodels(color, cmp.n_models)
+        style = _check_arg_length_match_nmodels(style, cmp.n_models)
 
-        color, style = _check_kwarg_and_convert_to_list(color, style, cmp.n_models)
+        # color, style = _check_kwarg_and_convert_to_list(color, style, cmp.n_models)
 
         if color is not None and len(color) > cmp.n_models:
             # If more than n_models colors is given, the first color is used for the observations
