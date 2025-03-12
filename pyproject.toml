@@ -58,6 +58,7 @@ test =  [
             "mypy",
             "types-PyYAML",
             "geopandas",
+            "plotly",
         ]
 
 notebooks = [
