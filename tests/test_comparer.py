@@ -910,6 +910,14 @@ def test_timeseriesplot_accepts_style_color_input(pc):
     plt.show()
 
 
+def test_timeseriesplot_plotly_does_not_accept_style_color_input(pc):
+    with pytest.raises(NotImplementedError):
+        pc.plot.timeseries(backend="plotly", style=["b-", "g--"])
+
+    with pytest.raises(NotImplementedError):
+        pc.plot.timeseries(backend="plotly", color=["red", "blue"])
+
+
 def test_from_matched_x_or_x_item_not_both():
     with pytest.raises(ValueError, match="x and x_item cannot both be specified"):
         ms.from_matched(

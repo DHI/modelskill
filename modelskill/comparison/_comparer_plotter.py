@@ -160,6 +160,15 @@ class ComparerPlotter:
         elif backend == "plotly":  # pragma: no cover
             import plotly.graph_objects as go  # type: ignore
 
+            if style is not None:
+                raise NotImplementedError(
+                    "style argument is not supported for plotly backend"
+                )
+            if color is not None:
+                raise NotImplementedError(
+                    "color argument not supported for plotly backend"
+                )
+
             mod_scatter_list = []
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
