@@ -89,17 +89,7 @@ class ComparerCollection(Mapping, Scoreable):
     plotter = ComparerCollectionPlotter
 
     def __init__(self, comparers: Iterable[Comparer]) -> None:
-        self._comparers: Dict[str, Comparer] = {}
-
-        for cmp in comparers:
-            if cmp.name in self._comparers:
-                # comparer with this name already exists!
-                # maybe the user is trying to add a new model
-                # or a new time period
-                self._comparers[cmp.name] += cmp
-            else:
-                self._comparers[cmp.name] = cmp
-
+        self._comparers = {cmp.name: cmp for cmp in comparers}
         self.plot = ComparerCollection.plotter(self)
         """Plot using the [](`~modelskill.comparison.ComparerCollectionPlotter`)"""
 
@@ -186,6 +176,25 @@ class ComparerCollection(Mapping, Scoreable):
             out.append(f"{index}: {key} - {value.quantity}")
         return str.join("\n", out)
 
+    def merge(self, other: "ComparerCollection" | Comparer) -> "ComparerCollection":
+        # make a copy of self to avoid modifying the original
+        res = self.copy()
+
+        if isinstance(other, Comparer):
+            if other.name in res._comparers:
+                res._comparers[other.name] += other
+            else:
+                res._comparers[other.name] = other
+        elif isinstance(other, ComparerCollection):
+            for cmp in other:
+                if cmp.name in self._comparers:
+                    res._comparers[cmp.name] += cmp
+                else:
+                    res._comparers[cmp.name] = cmp
+        else:
+            raise TypeError(f"Cannot merge {type(other)} with {type(self)}")
+        return res
+
     def rename(self, mapping: Dict[str, str]) -> "ComparerCollection":
         """Rename observation, model or auxiliary data variables
 
@@ -258,10 +267,11 @@ class ComparerCollection(Mapping, Scoreable):
         if not isinstance(other, (Comparer, ComparerCollection)):
             raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
-        if isinstance(other, Comparer):
-            return ComparerCollection([*self, other])
-        elif isinstance(other, ComparerCollection):
-            return ComparerCollection([*self, *other])
+        return self.merge(other)
+        # if isinstance(other, Comparer):
+        #     return ComparerCollection([*self, other])
+        # elif isinstance(other, ComparerCollection):
+        #     return ComparerCollection([*self, *other])
 
     def sel(
         self,
