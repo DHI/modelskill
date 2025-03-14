@@ -576,3 +576,42 @@ def test_match_obs_model_pos_args_wrong_order_helpful_error_message():
 
     with pytest.raises(TypeError, match="order"):
         ms.match(mr, obs)
+
+
+def test_multiple_models_same_name(tmp_path):
+    obs = ms.PointObservation(
+        "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA"
+    )
+
+    modelfilebase = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
+
+    # copy model file to two new directories, representing two different calibration runs
+    dir1 = tmp_path / "cal1"
+    dir1.mkdir()
+    dir2 = tmp_path / "cal2"
+    dir2.mkdir()
+
+    import shutil
+
+    shutil.copy(modelfilebase, dir1)
+    shutil.copy(modelfilebase, dir2)
+
+    # named models
+    mr1 = ms.DfsuModelResult(
+        dir1 / "HKZN_local_2017_DutchCoast.dfsu", item=0, name="cal1"
+    )
+    mr2 = ms.DfsuModelResult(
+        dir2 / "HKZN_local_2017_DutchCoast.dfsu", item=0, name="cal2"
+    )
+
+    cmp = ms.match(obs, [mr1, mr2])
+
+    assert len(cmp.mod_names) == 2
+
+    # unnamed models
+    mr1 = ms.DfsuModelResult(dir1 / "HKZN_local_2017_DutchCoast.dfsu", item=0)
+    mr2 = ms.DfsuModelResult(dir2 / "HKZN_local_2017_DutchCoast.dfsu", item=0)
+
+    cmp = ms.match(obs, [mr1, mr2])
+
+    assert len(cmp.mod_names) == 2
