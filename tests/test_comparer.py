@@ -524,6 +524,49 @@ def test_tc_sel_time_and_area(tc):
     assert tc2.data.Observation.values.tolist() == [2.0]
 
 
+def test_pc_drop_model(pc):
+    pc2 = pc.drop(model="m2")
+    assert isinstance(pc2, type(pc))
+    assert pc2.n_models == pc.n_models - 1
+    assert "m2" not in pc2.mod_names
+    assert "m2" not in pc2.raw_mod_data
+    assert "m2" not in pc2.data
+    assert np.all(pc.data.m1 == pc2.data.m1)
+    assert np.all(pc.raw_mod_data["m1"] == pc2.raw_mod_data["m1"])
+
+
+def test_pc_drop_model_first(pc):
+    pc2 = pc.drop(model=0)
+    assert isinstance(pc2, type(pc))
+    assert pc2.n_models == pc.n_models - 1
+    assert "m1" not in pc2.mod_names
+    assert "m1" not in pc2.raw_mod_data
+    assert "m1" not in pc2.data
+    assert np.all(pc.data.m2 == pc2.data.m2)
+    assert np.all(pc.raw_mod_data["m2"] == pc2.raw_mod_data["m2"])
+
+
+def test_pc_drop_model_last(pc):
+    pc2 = pc.drop(model=-1)
+    assert isinstance(pc2, type(pc))
+    assert pc2.n_models == pc.n_models - 1
+    assert "m2" not in pc2.mod_names
+    assert "m2" not in pc2.raw_mod_data
+    assert "m2" not in pc2.data
+    assert np.all(pc.data.m1 == pc2.data.m1)
+    assert np.all(pc.raw_mod_data["m1"] == pc2.raw_mod_data["m1"])
+
+
+def test_tc_drop_model(tc):
+    tc2 = tc.drop(model="m2")
+    assert isinstance(tc2, type(tc))
+    assert tc2.n_models == tc.n_models - 1
+    assert "m2" not in tc2.mod_names
+    assert "m2" not in tc2.raw_mod_data
+    assert "m2" not in tc2.data
+    assert np.all(tc.data.m1 == tc2.data.m1)
+
+
 def test_pc_where(pc):
     pc2 = pc.where(pc.data.Observation > 2.5)
     assert pc2.n_points == 3
