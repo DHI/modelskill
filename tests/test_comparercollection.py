@@ -131,6 +131,18 @@ def test_cc_sel_model_m3(cc):
     assert cc2.n_models == 1
 
 
+def test_cc_drop_model(cc):
+    cc2 = cc.drop(model="m1")
+    assert "m1" not in cc2.mod_names
+    assert "m3" in cc2.mod_names
+
+
+def test_cc_drop_observation(cc):
+    cc2 = cc.drop(observation="fake point obs")
+    assert "fake point obs" not in cc2.obs_names
+    assert "fake track obs" in cc2.obs_names
+
+
 def test_cc_sel_model_last(cc):
     # last is m3 which is not in the first comparer
     cc2 = cc.sel(model=-1)

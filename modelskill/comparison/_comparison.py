@@ -899,6 +899,31 @@ class Comparer(Scoreable):
                 d = d.isel(time=mask)
         return Comparer.from_matched_data(data=d, raw_mod_data=raw_mod_data)
 
+    def drop(
+        self,
+        model: IdxOrNameTypes,
+    ) -> "Comparer":
+        """Drop data based on model.
+
+        Parameters
+        ----------
+        model : str, optional
+            Model name or index.
+        """
+        if isinstance(model, (str, int)):
+            models = [model]
+        else:
+            models = list(model)
+        mod_names = [_get_name(m, self.mod_names) for m in models]
+        dropped_models = [m for m in self.mod_names if m in mod_names]
+        d = self.data.drop_vars(dropped_models)
+        raw_mod_data = {
+            m: self.raw_mod_data[m]
+            for m in self.raw_mod_data.keys()
+            if m not in dropped_models
+        }
+        return Comparer.from_matched_data(data=d, raw_mod_data=raw_mod_data)
+
     def where(
         self,
         cond: Union[bool, np.ndarray, xr.DataArray],

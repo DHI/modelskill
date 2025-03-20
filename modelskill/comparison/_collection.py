@@ -348,6 +348,40 @@ class ComparerCollection(Mapping, Scoreable):
 
         return cc
 
+    def drop(
+        self,
+        model: Optional[str] = None,
+        observation: Optional[str] = None,
+        quantity: Optional[str] = None,
+    ) -> "ComparerCollection":
+        """Drop data based on model, observation and/or quantity.
+
+        Parameters
+        ----------
+        model : str, optional
+            Model name. If None, all models are kept.
+        observation : str, optional
+            Observation name. If None, all observations are kept.
+        quantity : str, optional
+            Quantity name. If None, all quantities are kept.
+        """
+
+        remaining_models = (
+            [m for m in self.mod_names if m not in model] if model else None
+        )
+        remaing_observations = (
+            [o for o in self.obs_names if o not in observation] if observation else None
+        )
+        remaining_quantities = (
+            [q for q in self.quantity_names if q not in quantity] if quantity else None
+        )
+
+        return self.sel(
+            model=remaining_models,
+            observation=remaing_observations,
+            quantity=remaining_quantities,
+        )
+
     def filter_by_attrs(self, **kwargs: Any) -> "ComparerCollection":
         """Filter by comparer attrs similar to xarray.Dataset.filter_by_attrs
 
