@@ -462,6 +462,12 @@ def test_pc_sel_model(pc):
     assert np.all(pc2.raw_mod_data["m2"] == pc.raw_mod_data["m2"])
 
 
+def test_pc_drop_model(pc):
+    pc2 = pc.drop(model="m2")
+    assert "m2" not in pc2.mod_names
+    assert "m1" in pc2.mod_names
+
+
 def test_pc_sel_model_first(pc):
     pc2 = pc.sel(model=0)
     assert pc2.n_points == 5

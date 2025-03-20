@@ -120,6 +120,17 @@ def test_mv_mm_skill(cc):
     assert pytest.approx(df.loc[idx].rmse) == 1.30535897
 
 
+def test_drop_quantity(cc) -> None:
+    cc2 = cc.drop(quantity="Wind speed")
+
+    # Original object is not changed
+    assert "Wind speed" in cc.quantity_names
+
+    # New object does not contain the dropped quantity
+    assert "Wind speed" not in cc2.quantity_names
+    assert "Significant wave height" in cc.quantity_names
+
+
 def test_mv_mm_mean_skill(cc):
     df = cc.mean_skill().to_dataframe()
     assert df.index.names[0] == "model"
