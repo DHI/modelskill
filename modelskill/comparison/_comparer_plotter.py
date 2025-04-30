@@ -31,6 +31,17 @@ from ..plotting import taylor_diagram, scatter, TaylorPoint
 from ..settings import options
 
 
+def _check_arg_length_match_nmodels(arg, n_mod):
+    if isinstance(arg, str):
+        # If arg is str, convert to list (for looping)
+        arg = [arg]
+    if arg is not None and len(arg) < n_mod:
+        raise ValueError(
+            f"Number of elements in {arg} does not match the number of models in the comparer."
+        )
+    return arg
+
+
 class ComparerPlotter:
     """Plotter class for Comparer
 
@@ -62,6 +73,8 @@ class ComparerPlotter:
         ax=None,
         figsize: Tuple[float, float] | None = None,
         backend: str = "matplotlib",
+        style: list[str] | str | None = None,
+        color: list[str] | tuple | str | None = None,
         **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
@@ -79,6 +92,14 @@ class ComparerPlotter:
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend,
             by default "matplotlib"
+        style: list of str, optional
+            Only for matplotlib backend. Containing line styles of the model results. Cannot be passed together with color input.
+            by default None
+        color: list of str, optional
+            Only for matplotlib backend. containing colors of the model results.
+            If len(colors) == num_models + 1, the first color will be used for the observations.
+            Cannot be passed together with style input.
+            by default None
         **kwargs
             other keyword arguments to fig.update_layout (plotly backend)
 
@@ -86,6 +107,7 @@ class ComparerPlotter:
         -------
         matplotlib.axes.Axes or plotly.graph_objects.Figure
         """
+
         from ._comparison import MOD_COLORS
 
         cmp = self.comparer
@@ -93,18 +115,39 @@ class ComparerPlotter:
         if title is None:
             title = cmp.name
 
+        if color is not None and style is not None:
+            raise ValueError(
+                "It is not possible to pass both the color argument and the style argument. Choose one."
+            )
+
+        # Color for observations:
+        obs_color = cmp.data[cmp._obs_name].attrs["color"]
+
+        color = _check_arg_length_match_nmodels(color, cmp.n_models)
+        style = _check_arg_length_match_nmodels(style, cmp.n_models)
+
+        if color is not None and len(color) > cmp.n_models:
+            # If more than n_models colors is given, the first color is used for the observations
+            obs_color = color[0]
+            color = color[1:]
+
         if backend == "matplotlib":
             fig, ax = _get_fig_ax(ax, figsize)
             for j in range(cmp.n_models):
                 key = cmp.mod_names[j]
                 mod = cmp.raw_mod_data[key]._values_as_series
-                mod.plot(ax=ax, color=MOD_COLORS[j])
+                if style is not None:
+                    mod.plot(ax=ax, style=style[j])
+                else:
+                    if color is None:
+                        color = MOD_COLORS
+                    mod.plot(ax=ax, color=color[j])
 
             ax.scatter(
                 cmp.time,
                 cmp.data[cmp._obs_name].values,
                 marker=".",
-                color=cmp.data[cmp._obs_name].attrs["color"],
+                color=obs_color,
             )
             ax.set_ylabel(cmp._unit_text)
             ax.legend([*cmp.mod_names, cmp._obs_name])
@@ -116,6 +159,15 @@ class ComparerPlotter:
 
         elif backend == "plotly":  # pragma: no cover
             import plotly.graph_objects as go  # type: ignore
+
+            if style is not None:
+                raise NotImplementedError(
+                    "style argument is not supported for plotly backend"
+                )
+            if color is not None:
+                raise NotImplementedError(
+                    "color argument not supported for plotly backend"
+                )
 
             mod_scatter_list = []
             for j in range(cmp.n_models):

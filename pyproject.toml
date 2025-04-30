@@ -55,17 +55,17 @@ docs = [
     "dask",
 ]
 
-dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2"]
-
-test = [
-    "pytest",
-    "pytest-cov",
-    "openpyxl",
-    "dask",
-    "mypy",
-    "types-PyYAML",
-    "geopandas",
+test =  [
+        "pytest",
+        "pytest-cov", 
+        "netCDF4",
+        "openpyxl",
+        "dask",
+        "mypy",
+        "geopandas",
+        "plotly",
 ]
+
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
