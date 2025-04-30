@@ -268,11 +268,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <p>Comparing directional data is easy from version 1.0 if the quantity is defined as directional. This happens automatically if data is loaded from a dfs file with EUM unit in “degrees” or if loaded from a xarray dataset with attribute “units” set to “degrees”. The quantity can also be created as directional manually by <code>ms.Quantity(..., is_directional=True)</code>.</p>
 <p>In the below example, the EUM unit is “degrees”.</p>
-<div id="c898f030" class="cell" data-execution_count="1">
+<div id="48769cd5" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mikeio</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="3511d1e7" class="cell" data-execution_count="2">
+<div id="06671187" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>fn <span class="op">=</span> <span class="st">"../data/wave_dir.dfs0"</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ds <span class="op">=</span> mikeio.read(fn)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>ds</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -288,7 +288,7 @@ items:
   3:  China_Measured: Mean Wave Direction &lt;Mean Wave Direction&gt; (degree)</code></pre>
 </div>
 </div>
-<div id="7dc7ebfd" class="cell" data-execution_count="3">
+<div id="044bdcbe" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.from_matched(ds, obs_item<span class="op">=</span><span class="dv">3</span>, mod_items<span class="op">=</span>[<span class="dv">2</span>])</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
@@ -299,14 +299,14 @@ Model(s):
 0: China_Model: Mean Wave Direction</code></pre>
 </div>
 </div>
-<div id="f773642c" class="cell" data-execution_count="4">
+<div id="28f2a7c0" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.quantity</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <pre><code>Quantity(name='Mean Wave Direction', unit='degree', is_directional=True)</code></pre>
 </div>
 </div>
 <p>Circular metrics are used to compare directional data if the quantity is defined as directional.</p>
-<div id="ba443666" class="cell" data-execution_count="5">
+<div id="53bef510" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.skill(metrics<span class="op">=</span>[<span class="st">"c_rmse"</span>,<span class="st">"c_max_error"</span>]).<span class="bu">round</span>(<span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div>
@@ -340,7 +340,7 @@ Model(s):
 </div>
 </div>
 </div>
-<div id="3c4a10e4" class="cell" data-execution_count="6">
+<div id="8304fcb2" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.timeseries(figsize<span class="op">=</span>(<span class="dv">8</span>,<span class="dv">5</span>))<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -350,7 +350,7 @@ Model(s):
 </div>
 </div>
 </div>
-<div id="6d318edc" class="cell" data-execution_count="7">
+<div id="1ac210eb" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.kde()<span class="op">;</span>   <span class="co"># note: the KDE estimate is not directional! (yet)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -360,7 +360,7 @@ Model(s):
 </div>
 </div>
 </div>
-<div id="4cfadf92" class="cell" data-execution_count="8">
+<div id="0c515618" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.plot.scatter()<span class="op">;</span>  <span class="co"># note: regression line and Q-Q are not shown </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
