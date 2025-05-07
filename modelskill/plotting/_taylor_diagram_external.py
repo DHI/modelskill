@@ -53,7 +53,8 @@ class TaylorDiagram:
 
         self.refstd = refstd  # Reference standard deviation
 
-        tr = PolarAxes.PolarTransform()
+        # TODO "and make sure to shift theta values before being passed"
+        tr = PolarAxes.PolarTransform(apply_theta_transforms=False)
 
         # Correlation labels
         rlocs = np.array([0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1])
