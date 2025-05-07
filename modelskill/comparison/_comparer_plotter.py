@@ -737,16 +737,16 @@ class ComparerPlotter:
 
         if sk is None:  # TODO
             return
-        df = sk.to_dataframe()
+        df = sk.to_dataframe().reset_index()
+        if "model" not in df.columns:
+            # doesn't make sense to make a taylor plot...
+            df["model"] = "model"
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
-        df = df[["_std_obs", "_std_mod", "cc"]].copy()
-        df.columns = ["obs_std", "std", "cc"]
+        df = df.rename(columns={"_std_obs": "obs_std", "_std_mod": "std"})
 
         pts = [
-            TaylorPoint(
-                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
-            )
+            TaylorPoint(name=r.model, obs_std=r.obs_std, std=r.std, cc=r.cc, marker=marker, marker_size=marker_size)
             for r in df.itertuples()
         ]
 

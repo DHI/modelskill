@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 import warnings
 from collections import namedtuple
 from typing import TYPE_CHECKING
@@ -11,7 +12,14 @@ import numpy as np
 
 from ._taylor_diagram_external import TaylorDiagram
 
-TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size")
+@dataclass
+class TaylorPoint:
+    name: str
+    obs_std: float
+    std: float
+    cc: float
+    marker: str
+    marker_size: float
 
 
 def taylor_diagram(
