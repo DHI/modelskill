@@ -1,11 +1,12 @@
-import numpy as np
-import pytest
-import pandas as pd
-import xarray as xr
 import matplotlib.pyplot as plt
-from modelskill.comparison import Comparer
-from modelskill import __version__
+import numpy as np
+import pandas as pd
+import pytest
+import xarray as xr
+
 import modelskill as ms
+from modelskill import __version__
+from modelskill.comparison import Comparer
 
 
 @pytest.fixture
@@ -951,3 +952,33 @@ def test_from_matched_non_scalar_xy_fails():
             x=df.lon,
             y=df.lat,
         )
+
+
+def test_load_comparer(pt_df, tmp_path):
+    cmp = Comparer.from_matched_data(data=pt_df)
+    fn = tmp_path / "test_comparer.nc"
+    cmp.save(fn)
+
+    cmp2 = Comparer.load(fn)
+    assert cmp2.gtype == "point"
+    assert "m2" in cmp2.mod_names
+    assert "m1" in cmp2.mod_names
+    assert len(cmp2.mod_names) == 2
+    assert cmp2.n_points == 6
+    assert cmp2.name == "Observation"
+    assert cmp2.score()["m1"] == pytest.approx(0.5916079783099617)
+
+
+def test_load_comparer_from_root_namespace(pt_df, tmp_path):
+    cmp = Comparer.from_matched_data(data=pt_df)
+    fn = tmp_path / "test_comparer2.nc"
+    cmp.save(fn)
+
+    cmp2 = ms.load(fn)
+    assert cmp2.gtype == "point"
+    assert "m2" in cmp2.mod_names
+    assert "m1" in cmp2.mod_names
+    assert len(cmp2.mod_names) == 2
+    assert cmp2.n_points == 6
+    assert cmp2.name == "Observation"
+    assert cmp2.score()["m1"] == pytest.approx(0.5916079783099617)
