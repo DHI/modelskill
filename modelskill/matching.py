@@ -414,6 +414,11 @@ def _parse_models(
     if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
     elif isinstance(mod, Sequence):
+        # model names have to be unique
+        model_names = [m.name for m in mod]
+        if len(set(model_names)) != len(mod):
+            raise ValueError("Model names must be unique")
+
         return [_parse_single_model(m, item=item, gtype=gtype) for m in mod]
     else:
         raise ValueError(f"Unknown mod type {type(mod)}")

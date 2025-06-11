@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
@@ -238,7 +239,13 @@ def test_small_multi_model_shifted_time_match():
         cmp2 = ms.match(obs=obs, mod=mod2)
         assert cmp2.n_points == 3
 
-        mcmp = ms.match(obs=obs, mod=[mod, mod2])
+        mcmp = ms.match(
+            obs=obs,
+            mod=[
+                ms.PointModelResult(mod, name="foo"),
+                ms.PointModelResult(mod2, name="bar"),
+            ],
+        )
         assert mcmp.n_points == 2
 
 
@@ -578,7 +585,7 @@ def test_match_obs_model_pos_args_wrong_order_helpful_error_message():
         ms.match(mr, obs)
 
 
-def test_multiple_models_same_name(tmp_path):
+def test_multiple_models_same_name(tmp_path: Path) -> None:
     obs = ms.PointObservation(
         "tests/testdata/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA"
     )
@@ -612,6 +619,5 @@ def test_multiple_models_same_name(tmp_path):
     mr1 = ms.DfsuModelResult(dir1 / "HKZN_local_2017_DutchCoast.dfsu", item=0)
     mr2 = ms.DfsuModelResult(dir2 / "HKZN_local_2017_DutchCoast.dfsu", item=0)
 
-    cmp = ms.match(obs, [mr1, mr2])
-
-    assert len(cmp.mod_names) == 2
+    with pytest.raises(ValueError, match="unique"):
+        ms.match(obs, [mr1, mr2])
