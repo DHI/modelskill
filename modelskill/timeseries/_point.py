@@ -80,7 +80,7 @@ def _parse_point_input(
 
     # parse items
     if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):
-        item_name = data.name if hasattr(data, "name") else "PointModelResult"
+        item_name = data.name if data.name is not None else "PointModelResult"
         assert isinstance(item_name, str)
         if item is not None:
             raise ValueError(f"item must be None when data is a {type(data)}")
