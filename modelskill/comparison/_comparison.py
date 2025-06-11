@@ -20,14 +20,12 @@ import pandas as pd
 import xarray as xr
 from copy import deepcopy
 
-from modelskill.model.track import TrackModelResult
-
 
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation
-from ..model import PointModelResult
+from ..model import PointModelResult, TrackModelResult
 from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
