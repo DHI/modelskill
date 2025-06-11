@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import xarray as xr
 
-from ..obs import Observation, TrackObservation
+from ..obs import Observation
 from ..types import TrackType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_track_input

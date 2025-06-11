@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 
-from ..obs import Observation, PointObservation
+from ..obs import Observation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
