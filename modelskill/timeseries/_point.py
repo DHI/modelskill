@@ -80,12 +80,12 @@ def _parse_point_input(
 
     # parse items
     if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):
-        item_name = data.name if hasattr(data, "name") else "PointModelResult"
+        item_name = data.name if data.name is not None else "PointModelResult"
         if item is not None:
             raise ValueError(f"item must be None when data is a {type(data)}")
         if aux_items is not None:
             raise ValueError(f"aux_items must be None when data is a {type(data)}")
-        sel_items = PointItem(values=item_name, aux=[])
+        sel_items = PointItem(values=str(item_name), aux=[])
 
         if isinstance(data, mikeio.DataArray):
             data = mikeio.Dataset([data])
@@ -135,8 +135,9 @@ def _parse_point_input(
 
     assert isinstance(ds, xr.Dataset)
 
-    name = name or item_name
-    name = _validate_data_var_name(name)
+    varname = name or item_name
+    assert isinstance(varname, str)
+    name = _validate_data_var_name(varname)
 
     n_unique_times = len(ds.time.to_index().unique())
     if n_unique_times < len(ds.time):
