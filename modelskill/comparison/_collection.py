@@ -91,14 +91,11 @@ class ComparerCollection(Mapping, Scoreable):
     def __init__(self, comparers: Iterable[Comparer]) -> None:
         self._comparers: Dict[str, Comparer] = {}
 
-        for cmp in comparers:
-            if cmp.name in self._comparers:
-                # comparer with this name already exists!
-                # maybe the user is trying to add a new model
-                # or a new time period
-                self._comparers[cmp.name] += cmp
-            else:
-                self._comparers[cmp.name] = cmp
+        names = [c.name for c in comparers]
+        if len(set(names)) != len(names):
+            raise ValueError("Names must be unique")
+
+        self._comparers = {cmp.name: cmp for cmp in comparers}
 
         self.plot = ComparerCollection.plotter(self)
         """Plot using the [](`~modelskill.comparison.ComparerCollectionPlotter`)"""
