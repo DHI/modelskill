@@ -179,18 +179,18 @@ def test_cc_query(cc):
     assert cc2.n_points == 2
 
 
-def test_add_cc_pc(cc, pc):
+def test_merge_cc_pc(cc, pc):
     pc2 = pc.copy()
     pc2.data.attrs["name"] = "pc2"
-    cc2 = cc + pc2
+    cc2 = cc.merge(pc2)
     assert cc2.n_points == 15
     assert len(cc2) == 3
 
 
-def test_add_cc_tc(cc, tc):
+def test_merge_cc_tc(cc, tc):
     tc2 = tc.copy()
     tc2.data.attrs["name"] = "tc2"
-    cc2 = cc + tc2
+    cc2 = cc.merge(tc2)
     assert cc2.n_points == 15
     assert len(cc2) == 3
 
