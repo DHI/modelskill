@@ -249,16 +249,37 @@ class ComparerCollection(Mapping, Scoreable):
     def copy(self) -> "ComparerCollection":
         return deepcopy(self)
 
-    def __add__(
+    def concat(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
-        if not isinstance(other, (Comparer, ComparerCollection)):
-            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
-
         if isinstance(other, Comparer):
-            return ComparerCollection([*self, other])
+            if other.name in self._comparers:
+                cc = self.copy()
+                cc._comparers[other.name] = cc[other.name].concat(other)  # type: ignore
+                return cc
+            else:
+                return ComparerCollection([*self, other])
         elif isinstance(other, ComparerCollection):
-            return ComparerCollection([*self, *other])
+            cc = self
+            for oc in other:
+                cc = cc.concat(oc)
+            return cc
+
+    def merge(
+        self, other: Union["Comparer", "ComparerCollection"]
+    ) -> "ComparerCollection":
+        if isinstance(other, Comparer):
+            if other.name in self._comparers:
+                cc = self.copy()
+                cc._comparers[other.name] = cc[other.name].merge(other)  # type: ignore
+                return cc
+            else:
+                return ComparerCollection([*self, other])
+        elif isinstance(other, ComparerCollection):
+            cc = self
+            for oc in other:
+                cc = cc.merge(oc)
+            return cc
 
     def sel(
         self,

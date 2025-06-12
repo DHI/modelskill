@@ -201,9 +201,9 @@ def test_add_cc_cc(cc, pc, tc):
     tc2 = tc.copy()
     tc2.data.attrs["name"] = "tc2"
     tc3 = tc.copy()  # keep name
-    cc2 = pc2 + tc2 + tc3
+    cc2 = pc2.merge(tc2).merge(tc3)
 
-    cc3 = cc + cc2
+    cc3 = cc.merge(cc2)
     # assert cc3.n_points == 15
     assert len(cc3) == 4
 
