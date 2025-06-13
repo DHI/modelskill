@@ -789,11 +789,6 @@ class Comparer(Scoreable):
             elif isinstance(other, ComparerCollection):
                 return ComparerCollection([self, *other])
 
-    def concat(self, other: Comparer) -> Comparer:
-        cmp = self.copy()
-        cmp.data = xr.concat([cmp.data, other.data], dim="time").drop_duplicates("time")
-        return cmp
-
     def sel(
         self,
         model: Optional[IdxOrNameTypes] = None,
