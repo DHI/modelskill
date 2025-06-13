@@ -765,22 +765,13 @@ class Comparer(Scoreable):
         from ._collection import ComparerCollection
 
         if isinstance(other, Comparer) and (self.name == other.name):
-            missing_models = set(self.mod_names) - set(other.mod_names)
-            if len(missing_models) == 0:
-                # same obs name and same model names
-                cmp = self.copy()
-                cmp.data = xr.concat(
-                    [cmp.data, other.data], dim="time"
-                ).drop_duplicates("time")
-
-            else:
-                raw_mod_data = self.raw_mod_data.copy()
-                raw_mod_data.update(other.raw_mod_data)  # TODO!
-                matched = match_space_time(
-                    observation=self._to_observation(),
-                    raw_mod_data=raw_mod_data,  # type: ignore
-                )
-                cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
+            raw_mod_data = self.raw_mod_data.copy()
+            raw_mod_data.update(other.raw_mod_data)  # TODO!
+            matched = match_space_time(
+                observation=self._to_observation(),
+                raw_mod_data=raw_mod_data,  # type: ignore
+            )
+            cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp
         else:
