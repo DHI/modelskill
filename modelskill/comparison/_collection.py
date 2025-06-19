@@ -70,7 +70,7 @@ class ComparerCollection(Mapping, Scoreable):
     Parameters
     ----------
     comparers : list of Comparer
-        list of comparers
+        list of uniquely named comparers
 
     Examples
     --------
@@ -95,7 +95,7 @@ class ComparerCollection(Mapping, Scoreable):
         if len(set(names)) != len(names):
             raise ValueError("Names must be unique")
 
-        self._comparers = {cmp.name: cmp for cmp in comparers}
+        self._comparers = {cmp.name: cmp.copy() for cmp in comparers}
 
         self.plot = ComparerCollection.plotter(self)
         """Plot using the [](`~modelskill.comparison.ComparerCollectionPlotter`)"""
@@ -249,9 +249,28 @@ class ComparerCollection(Mapping, Scoreable):
     def copy(self) -> "ComparerCollection":
         return deepcopy(self)
 
+    def __add__(self, other):
+        warnings.warn(
+            "Merging collections using + is deprecated, use .merge instead.",
+            FutureWarning,
+        )
+        return self.merge(other)
+
     def merge(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
+        """Merge another Comparer or ComparerCollection with this one into a new collection.
+
+        Parameters
+        ----------
+        other : Comparer or ComparerCollection
+            Comparer/Collection to merge with.
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with merged data.
+        """
+
         if isinstance(other, Comparer):
             if other.name in self._comparers:
                 cc = self.copy()
@@ -260,7 +279,7 @@ class ComparerCollection(Mapping, Scoreable):
             else:
                 return ComparerCollection([*self, other])
         elif isinstance(other, ComparerCollection):
-            cc = self
+            cc = self.copy()
             for oc in other:
                 cc = cc.merge(oc)
             return cc

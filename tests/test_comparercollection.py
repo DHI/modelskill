@@ -293,13 +293,11 @@ def test_filter_by_attrs_custom(cc):
     cc2 = cc.filter_by_attrs(custom=12)
     assert len(cc2) == 1
     assert cc2[0].data.attrs["custom"] == 12
-    assert cc2[0] == cc[0]
 
     cc[0].data.attrs["custom2"] = True
     cc3 = cc.filter_by_attrs(custom2=True)
     assert len(cc3) == 1
     assert cc3[0].data.attrs["custom2"]
-    assert cc3[0] == cc[0]
 
 
 def test_skill_by_attrs_gtype(cc):
@@ -608,3 +606,20 @@ def test_plot_temporal_coverage(cc):
     lines = ax.get_lines()
     assert len(lines) == 4  # 1 point, 1 track, 2 models
     assert ax is not None
+
+
+def test_collection_has_copies_not_references_to_comparers():
+    """Test that the collection has copies of the comparers, not references"""
+
+    cmp1 = ms.from_matched(
+        pd.DataFrame({"foo": [0, 0], "m1": [1, 1]}),
+    )
+    cmp2 = ms.from_matched(
+        pd.DataFrame({"bar": [0, 0], "m1": [1, 1]}),
+    )
+    cc = ms.ComparerCollection([cmp1, cmp2])
+    # modify the first comparer
+    cc[0].data["m1"].attrs["random"] = "value"
+    assert cc[0].data["m1"].attrs["random"] == "value"
+    # the second comparer should not have this attribute
+    assert "random" not in cc[1].data["m1"].attrs

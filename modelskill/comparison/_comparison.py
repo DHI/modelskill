@@ -15,6 +15,7 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
 )
+import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -758,9 +759,27 @@ class Comparer(Scoreable):
         mods = list(self.raw_mod_data.values())
         return mods
 
+    def __add__(self, other):
+        warnings.warn(
+            "Merging comparers using + is deprecated, use .merge instead.",
+            FutureWarning,
+        )
+        return self.merge(other)
+
     def merge(
         self, other: Comparer | ComparerCollection
     ) -> Comparer | ComparerCollection:
+        """Merge another Comparer or ComparerCollection with this one into a new object.
+
+        Parameters
+        ----------
+        other : Comparer or ComparerCollection
+            Comparer/Collection to merge with.
+        Returns
+        -------
+        Comparer or ComparerCollection
+            New object with merged data.
+        """
         from ..matching import match_space_time
         from ._collection import ComparerCollection
 

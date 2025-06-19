@@ -64,6 +64,12 @@ def test_merge(o123, mrmike, mrmike2):
     assert cc12b.score() == cc12.score()
     assert cc12b.n_points == cc12.n_points
 
+    # deprecated
+    with pytest.warns(FutureWarning, match="deprecated"):
+        cc12c = cc1 + cc2
+        assert cc12c.score() == cc12.score()
+        assert cc12c.n_points == cc12.n_points
+
 
 def test_merge_models_different_time(o123, mrmike, mr2days):
     cc1 = ms.match(o123, mrmike)
