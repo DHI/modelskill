@@ -107,4 +107,5 @@ __all__ = [
     "plotting",
     "from_config",
     "data",
+    "load",
 ]
