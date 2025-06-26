@@ -2,6 +2,7 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from platform import architecture
 from typing import Union
+import zipfile
 
 
 # PEP0440 compatible formatted version, see:
@@ -50,18 +51,19 @@ from .skill import SkillTable
 from .timeseries import TimeSeries
 
 
-def load(filename: Union[str, Path]) -> ComparerCollection:
-    """Load a ComparerCollection from a zip file.
+def load(filename: Union[str, Path]) -> Comparer | ComparerCollection:
+    """Load a Comparer or ComparerCollection from a netcdf/zip file.
 
     Parameters
     ----------
     filename : str or Path
-        Filename of the zip file.
+        Filename of the netcdf or zip file to load.
 
     Returns
     -------
-    ComparerCollection
-        The loaded ComparerCollection.
+    Comparer or ComparerCollection
+        The loaded Comparer or ComparerCollection.
+
 
     Examples
     --------
@@ -69,7 +71,15 @@ def load(filename: Union[str, Path]) -> ComparerCollection:
     >>> cc.save("my_comparer_collection.msk")
     >>> cc2 = ms.load("my_comparer_collection.msk")"""
 
-    return ComparerCollection.load(filename)
+    try:
+        return ComparerCollection.load(filename)
+    except zipfile.BadZipFile:
+        try:
+            return Comparer.load(filename)
+        except Exception as e:
+            raise ValueError(
+                f"File '{filename}' is neither a valid zip archive nor a NetCDF file: {e}"
+            )
 
 
 __all__ = [
