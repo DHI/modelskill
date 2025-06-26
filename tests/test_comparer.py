@@ -7,6 +7,8 @@ import xarray as xr
 import modelskill as ms
 from modelskill import __version__
 from modelskill.comparison import Comparer
+from modelskill.model.point import PointModelResult
+from modelskill.model.track import TrackModelResult
 
 
 @pytest.fixture
@@ -61,7 +63,10 @@ def pc() -> Comparer:
     data.coords["z"] = np.nan
     data = _set_attrs(data)
 
-    raw_data = {"m1": data[["m1"]], "m2": data[["m2"]]}
+    raw_data = {
+        "m1": PointModelResult(data[["m1"]]),
+        "m2": PointModelResult(data[["m2"]]),
+    }
 
     data = data.dropna(dim="time")
 
@@ -79,7 +84,10 @@ def tc() -> Comparer:
     data.attrs["name"] = "fake track obs"
     data = _set_attrs(data)
 
-    raw_data = {"m1": data[["m1"]], "m2": data[["m2"]]}
+    raw_data = {
+        "m1": TrackModelResult(data[["m1"]]),
+        "m2": TrackModelResult(data[["m2"]]),
+    }
 
     data = data.dropna(dim="time")
     return Comparer(matched_data=data, raw_mod_data=raw_data)

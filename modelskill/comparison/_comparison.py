@@ -25,8 +25,8 @@ from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation
-from ..model import PointModelResult
-from ..timeseries._timeseries import _validate_data_var_name, TimeSeries
+from ..model import PointModelResult, TrackModelResult
+from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
 
@@ -456,14 +456,13 @@ class Comparer(Scoreable):
     """
 
     data: xr.Dataset
-    raw_mod_data: Dict[str, PointModelResult]
     _obs_str = "Observation"
     plotter = ComparerPlotter
 
     def __init__(
         self,
         matched_data: xr.Dataset,
-        raw_mod_data: Optional[Dict[str, PointModelResult]] = None,
+        raw_mod_data: dict[str, PointModelResult | TrackModelResult] | None = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
@@ -476,21 +475,6 @@ class Comparer(Scoreable):
                 if value.attrs["kind"] == "model"
             }
         )
-        # TODO: validate that the names in raw_mod_data are the same as in matched_data
-        assert isinstance(self.raw_mod_data, dict)
-        for k in self.raw_mod_data.keys():
-            v = self.raw_mod_data[k]
-            if not isinstance(v, TimeSeries):
-                try:
-                    self.raw_mod_data[k] = TimeSeries(v)
-                except Exception:
-                    raise ValueError(
-                        f"raw_mod_data[{k}] could not be converted to a TimeSeries object"
-                    )
-            else:
-                assert isinstance(
-                    v, TimeSeries
-                ), f"raw_mod_data[{k}] must be a TimeSeries object"
 
         self.plot = Comparer.plotter(self)
         """Plot using the [](`~modelskill.comparison.ComparerPlotter`)"""
@@ -498,7 +482,7 @@ class Comparer(Scoreable):
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[Dict[str, PointModelResult]] = None,
+        raw_mod_data: Optional[Dict[str, PointModelResult | TrackModelResult]] = None,
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
@@ -770,7 +754,7 @@ class Comparer(Scoreable):
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
-    def _to_model(self) -> list[PointModelResult]:
+    def _to_model(self) -> list[PointModelResult | TrackModelResult]:
         mods = list(self.raw_mod_data.values())
         return mods
 
@@ -1291,7 +1275,7 @@ class Comparer(Scoreable):
             return Comparer(matched_data=data)
 
         if data.gtype == "point":
-            raw_mod_data: Dict[str, PointModelResult] = {}
+            raw_mod_data: Dict[str, PointModelResult | TrackModelResult] = {}
 
             for var in data.data_vars:
                 var_name = str(var)
