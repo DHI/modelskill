@@ -1,14 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build]
-include = [
-    "modelskill/**/*",
-]
-
-[tool.hatch.metadata]
-allow-direct-references = true
+requires = ["uv_build>=0.8.9,<0.9.0"]
+build-backend = "uv_build"
 
 [project]
 name = "modelskill"
@@ -46,7 +38,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 docs = [
     "quarto-cli==1.5.57",
     "quartodoc==0.9.1",
