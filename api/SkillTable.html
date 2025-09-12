@@ -470,7 +470,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="modelskill.SkillTable" class="level1">
 <h1>SkillTable</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>SkillTable(<span class="va">self</span>, data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>SkillTable(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Visualize skill metrics.</p>
 <p>SkillTable object for visualization and analysis returned by the comparer’s <code>skill</code> method. The object wraps the pd.DataFrame class which can be accessed from the attribute <code>data</code>.</p>
 <p>The columns are assumed to be metrics and data for a single metric can be accessed by e.g.&nbsp;<code>s.rmse</code> or <code>s["rmse"]</code>. The resulting object can be used for plotting.</p>

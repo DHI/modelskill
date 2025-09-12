@@ -463,7 +463,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="modelskill.skill_grid.SkillGrid" class="level1">
 <h1>skill_grid.SkillGrid</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>skill_grid.SkillGrid(<span class="va">self</span>, data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>skill_grid.SkillGrid(data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Spatially gridded skill data.</p>
 <p>Gridded skill object for analysis and visualization of spatially gridded skill data. The object wraps the xr.DataSet class which can be accessed from the attribute data.</p>
 <p>The object contains one or more “arrays” of skill metrics, each corresponding to a single metric (e.g.&nbsp;bias, rmse, r2). The arrays are indexed by the metric name, e.g.&nbsp;<code>ss["bias"]</code> or <code>ss.bias</code>.</p>

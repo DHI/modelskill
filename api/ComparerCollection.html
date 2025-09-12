@@ -471,7 +471,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <section id="modelskill.ComparerCollection" class="level1">
 <h1>ComparerCollection</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ComparerCollection(<span class="va">self</span>, comparers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>ComparerCollection(comparers)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Collection of comparers.</p>
 <p>The <code>ComparerCollection</code> is one of the main objects of the <code>modelskill</code> package. It is a collection of <a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> objects and created either by the <a href="../api/match.html#modelskill.match"><code>match()</code></a> function, by passing a list of Comparers to the <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><code>ComparerCollection</code></a> constructor, or by reading a config file using the <a href="../api/from_config.html#modelskill.from_config"><code>from_config()</code></a> function.</p>
 <p>NOTE: In case of multiple model results with different time coverage, only the <em>overlapping</em> time period will be used! (intersection)</p>
