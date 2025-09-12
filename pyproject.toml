@@ -39,15 +39,15 @@ classifiers = [
 ]
 
 [dependency-groups]
-docs = [
-    "quarto-cli==1.5.57",
-    "quartodoc==0.9.1",
-    "netCDF4",
+dev = [
+    "pytest",
     "plotly >= 4.5",
+    "ruff==0.6.2",
+    "quarto-cli==1.5.57",
+    "quartodoc==0.11.1",
+    "netCDF4",
     "dask",
 ]
-
-dev = ["pytest", "plotly >= 4.5", "ruff==0.6.2"]
 
 test = [
     "pytest",
