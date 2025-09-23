@@ -702,9 +702,22 @@ class ComparerCollection(Mapping, Scoreable):
         skilldf = sk.to_dataframe()
 
         # weights
-        weights = cc._parse_weights(weights, sk.obs_names)
+        # obs_weights = cc._parse_weights(weights, sk.obs_names)
+        # skilldf["weights"] = (
+        #    skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
+        # )
+        if weights is None or weights == "equal":
+            weights = {k: 1.0 for k in sk.obs_names}
+        elif weights == "points":
+            weights = skilldf["n"].groupby(level="observation").first().to_dict()
+        elif isinstance(weights, list):
+            if len(weights) != len(sk.obs_names):
+                raise ValueError("weights must have same length as observations")
+            weights = {k: v for k, v in zip(sk.obs_names, weights)}
+
+        assert isinstance(weights, dict)
         skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
+            skilldf.index.get_level_values("observation").map(weights).fillna(1.0)
         )
 
         def weighted_mean(x: Any) -> Any:
@@ -789,13 +802,15 @@ class ComparerCollection(Mapping, Scoreable):
                 by = [mod_names[0]] * len(skilldf)
         return by
 
-    def _parse_weights(self, weights: Any, observations: Any) -> Any:
-        if observations is None:
-            observations = self.obs_names
-        else:
-            observations = [observations] if np.isscalar(observations) else observations
-            observations = [_get_name(o, self.obs_names) for o in observations]
-        n_obs = len(observations)
+    def _parse_weights(
+        self, weights: None | int | str, observations: list[str]
+    ) -> pd.Series:
+        # if observations is None:
+        #    observations = self.obs_names
+        # else:
+        #    observations = [observations] if np.isscalar(observations) else observations
+        #    observations = [_get_name(o, self.obs_names) for o in observations]
+        # n_obs = len(observations)
 
         if weights is None:
             # get weights from observation objects
