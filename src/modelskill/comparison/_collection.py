@@ -701,11 +701,6 @@ class ComparerCollection(Mapping, Scoreable):
             return None
         skilldf = sk.to_dataframe()
 
-        # weights
-        # obs_weights = cc._parse_weights(weights, sk.obs_names)
-        # skilldf["weights"] = (
-        #    skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
-        # )
         if weights is None or weights == "equal":
             weights = {k: 1.0 for k in sk.obs_names}
         elif weights == "points":
@@ -801,51 +796,6 @@ class ComparerCollection(Mapping, Scoreable):
             else:
                 by = [mod_names[0]] * len(skilldf)
         return by
-
-    def _parse_weights(
-        self, weights: None | int | str, observations: list[str]
-    ) -> pd.Series:
-        # if observations is None:
-        #    observations = self.obs_names
-        # else:
-        #    observations = [observations] if np.isscalar(observations) else observations
-        #    observations = [_get_name(o, self.obs_names) for o in observations]
-        # n_obs = len(observations)
-
-        if weights is None:
-            # get weights from observation objects
-            # default is equal weight to all
-            weights = [self._comparers[o].weight for o in observations]
-        else:
-            if isinstance(weights, int):
-                weights = np.ones(n_obs)  # equal weight to all
-            elif isinstance(weights, dict):
-                w_dict = weights
-                weights = [w_dict.get(name, 1.0) for name in observations]
-
-            elif isinstance(weights, str):
-                if weights.lower() == "equal":
-                    weights = np.ones(n_obs)  # equal weight to all
-                elif "point" in weights.lower():
-                    weights = None  # no weight => use n_points
-                else:
-                    raise ValueError(
-                        "unknown weights argument (None, 'equal', 'points', or list of floats)"
-                    )
-            elif not np.isscalar(weights):
-                if n_obs == 1:
-                    if len(weights) > 1:
-                        warnings.warn(
-                            "Cannot apply multiple weights to one observation"
-                        )
-                    weights = [1.0]
-                if not len(weights) == n_obs:
-                    raise ValueError(
-                        f"weights must have same length as observations: {observations}"
-                    )
-        if weights is not None:
-            assert len(weights) == n_obs
-        return weights
 
     def score(
         self,
