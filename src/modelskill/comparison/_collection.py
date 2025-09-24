@@ -690,14 +690,14 @@ class ComparerCollection(Mapping):
                 weights = {k: cmp.weight for k, cmp in self._comparers.items()}
 
             case dict():
-                defaults = {k: c.weight for k, c in self._comparers.items()}
+                defaults = {k: cmp.weight for k, cmp in self._comparers.items()}
                 weights = {**defaults, **weights}
 
             case "equal":
                 weights = {k: 1.0 for k in self._comparers.keys()}
 
             case "points":
-                weights = {k: c.n_points for k, c in self._comparers.items()}
+                weights = {k: cmp.n_points for k, cmp in self._comparers.items()}
 
             case list() if len(weights) == len(self._comparers):
                 weights = dict(zip(self._comparers.keys(), weights))
