@@ -18,7 +18,7 @@ typecheck:
 	uv run mypy $(LIB)/ --config-file pyproject.toml
 
 doctest:
-	uv run pytest ./modelskill/metrics.py --doctest-modules
+	uv run pytest src/modelskill/metrics.py --doctest-modules
 
 coverage: 
 	uv run pytest --cov-report html --cov=$(LIB) tests/
