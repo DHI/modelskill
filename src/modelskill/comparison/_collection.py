@@ -637,7 +637,7 @@ class ComparerCollection(Mapping):
     def mean_skill(
         self,
         *,
-        weights: str | list[float] | dict[str, float] = "equal",
+        weights: str | list[float] | dict[str, float] | None = None,
         metrics: list | None = None,
     ) -> SkillTable:
         """Weighted mean of skills
@@ -685,49 +685,53 @@ class ComparerCollection(Mapping):
         >>> sk = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
 
-        cc = self
+        match weights:
+            case None:
+                weights = {k: cmp.weight for k, cmp in self._comparers.items()}
 
-        df = cc._to_long_dataframe()  # TODO: remove
-        mod_names = cc.mod_names
-        # obs_names = cmp.obs_names  # df.observation.unique()
-        qnt_names = cc.quantity_names
+            case dict():
+                defaults = {k: c.weight for k, c in self._comparers.items()}
+                weights = {**defaults, **weights}
 
-        # skill assessment
-        pmetrics = _parse_metric(metrics)
-        sk = cc.skill(metrics=pmetrics)
-        if sk is None:
-            return None
-        skilldf = sk.to_dataframe()
+            case "equal":
+                weights = {k: 1.0 for k in self._comparers.keys()}
 
-        if weights == "equal":
-            weights = {c.name: c.weight for c in self._comparers.values()}
-        elif weights == "points":
-            weights = skilldf["n"].groupby(level="observation").first().to_dict()
-        elif isinstance(weights, list):
-            if len(weights) != len(sk.obs_names):
+            case "points":
+                weights = {k: c.n_points for k, c in self._comparers.items()}
+
+            case list() if len(weights) == len(self._comparers):
+                weights = dict(zip(self._comparers.keys(), weights))
+
+            case list():
                 raise ValueError("weights must have same length as observations")
-            weights = {k: v for k, v in zip(sk.obs_names, weights)}
 
-        assert isinstance(weights, dict)
-        skilldf["weights"] = (
-            skilldf.index.get_level_values("observation").map(weights).fillna(1.0)
+            case _:
+                raise ValueError("Invalid weights specification")
+
+        df = self._to_long_dataframe()
+        pmetrics = _parse_metric(metrics)
+        skilldf = (
+            self.skill(metrics=pmetrics)
+            .to_dataframe()
+            .assign(
+                weights=lambda df: df.index.get_level_values("observation").map(weights)
+            )
         )
 
         def weighted_mean(x: Any) -> Any:
             return np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
-        by = cc._mean_skill_by(skilldf, mod_names, qnt_names)  # type: ignore
-        agg = {"n": "sum"}
-        for metric in pmetrics:  # type: ignore
-            agg[metric.__name__] = weighted_mean  # type: ignore
-        res = skilldf.groupby(by, observed=False).agg(agg)
+        by = self._mean_skill_by(skilldf)
+        res = skilldf.groupby(by, observed=False).agg(
+            {"n": "sum", **{metric.__name__: weighted_mean for metric in pmetrics}}
+        )
 
         # TODO is this correct?
         res.index.name = "model"
 
         # output
-        res = cc._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])  # type: ignore
+        res = self._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])  # type: ignore
         return SkillTable(res.astype({"n": int}))
 
     # def mean_skill_points(
@@ -780,11 +784,11 @@ class ComparerCollection(Mapping):
     #     # return self.skill(df=dfall, metrics=metrics)
     #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
-    def _mean_skill_by(self, skilldf, mod_names, qnt_names):  # type: ignore
+    def _mean_skill_by(self, skilldf: pd.DataFrame) -> list[str]:
         by = []
-        if len(mod_names) > 1:
+        if len(self.mod_names) > 1:
             by.append("model")
-        if len(qnt_names) > 1:
+        if len(self.quantity_names) > 1:
             by.append("quantity")
         if len(by) == 0:
             if (self.n_quantities > 1) and ("quantity" in skilldf):
@@ -792,13 +796,13 @@ class ComparerCollection(Mapping):
             elif "model" in skilldf:
                 by.append("model")
             else:
-                by = [mod_names[0]] * len(skilldf)
+                by = [self.mod_names[0]] * len(skilldf)
         return by
 
     def score(
         self,
         metric: str | Callable = mtr.rmse,
-        weights: str | list[float] | dict[str, float] = "equal",
+        weights: str | list[float] | dict[str, float] | None = None,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
 
@@ -810,7 +814,6 @@ class ComparerCollection(Mapping):
         ----------
         weights : str or List(float) or Dict(str, float), optional
             weighting of observations, by default None
-
             - None: use observations weight attribute (if assigned, else "equal")
             - "equal": giving all observations equal weight,
             - "points": giving all points equal weight,
