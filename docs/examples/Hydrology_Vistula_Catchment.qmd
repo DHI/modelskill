@@ -106,7 +106,7 @@ cc
 cc.skill(by=["model","observation"], metrics="kge")["kge"].plot.barh();
 ```
 
-Average skill over all stations, weighted by sqrt(area)
+Average skill over all stations, weighted by $\sqrt{area}$.
 
 ```{python}
 weights = np.sqrt(df.set_index("Station")["Area"]).to_dict()
