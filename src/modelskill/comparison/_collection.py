@@ -645,8 +645,6 @@ class ComparerCollection(Mapping):
         First, the skill is calculated per observation,
         the weighted mean of the skills is then found.
 
-        Warning: This method is NOT the mean skill of
-        all observational points! (mean_skill_points)
 
         Parameters
         ----------
@@ -670,8 +668,6 @@ class ComparerCollection(Mapping):
         --------
         skill
             skill assessment per observation
-        mean_skill_points
-            skill assessment pooling all observation points together
 
         Examples
         --------
@@ -708,7 +704,6 @@ class ComparerCollection(Mapping):
             case _:
                 raise ValueError("Invalid weights specification")
 
-        df = self._to_long_dataframe()
         pmetrics = _parse_metric(metrics)
         skilldf = (
             self.skill(metrics=pmetrics)
@@ -718,7 +713,7 @@ class ComparerCollection(Mapping):
             )
         )
 
-        def weighted_mean(x: Any) -> Any:
+        def weighted_mean(x: pd.Series) -> np.floating:
             return np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
@@ -727,62 +722,7 @@ class ComparerCollection(Mapping):
             {"n": "sum", **{metric.__name__: weighted_mean for metric in pmetrics}}
         )
 
-        # TODO is this correct?
-        res.index.name = "model"
-
-        # output
-        res = self._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])  # type: ignore
         return SkillTable(res.astype({"n": int}))
-
-    # def mean_skill_points(
-    #     self,
-    #     *,
-    #     metrics: Optional[list] = None,
-    #     **kwargs,
-    # ) -> Optional[SkillTable]:  # TODO raise error if no data?
-    #     """Mean skill of all observational points
-
-    #     All data points are pooled (disregarding which observation they belong to),
-    #     the skill is then found (for each model).
-
-    #     .. note::
-    #         No weighting can be applied with this method,
-    #         use mean_skill() if you need to apply weighting
-
-    #     .. warning::
-    #         This method is NOT the mean of skills (mean_skill)
-
-    #     Parameters
-    #     ----------
-    #     metrics : list, optional
-    #         list of modelskill.metrics, by default modelskill.options.metrics.list
-
-    #     Returns
-    #     -------
-    #     SkillTable
-    #         mean skill assessment as a skill object
-
-    #     See also
-    #     --------
-    #     skill
-    #         skill assessment per observation
-    #     mean_skill
-    #         weighted mean of skills (not the same as this method)
-
-    #     Examples
-    #     --------
-    #     >>> import modelskill as ms
-    #     >>> cc = ms.match(obs, mod)
-    #     >>> cc.mean_skill_points()
-    #     """
-
-    #     cmp = self
-    #     dfall = cmp.to_dataframe()
-    #     dfall["observation"] = "all"
-
-    #     # TODO: no longer possible to do this way
-    #     # return self.skill(df=dfall, metrics=metrics)
-    #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
 
     def _mean_skill_by(self, skilldf: pd.DataFrame) -> list[str]:
         by = []
