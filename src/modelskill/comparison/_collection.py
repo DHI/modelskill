@@ -29,7 +29,7 @@ from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 
 from ..utils import _get_name
-from ._comparison import Comparer, Scoreable
+from ._comparison import Comparer
 from ..metrics import _parse_metric
 from ._utils import (
     _add_spatial_grid_to_df,
@@ -40,7 +40,7 @@ from ._utils import (
 )
 
 
-class ComparerCollection(Mapping, Scoreable):
+class ComparerCollection(Mapping):
     """Collection of comparers.
 
     The `ComparerCollection` is one of the main objects of the `modelskill` package. It is a collection of [`Comparer`](`modelskill.Comparer`) objects and created either by the [`match()`](`modelskill.match`) function, by passing a list of Comparers to the [`ComparerCollection`](`modelskill.ComparerCollection`) constructor, or by reading a config file using the [`from_config()`](`modelskill.from_config`) function.
@@ -637,9 +637,8 @@ class ComparerCollection(Mapping, Scoreable):
     def mean_skill(
         self,
         *,
-        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
-        metrics: Optional[list] = None,
-        **kwargs: Any,
+        weights: str | list[float] | dict[str, float] = "equal",
+        metrics: list | None = None,
     ) -> SkillTable:
         """Weighted mean of skills
 
@@ -700,8 +699,8 @@ class ComparerCollection(Mapping, Scoreable):
             return None
         skilldf = sk.to_dataframe()
 
-        if weights is None or weights == "equal":
-            weights = {k: 1.0 for k in sk.obs_names}
+        if weights == "equal":
+            weights = {c.name: c.weight for c in self._comparers.values()}
         elif weights == "points":
             weights = skilldf["n"].groupby(level="observation").first().to_dict()
         elif isinstance(weights, list):
@@ -799,8 +798,7 @@ class ComparerCollection(Mapping, Scoreable):
     def score(
         self,
         metric: str | Callable = mtr.rmse,
-        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
-        **kwargs: Any,
+        weights: str | list[float] | dict[str, float] = "equal",
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
 
@@ -850,20 +848,13 @@ class ComparerCollection(Mapping, Scoreable):
 
         metric = _parse_metric(metric)[0]
 
-        if weights is None:
-            weights = {c.name: c.weight for c in self._comparers.values()}
-
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self
-
-        if cmp.n_points == 0:
+        if self.n_points == 0:
             raise ValueError("Dataset is empty, no data to compare.")
 
-        sk = cmp.mean_skill(weights=weights, metrics=[metric])
+        sk = self.mean_skill(weights=weights, metrics=[metric])
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
