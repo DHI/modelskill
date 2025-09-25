@@ -324,8 +324,13 @@ def _single_obs_compare(
         else:
             pass
     matched_data = match_space_time(
-        observation=observation, raw_mod_data=raw_mod_data, max_model_gap=max_model_gap
+        observation=observation,
+        raw_mod_data=raw_mod_data,
+        max_model_gap=max_model_gap,
+        obs_no_overlap=obs_no_overlap,
     )
+    if matched_data is None:
+        return None
     matched_data.attrs["weight"] = observation.weight
 
     # TODO where does this line belong?
