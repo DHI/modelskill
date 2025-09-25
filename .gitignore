@@ -152,3 +152,5 @@ notebooks/Untitled.ipynb
 docs/_site/
 docs/_extensions/
 docs/api/*.qmd
+
+uv.lock

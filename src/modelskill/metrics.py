@@ -611,7 +611,7 @@ def peak_ratio(
     peaks = model[peak_index]
     found_peaks_mod = peaks.sort_values(ascending=False)
 
-    top_n_peaks = max(1, min(round(AAP_ * N_years), np.sum(peaks)))
+    top_n_peaks = max(1, min(round(AAP_ * N_years), len(peaks)))
     # Resample~ish, find peaks spread maximum Half the inter event time (if inter event =36, select data paired +/- 18h) (or inter_event) and then select
     indices_mod = (
         abs(found_peaks_obs.index.values[:, None] - found_peaks_mod.index.values)
