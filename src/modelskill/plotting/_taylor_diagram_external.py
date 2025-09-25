@@ -9,6 +9,7 @@ appreciate an acknowledgment.
 __version__ = "Time-stamp: <2018-12-06 11:43:41 ycopin>"
 __author__ = "Yannick Copin <yannick.copin@laposte.net>"
 
+from matplotlib.figure import Figure
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -24,14 +25,14 @@ class TaylorDiagram:
 
     def __init__(
         self,
-        refstd,
-        fig=None,
-        rect=111,
-        label="_",
-        srange=(0, 1.5),
-        extend=False,
-        normalize_std=False,
-    ):
+        refstd: float,
+        fig: Figure | None = None,
+        rect: int = 111,
+        label: str = "_",
+        srange: tuple[float, float] = (0, 1.5),
+        extend: bool = False,
+        normalize_std: bool = False,
+    ) -> None:
         """
         Create a Taylor diagram.
 
@@ -53,7 +54,8 @@ class TaylorDiagram:
 
         self.refstd = refstd  # Reference standard deviation
 
-        tr = PolarAxes.PolarTransform()
+        # TODO "and make sure to shift theta values before being passed"
+        tr = PolarAxes.PolarTransform(apply_theta_transforms=False)
 
         # Correlation labels
         rlocs = np.array([0, 0.2, 0.4, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1])
@@ -122,7 +124,7 @@ class TaylorDiagram:
         # Collect sample points for latter use (e.g. legend)
         self.samplePoints = [points]
 
-    def add_sample(self, stddev, corrcoef, *args, **kwargs):
+    def add_sample(self, stddev: float, corrcoef: float, *args, **kwargs):
         """
         Add sample to the diagram.
 

@@ -17,8 +17,7 @@ dependencies = [
     "xarray",
     "netCDF4",
     "scipy",
-    "jinja2",
-    "types-pyyaml>=6.0.12.20241230",
+    "jinja2", # used for skill.style
 ]
 
 authors = [
@@ -58,7 +57,7 @@ test = [
     "pytest-cov",
     "openpyxl",
     "dask",
-    "mypy",
+    "mypy==1.16.1",
     "types-PyYAML",
     "geopandas",
 ]
