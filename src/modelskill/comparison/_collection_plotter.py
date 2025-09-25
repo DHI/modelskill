@@ -18,6 +18,7 @@ from matplotlib.axes import Axes
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
 
+from matplotlib.figure import Figure
 import numpy as np
 import pandas as pd
 
@@ -463,7 +464,7 @@ class ComparerCollectionPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-    ):
+    ) -> Optional[Figure]:
         """Taylor diagram for model skill comparison.
 
         Taylor diagram showing model std and correlation to observation
@@ -505,25 +506,30 @@ class ComparerCollectionPlotter:
                 "aggregate_observations=False is only possible if normalize_std=True!"
             )
 
-        metrics = [mtr._std_obs, mtr._std_mod, mtr.cc]
         skill_func = self.cc.mean_skill if aggregate_observations else self.cc.skill
         sk = skill_func(
-            metrics=metrics,  # type: ignore
+            metrics=[mtr._std_obs, mtr._std_mod, mtr.cc],  # type: ignore
         )
         if sk is None:
+            # TODO when does this make sense?
             return
 
+        # TODO reduce duplication of code in the ComparerPlotter/ComparerCollectionPlotter
         df = sk.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]
 
         if isinstance(df.index, pd.MultiIndex):
             df.index = df.index.map("_".join)
 
-        df = df[["_std_obs", "_std_mod", "cc"]].copy()
-        df.columns = ["obs_std", "std", "cc"]
+        df = df.rename(columns={"_std_obs": "obs_std", "_std_mod": "std"})
         pts = [
             TaylorPoint(
-                r.Index, r.obs_std, r.std, r.cc, marker=marker, marker_size=marker_size
+                name=r.Index,
+                obs_std=r.obs_std,
+                std=r.std,
+                cc=r.cc,
+                marker=marker,
+                marker_size=marker_size,
             )
             for r in df.itertuples()
         ]
