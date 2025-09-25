@@ -16,7 +16,6 @@ Examples
 
 from importlib.resources import files
 
-import modelskill as ms
 from ..comparison import ComparerCollection
 
 
@@ -34,7 +33,7 @@ def vistula() -> ComparerCollection:
     ComparerCollection
     """
     fn = str(files("modelskill.data") / "vistula.msk")
-    return ms.load(fn)
+    return ComparerCollection.load(fn)
 
 
 def oresund() -> ComparerCollection:
@@ -50,4 +49,4 @@ def oresund() -> ComparerCollection:
     ComparerCollection
     """
     fn = str(files("modelskill.data") / "oresund.msk")
-    return ms.load(fn)
+    return ComparerCollection.load(fn)
