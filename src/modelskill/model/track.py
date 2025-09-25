@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import xarray as xr
 
-from ..obs import Observation, TrackObservation
+from ..obs import Observation
 from ..types import TrackType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_track_input
@@ -71,17 +71,6 @@ class TrackModelResult(TimeSeries, Alignable):
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
-
-    def extract(
-        self, obs: TrackObservation, spatial_method: Optional[str] = None
-    ) -> TrackModelResult:
-        if not isinstance(obs, TrackObservation):
-            raise ValueError(f"obs must be a TrackObservation not {type(obs)}")
-        if spatial_method is not None:
-            raise NotImplementedError(
-                "spatial interpolation not possible when matching track model results with track observations"
-            )
-        return self
 
     def align(self, observation: Observation, **kwargs: Any) -> xr.Dataset:
         spatial_tolerance = 1e-3

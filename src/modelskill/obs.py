@@ -33,7 +33,7 @@ def observation(
     *,
     gtype: Optional[Literal["point", "track"]] = None,
     **kwargs,
-):
+) -> PointObservation | TrackObservation:
     """Create an appropriate observation object.
 
     A factory function for creating an appropriate observation object
