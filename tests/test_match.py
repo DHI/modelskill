@@ -619,5 +619,5 @@ def test_multiple_models_same_name(tmp_path: Path) -> None:
     mr1 = ms.DfsuModelResult(dir1 / "HKZN_local_2017_DutchCoast.dfsu", item=0)
     mr2 = ms.DfsuModelResult(dir2 / "HKZN_local_2017_DutchCoast.dfsu", item=0)
 
-    with pytest.raises(ValueError, match="unique"):
+    with pytest.raises(ValueError, match="HKZN_local_2017_DutchCoast"):
         ms.match(obs, [mr1, mr2])
