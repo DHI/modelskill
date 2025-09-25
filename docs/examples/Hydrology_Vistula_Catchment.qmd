@@ -106,9 +106,14 @@ cc
 cc.skill(by=["model","observation"], metrics="kge")["kge"].plot.barh();
 ```
 
+Average skill over all stations, weighted by $\sqrt{area}$.
+
 ```{python}
-# Average skill over all stations, weighted by sqrt(area)
-area = df.set_index("Station").loc[cc.obs_names].Area
-cc.mean_skill(weights=np.sqrt(area)).round(3)
+weights = np.sqrt(df.set_index("Station")["Area"]).to_dict()
+weights
+```
+
+```{python}
+cc.mean_skill(weights=weights).round(3)
 ```
 

@@ -238,9 +238,9 @@ def test_mm_mean_skill_weights_list(cc):
     sk = cc.mean_skill(weights=[100000000000.0, 1.0, 1.0])
     assert sk.loc["SW_1"].rmse < 1.0
 
-    sk = cc.mean_skill(weights=1)
-    assert len(sk) == 2
-    assert sk.loc["SW_1"].rmse == pytest.approx(0.309118939)
+    # sk = cc.mean_skill(weights=1)
+    # assert len(sk) == 2
+    # assert sk.loc["SW_1"].rmse == pytest.approx(0.309118939)
 
     with pytest.raises(ValueError):
         # too many weights

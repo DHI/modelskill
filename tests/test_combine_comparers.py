@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 
 import modelskill as ms
@@ -139,3 +140,23 @@ def test_concat_time_overlap(o123, mrmike):
 
     cc12a = cc2 + cc26
     assert cc12a.n_points == cc12.n_points
+
+
+def test_combine_non_overlapping_comparers():
+    time = pd.date_range("2000", periods=2)
+    cmp1 = ms.match(
+        obs=ms.PointObservation(pd.Series([0, 0], index=time), name="foo"),
+        mod=ms.PointModelResult(pd.Series([0, 0], index=time), name="bar"),
+    )
+    assert cmp1.score()["bar"] == pytest.approx(0.0)
+    cmp2 = ms.match(
+        obs=ms.PointObservation(pd.Series([0, 0], index=time), name="baz"),
+        mod=ms.PointModelResult(pd.Series([0, 0], index=time), name="qux"),
+    )
+    assert cmp2.score()["qux"] == pytest.approx(0.0)
+
+    # TODO should it be allowed to combine two comparers with different models, maybe not?
+    cc = ms.ComparerCollection([cmp1, cmp2])
+
+    assert cc.score()["bar"] == pytest.approx(0.0)
+    assert cc.score()["qux"] == pytest.approx(0.0)
