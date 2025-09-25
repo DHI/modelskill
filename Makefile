@@ -1,33 +1,33 @@
-LIB = modelskill
+LIB = src
 
 check: lint typecheck test doctest
 
 build: typecheck test
-	python -m build
+	uv build
 
 lint:
-	ruff check $(LIB)
+	uv run ruff check $(LIB)
 
 format:
-	ruff format $(LIB)
+	uv run ruff format $(LIB)
 
 test:
-	pytest --disable-warnings
+	uv run pytest --disable-warnings
 
 typecheck:
-	mypy $(LIB)/ --config-file pyproject.toml
+	uv run mypy $(LIB)/ --config-file pyproject.toml
 
 doctest:
-	pytest ./modelskill/metrics.py --doctest-modules
+	uv run pytest ./modelskill/metrics.py --doctest-modules
 
 coverage: 
-	pytest --cov-report html --cov=$(LIB) tests/
+	uv run pytest --cov-report html --cov=$(LIB) tests/
 
 docs: FORCE
 	set -e; \
 	cd docs; \
-	quartodoc build; \
-	quarto render; \
+	uv run quartodoc build; \
+	uv run quarto render; \
 	if [ ! -f _site/index.html ]; then \
         echo "Error: index.html not found. Quarto render failed."; \
         exit 1; \

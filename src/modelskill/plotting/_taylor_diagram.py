@@ -1,27 +1,35 @@
 from __future__ import annotations
+from dataclasses import dataclass
 import warnings
-from collections import namedtuple
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Collection
 
 if TYPE_CHECKING:
     import matplotlib.figure
 
+from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
-import numpy as np
 
 from ._taylor_diagram_external import TaylorDiagram
 
-TaylorPoint = namedtuple("TaylorPoint", "name obs_std std cc marker marker_size")
+
+@dataclass
+class TaylorPoint:
+    name: str
+    obs_std: float
+    std: float
+    cc: float
+    marker: str
+    marker_size: float
 
 
 def taylor_diagram(
-    obs_std,
-    points,
-    figsize=(7, 7),
-    obs_text="Observations",
-    normalize_std=False,
-    ax=None,
-    title="Taylor diagram",
+    obs_std: float,
+    points: Collection[TaylorPoint] | TaylorPoint,
+    figsize: tuple[float, float] = (7, 7),
+    obs_text: str = "Observations",
+    normalize_std: bool = False,
+    ax: Axes | None = None,
+    title: str = "Taylor diagram",
 ) -> matplotlib.figure.Figure:
     """
     Plot a Taylor diagram using the given observations and points.
@@ -47,9 +55,7 @@ def taylor_diagram(
             The matplotlib figure object
     """
 
-    if np.isscalar(figsize):
-        figsize = (figsize, figsize)
-    elif figsize[0] != figsize[1]:
+    if figsize[0] != figsize[1]:
         warnings.warn(
             "It is strongly recommended that the aspect ratio is 1:1 for Taylor diagrams"
         )
