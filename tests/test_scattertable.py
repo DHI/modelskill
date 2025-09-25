@@ -71,7 +71,7 @@ def wind3():
 def cc(mr1Hm0, mr1WS, mr2Hm0, mr2WS, o1, o2, o3, wind1, wind2, wind3):
     cc1 = ms.match([o1, o2, o3], [mr1Hm0, mr2Hm0])
     cc2 = ms.match([wind1, wind2, wind3], [mr1WS, mr2WS])
-    return cc1 + cc2
+    return cc1.merge(cc2)
 
 
 @pytest.fixture
