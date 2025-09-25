@@ -773,6 +773,7 @@ class Comparer(Scoreable):
                 observation=self._to_observation(),
                 raw_mod_data=self.raw_mod_data,  # type: ignore
             )
+            assert matched is not None
             self.data = matched
 
         return self
@@ -802,6 +803,7 @@ class Comparer(Scoreable):
                     observation=self._to_observation(),
                     raw_mod_data=raw_mod_data,  # type: ignore
                 )
+                assert matched is not None
                 cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp
