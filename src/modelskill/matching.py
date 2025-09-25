@@ -243,7 +243,7 @@ def match(
     from_matched - Create a Comparer from observation and model results that are already matched
     """
     if isinstance(obs, get_args(ObsInputType)):
-        return _single_obs_compare(
+        return _match_single_obs(
             obs,
             mod,
             obs_item=obs_item,
@@ -275,7 +275,7 @@ def match(
             )
 
     clist = [
-        _single_obs_compare(
+        _match_single_obs(
             o,
             mod,
             obs_item=obs_item,
@@ -290,7 +290,7 @@ def match(
     return ComparerCollection(clist)
 
 
-def _single_obs_compare(
+def _match_single_obs(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
@@ -300,19 +300,27 @@ def _single_obs_compare(
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
 ) -> Comparer:
-    """Compare a single observation with multiple models"""
     observation = _parse_single_obs(obs, obs_item, gtype=gtype)
 
-    mods = _parse_models(mod, mod_item, gtype=gtype)
+    if isinstance(mod, get_args(MRInputType)):
+        models: list = [mod]
+    else:
+        models = mod  # type: ignore
 
-    raw_mod_data: dict[str, PointModelResult | TrackModelResult] = {}
-    for m in mods:
-        if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult)):
-            raw_mod_data[m.name] = m.extract(observation, spatial_method=spatial_method)
-        elif isinstance(m, (PointModelResult, TrackModelResult)):
-            raw_mod_data[m.name] = m
-        else:
-            pass
+    model_results = [_parse_single_model(m, item=mod_item, gtype=gtype) for m in models]
+    names = [m.name for m in model_results]
+    if len(names) != len(set(names)):
+        raise ValueError(f"Duplicate model names found: {names}")
+
+    raw_mod_data = {
+        m.name: (
+            m.extract(observation, spatial_method=spatial_method)
+            if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
+            else m
+        )
+        for m in model_results
+    }
+
     matched_data = match_space_time(
         observation=observation, raw_mod_data=raw_mod_data, max_model_gap=max_model_gap
     )
@@ -410,26 +418,6 @@ def _parse_single_obs(
     else:
         # observation factory can only handle track and point
         return observation(obs, item=obs_item, gtype=gtype)  # type: ignore
-
-
-def _parse_models(
-    mod: MRInputType | Sequence[MRInputType],
-    item: Optional[IdxOrNameTypes] = None,
-    gtype: Optional[GeometryTypes] = None,
-) -> list[
-    PointModelResult
-    | TrackModelResult
-    | GridModelResult
-    | DfsuModelResult
-    | DummyModelResult
-]:
-    """Return a list of ModelResult objects"""
-    if isinstance(mod, get_args(MRInputType)):
-        return [_parse_single_model(mod, item=item, gtype=gtype)]
-    elif isinstance(mod, Sequence):
-        return [_parse_single_model(m, item=item, gtype=gtype) for m in mod]
-    else:
-        raise ValueError(f"Unknown mod type {type(mod)}")
 
 
 def _parse_single_model(
