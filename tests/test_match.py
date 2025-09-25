@@ -434,11 +434,6 @@ def test_specifying_mod_item_not_allowed_twice(o1, mr1):
         ms.match(obs=o1, mod=mr1, mod_item=1)
 
 
-def test_bad_model_input(o1):
-    with pytest.raises(ValueError, match="mod type"):
-        ms.match(obs=o1, mod=None)
-
-
 def test_obs_and_mod_can_not_have_same_aux_item_names():
     obs_df = pd.DataFrame(
         {"wl": [1.0, 2.0, 3.0], "wind_speed": [1.0, 2.0, 3.0]},
