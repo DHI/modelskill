@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 
-from ..obs import Observation, PointObservation
+from ..obs import Observation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
@@ -70,17 +70,6 @@ class PointModelResult(TimeSeries, Alignable):
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
-
-    def extract(
-        self, obs: PointObservation, spatial_method: Optional[str] = None
-    ) -> PointModelResult:
-        if not isinstance(obs, PointObservation):
-            raise ValueError(f"obs must be a PointObservation not {type(obs)}")
-        if spatial_method is not None:
-            raise NotImplementedError(
-                "spatial interpolation not possible when matching point model results with point observations"
-            )
-        return self
 
     def interp_time(self, observation: Observation, **kwargs: Any) -> PointModelResult:
         """

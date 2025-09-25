@@ -3,10 +3,8 @@ from __future__ import annotations
 from datetime import timedelta
 from pathlib import Path
 from typing import (
-    Any,
     Collection,
     Iterable,
-    List,
     Literal,
     Mapping,
     Optional,
@@ -22,6 +20,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from modelskill.model.point import PointModelResult
+
 from . import Quantity, __version__, model_result
 from .comparison import Comparer, ComparerCollection
 from .model._base import Alignable
@@ -29,7 +29,7 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, observation
+from .obs import Observation, PointObservation, TrackObservation, observation
 from .timeseries import TimeSeries
 from .types import Period
 
@@ -311,20 +311,22 @@ def _single_obs_compare(
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Optional[Comparer]:
     """Compare a single observation with multiple models"""
-    obs = _parse_single_obs(obs, obs_item, gtype=gtype)
+    observation = _parse_single_obs(obs, obs_item, gtype=gtype)
 
     mods = _parse_models(mod, mod_item, gtype=gtype)
 
-    raw_mod_data = {m.name: m.extract(obs, spatial_method) for m in mods}
+    raw_mod_data: dict[str, PointModelResult | TrackModelResult] = {}
+    for m in mods:
+        if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult)):
+            raw_mod_data[m.name] = m.extract(observation, spatial_method=spatial_method)
+        elif isinstance(m, (PointModelResult, TrackModelResult)):
+            raw_mod_data[m.name] = m
+        else:
+            pass
     matched_data = match_space_time(
-        observation=obs,
-        raw_mod_data=raw_mod_data,
-        max_model_gap=max_model_gap,
-        obs_no_overlap=obs_no_overlap,
+        observation=observation, raw_mod_data=raw_mod_data, max_model_gap=max_model_gap
     )
-    if matched_data is None:
-        return None
-    matched_data.attrs["weight"] = obs.weight
+    matched_data.attrs["weight"] = observation.weight
 
     # TODO where does this line belong?
     matched_data.attrs["modelskill_version"] = __version__
@@ -411,8 +413,8 @@ def _parse_single_obs(
     obs: ObsInputType,
     obs_item: Optional[int | str],
     gtype: Optional[GeometryTypes],
-) -> Observation:
-    if isinstance(obs, Observation):
+) -> PointObservation | TrackObservation:
+    if isinstance(obs, (PointObservation, TrackObservation)):
         if obs_item is not None:
             raise ValueError(
                 "obs_item argument not allowed if obs is an modelskill.Observation type"
@@ -424,10 +426,16 @@ def _parse_single_obs(
 
 
 def _parse_models(
-    mod: Any,  # TODO
+    mod: MRInputType | Sequence[MRInputType],
     item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
-) -> List[Any]:  # TODO
+) -> list[
+    PointModelResult
+    | TrackModelResult
+    | GridModelResult
+    | DfsuModelResult
+    | DummyModelResult
+]:
     """Return a list of ModelResult objects"""
     if isinstance(mod, get_args(MRInputType)):
         return [_parse_single_model(mod, item=item, gtype=gtype)]
@@ -438,10 +446,16 @@ def _parse_models(
 
 
 def _parse_single_model(
-    mod: Any,  # TODO
+    mod: MRInputType,
     item: Optional[IdxOrNameTypes] = None,
     gtype: Optional[GeometryTypes] = None,
-) -> Any:  # TODO
+) -> (
+    PointModelResult
+    | TrackModelResult
+    | GridModelResult
+    | DfsuModelResult
+    | DummyModelResult
+):
     if isinstance(
         mod,
         (
@@ -465,5 +479,14 @@ def _parse_single_model(
     else:
         if item is not None:
             raise ValueError("item argument not allowed if mod is a ModelResult type")
-        # assume it is already a model result
+        assert isinstance(
+            mod,
+            (
+                PointModelResult,
+                TrackModelResult,
+                GridModelResult,
+                DfsuModelResult,
+                DummyModelResult,
+            ),
+        )
         return mod

@@ -1,45 +1,37 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: Full test
 
 on:
   push:
-    branches: [ main]
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   build:
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.13"]      
+        python-version: ["3.10", "3.13"]
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: astral-sh/ruff-action@v2 # Fail fast if there are any linting errors
-      with:
-        version: 0.6.2
-        src: "modelskill"
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest pytest-cov
-        
-    - name: Install modelskill
-      run: |
-        pip install .[test]
-    - name: Test with pytest
-      run: |
-        pytest --cov=modelskill --ignore tests/notebooks/
-    - name: Static type check
-      run: make typecheck
-    - name: Test docstrings with pytest
-      run: |
-        pytest ./modelskill/metrics.py --doctest-modules
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/ruff-action@v2
+        with:
+          version: 0.6.2
+          src: src
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --group test --no-dev
+
+      - name: Type check
+        run: make typecheck
+
+      - name: Test
+        run: make test

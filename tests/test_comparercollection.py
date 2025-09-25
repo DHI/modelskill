@@ -58,7 +58,10 @@ def pc() -> modelskill.comparison.Comparer:
     data.coords["z"] = np.nan
     data = _set_attrs(data)
 
-    raw_data = {"m1": data[["m1"]].copy(), "m2": data[["m2"]].copy()}
+    raw_data = {
+        "m1": PointModelResult(data[["m1"]].copy()),
+        "m2": PointModelResult(data[["m2"]].copy()),
+    }
 
     data = data.dropna(dim="time")
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
@@ -86,14 +89,8 @@ def tc() -> modelskill.comparison.Comparer:
     data["m3"].attrs["kind"] = "model"
     data = _set_attrs(data)
 
-    raw_data = {
-        "m1": data[["m1"]].copy(),
-        "m2": data[["m2"]].copy(),
-        "m3": data[["m3"]].copy(),
-    }
-
     data = data.dropna(dim="time")
-    return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
+    return modelskill.comparison.Comparer(matched_data=data)
 
 
 @pytest.fixture
