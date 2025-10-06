@@ -468,7 +468,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    gtype<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    max_model_gap<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    spatial_method<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    obs_no_overlap<span class="op">=</span><span class="st">'error'</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Match observation and model result data in space and time</p>
 <p>NOTE: In case of multiple model results with different time coverage, only the <em>overlapping</em> time period will be used! (intersection)</p>
 <p>NOTE: In case of multiple observations, multiple models can <em>only</em> be matched if they are <em>all</em> of SpatialField type, e.g.&nbsp;DfsuModelResult or GridModelResult.</p>
@@ -531,6 +532,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>str</td>
 <td>For Dfsu- and GridModelResult, spatial interpolation/selection method. - For DfsuModelResult, one of: ‘contained’ (=isel), ‘nearest’, ‘inverse_distance’ (with 5 nearest points), by default “inverse_distance”. - For GridModelResult, passed to xarray.interp() as method argument, by default ‘linear’.</td>
 <td><code>None</code></td>
+</tr>
+<tr class="even">
+<td>obs_no_overlap</td>
+<td>Literal['ignore', 'error', 'warn']</td>
+<td>How to handle observations with no overlap with model results. One of: ‘ignore’, ‘error’, ‘warn’, by default ‘error’.</td>
+<td><code>'error'</code></td>
 </tr>
 </tbody>
 </table>

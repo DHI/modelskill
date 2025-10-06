@@ -309,16 +309,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="modelskill.TimeSeries.trim" class="level3">
 <h3 class="anchored" data-anchor-id="modelskill.TimeSeries.trim">trim</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.trim(start_time<span class="op">=</span><span class="va">None</span>, end_time<span class="op">=</span><span class="va">None</span>, <span class="bu">buffer</span><span class="op">=</span><span class="st">'1s'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.trim(start_time<span class="op">=</span><span class="va">None</span>, end_time<span class="op">=</span><span class="va">None</span>, <span class="bu">buffer</span><span class="op">=</span><span class="st">'1s'</span>, no_overlap<span class="op">=</span><span class="st">'error'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Trim observation data to a given time interval</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 12%">
-<col style="width: 15%">
-<col style="width: 60%">
-<col style="width: 11%">
+<col style="width: 9%">
+<col style="width: 35%">
+<col style="width: 45%">
+<col style="width: 8%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -346,6 +346,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>str</td>
 <td>buffer time around start and end time, by default “1s”</td>
 <td><code>'1s'</code></td>
+</tr>
+<tr class="even">
+<td>no_overlap</td>
+<td>Literal['ignore', 'error', 'warn']</td>
+<td>Empty data handling.</td>
+<td><code>'error'</code></td>
 </tr>
 </tbody>
 </table>
