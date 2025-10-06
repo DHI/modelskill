@@ -689,10 +689,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="modelskill.ComparerCollection.mean_skill" class="level3">
 <h3 class="anchored" data-anchor-id="modelskill.ComparerCollection.mean_skill">mean_skill</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ComparerCollection.mean_skill(weights<span class="op">=</span><span class="va">None</span>, metrics<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ComparerCollection.mean_skill(weights<span class="op">=</span><span class="va">None</span>, metrics<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Weighted mean of skills</p>
 <p>First, the skill is calculated per observation, the weighted mean of the skills is then found.</p>
-<p>Warning: This method is NOT the mean skill of all observational points! (mean_skill_points)</p>
 <section id="parameters-2" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-2">Parameters</h4>
 <table class="caption-top table">
@@ -747,7 +746,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="see-also-1" class="level4 doc-section doc-section-see-also">
 <h4 class="doc-section doc-section-see-also anchored" data-anchor-id="see-also-1">See also</h4>
-<p>skill skill assessment per observation mean_skill_points skill assessment pooling all observation points together</p>
+<p>skill skill assessment per observation</p>
 </section>
 <section id="examples-2" class="level4 doc-section doc-section-examples">
 <h4 class="doc-section doc-section-examples anchored" data-anchor-id="examples-2">Examples</h4>
@@ -871,7 +870,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="modelskill.ComparerCollection.score" class="level3">
 <h3 class="anchored" data-anchor-id="modelskill.ComparerCollection.score">score</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ComparerCollection.score(metric<span class="op">=</span>mtr.rmse, weights<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ComparerCollection.score(metric<span class="op">=</span>mtr.rmse, weights<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Weighted mean score of model(s) over all observations</p>
 <p>Wrapping mean_skill() with a single metric.</p>
 <p>NOTE: will take simple mean over different quantities!</p>
