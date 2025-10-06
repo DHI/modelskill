@@ -610,6 +610,49 @@ def test_plot_temporal_coverage(cc):
     assert ax is not None
 
 
+def test_handle_no_overlap_in_time():
+    o1 = ms.PointObservation(
+        pd.DataFrame({"O1": np.zeros(2)}, index=pd.date_range("2000", periods=2)),
+        # inside the domain
+        x=0.25,
+        y=0.25,
+    )
+    o2 = ms.PointObservation(
+        # mismatch in time
+        pd.DataFrame({"O2": np.zeros(2)}, index=pd.date_range("2100", periods=2)),
+        # inside the domain
+        x=0.5,
+        y=0.5,
+    )
+
+    mod = ms.GridModelResult(
+        xr.DataArray(
+            name="foo",
+            data=np.zeros((2, 2, 2)),
+            dims=["time", "x", "y"],
+            coords={
+                "time": pd.date_range("2000", periods=2),
+                "x": [0.0, 1.0],
+                "y": [0.0, 1.0],
+            },
+        )
+    )
+
+    obs = [o1, o2]
+
+    with pytest.raises(ValueError, match="No data"):
+        ms.match(obs=obs, mod=mod)
+
+    cc = ms.match(obs=obs, mod=mod, obs_no_overlap="ignore")
+    assert "O1" in cc
+    assert "O2" not in cc
+
+    with pytest.warns(UserWarning, match="No data"):
+        cc = ms.match(obs=obs, mod=mod, obs_no_overlap="warn")
+    assert "O1" in cc
+    assert "O2" not in cc
+
+
 def test_score_changes_when_weights_override_defaults():
     time = pd.date_range("2000", periods=2)
     cc = ms.match(
