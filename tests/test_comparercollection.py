@@ -609,8 +609,6 @@ def test_plot_temporal_coverage(cc):
 
 
 def test_collection_has_copies_not_references_to_comparers():
-    """Test that the collection has copies of the comparers, not references"""
-
     cmp1 = ms.from_matched(
         pd.DataFrame({"foo": [0, 0], "m1": [1, 1]}),
     )
@@ -621,5 +619,9 @@ def test_collection_has_copies_not_references_to_comparers():
     # modify the first comparer
     cc[0].data["m1"].attrs["random"] = "value"
     assert cc[0].data["m1"].attrs["random"] == "value"
+
+    # cmp1 is unchanged
+    assert "random" not in cmp1.data["m1"].attrs
+
     # the second comparer should not have this attribute
     assert "random" not in cc[1].data["m1"].attrs
