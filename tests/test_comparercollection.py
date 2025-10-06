@@ -608,6 +608,25 @@ def test_plot_temporal_coverage(cc):
     assert ax is not None
 
 
+def test_score_changes_when_weights_override_defaults():
+    time = pd.date_range("2000", periods=2)
+    cc = ms.match(
+        obs=[
+            ms.PointObservation(
+                pd.Series([2.0, 2.0], index=time),
+                name="foo",
+                weight=10.0,
+            ),
+            ms.PointObservation(pd.Series([1.0, 1.0], index=time), name="bar"),
+        ],
+        mod=ms.PointModelResult(pd.Series([0.0, 0.0], index=time), name="m"),
+    )
+
+    assert cc.score()["m"] == pytest.approx(1.90909)
+    assert cc.score(weights={"bar": 2.0})["m"] == pytest.approx(1.8333333)
+    assert cc.score(weights={"foo": 1.0, "bar": 2.0})["m"] == pytest.approx(1.333333)
+
+
 def test_collection_has_copies_not_references_to_comparers():
     cmp1 = ms.from_matched(
         pd.DataFrame({"foo": [0, 0], "m1": [1, 1]}),

@@ -11,7 +11,6 @@ from typing import (
     Optional,
     Union,
     Iterable,
-    Protocol,
     Sequence,
     TYPE_CHECKING,
 )
@@ -48,26 +47,6 @@ if TYPE_CHECKING:
     from ._collection import ComparerCollection
 
 Serializable = Union[str, int, float]
-
-
-class Scoreable(Protocol):
-    def score(self, metric: str | Callable, **kwargs: Any) -> Dict[str, float]: ...
-
-    def skill(
-        self,
-        by: str | Iterable[str] | None = None,
-        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-    ) -> SkillTable: ...
-
-    def gridded_skill(
-        self,
-        bins: int = 5,
-        binsize: float | None = None,
-        by: str | Iterable[str] | None = None,
-        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
-        n_min: int | None = None,
-        **kwargs: Any,
-    ) -> SkillGrid: ...
 
 
 def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
@@ -412,7 +391,7 @@ def _matched_data_to_xarray(
     return ds
 
 
-class Comparer(Scoreable):
+class Comparer:
     """
     Comparer class for comparing model and observation data.
 
@@ -1029,7 +1008,6 @@ class Comparer(Scoreable):
     def score(
         self,
         metric: str | Callable = mtr.rmse,
-        **kwargs: Any,
     ) -> Dict[str, float]:
         """Model skill score
 
@@ -1061,8 +1039,6 @@ class Comparer(Scoreable):
         metric = _parse_metric(metric)[0]
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
-
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
 
         sk = self.skill(
             by=["model", "observation"],

@@ -17,7 +17,6 @@ from typing import (
     Hashable,
     Tuple,
 )
-import warnings
 import zipfile
 import numpy as np
 import pandas as pd
@@ -30,7 +29,7 @@ from ..skill import SkillTable
 from ..skill_grid import SkillGrid
 
 from ..utils import _get_name
-from ._comparison import Comparer, Scoreable
+from ._comparison import Comparer
 from ..metrics import _parse_metric
 from ._utils import (
     _add_spatial_grid_to_df,
@@ -41,7 +40,7 @@ from ._utils import (
 )
 
 
-class ComparerCollection(Mapping, Scoreable):
+class ComparerCollection(Mapping):
     """Collection of comparers.
 
     The `ComparerCollection` is one of the main objects of the `modelskill` package. It is a collection of [`Comparer`](`modelskill.Comparer`) objects and created either by the [`match()`](`modelskill.match`) function, by passing a list of Comparers to the [`ComparerCollection`](`modelskill.ComparerCollection`) constructor, or by reading a config file using the [`from_config()`](`modelskill.from_config`) function.
@@ -659,17 +658,14 @@ class ComparerCollection(Mapping, Scoreable):
     def mean_skill(
         self,
         *,
-        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
-        metrics: Optional[list] = None,
-        **kwargs: Any,
+        weights: str | list[float] | dict[str, float] | None = None,
+        metrics: list | None = None,
     ) -> SkillTable:
         """Weighted mean of skills
 
         First, the skill is calculated per observation,
         the weighted mean of the skills is then found.
 
-        Warning: This method is NOT the mean skill of
-        all observational points! (mean_skill_points)
 
         Parameters
         ----------
@@ -693,8 +689,6 @@ class ComparerCollection(Mapping, Scoreable):
         --------
         skill
             skill assessment per observation
-        mean_skill_points
-            skill assessment pooling all observation points together
 
         Examples
         --------
@@ -708,98 +702,54 @@ class ComparerCollection(Mapping, Scoreable):
         >>> sk = cc.mean_skill(weights={"EPL": 2.0}) # more weight on EPL, others=1.0
         """
 
-        cc = self
+        match weights:
+            case None:
+                weights = {k: cmp.weight for k, cmp in self._comparers.items()}
 
-        df = cc._to_long_dataframe()  # TODO: remove
-        mod_names = cc.mod_names
-        # obs_names = cmp.obs_names  # df.observation.unique()
-        qnt_names = cc.quantity_names
+            case dict():
+                defaults = {k: cmp.weight for k, cmp in self._comparers.items()}
+                weights = {**defaults, **weights}
 
-        # skill assessment
+            case "equal":
+                weights = {k: 1.0 for k in self._comparers.keys()}
+
+            case "points":
+                weights = {k: cmp.n_points for k, cmp in self._comparers.items()}
+
+            case list() if len(weights) == len(self._comparers):
+                weights = dict(zip(self._comparers.keys(), weights))
+
+            case list():
+                raise ValueError("weights must have same length as observations")
+
+            case _:
+                raise ValueError("Invalid weights specification")
+
         pmetrics = _parse_metric(metrics)
-        sk = cc.skill(metrics=pmetrics)
-        if sk is None:
-            return None
-        skilldf = sk.to_dataframe()
-
-        # weights
-        weights = cc._parse_weights(weights, sk.obs_names)
-        skilldf["weights"] = (
-            skilldf.n if weights is None else np.tile(weights, len(mod_names))  # type: ignore
+        skilldf = (
+            self.skill(metrics=pmetrics)
+            .to_dataframe()
+            .assign(
+                weights=lambda df: df.index.get_level_values("observation").map(weights)
+            )
         )
 
-        def weighted_mean(x: Any) -> Any:
+        def weighted_mean(x: pd.Series) -> np.floating:
             return np.average(x, weights=skilldf.loc[x.index, "weights"])
 
         # group by
-        by = cc._mean_skill_by(skilldf, mod_names, qnt_names)  # type: ignore
-        agg = {"n": "sum"}
-        for metric in pmetrics:  # type: ignore
-            agg[metric.__name__] = weighted_mean  # type: ignore
-        res = skilldf.groupby(by, observed=False).agg(agg)
+        by = self._mean_skill_by(skilldf)
+        res = skilldf.groupby(by, observed=False).agg(
+            {"n": "sum", **{metric.__name__: weighted_mean for metric in pmetrics}}
+        )
 
-        # TODO is this correct?
-        res.index.name = "model"
-
-        # output
-        res = cc._add_as_col_if_not_in_index(df, res, fields=["model", "quantity"])  # type: ignore
         return SkillTable(res.astype({"n": int}))
 
-    # def mean_skill_points(
-    #     self,
-    #     *,
-    #     metrics: Optional[list] = None,
-    #     **kwargs,
-    # ) -> Optional[SkillTable]:  # TODO raise error if no data?
-    #     """Mean skill of all observational points
-
-    #     All data points are pooled (disregarding which observation they belong to),
-    #     the skill is then found (for each model).
-
-    #     .. note::
-    #         No weighting can be applied with this method,
-    #         use mean_skill() if you need to apply weighting
-
-    #     .. warning::
-    #         This method is NOT the mean of skills (mean_skill)
-
-    #     Parameters
-    #     ----------
-    #     metrics : list, optional
-    #         list of modelskill.metrics, by default modelskill.options.metrics.list
-
-    #     Returns
-    #     -------
-    #     SkillTable
-    #         mean skill assessment as a skill object
-
-    #     See also
-    #     --------
-    #     skill
-    #         skill assessment per observation
-    #     mean_skill
-    #         weighted mean of skills (not the same as this method)
-
-    #     Examples
-    #     --------
-    #     >>> import modelskill as ms
-    #     >>> cc = ms.match(obs, mod)
-    #     >>> cc.mean_skill_points()
-    #     """
-
-    #     cmp = self
-    #     dfall = cmp.to_dataframe()
-    #     dfall["observation"] = "all"
-
-    #     # TODO: no longer possible to do this way
-    #     # return self.skill(df=dfall, metrics=metrics)
-    #     return cmp.skill(metrics=metrics)  # NOT CORRECT - SEE ABOVE
-
-    def _mean_skill_by(self, skilldf, mod_names, qnt_names):  # type: ignore
+    def _mean_skill_by(self, skilldf: pd.DataFrame) -> list[str]:
         by = []
-        if len(mod_names) > 1:
+        if len(self.mod_names) > 1:
             by.append("model")
-        if len(qnt_names) > 1:
+        if len(self.quantity_names) > 1:
             by.append("quantity")
         if len(by) == 0:
             if (self.n_quantities > 1) and ("quantity" in skilldf):
@@ -807,57 +757,13 @@ class ComparerCollection(Mapping, Scoreable):
             elif "model" in skilldf:
                 by.append("model")
             else:
-                by = [mod_names[0]] * len(skilldf)
+                by = [self.mod_names[0]] * len(skilldf)
         return by
-
-    def _parse_weights(self, weights: Any, observations: Any) -> Any:
-        if observations is None:
-            observations = self.obs_names
-        else:
-            observations = [observations] if np.isscalar(observations) else observations
-            observations = [_get_name(o, self.obs_names) for o in observations]
-        n_obs = len(observations)
-
-        if weights is None:
-            # get weights from observation objects
-            # default is equal weight to all
-            weights = [self._comparers[o].weight for o in observations]
-        else:
-            if isinstance(weights, int):
-                weights = np.ones(n_obs)  # equal weight to all
-            elif isinstance(weights, dict):
-                w_dict = weights
-                weights = [w_dict.get(name, 1.0) for name in observations]
-
-            elif isinstance(weights, str):
-                if weights.lower() == "equal":
-                    weights = np.ones(n_obs)  # equal weight to all
-                elif "point" in weights.lower():
-                    weights = None  # no weight => use n_points
-                else:
-                    raise ValueError(
-                        "unknown weights argument (None, 'equal', 'points', or list of floats)"
-                    )
-            elif not np.isscalar(weights):
-                if n_obs == 1:
-                    if len(weights) > 1:
-                        warnings.warn(
-                            "Cannot apply multiple weights to one observation"
-                        )
-                    weights = [1.0]
-                if not len(weights) == n_obs:
-                    raise ValueError(
-                        f"weights must have same length as observations: {observations}"
-                    )
-        if weights is not None:
-            assert len(weights) == n_obs
-        return weights
 
     def score(
         self,
         metric: str | Callable = mtr.rmse,
-        weights: Optional[Union[str, List[float], Dict[str, float]]] = None,
-        **kwargs: Any,
+        weights: str | list[float] | dict[str, float] | None = None,
     ) -> Dict[str, float]:
         """Weighted mean score of model(s) over all observations
 
@@ -869,7 +775,6 @@ class ComparerCollection(Mapping, Scoreable):
         ----------
         weights : str or List(float) or Dict(str, float), optional
             weighting of observations, by default None
-
             - None: use observations weight attribute (if assigned, else "equal")
             - "equal": giving all observations equal weight,
             - "points": giving all points equal weight,
@@ -907,20 +812,13 @@ class ComparerCollection(Mapping, Scoreable):
 
         metric = _parse_metric(metric)[0]
 
-        if weights is None:
-            weights = {c.name: c.weight for c in self._comparers.values()}
-
         if not (callable(metric) or isinstance(metric, str)):
             raise ValueError("metric must be a string or a function")
 
-        assert kwargs == {}, f"Unknown keyword arguments: {kwargs}"
-
-        cmp = self
-
-        if cmp.n_points == 0:
+        if self.n_points == 0:
             raise ValueError("Dataset is empty, no data to compare.")
 
-        sk = cmp.mean_skill(weights=weights, metrics=[metric])
+        sk = self.mean_skill(weights=weights, metrics=[metric])
         df = sk.to_dataframe()
 
         metric_name = metric if isinstance(metric, str) else metric.__name__
