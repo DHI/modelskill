@@ -1,7 +1,8 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import ClassVar, Optional, TypeVar, Any
+from typing import ClassVar, Literal, Optional, TypeVar, Any
+import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -308,6 +309,7 @@ class TimeSeries:
         start_time: Optional[pd.Timestamp] = None,
         end_time: Optional[pd.Timestamp] = None,
         buffer: str = "1s",
+        no_overlap: Literal["ignore", "error", "warn"] = "error",
     ) -> T:
         """Trim observation data to a given time interval
 
@@ -319,14 +321,23 @@ class TimeSeries:
             end time
         buffer : str, optional
             buffer time around start and end time, by default "1s"
+        no_overlap: str, optional
+            Empty data handling.
         """
         # Expand time interval with buffer
         start_time = pd.Timestamp(start_time) - pd.Timedelta(buffer)
         end_time = pd.Timestamp(end_time) + pd.Timedelta(buffer)
 
         data = self.data.sel(time=slice(start_time, end_time))
+
         if len(data.time) == 0:
-            raise ValueError(
-                f"No data left after trimming to {start_time} - {end_time}"
-            )
+            msg = f"No data left after trimming to {start_time} - {end_time}"
+            match no_overlap:
+                case "error":
+                    raise ValueError(msg)
+                case "warn":
+                    warnings.warn(msg)
+                case _:
+                    pass
+
         return self.__class__(data)
