@@ -73,7 +73,9 @@ class DfsuModelResult(SpatialField):
             item = data.name
             self.sel_items = SelectedItems(values=data.name, aux=[])
             data = mikeio.Dataset({data.name: data})
-        elif isinstance(data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D)):
+        elif isinstance(
+            data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D, mikeio.Dataset)
+        ):
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
@@ -82,8 +84,8 @@ class DfsuModelResult(SpatialField):
                 item_names, item=item, aux_items=aux_items
             )
             item = self.sel_items.values
-        if isinstance(data, mikeio.Dataset):
-            data = data[self.sel_items.all]
+        # if isinstance(data, mikeio.Dataset):
+        #    item_info = data.items[idx]
 
         assert isinstance(
             data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D, mikeio.Dataset)
@@ -143,6 +145,29 @@ class DfsuModelResult(SpatialField):
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
+
+    def extract_points(self, observations: list[PointObservation]) -> mikeio.Dataset:
+        """Extract multiple PointObservations at once.
+
+        Parameters
+        ----------
+        observations : list[PointObservation]
+            List of PointObservations to extract.
+
+        Returns
+        -------
+        mikeio.Dataset
+            Dataset with extracted points.
+        """
+        x = [obs.x for obs in observations]
+        y = [obs.y for obs in observations]
+        if not isinstance(self.data, mikeio.dfsu.Dfsu2DH):
+            raise NotImplementedError(
+                "extract_points is only implemented for DfsuModelResult with Dfsu2DH data."
+            )
+        elemids = self.data.geometry.find_index(x=x, y=y)
+        ds = self.data.read(elements=elemids, items=self.sel_items.all)
+        return ds
 
     @staticmethod
     def _parse_spatial_method(method: str | None) -> str | None:
