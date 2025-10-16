@@ -84,8 +84,6 @@ class DfsuModelResult(SpatialField):
                 item_names, item=item, aux_items=aux_items
             )
             item = self.sel_items.values
-        # if isinstance(data, mikeio.Dataset):
-        #    item_info = data.items[idx]
 
         assert isinstance(
             data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D, mikeio.Dataset)
