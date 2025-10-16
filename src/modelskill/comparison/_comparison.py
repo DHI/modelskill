@@ -44,6 +44,7 @@ from .. import __version__
 
 if TYPE_CHECKING:
     from ._collection import ComparerCollection
+    from numpy._typing._array_like import NDArray
 
 Serializable = Union[str, int, float]
 
@@ -1275,13 +1276,15 @@ class Comparer:
             raise NotImplementedError(f"Unknown gtype: {data.gtype}")
 
     def transform_values(
-        self, func: Callable[[float], float], new_quantity: Quantity | None = None
+        self,
+        func: Callable[[NDArray[np.floating]], NDArray[np.floating]],
+        new_quantity: Quantity | None = None,
     ) -> Comparer:
         """Transform observation and model values using a function
 
         Parameters
         ----------
-        func : Callable[[float], float]
+        func : Callable[NDArray[np.floating]], NDArray[np.floating]]
             function to apply to observation and model values
         new_quantity : Quantity, optional
             new quantity, by default None

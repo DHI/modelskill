@@ -16,6 +16,7 @@ from typing import (
     overload,
     Hashable,
     Tuple,
+    TYPE_CHECKING,
 )
 import zipfile
 import numpy as np
@@ -39,6 +40,9 @@ from ._utils import (
     TimeTypes,
 )
 from ..quantity import Quantity
+
+if TYPE_CHECKING:
+    from numpy._typing._array_like import NDArray
 
 
 class ComparerCollection(Mapping):
@@ -878,7 +882,9 @@ class ComparerCollection(Mapping):
         return cmp
 
     def transform_values(
-        self, func: Callable[[float], float], new_quantity: Quantity | None = None
+        self,
+        func: Callable[[NDArray[np.floating]], NDArray[np.floating]],
+        new_quantity: Quantity | None = None,
     ) -> "ComparerCollection":
         """Transform the values of all comparers using a function.
 
