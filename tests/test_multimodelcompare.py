@@ -386,3 +386,9 @@ def test_mm_plot_timeseries(cc):
     assert "EPL" in ax.get_title()
 
     plt.close("all")
+
+
+def test_match_including_dummy(mr1, mr2, o1, o2, o3):
+    mr3 = ms.DummyModelResult(strategy="constant", data=0.0)
+    cc = ms.match([o1, o2, o3], [mr3, mr1, mr2])
+    assert "dummy" in cc.mod_names
