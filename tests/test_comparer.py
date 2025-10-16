@@ -990,3 +990,23 @@ def test_load_comparer_from_root_namespace(pt_df, tmp_path):
     assert cmp2.n_points == 6
     assert cmp2.name == "Observation"
     assert cmp2.score()["m1"] == pytest.approx(0.5916079783099617)
+
+
+def test_transform_values_new_quantity(pc: Comparer) -> None:
+    assert pc.data.m1.values[0] == 1.5
+    assert pc.data.Observation.values[0] == 1.0
+    pc2 = pc.transform_values(lambda x: x / 100.0, ms.Quantity(pc.quantity.name, "cm"))
+    assert pc2.quantity.unit == "cm"
+    assert pc.data.m1.values[0] == 1.5
+    assert pc2.data.m1.values[0] == 0.015
+    assert pc.data.Observation.values[0] == 1.0
+    assert pc2.data.Observation.values[0] == 0.01
+
+
+def test_transform_values_keep_quantity(pc: Comparer) -> None:
+    pc2 = pc.transform_values(lambda x: x + 1.0)
+    assert pc2.quantity.unit == "m"
+    assert pc.data.m1.values[0] == 1.5
+    assert pc2.data.m1.values[0] == 2.5
+    assert pc.data.Observation.values[0] == 1.0
+    assert pc2.data.Observation.values[0] == 2.0

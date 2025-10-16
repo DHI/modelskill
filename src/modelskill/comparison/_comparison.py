@@ -1273,3 +1273,36 @@ class Comparer:
 
         else:
             raise NotImplementedError(f"Unknown gtype: {data.gtype}")
+
+    def transform_values(
+        self, func: Callable[[float], float], new_quantity: Quantity | None = None
+    ) -> Comparer:
+        """Transform observation and model values using a function
+
+        Parameters
+        ----------
+        func : Callable[[float], float]
+            function to apply to observation and model values
+        new_quantity : Quantity, optional
+            new quantity, by default None
+
+        Returns
+        -------
+        Comparer
+            new Comparer with transformed values
+
+        """
+        cmp = self.copy()
+        with xr.set_options(keep_attrs=True):  # type: ignore
+            # apply func to observation and model, checking the kind attribute
+            for var in cmp.data.data_vars:
+                if cmp.data[var].attrs["kind"] in ["observation", "model"]:
+                    cmp.data[var].values = func(cmp.data[var].values)
+            for var, ts in cmp.raw_mod_data.items():
+                ts = ts.copy()
+                ts.data[var].values = func(ts.data[var].values)
+                cmp.raw_mod_data[var] = ts
+
+        if new_quantity is not None:
+            cmp.quantity = new_quantity
+        return cmp

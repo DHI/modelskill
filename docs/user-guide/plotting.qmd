@@ -71,6 +71,13 @@ cmp.plot.timeseries();
 cmp.plot.scatter();
 ```
 
+## Transform values
+```{python}
+(cmp.transform_values(lambda x: x / 100.0, new_quantity=ms.Quantity(cmp.quantity.name, "cm"))
+     .plot.timeseries()
+);
+```
+
 
 ## Taylor diagrams
 

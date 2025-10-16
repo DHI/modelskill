@@ -38,6 +38,7 @@ from ._utils import (
     IdxOrNameTypes,
     TimeTypes,
 )
+from ..quantity import Quantity
 
 
 class ComparerCollection(Mapping):
@@ -875,3 +876,25 @@ class ComparerCollection(Mapping):
         cmp = Comparer.load(f)
         os.remove(f)
         return cmp
+
+    def transform_values(
+        self, func: Callable[[float], float], new_quantity: Quantity | None = None
+    ) -> "ComparerCollection":
+        """Transform the values of all comparers using a function.
+
+        Parameters
+        ----------
+        func : Callable
+            Function to apply to the values.
+        new_quantity : Quantity, optional
+            New quantity for the transformed values. If None, the original quantity is used.
+
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with transformed values.
+        """
+        cmps = [
+            cmp.transform_values(func=func, new_quantity=new_quantity) for cmp in self
+        ]
+        return ComparerCollection(cmps)
