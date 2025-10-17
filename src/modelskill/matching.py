@@ -31,7 +31,7 @@ from .model.grid import GridModelResult
 from .model.track import TrackModelResult
 from .obs import Observation, PointObservation, TrackObservation, observation
 from .timeseries import TimeSeries
-from .types import Period
+from .types import Period, InterpMethod
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 IdxOrNameTypes = Optional[Union[int, str]]
@@ -172,22 +172,7 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
-    temporal_method: Literal[
-        "akima",
-        "barycentric",
-        "cubic",
-        "krogh",
-        "linear",
-        "makima",
-        "nearest",
-        "pchip",
-        "polynomial",
-        "quadratic",
-        "quintic",
-        "slinear",
-        "spline",
-        "zero",
-    ] = "linear",
+    temporal_method: InterpMethod | str = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Comparer: ...
 
@@ -202,22 +187,7 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
-    temporal_method: Literal[
-        "akima",
-        "barycentric",
-        "cubic",
-        "krogh",
-        "linear",
-        "makima",
-        "nearest",
-        "pchip",
-        "polynomial",
-        "quadratic",
-        "quintic",
-        "slinear",
-        "spline",
-        "zero",
-    ] = "linear",
+    temporal_method: InterpMethod | str = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> ComparerCollection: ...
 
@@ -231,22 +201,7 @@ def match(
     gtype=None,
     max_model_gap=None,
     spatial_method: Optional[str] = None,
-    temporal_method: Literal[
-        "akima",
-        "barycentric",
-        "cubic",
-        "krogh",
-        "linear",
-        "makima",
-        "nearest",
-        "pchip",
-        "polynomial",
-        "quadratic",
-        "quintic",
-        "slinear",
-        "spline",
-        "zero",
-    ] = "linear",
+    temporal_method: InterpMethod | str = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ):
     """Match observation and model result data in space and time
@@ -281,6 +236,11 @@ def match(
         'inverse_distance' (with 5 nearest points), by default "inverse_distance".
         - For GridModelResult, passed to xarray.interp() as method argument,
         by default 'linear'.
+    temporal_method : InterpMethod | str, optional
+        Temporal interpolation method passed to xarray.interp(), by default 'linear'
+        Valid options are: "akima", "barycentric", "cubic", "krogh", "linear",
+        "makima", "nearest", "pchip", "polynomial", "quadratic",
+        "quintic", "slinear", "spline", "zero".
     obs_no_overlap: str, optional
         How to handle observations with no overlap with model results. One of: 'ignore', 'error', 'warn', by default 'error'.
 
@@ -357,22 +317,7 @@ def _match_single_obs(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
-    temporal_method: Literal[
-        "akima",
-        "barycentric",
-        "cubic",
-        "krogh",
-        "linear",
-        "makima",
-        "nearest",
-        "pchip",
-        "polynomial",
-        "quadratic",
-        "quintic",
-        "slinear",
-        "spline",
-        "zero",
-    ] = "linear",
+    temporal_method: InterpMethod | str = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Optional[Comparer]:
     observation = _parse_single_obs(obs, obs_item, gtype=gtype)
@@ -430,22 +375,7 @@ def match_space_time(
     raw_mod_data: Mapping[str, Alignable],
     max_model_gap: float | None = None,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
-    temporal_method: Literal[
-        "akima",
-        "barycentric",
-        "cubic",
-        "krogh",
-        "linear",
-        "makima",
-        "nearest",
-        "pchip",
-        "polynomial",
-        "quadratic",
-        "quintic",
-        "slinear",
-        "spline",
-        "zero",
-    ] = "linear",
+    temporal_method: InterpMethod | str = "linear",
 ) -> Optional[xr.Dataset]:
     """Match observation with one or more model results in time domain.
 
@@ -465,6 +395,10 @@ def match_space_time(
     max_model_gap : Optional[TimeDeltaTypes], optional
         In case of non-equidistant model results (e.g. event data),
         max_model_gap can be given e.g. as seconds, by default None
+    obs_no_overlap : Literal['ignore', 'error', 'warn'], optional
+        How to handle observations with no overlap with model results. One of: 'ignore', 'error', 'warn', by default 'error'.
+    temporal_method : InterpMethod | str, optional
+        Temporal interpolation method passed to xarray.interp(), by default 'linear'
 
     Returns
     -------

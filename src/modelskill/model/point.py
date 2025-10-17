@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Any, Literal
+from typing import Optional, Sequence, Any
 import numpy as np
 
 import xarray as xr
 import pandas as pd
 
 from ..obs import Observation
-from ..types import PointType
+from ..types import PointType, InterpMethod
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
 from ._base import Alignable
@@ -98,22 +98,7 @@ class PointModelResult(TimeSeries, Alignable):
         observation: Observation,
         *,
         max_gap: float | None = None,
-        method: Literal[
-            "akima",
-            "barycentric",
-            "cubic",
-            "krogh",
-            "linear",
-            "makima",
-            "nearest",
-            "pchip",
-            "polynomial",
-            "quadratic",
-            "quintic",
-            "slinear",
-            "spline",
-            "zero",
-        ] = "linear",
+        method: InterpMethod | str = "linear",
         **kwargs: Any,
     ) -> xr.Dataset:
         new_time = observation.time
