@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Any
+from typing import Optional, Sequence, Any, Literal
 import numpy as np
 
 import xarray as xr
@@ -98,12 +98,28 @@ class PointModelResult(TimeSeries, Alignable):
         observation: Observation,
         *,
         max_gap: float | None = None,
+        method: Literal[
+            "akima",
+            "barycentric",
+            "cubic",
+            "krogh",
+            "linear",
+            "makima",
+            "nearest",
+            "pchip",
+            "polynomial",
+            "quadratic",
+            "quintic",
+            "slinear",
+            "spline",
+            "zero",
+        ] = "linear",
         **kwargs: Any,
     ) -> xr.Dataset:
         new_time = observation.time
 
         dati = self.data.dropna("time").interp(
-            time=new_time, assume_sorted=True, **kwargs
+            time=new_time, assume_sorted=True, method=method, **kwargs
         )
 
         pmr = PointModelResult(dati)

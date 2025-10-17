@@ -172,6 +172,22 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    temporal_method: Literal[
+        "akima",
+        "barycentric",
+        "cubic",
+        "krogh",
+        "linear",
+        "makima",
+        "nearest",
+        "pchip",
+        "polynomial",
+        "quadratic",
+        "quintic",
+        "slinear",
+        "spline",
+        "zero",
+    ] = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Comparer: ...
 
@@ -186,6 +202,22 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    temporal_method: Literal[
+        "akima",
+        "barycentric",
+        "cubic",
+        "krogh",
+        "linear",
+        "makima",
+        "nearest",
+        "pchip",
+        "polynomial",
+        "quadratic",
+        "quintic",
+        "slinear",
+        "spline",
+        "zero",
+    ] = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> ComparerCollection: ...
 
@@ -199,6 +231,22 @@ def match(
     gtype=None,
     max_model_gap=None,
     spatial_method: Optional[str] = None,
+    temporal_method: Literal[
+        "akima",
+        "barycentric",
+        "cubic",
+        "krogh",
+        "linear",
+        "makima",
+        "nearest",
+        "pchip",
+        "polynomial",
+        "quadratic",
+        "quintic",
+        "slinear",
+        "spline",
+        "zero",
+    ] = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ):
     """Match observation and model result data in space and time
@@ -256,6 +304,7 @@ def match(
             gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
+            temporal_method=temporal_method,
             obs_no_overlap=obs_no_overlap,
         )
 
@@ -308,6 +357,22 @@ def _match_single_obs(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    temporal_method: Literal[
+        "akima",
+        "barycentric",
+        "cubic",
+        "krogh",
+        "linear",
+        "makima",
+        "nearest",
+        "pchip",
+        "polynomial",
+        "quadratic",
+        "quintic",
+        "slinear",
+        "spline",
+        "zero",
+    ] = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Optional[Comparer]:
     observation = _parse_single_obs(obs, obs_item, gtype=gtype)
@@ -324,7 +389,10 @@ def _match_single_obs(
 
     raw_mod_data = {
         m.name: (
-            m.extract(observation, spatial_method=spatial_method)
+            m.extract(
+                observation,
+                spatial_method=spatial_method,
+            )
             if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
             else m
         )
@@ -336,6 +404,7 @@ def _match_single_obs(
         raw_mod_data=raw_mod_data,
         max_model_gap=max_model_gap,
         obs_no_overlap=obs_no_overlap,
+        temporal_method=temporal_method,
     )
     if matched_data is None:
         return None
@@ -361,6 +430,22 @@ def match_space_time(
     raw_mod_data: Mapping[str, Alignable],
     max_model_gap: float | None = None,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+    temporal_method: Literal[
+        "akima",
+        "barycentric",
+        "cubic",
+        "krogh",
+        "linear",
+        "makima",
+        "nearest",
+        "pchip",
+        "polynomial",
+        "quadratic",
+        "quintic",
+        "slinear",
+        "spline",
+        "zero",
+    ] = "linear",
 ) -> Optional[xr.Dataset]:
     """Match observation with one or more model results in time domain.
 
@@ -399,7 +484,7 @@ def match_space_time(
 
     for mr in raw_mod_data.values():
         # TODO is `align` the correct name for this operation?
-        aligned = mr.align(observation, max_gap=max_model_gap)
+        aligned = mr.align(observation, max_gap=max_model_gap, method=temporal_method)
 
         if overlapping := set(aligned.filter_by_attrs(kind="aux").data_vars) & set(
             observation.data.filter_by_attrs(kind="aux").data_vars
