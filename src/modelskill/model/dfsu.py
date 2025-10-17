@@ -2,6 +2,7 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 from typing import Literal, Optional, get_args, cast
+from collections.abc import Sequence, Iterable
 
 import mikeio
 import numpy as np
@@ -29,8 +30,6 @@ class DfsuModelResult(SpatialField):
     item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
-    quantity : Quantity, optional
-        Model quantity, for MIKE files this is inferred from the EUM information
     aux_items : Optional[list[int | str]], optional
         Auxiliary items, by default None
     """
@@ -39,10 +38,9 @@ class DfsuModelResult(SpatialField):
         self,
         data: UnstructuredType,
         *,
-        name: Optional[str] = None,
+        name: str | None = None,
         item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
+        aux_items: Sequence[int | str] | None = None,
     ) -> None:
         filename = None
 
@@ -90,9 +88,8 @@ class DfsuModelResult(SpatialField):
         )
         self.data = data
         self.name = name or str(item)
-        self.quantity = (
-            Quantity.from_mikeio_iteminfo(item_info) if quantity is None else quantity
-        )
+        self.quantity = Quantity.from_mikeio_iteminfo(item_info)
+        
         self.filename = filename  # TODO: remove? backward compatibility
 
     def __repr__(self) -> str:
@@ -144,18 +141,18 @@ class DfsuModelResult(SpatialField):
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
 
-    def extract_points(self, observations: list[PointObservation]) -> mikeio.Dataset:
+    def extract_points(self, observations: Iterable[PointObservation]) -> DfsuModelResult:
         """Extract multiple PointObservations at once.
 
         Parameters
         ----------
-        observations : list[PointObservation]
+        observations : Iterable[PointObservation]
             List of PointObservations to extract.
 
         Returns
         -------
-        mikeio.Dataset
-            Dataset with extracted points.
+        DfsuModelResult
+            A DfsuModelResult containing the extracted points.
         """
         x = [obs.x for obs in observations]
         y = [obs.y for obs in observations]
@@ -165,7 +162,12 @@ class DfsuModelResult(SpatialField):
             )
         elemids = self.data.geometry.find_index(x=x, y=y)
         ds = self.data.read(elements=elemids, items=self.sel_items.all)
-        return ds
+        return DfsuModelResult(
+            data=ds,
+            name=self.name,
+            item=self.sel_items.values,
+            aux_items=self.sel_items.aux,
+        )
 
     @staticmethod
     def _parse_spatial_method(method: str | None) -> str | None:
