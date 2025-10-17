@@ -153,6 +153,12 @@ class DfsuModelResult(SpatialField):
         -------
         DfsuModelResult
             A DfsuModelResult containing the extracted points.
+
+        Notes
+        -----
+        The extracted result will only contain selected elements and is not suitable for interpolation in space.
+        Use `match(..., spatial_method='contained')` to avoid interpolation.
+
         """
         x = [obs.x for obs in observations]
         y = [obs.y for obs in observations]
