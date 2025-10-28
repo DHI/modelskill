@@ -24,7 +24,6 @@ from modelskill.model.point import PointModelResult
 
 from . import Quantity, __version__, model_result
 from .comparison import Comparer, ComparerCollection
-from .model._base import Alignable
 from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
@@ -199,6 +198,7 @@ def match(
     gtype=None,
     max_model_gap=None,
     spatial_method: Optional[str] = None,
+    spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ):
     """Match observation and model result data in space and time
@@ -233,6 +233,11 @@ def match(
         'inverse_distance' (with 5 nearest points), by default "inverse_distance".
         - For GridModelResult, passed to xarray.interp() as method argument,
         by default 'linear'.
+    spatial_tolerance : float, optional
+        Spatial tolerance (in the units of the coordinate system) for matching
+        model track points to observation track points. Model points outside
+        this tolerance will be discarded. Only relevant for TrackModelResult
+        and TrackObservation, by default 1e-3.
     obs_no_overlap: str, optional
         How to handle observations with no overlap with model results. One of: 'ignore', 'error', 'warn', by default 'error'.
 
@@ -256,6 +261,7 @@ def match(
             gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
+            spatial_tolerance=spatial_tolerance,
             obs_no_overlap=obs_no_overlap,
         )
 
@@ -289,6 +295,7 @@ def match(
             gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
+            spatial_tolerance=spatial_tolerance,
             obs_no_overlap=obs_no_overlap,
         )
         for o in obs
@@ -303,12 +310,13 @@ def _match_single_obs(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[int | str] = None,
-    mod_item: Optional[int | str] = None,
-    gtype: Optional[GeometryTypes] = None,
-    max_model_gap: Optional[float] = None,
-    spatial_method: Optional[str] = None,
-    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+    obs_item: Optional[int | str],
+    mod_item: Optional[int | str],
+    gtype: Optional[GeometryTypes],
+    max_model_gap: Optional[float],
+    spatial_method: Optional[str],
+    spatial_tolerance: float,
+    obs_no_overlap: Literal["ignore", "error", "warn"],
 ) -> Optional[Comparer]:
     observation = _parse_single_obs(obs, obs_item, gtype=gtype)
 
@@ -336,6 +344,7 @@ def _match_single_obs(
         raw_mod_data=raw_mod_data,
         max_model_gap=max_model_gap,
         obs_no_overlap=obs_no_overlap,
+        spatial_tolerance=spatial_tolerance,
     )
     if matched_data is None:
         return None
@@ -358,34 +367,11 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, Alignable],
-    max_model_gap: float | None = None,
-    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
+    max_model_gap: float | None,
+    spatial_tolerance: float,
+    obs_no_overlap: Literal["ignore", "error", "warn"],
 ) -> Optional[xr.Dataset]:
-    """Match observation with one or more model results in time domain.
-
-    and return as xr.Dataset in the format used by modelskill.Comparer
-
-    Will interpolate model results to observation time.
-
-    Note: assumes that observation and model data are already matched in space.
-        But positions of track observations will be checked.
-
-    Parameters
-    ----------
-    observation : Observation
-        Observation to be matched
-    raw_mod_data : Mapping[str, Alignable]
-        Mapping of model results ready for interpolation
-    max_model_gap : Optional[TimeDeltaTypes], optional
-        In case of non-equidistant model results (e.g. event data),
-        max_model_gap can be given e.g. as seconds, by default None
-
-    Returns
-    -------
-    xr.Dataset or None
-        Matched data in the format used by modelskill.Comparer
-    """
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
@@ -398,8 +384,17 @@ def match_space_time(
     data = data.rename({observation.name: "Observation"})
 
     for mr in raw_mod_data.values():
-        # TODO is `align` the correct name for this operation?
-        aligned = mr.align(observation, max_gap=max_model_gap)
+        match mr, observation:
+            case TrackModelResult() as tmr, TrackObservation():
+                aligned = tmr.subset_to(
+                    observation, spatial_tolerance=spatial_tolerance
+                )
+            case PointModelResult() as pmr, PointObservation():
+                aligned = pmr.align(observation, max_gap=max_model_gap)
+            case _:
+                raise TypeError(
+                    f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
+                )
 
         if overlapping := set(aligned.filter_by_attrs(kind="aux").data_vars) & set(
             observation.data.filter_by_attrs(kind="aux").data_vars

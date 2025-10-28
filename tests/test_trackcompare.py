@@ -190,7 +190,7 @@ def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
         )
     with pytest.warns(UserWarning, match="Removed 2 model points"):
         # 2 points removed due to difference in x,y
-        cmp = ms.match(obs_tiny, mod_tiny_unique)
+        cmp = ms.match(obs_tiny, mod_tiny_unique, spatial_tolerance=1e-3)
     assert cmp.n_points == 2
     expected_time = pd.DatetimeIndex(
         [

@@ -748,9 +748,13 @@ class Comparer:
             )
         else:
             self.raw_mod_data.update(other.raw_mod_data)
+            # TODO it seems wrong to call match_space_time here again...
             matched = match_space_time(
                 observation=self._to_observation(),
                 raw_mod_data=self.raw_mod_data,  # type: ignore
+                max_model_gap=None,
+                spatial_tolerance=1e6,
+                obs_no_overlap="ignore",
             )
             assert matched is not None
             self.data = matched
