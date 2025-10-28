@@ -98,12 +98,16 @@ class PointModelResult(TimeSeries, Alignable):
         observation: Observation,
         *,
         max_gap: float | None = None,
+        method: str = "linear",
         **kwargs: Any,
     ) -> xr.Dataset:
         new_time = observation.time
 
         dati = self.data.dropna("time").interp(
-            time=new_time, assume_sorted=True, **kwargs
+            time=new_time,
+            assume_sorted=True,
+            method=method,  # type: ignore
+            **kwargs,
         )
 
         pmr = PointModelResult(dati)
