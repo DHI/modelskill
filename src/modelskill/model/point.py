@@ -6,7 +6,7 @@ import xarray as xr
 import pandas as pd
 
 from ..obs import Observation
-from ..types import PointType, InterpMethod
+from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
 from ._base import Alignable
@@ -98,7 +98,7 @@ class PointModelResult(TimeSeries, Alignable):
         observation: Observation,
         *,
         max_gap: float | None = None,
-        method: InterpMethod | str = "linear",
+        method: str = "linear",
         **kwargs: Any,
     ) -> xr.Dataset:
         new_time = observation.time

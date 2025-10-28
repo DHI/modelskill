@@ -1,27 +1,10 @@
 from enum import Enum
 from pathlib import Path
-from typing import Union, List, Optional, Literal
+from typing import Union, List, Optional
 from dataclasses import dataclass
 import pandas as pd
 import xarray as xr
 import mikeio
-
-InterpMethod = Literal[
-    "akima",
-    "barycentric",
-    "cubic",
-    "krogh",
-    "linear",
-    "makima",
-    "nearest",
-    "pchip",
-    "polynomial",
-    "quadratic",
-    "quintic",
-    "slinear",
-    "spline",
-    "zero",
-]
 
 
 class GeometryType(Enum):
