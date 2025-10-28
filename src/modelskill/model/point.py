@@ -104,7 +104,10 @@ class PointModelResult(TimeSeries, Alignable):
         new_time = observation.time
 
         dati = self.data.dropna("time").interp(
-            time=new_time, assume_sorted=True, method=method, **kwargs
+            time=new_time,
+            assume_sorted=True,
+            method=method,  # type: ignore
+            **kwargs,
         )
 
         pmr = PointModelResult(dati)
