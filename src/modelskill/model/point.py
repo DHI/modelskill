@@ -9,10 +9,9 @@ from ..obs import Observation
 from ..types import PointType
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_point_input
-from ._base import Alignable
 
 
-class PointModelResult(TimeSeries, Alignable):
+class PointModelResult(TimeSeries):
     """Model result for a single point location.
 
     Construct a PointModelResult from a 0d data source:
