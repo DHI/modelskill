@@ -310,14 +310,15 @@ def _match_single_obs(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[int | str],
-    mod_item: Optional[int | str],
-    gtype: Optional[GeometryTypes],
-    max_model_gap: Optional[float],
-    spatial_method: Optional[str],
+    obs_item: int | str | None,
+    mod_item: int | str | None,
+    gtype: GeometryTypes | None,
+    max_model_gap: float | None,
+    spatial_method: str | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
-) -> Optional[Comparer]:
+) -> Comparer | None:
+    # TODO passing gtype to this function is inconsistent with `match` docstring, where gtype is the geometry type of model result
     observation = _parse_single_obs(obs, obs_item, gtype=gtype)
 
     if isinstance(mod, get_args(MRInputType)):
