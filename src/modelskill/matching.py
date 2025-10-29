@@ -22,20 +22,27 @@ import xarray as xr
 
 from modelskill.model.point import PointModelResult
 
-from . import Quantity, __version__, model_result
+from . import Quantity, __version__
 from .comparison import Comparer, ComparerCollection
 from .model._base import Alignable
 from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation, observation
+from .obs import Observation, PointObservation, TrackObservation
 from .timeseries import TimeSeries
 from .types import Period
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 IdxOrNameTypes = Optional[Union[int, str]]
 GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
+MRTypes = Union[
+    PointModelResult,
+    GridModelResult,
+    DfsuModelResult,
+    TrackModelResult,
+    DummyModelResult,
+]
 MRInputType = Union[
     str,
     Path,
@@ -48,11 +55,9 @@ MRInputType = Union[
     xr.Dataset,
     xr.DataArray,
     TimeSeries,
-    GridModelResult,
-    DfsuModelResult,
-    TrackModelResult,
-    DummyModelResult,
+    MRTypes,
 ]
+ObsTypes = Union[PointObservation, TrackObservation]
 ObsInputType = Union[
     str,
     Path,
@@ -61,7 +66,7 @@ ObsInputType = Union[
     mikeio.Dfs0,
     pd.DataFrame,
     pd.Series,
-    Observation,
+    ObsTypes,
 ]
 
 T = TypeVar("T", bound="TimeSeries")
@@ -164,12 +169,9 @@ def from_matched(
 
 @overload
 def match(
-    obs: Observation,
-    mod: Union[MRInputType, Sequence[MRInputType]],
+    obs: ObsTypes,
+    mod: MRTypes | Sequence[MRTypes],
     *,
-    obs_item: Optional[IdxOrNameTypes] = None,
-    mod_item: Optional[IdxOrNameTypes] = None,
-    gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
@@ -178,12 +180,9 @@ def match(
 
 @overload
 def match(
-    obs: Iterable[Observation],
-    mod: Union[MRInputType, Sequence[MRInputType]],
+    obs: Iterable[ObsTypes],
+    mod: MRTypes | Sequence[MRTypes],
     *,
-    obs_item: Optional[IdxOrNameTypes] = None,
-    mod_item: Optional[IdxOrNameTypes] = None,
-    gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
@@ -194,9 +193,6 @@ def match(
     obs,
     mod,
     *,
-    obs_item=None,
-    mod_item=None,
-    gtype=None,
     max_model_gap=None,
     spatial_method: Optional[str] = None,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
@@ -212,17 +208,10 @@ def match(
 
     Parameters
     ----------
-    obs : (str, Path, pd.DataFrame, Observation, Sequence[Observation])
+    obs : (Observation, Sequence[Observation])
         Observation(s) to be compared
-    mod : (str, Path, pd.DataFrame, ModelResult, Sequence[ModelResult])
+    mod : (ModelResult, Sequence[ModelResult])
         Model result(s) to be compared
-    obs_item : int or str, optional
-        observation item if obs is a file/dataframe, by default None
-    mod_item : (int, str), optional
-        model item if mod is a file/dataframe, by default None
-    gtype : (str, optional)
-        Geometry type of the model result (if mod is a file/dataframe).
-        If not specified, it will be guessed.
     max_model_gap : (float, optional)
         Maximum time gap (s) in the model result (e.g. for event-based
         model results), by default None
@@ -251,9 +240,6 @@ def match(
         return _match_single_obs(
             obs,
             mod,
-            obs_item=obs_item,
-            mod_item=mod_item,
-            gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
             obs_no_overlap=obs_no_overlap,
@@ -284,9 +270,6 @@ def match(
         _match_single_obs(
             o,
             mod,
-            obs_item=obs_item,
-            mod_item=mod_item,
-            gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
             obs_no_overlap=obs_no_overlap,
@@ -300,46 +283,40 @@ def match(
 
 
 def _match_single_obs(
-    obs: ObsInputType,
-    mod: Union[MRInputType, Sequence[MRInputType]],
+    obs: ObsTypes,
+    mod: MRTypes | Sequence[MRTypes],
     *,
-    obs_item: Optional[int | str] = None,
-    mod_item: Optional[int | str] = None,
-    gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Optional[Comparer]:
-    observation = _parse_single_obs(obs, obs_item, gtype=gtype)
-
     if isinstance(mod, get_args(MRInputType)):
         models: list = [mod]
     else:
         models = mod  # type: ignore
 
-    model_results = [_parse_single_model(m, item=mod_item, gtype=gtype) for m in models]
-    names = [m.name for m in model_results]
+    names = [m.name for m in models]
     if len(names) != len(set(names)):
         raise ValueError(f"Duplicate model names found: {names}")
 
     raw_mod_data = {
         m.name: (
-            m.extract(observation, spatial_method=spatial_method)
+            m.extract(obs, spatial_method=spatial_method)
             if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
             else m
         )
-        for m in model_results
+        for m in models
     }
 
     matched_data = match_space_time(
-        observation=observation,
+        observation=obs,
         raw_mod_data=raw_mod_data,
         max_model_gap=max_model_gap,
         obs_no_overlap=obs_no_overlap,
     )
     if matched_data is None:
         return None
-    matched_data.attrs["weight"] = observation.weight
+    matched_data.attrs["weight"] = obs.weight
 
     # TODO where does this line belong?
     matched_data.attrs["modelskill_version"] = __version__
@@ -420,66 +397,3 @@ def match_space_time(
     data = data.dropna(dim="time", subset=mo_cols)
 
     return data
-
-
-def _parse_single_obs(
-    obs: ObsInputType,
-    obs_item: Optional[int | str],
-    gtype: Optional[GeometryTypes],
-) -> PointObservation | TrackObservation:
-    if isinstance(obs, (PointObservation, TrackObservation)):
-        if obs_item is not None:
-            raise ValueError(
-                "obs_item argument not allowed if obs is an modelskill.Observation type"
-            )
-        return obs
-    else:
-        # observation factory can only handle track and point
-        return observation(obs, item=obs_item, gtype=gtype)  # type: ignore
-
-
-def _parse_single_model(
-    mod: MRInputType,
-    item: Optional[IdxOrNameTypes] = None,
-    gtype: Optional[GeometryTypes] = None,
-) -> (
-    PointModelResult
-    | TrackModelResult
-    | GridModelResult
-    | DfsuModelResult
-    | DummyModelResult
-):
-    if isinstance(
-        mod,
-        (
-            str,
-            Path,
-            pd.DataFrame,
-            xr.Dataset,
-            xr.DataArray,
-            mikeio.Dfs0,
-            mikeio.Dataset,
-            mikeio.DataArray,
-            mikeio.dfsu.Dfsu2DH,
-        ),
-    ):
-        try:
-            return model_result(mod, item=item, gtype=gtype)
-        except ValueError as e:
-            raise ValueError(
-                f"Could not compare. Unknown model result type {type(mod)}. {str(e)}"
-            )
-    else:
-        if item is not None:
-            raise ValueError("item argument not allowed if mod is a ModelResult type")
-        assert isinstance(
-            mod,
-            (
-                PointModelResult,
-                TrackModelResult,
-                GridModelResult,
-                DfsuModelResult,
-                DummyModelResult,
-            ),
-        )
-        return mod
