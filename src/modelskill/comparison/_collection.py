@@ -17,6 +17,7 @@ from typing import (
     Hashable,
     Tuple,
 )
+import warnings
 import zipfile
 import numpy as np
 import pandas as pd
@@ -69,7 +70,7 @@ class ComparerCollection(Mapping):
     Parameters
     ----------
     comparers : list of Comparer
-        list of comparers
+        list of uniquely named comparers
 
     Examples
     --------
@@ -90,14 +91,11 @@ class ComparerCollection(Mapping):
     def __init__(self, comparers: Iterable[Comparer]) -> None:
         self._comparers: Dict[str, Comparer] = {}
 
-        for cmp in comparers:
-            if cmp.name in self._comparers:
-                # comparer with this name already exists!
-                # maybe the user is trying to add a new model
-                # or a new time period
-                self._comparers[cmp.name] += cmp
-            else:
-                self._comparers[cmp.name] = cmp
+        names = [c.name for c in comparers]
+        if len(set(names)) != len(names):
+            raise ValueError("Names must be unique")
+
+        self._comparers = {cmp.name: cmp.copy() for cmp in comparers}
 
         self.plot = ComparerCollection.plotter(self)
         """Plot using the [](`~modelskill.comparison.ComparerCollectionPlotter`)"""
@@ -251,16 +249,40 @@ class ComparerCollection(Mapping):
     def copy(self) -> "ComparerCollection":
         return deepcopy(self)
 
-    def __add__(
+    def __add__(self, other):
+        warnings.warn(
+            "Merging collections using + is deprecated, use .merge instead.",
+            FutureWarning,
+        )
+        return self.merge(other)
+
+    def merge(
         self, other: Union["Comparer", "ComparerCollection"]
     ) -> "ComparerCollection":
-        if not isinstance(other, (Comparer, ComparerCollection)):
-            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
+        """Merge another Comparer or ComparerCollection with this one into a new collection.
+
+        Parameters
+        ----------
+        other : Comparer or ComparerCollection
+            Comparer/Collection to merge with.
+        Returns
+        -------
+        ComparerCollection
+            New ComparerCollection with merged data.
+        """
 
         if isinstance(other, Comparer):
-            return ComparerCollection([*self, other])
+            if other.name in self._comparers:
+                cc = self.copy()
+                cc._comparers[other.name] = cc[other.name].merge(other)  # type: ignore
+                return cc
+            else:
+                return ComparerCollection([*self, other])
         elif isinstance(other, ComparerCollection):
-            return ComparerCollection([*self, *other])
+            cc = self.copy()
+            for oc in other:
+                cc = cc.merge(oc)
+            return cc
 
     def sel(
         self,

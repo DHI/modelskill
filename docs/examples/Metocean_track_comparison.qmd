@@ -163,7 +163,7 @@ cmp2 = ms.match(o2, mr)
 Extract, gridded skill, add attrs, plot.
 
 ```{python}
-cmp = cmp + cmp2
+cmp = cmp.merge(cmp2)
 gs = cmp.gridded_skill(metrics=['bias'], n_min=20)
 gs.bias.data.attrs = dict(long_name="Bias of surface elevation", units="m")
 gs.bias.plot(figsize=(10,5));

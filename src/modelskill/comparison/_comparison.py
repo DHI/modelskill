@@ -14,6 +14,7 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
 )
+import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -737,53 +738,39 @@ class Comparer:
         mods = list(self.raw_mod_data.values())
         return mods
 
-    def __iadd__(self, other: Comparer):  # type: ignore
+    def __add__(self, other):
+        warnings.warn(
+            "Merging comparers using + is deprecated, use .merge instead.",
+            FutureWarning,
+        )
+        return self.merge(other)
+
+    def merge(
+        self, other: Comparer | ComparerCollection
+    ) -> Comparer | ComparerCollection:
+        """Merge another Comparer or ComparerCollection with this one into a new object.
+
+        Parameters
+        ----------
+        other : Comparer or ComparerCollection
+            Comparer/Collection to merge with.
+        Returns
+        -------
+        Comparer or ComparerCollection
+            New object with merged data.
+        """
         from ..matching import match_space_time
-
-        missing_models = set(self.mod_names) - set(other.mod_names)
-        if len(missing_models) == 0:
-            # same obs name and same model names
-            self.data = xr.concat([self.data, other.data], dim="time").drop_duplicates(
-                "time"
-            )
-        else:
-            self.raw_mod_data.update(other.raw_mod_data)
-            matched = match_space_time(
-                observation=self._to_observation(),
-                raw_mod_data=self.raw_mod_data,  # type: ignore
-            )
-            assert matched is not None
-            self.data = matched
-
-        return self
-
-    def __add__(
-        self, other: Union["Comparer", "ComparerCollection"]
-    ) -> "ComparerCollection" | "Comparer":
         from ._collection import ComparerCollection
-        from ..matching import match_space_time
-
-        if not isinstance(other, (Comparer, ComparerCollection)):
-            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
         if isinstance(other, Comparer) and (self.name == other.name):
-            missing_models = set(self.mod_names) - set(other.mod_names)
-            if len(missing_models) == 0:
-                # same obs name and same model names
-                cmp = self.copy()
-                cmp.data = xr.concat(
-                    [cmp.data, other.data], dim="time"
-                ).drop_duplicates("time")
-
-            else:
-                raw_mod_data = self.raw_mod_data.copy()
-                raw_mod_data.update(other.raw_mod_data)  # TODO!
-                matched = match_space_time(
-                    observation=self._to_observation(),
-                    raw_mod_data=raw_mod_data,  # type: ignore
-                )
-                assert matched is not None
-                cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
+            raw_mod_data = self.raw_mod_data.copy()
+            raw_mod_data.update(other.raw_mod_data)  # TODO!
+            matched = match_space_time(
+                observation=self._to_observation(),
+                raw_mod_data=raw_mod_data,  # type: ignore
+            )
+            assert matched is not None
+            cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp
         else:
