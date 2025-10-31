@@ -670,3 +670,10 @@ def test_score_changes_when_weights_override_defaults():
     assert cc.score()["m"] == pytest.approx(1.90909)
     assert cc.score(weights={"bar": 2.0})["m"] == pytest.approx(1.8333333)
     assert cc.score(weights={"foo": 1.0, "bar": 2.0})["m"] == pytest.approx(1.333333)
+
+
+def test_transform_values_new_quantity(cc: ms.ComparerCollection) -> None:
+    cc2 = cc.transform_values(
+        lambda x: x / 100.0, ms.Quantity(cc[0].quantity.name, "cm")
+    )
+    assert all(cmp.quantity.unit == "cm" for cmp in cc2)
