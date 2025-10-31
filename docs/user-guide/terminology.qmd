@@ -64,10 +64,6 @@ A [**Comparer**](`modelskill.Comparer`) is an object that stores the matched obs
 A [**ComparerCollection**](`modelskill.ComparerCollection`) is a collection of [Comparer](#comparer)s. It is used to compare *multiple* observations with one or more model results. A ComparerCollection can be created using the [`match`](`modelskill.match`) function or by passing a list of Comparers to the [`ComparerCollection`](`modelskill.ComparerCollection`) constructor. 
 
 
-## Connector
-In past versions of FMSkill/ModelSkill, the Connector class was used to connect observations and model results. This class has been deprecated and is no longer in use. 
-
-
 ## Abbreviations
 
 | Abbreviation | Meaning |
