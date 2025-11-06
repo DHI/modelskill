@@ -759,20 +759,12 @@ class Comparer:
         Comparer or ComparerCollection
             New object with merged data.
         """
-        from ..matching import match_space_time
         from ._collection import ComparerCollection
 
         if isinstance(other, Comparer) and (self.name == other.name):
             raw_mod_data = self.raw_mod_data.copy()
             raw_mod_data.update(other.raw_mod_data)  # TODO!
-            matched = match_space_time(
-                observation=self._to_observation(),
-                raw_mod_data=raw_mod_data,  # type: ignore,
-                max_model_gap=None,
-                spatial_tolerance=1e6,
-                obs_no_overlap="ignore",
-            )
-            assert matched is not None
+            matched = self.data.merge(other.data).dropna(dim="time")
             cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp
