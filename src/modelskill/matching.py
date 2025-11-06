@@ -273,7 +273,10 @@ def match(
         )
 
     if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
-        if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
+        if not all(
+            isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
+            for m in mod
+        ):
             raise ValueError(
                 """
                 In case of multiple observations, multiple models can _only_ 

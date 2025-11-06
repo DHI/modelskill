@@ -176,18 +176,18 @@ def test_cc_query(cc):
     assert cc2.n_points == 2
 
 
-def test_add_cc_pc(cc, pc):
+def test_merge_cc_pc(cc, pc):
     pc2 = pc.copy()
     pc2.data.attrs["name"] = "pc2"
-    cc2 = cc + pc2
+    cc2 = cc.merge(pc2)
     assert cc2.n_points == 15
     assert len(cc2) == 3
 
 
-def test_add_cc_tc(cc, tc):
+def test_merge_cc_tc(cc, tc):
     tc2 = tc.copy()
     tc2.data.attrs["name"] = "tc2"
-    cc2 = cc + tc2
+    cc2 = cc.merge(tc2)
     assert cc2.n_points == 15
     assert len(cc2) == 3
 
@@ -198,9 +198,9 @@ def test_add_cc_cc(cc, pc, tc):
     tc2 = tc.copy()
     tc2.data.attrs["name"] = "tc2"
     tc3 = tc.copy()  # keep name
-    cc2 = pc2 + tc2 + tc3
+    cc2 = pc2.merge(tc2).merge(tc3)
 
-    cc3 = cc + cc2
+    cc3 = cc.merge(cc2)
     # assert cc3.n_points == 15
     assert len(cc3) == 4
 
@@ -293,13 +293,11 @@ def test_filter_by_attrs_custom(cc):
     cc2 = cc.filter_by_attrs(custom=12)
     assert len(cc2) == 1
     assert cc2[0].data.attrs["custom"] == 12
-    assert cc2[0] == cc[0]
 
     cc[0].data.attrs["custom2"] = True
     cc3 = cc.filter_by_attrs(custom2=True)
     assert len(cc3) == 1
     assert cc3[0].data.attrs["custom2"]
-    assert cc3[0] == cc[0]
 
 
 def test_skill_by_attrs_gtype(cc):
@@ -670,3 +668,22 @@ def test_score_changes_when_weights_override_defaults():
     assert cc.score()["m"] == pytest.approx(1.90909)
     assert cc.score(weights={"bar": 2.0})["m"] == pytest.approx(1.8333333)
     assert cc.score(weights={"foo": 1.0, "bar": 2.0})["m"] == pytest.approx(1.333333)
+
+
+def test_collection_has_copies_not_references_to_comparers():
+    cmp1 = ms.from_matched(
+        pd.DataFrame({"foo": [0, 0], "m1": [1, 1]}),
+    )
+    cmp2 = ms.from_matched(
+        pd.DataFrame({"bar": [0, 0], "m1": [1, 1]}),
+    )
+    cc = ms.ComparerCollection([cmp1, cmp2])
+    # modify the first comparer
+    cc[0].data["m1"].attrs["random"] = "value"
+    assert cc[0].data["m1"].attrs["random"] == "value"
+
+    # cmp1 is unchanged
+    assert "random" not in cmp1.data["m1"].attrs
+
+    # the second comparer should not have this attribute
+    assert "random" not in cc[1].data["m1"].attrs
