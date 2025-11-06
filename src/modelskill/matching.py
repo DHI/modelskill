@@ -343,7 +343,7 @@ def _match_single_obs(
         for m in model_results
     }
 
-    matched_data = match_space_time(
+    matched_data = _match_space_time(
         observation=observation,
         raw_mod_data=raw_mod_data,
         max_model_gap=max_model_gap,
@@ -369,7 +369,7 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
     return Period(start=min(starts), end=max(ends))
 
 
-def match_space_time(
+def _match_space_time(
     observation: Observation,
     raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
     max_model_gap: float | None,
