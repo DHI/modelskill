@@ -468,8 +468,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    gtype<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    max_model_gap<span class="op">=</span><span class="va">None</span>,</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    spatial_method<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    obs_no_overlap<span class="op">=</span><span class="st">'error'</span>,</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    spatial_tolerance<span class="op">=</span><span class="fl">0.001</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    obs_no_overlap<span class="op">=</span><span class="st">'error'</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Match observation and model result data in space and time</p>
 <p>NOTE: In case of multiple model results with different time coverage, only the <em>overlapping</em> time period will be used! (intersection)</p>
 <p>NOTE: In case of multiple observations, multiple models can <em>only</em> be matched if they are <em>all</em> of SpatialField type, e.g.&nbsp;DfsuModelResult or GridModelResult.</p>
@@ -479,7 +480,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <colgroup>
 <col style="width: 4%">
 <col style="width: 16%">
-<col style="width: 76%">
+<col style="width: 75%">
 <col style="width: 3%">
 </colgroup>
 <thead>
@@ -534,6 +535,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td><code>None</code></td>
 </tr>
 <tr class="even">
+<td>spatial_tolerance</td>
+<td>float</td>
+<td>Spatial tolerance (in the units of the coordinate system) for matching model track points to observation track points. Model points outside this tolerance will be discarded. Only relevant for TrackModelResult and TrackObservation, by default 1e-3.</td>
+<td><code>0.001</code></td>
+</tr>
+<tr class="odd">
 <td>obs_no_overlap</td>
 <td>Literal['ignore', 'error', 'warn']</td>
 <td>How to handle observations with no overlap with model results. One of: ‘ignore’, ‘error’, ‘warn’, by default ‘error’.</td>
