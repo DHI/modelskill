@@ -28,6 +28,7 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
+from .model.network import NetworkModelResult
 from .obs import Observation, PointObservation, TrackObservation, observation
 from .timeseries import TimeSeries
 from .types import Period
@@ -50,6 +51,7 @@ MRInputType = Union[
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
+    NetworkModelResult,
     DummyModelResult,
 ]
 ObsInputType = Union[
@@ -279,7 +281,15 @@ def match(
 
     if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
         if not all(
-            isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
+            isinstance(
+                m,
+                (
+                    DfsuModelResult,
+                    GridModelResult,
+                    NetworkModelResult,
+                    DummyModelResult,
+                ),
+            )
             for m in mod
         ):
             raise ValueError(
@@ -342,7 +352,15 @@ def _match_single_obs(
     raw_mod_data = {
         m.name: (
             m.extract(observation, spatial_method=spatial_method)
-            if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
+            if isinstance(
+                m,
+                (
+                    DfsuModelResult,
+                    GridModelResult,
+                    DummyModelResult,
+                    NetworkModelResult,
+                ),
+            )
             else m
         )
         for m in model_results
@@ -384,6 +402,7 @@ def _match_space_time(
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
+    # TODO is the trim step necessary?
     observation = observation.trim(period.start, period.end, no_overlap=obs_no_overlap)
     if len(observation.data.time) == 0:
         return None
@@ -451,6 +470,7 @@ def _parse_single_model(
     | TrackModelResult
     | GridModelResult
     | DfsuModelResult
+    | NetworkModelResult
     | DummyModelResult
 ):
     if isinstance(
@@ -483,6 +503,7 @@ def _parse_single_model(
                 TrackModelResult,
                 GridModelResult,
                 DfsuModelResult,
+                NetworkModelResult,
                 DummyModelResult,
             ),
         )
