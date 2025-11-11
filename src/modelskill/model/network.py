@@ -1,3 +1,4 @@
+from typing import Any
 from pathlib import Path
 from typing import Optional
 
@@ -6,7 +7,7 @@ import pandas as pd
 # from ..quantity import Quantity
 
 from ._base import SelectedItems
-from ..obs import NetworkLocationObservation
+from ..obs import NetworkLocationObservation, PointObservation, TrackObservation
 from .point import PointModelResult
 
 
@@ -15,7 +16,7 @@ class NetworkModelResult:
         self,
         data: str | Path,
         *,
-        name: Optional[str] = None,
+        name: str,
         item: str | int | None = None,
         # quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,
@@ -38,9 +39,13 @@ class NetworkModelResult:
 
     def extract(
         self,
-        observation: NetworkLocationObservation,
-        spatial_method: Optional[str] = None,
+        observation: PointObservation | TrackObservation | NetworkLocationObservation,
+        **kwargs: Any,
     ) -> PointModelResult:
+        if not isinstance(observation, NetworkLocationObservation):
+            raise TypeError(
+                "NetworkModelResult can only extract NetworkLocationObservation"
+            )
         col = f"{self.item}:{observation.reach}:{observation.chainage}"
 
         df = pd.DataFrame()
