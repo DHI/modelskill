@@ -29,7 +29,13 @@ from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
 from .model.network import NetworkModelResult
-from .obs import Observation, PointObservation, TrackObservation, observation
+from .obs import (
+    Observation,
+    PointObservation,
+    TrackObservation,
+    NetworkLocationObservation,
+    observation,
+)
 from .timeseries import TimeSeries
 from .types import Period
 
@@ -449,8 +455,10 @@ def _parse_single_obs(
     obs: ObsInputType,
     obs_item: Optional[int | str],
     gtype: Optional[GeometryTypes],
-) -> PointObservation | TrackObservation:
-    if isinstance(obs, (PointObservation, TrackObservation)):
+) -> PointObservation | TrackObservation | NetworkLocationObservation:
+    if isinstance(
+        obs, (PointObservation, TrackObservation, NetworkLocationObservation)
+    ):
         if obs_item is not None:
             raise ValueError(
                 "obs_item argument not allowed if obs is an modelskill.Observation type"
