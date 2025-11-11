@@ -339,5 +339,6 @@ class TimeSeries:
                     warnings.warn(msg)
                 case _:
                     pass
-
-        return self.__class__(data)
+        copy = deepcopy(self)
+        copy.data = data
+        return copy
