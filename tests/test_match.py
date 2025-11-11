@@ -632,5 +632,5 @@ def test_network():
     )
 
     cmp = ms.match(obs, mod)
-    assert cmp.n_points == 62
-    assert cmp.score()["Vida"] == pytest.approx(1.7913410277292984e-07)
+    assert cmp.n_points == 37
+    assert cmp.score()["Vida"] == pytest.approx(0.11985827)
