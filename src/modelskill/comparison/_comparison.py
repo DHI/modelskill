@@ -56,7 +56,7 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     assert "Observation" in data.data_vars
 
     # no missing values allowed in Observation
-    if data["Observation"].isna().any():
+    if data["Observation"].isnull().any():  # noqa: PD003
         raise ValueError("Observation data must not contain missing values.")
 
     # coordinates
