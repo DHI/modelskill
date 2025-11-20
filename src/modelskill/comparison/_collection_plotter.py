@@ -72,6 +72,7 @@ class ComparerCollectionPlotter:
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
         skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
+        random_state: Optional[int] = None,
         ax: Optional[Axes] = None,
         **kwargs,
     ) -> Axes | list[Axes]:
@@ -138,6 +139,8 @@ class ComparerCollectionPlotter:
             This kword adds a box at the right of the scatter plot.
             mapping can be used to rename the metrics in the table.
             by default False
+        random_state : int, optional
+            random seed for point sampling, by default None
         ax : matplotlib axes, optional
             axes to plot on, by default None
         **kwargs
@@ -176,6 +179,7 @@ class ComparerCollectionPlotter:
                 xlabel=xlabel,
                 ylabel=ylabel,
                 skill_table=skill_table,
+                random_state=random_state,
                 ax=ax,
                 **kwargs,
             )
@@ -201,6 +205,7 @@ class ComparerCollectionPlotter:
         xlabel: Optional[str],
         ylabel: Optional[str],
         skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]],
+        random_state: Optional[int] = None,
         ax,
         **kwargs,
     ):
@@ -268,6 +273,7 @@ class ComparerCollectionPlotter:
             skill_scores=skill_scores,
             skill_score_unit=skill_score_unit,
             ax=ax,
+            random_state=random_state,
             **kwargs,
         )
 
