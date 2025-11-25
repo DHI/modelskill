@@ -176,6 +176,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a>
   <ul class="collapse">
+  <li><a href="#modelskill.TimeSeries.copy" id="toc-modelskill.TimeSeries.copy" class="nav-link" data-scroll-target="#modelskill.TimeSeries.copy">copy</a></li>
   <li><a href="#modelskill.TimeSeries.equals" id="toc-modelskill.TimeSeries.equals" class="nav-link" data-scroll-target="#modelskill.TimeSeries.equals">equals</a></li>
   <li><a href="#modelskill.TimeSeries.sel" id="toc-modelskill.TimeSeries.sel" class="nav-link" data-scroll-target="#modelskill.TimeSeries.sel">sel</a></li>
   <li><a href="#modelskill.TimeSeries.to_dataframe" id="toc-modelskill.TimeSeries.to_dataframe" class="nav-link" data-scroll-target="#modelskill.TimeSeries.to_dataframe">to_dataframe</a></li>
@@ -255,40 +256,68 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#modelskill.TimeSeries.copy">copy</a></td>
+<td>Create a deep copy of the TimeSeries.</td>
+</tr>
+<tr class="even">
 <td><a href="#modelskill.TimeSeries.equals">equals</a></td>
 <td>Check if two TimeSeries are equal</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.TimeSeries.sel">sel</a></td>
 <td>Select data by label</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#modelskill.TimeSeries.to_dataframe">to_dataframe</a></td>
 <td>Convert matched data to pandas DataFrame</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#modelskill.TimeSeries.trim">trim</a></td>
 <td>Trim observation data to a given time interval</td>
 </tr>
 </tbody>
 </table>
+<section id="modelskill.TimeSeries.copy" class="level3">
+<h3 class="anchored" data-anchor-id="modelskill.TimeSeries.copy">copy</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.copy()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Create a deep copy of the TimeSeries.</p>
+<section id="returns" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>TimeSeries</td>
+<td>Deep copy of the TimeSeries object</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="modelskill.TimeSeries.equals" class="level3">
 <h3 class="anchored" data-anchor-id="modelskill.TimeSeries.equals">equals</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.equals(other)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.equals(other)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Check if two TimeSeries are equal</p>
 </section>
 <section id="modelskill.TimeSeries.sel" class="level3">
 <h3 class="anchored" data-anchor-id="modelskill.TimeSeries.sel">sel</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.sel(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.sel(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Select data by label</p>
 </section>
 <section id="modelskill.TimeSeries.to_dataframe" class="level3">
 <h3 class="anchored" data-anchor-id="modelskill.TimeSeries.to_dataframe">to_dataframe</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.to_dataframe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.to_dataframe()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Convert matched data to pandas DataFrame</p>
 <p>Include x, y coordinates only if gtype=track</p>
-<section id="returns" class="level4 doc-section doc-section-returns">
-<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns">Returns</h4>
+<section id="returns-1" class="level4 doc-section doc-section-returns">
+<h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-1">Returns</h4>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -309,7 +338,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="modelskill.TimeSeries.trim" class="level3">
 <h3 class="anchored" data-anchor-id="modelskill.TimeSeries.trim">trim</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.trim(start_time<span class="op">=</span><span class="va">None</span>, end_time<span class="op">=</span><span class="va">None</span>, <span class="bu">buffer</span><span class="op">=</span><span class="st">'1s'</span>, no_overlap<span class="op">=</span><span class="st">'error'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>TimeSeries.trim(start_time<span class="op">=</span><span class="va">None</span>, end_time<span class="op">=</span><span class="va">None</span>, <span class="bu">buffer</span><span class="op">=</span><span class="st">'1s'</span>, no_overlap<span class="op">=</span><span class="st">'error'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Trim observation data to a given time interval</p>
 <section id="parameters" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h4>
