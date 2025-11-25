@@ -1146,6 +1146,29 @@ class Comparer:
     def remove_bias(
         self, correct: Literal["Model", "Observation"] = "Model"
     ) -> Comparer:
+        """Remove bias from model or observation data.
+
+        The bias is calculated as the mean residual (model - observation)
+        and can be removed from either the model or observation data.
+
+        Parameters
+        ----------
+        correct : {"Model", "Observation"}, optional
+            Which data to correct by removing bias, by default "Model"
+            - "Model": subtract bias from model data
+            - "Observation": add bias to observation data
+
+        Returns
+        -------
+        Comparer
+            New Comparer with bias removed
+
+        Examples
+        --------
+        >>> cmp = ms.match(obs, mod)
+        >>> cmp_unbiased = cmp.remove_bias()
+        >>> cmp_unbiased.skill()
+        """
         cmp = self.copy()
 
         bias = cmp._residual.mean(axis=0)

@@ -109,6 +109,11 @@ def from_matched(
     y_item: [str, int], optional
         Name of y item, only relevant for track data
 
+    Returns
+    -------
+    Comparer
+        A Comparer object with matched observation and model data
+
     Examples
     --------
     >>> import pandas as pd

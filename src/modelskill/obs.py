@@ -51,6 +51,11 @@ def observation(
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
+    Returns
+    -------
+    PointObservation or TrackObservation
+        An observation object of the appropriate type
+
     Examples
     --------
     >>> import modelskill as ms
