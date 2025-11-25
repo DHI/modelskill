@@ -9,8 +9,19 @@ The observation is considered the *truth* and the model result data is therefore
 The matching process will be different depending on the geometry of observation and model result:
 
 * Geometries are the *same* (e.g. both are point time series): only temporal matching is needed
-* Geometries are *different* (e.g. observation is a point time series and model result is a grid): data is first spatially *extracted* from the model result and *then* matched in time. 
+* Geometries are *different* (e.g. observation is a point time series and model result is a grid): data is first spatially *extracted* from the model result and *then* matched in time.
 
+## Compatibility Matrix
+
+The following table shows which observation types can be matched with which model result types:
+
+| Model Result Type | PointObservation | TrackObservation |
+|-------------------|:----------------:|:----------------:|
+| PointModelResult  | ✓ | ✗ |
+| TrackModelResult  | ✗ | ✓ |
+| GridModelResult   | ✓ | ✓ |
+| DfsuModelResult   | ✓ | ✓ |
+| DummyModelResult  | ✓ | ✓ |
 
 ## Temporal matching
 
