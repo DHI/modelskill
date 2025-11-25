@@ -45,6 +45,32 @@ make docs               # Build documentation with quartodoc and quarto
                         # Located in docs/_site after building
 ```
 
+## Coding Conventions
+
+### Docstrings
+- All docstrings use **NumPy format** (not Google or reStructuredText style)
+- Include sections: Parameters, Returns, Raises, Examples, See Also, Notes as appropriate
+- Example:
+  ```python
+  def function_name(param1, param2):
+      """Short description.
+
+      Longer description if needed.
+
+      Parameters
+      ----------
+      param1 : type
+          Description of param1
+      param2 : type
+          Description of param2
+
+      Returns
+      -------
+      type
+          Description of return value
+      """
+  ```
+
 ## Architecture
 
 ### Core Workflow (4-Step Pattern)
