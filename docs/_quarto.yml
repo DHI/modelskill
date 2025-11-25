@@ -37,7 +37,7 @@ website:
 
     - title: "User Guide"
       style: docked
-      contents: 
+      contents:
         - user-guide/index.qmd
         - user-guide/getting-started.qmd
         - user-guide/overview.qmd
@@ -46,6 +46,7 @@ website:
         - user-guide/workflow.qmd
         - user-guide/matching.qmd
         - user-guide/selecting-data.qmd
+        - user-guide/metrics.qmd
         - user-guide/plotting.qmd
         - user-guide/statistics.qmd
 
