@@ -44,6 +44,7 @@ def scatter(
     skill_scores: Mapping[str, float] | None = None,
     skill_score_unit: Optional[str] = "",
     ax: Optional[Axes] = None,
+    random_state: Optional[int] = None,
     **kwargs,
 ) -> Axes:
     """Scatter plot tailored for model skill comparison.
@@ -120,6 +121,8 @@ def scatter(
         unit for skill_scores, by default None
     ax : matplotlib.axes.Axes, optional
         axes to plot on, by default None
+    random_state : int, optional
+        random seed for point sampling, by default None
     **kwargs
 
     Returns
@@ -155,7 +158,7 @@ def scatter(
     if norm is None:
         norm = colors.PowerNorm(vmin=1, gamma=0.5)
 
-    x_sample, y_sample = sample_points(x, y, show_points)
+    x_sample, y_sample = sample_points(x, y, show_points, random_state=random_state)
     show_points = len(x_sample) > 0
     xq, yq = quantiles_xy(x, y, quantiles)
 

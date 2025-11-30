@@ -476,6 +476,7 @@ class ComparerPlotter:
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
         skill_table: Optional[Union[str, List[str], Mapping[str, str], bool]] = None,
+        random_state: Optional[int] = None,
         ax: Optional[matplotlib.axes.Axes] = None,
         **kwargs,
     ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
@@ -542,6 +543,8 @@ class ComparerPlotter:
             modelskill.options.metrics.list. This kword adds a box at the
             right of the scatter plot, by default False
             mapping can be used to rename the metrics in the table.
+        random_state : int, optional
+            random seed for point sampling, by default None
         ax : matplotlib.axes.Axes, optional
             axes to plot on, by default None
         **kwargs
@@ -581,6 +584,7 @@ class ComparerPlotter:
                 ylabel=ylabel,
                 skill_table=skill_table,
                 ax=ax,
+                random_state=random_state,
                 **kwargs,
             )
             axes.append(ax_mod)
@@ -746,7 +750,14 @@ class ComparerPlotter:
         df = df.rename(columns={"_std_obs": "obs_std", "_std_mod": "std"})
 
         pts = [
-            TaylorPoint(name=r.model, obs_std=r.obs_std, std=r.std, cc=r.cc, marker=marker, marker_size=marker_size)
+            TaylorPoint(
+                name=r.model,
+                obs_std=r.obs_std,
+                std=r.std,
+                cc=r.cc,
+                marker=marker,
+                marker_size=marker_size,
+            )
             for r in df.itertuples()
         ]
 

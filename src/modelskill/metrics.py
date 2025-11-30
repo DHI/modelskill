@@ -632,7 +632,7 @@ def peak_ratio(
         }
     )
     df_filter["Maximum"] = df_filter.max(axis=1)
-    df_filter.sort_values(by="Maximum", ascending=False, inplace=True)
+    df_filter = df_filter.sort_values(by="Maximum", ascending=False)
     # Finally we do the selection of the N- largest peaks from either model or measured
     df_filter = df_filter.iloc[0:top_n_peaks, :]
     # Rename to avoid further refactoring

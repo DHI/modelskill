@@ -18,7 +18,7 @@ jobs:
 
       - uses: astral-sh/ruff-action@v2
         with:
-          version: 0.6.2
+          version: 0.14.5
           src: src
 
       - name: Set up uv

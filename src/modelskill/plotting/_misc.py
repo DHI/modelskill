@@ -53,25 +53,11 @@ def _xyticks(n_sectors=8, lim=None):
 
 
 def sample_points(
-    x: np.ndarray, y: np.ndarray, show_points: bool | int | float | None = None
+    x: np.ndarray,
+    y: np.ndarray,
+    show_points: bool | int | float | None = None,
+    random_state: int | None = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Sample points to be plotted
-
-    Parameters
-    ----------
-    x: np.ndarray, 1d
-    y: np.ndarray, 1d
-    include: bool, int or float, optional
-        default is subset the data to 50k points
-
-    Returns
-    -------
-    np.ndarray, np.ndarray
-        x and y arrays with sampled points
-    """
-
-    assert len(x) == len(y), "x and y must have same length"
-
     if show_points is True:
         return x, y
 
@@ -104,8 +90,8 @@ def sample_points(
             show_points = len(x)
         n_samples = show_points
 
-    np.random.seed(20)  # TODO should this be a parameter?
-    ran_index = np.random.choice(range(len(x)), n_samples, replace=False)
+    rng = np.random.default_rng(seed=random_state)
+    ran_index = rng.choice(range(len(x)), n_samples, replace=False)
     x_sample = x[ran_index]
     y_sample = y[ran_index]
 

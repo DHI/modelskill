@@ -122,9 +122,9 @@ def test_format_skill_table():
 
 @pytest.fixture
 def x_y():
-    np.random.seed(42)
-    x = np.random.rand(100000)
-    y = np.random.rand(100000)
+    rng = np.random.default_rng(seed=42)
+    x = rng.random(100000)
+    y = rng.random(100000)
     return x, y
 
 

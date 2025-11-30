@@ -45,7 +45,7 @@ classifiers = [
 dev = [
     "pytest",
     "plotly >= 4.5",
-    "ruff==0.6.2",
+    "ruff==0.14.5",
     "quarto-cli==1.5.57",
     "quartodoc==0.11.1",
     "netCDF4",
@@ -70,8 +70,8 @@ notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
 
 [tool.ruff.lint]
-ignore = ["E501"]
-select = ["E4", "E7", "E9", "F", "D200", "D205"]
+ignore = ["E501", "PD011"]
+select = ["E4", "E7", "E9", "F", "D200", "D205", "NPY", "PD"]
 
 [tool.mypy]
 python_version = "3.10"

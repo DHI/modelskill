@@ -455,7 +455,7 @@ def test_save_and_load_preserves_raw_model_data(cc, tmp_path):
 
 
 def test_plot_scatter(cc):
-    ax = cc.plot.scatter(skill_table=True)
+    ax = cc.plot.scatter(skill_table=True, random_state=20)
     assert ax is not None
 
 
