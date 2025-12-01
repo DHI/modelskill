@@ -29,4 +29,4 @@ jobs:
           uv add "git+https://github.com/DHI/mikeio.git@main"
 
       - name: Test
-        run: make test
+        run: uv run pytest
