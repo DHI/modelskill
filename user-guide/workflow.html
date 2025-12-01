@@ -298,7 +298,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><a href="../api/TrackObservation.html#modelskill.TrackObservation"><code>TrackObservation</code></a></li>
 </ul>
 <p>Let’s assume that we have one PointObservation and one TrackObservation (<code>name</code> is used to identify the observation, similar to the <code>name</code> of the model above).</p>
-<div id="16a08e96" class="cell" data-execution_count="1">
+<div id="8f168fda" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>hkna <span class="op">=</span> ms.PointObservation(<span class="st">"../data/SW/HKNA_Hm0.dfs0"</span>, item<span class="op">=</span><span class="dv">0</span>,</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                            x<span class="op">=</span><span class="fl">4.2420</span>, y<span class="op">=</span><span class="fl">52.6887</span>,</span>
@@ -314,7 +314,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="define-modelresults"><i class="fa-solid fa-database" aria-label="database"></i> Define ModelResults</h2>
 <p>The result of a simulation is stored in one or more result files, e.g.&nbsp;dfsu, dfs0, nc, csv.</p>
 <p>The name is used to identify the model result in the plots and tables.</p>
-<div id="4672037e" class="cell" data-execution_count="2">
+<div id="3a3cf352" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.DfsuModelResult(<span class="st">"../data/SW/HKZN_local_2017_DutchCoast.dfsu"</span>, </span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                         item<span class="op">=</span><span class="st">"Sign. Wave Height"</span>,</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                         name<span class="op">=</span><span class="st">'HKZN_local'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -323,7 +323,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="match-observations-and-modelresults" class="level2">
 <h2 class="anchored" data-anchor-id="match-observations-and-modelresults"><i class="fa-solid fa-link" aria-label="link"></i> Match observations and ModelResults</h2>
 <p>The <a href="../api/match.html#modelskill.match">match()</a> function returns a <a href="../api/Comparer.html#modelskill.Comparer">Comparer</a> (a single observation) or a <a href="../api/ComparerCollection.html#modelskill.ComparerCollection">ComparerCollection</a> (multiple observations) for further analysis and plotting.</p>
-<div id="3d5a420e" class="cell" data-execution_count="3">
+<div id="e3709fb8" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match([hkna, c2], mr)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>cc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
