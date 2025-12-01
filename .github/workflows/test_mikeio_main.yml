@@ -1,0 +1,55 @@
+name: Test against mikeio main
+# Tests ModelSkill against development version of mikeio to catch breaking changes early before they are released
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    # Run weekly on Mondays at 5:00 AM UTC
+    - cron: '0 5 * * 1'
+
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/test_mikeio_main.yml'
+
+jobs:
+  test-mikeio-main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --group test --no-dev
+
+      - name: Install mikeio from main branch
+        run: |
+          uv pip install git+https://github.com/DHI/mikeio.git@main
+
+      - name: Test
+        run: |
+          # Run tests with warnings enabled and capture output
+          pytest -W default 2>&1 | tee test_output.txt || true
+
+          # Highlight mikeio-related warnings
+          echo "## Checking for mikeio warnings..."
+          if grep -i "warning.*mikeio\|mikeio.*warning\|deprecat" test_output.txt; then
+            echo "::warning::Found mikeio-related warnings - review output above"
+          fi
+
+          # Check if tests actually failed
+          if ! make test; then
+            exit 1
+          fi
+
+      - name: Report status
+        if: failure()
+        run: |
+          echo "::warning::Tests failed against mikeio main branch. This may indicate upcoming compatibility issues."
