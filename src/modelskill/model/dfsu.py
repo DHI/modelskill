@@ -219,7 +219,7 @@ class DfsuModelResult(SpatialField):
 
         # TODO not sure why we rename here
         assert self.name is not None
-        ds_model.rename({ds_model.items[0].name: self.name}, inplace=True)
+        ds_model = ds_model.rename({ds_model.items[0].name: self.name})
 
         return PointModelResult(
             data=ds_model,
@@ -268,7 +268,7 @@ class DfsuModelResult(SpatialField):
 
         if isinstance(self.data, mikeio.DataArray):
             ds_model = self.data.extract_track(track=track, method=method)
-            ds_model.rename({self.data.name: self.name}, inplace=True)
+            ds_model = ds_model.rename({self.data.name: self.name})
             aux_items = None
         else:
             if isinstance(self.data, mikeio.dfsu.Dfsu2DH):
@@ -279,7 +279,7 @@ class DfsuModelResult(SpatialField):
                 ds_model = self.data[self.sel_items.all].extract_track(
                     track=track, method=method
                 )
-            ds_model.rename({self.sel_items.values: self.name}, inplace=True)
+            ds_model = ds_model.rename({self.sel_items.values: self.name})
             aux_items = self.sel_items.aux
 
         item_names = [i.name for i in ds_model.items]
