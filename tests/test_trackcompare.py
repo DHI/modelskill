@@ -299,6 +299,12 @@ def test_gridded_skill_misc(comparer):
     assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
 
 
+def test_gridded_skill_binsize_no_data_loss(comparer):
+    """Test that all data points are included when using binsize parameter."""
+    gs = comparer.gridded_skill(metrics=["bias"], binsize=2.5)
+    assert int(gs.n.data.sum().values) == comparer.n_points
+
+
 def test_hist(comparer):
     cmp = comparer
 
