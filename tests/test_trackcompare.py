@@ -280,7 +280,7 @@ def test_gridded_skill_bins(comparer):
 
     # binsize (overwrites bins)
     ds = comparer.gridded_skill(metrics=["bias"], binsize=2.5, bins=100)
-    assert len(ds.x) == 4
+    assert len(ds.x) == 5  # One more bin needed to cover full data range
     assert len(ds.y) == 3
     assert ds.x[0] == -0.75
 
