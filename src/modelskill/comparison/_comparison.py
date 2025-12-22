@@ -450,7 +450,7 @@ class Comparer:
             if raw_mod_data is not None
             else {
                 # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
-                key: PointModelResult(self.data[[key]], name=key)
+                str(key): PointModelResult(self.data[[str(key)]], name=str(key))
                 for key, value in matched_data.data_vars.items()
                 if value.attrs["kind"] == "model"
             }
@@ -601,13 +601,11 @@ class Comparer:
     def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
         # we don't require the kind attribute to be "auxiliary"
-        return list(
-            [
-                k
-                for k, v in self.data.data_vars.items()
-                if v.attrs["kind"] not in ["observation", "model"]
-            ]
-        )
+        return [
+            str(k)
+            for k, v in self.data.data_vars.items()
+            if v.attrs["kind"] not in ["observation", "model"]
+        ]
 
     # TODO: always "Observation", necessary to have this property?
     @property

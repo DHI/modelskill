@@ -90,7 +90,7 @@ def _parse_track_input(
     elif isinstance(data, pd.DataFrame):
         valid_items = list(data.columns)
     elif isinstance(data, xr.Dataset):
-        valid_items = list(data.data_vars)
+        valid_items = [str(v) for v in data.data_vars]
     else:
         raise ValueError("Could not construct Track object from provided data")
 
