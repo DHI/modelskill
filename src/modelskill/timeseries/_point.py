@@ -97,6 +97,7 @@ def _parse_point_input(
             data = data.to_dataset()
 
     elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):
+        valid_items: Sequence[Hashable]
         if isinstance(data, mikeio.Dataset):
             valid_items = [i.name for i in data.items]
         elif isinstance(data, pd.DataFrame):

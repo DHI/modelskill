@@ -86,6 +86,7 @@ def _parse_track_input(
         data = data.read()  # now mikeio.Dataset
 
     # parse items
+    valid_items: Sequence[Hashable]
     if isinstance(data, mikeio.Dataset):
         valid_items = [i.name for i in data.items]
     elif isinstance(data, pd.DataFrame):
