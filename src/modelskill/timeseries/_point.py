@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence, get_args, List, Optional
@@ -25,7 +26,7 @@ class PointItem:
 
 
 def _parse_point_items(
-    items: Sequence[str],
+    items: Sequence[Hashable],
     item: int | str | None,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> PointItem:
@@ -96,6 +97,7 @@ def _parse_point_input(
             data = data.to_dataset()
 
     elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):
+        valid_items: Sequence[Hashable]
         if isinstance(data, mikeio.Dataset):
             valid_items = [i.name for i in data.items]
         elif isinstance(data, pd.DataFrame):

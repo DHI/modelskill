@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, get_args, Optional, List, Sequence
@@ -27,7 +28,7 @@ class TrackItem:
 
 
 def _parse_track_items(
-    items: Sequence[str],
+    items: Sequence[Hashable],
     x_item: int | str | None,
     y_item: int | str | None,
     item: int | str | None,
@@ -85,6 +86,7 @@ def _parse_track_input(
         data = data.read()  # now mikeio.Dataset
 
     # parse items
+    valid_items: Sequence[Hashable]
     if isinstance(data, mikeio.Dataset):
         valid_items = [i.name for i in data.items]
     elif isinstance(data, pd.DataFrame):

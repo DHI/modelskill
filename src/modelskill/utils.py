@@ -1,10 +1,10 @@
 from __future__ import annotations
-from typing import Sequence
+from typing import Sequence, cast
 import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
-from collections.abc import Iterable
+from collections.abc import Hashable, Iterable
 
 _RESERVED_NAMES = ["Observation", "time", "x", "y", "z"]
 
@@ -158,12 +158,12 @@ def make_unique_index(
     return new_index
 
 
-def _get_name(x: int | str | None, valid_names: Sequence[str]) -> str:
+def _get_name(x: int | str | None, valid_names: Sequence[Hashable]) -> str:
     """Parse name/idx from list of valid names (e.g. obs from obs_names), return name"""
-    return valid_names[_get_idx(x, valid_names)]
+    return cast(str, valid_names[_get_idx(x, valid_names)])
 
 
-def _get_idx(x: int | str | None, valid_names: Sequence[str]) -> int:
+def _get_idx(x: int | str | None, valid_names: Sequence[Hashable]) -> int:
     """Parse name/idx from list of valid names (e.g. obs from obs_names), return idx"""
 
     if x is None:
