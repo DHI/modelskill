@@ -57,7 +57,7 @@ test = [
     "pytest-cov",
     "openpyxl",
     "dask",
-    "mypy==1.16.1",
+    "mypy==1.19.1",
     "types-PyYAML",
     "geopandas",
 ]
