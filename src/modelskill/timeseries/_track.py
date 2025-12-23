@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, get_args, Optional, List, Sequence
@@ -27,7 +28,7 @@ class TrackItem:
 
 
 def _parse_track_items(
-    items: Sequence[str],
+    items: Sequence[Hashable],
     x_item: int | str | None,
     y_item: int | str | None,
     item: int | str | None,
@@ -90,7 +91,7 @@ def _parse_track_input(
     elif isinstance(data, pd.DataFrame):
         valid_items = list(data.columns)
     elif isinstance(data, xr.Dataset):
-        valid_items = [str(v) for v in data.data_vars]
+        valid_items = list(data.data_vars)
     else:
         raise ValueError("Could not construct Track object from provided data")
 

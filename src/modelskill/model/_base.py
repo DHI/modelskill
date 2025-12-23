@@ -1,5 +1,6 @@
 from __future__ import annotations
 from collections import Counter
+from collections.abc import Hashable
 from typing import List, Optional, Protocol, Sequence, TYPE_CHECKING
 from dataclasses import dataclass
 import warnings
@@ -25,7 +26,7 @@ class SelectedItems:
 
     @staticmethod
     def parse(
-        avail_items: Sequence[str],
+        avail_items: Sequence[Hashable],
         item: int | str | None,
         aux_items: Optional[Sequence[int | str]] = None,
     ) -> SelectedItems:
@@ -33,7 +34,7 @@ class SelectedItems:
 
 
 def _parse_items(
-    avail_items: Sequence[str],
+    avail_items: Sequence[Hashable],
     item: int | str | None,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> SelectedItems:

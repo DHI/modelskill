@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence, get_args, List, Optional
@@ -25,7 +26,7 @@ class PointItem:
 
 
 def _parse_point_items(
-    items: Sequence[str],
+    items: Sequence[Hashable],
     item: int | str | None,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> PointItem:
@@ -101,7 +102,7 @@ def _parse_point_input(
         elif isinstance(data, pd.DataFrame):
             valid_items = list(data.columns)
         else:
-            valid_items = [str(v) for v in data.data_vars]
+            valid_items = list(data.data_vars)
         sel_items = _parse_point_items(valid_items, item=item, aux_items=aux_items)
         item_name = sel_items.values
         data = data[sel_items.all]

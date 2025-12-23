@@ -83,7 +83,7 @@ class GridModelResult(SpatialField):
             )
 
         sel_items = SelectedItems.parse(
-            [str(v) for v in ds.data_vars], item=item, aux_items=aux_items
+            list(ds.data_vars), item=item, aux_items=aux_items
         )
         name = name or sel_items.values
         ds = rename_coords_xr(ds)
