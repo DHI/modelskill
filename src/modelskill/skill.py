@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 from .plotting._misc import _get_fig_ax
 from .metrics import small_is_best, large_is_best, zero_is_best, one_is_best
+from ._deprecation import _deprecate_positional_args
 
 
 # TODO remove ?
@@ -172,6 +173,7 @@ class SkillArrayPlotter:
         self._name_to_title_in_kwargs(kwargs)
         return df.plot.barh(**kwargs)
 
+    @_deprecate_positional_args
     def grid(
         self,
         show_numbers: bool = True,
@@ -655,6 +657,7 @@ class SkillTable:
         """
         return self.__class__(self.data.query(query))
 
+    @_deprecate_positional_args
     def sel(
         self, query: str | None = None, reduce_index: bool = True, **kwargs: Any
     ) -> SkillTable | SkillArray:
@@ -762,6 +765,7 @@ class SkillTable:
 
         return self.__class__(self.data.round(decimals=decimals))
 
+    @_deprecate_positional_args
     def style(
         self,
         decimals: int = 3,
