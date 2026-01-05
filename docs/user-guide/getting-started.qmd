@@ -27,6 +27,24 @@ uv pip install modelskill
 ```
 :::
 
+### Optional dependencies
+
+For saving/loading `Comparer` objects to NetCDF format, install the `netcdf` extra:
+
+::: {.panel-tabset}
+## pip
+
+```bash
+pip install modelskill[netcdf]
+```
+
+## uv
+
+```bash
+uv pip install modelskill[netcdf]
+```
+:::
+
 ## Skill assessment
 
 The simplest use-case for skill assessment is when you have a dataset of matched model results and observations in tabular format.

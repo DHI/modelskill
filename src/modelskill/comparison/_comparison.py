@@ -1216,6 +1216,11 @@ class Comparer:
         ----------
         filename : str or Path
             filename
+
+        Raises
+        ------
+        ImportError
+            If netCDF4 is not installed
         """
         ds = self.data
 
@@ -1234,7 +1239,15 @@ class Comparer:
                 # da = ds_mod.to_xarray()[key]
                 ds["_raw_" + key] = ts_mod.data[key]
 
-        ds.to_netcdf(filename)
+        try:
+            ds.to_netcdf(filename)
+        except (ImportError, ValueError) as e:
+            if "netCDF4" in str(e) or "No module named" in str(e):
+                raise ImportError(
+                    "netCDF4 is required for saving to NetCDF format. "
+                    "Install it with: pip install modelskill[netcdf]"
+                ) from e
+            raise
 
     @staticmethod
     def load(filename: Union[str, Path]) -> "Comparer":
@@ -1248,9 +1261,22 @@ class Comparer:
         Returns
         -------
         Comparer
+
+        Raises
+        ------
+        ImportError
+            If netCDF4 is not installed
         """
-        with xr.open_dataset(filename) as ds:
-            data = ds.load()
+        try:
+            with xr.open_dataset(filename) as ds:
+                data = ds.load()
+        except (ImportError, ValueError) as e:
+            if "netCDF4" in str(e) or "No module named" in str(e):
+                raise ImportError(
+                    "netCDF4 is required for loading NetCDF files. "
+                    "Install it with: pip install modelskill[netcdf]"
+                ) from e
+            raise
 
         if data.gtype == "track":
             return Comparer(matched_data=data)

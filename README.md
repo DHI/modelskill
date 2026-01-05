@@ -28,6 +28,12 @@ Or the development version:
 
 `> pip install https://github.com/DHI/modelskill/archive/main.zip`
 
+### Optional dependencies
+
+For saving/loading `Comparer` objects to NetCDF format:
+
+`> pip install modelskill[netcdf]`
+
 
 ## Example notebooks
 

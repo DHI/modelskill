@@ -15,7 +15,6 @@ dependencies = [
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",
-    "netCDF4",
     "scipy",
     "jinja2", # used for skill.style
 ]
@@ -48,7 +47,6 @@ dev = [
     "ruff==0.6.2",
     "quarto-cli==1.5.57",
     "quartodoc==0.11.1",
-    "netCDF4",
     "dask",
 ]
 
@@ -60,7 +58,10 @@ test = [
     "mypy==1.19.1",
     "types-PyYAML",
     "geopandas",
+    "netCDF4",  # needed for save/load tests
 ]
+
+netcdf = ["netCDF4"]
 
 notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
