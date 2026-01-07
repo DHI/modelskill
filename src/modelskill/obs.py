@@ -231,6 +231,37 @@ class PointObservation(Observation):
         self.data["z"] = value
 
 
+class NetworkLocationObservation(PointObservation):
+    def __init__(
+        self,
+        data: PointType,
+        *,
+        reach: str,
+        chainage: str,
+        item: Optional[int | str] = None,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+        name: Optional[str] = None,
+        weight: float = 1.0,
+        quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
+        attrs: Optional[dict] = None,
+    ) -> None:
+        self.reach = reach
+        self.chainage = chainage
+        super().__init__(
+            data=data,
+            item=item,
+            x=x,
+            y=y,
+            name=name,
+            weight=weight,
+            quantity=quantity,
+            aux_items=aux_items,
+            attrs=attrs,
+        )
+
+
 class TrackObservation(Observation):
     """Class for observation with locations moving in space, e.g. satellite altimetry
 

@@ -49,7 +49,7 @@ dev = [
     "quarto-cli==1.5.57",
     "quartodoc==0.11.1",
     "netCDF4",
-    "dask",
+    "mikeio1d>=1.1.1",
 ]
 
 test = [
