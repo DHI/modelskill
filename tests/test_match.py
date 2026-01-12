@@ -616,3 +616,21 @@ def test_multiple_models_same_name(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="HKZN_local_2017_DutchCoast"):
         ms.match(obs, [mr1, mr2])
+
+
+def test_network():
+    obs = ms.NetworkLocationObservation(
+        "tests/testdata/network/vidaa_mag_4905.dfs0",
+        item=0,
+        reach="VIDAA-MAG",
+        chainage="4905",
+    )
+    mod = ms.NetworkModelResult(
+        "tests/testdata/network/Vida_1BaseDefault_Network_HD.res1d",
+        name="Vida",
+        item="Discharge",
+    )
+
+    cmp = ms.match(obs, mod)
+    assert cmp.n_points == 37
+    assert cmp.score()["Vida"] == pytest.approx(0.11985827)
