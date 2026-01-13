@@ -28,7 +28,13 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation, observation
+from .obs import (
+    Observation,
+    PointObservation,
+    TrackObservation,
+    NetworkPointObservation,
+    observation,
+)
 from .timeseries import TimeSeries
 from .types import Period
 
@@ -400,6 +406,8 @@ def _match_space_time(
                 )
             case PointModelResult() as pmr, PointObservation():
                 aligned = pmr.align(observation, max_gap=max_model_gap)
+            case PointModelResult() as pmr, NetworkPointObservation():
+                aligned = pmr.align(observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
@@ -430,8 +438,8 @@ def _parse_single_obs(
     obs: ObsInputType,
     obs_item: Optional[int | str],
     gtype: Optional[GeometryTypes],
-) -> PointObservation | TrackObservation:
-    if isinstance(obs, (PointObservation, TrackObservation)):
+) -> PointObservation | TrackObservation | NetworkPointObservation:
+    if isinstance(obs, (PointObservation, TrackObservation, NetworkPointObservation)):
         if obs_item is not None:
             raise ValueError(
                 "obs_item argument not allowed if obs is an modelskill.Observation type"

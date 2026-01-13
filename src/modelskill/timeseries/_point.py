@@ -8,6 +8,7 @@ import pandas as pd
 import xarray as xr
 
 import mikeio
+import mikeio1d
 
 from ..types import GeometryType, PointType
 from ..quantity import Quantity
@@ -76,9 +77,14 @@ def _parse_point_input(
             stem = Path(data).stem
             data = xr.open_dataset(data)
             name = name or data.attrs.get("name") or stem
+        elif suffix == ".res1d":
+            name = name or Path(data).stem
+            data = mikeio1d.open(data)
+
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
-
+    elif isinstance(data, mikeio1d.Res1D):
+        data = data.read()  # now mikeio1d.Res1D
     # parse items
     if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):
         item_name = data.name if data.name is not None else "PointModelResult"

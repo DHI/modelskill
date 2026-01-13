@@ -340,6 +340,32 @@ class TrackObservation(Observation):
         super().__init__(data=data, weight=weight, attrs=attrs)
 
 
+class NetworkPointObservation(Observation):
+    def __init__(
+        self,
+        data: PointType,
+        *,
+        name: Optional[str] = None,
+        item: Optional[str] = None,
+        attrs: Optional[dict] = None,
+        quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_point_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                aux_items=aux_items,
+                x=None,
+                y=None,
+                z=None,
+            )
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=1, attrs=attrs)
+
+
 def unit_display_name(name: str) -> str:
     """Display name
 
