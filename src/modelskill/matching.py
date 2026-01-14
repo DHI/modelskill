@@ -28,6 +28,7 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
+from .model.network import NetworkModelResult
 from .obs import (
     Observation,
     PointObservation,
@@ -40,7 +41,7 @@ from .types import Period
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 IdxOrNameTypes = Optional[Union[int, str]]
-GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
+GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid", "network"]]
 MRInputType = Union[
     str,
     Path,
@@ -57,6 +58,7 @@ MRInputType = Union[
     DfsuModelResult,
     TrackModelResult,
     DummyModelResult,
+    NetworkModelResult,
 ]
 ObsInputType = Union[
     str,
@@ -460,6 +462,7 @@ def _parse_single_model(
     | GridModelResult
     | DfsuModelResult
     | DummyModelResult
+    | NetworkModelResult
 ):
     if isinstance(
         mod,
@@ -492,6 +495,7 @@ def _parse_single_model(
                 GridModelResult,
                 DfsuModelResult,
                 DummyModelResult,
+                NetworkModelResult,
             ),
         )
         return mod

@@ -9,6 +9,7 @@ from .point import PointModelResult
 from .track import TrackModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
+from .network import NetworkModelResult
 
 
 from ..types import GeometryType, DataInputType
@@ -18,6 +19,7 @@ _modelresult_lookup = {
     GeometryType.TRACK: TrackModelResult,
     GeometryType.UNSTRUCTURED: DfsuModelResult,
     GeometryType.GRID: GridModelResult,
+    GeometryType.NETWORK: NetworkModelResult,
 }
 
 
@@ -27,7 +29,13 @@ def model_result(
     aux_items: Optional[list[int | str]] = None,
     gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
     **kwargs: Any,
-) -> PointModelResult | TrackModelResult | DfsuModelResult | GridModelResult:
+) -> (
+    PointModelResult
+    | TrackModelResult
+    | DfsuModelResult
+    | GridModelResult
+    | NetworkModelResult
+):
     """A factory function for creating an appropriate object based on the data input.
 
     Parameters
@@ -86,6 +94,8 @@ def _guess_gtype(data: Any) -> GeometryType:
             return GeometryType.GRID
         elif file_ext == ".dfs2":
             return GeometryType.GRID
+        elif file_ext == ".res1d":
+            return GeometryType.NETWORK
         else:
             raise ValueError(
                 "Could not guess gtype from file extension, please specify gtype, e.g. gtype='track'"
