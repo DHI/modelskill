@@ -213,7 +213,7 @@ def _parse_network_input(
 
     elif by_reach and not by_node:
         location = data.reaches[reach]
-        if with_index != with_chainage:
+        if with_index == with_chainage:
             raise ValueError(
                 "Items accessed by chainage must be specified either by chainage or by index, not both"
             )
