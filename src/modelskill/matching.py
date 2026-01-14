@@ -40,7 +40,7 @@ from .types import Period
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 IdxOrNameTypes = Optional[Union[int, str]]
-GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid", "network"]]
+GeometryTypes = Optional[Literal["point", "track", "unstructured", "grid"]]
 MRInputType = Union[
     str,
     Path,

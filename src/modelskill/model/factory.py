@@ -19,7 +19,6 @@ _modelresult_lookup = {
     GeometryType.TRACK: TrackModelResult,
     GeometryType.UNSTRUCTURED: DfsuModelResult,
     GeometryType.GRID: GridModelResult,
-    GeometryType.NETWORK: NetworkModelResult,
 }
 
 
@@ -94,8 +93,6 @@ def _guess_gtype(data: Any) -> GeometryType:
             return GeometryType.GRID
         elif file_ext == ".dfs2":
             return GeometryType.GRID
-        elif file_ext == ".res1d":
-            return GeometryType.NETWORK
         else:
             raise ValueError(
                 "Could not guess gtype from file extension, please specify gtype, e.g. gtype='track'"
