@@ -19,7 +19,7 @@ def res1d_object(res1d_datapath) -> mikeio1d.Res1D:
 
 
 def test_read_quantity_by_node(res1d_object):
-    series = parse_network(res1d_object, eum_name="Water Level", node=3)
+    series = parse_network(res1d_object, variable="Water Level", node=3)
     df = res1d_object.read()
     assert isinstance(series, pd.Series)
     assert series.name == "WaterLevel"
@@ -37,7 +37,7 @@ def test_read_quantity_by_node(res1d_object):
 )
 def test_read_quantity_by_reach(res1d_object, network_kwargs):
     series = parse_network(
-        res1d_object, eum_name="Water Level", reach="100l1", **network_kwargs
+        res1d_object, variable="Water Level", reach="100l1", **network_kwargs
     )
     df = res1d_object.read()
     assert isinstance(series, pd.Series)
@@ -49,4 +49,4 @@ def test_node_and_reach_as_arguments(res1d_object):
     with pytest.raises(
         ValueError, match="Item can only be specified either by node or by reach"
     ):
-        parse_network(res1d_object, eum_name="Water Level", reach="100l1", node=2)
+        parse_network(res1d_object, variable="Water Level", reach="100l1", node=2)

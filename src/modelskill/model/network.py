@@ -38,7 +38,7 @@ class NetworkModelResult(PointModelResult):
     def __init__(
         self,
         data: Res1D | str,
-        quantity: str | Quantity,
+        quantity: Optional[str | Quantity] = None,
         *,
         reach: Optional[str] = None,
         node: Optional[int] = None,
@@ -50,9 +50,10 @@ class NetworkModelResult(PointModelResult):
         if isinstance(quantity, str):
             quantity = Quantity.from_mikeio_eum_name(quantity)
 
+        variable = quantity.name if isinstance(quantity, Quantity) else None
         data = _parse_network_input(
             data,
-            eum_name=quantity.name,
+            variable=variable,
             reach=reach,
             node=node,
             chainage=chainage,

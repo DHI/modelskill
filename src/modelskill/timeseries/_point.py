@@ -188,14 +188,14 @@ def _parse_point_input(
 
 def _parse_network_input(
     data: mikeio1d.Res1D | str,
-    eum_name: str,
+    variable: Optional[str] = None,
     *,
     node: Optional[int] = None,
     reach: Optional[str] = None,
     chainage: Optional[str | float] = None,
     gridpoint: Optional[int | Literal["start", "end"]] = None,
 ) -> pd.Series:
-    def eum_name_to_res1d(name: str) -> str:
+    def variable_name_to_res1d(name: str) -> str:
         return name.replace(" ", "").replace("_", "")
 
     if isinstance(data, (str, Path)):
@@ -213,14 +213,14 @@ def _parse_network_input(
         location = data.nodes[str(node)]
         if with_chainage or with_index:
             warnings.warn(
-                "'chainage' or 'gridpoint' were passed along with 'node'. These are only relevant when passed with 'reach', so they will be ignored."
+                "'chainage' or 'gridpoint' are only relevant when passed with 'reach' but they were passed with 'node', so they will be ignored."
             )
 
     elif by_reach and not by_node:
         location = data.reaches[reach]
         if with_index == with_chainage:
             raise ValueError(
-                "Items accessed by chainage must be specified either by chainage or by index, not both"
+                "Locations accessed by chainage must be specified either by chainage or by index, not both."
             )
 
         if with_index and not with_chainage:
@@ -231,11 +231,20 @@ def _parse_network_input(
         location = location[chainage]
 
     else:
-        raise ValueError("Item can only be specified either by node or by reach")
+        raise ValueError(
+            "A network location must be specified either by node or by reach."
+        )
 
-    # After filtering by node or by reach and chainage, a location will only
-    # have unique quantities
-    res1d_name = eum_name_to_res1d(eum_name)
+    if variable is None:
+        if len(location.quantities) != 1:
+            raise ValueError(
+                f"The network location does not have a unique quantity: {location.quantities}, in such case 'variable' argument cannot be None"
+            )
+        res1d_name = location.quantities[0]
+    else:
+        # After filtering by node or by reach and chainage, a location will only
+        # have unique quantities
+        res1d_name = variable_name_to_res1d(variable)
     df = location.to_dataframe()
     if df.shape[1] == 1:
         colname = df.columns[0]
