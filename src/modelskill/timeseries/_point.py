@@ -6,6 +6,7 @@ from typing import Literal, Sequence, get_args, List, Optional
 import numpy as np
 import pandas as pd
 import xarray as xr
+import difflib
 
 import mikeio
 import mikeio1d
@@ -187,13 +188,16 @@ def _parse_point_input(
 
 def _parse_network_input(
     data: mikeio1d.Res1D | str,
-    quantity: str,
+    eum_name: str,
     *,
     node: Optional[int] = None,
     reach: Optional[str] = None,
     chainage: Optional[str | float] = None,
     gridpoint: Optional[int | Literal["start", "end"]] = None,
 ) -> pd.Series:
+    def eum_name_to_res1d(name: str) -> str:
+        return name.replace(" ", "").replace("_", "")
+
     if isinstance(data, (str, Path)):
         if Path(data).suffix == ".res1d":
             data = mikeio1d.open(data)
@@ -207,9 +211,6 @@ def _parse_network_input(
 
     if by_node and not by_reach:
         location = data.nodes[str(node)]
-        assert (
-            quantity in location.quantities
-        ), f"Quantity {quantity} was not found in node."
 
     elif by_reach and not by_node:
         location = data.reaches[reach]
@@ -228,7 +229,11 @@ def _parse_network_input(
     else:
         raise ValueError("Item can only be specified either by node or by reach")
 
-    df = location.to_dataframe()
-    assert df.shape[1] == 1, "Multiple columns found in df"
-    df.rename(columns=lambda x: quantity, inplace=True)
-    return df[quantity].copy()
+    # After filtering by node or by reach and chainage, a location will only
+    # have unique quantities
+    colname = eum_name_to_res1d(eum_name)
+    df = location.to_dataframe().rename(columns=lambda x: colname)
+    if df.shape[1] == 1:
+        return df[colname].copy()
+    else:
+        raise ValueError(f"Multiple matching quantites found at location: {df.columns}")
