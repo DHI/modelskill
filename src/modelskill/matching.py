@@ -28,7 +28,13 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation, observation
+from .model.network import NetworkModelResult
+from .obs import (
+    Observation,
+    PointObservation,
+    TrackObservation,
+    observation,
+)
 from .timeseries import TimeSeries
 from .types import Period
 
@@ -51,6 +57,7 @@ MRInputType = Union[
     DfsuModelResult,
     TrackModelResult,
     DummyModelResult,
+    NetworkModelResult,
 ]
 ObsInputType = Union[
     str,
@@ -452,6 +459,7 @@ def _parse_single_model(
     | GridModelResult
     | DfsuModelResult
     | DummyModelResult
+    | NetworkModelResult
 ):
     if isinstance(
         mod,
@@ -484,6 +492,7 @@ def _parse_single_model(
                 GridModelResult,
                 DfsuModelResult,
                 DummyModelResult,
+                NetworkModelResult,
             ),
         )
         return mod

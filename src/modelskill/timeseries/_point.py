@@ -2,12 +2,14 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence, get_args, List, Optional
+from typing import Literal, Sequence, get_args, List, Optional
 import numpy as np
 import pandas as pd
 import xarray as xr
 
+import warnings
 import mikeio
+import mikeio1d
 
 from ..types import GeometryType, PointType
 from ..quantity import Quantity
@@ -76,9 +78,14 @@ def _parse_point_input(
             stem = Path(data).stem
             data = xr.open_dataset(data)
             name = name or data.attrs.get("name") or stem
+        elif suffix == ".res1d":
+            name = name or Path(data).stem
+            data = mikeio1d.open(data)
+
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
-
+    elif isinstance(data, mikeio1d.Res1D):
+        data = data.read()  # now mikeio1d.Res1D
     # parse items
     if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):
         item_name = data.name if data.name is not None else "PointModelResult"
@@ -177,3 +184,73 @@ def _parse_point_input(
 
     assert isinstance(ds, xr.Dataset)
     return ds
+
+
+def _parse_network_input(
+    data: mikeio1d.Res1D | str,
+    variable: Optional[str] = None,
+    *,
+    node: Optional[int] = None,
+    reach: Optional[str] = None,
+    chainage: Optional[str | float] = None,
+    gridpoint: Optional[int | Literal["start", "end"]] = None,
+) -> pd.Series:
+    def variable_name_to_res1d(name: str) -> str:
+        return name.replace(" ", "").replace("_", "")
+
+    if isinstance(data, (str, Path)):
+        if Path(data).suffix == ".res1d":
+            data = mikeio1d.open(data)
+        else:
+            raise ValueError("Input data must have '.res1d' file extension.")
+
+    by_node = node is not None
+    by_reach = reach is not None
+    with_chainage = chainage is not None
+    with_index = gridpoint is not None
+
+    if by_node and not by_reach:
+        location = data.nodes[str(node)]
+        if with_chainage or with_index:
+            warnings.warn(
+                "'chainage' or 'gridpoint' are only relevant when passed with 'reach' but they were passed with 'node', so they will be ignored."
+            )
+
+    elif by_reach and not by_node:
+        location = data.reaches[reach]
+        if with_index == with_chainage:
+            raise ValueError(
+                "Locations accessed by chainage must be specified either by chainage or by index, not both."
+            )
+
+        if with_index and not with_chainage:
+            gridpoint = 0 if gridpoint == "start" else gridpoint
+            gridpoint = -1 if gridpoint == "end" else gridpoint
+            chainage = location.chainages[gridpoint]
+
+        location = location[chainage]
+
+    else:
+        raise ValueError(
+            "A network location must be specified either by node or by reach."
+        )
+
+    if variable is None:
+        if len(location.quantities) != 1:
+            raise ValueError(
+                f"The network location does not have a unique quantity: {location.quantities}, in such case 'variable' argument cannot be None"
+            )
+        res1d_name = location.quantities[0]
+    else:
+        # After filtering by node or by reach and chainage, a location will only
+        # have unique quantities
+        res1d_name = variable_name_to_res1d(variable)
+    df = location.to_dataframe()
+    if df.shape[1] == 1:
+        colname = df.columns[0]
+        if res1d_name not in colname:
+            raise ValueError(f"Column name '{colname}' does not contain '{res1d_name}'")
+
+        return df.rename(columns={colname: res1d_name})[res1d_name].copy()
+    else:
+        raise ValueError(f"Multiple matching quantites found at location: {df.columns}")

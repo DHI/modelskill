@@ -39,8 +39,13 @@ from .model import (
     GridModelResult,
     DfsuModelResult,
     DummyModelResult,
+    NetworkModelResult,
 )
-from .obs import observation, PointObservation, TrackObservation
+from .obs import (
+    observation,
+    PointObservation,
+    TrackObservation,
+)
 from .matching import from_matched, match
 from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
@@ -90,6 +95,7 @@ __all__ = [
     "GridModelResult",
     "DfsuModelResult",
     "DummyModelResult",
+    "NetworkModelResult",
     "observation",
     "PointObservation",
     "TrackObservation",
