@@ -196,7 +196,7 @@ def _parse_network_input(
 ) -> pd.Series:
     if isinstance(data, (str, Path)):
         if Path(data).suffix == ".res1d":
-            data = open(data)
+            data = mikeio1d.open(data)
         else:
             raise ValueError("Invalid path to network")
 
