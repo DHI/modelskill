@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence, get_args, List, Optional
+from typing import Literal, Sequence, get_args, List, Optional
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -183,3 +183,52 @@ def _parse_point_input(
 
     assert isinstance(ds, xr.Dataset)
     return ds
+
+
+def _parse_network_input(
+    data: mikeio1d.Res1D | str,
+    quantity: str,
+    *,
+    node: Optional[int] = None,
+    reach: Optional[str] = None,
+    chainage: Optional[str | float] = None,
+    gridpoint: Optional[int | Literal["start", "end"]] = None,
+) -> pd.Series:
+    if isinstance(data, (str, Path)):
+        if Path(data).suffix == ".res1d":
+            data = open(data)
+        else:
+            raise ValueError("Invalid path to network")
+
+    by_node = node is not None
+    by_reach = reach is not None
+    with_chainage = chainage is not None
+    with_index = gridpoint is not None
+
+    if by_node and not by_reach:
+        location = data.nodes[str(node)]
+        assert (
+            quantity in location.quantities
+        ), f"Quantity {quantity} was not found in node."
+
+    elif by_reach and not by_node:
+        location = data.reaches[reach]
+        if with_index != with_chainage:
+            raise ValueError(
+                "Items accessed by chainage must be specified either by chainage or by index, not both"
+            )
+
+        if with_index and not with_chainage:
+            gridpoint = 0 if gridpoint == "start" else gridpoint
+            gridpoint = -1 if gridpoint == "end" else gridpoint
+            chainage = location.chainages[gridpoint]
+
+        location = location[chainage]
+
+    else:
+        raise ValueError("Item can only be specified either by node or by reach")
+
+    df = location.to_dataframe()
+    assert df.shape[1] == 1, "Multiple columns found in df"
+    df.rename(columns=lambda x: quantity, inplace=True)
+    return df[quantity].copy()
