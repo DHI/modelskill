@@ -6,7 +6,6 @@ from typing import Literal, Sequence, get_args, List, Optional
 import numpy as np
 import pandas as pd
 import xarray as xr
-import difflib
 
 import mikeio
 import mikeio1d
@@ -231,9 +230,15 @@ def _parse_network_input(
 
     # After filtering by node or by reach and chainage, a location will only
     # have unique quantities
-    colname = eum_name_to_res1d(eum_name)
-    df = location.to_dataframe().rename(columns=lambda x: colname)
+    res1d_name = eum_name_to_res1d(eum_name)
+    df = location.to_dataframe()
     if df.shape[1] == 1:
-        return df[colname].copy()
+        colname = df.columns[0]
+        if res1d_name not in colname:
+            raise ValueError(
+                f"Column name '{colname}' does not match expected pattern '{res1d_name}'"
+            )
+
+        return df.rename(columns={colname: res1d_name})[res1d_name].copy()
     else:
         raise ValueError(f"Multiple matching quantites found at location: {df.columns}")
