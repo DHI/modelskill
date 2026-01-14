@@ -39,6 +39,7 @@ from .model import (
     GridModelResult,
     DfsuModelResult,
     DummyModelResult,
+    NetworkModelResult,
 )
 from .obs import (
     observation,
@@ -94,6 +95,7 @@ __all__ = [
     "GridModelResult",
     "DfsuModelResult",
     "DummyModelResult",
+    "NetworkModelResult",
     "observation",
     "PointObservation",
     "TrackObservation",
