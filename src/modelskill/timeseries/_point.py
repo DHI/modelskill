@@ -235,9 +235,7 @@ def _parse_network_input(
     if df.shape[1] == 1:
         colname = df.columns[0]
         if res1d_name not in colname:
-            raise ValueError(
-                f"Column name '{colname}' does not match expected pattern '{res1d_name}'"
-            )
+            raise ValueError(f"Column name '{colname}' does not contain '{res1d_name}'")
 
         return df.rename(columns={colname: res1d_name})[res1d_name].copy()
     else:
