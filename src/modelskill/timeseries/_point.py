@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+import warnings
 import mikeio
 import mikeio1d
 
@@ -201,7 +202,7 @@ def _parse_network_input(
         if Path(data).suffix == ".res1d":
             data = mikeio1d.open(data)
         else:
-            raise ValueError("Invalid path to network")
+            raise ValueError("Input data must have '.res1d' file extension.")
 
     by_node = node is not None
     by_reach = reach is not None
@@ -210,6 +211,10 @@ def _parse_network_input(
 
     if by_node and not by_reach:
         location = data.nodes[str(node)]
+        if with_chainage or with_index:
+            warnings.warn(
+                "'chainage' or 'gridpoint' were passed along with 'node'. These are only relevant when passed with 'reach', so they will be ignored."
+            )
 
     elif by_reach and not by_node:
         location = data.reaches[reach]
