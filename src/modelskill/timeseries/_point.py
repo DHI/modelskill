@@ -7,7 +7,6 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 
-import warnings
 import mikeio
 import mikeio1d
 
@@ -187,15 +186,14 @@ def _open_and_name(data: PointType, name: Optional[str]) -> Tuple[PointType, str
     return data, name
 
 
-def _parse_xyz_point_input(
+def _parse_point_input(
     data: PointType,
     name: Optional[str],
     item: str | int | None,
     quantity: Optional[Quantity],
-    x: Optional[float],
-    y: Optional[float],
-    z: Optional[float],
     aux_items: Optional[Sequence[int | str]],
+    *,
+    coords: XYZCoords | NetworkCoords,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset"""
 
@@ -230,80 +228,55 @@ def _parse_xyz_point_input(
     model_quantity = Quantity.undefined() if quantity is None else quantity
 
     ds = _include_attributes(ds, varname, model_quantity, sel_items)
-
-    coords = XYZCoords(x, y, z)
     ds = _include_coords(ds, coords=coords)
+    return ds
 
+
+def _parse_xyz_point_input(
+    data: PointType,
+    name: Optional[str],
+    item: str | int | None,
+    quantity: Optional[Quantity],
+    x: Optional[float],
+    y: Optional[float],
+    z: Optional[float],
+    aux_items: Optional[Sequence[int | str]],
+) -> xr.Dataset:
+    coords = XYZCoords(x, y, z)
+    ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds
 
 
 def _parse_network_input(
-    data: mikeio1d.Res1D | str,
-    variable: Optional[str] = None,
+    data: PointType,
+    name: Optional[str] = None,
+    item: Optional[str | int] = None,
+    quantity: Optional[Quantity] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
     *,
     node: Optional[int] = None,
     reach: Optional[str] = None,
     chainage: Optional[str | float] = None,
     gridpoint: Optional[int | Literal["start", "end"]] = None,
-) -> pd.Series:
+) -> xr.Dataset:
     def variable_name_to_res1d(name: str) -> str:
         return name.replace(" ", "").replace("_", "")
 
-    if isinstance(data, (str, Path)):
-        data = mikeio1d.open(data)
-
-    if ("reaches" not in dir(data)) or ("nodes" not in dir(data)):
-        raise ValueError(
-            "Invalid file format. Data must have a network structure containing 'nodes' and 'reaches'."
-        )
-
-    by_node = node is not None
-    by_reach = reach is not None
-    with_chainage = chainage is not None
-    with_index = gridpoint is not None
-
-    if by_node and not by_reach:
-        location = data.nodes[str(node)]
-        if with_chainage or with_index:
-            warnings.warn(
-                "'chainage' or 'gridpoint' are only relevant when passed with 'reach' but they were passed with 'node', so they will be ignored."
-            )
-
-    elif by_reach and not by_node:
-        location = data.reaches[reach]
-        if with_index == with_chainage:
+    coords = NetworkCoords(node, reach, chainage, gridpoint)
+    location = coords.get_network_location(data)
+    if item is None:
+        if len(location.columns) != 1:
             raise ValueError(
-                "Locations accessed by chainage must be specified either by chainage or by index, not both."
+                f"The network location does not have a unique quantity: {location.columns}, in such case 'variable' argument cannot be None"
             )
-
-        if with_index and not with_chainage:
-            gridpoint = 0 if gridpoint == "start" else gridpoint
-            gridpoint = -1 if gridpoint == "end" else gridpoint
-            chainage = location.chainages[gridpoint]
-
-        location = location[chainage]
-
-    else:
-        raise ValueError(
-            "A network location must be specified either by node or by reach."
-        )
-
-    if variable is None:
-        if len(location.quantities) != 1:
-            raise ValueError(
-                f"The network location does not have a unique quantity: {location.quantities}, in such case 'variable' argument cannot be None"
-            )
-        res1d_name = location.quantities[0]
+        item = location.columns[0]
     else:
         # After filtering by node or by reach and chainage, a location will only
         # have unique quantities
-        res1d_name = variable_name_to_res1d(variable)
-    df = location.to_dataframe()
-    if df.shape[1] == 1:
-        colname = df.columns[0]
-        if res1d_name not in colname:
-            raise ValueError(f"Column name '{colname}' does not contain '{res1d_name}'")
+        res1d_name = variable_name_to_res1d(item)
+        relevant_columns = [col for col in location.columns if res1d_name in col]
+        assert len(relevant_columns) == 1
+        item = relevant_columns[0]
 
-        return df.rename(columns={colname: res1d_name})[res1d_name].copy()
-    else:
-        raise ValueError(f"Multiple matching quantites found at location: {df.columns}")
+    ds = _parse_point_input(location, name, item, quantity, aux_items, coords=coords)
+    return ds

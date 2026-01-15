@@ -1,4 +1,9 @@
+import warnings
+import mikeio1d
+
 import numpy as np
+import pandas as pd
+
 from typing import Optional, Literal
 
 
@@ -26,12 +31,11 @@ class NetworkCoords:
         chainage: Optional[str | float] = None,
         gridpoint: Optional[int | Literal["start", "end"]] = None,
     ):
-        self.node = node if node is not None else np.nan
-        self.reach = reach if reach is not None else np.nan
-        self.chainage = chainage if chainage is not None else np.nan
-        self.gridpoint = gridpoint if gridpoint is not None else np.nan
-
-        # TODO: add validation (move parse_network_input preamble)
+        self.node = node
+        self.reach = reach
+        self.chainage = chainage
+        self.gridpoint = gridpoint
+        self.validate_coordinates()
 
     @property
     def as_dict(self) -> dict:
@@ -41,3 +45,51 @@ class NetworkCoords:
             "chainage": self.chainage,
             "gridpoint": self.gridpoint,
         }
+
+    @property
+    def by_node(self) -> bool:
+        return self.node is not None
+
+    @property
+    def by_reach(self) -> bool:
+        return self.reach is not None
+
+    @property
+    def with_chainage(self) -> bool:
+        return self.chainage is not None
+
+    @property
+    def with_index(self) -> bool:
+        return self.gridpoint is not None
+
+    def validate_coordinates(self):
+        if self.by_node and not self.by_reach:
+            if self.with_chainage or self.with_index:
+                warnings.warn(
+                    "'chainage' or 'gridpoint' are only relevant when passed with 'reach' but they were passed with 'node', so they will be ignored."
+                )
+
+        elif self.by_reach and not self.by_node:
+            if self.with_index == self.with_chainage:
+                raise ValueError(
+                    "Locations accessed by chainage must be specified either by chainage or by index, not both."
+                )
+
+        else:
+            raise ValueError(
+                "A network location must be specified either by node or by reach."
+            )
+
+    def get_network_location(self, data: mikeio1d.Res1D) -> pd.DataFrame:
+        if ("reaches" not in dir(data)) or ("nodes" not in dir(data)):
+            raise ValueError(
+                "Invalid file format. Data must have a network structure containing 'nodes' and 'reaches'."
+            )
+
+        if self.by_node and not self.by_reach:
+            location = data.nodes[str(self.node)]
+
+        if self.by_reach and not self.by_node:
+            location = data.reaches[self.reach][self.chainage]
+
+        return location.to_dataframe()

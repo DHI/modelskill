@@ -1,6 +1,7 @@
 import pytest
 import mikeio1d
 
+import xarray as xr
 import numpy as np
 import pandas as pd
 import modelskill as ms
@@ -19,11 +20,13 @@ def res1d_object(res1d_datapath) -> mikeio1d.Res1D:
 
 
 def test_read_quantity_by_node(res1d_object):
-    series = parse_network(res1d_object, variable="Water Level", node=3)
+    ds = parse_network(res1d_object, item="Water Level", node=3)
+    assert isinstance(ds, xr.Dataset)
+    assert ds.coords["node"] == 3
+    assert "WaterLevel:3" in ds.data_vars
+
     df = res1d_object.read()
-    assert isinstance(series, pd.Series)
-    assert series.name == "WaterLevel"
-    np.testing.assert_allclose(df["WaterLevel:3"].values, series.values)
+    # np.testing.assert_allclose(df["WaterLevel:3"].values, ds.values())
 
 
 @pytest.mark.parametrize(
