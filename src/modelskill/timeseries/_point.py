@@ -15,6 +15,7 @@ from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
 from ._coords import XYZCoords, NetworkCoords
+from ..model.network import read_network_coords
 
 
 @dataclass
@@ -259,24 +260,8 @@ def _parse_network_input(
     chainage: Optional[str | float] = None,
     gridpoint: Optional[int | Literal["start", "end"]] = None,
 ) -> xr.Dataset:
-    def variable_name_to_res1d(name: str) -> str:
-        return name.replace(" ", "").replace("_", "")
-
     coords = NetworkCoords(node, reach, chainage, gridpoint)
-    location = coords.get_network_location(data)
-    if item is None:
-        if len(location.columns) != 1:
-            raise ValueError(
-                f"The network location does not have a unique quantity: {location.columns}, in such case 'variable' argument cannot be None"
-            )
-        item = location.columns[0]
-    else:
-        # After filtering by node or by reach and chainage, a location will only
-        # have unique quantities
-        res1d_name = variable_name_to_res1d(item)
-        relevant_columns = [col for col in location.columns if res1d_name in col]
-        assert len(relevant_columns) == 1
-        item = relevant_columns[0]
+    location = read_network_coords(data, coords)
 
     ds = _parse_point_input(location, name, item, quantity, aux_items, coords=coords)
     return ds

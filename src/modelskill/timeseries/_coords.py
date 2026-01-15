@@ -1,8 +1,6 @@
 import warnings
-import mikeio1d
 
 import numpy as np
-import pandas as pd
 
 from typing import Optional, Literal
 
@@ -79,17 +77,3 @@ class NetworkCoords:
             raise ValueError(
                 "A network location must be specified either by node or by reach."
             )
-
-    def get_network_location(self, data: mikeio1d.Res1D) -> pd.DataFrame:
-        if ("reaches" not in dir(data)) or ("nodes" not in dir(data)):
-            raise ValueError(
-                "Invalid file format. Data must have a network structure containing 'nodes' and 'reaches'."
-            )
-
-        if self.by_node and not self.by_reach:
-            location = data.nodes[str(self.node)]
-
-        if self.by_reach and not self.by_node:
-            location = data.reaches[self.reach][self.chainage]
-
-        return location.to_dataframe()
