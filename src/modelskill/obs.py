@@ -11,7 +11,7 @@ An observation can be created by explicitly invoking one of the above classes or
 
 from __future__ import annotations
 
-from typing import Literal, Optional, Any, Union
+from typing import Literal, Optional, Any, Union, List
 import warnings
 import pandas as pd
 import xarray as xr
@@ -20,7 +20,7 @@ from .types import PointType, TrackType, GeometryType, DataInputType
 from . import Quantity
 from .timeseries import (
     TimeSeries,
-    _parse_point_input,
+    _parse_xyz_point_input,
     _parse_track_input,
 )
 
@@ -207,7 +207,7 @@ class PointObservation(Observation):
         attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_point_input(
+            data = _parse_xyz_point_input(
                 data,
                 name=name,
                 item=item,

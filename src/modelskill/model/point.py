@@ -8,7 +8,7 @@ import pandas as pd
 from ..obs import Observation
 from ..types import PointType
 from ..quantity import Quantity
-from ..timeseries import TimeSeries, _parse_point_input
+from ..timeseries import TimeSeries, _parse_xyz_point_input
 
 
 class PointModelResult(TimeSeries):
@@ -53,7 +53,7 @@ class PointModelResult(TimeSeries):
         aux_items: Optional[Sequence[int | str]] = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_point_input(
+            data = _parse_xyz_point_input(
                 data,
                 name=name,
                 item=item,

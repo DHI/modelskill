@@ -187,7 +187,7 @@ def _open_and_name(data: PointType, name: Optional[str]) -> Tuple[PointType, str
     return data, name
 
 
-def _parse_point_input(
+def _parse_xyz_point_input(
     data: PointType,
     name: Optional[str],
     item: str | int | None,
