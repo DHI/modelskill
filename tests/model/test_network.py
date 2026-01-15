@@ -47,6 +47,7 @@ def test_read_quantity_by_reach(res1d_object, network_kwargs):
 
 def test_node_and_reach_as_arguments(res1d_object):
     with pytest.raises(
-        ValueError, match="Item can only be specified either by node or by reach"
+        ValueError,
+        match="A network location must be specified either by node or by reach.",
     ):
         parse_network(res1d_object, variable="Water Level", reach="100l1", node=2)

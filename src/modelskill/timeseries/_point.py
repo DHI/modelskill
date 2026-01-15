@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal, Sequence, get_args, List, Optional, Tuple
 import pandas as pd
 import xarray as xr
+import numpy as np
 
 import warnings
 import mikeio
@@ -132,9 +133,12 @@ def _include_coords(
     if coords is not None:
         # ds might already have some coordinates set, so we will update
         # only the ones that are NOT already present
-        new_coords = set(coords.as_dict).difference(ds.coords)
-        incoming_coords = {k: coords.as_dict[k] for k in new_coords}
-        ds.coords.update(incoming_coords)
+        coords_to_add = {}
+        for k, v in coords.as_dict.items():
+            # Add if coordinate doesn't exist, or if user provided a non-null value
+            if k not in ds.coords or (v is not None and not np.isnan(v)):
+                coords_to_add[k] = v
+        ds.coords.update(coords_to_add)
     if network_coords is not None:
         ds.coords.update(network_coords.as_dict)
 
