@@ -15,7 +15,7 @@ from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
 from ._coords import XYZCoords, NetworkCoords
-from ..model.network import read_network_coords
+from ._coords import read_network_coords
 
 
 @dataclass
@@ -167,17 +167,17 @@ def _open_and_name(data: PointType, name: Optional[str]) -> Tuple[PointType, str
         data, get_args(PointType)
     ), f"Could not construct object from provided data of type {type(data)}"
 
+    name_is_arg = name is not None
     if isinstance(data, (str, Path)):
         suffix = Path(data).suffix
+        stem = Path(data).stem
+        name = name or stem
         if suffix == ".dfs0":
-            name = name or Path(data).stem
             data = mikeio.read(data)  # now mikeio.Dataset
         elif suffix == ".nc":
-            stem = Path(data).stem
             data = xr.open_dataset(data)
-            name = name or data.attrs.get("name") or stem
+            name = name if name_is_arg else data.attrs.get("name") or stem
         elif suffix == ".res1d":
-            name = name or Path(data).stem
             data = mikeio1d.open(data)
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
@@ -261,7 +261,7 @@ def _parse_network_input(
     gridpoint: Optional[int | Literal["start", "end"]] = None,
 ) -> xr.Dataset:
     coords = NetworkCoords(node, reach, chainage, gridpoint)
-    location = read_network_coords(data, coords)
+    data = read_network_coords(data, coords)
 
-    ds = _parse_point_input(location, name, item, quantity, aux_items, coords=coords)
+    ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds
