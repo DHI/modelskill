@@ -261,7 +261,6 @@ def _parse_network_input(
     gridpoint: Optional[int | Literal["start", "end"]] = None,
 ) -> xr.Dataset:
     coords = NetworkCoords(node, reach, chainage, gridpoint)
-    data = read_network_coords(data, coords)
-
+    data = read_network_coords(data, coords, variable=item)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds

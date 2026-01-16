@@ -23,10 +23,10 @@ def test_read_quantity_by_node(res1d_object):
     ds = parse_network(res1d_object, item="Water Level", node=3)
     assert isinstance(ds, xr.Dataset)
     assert ds.coords["node"] == 3
-    assert "WaterLevel:3" in ds.data_vars
+    assert "Water Level" in ds.data_vars
 
     df = res1d_object.read()
-    # np.testing.assert_allclose(df["WaterLevel:3"].values, ds.values())
+    np.testing.assert_allclose(df["WaterLevel:3"].values, ds["Water Level"].values)
 
 
 @pytest.mark.parametrize(
@@ -39,13 +39,15 @@ def test_read_quantity_by_node(res1d_object):
     ],
 )
 def test_read_quantity_by_reach(res1d_object, network_kwargs):
-    series = parse_network(
-        res1d_object, variable="Water Level", reach="100l1", **network_kwargs
+    ds = parse_network(
+        res1d_object, item="Water Level", reach="100l1", **network_kwargs
     )
     df = res1d_object.read()
-    assert isinstance(series, pd.Series)
-    assert series.name == "WaterLevel"
-    np.testing.assert_allclose(df["WaterLevel:100l1:47.6827"].values, series.values)
+    assert isinstance(ds, xr.Dataset)
+    assert "Water Level" in ds.data_vars
+    np.testing.assert_allclose(
+        df["WaterLevel:100l1:47.6827"].values, ds["Water Level"].values
+    )
 
 
 def test_node_and_reach_as_arguments(res1d_object):
@@ -53,4 +55,4 @@ def test_node_and_reach_as_arguments(res1d_object):
         ValueError,
         match="A network location must be specified either by node or by reach.",
     ):
-        parse_network(res1d_object, variable="Water Level", reach="100l1", node=2)
+        parse_network(res1d_object, item="Water Level", reach="100l1", node=2)

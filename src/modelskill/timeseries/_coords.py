@@ -34,7 +34,13 @@ class NetworkCoords:
         self.node = node
         self.reach = reach
         self.chainage = chainage
+
+        if gridpoint == "start":
+            gridpoint = 0
+        if gridpoint == "end":
+            gridpoint = -1
         self.gridpoint = gridpoint
+        
         self.validate_coordinates()
 
     @property
@@ -96,7 +102,11 @@ def read_network_coords(
         location = data.nodes[str(coords.node)]
 
     if coords.by_reach and not coords.by_node:
-        location = data.reaches[coords.reach][coords.chainage]
+        location = data.reaches[coords.reach]
+        if coords.with_chainage:
+            location = location[coords.chainage]
+        elif coords.with_index:
+            location = location[coords.gridpoint]
 
     df = location.to_dataframe()
     if variable is None:
@@ -109,4 +119,4 @@ def read_network_coords(
         res1d_name = variable_name_to_res1d(variable)
         relevant_columns = [col for col in df.columns if res1d_name in col]
         assert len(relevant_columns) == 1
-        return df.rename(columns={relevant_columns[0]: res1d_name})
+        return df.rename(columns={relevant_columns[0]: variable})
