@@ -28,6 +28,7 @@ Each ADR follows this structure:
 - [ADR-007](007-four-step-workflow.md) - Four-step workflow pattern
 - [ADR-008](008-options-styling-system.md) - Options and styling system
 - [ADR-009](009-factory-pattern.md) - Factory pattern for type detection
+- [ADR-010](010-optional-domain-dependencies.md) - Optional dependencies for domain-specific model types (Draft)
 
 ## Contributing
 
