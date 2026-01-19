@@ -11,7 +11,7 @@ An observation can be created by explicitly invoking one of the above classes or
 
 from __future__ import annotations
 
-from typing import Literal, Optional, Any, Union, List
+from typing import Literal, Optional, Any, Union
 import warnings
 import pandas as pd
 import xarray as xr
