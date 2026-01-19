@@ -207,6 +207,7 @@ def _open_and_name(
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
 
+    name = name or ""
     return data, name
 
 
