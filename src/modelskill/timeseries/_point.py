@@ -84,7 +84,7 @@ def _select_items(
             valid_items = list(data.data_vars)
         sel_items = _parse_point_items(valid_items, item=item, aux_items=aux_items)
     else:
-        raise ValueError("Could not Point object from provided data")
+        raise ValueError("Could not create Point object from provided data")
 
     return sel_items
 
