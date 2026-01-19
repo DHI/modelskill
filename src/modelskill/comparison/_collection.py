@@ -533,6 +533,9 @@ class ComparerCollection(Mapping):
     @staticmethod
     def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
         """skill() helper: Append x and y to res if possible"""
+        # TODO: Code smell - checking gtype instead of polymorphism
+        # Consider adding Comparer.get_coordinates() -> tuple[float, float]
+        # that returns (x, y) for point or (nan, nan) for track
         obs_to_xy = {cmp.name: (cmp.x, cmp.y) for cmp in cc if cmp.gtype == "point"}
 
         if "observation" in res.index.names:
