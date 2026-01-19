@@ -213,8 +213,9 @@ def _open_and_name(
 
 def _get_quantity(data: Any, sel_items: PointItem) -> Quantity:
     if isinstance(data, mikeio.Dataset):
-        return Quantity.from_mikeio_iteminfo(data[0].item)
-
+        return Quantity.from_mikeio_iteminfo(data[sel_items.values].item)
+    if isinstance(data, mikeio.DataArray):
+        return Quantity.from_mikeio_iteminfo(data.item)
     if isinstance(data, xr.Dataset):
         da = data[sel_items.values]
         return Quantity.from_cf_attrs(da.attrs)
