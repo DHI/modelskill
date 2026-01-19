@@ -6,6 +6,7 @@ MultiIndex complexity while maintaining backward compatibility.
 
 from __future__ import annotations
 from dataclasses import dataclass, field
+from typing import Any, Callable
 import numpy as np
 import pandas as pd
 
@@ -305,7 +306,7 @@ class _SkillData:
             return _SkillData(result, new_dims)
 
         # Build aggregation dictionary
-        agg_dict = {}
+        agg_dict: dict[str, str | Callable[[Any], Any]] = {}
 
         if weights is not None:
             # Weighted mean for metrics
