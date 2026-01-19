@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from .plotting._misc import _get_fig_ax
 from .metrics import small_is_best, large_is_best, zero_is_best, one_is_best
-from ._skill_data import _SkillData, SkillDimensions
+from ._skill_data import _SkillData
 
 
 # TODO remove ?
