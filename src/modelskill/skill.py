@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 from .plotting._misc import _get_fig_ax
 from .metrics import small_is_best, large_is_best, zero_is_best, one_is_best
+from ._skill_data import _SkillData, SkillDimensions
 
 
 # TODO remove ?
@@ -424,12 +425,31 @@ class SkillTable:
     >>> sk.rmse.plot.bar()
     """
 
-    def __init__(self, data: pd.DataFrame):
-        self.data: pd.DataFrame = (
-            data if isinstance(data, pd.DataFrame) else data.to_dataframe()
-        )
+    def __init__(self, data: pd.DataFrame | _SkillData):
+        # Internal storage uses long-format _SkillData
+        if isinstance(data, _SkillData):
+            self._skill_data = data
+        elif isinstance(data, pd.DataFrame):
+            # Support both old MultiIndex and new long format
+            self._skill_data = _SkillData.from_multiindex(data)
+        else:
+            # Fallback for other types with to_dataframe()
+            df = data.to_dataframe() if hasattr(data, "to_dataframe") else data
+            self._skill_data = _SkillData.from_multiindex(df)
+
         # TODO remove in v1.1
         self.plot = DeprecatedSkillPlotter(self)  # type: ignore
+
+    @property
+    def data(self) -> pd.DataFrame:
+        """Data as DataFrame with MultiIndex (backward compatibility).
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with active dimensions as MultiIndex
+        """
+        return self._skill_data.to_display()
 
     # TODO: remove?
     @property
@@ -440,7 +460,8 @@ class SkillTable:
     @property
     def metrics(self) -> Collection[str]:
         """List of metrics (columns) in the SkillTable"""
-        return list(self._df.columns)
+        # Return only metric columns, not dimensions or coordinates
+        return self._skill_data.dims.metrics
 
     # TODO: remove?
     def __len__(self) -> int:
@@ -611,27 +632,26 @@ class SkillTable:
     @property
     def mod_names(self) -> list[str]:
         """List of model names (in index)"""
-        return self._get_index_level_by_name("model")
+        # Only return if dimension is in the displayed index
+        if "model" in self.data.index.names:
+            return self._skill_data.get_unique_values("model")
+        return []
 
     @property
     def obs_names(self) -> list[str]:
         """List of observation names (in index)"""
-        return self._get_index_level_by_name("observation")
+        # Only return if dimension is in the displayed index
+        if "observation" in self.data.index.names:
+            return self._skill_data.get_unique_values("observation")
+        return []
 
     @property
     def quantity_names(self) -> list[str]:
         """List of quantity names (in index)"""
-        return self._get_index_level_by_name("quantity")
-
-    def _get_index_level_by_name(self, name: str) -> list[str]:
-        # Helper function to get unique values of a level in the index (e.g. model)
-        index = self._df.index
-        if name in index.names:
-            level = index.names.index(name)
-            return list(index.get_level_values(level).unique())
-        else:
-            return []
-            # raise ValueError(f"name {name} not in index {list(self.index.names)}")
+        # Only return if dimension is in the displayed index
+        if "quantity" in self.data.index.names:
+            return self._skill_data.get_unique_values("quantity")
+        return []
 
     def query(self, query: str) -> SkillTable:
         """Select a subset of the SkillTable by a query string
@@ -685,64 +705,68 @@ class SkillTable:
         >>> sk_SW1 = sk.sel(model = "SW_1")
         >>> sk2 = sk.sel(observation = ["EPL", "HKNA"])
         """
-
-        df = self.to_dataframe(drop_xy=False)
-
-        for key, value in kwargs.items():
-            if key in df.index.names:
-                df = self._sel_from_index(df, key, value)
-            else:
-                raise KeyError(
-                    f"Unknown index {key}. Valid index names are {df.index.names}"
-                )
-
-        if isinstance(df, pd.Series):
-            return SkillArray(df)
         if not isinstance(reduce_index, bool):
             raise TypeError(
                 "reduce_index must be a boolean not " + str(type(reduce_index))
             )
-        if reduce_index and isinstance(df.index, pd.MultiIndex):
-            df = self._reduce_index(df)
-        return self.__class__(df)
 
-    def _sel_from_index(
-        self, df: pd.DataFrame, key: str, value: str | int
-    ) -> pd.DataFrame:
-        if (not isinstance(value, str)) and isinstance(value, Iterable):
-            for i, v in enumerate(value):
-                dfi = self._sel_from_index(df, key, v)
-                if i == 0:
-                    dfout = dfi
-                else:
-                    dfout = pd.concat([dfout, dfi])
-            return dfout
+        # Normalize integer indices to names
+        normalized_kwargs = {}
 
-        if isinstance(value, int):
-            value = self._idx_to_name(key, value)
+        # Determine selectable dimensions (tracked dims + categorical columns)
+        selectable = set(self._skill_data.dims.all)
+        for col in self._skill_data._df.columns:
+            if isinstance(self._skill_data._df[col].dtype, pd.CategoricalDtype):
+                selectable.add(col)
 
-        if isinstance(df.index, pd.MultiIndex):
-            df = df.xs(value, level=key, drop_level=False)
-        else:
-            df = df[df.index == value]  # .copy()
-        return df
+        for key, value in kwargs.items():
+            # Check if key is selectable
+            if key not in selectable:
+                raise KeyError(
+                    f"Cannot select on '{key}'. "
+                    f"Selectable dimensions: {sorted(selectable)}"
+                )
 
-    def _idx_to_name(self, index_name: str, pos: int) -> str:
-        """Assumes that index is valid and idx is int"""
-        names = self._get_index_level_by_name(index_name)
-        n = len(names)
-        if (pos < 0) or (pos >= n):
-            raise KeyError(f"Id {pos} is out of bounds for index {index_name} (0, {n})")
-        return names[pos]
+            if key not in self._skill_data._df.columns:
+                raise KeyError(
+                    f"Dimension '{key}' not found in data. "
+                    f"Available columns: {list(self._skill_data._df.columns)}"
+                )
 
-    def _reduce_index(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Remove unnecessary levels of MultiIndex"""
-        df.index = df.index.remove_unused_levels()
-        levels_to_reset = []
-        for j, level in enumerate(df.index.levels):
-            if len(level) == 1:
-                levels_to_reset.append(j)
-        return df.reset_index(level=levels_to_reset)
+            # Handle integer indexing
+            if isinstance(value, int):
+                available = self._skill_data._df[key].unique().tolist()
+                if value < 0 or value >= len(available):
+                    raise KeyError(
+                        f"Index {value} is out of bounds for dimension '{key}' (0, {len(available)})"
+                    )
+                normalized_kwargs[key] = available[value]
+            else:
+                normalized_kwargs[key] = value
+
+        # Use _SkillData.sel() - much simpler!
+        filtered = self._skill_data.sel(**normalized_kwargs)
+
+        # Apply reduce_index if requested
+        if reduce_index:
+            # Remove single-value dimensions from dims.all
+            # This ensures they stay as columns rather than becoming index
+            new_dims_all = [
+                d for d in filtered.dims.all
+                if d in filtered._df.columns and filtered._df[d].nunique() > 1
+            ]
+            filtered.dims.all = new_dims_all
+
+        # Check if result would be a single value (return SkillArray)
+        # This happens when all dimensions are filtered to single values
+        result_df = filtered._df
+        n_rows = len(result_df)
+        if n_rows == 1 and len(filtered.dims.all) == 0:
+            # Single row with no dimensions -> could return SkillArray
+            # But this is edge case, just return SkillTable for now
+            pass
+
+        return self.__class__(filtered)
 
     def round(self, decimals: int = 3) -> SkillTable:
         """Round all values in SkillTable

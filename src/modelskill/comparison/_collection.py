@@ -532,20 +532,39 @@ class ComparerCollection(Mapping):
 
     @staticmethod
     def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
-        """skill() helper: Append x and y to res if possible"""
-        res["x"] = np.nan
-        res["y"] = np.nan
+        """skill() helper: Append x and y to res if possible
 
-        # for MultiIndex in res find "observation" level and
-        # insert x, y if gtype=point for that observation
+        Simplified version using direct mapping instead of reset/set_index.
+        """
+        # Check if observation is in index or columns
         if "observation" in res.index.names:
-            idx_names = res.index.names
-            res = res.reset_index()
-            for cmp in cc:
-                if cmp.gtype == "point":
-                    res.loc[res.observation == cmp.name, "x"] = cmp.x
-                    res.loc[res.observation == cmp.name, "y"] = cmp.y
-            res = res.set_index(idx_names)
+            # Build mapping dictionaries for point observations
+            obs_to_x = {
+                cmp.name: cmp.x for cmp in cc if cmp.gtype == "point"
+            }
+            obs_to_y = {
+                cmp.name: cmp.y for cmp in cc if cmp.gtype == "point"
+            }
+
+            # Map directly on index level - no reset/set_index needed!
+            obs_level = res.index.get_level_values("observation")
+            res["x"] = obs_level.map(obs_to_x).fillna(np.nan)
+            res["y"] = obs_level.map(obs_to_y).fillna(np.nan)
+        elif "observation" in res.columns:
+            # Long format - even simpler
+            obs_to_x = {
+                cmp.name: cmp.x for cmp in cc if cmp.gtype == "point"
+            }
+            obs_to_y = {
+                cmp.name: cmp.y for cmp in cc if cmp.gtype == "point"
+            }
+            res["x"] = res["observation"].map(obs_to_x).fillna(np.nan)
+            res["y"] = res["observation"].map(obs_to_y).fillna(np.nan)
+        else:
+            # No observation dimension
+            res["x"] = np.nan
+            res["y"] = np.nan
+
         return res
 
     def _add_as_col_if_not_in_index(
@@ -727,26 +746,45 @@ class ComparerCollection(Mapping):
                 raise ValueError("Invalid weights specification")
 
         pmetrics = _parse_metric(metrics)
-        skilldf = (
-            self.skill(metrics=pmetrics)
-            .to_dataframe()
-            .assign(
-                weights=lambda df: df.index.get_level_values("observation").map(weights)
-            )
-        )
 
-        def weighted_mean(x: pd.Series) -> np.floating:
-            return np.average(x, weights=skilldf.loc[x.index, "weights"])
+        # Get skill table with internal _SkillData
+        sk = self.skill(metrics=pmetrics)
 
-        # group by
-        by = self._mean_skill_by(skilldf)
-        res = skilldf.groupby(by, observed=False).agg(
-            {"n": "sum", **{metric.__name__: weighted_mean for metric in pmetrics}}
-        )
+        # Determine what to group by
+        by = self._mean_skill_by_v2(sk)
 
-        return SkillTable(res.astype({"n": int}))
+        # Use _SkillData.aggregate with weights - much simpler!
+        aggregated = sk._skill_data.aggregate(by=by, weights=weights)
+
+        return SkillTable(aggregated)
+
+    def _mean_skill_by_v2(self, sk: SkillTable) -> list[str]:
+        """Determine aggregation dimensions for mean skill (new version).
+
+        Returns list of dimensions to group by when aggregating across observations.
+        Aggregates ACROSS observations, so we don't include observation in by.
+        """
+        by = []
+        df = sk._skill_data._df
+
+        # Include dimensions that have multiple values in the DataFrame
+        if len(self.mod_names) > 1 and "model" in df.columns:
+            by.append("model")
+        if len(self.quantity_names) > 1 and "quantity" in df.columns:
+            by.append("quantity")
+
+        # If no varying dimensions, use whatever dimension exists (except observation)
+        if len(by) == 0:
+            for dim in ["model", "quantity"]:
+                if dim in df.columns:
+                    by.append(dim)
+                    break
+
+        # If still empty, return empty list (will aggregate everything)
+        return by
 
     def _mean_skill_by(self, skilldf: pd.DataFrame) -> list[str]:
+        """Determine aggregation dimensions for mean skill (old version - deprecated)."""
         by = []
         if len(self.mod_names) > 1:
             by.append("model")
@@ -819,12 +857,51 @@ class ComparerCollection(Mapping):
         if self.n_points == 0:
             raise ValueError("Dataset is empty, no data to compare.")
 
-        sk = self.mean_skill(weights=weights, metrics=[metric])
-        df = sk.to_dataframe()
+        # Process weights parameter same way as mean_skill
+        match weights:
+            case None:
+                weights = {k: cmp.weight for k, cmp in self._comparers.items()}
 
+            case dict():
+                defaults = {k: cmp.weight for k, cmp in self._comparers.items()}
+                weights = {**defaults, **weights}
+
+            case "equal":
+                weights = {k: 1.0 for k in self._comparers.keys()}
+
+            case "points":
+                weights = {k: cmp.n_points for k, cmp in self._comparers.items()}
+
+            case list() if len(weights) == len(self._comparers):
+                weights = dict(zip(self._comparers.keys(), weights))
+
+            case list():
+                raise ValueError("weights must have same length as observations")
+
+            case _:
+                raise ValueError("Invalid weights specification")
+
+        # Get skill per observation (and model if multiple models)
+        sk = self.skill(metrics=[metric])
+
+        # Aggregate across observations
         metric_name = metric if isinstance(metric, str) else metric.__name__
-        ser = df[metric_name]
-        score = {str(col): float(value) for col, value in ser.items()}
+
+        if "model" in sk._skill_data._df.columns:
+            # Multiple models: aggregate by model
+            aggregated = sk._skill_data.aggregate(by=["model"], weights=weights)
+            result_sk = SkillTable(aggregated)
+            df = result_sk.to_dataframe()
+            ser = df[metric_name]
+            score = {str(col): float(value) for col, value in ser.items()}
+        else:
+            # Single model: aggregate everything and use model name from mod_names
+            aggregated = sk._skill_data.aggregate(by=[], weights=weights)
+            result_sk = SkillTable(aggregated)
+            df = result_sk.to_dataframe()
+            # Use the single model name
+            model_name = self.mod_names[0] if self.mod_names else "model"
+            score = {model_name: float(df[metric_name].iloc[0])}
 
         return score
 

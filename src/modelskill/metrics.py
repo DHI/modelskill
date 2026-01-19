@@ -1163,6 +1163,17 @@ def get_metric(metric: Union[str, Callable]) -> Callable:
         )
 
 
+def get_metric_names() -> Set[str]:
+    """Get the set of all defined metric names.
+
+    Returns
+    -------
+    Set[str]
+        Set of metric names
+    """
+    return defined_metrics.copy()
+
+
 def _parse_metric(
     metric: str | Iterable[str] | Callable | Iterable[Callable] | None,
     *,
