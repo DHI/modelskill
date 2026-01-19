@@ -73,6 +73,21 @@ make docs               # Build documentation with quartodoc and quarto
 
 ## Architecture
 
+### Architecture Decision Records
+
+Key architectural decisions are documented in the `/adr` directory. These ADRs explain the rationale behind major design choices including:
+- Why mikeio is a core dependency
+- The centralized metrics module approach
+- The Comparer/ComparerCollection pattern
+- Using xarray for internal data structures
+- The model result type hierarchy
+- Supporting dual plotting backends
+- The four-step workflow pattern
+- The options and styling system
+- Factory pattern for type detection
+
+See [/adr/README.md](adr/README.md) for the complete index.
+
 ### Core Workflow (4-Step Pattern)
 The package follows a consistent 4-step workflow that users should follow:
 
