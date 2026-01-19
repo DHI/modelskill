@@ -62,7 +62,7 @@ def _select_items(
         pd.Series,
         pd.DataFrame,
     ],
-    item: Optional[str | int | None] = None,
+    item: Optional[str | int] = None,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> PointItem:
     if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):
@@ -178,7 +178,7 @@ def _include_attributes(
 
 
 def _open_and_name(
-    data: PointType, name: Optional[str]
+    data: PointType, name: str
 ) -> Tuple[
     Union[
         mikeio.Dataset,
@@ -231,9 +231,9 @@ def _select_variable_name(name: str, sel_items: PointItem) -> str:
 def _parse_point_input(
     data: PointType,
     name: Optional[str],
-    item: str | int | None,
-    quantity: Optional[Quantity],
-    aux_items: Optional[Sequence[int | str]],
+    item: Optional[str | int] = None,
+    quantity: Optional[Quantity] = None,
+    aux_items: Optional[Sequence[int | str]] = None,
     *,
     coords: XYZCoords,
 ) -> xr.Dataset:
