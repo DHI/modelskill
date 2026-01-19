@@ -2,13 +2,12 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence, get_args, List, Optional, Tuple, Union
+from typing import Sequence, get_args, List, Optional, Tuple, Union, Any
 import pandas as pd
 import xarray as xr
 import numpy as np
 
 import mikeio
-import mikeio1d
 
 from ..types import GeometryType, PointType
 from ..quantity import Quantity
@@ -54,8 +53,15 @@ def _parse_point_items(
     return res
 
 
-def _parse_items(
-    data: PointType,
+def _select_items(
+    data: Union[
+        mikeio.Dataset,
+        mikeio.DataArray,
+        xr.Dataset,
+        xr.DataArray,
+        pd.Series,
+        pd.DataFrame,
+    ],
     item: Optional[str | int | None] = None,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> PointItem:
@@ -171,7 +177,19 @@ def _include_attributes(
     return ds
 
 
-def _open_and_name(data: PointType, name: Optional[str]) -> Tuple[PointType, str]:
+def _open_and_name(
+    data: PointType, name: Optional[str]
+) -> Tuple[
+    Union[
+        mikeio.Dataset,
+        mikeio.DataArray,
+        xr.Dataset,
+        xr.DataArray,
+        pd.Series,
+        pd.DataFrame,
+    ],
+    str,
+]:
     assert isinstance(
         data, get_args(PointType)
     ), f"Could not construct object from provided data of type {type(data)}"
@@ -186,17 +204,13 @@ def _open_and_name(data: PointType, name: Optional[str]) -> Tuple[PointType, str
         elif suffix == ".nc":
             data = xr.open_dataset(data)
             name = name if name_is_arg else data.attrs.get("name") or stem
-        elif suffix == ".res1d":
-            data = mikeio1d.open(data)
     elif isinstance(data, mikeio.Dfs0):
         data = data.read()  # now mikeio.Dataset
-    elif isinstance(data, mikeio1d.Res1D):
-        data = data.read()  # now mikeio1d.Res1D
 
     return data, name
 
 
-def _get_quantity(data: PointType, sel_items: PointItem) -> Quantity:
+def _get_quantity(data: Any, sel_items: PointItem) -> Quantity:
     if isinstance(data, mikeio.Dataset):
         return Quantity.from_mikeio_iteminfo(data[0].item)
 
@@ -226,7 +240,7 @@ def _parse_point_input(
     """Convert accepted input data to an xr.Dataset"""
 
     data, name = _open_and_name(data, name)
-    sel_items = _parse_items(data, item, aux_items)
+    sel_items = _select_items(data, item, aux_items)
     quantity = _get_quantity(data, sel_items) if quantity is None else quantity
     varname = _select_variable_name(name, sel_items)
 
