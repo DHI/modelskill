@@ -532,39 +532,20 @@ class ComparerCollection(Mapping):
 
     @staticmethod
     def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
-        """skill() helper: Append x and y to res if possible
+        """skill() helper: Append x and y to res if possible"""
+        obs_to_xy = {cmp.name: (cmp.x, cmp.y) for cmp in cc if cmp.gtype == "point"}
 
-        Simplified version using direct mapping instead of reset/set_index.
-        """
-        # Check if observation is in index or columns
         if "observation" in res.index.names:
-            # Build mapping dictionaries for point observations
-            obs_to_x = {
-                cmp.name: cmp.x for cmp in cc if cmp.gtype == "point"
-            }
-            obs_to_y = {
-                cmp.name: cmp.y for cmp in cc if cmp.gtype == "point"
-            }
-
-            # Map directly on index level - no reset/set_index needed!
-            obs_level = res.index.get_level_values("observation")
-            res["x"] = obs_level.map(obs_to_x).fillna(np.nan)
-            res["y"] = obs_level.map(obs_to_y).fillna(np.nan)
+            obs_values = res.index.get_level_values("observation")
         elif "observation" in res.columns:
-            # Long format - even simpler
-            obs_to_x = {
-                cmp.name: cmp.x for cmp in cc if cmp.gtype == "point"
-            }
-            obs_to_y = {
-                cmp.name: cmp.y for cmp in cc if cmp.gtype == "point"
-            }
-            res["x"] = res["observation"].map(obs_to_x).fillna(np.nan)
-            res["y"] = res["observation"].map(obs_to_y).fillna(np.nan)
+            obs_values = res["observation"]
         else:
-            # No observation dimension
             res["x"] = np.nan
             res["y"] = np.nan
+            return res
 
+        xy_tuples = [obs_to_xy.get(obs, (np.nan, np.nan)) for obs in obs_values]
+        res[["x", "y"]] = pd.DataFrame(xy_tuples, index=res.index)
         return res
 
     def _add_as_col_if_not_in_index(
