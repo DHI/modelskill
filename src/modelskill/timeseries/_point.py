@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence, get_args, List, Optional, Tuple
+from typing import Sequence, get_args, List, Optional, Tuple, Union
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -84,22 +84,37 @@ def _parse_items(
 
 
 def _convert_to_dataset(
-    data: PointType, varname: str, sel_items: PointItem
+    data: Union[
+        pd.DataFrame,
+        pd.Series,
+        mikeio.Dataset,
+        mikeio.DataArray,
+        xr.Dataset,
+        xr.DataArray,
+    ],
+    varname: str,
+    sel_items: PointItem,
 ) -> xr.Dataset:
-    # convert to xr.Dataset
+    if isinstance(data, mikeio.DataArray):
+        data = mikeio.Dataset([data])
+    elif isinstance(data, pd.Series):
+        data = data.to_frame()
+    elif isinstance(data, xr.DataArray):
+        data = data.to_dataset()
+    elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):
+        data = data[sel_items.all]
+
     if isinstance(data, mikeio.Dataset):
         ds = data.to_xarray()
     elif isinstance(data, pd.DataFrame):
         data.index.name = "time"
         ds = data.to_xarray()
-    else:
+    elif isinstance(data, xr.Dataset):
         assert len(data.dims) == 1, "Only 0-dimensional data are supported"
         time_dim_name = list(data.dims)[0]
         if time_dim_name != "time":
             data = data.rename({time_dim_name: "time"})
         ds = data
-
-    assert isinstance(ds, xr.Dataset)
 
     name = _validate_data_var_name(varname)
 
@@ -116,8 +131,6 @@ def _convert_to_dataset(
     vars = [v for v in ds.data_vars]
     assert len(ds.data_vars) == 1 + len(sel_items.aux)
     ds = ds.rename({vars[0]: name})
-
-    assert isinstance(ds, xr.Dataset)
 
     return ds
 
@@ -183,6 +196,24 @@ def _open_and_name(data: PointType, name: Optional[str]) -> Tuple[PointType, str
     return data, name
 
 
+def _get_quantity(data: PointType, sel_items: PointItem) -> Quantity:
+    if isinstance(data, mikeio.Dataset):
+        return Quantity.from_mikeio_iteminfo(data[0].item)
+
+    if isinstance(data, xr.Dataset):
+        da = data[sel_items.values]
+        return Quantity.from_cf_attrs(da.attrs)
+
+    return Quantity.undefined()
+
+
+def _select_variable_name(name: str, sel_items: PointItem) -> str:
+    varname = name or sel_items.values
+    if not isinstance(varname, str):
+        raise ValueError(f"Invalid variable name: {varname}")
+    return varname
+
+
 def _parse_point_input(
     data: PointType,
     name: Optional[str],
@@ -196,35 +227,11 @@ def _parse_point_input(
 
     data, name = _open_and_name(data, name)
     sel_items = _parse_items(data, item, aux_items)
+    quantity = _get_quantity(data, sel_items) if quantity is None else quantity
+    varname = _select_variable_name(name, sel_items)
 
-    if isinstance(data, mikeio.DataArray):
-        data = mikeio.Dataset([data])
-    elif isinstance(data, pd.Series):
-        data = data.to_frame()
-    elif isinstance(data, xr.DataArray):
-        data = data.to_dataset()
-    elif isinstance(data, (mikeio.Dataset, pd.DataFrame, xr.Dataset)):
-        data = data[sel_items.all]
-    else:
-        raise ValueError(f"Invalid data type {type(data)}")
-
-    varname = name or sel_items.values
-    if not isinstance(varname, str):
-        raise ValueError(f"Invalid variable name: {varname}")
     ds = _convert_to_dataset(data, varname, sel_items)
-
-    # parse quantity
-    if isinstance(data, mikeio.Dataset):
-        if quantity is None:
-            quantity = Quantity.from_mikeio_iteminfo(data[0].item)
-
-    if isinstance(data, xr.Dataset):
-        if quantity is None:
-            da = data[sel_items.values]
-            quantity = Quantity.from_cf_attrs(da.attrs)
-    model_quantity = Quantity.undefined() if quantity is None else quantity
-
-    ds = _include_attributes(ds, varname, model_quantity, sel_items)
+    ds = _include_attributes(ds, varname, quantity, sel_items)
     ds = _include_coords(ds, coords=coords)
     return ds
 
