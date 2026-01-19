@@ -15,30 +15,11 @@ from .metrics import get_metric_names
 
 @dataclass
 class SkillDimensions:
-    """Metadata tracking which columns represent dimensions vs metrics vs coordinates.
+    """Tracks which columns are dimensions vs metrics vs coordinates.
 
-    This class encapsulates the dimensional structure of skill results,
-    distinguishing between:
-    - Dimensions: observation, model, quantity (categorical grouping variables)
-    - Metrics: n, bias, rmse, r2, etc. (computed statistics)
-    - Coords: x, y (spatial metadata)
-
-    Parameters
-    ----------
-    all : list of str
-        Names of dimension columns present in the data
-    metrics : list of str
-        Names of metric columns
-    coords : list of str, optional
-        Names of coordinate columns (e.g., x, y)
-
-    Examples
-    --------
-    >>> dims = SkillDimensions(
-    ...     all=["observation", "model"],
-    ...     metrics=["n", "bias", "rmse"],
-    ...     coords=["x", "y"]
-    ... )
+    Dimensions: observation, model, quantity (categorical grouping)
+    Metrics: n, bias, rmse, r2, etc. (computed statistics)
+    Coords: x, y (spatial metadata)
     """
 
     all: list[str]
@@ -47,18 +28,7 @@ class SkillDimensions:
 
     @classmethod
     def infer(cls, df: pd.DataFrame) -> "SkillDimensions":
-        """Infer dimensions from DataFrame columns.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            DataFrame to infer dimensions from
-
-        Returns
-        -------
-        SkillDimensions
-            Inferred dimensional structure
-        """
+        """Infer dimensions from DataFrame columns."""
         known_dims = {"observation", "model", "quantity"}
         known_coords = {"x", "y", "z"}
         known_metrics = set(get_metric_names()) | {"n"}
@@ -77,47 +47,13 @@ class SkillDimensions:
 
         return cls(all=dims, metrics=metrics, coords=coords)
 
-    def to_index_names(self) -> list[str]:
-        """Get list of dimension names suitable for use as MultiIndex.
-
-        Returns
-        -------
-        list of str
-            Dimension names
-        """
-        return self.all.copy()
-
 
 class _SkillData:
     """Internal storage for skill results using long-format DataFrame.
 
-    This class wraps a long-format DataFrame where dimensions (observation, model,
-    quantity) are regular columns rather than MultiIndex levels. This dramatically
-    simplifies operations like filtering, aggregation, and coordinate assignment.
-
-    The public API (SkillTable) converts to MultiIndex format for display and
-    backward compatibility, but all internal operations work on the long format.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Long-format DataFrame with dimension columns
-    dims : SkillDimensions, optional
-        Dimensional metadata. If None, will be inferred from df.
-
-    Examples
-    --------
-    >>> df = pd.DataFrame({
-    ...     "observation": ["obs1", "obs1", "obs2"],
-    ...     "model": ["m1", "m2", "m1"],
-    ...     "n": [100, 100, 150],
-    ...     "bias": [0.1, 0.2, 0.05],
-    ...     "rmse": [0.2, 0.3, 0.15],
-    ...     "x": [1.0, 1.0, 2.0],
-    ...     "y": [2.0, 2.0, 3.0],
-    ... })
-    >>> skill_data = _SkillData(df)
-    >>> skill_data.sel(model="m1")
+    Dimensions (observation, model, quantity) are regular columns rather than
+    MultiIndex levels, simplifying filtering, aggregation, and coordinate assignment.
+    SkillTable converts to MultiIndex format for display/backward compatibility.
     """
 
     def __init__(self, df: pd.DataFrame, dims: SkillDimensions | None = None):
@@ -140,18 +76,7 @@ class _SkillData:
 
     @classmethod
     def from_multiindex(cls, df: pd.DataFrame) -> "_SkillData":
-        """Create from MultiIndex DataFrame (backward compatibility).
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            DataFrame with MultiIndex or regular index
-
-        Returns
-        -------
-        _SkillData
-            Long-format skill data
-        """
+        """Create from MultiIndex DataFrame (backward compatibility)."""
         # Track which columns were in the index (these become dimensions)
         index_cols = []
 
@@ -174,25 +99,7 @@ class _SkillData:
         return cls(df, dims)
 
     def sel(self, **kwargs) -> "_SkillData":
-        """Select by dimension values.
-
-        Parameters
-        ----------
-        **kwargs
-            Dimension names and values to filter by.
-            Values can be single items or lists.
-            Can select on any dimension in dims.all or any categorical column.
-
-        Returns
-        -------
-        _SkillData
-            Filtered skill data
-
-        Examples
-        --------
-        >>> skill_data.sel(model="m1")
-        >>> skill_data.sel(observation=["obs1", "obs2"])
-        """
+        """Values can be single items or lists."""
         df = self._df
 
         # Build set of selectable dimensions: tracked dimensions + categorical columns
@@ -222,19 +129,6 @@ class _SkillData:
         return _SkillData(df, self.dims)
 
     def to_display(self, reduce_index: bool = False) -> pd.DataFrame:
-        """Convert to MultiIndex DataFrame for display.
-
-        Parameters
-        ----------
-        reduce_index : bool
-            If True, only dimensions with >1 unique value are used as index.
-            If False (default), all dimensions are used as index.
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame with MultiIndex on dimensions
-        """
         if not self.dims.all:
             return self._df.copy()
 
@@ -259,22 +153,6 @@ class _SkillData:
         weights: dict | None = None,
         n_col: str = "n"
     ) -> "_SkillData":
-        """Aggregate metrics across dimensions.
-
-        Parameters
-        ----------
-        by : list of str
-            Dimension names to group by. If empty, aggregates everything.
-        weights : dict, optional
-            Mapping from group values to weights for weighted aggregation
-        n_col : str
-            Name of the count column (summed, not averaged)
-
-        Returns
-        -------
-        _SkillData
-            Aggregated skill data
-        """
         # Handle empty by - aggregate everything into single row
         if not by:
             result_dict = {n_col: [self._df[n_col].sum()]}
@@ -375,28 +253,6 @@ class _SkillData:
         return _SkillData(result, new_dims)
 
     def get_unique_values(self, dim: str) -> list:
-        """Get unique values for a dimension.
-
-        Parameters
-        ----------
-        dim : str
-            Dimension name
-
-        Returns
-        -------
-        list
-            Unique values, or empty list if dimension not present
-        """
         if dim not in self.dims.all or dim not in self._df.columns:
             return []
         return self._df[dim].unique().tolist()
-
-    def copy(self) -> "_SkillData":
-        """Create a copy of this SkillData.
-
-        Returns
-        -------
-        _SkillData
-            Copy of skill data
-        """
-        return _SkillData(self._df.copy(), self.dims)
