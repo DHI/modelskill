@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections.abc import Hashable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Sequence, get_args, List, Optional, Tuple
+from typing import Sequence, get_args, List, Optional, Tuple
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -14,8 +14,7 @@ from ..types import GeometryType, PointType
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
-from ._coords import XYZCoords, NetworkCoords
-from ._coords import read_network_coords
+from ._coords import XYZCoords
 
 
 @dataclass
@@ -127,7 +126,6 @@ def _include_coords(
     ds: xr.Dataset,
     *,
     coords: Optional[XYZCoords] = None,
-    network_coords: Optional[NetworkCoords] = None,
 ) -> xr.Dataset:
     ds = ds.copy()
     if coords is not None:
@@ -139,8 +137,6 @@ def _include_coords(
             if k not in ds.coords or (v is not None and not np.isnan(v)):
                 coords_to_add[k] = v
         ds.coords.update(coords_to_add)
-    if network_coords is not None:
-        ds.coords.update(network_coords.as_dict)
 
     return ds
 
@@ -194,7 +190,7 @@ def _parse_point_input(
     quantity: Optional[Quantity],
     aux_items: Optional[Sequence[int | str]],
     *,
-    coords: XYZCoords | NetworkCoords,
+    coords: XYZCoords,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset"""
 
@@ -244,23 +240,5 @@ def _parse_xyz_point_input(
     aux_items: Optional[Sequence[int | str]],
 ) -> xr.Dataset:
     coords = XYZCoords(x, y, z)
-    ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
-    return ds
-
-
-def _parse_network_input(
-    data: PointType,
-    name: Optional[str] = None,
-    item: Optional[str | int] = None,
-    quantity: Optional[Quantity] = None,
-    aux_items: Optional[Sequence[int | str]] = None,
-    *,
-    node: Optional[int] = None,
-    reach: Optional[str] = None,
-    chainage: Optional[str | float] = None,
-    gridpoint: Optional[int | Literal["start", "end"]] = None,
-) -> xr.Dataset:
-    coords = NetworkCoords(node, reach, chainage, gridpoint)
-    data = read_network_coords(data, coords, variable=item)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds

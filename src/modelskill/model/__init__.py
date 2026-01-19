@@ -21,7 +21,6 @@ from .track import TrackModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
 from .dummy import DummyModelResult
-from .network import NetworkModelResult
 
 __all__ = [
     "PointModelResult",
@@ -30,5 +29,4 @@ __all__ = [
     "GridModelResult",
     "model_result",
     "DummyModelResult",
-    "NetworkModelResult",
 ]

@@ -9,7 +9,6 @@ from .point import PointModelResult
 from .track import TrackModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
-from .network import NetworkModelResult
 
 
 from ..types import GeometryType, DataInputType
@@ -28,13 +27,7 @@ def model_result(
     aux_items: Optional[list[int | str]] = None,
     gtype: Optional[Literal["point", "track", "unstructured", "grid"]] = None,
     **kwargs: Any,
-) -> (
-    PointModelResult
-    | TrackModelResult
-    | DfsuModelResult
-    | GridModelResult
-    | NetworkModelResult
-):
+) -> PointModelResult | TrackModelResult | DfsuModelResult | GridModelResult:
     """A factory function for creating an appropriate object based on the data input.
 
     Parameters
