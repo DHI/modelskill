@@ -56,7 +56,7 @@ def _parse_point_items(
 
 def _parse_items(
     data: PointType,
-    item: Optional[str | None] = None,
+    item: Optional[str | int | None] = None,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> PointItem:
     if isinstance(data, (mikeio.DataArray, pd.Series, xr.DataArray)):

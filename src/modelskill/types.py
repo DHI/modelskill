@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import pandas as pd
 import xarray as xr
 import mikeio
-import mikeio1d
 
 
 class GeometryType(Enum):
@@ -86,7 +85,6 @@ PointType = Union[
     mikeio.DataArray,
     xr.Dataset,
     xr.DataArray,
-    mikeio1d.Res1D,
 ]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
 
