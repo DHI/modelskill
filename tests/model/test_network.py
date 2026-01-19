@@ -3,7 +3,6 @@ import mikeio1d
 
 import xarray as xr
 import numpy as np
-import pandas as pd
 import modelskill as ms
 
 parse_network = ms.timeseries._parse_network_input
