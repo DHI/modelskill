@@ -178,7 +178,7 @@ def _include_attributes(
 
 
 def _open_and_name(
-    data: PointType, name: str
+    data: PointType, name: Optional[str]
 ) -> Tuple[
     Union[
         mikeio.Dataset,
@@ -231,9 +231,9 @@ def _select_variable_name(name: str, sel_items: PointItem) -> str:
 def _parse_point_input(
     data: PointType,
     name: Optional[str],
-    item: Optional[str | int] = None,
-    quantity: Optional[Quantity] = None,
-    aux_items: Optional[Sequence[int | str]] = None,
+    item: Optional[str | int],
+    quantity: Optional[Quantity],
+    aux_items: Optional[Sequence[int | str]],
     *,
     coords: XYZCoords,
 ) -> xr.Dataset:
