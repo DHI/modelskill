@@ -656,12 +656,11 @@ class SkillTable:
         return self.__class__(self.data.query(query))
 
     def sel(
-        self, query: str | None = None, reduce_index: bool = True, **kwargs: Any
+        self, reduce_index: bool = True, **kwargs: Any
     ) -> SkillTable | SkillArray:
         """Filter (select) specific models or observations.
 
-        Select a subset of the SkillTable by a query,
-           (part of) the index, or specific columns
+        Select a subset of the SkillTable by (part of) the index.
 
         Parameters
         ----------
