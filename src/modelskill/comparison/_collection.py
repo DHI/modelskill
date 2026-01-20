@@ -175,6 +175,58 @@ class ComparerCollection(Mapping):
         """Number of unique quantities"""
         return len(self.quantity_names)
 
+    def observation_metadata(self) -> pd.DataFrame:
+        """Get metadata for all observations.
+
+        Returns DataFrame with one row per observation containing
+        available metadata such as spatial coordinates, weight, and other attributes.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame indexed by observation name with metadata columns.
+            Columns depend on observation types:
+            - PointObservation: x, y, z (if present), weight, quantity, gtype, ...
+            - TrackObservation: weight, quantity, gtype, ... (no fixed x, y)
+
+        Examples
+        --------
+        >>> meta = cc.observation_metadata()
+        >>> skill = cc.skill()
+        >>> # Join skill with observation metadata
+        >>> skill_with_meta = skill.to_dataframe().merge(
+        ...     meta, left_on='observation', right_index=True
+        ... )
+
+        See Also
+        --------
+        skill : Calculate skill metrics
+        """
+        records = []
+        for cmp in self:
+            record = {"observation": cmp.name, "weight": cmp.weight, "gtype": cmp.gtype}
+
+            # Add quantity if available
+            if hasattr(cmp, "quantity"):
+                record["quantity"] = cmp.quantity.name
+
+            # Add spatial coordinates if observation type has them
+            if cmp.gtype == "point":
+                record["x"] = cmp.x
+                record["y"] = cmp.y
+                if hasattr(cmp, "z") and cmp.z is not None:
+                    record["z"] = cmp.z
+
+            # Add all other observation attributes
+            if hasattr(cmp, "attrs"):
+                for key, value in cmp.attrs.items():
+                    if key not in record:  # Don't override existing keys
+                        record[key] = value
+
+            records.append(record)
+
+        return pd.DataFrame(records).set_index("observation")
+
     def __repr__(self) -> str:
         out = []
         out.append("<ComparerCollection>")
@@ -494,7 +546,6 @@ class ComparerCollection(Mapping):
         res = _groupby_df(df, by=agg_cols, metrics=pmetrics)
         mtr_cols = [m.__name__ for m in pmetrics]  # type: ignore
         res = res.dropna(subset=mtr_cols, how="all")  # TODO: ok to remove empty?
-        res = self._append_xy_to_res(res, cc)
         res = cc._add_as_col_if_not_in_index(df, skilldf=res)  # type: ignore
         return SkillTable(res)
 
@@ -529,27 +580,6 @@ class ComparerCollection(Mapping):
             else:
                 agg_cols.append(b)
         return agg_cols, attrs_keys
-
-    @staticmethod
-    def _append_xy_to_res(res: pd.DataFrame, cc: ComparerCollection) -> pd.DataFrame:
-        """skill() helper: Append x and y to res if possible"""
-        # TODO: Code smell - checking gtype instead of polymorphism
-        # Consider adding Comparer.get_coordinates() -> tuple[float, float]
-        # that returns (x, y) for point or (nan, nan) for track
-        obs_to_xy = {cmp.name: (cmp.x, cmp.y) for cmp in cc if cmp.gtype == "point"}
-
-        if "observation" in res.index.names:
-            obs_values = res.index.get_level_values("observation")
-        elif "observation" in res.columns:
-            obs_values = res["observation"]
-        else:
-            res["x"] = np.nan
-            res["y"] = np.nan
-            return res
-
-        xy_tuples = [obs_to_xy.get(obs, (np.nan, np.nan)) for obs in obs_values]
-        res[["x", "y"]] = pd.DataFrame(xy_tuples, index=res.index)
-        return res
 
     def _add_as_col_if_not_in_index(
         self,
@@ -735,18 +765,18 @@ class ComparerCollection(Mapping):
         sk = self.skill(metrics=pmetrics)
 
         # Determine what to group by
-        by = self._mean_skill_by_v2(sk)
+        by = self._get_aggregation_dimensions(sk)
 
         # Use _SkillData.aggregate with weights - much simpler!
         aggregated = sk._skill_data.aggregate(by=by, weights=weights)
 
         return SkillTable(aggregated)
 
-    def _mean_skill_by_v2(self, sk: SkillTable) -> list[str]:
-        """Determine aggregation dimensions for mean skill (new version).
+    def _get_aggregation_dimensions(self, sk: SkillTable) -> list[str]:
+        """Determine dimensions to group by when aggregating across observations.
 
-        Returns list of dimensions to group by when aggregating across observations.
-        Aggregates ACROSS observations, so we don't include observation in by.
+        Returns list of dimensions (e.g., 'model', 'quantity') to group by
+        when computing mean skill across observations.
         """
         by = []
         df = sk._skill_data._df
@@ -765,22 +795,6 @@ class ComparerCollection(Mapping):
                     break
 
         # If still empty, return empty list (will aggregate everything)
-        return by
-
-    def _mean_skill_by(self, skilldf: pd.DataFrame) -> list[str]:
-        """Determine aggregation dimensions for mean skill (old version - deprecated)."""
-        by = []
-        if len(self.mod_names) > 1:
-            by.append("model")
-        if len(self.quantity_names) > 1:
-            by.append("quantity")
-        if len(by) == 0:
-            if (self.n_quantities > 1) and ("quantity" in skilldf):
-                by.append("quantity")
-            elif "model" in skilldf:
-                by.append("model")
-            else:
-                by = [self.mod_names[0]] * len(skilldf)
         return by
 
     def score(

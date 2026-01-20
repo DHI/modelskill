@@ -105,14 +105,6 @@ def test_matched_df(pt_df):
     assert cmp.score()["m2"] == pytest.approx(0.15811388300841905)
 
 
-def test_matched_skill_geodataframe(pt_df):
-    cmp = Comparer.from_matched_data(data=pt_df, x=10.0, y=55.0)
-    sk = cmp.skill()
-    gdf = sk.to_geodataframe()
-    assert gdf.iloc[0].geometry.coords[0][0] == 10.0
-    assert gdf.iloc[0].geometry.coords[0][1] == 55.0
-
-
 def test_df_score():
     df = pd.DataFrame(
         {"obs": [1.0, 2.0], "not_so_good": [0.9, 2.1], "perfect": [1.0, 2.0]}
@@ -665,43 +657,6 @@ def test_skill_freq(pc):
     sk2 = pc.skill(by="freq:12h")
     assert len(sk2.to_dataframe()) == 9
     assert np.isnan(sk2.to_dataframe().loc["2019-01-02 12:00:00", "rmse"])
-
-
-def test_xy_in_skill_pt(pc):
-    # point obs has x,y, track obs x, y are np.nan
-    sk = pc.skill()
-    assert "x" in sk.data.columns
-    assert "y" in sk.data.columns
-    df = sk.data
-    assert all(df.x == pc.x)
-    assert all(df.y == pc.y)
-
-    # x, y maintained during sort_values, sort_index, sel
-    sk2 = sk.sort_values("rmse")
-    assert all(sk2.data.x == pc.x)
-    assert all(sk2.data.y == pc.y)
-
-    sk3 = sk.sort_index()
-    assert all(sk3.data.x == pc.x)
-    assert all(sk3.data.y == pc.y)
-
-    sk4 = sk.sel(model="m1")
-    assert all(sk4.data.x == pc.x)
-    assert all(sk4.data.y == pc.y)
-
-    sa = sk.rmse  # SkillArray
-    assert all(sa.data.x == pc.x)
-    assert all(sa.data.y == pc.y)
-
-
-def test_xy_not_in_skill_tc(tc):
-    # point obs has x,y, track obs x, y are np.nan
-    sk = tc.skill()
-    assert "x" in sk.data.columns
-    assert "y" in sk.data.columns
-    df = sk.data
-    assert df.x.isna().all()
-    assert df.y.isna().all()
 
 
 def test_to_dataframe_pt(pc):

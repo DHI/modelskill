@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
-    import geopandas as gpd
     from matplotlib.axes import Axes
     from matplotlib.colors import Colormap
 
@@ -371,37 +370,6 @@ class SkillArray:
         """Name of the metric"""
         return self._ser.name
 
-    def to_geodataframe(self, crs: str = "EPSG:4326") -> gpd.GeoDataFrame:
-        """Convert SkillArray to geopandas.GeoDataFrame
-
-        Note: requires geopandas to be installed
-
-        Note: requires x and y columns to be present
-
-        Parameters
-        ----------
-        crs : str, optional
-            Coordinate reference system identifier passed to the
-            GeoDataFrame constructor, by default "EPSG:4326"
-
-        Returns
-        -------
-        gpd.GeoDataFrame
-            Skill data as GeoDataFrame
-        """
-        import geopandas as gpd
-
-        assert "x" in self.data.columns
-        assert "y" in self.data.columns
-
-        gdf = gpd.GeoDataFrame(
-            self._ser,
-            geometry=gpd.points_from_xy(self.data.x, self.data.y),
-            crs=crs,
-        )
-
-        return gdf
-
 
 class SkillTable:
     """
@@ -485,39 +453,6 @@ class SkillTable:
         else:
             return self.data.copy()
 
-    def to_geodataframe(self, crs: str = "EPSG:4326") -> gpd.GeoDataFrame:
-        """Convert SkillTable to geopandas.GeoDataFrame
-
-        Note: requires geopandas to be installed
-
-        Note: requires x and y columns to be present
-
-        Parameters
-        ----------
-        crs : str, optional
-            Coordinate reference system identifier passed to the
-            GeoDataFrame constructor, by default "EPSG:4326"
-
-        Returns
-        -------
-        gpd.GeoDataFrame
-            Skill data as GeoDataFrame
-        """
-        import geopandas as gpd
-
-        assert "x" in self.data.columns
-        assert "y" in self.data.columns
-
-        df = self.to_dataframe(drop_xy=False)
-
-        gdf = gpd.GeoDataFrame(
-            df,
-            geometry=gpd.points_from_xy(df.x, df.y),
-            crs=crs,
-        )
-
-        return gdf
-
     def __repr__(self) -> str:
         return repr(self._df)
 
@@ -537,12 +472,7 @@ class SkillTable:
             key = list(self.data.columns)[key]
         result = self.data[key]
         if isinstance(result, pd.Series):
-            # I don't think this should be necessary, but in some cases the input doesn't contain x and y
-            if "x" in self.data.columns and "y" in self.data.columns:
-                cols = ["x", "y", key]
-                return SkillArray(self.data[cols])
-            else:
-                return SkillArray(result.to_frame())
+            return SkillArray(result.to_frame())
         elif isinstance(result, pd.DataFrame):
             return SkillTable(result)
         else:
@@ -752,7 +682,8 @@ class SkillTable:
             # Remove single-value dimensions from dims.all
             # This ensures they stay as columns rather than becoming index
             new_dims_all = [
-                d for d in filtered.dims.all
+                d
+                for d in filtered.dims.all
                 if d in filtered._df.columns and filtered._df[d].nunique() > 1
             ]
             filtered.dims.all = new_dims_all
