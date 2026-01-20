@@ -71,7 +71,7 @@ notebooks = ["nbformat", "nbconvert", "jupyter", "plotly", "shapely", "seaborn"]
 
 [tool.ruff.lint]
 ignore = ["E501"]
-select = ["E4", "E7", "E9", "F", "D200", "D205", "ARG"]
+select = ["E4", "E7", "E9", "F", "D200", "D205"]
 
 [tool.mypy]
 python_version = "3.10"
