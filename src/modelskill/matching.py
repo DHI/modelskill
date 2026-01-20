@@ -28,7 +28,12 @@ from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation, observation
+from .obs import (
+    Observation,
+    PointObservation,
+    TrackObservation,
+    observation,
+)
 from .timeseries import TimeSeries
 from .types import Period
 
