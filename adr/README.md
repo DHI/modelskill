@@ -10,7 +10,7 @@ ADRs help new developers (and future maintainers) understand why the codebase is
 
 Each ADR follows this structure:
 
-- **Status**: Draft, Accepted, Superseded, Deprecated
+- **Status**: Draft, Accepted, Superseded
 - **Date**: When the decision was made (approximate for historical ADRs)
 - **Context**: What problem or requirement led to this decision?
 - **Decision**: What did we decide to do?
