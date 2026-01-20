@@ -290,7 +290,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="timeseries-data" class="level2">
 <h2 class="anchored" data-anchor-id="timeseries-data">TimeSeries data</h2>
 <p>Point and track timeseries data of both observation and model result kinds are stored in <a href="../api/TimeSeries.html#modelskill.TimeSeries"><code>TimeSeries</code></a> objects which uses <a href="https://xarray.pydata.org/en/stable/generated/xarray.Dataset.html#xarray.Dataset"><code>xarray.Dataset</code></a> as data container. The <a href="../api/TimeSeries.html#modelskill.TimeSeries.sel"><code>sel()</code></a> method can be used to select data based on time and returns a new <a href="../api/TimeSeries.html#modelskill.TimeSeries"><code>TimeSeries</code></a> object with the selected data.</p>
-<div id="1524bd18" class="cell" data-execution_count="1">
+<div id="3dc3d8cd" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>o <span class="op">=</span> ms.observation(<span class="st">"../data/obs.nc"</span>, item<span class="op">=</span><span class="st">"waterlevel"</span>, gtype<span class="op">=</span><span class="st">'point'</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>o_1month <span class="op">=</span> o.sel(time<span class="op">=</span><span class="bu">slice</span>(<span class="st">"2018-01-01"</span>, <span class="st">"2018-02-01"</span>))</span>
@@ -313,7 +313,7 @@ Quantity:  []</code></pre>
 <li><strong><code>where()</code></strong>: Use for conditional filtering based on logical criteria.</li>
 <li><strong><code>query()</code></strong>: Use for flexible, expression-based filtering in a pandas-like style.</li>
 </ul>
-<div id="770de390" class="cell" data-execution_count="2">
+<div id="ed3d2def" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Observation and model data</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>o <span class="op">=</span> ms.observation(<span class="st">"../data/SW/HKNA_Hm0.dfs0"</span>, item<span class="op">=</span><span class="dv">0</span>,</span>
@@ -327,7 +327,7 @@ Quantity:  []</code></pre>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>                      name<span class="op">=</span><span class="st">"m2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="f9671f32" class="cell" data-execution_count="3">
+<div id="b2931dc8" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> ms.match(o, [m1, m2])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="sel-method" class="level3">
@@ -371,7 +371,7 @@ Quantity:  []</code></pre>
 </tbody>
 </table>
 <p><strong>Example 1: Selecting data by time</strong></p>
-<div id="9aece82a" class="cell" data-execution_count="4">
+<div id="4a9c0414" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>cmp_12hrs <span class="op">=</span> <span class="bu">cmp</span>.sel(time<span class="op">=</span><span class="bu">slice</span>(<span class="st">'2017-10-28'</span>, <span class="st">'2017-10-28 12:00'</span>))</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>cmp_12hrs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="4">
@@ -385,7 +385,7 @@ Model(s):
 </div>
 <p>This selects data within the specified time range.</p>
 <p><strong>Example 2: Selecting a specific model</strong></p>
-<div id="b1ac1dac" class="cell" data-execution_count="5">
+<div id="55e34ee5" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cmp_m1 <span class="op">=</span> <span class="bu">cmp</span>.sel(model<span class="op">=</span><span class="st">'m1'</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>cmp_m1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
@@ -398,7 +398,7 @@ Model(s):
 </div>
 <p>This filters the data to include only the model named “m1”.</p>
 <p><strong>Example 3: Selecting a spatial area</strong></p>
-<div id="9788a3a9" class="cell" data-execution_count="6">
+<div id="7ae6f333" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>cmp_area <span class="op">=</span> <span class="bu">cmp</span>.sel(area<span class="op">=</span>[<span class="fl">4.0</span>, <span class="fl">52.5</span>, <span class="fl">5.0</span>, <span class="fl">53.0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This filters the data within the bounding box defined by <code>[x0, y0, x1, y1]</code>.</p>
@@ -429,7 +429,7 @@ Model(s):
 </tbody>
 </table>
 <p><strong>Example 4: Filtering data conditionally</strong></p>
-<div id="e3639f2c" class="cell" data-execution_count="7">
+<div id="de4c82aa" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.where(<span class="bu">cmp</span>.data.Observation <span class="op">&gt;</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
 <pre><code>&lt;Comparer&gt;
@@ -442,7 +442,7 @@ Model(s):
 </div>
 <p>This filters out any rows where the observation values are not greater than 3.</p>
 <p><strong>Example 5: Multiple conditions</strong></p>
-<div id="4df71bbe" class="cell" data-execution_count="8">
+<div id="9460de13" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.where((<span class="bu">cmp</span>.data.m1 <span class="op">&lt;</span> <span class="fl">2.9</span>) <span class="op">&amp;</span> (<span class="bu">cmp</span>.data.Observation <span class="op">&gt;</span> <span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="8">
 <pre><code>&lt;Comparer&gt;
@@ -476,7 +476,7 @@ Model(s):
 </tbody>
 </table>
 <p><strong>Example 6: Querying data</strong></p>
-<div id="778ed6be" class="cell" data-execution_count="9">
+<div id="f5396e9a" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span>.query(<span class="st">"Observation &gt; 3.0 and m1 &lt; 2.9"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
 <pre><code>&lt;Comparer&gt;
@@ -495,7 +495,7 @@ Model(s):
 <h2 class="anchored" data-anchor-id="skill-objects">Skill objects</h2>
 <p>The <a href="../api/Comparer.html#modelskill.Comparer.skill"><code>skill()</code></a> and <a href="../api/ComparerCollection.html#modelskill.ComparerCollection.mean_skill"><code>mean_skill()</code></a> methods return a <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object with skill scores from comparing observation and model result data using different metrics (e.g.&nbsp;root mean square error). It returns a <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object, which wraps a <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame"><code>pandas.DataFrame</code></a> and organizes the skill scores for further filtering, visualization, or analysis.</p>
 <p>The resulting <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object provides several methods to facilitate filtering and formatting: - <strong><code>sel()</code></strong>: Select specific models or observations. - <strong><code>query()</code></strong>: Apply flexible conditions with pandas-like queries.</p>
-<div id="219d702c" class="cell" data-execution_count="10">
+<div id="a7af7047" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>sk <span class="op">=</span> <span class="bu">cmp</span>.skill(metrics<span class="op">=</span>[<span class="st">"rmse"</span>, <span class="st">"mae"</span>, <span class="st">"si"</span>])</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>sk</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="10">
@@ -545,7 +545,7 @@ Model(s):
 </div>
 </div>
 <p><strong>Example 7: Select model</strong></p>
-<div id="0f1399e1" class="cell" data-execution_count="11">
+<div id="224dc74a" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>sk.sel(model<span class="op">=</span><span class="st">'m1'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="11">
 <div>
@@ -581,7 +581,7 @@ Model(s):
 </div>
 <p>Here, <code>sk</code> contains skill scores for all models, and <code>sk_m1</code> filters the results to include only model “m1”. Observations can be selected in the same way.</p>
 <p><strong>Example 8: Querying skill scores</strong></p>
-<div id="4098723a" class="cell" data-execution_count="12">
+<div id="71b67906" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>sk_high_rmse <span class="op">=</span> sk.query(<span class="st">"rmse &gt; 0.3"</span>)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>sk_high_rmse</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="12">
@@ -624,7 +624,7 @@ Model(s):
 </div>
 <p>This filters the <code>SkillTable</code> to include only rows where the root mean square error (RMSE) exceeds 0.3.</p>
 <p><strong>Example 9: Accessing and visualizing specific metrics</strong></p>
-<div id="9c9f187f" class="cell" data-execution_count="13">
+<div id="2d14f465" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>sk_rmse <span class="op">=</span> sk.rmse</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>sk_rmse</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="13">
@@ -661,7 +661,7 @@ Model(s):
 </div>
 </div>
 </div>
-<div id="a3324422" class="cell" data-execution_count="14">
+<div id="b5710c01" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>sk_rmse.plot.bar(figsize<span class="op">=</span>(<span class="dv">5</span>,<span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
