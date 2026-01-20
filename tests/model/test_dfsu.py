@@ -195,6 +195,21 @@ def test_dfsu_extract_point(sw_dutch_coast, Hm0_EPL):
     assert list(mr_extr_1.data.data_vars) == list(mr_extr_2.data.data_vars)
 
 
+def test_dfsu_extract_points(hd_oresund_2d, klagshamn, drogden):
+    mr = ms.DfsuModelResult(name="HD", data=hd_oresund_2d, item=0, aux_items=[2])
+    obs = [klagshamn, drogden]
+    mr_sub = mr.extract_points(obs)
+    assert mr_sub.name == "HD"
+    assert mr_sub.sel_items.values == "Surface elevation"
+    assert "U velocity" in mr_sub.sel_items.aux
+    assert mr_sub.data.geometry.n_elements == 2
+
+    # once we have a small dataset with multiple points, we can match
+    #cc = ms.match(obs, ds)
+    #assert "dmi_30357_Drogden_Fyr" in cc
+    #assert "Klagshamn" in cc
+
+
 def test_dfsu_extract_point_aux(sw_dutch_coast, Hm0_EPL):
     mr1 = ms.model_result(
         sw_dutch_coast, item=0, aux_items=["Peak Wave Direction"], name="SW1"
