@@ -343,7 +343,6 @@ class ComparerCollectionPlotter:
         self,
         bins: int | Sequence = 100,
         *,
-        model: str | int | None = None,
         title: Optional[str] = None,
         density: bool = True,
         alpha: float = 0.5,
@@ -351,7 +350,7 @@ class ComparerCollectionPlotter:
         figsize: Optional[Tuple[float, float]] = None,
         **kwargs,
     ):
-        """Plot histogram of specific model and all observations.
+        """Plot histogram of all models and observations.
 
         Wraps pandas.DataFrame hist() method.
 

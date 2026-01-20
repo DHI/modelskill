@@ -753,11 +753,11 @@ def _linear_regression(
     return slope, intercept
 
 
-def _std_obs(obs: ArrayLike, model: ArrayLike) -> Any:
+def _std_obs(obs: ArrayLike, _model: Any) -> Any:
     return obs.std()
 
 
-def _std_mod(obs: ArrayLike, model: ArrayLike) -> Any:
+def _std_mod(_obs: Any, model: ArrayLike) -> Any:
     return model.std()
 
 
