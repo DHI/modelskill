@@ -51,7 +51,7 @@ class SkillArrayPlotter:
     def _get_plot_df(self, level: int | str = 0) -> pd.DataFrame:
         ser = self.skillarray._ser
         if isinstance(ser.index, pd.MultiIndex):
-            df = ser.unstack(level=level)
+            df = ser.unstack(level=level)  # noqa: PD010
         else:
             df = ser.to_frame()
         return df
@@ -226,7 +226,7 @@ class SkillArrayPlotter:
             # TODO raise error?
             return None
             # df = self.df[field]    TODO: at_least_2d...
-        df = ser.unstack()
+        df = ser.unstack()  # noqa: PD010
 
         vmin = None
         vmax = None
