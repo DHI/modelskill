@@ -21,6 +21,7 @@ import numpy as np  # type: ignore
 from .. import metrics as mtr
 from ..utils import _get_idx
 import matplotlib.colors as colors
+from .._deprecation import _deprecate_positional_args
 from ..plotting._misc import (
     _get_fig_ax,
     _xtick_directional,
@@ -259,6 +260,7 @@ class ComparerPlotter:
 
         return ax
 
+    @_deprecate_positional_args
     def kde(self, ax=None, title=None, figsize=None, **kwargs) -> matplotlib.axes.Axes:
         """Plot kde (kernel density estimates of distributions) of model data and observations.
 
@@ -760,6 +762,7 @@ class ComparerPlotter:
             title=title,
         )
 
+    @_deprecate_positional_args
     def residual_hist(
         self, bins=100, title=None, color=None, figsize=None, ax=None, **kwargs
     ) -> matplotlib.axes.Axes | list[matplotlib.axes.Axes]:
