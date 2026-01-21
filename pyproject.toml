@@ -11,13 +11,12 @@ name = "modelskill"
 version = "1.4.dev0"
 dependencies = [
     "numpy  > 1.24.4",
-    "pandas >= 1.4",
+    "pandas[output_formatting] >= 1.4",
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",
     "netCDF4",
     "scipy",
-    "jinja2", # used for skill.style
 ]
 
 authors = [
