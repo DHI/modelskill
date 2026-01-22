@@ -20,7 +20,7 @@ from .types import PointType, TrackType, GeometryType, DataInputType
 from . import Quantity
 from .timeseries import (
     TimeSeries,
-    _parse_point_input,
+    _parse_xyz_point_input,
     _parse_track_input,
 )
 
@@ -50,6 +50,11 @@ def observation(
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
+
+    Returns
+    -------
+    PointObservation or TrackObservation
+        An observation object of the appropriate type
 
     Examples
     --------
@@ -202,7 +207,7 @@ class PointObservation(Observation):
         attrs: Optional[dict] = None,
     ) -> None:
         if not self._is_input_validated(data):
-            data = _parse_point_input(
+            data = _parse_xyz_point_input(
                 data,
                 name=name,
                 item=item,

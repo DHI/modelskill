@@ -1,6 +1,7 @@
 import pytest
 import mikeio
 from datetime import datetime
+import pandas as pd
 import modelskill as ms
 
 
@@ -117,3 +118,19 @@ def test_compare_obs_item_pointobs_inconsistent_item_error(fn_mod):
 def test_force_keyword_args(fn_obs, fn_mod):
     with pytest.raises(TypeError):
         ms.match(fn_obs, fn_mod, 0, 0)
+
+
+def test_matching_pointobservation_with_trackmodelresult_is_not_possible():
+    # ignore the data
+    tdf = pd.DataFrame(
+        {"x": [1, 2], "y": [1, 2], "m1": [0, 0]},
+        index=pd.date_range("2017-10-27 13:00:01", periods=2, freq="4S"),
+    )
+    mr = ms.TrackModelResult(tdf, item="m1", x_item="x", y_item="y")
+    pdf = pd.DataFrame(
+        data={"level": [0.0, 0.0]},
+        index=pd.date_range("2017-10-27 13:00:01", periods=2, freq="4S"),
+    )
+    obs = ms.PointObservation(pdf, item="level")
+    with pytest.raises(TypeError, match="TrackModelResult"):
+        ms.match(obs=obs, mod=mr)

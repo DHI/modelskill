@@ -84,9 +84,23 @@ class Quantity:
 
     @staticmethod
     def undefined() -> "Quantity":
+        """Create an undefined Quantity.
+
+        Returns
+        -------
+        Quantity
+            A Quantity with empty name and unit
+        """
         return Quantity(name="", unit="")
 
     def to_dict(self) -> Dict[str, str]:
+        """Convert Quantity to a dictionary.
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'name' and 'unit' keys
+        """
         return {"name": self.name, "unit": self.unit}
 
     @staticmethod
@@ -101,6 +115,11 @@ class Quantity:
         ----------
         attrs : Mapping[str, str]
             Attributes dictionary
+
+        Returns
+        -------
+        Quantity
+            Quantity object created from CF attributes
 
         Examples
         --------
@@ -144,6 +163,11 @@ class Quantity:
         ----------
         type_name : str
             Name of the quantity
+
+        Returns
+        -------
+        Quantity
+            Quantity object created from mikeio EUM type
 
         Examples
         --------

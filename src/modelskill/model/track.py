@@ -1,18 +1,17 @@
 from __future__ import annotations
-from typing import Any, Literal, Optional, Sequence
+from typing import Literal, Optional, Sequence
 import warnings
 
 import numpy as np
 import xarray as xr
 
-from ..obs import Observation
 from ..types import TrackType
+from ..obs import TrackObservation
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_track_input
-from ._base import Alignable
 
 
-class TrackModelResult(TimeSeries, Alignable):
+class TrackModelResult(TimeSeries):
     """Model result for a track.
 
     Construct a TrackModelResult from a dfs0 file,
@@ -72,9 +71,9 @@ class TrackModelResult(TimeSeries, Alignable):
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
 
-    def align(self, observation: Observation, **kwargs: Any) -> xr.Dataset:
-        spatial_tolerance = 1e-3
-
+    def subset_to(
+        self, observation: TrackObservation, *, spatial_tolerance: float
+    ) -> xr.Dataset:
         mri = self
         mod_df = mri.data.to_dataframe()
         obs_df = observation.data.to_dataframe()

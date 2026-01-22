@@ -14,6 +14,7 @@ from typing import (
     Sequence,
     TYPE_CHECKING,
 )
+import warnings
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -340,10 +341,12 @@ def _matched_data_to_xarray(
                 f"Model data: {m} is of type {df[m].dtype}, it must be numeric"
             )
 
-    df = df[items.all]
-    df.index.name = "time"
-    df = df.rename(columns={items.obs: "Observation"})
-    ds = df.to_xarray()
+    ds = (
+        df.loc[:, items.all]
+        .rename_axis("time")
+        .rename(columns={items.obs: "Observation"})
+        .to_xarray()
+    )
     assert isinstance(ds, xr.Dataset)
 
     ds.attrs["name"] = name if name is not None else items.obs
@@ -449,7 +452,7 @@ class Comparer:
             if raw_mod_data is not None
             else {
                 # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
-                key: PointModelResult(self.data[[key]], name=key)
+                str(key): PointModelResult(self.data[[str(key)]], name=str(key))
                 for key, value in matched_data.data_vars.items()
                 if value.attrs["kind"] == "model"
             }
@@ -600,13 +603,11 @@ class Comparer:
     def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
         # we don't require the kind attribute to be "auxiliary"
-        return list(
-            [
-                k
-                for k, v in self.data.data_vars.items()
-                if v.attrs["kind"] not in ["observation", "model"]
-            ]
-        )
+        return [
+            str(k)
+            for k, v in self.data.data_vars.items()
+            if v.attrs["kind"] not in ["observation", "model"]
+        ]
 
     # TODO: always "Observation", necessary to have this property?
     @property
@@ -737,53 +738,34 @@ class Comparer:
         mods = list(self.raw_mod_data.values())
         return mods
 
-    def __iadd__(self, other: Comparer):  # type: ignore
-        from ..matching import match_space_time
+    def __add__(self, other):
+        warnings.warn(
+            "Merging comparers using + is deprecated, use .merge instead.",
+            FutureWarning,
+        )
+        return self.merge(other)
 
-        missing_models = set(self.mod_names) - set(other.mod_names)
-        if len(missing_models) == 0:
-            # same obs name and same model names
-            self.data = xr.concat([self.data, other.data], dim="time").drop_duplicates(
-                "time"
-            )
-        else:
-            self.raw_mod_data.update(other.raw_mod_data)
-            matched = match_space_time(
-                observation=self._to_observation(),
-                raw_mod_data=self.raw_mod_data,  # type: ignore
-            )
-            assert matched is not None
-            self.data = matched
+    def merge(
+        self, other: Comparer | ComparerCollection
+    ) -> Comparer | ComparerCollection:
+        """Merge another Comparer or ComparerCollection with this one into a new object.
 
-        return self
-
-    def __add__(
-        self, other: Union["Comparer", "ComparerCollection"]
-    ) -> "ComparerCollection" | "Comparer":
+        Parameters
+        ----------
+        other : Comparer or ComparerCollection
+            Comparer/Collection to merge with.
+        Returns
+        -------
+        Comparer or ComparerCollection
+            New object with merged data.
+        """
         from ._collection import ComparerCollection
-        from ..matching import match_space_time
-
-        if not isinstance(other, (Comparer, ComparerCollection)):
-            raise TypeError(f"Cannot add {type(other)} to {type(self)}")
 
         if isinstance(other, Comparer) and (self.name == other.name):
-            missing_models = set(self.mod_names) - set(other.mod_names)
-            if len(missing_models) == 0:
-                # same obs name and same model names
-                cmp = self.copy()
-                cmp.data = xr.concat(
-                    [cmp.data, other.data], dim="time"
-                ).drop_duplicates("time")
-
-            else:
-                raw_mod_data = self.raw_mod_data.copy()
-                raw_mod_data.update(other.raw_mod_data)  # TODO!
-                matched = match_space_time(
-                    observation=self._to_observation(),
-                    raw_mod_data=raw_mod_data,  # type: ignore
-                )
-                assert matched is not None
-                cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
+            raw_mod_data = self.raw_mod_data.copy()
+            raw_mod_data.update(other.raw_mod_data)  # TODO!
+            matched = self.data.merge(other.data).dropna(dim="time")
+            cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp
         else:
@@ -1164,6 +1146,29 @@ class Comparer:
     def remove_bias(
         self, correct: Literal["Model", "Observation"] = "Model"
     ) -> Comparer:
+        """Remove bias from model or observation data.
+
+        The bias is calculated as the mean residual (model - observation)
+        and can be removed from either the model or observation data.
+
+        Parameters
+        ----------
+        correct : {"Model", "Observation"}, optional
+            Which data to correct by removing bias, by default "Model"
+            - "Model": subtract bias from model data
+            - "Observation": add bias to observation data
+
+        Returns
+        -------
+        Comparer
+            New Comparer with bias removed
+
+        Examples
+        --------
+        >>> cmp = ms.match(obs, mod)
+        >>> cmp_unbiased = cmp.remove_bias()
+        >>> cmp_unbiased.skill()
+        """
         cmp = self.copy()
 
         bias = cmp._residual.mean(axis=0)

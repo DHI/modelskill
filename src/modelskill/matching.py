@@ -24,12 +24,16 @@ from modelskill.model.point import PointModelResult
 
 from . import Quantity, __version__, model_result
 from .comparison import Comparer, ComparerCollection
-from .model._base import Alignable
 from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation, observation
+from .obs import (
+    Observation,
+    PointObservation,
+    TrackObservation,
+    observation,
+)
 from .timeseries import TimeSeries
 from .types import Period
 
@@ -109,6 +113,11 @@ def from_matched(
         Name of x item, only relevant for track data
     y_item: [str, int], optional
         Name of y item, only relevant for track data
+
+    Returns
+    -------
+    Comparer
+        A Comparer object with matched observation and model data
 
     Examples
     --------
@@ -202,6 +211,7 @@ def match(
     max_model_gap=None,
     spatial_method: Optional[str] = None,
     temporal_method: str = "linear",
+    spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ):
     """Match observation and model result data in space and time
@@ -241,6 +251,11 @@ def match(
         Valid options are: "akima", "barycentric", "cubic", "krogh", "linear",
         "makima", "nearest", "pchip", "polynomial", "quadratic",
         "quintic", "slinear", "spline", "zero".
+    spatial_tolerance : float, optional
+        Spatial tolerance (in the units of the coordinate system) for matching
+        model track points to observation track points. Model points outside
+        this tolerance will be discarded. Only relevant for TrackModelResult
+        and TrackObservation, by default 1e-3.
     obs_no_overlap: str, optional
         How to handle observations with no overlap with model results. One of: 'ignore', 'error', 'warn', by default 'error'.
 
@@ -265,6 +280,7 @@ def match(
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
             temporal_method=temporal_method,
+            spatial_tolerance=spatial_tolerance,
             obs_no_overlap=obs_no_overlap,
         )
 
@@ -276,7 +292,10 @@ def match(
         )
 
     if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
-        if not all(isinstance(m, (DfsuModelResult, GridModelResult)) for m in mod):
+        if not all(
+            isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
+            for m in mod
+        ):
             raise ValueError(
                 """
                 In case of multiple observations, multiple models can _only_ 
@@ -298,6 +317,7 @@ def match(
             gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
+            spatial_tolerance=spatial_tolerance,
             obs_no_overlap=obs_no_overlap,
         )
         for o in obs
@@ -312,14 +332,16 @@ def _match_single_obs(
     obs: ObsInputType,
     mod: Union[MRInputType, Sequence[MRInputType]],
     *,
-    obs_item: Optional[int | str] = None,
-    mod_item: Optional[int | str] = None,
-    gtype: Optional[GeometryTypes] = None,
-    max_model_gap: Optional[float] = None,
-    spatial_method: Optional[str] = None,
+    obs_item: int | str | None,
+    mod_item: int | str | None,
+    gtype: GeometryTypes | None,
+    max_model_gap: float | None,
+    spatial_method: str | None,
     temporal_method: str = "linear",
-    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
-) -> Optional[Comparer]:
+    spatial_tolerance: float,
+    obs_no_overlap: Literal["ignore", "error", "warn"],
+) -> Comparer | None:
+    # TODO passing gtype to this function is inconsistent with `match` docstring, where gtype is the geometry type of model result
     observation = _parse_single_obs(obs, obs_item, gtype=gtype)
 
     if isinstance(mod, get_args(MRInputType)):
@@ -344,12 +366,13 @@ def _match_single_obs(
         for m in model_results
     }
 
-    matched_data = match_space_time(
+    matched_data = _match_space_time(
         observation=observation,
         raw_mod_data=raw_mod_data,
         max_model_gap=max_model_gap,
         obs_no_overlap=obs_no_overlap,
         temporal_method=temporal_method,
+        spatial_tolerance=spatial_tolerance,
     )
     if matched_data is None:
         return None
@@ -370,11 +393,12 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
     return Period(start=min(starts), end=max(ends))
 
 
-def match_space_time(
+def _match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, Alignable],
-    max_model_gap: float | None = None,
-    obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
+    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
+    max_model_gap: float | None,
+    spatial_tolerance: float,
+    obs_no_overlap: Literal["ignore", "error", "warn"],
     temporal_method: str = "linear",
 ) -> Optional[xr.Dataset]:
     """Match observation with one or more model results in time domain.
@@ -417,8 +441,17 @@ def match_space_time(
     data = data.rename({observation.name: "Observation"})
 
     for mr in raw_mod_data.values():
-        # TODO is `align` the correct name for this operation?
-        aligned = mr.align(observation, max_gap=max_model_gap, method=temporal_method)
+        match mr, observation:
+            case TrackModelResult() as tmr, TrackObservation():
+                aligned = tmr.subset_to(
+                    observation, spatial_tolerance=spatial_tolerance
+                )
+            case PointModelResult() as pmr, PointObservation():
+                aligned = pmr.align(observation, max_gap=max_model_gap)
+            case _:
+                raise TypeError(
+                    f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
+                )
 
         if overlapping := set(aligned.filter_by_attrs(kind="aux").data_vars) & set(
             observation.data.filter_by_attrs(kind="aux").data_vars

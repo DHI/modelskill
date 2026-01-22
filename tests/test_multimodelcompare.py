@@ -53,10 +53,10 @@ def test_compare(mr1, mr2, o1, o2, o3):
     assert "Comparer" in repr(cc[2])
 
 
-def test_add_comparer(mr1, mr2, o1, o2):
+def test_merge_comparer(mr1, mr2, o1, o2):
     cc1 = ms.match(o1, mr1)
     cc2 = ms.match(o2, mr2)
-    cc = cc1 + cc2
+    cc = cc1.merge(cc2)
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
     assert "Comparer" in repr(cc["EPL"])
@@ -66,9 +66,9 @@ def test_add_comparer(mr1, mr2, o1, o2):
 def test_add_same_comparer_twice(mr1, mr2, o1, o2):
     cc1 = ms.match(o1, mr1)
     cc2 = ms.match(o2, mr2)
-    cc = cc1 + cc2
+    cc = cc1.merge(cc2)
     assert len(cc) == 2
-    cc = cc + cc2
+    cc = cc.merge(cc2)
     assert len(cc) == 2  # adding the same comparer again doesn't have any effect
     assert cc.n_points > 0
     assert "ComparerCollection" in repr(cc)
@@ -386,3 +386,9 @@ def test_mm_plot_timeseries(cc):
     assert "EPL" in ax.get_title()
 
     plt.close("all")
+
+
+def test_match_including_dummy(mr1, mr2, o1, o2, o3):
+    mr3 = ms.DummyModelResult(strategy="constant", data=0.0)
+    cc = ms.match([o1, o2, o3], [mr3, mr1, mr2])
+    assert "dummy" in cc.mod_names

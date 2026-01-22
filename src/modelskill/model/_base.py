@@ -1,13 +1,13 @@
 from __future__ import annotations
 from collections import Counter
-from typing import Any, List, Optional, Protocol, Sequence, TYPE_CHECKING
+from collections.abc import Hashable
+from typing import List, Optional, Protocol, Sequence, TYPE_CHECKING
 from dataclasses import dataclass
 import warnings
 
 import pandas as pd
 
 if TYPE_CHECKING:
-    import xarray as xr
     from .point import PointModelResult
     from .track import TrackModelResult
 
@@ -26,7 +26,7 @@ class SelectedItems:
 
     @staticmethod
     def parse(
-        avail_items: Sequence[str],
+        avail_items: Sequence[Hashable],
         item: int | str | None,
         aux_items: Optional[Sequence[int | str]] = None,
     ) -> SelectedItems:
@@ -34,7 +34,7 @@ class SelectedItems:
 
 
 def _parse_items(
-    avail_items: Sequence[str],
+    avail_items: Sequence[Hashable],
     item: int | str | None,
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> SelectedItems:
@@ -86,16 +86,3 @@ class SpatialField(Protocol):
     def _extract_track(
         self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult: ...
-
-
-class Alignable(Protocol):
-    @property
-    def time(self) -> pd.DatetimeIndex: ...
-
-    def align(
-        self,
-        observation: Observation,
-        **kwargs: Any,
-    ) -> xr.Dataset: ...
-
-    # the attributues of the returned dataset have additional requirements, but we can't express that here

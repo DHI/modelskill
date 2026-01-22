@@ -94,6 +94,8 @@ def tc() -> Comparer:
 
 
 def test_matched_df(pt_df):
+    # modelskill doesn't care about the name of the index, but it should be preserved
+    pt_df.index.name = "dato_tid"
     cmp = Comparer.from_matched_data(data=pt_df)
     assert cmp.gtype == "point"
     assert "m2" in cmp.mod_names
@@ -103,6 +105,14 @@ def test_matched_df(pt_df):
     assert cmp.name == "Observation"
     assert cmp.score()["m1"] == pytest.approx(0.5916079783099617)
     assert cmp.score()["m2"] == pytest.approx(0.15811388300841905)
+
+    # from_matched doesn't modify the original dataframe,. including the name of the index
+    assert pt_df.index.name == "dato_tid"
+    assert list(pt_df.columns) == ["Observation", "m1", "m2"]
+
+    # but to_dataframe always returns a dataframe with index named "time"
+    df2 = cmp.to_dataframe()
+    assert df2.index.name == "time"
 
 
 def test_matched_skill_geodataframe(pt_df):
@@ -584,14 +594,14 @@ def test_pc_query_empty(pc):
     assert pc2.n_points == 0
 
 
-def test_add_pc_tc(pc, tc):
-    cc = pc + tc
+def test_merge_pc_tc(pc, tc):
+    cc = pc.merge(tc)
     assert cc.n_points == 10
     assert len(cc) == 2
 
 
-def test_add_tc_pc(pc, tc):
-    cc = tc + pc
+def test_merge_tc_pc(pc, tc):
+    cc = tc.merge(pc)
     assert cc.n_points == 10
     assert len(cc) == 2
 
