@@ -28,7 +28,7 @@ def taylor_diagram(
     figsize: tuple[float, float] = (7, 7),
     obs_text: str = "Observations",
     normalize_std: bool = False,
-    ax: Axes | None = None,
+    _ax: Axes | None = None,  # Not yet implemented
     title: str = "Taylor diagram",
 ) -> matplotlib.figure.Figure:
     """
