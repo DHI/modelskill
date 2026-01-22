@@ -248,7 +248,6 @@ def test_point_model_result_from_nc_file():
 
 
 def test_interp_time():
-
     df = pd.DataFrame(
         {
             "WL": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],

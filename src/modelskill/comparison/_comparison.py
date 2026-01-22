@@ -762,7 +762,9 @@ class Comparer:
         if isinstance(other, Comparer) and (self.name == other.name):
             raw_mod_data = self.raw_mod_data.copy()
             raw_mod_data.update(other.raw_mod_data)  # TODO!
-            matched = self.data.merge(other.data).dropna(dim="time")
+            matched = self.data.merge(
+                other.data, compat="no_conflicts", join="outer"
+            ).dropna(dim="time")
             cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp

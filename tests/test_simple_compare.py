@@ -124,12 +124,12 @@ def test_matching_pointobservation_with_trackmodelresult_is_not_possible():
     # ignore the data
     tdf = pd.DataFrame(
         {"x": [1, 2], "y": [1, 2], "m1": [0, 0]},
-        index=pd.date_range("2017-10-27 13:00:01", periods=2, freq="4S"),
+        index=pd.date_range("2017-10-27 13:00:01", periods=2, freq="4s"),
     )
     mr = ms.TrackModelResult(tdf, item="m1", x_item="x", y_item="y")
     pdf = pd.DataFrame(
         data={"level": [0.0, 0.0]},
-        index=pd.date_range("2017-10-27 13:00:01", periods=2, freq="4S"),
+        index=pd.date_range("2017-10-27 13:00:01", periods=2, freq="4s"),
     )
     obs = ms.PointObservation(pdf, item="level")
     with pytest.raises(TypeError, match="TrackModelResult"):

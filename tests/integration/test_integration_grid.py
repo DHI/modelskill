@@ -2,6 +2,7 @@ import modelskill as ms
 import pytest
 import xarray as xr
 
+
 def test_extract_point_from_3d():
     mr = ms.GridModelResult(
         "tests/testdata/cmems_mod_med_phy-sal_anfc_4.2km-3D_PT1H-m_1705916517624.nc",
