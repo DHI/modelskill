@@ -181,6 +181,7 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    temporal_method: str = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Comparer: ...
 
@@ -195,6 +196,7 @@ def match(
     gtype: Optional[GeometryTypes] = None,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    temporal_method: str = "linear",
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> ComparerCollection: ...
 
@@ -208,6 +210,7 @@ def match(
     gtype=None,
     max_model_gap=None,
     spatial_method: Optional[str] = None,
+    temporal_method: str = "linear",
     spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ):
@@ -243,6 +246,11 @@ def match(
         'inverse_distance' (with 5 nearest points), by default "inverse_distance".
         - For GridModelResult, passed to xarray.interp() as method argument,
         by default 'linear'.
+    temporal_method : str, optional
+        Temporal interpolation method passed to xarray.interp(), by default 'linear'
+        Valid options are: "akima", "barycentric", "cubic", "krogh", "linear",
+        "makima", "nearest", "pchip", "polynomial", "quadratic",
+        "quintic", "slinear", "spline", "zero".
     spatial_tolerance : float, optional
         Spatial tolerance (in the units of the coordinate system) for matching
         model track points to observation track points. Model points outside
@@ -271,6 +279,7 @@ def match(
             gtype=gtype,
             max_model_gap=max_model_gap,
             spatial_method=spatial_method,
+            temporal_method=temporal_method,
             spatial_tolerance=spatial_tolerance,
             obs_no_overlap=obs_no_overlap,
         )
@@ -328,6 +337,7 @@ def _match_single_obs(
     gtype: GeometryTypes | None,
     max_model_gap: float | None,
     spatial_method: str | None,
+    temporal_method: str = "linear",
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
 ) -> Comparer | None:
@@ -346,7 +356,10 @@ def _match_single_obs(
 
     raw_mod_data = {
         m.name: (
-            m.extract(observation, spatial_method=spatial_method)
+            m.extract(
+                observation,
+                spatial_method=spatial_method,
+            )
             if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
             else m
         )
@@ -358,6 +371,7 @@ def _match_single_obs(
         raw_mod_data=raw_mod_data,
         max_model_gap=max_model_gap,
         obs_no_overlap=obs_no_overlap,
+        temporal_method=temporal_method,
         spatial_tolerance=spatial_tolerance,
     )
     if matched_data is None:
@@ -385,6 +399,7 @@ def _match_space_time(
     max_model_gap: float | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
+    temporal_method: str = "linear",
 ) -> Optional[xr.Dataset]:
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
@@ -404,7 +419,9 @@ def _match_space_time(
                     observation, spatial_tolerance=spatial_tolerance
                 )
             case PointModelResult() as pmr, PointObservation():
-                aligned = pmr.align(observation, max_gap=max_model_gap)
+                aligned = pmr.align(
+                    observation, max_gap=max_model_gap, method=temporal_method
+                )
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"

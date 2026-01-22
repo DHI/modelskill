@@ -616,3 +616,26 @@ def test_multiple_models_same_name(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="HKZN_local_2017_DutchCoast"):
         ms.match(obs, [mr1, mr2])
+
+
+def test_directional_data_use_nearest_temporal_interpolation():
+    mod = ms.PointModelResult(
+        name="mod",
+        data=pd.Series(
+            [359, 5], index=pd.date_range("2023-01-01", periods=2, freq="3H")
+        ),
+    )
+
+    obs = ms.PointObservation(
+        name="obs",
+        data=pd.Series(
+            np.zeros(5), index=pd.date_range("2023-01-01", periods=5, freq="1H")
+        ),
+    )
+
+    cmp = ms.match(
+        obs=obs,
+        mod=mod,
+        temporal_method="nearest",
+    )
+    assert cmp.data["mod"].values[1] == pytest.approx(359.0)
