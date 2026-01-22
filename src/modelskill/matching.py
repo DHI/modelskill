@@ -22,7 +22,7 @@ import xarray as xr
 
 from modelskill.model.point import PointModelResult
 
-from . import Quantity, __version__
+from . import Quantity
 from .comparison import Comparer, ComparerCollection
 from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
@@ -178,6 +178,7 @@ def match(
     *,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> Comparer: ...
 
@@ -189,6 +190,7 @@ def match(
     *,
     max_model_gap: Optional[float] = None,
     spatial_method: Optional[str] = None,
+    spatial_tolerance: float = 1e-3,
     obs_no_overlap: Literal["ignore", "error", "warn"] = "error",
 ) -> ComparerCollection: ...
 
@@ -301,17 +303,11 @@ def _match_single_obs(
     obs: ObsTypes,
     mod: MRTypes | Sequence[MRTypes],
     *,
-    obs_item: int | str | None,
-    mod_item: int | str | None,
-    gtype: GeometryTypes | None,
     max_model_gap: float | None,
     spatial_method: str | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
 ) -> Comparer | None:
-    # TODO passing gtype to this function is inconsistent with `match` docstring, where gtype is the geometry type of model result
-    observation = _parse_single_obs(obs, obs_item, gtype=gtype)
-
     if isinstance(mod, get_args(MRInputType)):
         models: list = [mod]
     else:
@@ -330,7 +326,7 @@ def _match_single_obs(
         for m in models
     }
 
-    matched_data = match_space_time(
+    matched_data = _match_space_time(
         observation=obs,
         raw_mod_data=raw_mod_data,
         max_model_gap=max_model_gap,
@@ -340,9 +336,6 @@ def _match_single_obs(
     if matched_data is None:
         return None
     matched_data.attrs["weight"] = obs.weight
-
-    # TODO where does this line belong?
-    matched_data.attrs["modelskill_version"] = __version__
 
     return Comparer(matched_data=matched_data, raw_mod_data=raw_mod_data)
 
