@@ -280,7 +280,7 @@ def test_gridded_skill_bins(comparer):
 
     # binsize (overwrites bins)
     ds = comparer.gridded_skill(metrics=["bias"], binsize=2.5, bins=100)
-    assert len(ds.x) == 4
+    assert len(ds.x) == 5  # One more bin needed to cover full data range
     assert len(ds.y) == 3
     assert ds.x[0] == -0.75
 
@@ -297,6 +297,12 @@ def test_gridded_skill_misc(comparer):
     df = ds.to_dataframe()
     assert df.loc[df.n < 20, ["bias", "rmse"]].size == 30
     assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
+
+
+def test_gridded_skill_binsize_no_data_loss(comparer):
+    """Test that all data points are included when using binsize parameter."""
+    gs = comparer.gridded_skill(metrics=["bias"], binsize=2.5)
+    assert int(gs.n.data.sum().values) == comparer.n_points
 
 
 def test_hist(comparer):
