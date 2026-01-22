@@ -267,6 +267,13 @@ class TimeSeries:
         return len(self.data.time)
 
     def copy(self: T) -> T:
+        """Create a deep copy of the TimeSeries.
+
+        Returns
+        -------
+        TimeSeries
+            Deep copy of the TimeSeries object
+        """
         return deepcopy(self)
 
     def equals(self, other: TimeSeries) -> bool:

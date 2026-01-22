@@ -584,14 +584,14 @@ def test_pc_query_empty(pc):
     assert pc2.n_points == 0
 
 
-def test_add_pc_tc(pc, tc):
-    cc = pc + tc
+def test_merge_pc_tc(pc, tc):
+    cc = pc.merge(tc)
     assert cc.n_points == 10
     assert len(cc) == 2
 
 
-def test_add_tc_pc(pc, tc):
-    cc = tc + pc
+def test_merge_tc_pc(pc, tc):
+    cc = tc.merge(pc)
     assert cc.n_points == 10
     assert len(cc) == 2
 

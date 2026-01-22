@@ -8,7 +8,7 @@ wheel-exclude = ["**/.mypy_cache**","**/.mypy_cache/**"]
 
 [project]
 name = "modelskill"
-version = "1.3.dev0"
+version = "1.4.dev0"
 dependencies = [
     "numpy  > 1.24.4",
     "pandas >= 1.4",
@@ -57,7 +57,7 @@ test = [
     "pytest-cov",
     "openpyxl",
     "dask",
-    "mypy==1.16.1",
+    "mypy==1.19.1",
     "types-PyYAML",
     "geopandas",
 ]

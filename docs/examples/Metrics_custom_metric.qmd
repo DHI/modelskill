@@ -1,6 +1,5 @@
 ---
 title: Custom Metrics 
-jupyter: python3
 ---
 
 ModelSkill comes with many metrics to choose from, but you can also define your own. 
@@ -11,9 +10,8 @@ import modelskill as ms
 ```
 
 ```{python}
-fn = '../data/SW/HKZN_local_2017_DutchCoast.dfsu'
-mr = ms.model_result(fn, name='HKZN_local', item=0)
-o1 = ms.PointObservation('../data/SW/HKNA_Hm0.dfs0', item=0, x=4.2420, y=52.6887, name="HKNA")
+mr = ms.DfsuModelResult("../data/SW/HKZN_local_2017_DutchCoast.dfsu", name='HKZN_local', item=0)
+o1 = ms.PointObservation("../data/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
 o2 = ms.PointObservation("../data/SW/eur_Hm0.dfs0", item=0, x=3.2760, y=51.9990, name="EPL")
 o3 = ms.TrackObservation("../data/SW/Alti_c2_Dutch.dfs0", item=3, name="c2")
 cc = ms.match([o1, o2, o3], mr)
@@ -59,3 +57,38 @@ def mcae(obs, model):
 cc.skill(metrics=mcae).style()
 ```
 
+## Custom display name
+
+Sometimes you like to modify the display name of the metrics. This can be done by passing a dictionary with the metric name as key and the display name as value to the `display_name` parameter.
+
+```{python}
+@ms.metrics.metric(display_name="MEAN$_{Model}$", has_units="m")
+def mean_mod(obs, mod):
+    return mod.mean()
+
+@ms.metrics.metric(display_name="MEAN$_{Obs}$", has_units="m")
+def mean_obs(obs, mod):
+    return obs.mean()
+
+ms.metrics.add_metric(mean_mod)
+ms.metrics.add_metric(mean_obs)
+
+ms.metrics.pr.display_name = '$P_{ratio}$'
+cc[0].plot.scatter(skill_table=["pr", mean_mod, mean_obs]);
+```
+
+## Custom format
+
+In this example we modify `bias` to also add the perentage of the bias relative to the mean of the reference series.
+
+```{python}
+from modelskill.metrics import bias as mybias
+
+def bias(obs, mod):
+    avg = obs.mean()
+    bias = mybias(obs, mod)
+    sign = "+" if bias > 0 else ""
+    return f"{bias:.2f} ({sign}{bias/avg*100:.1f}%)"
+
+cc[0].plot.scatter(skill_table=[bias, "rmse"]);
+```
