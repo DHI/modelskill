@@ -122,6 +122,17 @@ def _convert_to_dataset(
             data = data.rename({time_dim_name: "time"})
         ds = data
 
+    # Normalize datetime precision to avoid xarray interp issues with pandas 3.0
+    # Different data sources (dfs0 files, DataFrames) may have different precisions
+    # (datetime64[s], datetime64[us], datetime64[ns], etc.), and xarray.interp()
+    # fails when interpolating between datasets with mismatched precisions.
+    # Use nanoseconds (ns) for backward compatibility with pandas 2.x
+    if ds.time.dtype.kind == "M":  # M = datetime
+        time_pd = ds.time.to_index()  # Preserves freq attribute
+        if time_pd.dtype != "datetime64[ns]":
+            time_index = time_pd.as_unit("ns")
+            ds = ds.assign_coords(time=time_index)
+
     name = _validate_data_var_name(varname)
 
     n_unique_times = len(ds.time.to_index().unique())

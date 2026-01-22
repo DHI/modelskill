@@ -55,6 +55,15 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
         # matched_data = self._matched_data_to_xarray(matched_data)
     assert "Observation" in data.data_vars
 
+    # Normalize datetime precision to avoid xarray interp issues with pandas 3.0
+    # Different data sources may have different precisions (datetime64[s], datetime64[us], etc.)
+    # Use nanoseconds (ns) for backward compatibility with pandas 2.x
+    if data.time.dtype.kind == "M":  # M = datetime
+        time_pd = data.time.to_index()  # Preserves freq attribute
+        if time_pd.dtype != "datetime64[ns]":
+            time_index = time_pd.as_unit("ns")
+            data = data.assign_coords(time=time_index)
+
     # no missing values allowed in Observation
     if data["Observation"].isnull().any():
         raise ValueError("Observation data must not contain missing values.")
@@ -331,12 +340,12 @@ def _matched_data_to_xarray(
             )
 
     # check that items.obs and items.model are numeric
-    if not np.issubdtype(df[items.obs].dtype, np.number):
+    if not pd.api.types.is_numeric_dtype(df[items.obs].dtype):
         raise ValueError(
             "Observation data is of type {df[items.obs].dtype}, it must be numeric"
         )
     for m in items.model:
-        if not np.issubdtype(df[m].dtype, np.number):
+        if not pd.api.types.is_numeric_dtype(df[m].dtype):
             raise ValueError(
                 f"Model data: {m} is of type {df[m].dtype}, it must be numeric"
             )
@@ -451,8 +460,10 @@ class Comparer:
             else {
                 # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
                 str(key): PointModelResult(self.data[[str(key)]], name=str(key))
-                for key, value in matched_data.data_vars.items()
-                if value.attrs["kind"] == "model"
+                for key, value in self.data.data_vars.items()
+                # Use .get("kind") instead of ["kind"] to avoid KeyError
+                # Auxiliary variables (e.g., "leadtime", "wind") may not have "kind" attribute
+                if value.attrs.get("kind") == "model"
             }
         )
 
