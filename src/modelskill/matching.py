@@ -401,34 +401,6 @@ def _match_space_time(
     obs_no_overlap: Literal["ignore", "error", "warn"],
     temporal_method: str = "linear",
 ) -> Optional[xr.Dataset]:
-    """Match observation with one or more model results in time domain.
-
-    and return as xr.Dataset in the format used by modelskill.Comparer
-
-    Will interpolate model results to observation time.
-
-    Note: assumes that observation and model data are already matched in space.
-        But positions of track observations will be checked.
-
-    Parameters
-    ----------
-    observation : Observation
-        Observation to be matched
-    raw_mod_data : Mapping[str, Alignable]
-        Mapping of model results ready for interpolation
-    max_model_gap : Optional[TimeDeltaTypes], optional
-        In case of non-equidistant model results (e.g. event data),
-        max_model_gap can be given e.g. as seconds, by default None
-    obs_no_overlap : Literal['ignore', 'error', 'warn'], optional
-        How to handle observations with no overlap with model results. One of: 'ignore', 'error', 'warn', by default 'error'.
-    temporal_method : str, optional
-        Temporal interpolation method passed to xarray.interp(), by default 'linear'
-
-    Returns
-    -------
-    xr.Dataset or None
-        Matched data in the format used by modelskill.Comparer
-    """
     idxs = [m.time for m in raw_mod_data.values()]
     period = _get_global_start_end(idxs)
 
@@ -447,7 +419,9 @@ def _match_space_time(
                     observation, spatial_tolerance=spatial_tolerance
                 )
             case PointModelResult() as pmr, PointObservation():
-                aligned = pmr.align(observation, max_gap=max_model_gap)
+                aligned = pmr.align(
+                    observation, max_gap=max_model_gap, method=temporal_method
+                )
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
