@@ -40,7 +40,7 @@ Both [](`~modelskill.Comparer`) and [](`~modelskill.ComparerCollection`) have a 
 
 ## Skill objects
 
-Calling a skill method on a comparer object will return a skill object with skill scores (statistics) from comparing observation and model result data using different metrics (e.g. root mean square error). Two skill objects are currently implemented: [](`~modelskill.SkillTable`) and [](`~modelskill.SkillGrid`). The first is relevant for all ModelSkill users while the latter is relevant for users of the track data (e.g. MetOcean studies using satellite altimetry data).
+Calling a skill method on a comparer object will return a skill object with skill scores (statistics) from comparing observation and model result data using different metrics (e.g. root mean square error). Two skill objects are currently implemented: [](`~modelskill.SkillTable`) and [](`~modelskill.skill_grid.SkillGrid`). The first is relevant for all ModelSkill users while the latter is relevant for users of the track data (e.g. MetOcean studies using satellite altimetry data).
 
 If `c` is a comparer object, then the following skill methods are available:
 

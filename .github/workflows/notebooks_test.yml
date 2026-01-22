@@ -5,6 +5,8 @@ on:
     branches: [ main]
   pull_request:
     branches: [ main ]
+    types: [review_requested, ready_for_review]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v6
       with:
-        python-version: '3.13'    
-    - name: Install modelskill
+        python-version: "3.14"
+        enable-cache: true
+    - name: Install dependencies
+      run: uv sync --group test --group notebooks --no-dev
+    - name: Test notebooks
       run: |
-        pip install .[test,notebooks]    
-    - name: Test notebooks    
-      run: |
-        pytest --durations=0 tests/notebooks/
+        uv run pytest tests/notebooks/

@@ -190,7 +190,7 @@ def test_tiny_mod_xy_difference(obs_tiny_df, mod_tiny_unique):
         )
     with pytest.warns(UserWarning, match="Removed 2 model points"):
         # 2 points removed due to difference in x,y
-        cmp = ms.match(obs_tiny, mod_tiny_unique)
+        cmp = ms.match(obs_tiny, mod_tiny_unique, spatial_tolerance=1e-3)
     assert cmp.n_points == 2
     expected_time = pd.DatetimeIndex(
         [
@@ -251,68 +251,6 @@ def test_skill(comparer):
     assert df.loc["alti"].n == 532  # 544
 
 
-# def test_extract_no_time_overlap(modelresult, observation_df):
-#     mr = modelresult
-#     df = observation_df.copy(deep=True)
-#     df.index = df.index + np.timedelta64(100, "D")
-#     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-#         o = ms.TrackObservation(df, item=2, name="alti")
-
-#     with pytest.raises(ValueError, match="Validation failed"):
-#         with pytest.warns(UserWarning, match="No time overlap!"):
-#             ms.Connector(o, mr)
-
-#     with pytest.warns(UserWarning, match="No time overlap!"):
-#         con = ms.Connector(o, mr, validate=False)
-
-#     with pytest.warns(UserWarning, match="No overlapping data"):
-#         cc = con.extract()
-
-#     assert cc.n_comparers == 0
-
-
-# def test_extract_obs_start_before(modelresult, observation_df):
-#     mr = modelresult
-#     df = observation_df.copy(deep=True)
-#     df.index = df.index - np.timedelta64(1, "D")
-#     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-#         o = ms.TrackObservation(df, item=2, name="alti")
-#     con = ms.Connector(o, mr)
-#     with pytest.warns(UserWarning, match="No overlapping data"):
-#         cc = con.extract()
-#     assert cc.n_comparers == 0
-
-
-# def test_extract_obs_end_after(modelresult, observation_df):
-#     mr = modelresult
-#     df = observation_df.copy(deep=True)
-#     df.index = df.index + np.timedelta64(1, "D")
-#     with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-#         o = ms.TrackObservation(df, item=2, name="alti")
-#     con = ms.Connector(o, mr)
-#     with pytest.warns(UserWarning, match="No overlapping data"):
-#         cc = con.extract()
-#     assert cc.n_comparers == 0
-
-
-# def test_extract_no_spatial_overlap_dfs0(modelresult, observation_df):
-#     mr = modelresult
-#     df = observation_df.copy(deep=True)
-#     df.lon = -100
-#     df.lat = -50
-#     # with pytest.warns(UserWarning, match="Time axis has duplicate entries"):
-#     o = ms.TrackObservation(df, item=2, name="alti")
-#     con = ms.Connector(o, mr)
-#     with pytest.warns(UserWarning, match="No overlapping data"):
-#     cc = con.extract()
-
-# assert cc.n_comparers == 0
-# assert cc.n_points == 0
-
-
-# def test_extract_no_spatial_overlap_dfsu(observation_df):
-
-
 def test_skill_vs_gridded_skill(comparer):
     df = comparer.skill().to_dataframe()  # to compare to result of .skill()
     ds = comparer.gridded_skill(bins=1)  # force 1 bin only
@@ -342,7 +280,7 @@ def test_gridded_skill_bins(comparer):
 
     # binsize (overwrites bins)
     ds = comparer.gridded_skill(metrics=["bias"], binsize=2.5, bins=100)
-    assert len(ds.x) == 4
+    assert len(ds.x) == 5  # One more bin needed to cover full data range
     assert len(ds.y) == 3
     assert ds.x[0] == -0.75
 
@@ -359,6 +297,12 @@ def test_gridded_skill_misc(comparer):
     df = ds.to_dataframe()
     assert df.loc[df.n < 20, ["bias", "rmse"]].size == 30
     assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
+
+
+def test_gridded_skill_binsize_no_data_loss(comparer):
+    """Test that all data points are included when using binsize parameter."""
+    gs = comparer.gridded_skill(metrics=["bias"], binsize=2.5)
+    assert int(gs.n.data.sum().values) == comparer.n_points
 
 
 def test_hist(comparer):

@@ -1,33 +1,54 @@
+# This workflows will upload a Python Package using Twine when a release is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
 name: Upload Python Package
 
 on:
   release:
-    types: [created]
+    types: [published]
   workflow_dispatch:
     
 jobs:
-  deploy:
 
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.14"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: uv sync --group test --no-dev
+    - name: Test with pytest
+      run: |
+        uv run pytest --ignore tests/performance/ --ignore tests/notebooks/ --disable-warnings
+
+  deploy:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
 
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v6
       with:
-        python-version: '3.11'
+        python-version: "3.14"
+        enable-cache: true
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build wheel twine
-    - name: Install modelskill
-      run: pip install .[test]
-    - name: Test
-      run: pytest
-    - name: Build  
-      run: python -m build
+      run: uv sync --group test --no-dev
+    - name: Build
+      run: uv build
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+

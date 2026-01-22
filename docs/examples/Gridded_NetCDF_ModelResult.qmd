@@ -102,6 +102,6 @@ cc.mean_skill().style()
 ```
 
 ```{python}
-cc.plot.taylor(figsize=6)
+cc.plot.taylor(figsize=(6,6))
 ```
 

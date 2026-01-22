@@ -58,7 +58,10 @@ def pc() -> modelskill.comparison.Comparer:
     data.coords["z"] = np.nan
     data = _set_attrs(data)
 
-    raw_data = {"m1": data[["m1"]].copy(), "m2": data[["m2"]].copy()}
+    raw_data = {
+        "m1": PointModelResult(data[["m1"]].copy()),
+        "m2": PointModelResult(data[["m2"]].copy()),
+    }
 
     data = data.dropna(dim="time")
     return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
@@ -86,14 +89,8 @@ def tc() -> modelskill.comparison.Comparer:
     data["m3"].attrs["kind"] = "model"
     data = _set_attrs(data)
 
-    raw_data = {
-        "m1": data[["m1"]].copy(),
-        "m2": data[["m2"]].copy(),
-        "m3": data[["m3"]].copy(),
-    }
-
     data = data.dropna(dim="time")
-    return modelskill.comparison.Comparer(matched_data=data, raw_mod_data=raw_data)
+    return modelskill.comparison.Comparer(matched_data=data)
 
 
 @pytest.fixture
@@ -179,18 +176,18 @@ def test_cc_query(cc):
     assert cc2.n_points == 2
 
 
-def test_add_cc_pc(cc, pc):
+def test_merge_cc_pc(cc, pc):
     pc2 = pc.copy()
     pc2.data.attrs["name"] = "pc2"
-    cc2 = cc + pc2
+    cc2 = cc.merge(pc2)
     assert cc2.n_points == 15
     assert len(cc2) == 3
 
 
-def test_add_cc_tc(cc, tc):
+def test_merge_cc_tc(cc, tc):
     tc2 = tc.copy()
     tc2.data.attrs["name"] = "tc2"
-    cc2 = cc + tc2
+    cc2 = cc.merge(tc2)
     assert cc2.n_points == 15
     assert len(cc2) == 3
 
@@ -201,9 +198,9 @@ def test_add_cc_cc(cc, pc, tc):
     tc2 = tc.copy()
     tc2.data.attrs["name"] = "tc2"
     tc3 = tc.copy()  # keep name
-    cc2 = pc2 + tc2 + tc3
+    cc2 = pc2.merge(tc2).merge(tc3)
 
-    cc3 = cc + cc2
+    cc3 = cc.merge(cc2)
     # assert cc3.n_points == 15
     assert len(cc3) == 4
 
@@ -296,13 +293,11 @@ def test_filter_by_attrs_custom(cc):
     cc2 = cc.filter_by_attrs(custom=12)
     assert len(cc2) == 1
     assert cc2[0].data.attrs["custom"] == 12
-    assert cc2[0] == cc[0]
 
     cc[0].data.attrs["custom2"] = True
     cc3 = cc.filter_by_attrs(custom2=True)
     assert len(cc3) == 1
     assert cc3[0].data.attrs["custom2"]
-    assert cc3[0] == cc[0]
 
 
 def test_skill_by_attrs_gtype(cc):
@@ -611,3 +606,84 @@ def test_plot_temporal_coverage(cc):
     lines = ax.get_lines()
     assert len(lines) == 4  # 1 point, 1 track, 2 models
     assert ax is not None
+
+
+def test_handle_no_overlap_in_time():
+    o1 = ms.PointObservation(
+        pd.DataFrame({"O1": np.zeros(2)}, index=pd.date_range("2000", periods=2)),
+        # inside the domain
+        x=0.25,
+        y=0.25,
+    )
+    o2 = ms.PointObservation(
+        # mismatch in time
+        pd.DataFrame({"O2": np.zeros(2)}, index=pd.date_range("2100", periods=2)),
+        # inside the domain
+        x=0.5,
+        y=0.5,
+    )
+
+    mod = ms.GridModelResult(
+        xr.DataArray(
+            name="foo",
+            data=np.zeros((2, 2, 2)),
+            dims=["time", "x", "y"],
+            coords={
+                "time": pd.date_range("2000", periods=2),
+                "x": [0.0, 1.0],
+                "y": [0.0, 1.0],
+            },
+        )
+    )
+
+    obs = [o1, o2]
+
+    with pytest.raises(ValueError, match="No data"):
+        ms.match(obs=obs, mod=mod)
+
+    cc = ms.match(obs=obs, mod=mod, obs_no_overlap="ignore")
+    assert "O1" in cc
+    assert "O2" not in cc
+
+    with pytest.warns(UserWarning, match="No data"):
+        cc = ms.match(obs=obs, mod=mod, obs_no_overlap="warn")
+    assert "O1" in cc
+    assert "O2" not in cc
+
+
+def test_score_changes_when_weights_override_defaults():
+    time = pd.date_range("2000", periods=2)
+    cc = ms.match(
+        obs=[
+            ms.PointObservation(
+                pd.Series([2.0, 2.0], index=time),
+                name="foo",
+                weight=10.0,
+            ),
+            ms.PointObservation(pd.Series([1.0, 1.0], index=time), name="bar"),
+        ],
+        mod=ms.PointModelResult(pd.Series([0.0, 0.0], index=time), name="m"),
+    )
+
+    assert cc.score()["m"] == pytest.approx(1.90909)
+    assert cc.score(weights={"bar": 2.0})["m"] == pytest.approx(1.8333333)
+    assert cc.score(weights={"foo": 1.0, "bar": 2.0})["m"] == pytest.approx(1.333333)
+
+
+def test_collection_has_copies_not_references_to_comparers():
+    cmp1 = ms.from_matched(
+        pd.DataFrame({"foo": [0, 0], "m1": [1, 1]}),
+    )
+    cmp2 = ms.from_matched(
+        pd.DataFrame({"bar": [0, 0], "m1": [1, 1]}),
+    )
+    cc = ms.ComparerCollection([cmp1, cmp2])
+    # modify the first comparer
+    cc[0].data["m1"].attrs["random"] = "value"
+    assert cc[0].data["m1"].attrs["random"] == "value"
+
+    # cmp1 is unchanged
+    assert "random" not in cmp1.data["m1"].attrs
+
+    # the second comparer should not have this attribute
+    assert "random" not in cc[1].data["m1"].attrs

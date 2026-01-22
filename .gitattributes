@@ -1,3 +1,10 @@
 *.ipynb linguist-language=Python
 docs/* linguist-documentation
 docsrc/* linguist-documentation
+
+# MIKE binary files
+*.dfs0 binary
+*.dfs1 binary
+*.dfs2 binary
+*.dfsu binary
+*.mesh binary
