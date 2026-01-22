@@ -72,8 +72,8 @@ def load(filename: Union[str, Path]) -> Comparer | ComparerCollection:
     Examples
     --------
     >>> cc = ms.match(obs, mod)
-    >>> cc.save("my_comparer_collection.msk")
-    >>> cc2 = ms.load("my_comparer_collection.msk")"""
+    >>> cc.save("my_comparer_collection.nc")
+    >>> cc2 = ms.load("my_comparer_collection.nc")"""
 
     try:
         return ComparerCollection.load(filename)

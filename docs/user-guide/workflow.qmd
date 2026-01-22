@@ -97,13 +97,13 @@ This method allow filtering of the data in several ways:
 It can be useful to save the comparer collection for later use. This can be done using the `save()` method:
 
 ```python
-cc.save("my_comparer_collection.msk")
+cc.save("my_comparer_collection.nc")
 ```
 
 The comparer collection can be loaded again from disk, using the `load()` method:
 
 ```python
-cc = ms.load("my_comparer_collection.msk")
+cc = ms.load("my_comparer_collection.nc")
 ```
 
 
