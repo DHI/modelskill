@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def gc_after_module():
+def gc_after_test():
     """Run Python's garabage collection after each test on Windows.
 
     The test suite currently opens many file handles that are not closed until garabage collection
