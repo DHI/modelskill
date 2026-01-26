@@ -5,7 +5,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def gc_after_test():
-    """Run Python's garabage collection after each test on Windows.
+    """Run Python's garbage collection after each test on Windows.
 
     The test suite currently opens many file handles that are not closed until garabage collection
     runs. This results in flaky test failures on Windows which has a limit of 512 open file handles
