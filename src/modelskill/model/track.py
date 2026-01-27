@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 import xarray as xr
 
-from ..types import TrackType
+from ..types import TrackType, VariableKind
 from ..obs import TrackObservation
 from ..quantity import Quantity
 from ..timeseries import TimeSeries, _parse_track_input
@@ -68,7 +68,7 @@ class TrackModelResult(TimeSeries):
 
         assert isinstance(data, xr.Dataset)
         data_var = str(list(data.data_vars)[0])
-        data[data_var].attrs["kind"] = "model"
+        data[data_var].attrs["kind"] = VariableKind.MODEL.value
         super().__init__(data=data)
 
     def subset_to(

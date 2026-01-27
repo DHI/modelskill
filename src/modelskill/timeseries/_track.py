@@ -9,7 +9,7 @@ import xarray as xr
 
 import mikeio
 
-from ..types import GeometryType, TrackType
+from ..types import GeometryType, TrackType, VariableKind
 from ..quantity import Quantity
 from ..utils import _get_name, make_unique_index
 from ._timeseries import _validate_data_var_name
@@ -152,7 +152,7 @@ def _parse_track_input(
     ds[name].attrs["units"] = model_quantity.unit
 
     for aux_item in sel_items.aux:
-        ds[aux_item].attrs["kind"] = "aux"
+        ds[aux_item].attrs["kind"] = VariableKind.AUXILIARY.value
 
     ds.attrs["gtype"] = str(GeometryType.TRACK)
     assert isinstance(ds, xr.Dataset)
