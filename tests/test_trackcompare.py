@@ -31,7 +31,7 @@ def obs_tiny(obs_tiny_df):
 
 
 @pytest.fixture
-def mod_tiny3():
+def mod_tiny3() -> ms.TrackModelResult:
     time = pd.DatetimeIndex(
         [
             "2017-10-27 13:00:02",
@@ -321,8 +321,7 @@ def test_residual_hist(comparer):
     cmp.plot.residual_hist(bins=10, title="new_title", color="blue")
 
 
-def test_df_input(obs_tiny_df, mod_tiny3):
-    """A dataframe is a valid input to ms.match, without explicitly creating a TrackObservation"""
+def test_df_input(obs_tiny_df, mod_tiny3: ms.TrackModelResult):
     # excerpt from obs_tiny_df
     # time                | value
     # --------------------------
@@ -333,7 +332,7 @@ def test_df_input(obs_tiny_df, mod_tiny3):
     assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
 
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
-        cmp = ms.match(obs_tiny_df, mod_tiny3, gtype="track")
+        cmp = ms.match(ms.TrackObservation(obs_tiny_df), mod_tiny3)
 
     assert (
         cmp.data.sel(

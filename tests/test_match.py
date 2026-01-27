@@ -111,7 +111,7 @@ def test_match_dataarray(o1, o3):
 
     # Using a mikeio.DataArray instead of a Dfs file, makes it possible to select a subset of data
 
-    cc = ms.match([o1, o3], da)
+    cc = ms.match([o1, o3], ms.DfsuModelResult(da))
     assert cc.n_models == 1
     assert cc["c2"].n_points == 41
 
@@ -119,7 +119,7 @@ def test_match_dataarray(o1, o3):
         0
     ]  # Spatio/temporal subset
 
-    cc2 = ms.match([o1, o3], da2)
+    cc2 = ms.match([o1, o3], ms.DfsuModelResult(da2))
     assert cc2["c2"].n_points == 19
 
 
@@ -231,22 +231,21 @@ def test_small_multi_model_shifted_time_match():
     # observation has four timesteps, but only three of them are in the Simple model and three in the NotSimple model
     # the number of overlapping points for all three datasets are 2, but three if we look at the models individually
 
-    with pytest.warns(UserWarning):
-        cmp1 = ms.match(obs=obs, mod=mod)
-        cmp1 = ms.match(obs=obs, mod=mod)
-        assert cmp1.n_points == 3
+    cmp1 = ms.match(obs=ms.PointObservation(obs), mod=ms.PointModelResult(mod))
+    cmp1 = ms.match(obs=ms.PointObservation(obs), mod=ms.PointModelResult(mod))
+    assert cmp1.n_points == 3
 
-        cmp2 = ms.match(obs=obs, mod=mod2)
-        assert cmp2.n_points == 3
+    cmp2 = ms.match(obs=ms.PointObservation(obs), mod=ms.PointModelResult(mod2))
+    assert cmp2.n_points == 3
 
-        mcmp = ms.match(
-            obs=obs,
-            mod=[
-                ms.PointModelResult(mod, name="foo"),
-                ms.PointModelResult(mod2, name="bar"),
-            ],
-        )
-        assert mcmp.n_points == 2
+    mcmp = ms.match(
+        obs=ms.PointObservation(obs),
+        mod=[
+            ms.PointModelResult(mod, name="foo"),
+            ms.PointModelResult(mod2, name="bar"),
+        ],
+    )
+    assert mcmp.n_points == 2
 
 
 def test_matched_data_single_model():
@@ -400,7 +399,7 @@ def test_save_comparercollection(o1, o3, tmp_path):
     fn = "tests/testdata/SW/HKZN_local_2017_DutchCoast.dfsu"
     da = mikeio.read(fn, time=slice("2017-10-28 00:00", None))[0]
 
-    cc = ms.match([o1, o3], da)
+    cc = ms.match([o1, o3], ms.DfsuModelResult(da))
 
     fn = tmp_path / "cc.msk"
     cc.save(fn)
@@ -425,13 +424,6 @@ def test_wind_directions():
     # default metrics *are* directional
     df = cc.skill().to_dataframe()
     assert df.loc["obs", "c_rmse"] == pytest.approx(1.322875655532)
-
-
-def test_specifying_mod_item_not_allowed_twice(o1, mr1):
-    # item was already specified in the construction of the DfsuModelResult
-
-    with pytest.raises(ValueError, match="item"):
-        ms.match(obs=o1, mod=mr1, mod_item=1)
 
 
 def test_obs_and_mod_can_not_have_same_aux_item_names():
