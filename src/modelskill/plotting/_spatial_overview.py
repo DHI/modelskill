@@ -86,7 +86,7 @@ def spatial_overview(
             ax.scatter(x=o.x, y=o.y, marker="x")
         elif isinstance(o, TrackObservation):
             if o.n_points < 10000:
-                ax.scatter(x=o.x, y=o.y, c=o.values, marker=".", cmap="Reds")
+                ax.scatter(x=o.x, y=o.y, marker=".")
             else:
                 print(f"{o.name}: Too many points to plot")
                 # TODO: group by lonlat bin or sample randomly
