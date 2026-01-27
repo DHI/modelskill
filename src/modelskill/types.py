@@ -50,6 +50,14 @@ class GeometryType(Enum):
             ) from e
 
 
+class VariableKind(Enum):
+    """Kind of data variable in a matched dataset"""
+
+    OBSERVATION = "observation"
+    MODEL = "model"
+    AUXILIARY = "aux"
+
+
 DataInputType = Union[
     str,
     Path,

@@ -326,5 +326,5 @@ def test_mod_aux_carried_over(klagshamn):
     cmp = ms.match(klagshamn, mr, spatial_method="contained")
     assert "U velocity" in cmp.data.data_vars
     assert cmp.data["U velocity"].values[0] == pytest.approx(-0.0360998)
-    assert cmp.data["U velocity"].attrs["kind"] == "aux"
+    assert cmp.data["U velocity"].attrs["kind"] == "aux"  # normalized
     assert cmp.mod_names == ["Oresund2D_subset"]

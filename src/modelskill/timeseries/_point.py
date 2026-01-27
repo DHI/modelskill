@@ -9,7 +9,7 @@ import numpy as np
 
 import mikeio
 
-from ..types import GeometryType, PointType
+from ..types import GeometryType, PointType, VariableKind
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
@@ -172,7 +172,7 @@ def _include_attributes(
     ds[name].attrs["is_directional"] = int(quantity.is_directional)
 
     for aux_item in sel_items.aux:
-        ds[aux_item].attrs["kind"] = "aux"
+        ds[aux_item].attrs["kind"] = VariableKind.AUXILIARY.value
 
     return ds
 

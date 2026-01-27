@@ -23,7 +23,7 @@ from copy import deepcopy
 
 from .. import metrics as mtr
 from .. import Quantity
-from ..types import GeometryType
+from ..types import GeometryType, VariableKind
 from ..obs import PointObservation, TrackObservation
 from ..model import PointModelResult, TrackModelResult
 from ..timeseries._timeseries import _validate_data_var_name
@@ -79,8 +79,10 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
         assert (
             list(data[v].dims)[0] == "time"
         ), f"All data arrays must have a time dimension; {v} has dimensions {data[v].dims}"
-        if "kind" not in data[v].attrs:
-            data[v].attrs["kind"] = "auxiliary"
+        # Normalize kind attribute (Postel's Law: be liberal in what you accept)
+        match data[v].attrs.get("kind"):
+            case None | "auxiliary":
+                data[v].attrs["kind"] = VariableKind.AUXILIARY.value
 
     n_mod = sum([_is_model(da) for da in data.data_vars.values()])
     n_obs = sum([_is_observation(da) for da in data.data_vars.values()])
@@ -121,11 +123,11 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
 
 
 def _is_observation(da: xr.DataArray) -> bool:
-    return str(da.attrs["kind"]) == "observation"
+    return str(da.attrs["kind"]) == VariableKind.OBSERVATION.value
 
 
 def _is_model(da: xr.DataArray) -> bool:
-    return str(da.attrs["kind"]) == "model"
+    return str(da.attrs["kind"]) == VariableKind.MODEL.value
 
 
 def _validate_metrics(metrics: Iterable[Any]) -> None:
@@ -350,11 +352,11 @@ def _matched_data_to_xarray(
     assert isinstance(ds, xr.Dataset)
 
     ds.attrs["name"] = name if name is not None else items.obs
-    ds["Observation"].attrs["kind"] = "observation"
+    ds["Observation"].attrs["kind"] = VariableKind.OBSERVATION.value
     for m in items.model:
-        ds[m].attrs["kind"] = "model"
+        ds[m].attrs["kind"] = VariableKind.MODEL.value
     for a in items.aux:
-        ds[a].attrs["kind"] = "auxiliary"
+        ds[a].attrs["kind"] = VariableKind.AUXILIARY.value
 
     if x_item is not None:
         ds = ds.rename({items.x: "x"}).set_coords("x")
@@ -454,7 +456,7 @@ class Comparer:
                 # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
                 str(key): PointModelResult(self.data[[str(key)]], name=str(key))
                 for key, value in matched_data.data_vars.items()
-                if value.attrs["kind"] == "model"
+                if value.attrs["kind"] == VariableKind.MODEL.value
             }
         )
 
@@ -602,11 +604,11 @@ class Comparer:
     @property
     def aux_names(self) -> List[str]:
         """List of auxiliary data names"""
-        # we don't require the kind attribute to be "auxiliary"
+        # Postel's Law: normalize at the boundary, be strict internally
         return [
             str(k)
             for k, v in self.data.data_vars.items()
-            if v.attrs["kind"] not in ["observation", "model"]
+            if v.attrs["kind"] == VariableKind.AUXILIARY.value
         ]
 
     # TODO: always "Observation", necessary to have this property?
