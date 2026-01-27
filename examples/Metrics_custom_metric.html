@@ -275,11 +275,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>ModelSkill comes with many metrics to choose from, but you can also define your own.</p>
-<div id="94e84e91" class="cell" data-execution_count="1">
+<div id="69d3b5d4" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="76307afb" class="cell" data-execution_count="2">
+<div id="2099e536" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mr <span class="op">=</span> ms.DfsuModelResult(<span class="st">"../data/SW/HKZN_local_2017_DutchCoast.dfsu"</span>, name<span class="op">=</span><span class="st">'HKZN_local'</span>, item<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>o1 <span class="op">=</span> ms.PointObservation(<span class="st">"../data/SW/HKNA_Hm0.dfs0"</span>, item<span class="op">=</span><span class="dv">0</span>, x<span class="op">=</span><span class="fl">4.2420</span>, y<span class="op">=</span><span class="fl">52.6887</span>, name<span class="op">=</span><span class="st">"HKNA"</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>o2 <span class="op">=</span> ms.PointObservation(<span class="st">"../data/SW/eur_Hm0.dfs0"</span>, item<span class="op">=</span><span class="dv">0</span>, x<span class="op">=</span><span class="fl">3.2760</span>, y<span class="op">=</span><span class="fl">51.9990</span>, name<span class="op">=</span><span class="st">"EPL"</span>)</span>
@@ -295,7 +295,7 @@ Comparers:
 </div>
 </div>
 <p>Standard set of metrics</p>
-<div id="b36f2db0" class="cell" data-execution_count="3">
+<div id="9952c0b0" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>cc.skill()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <div>
@@ -367,7 +367,7 @@ Comparers:
 </div>
 </div>
 <p>Some metrics has parameters, which require a bit special treatment.</p>
-<div id="8bd8a370" class="cell" data-execution_count="4">
+<div id="2dde820a" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.metrics <span class="im">import</span> hit_ratio, metric</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="at">@metric</span>(best<span class="op">=</span><span class="st">"+"</span>)</span>
@@ -425,7 +425,7 @@ Comparers:
 </div>
 </div>
 <p>And you are always free to specify your own special metric or import metrics from other libraries, e.g.&nbsp;scikit-learn.</p>
-<div id="3e594d12" class="cell" data-execution_count="5">
+<div id="d1e55f96" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="at">@metric</span>(best<span class="op">=</span><span class="st">"-"</span>, has_units<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mcae(obs, model):</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -439,29 +439,29 @@ Comparers:
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>cc.skill(metrics<span class="op">=</span>mcae).style()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
 <style type="text/css">
-#T_da970_row0_col1 {
+#T_559ba_row0_col1 {
   background-color: #7f0000;
   color: #f1f1f1;
 }
-#T_da970_row1_col1 {
+#T_559ba_row1_col1 {
   background-color: #fff7ec;
   color: #000000;
   text-decoration: underline;
   font-style: italic;
   font-weight: bold;
 }
-#T_da970_row2_col1 {
+#T_559ba_row2_col1 {
   background-color: #fdddb0;
   color: #000000;
 }
 </style>
 
-<table id="T_da970" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<table id="T_559ba" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
 <th class="blank level0" data-quarto-table-cell-role="th">&nbsp;</th>
-<th id="T_da970_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">n</th>
-<th id="T_da970_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">mcae</th>
+<th id="T_559ba_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">n</th>
+<th id="T_559ba_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">mcae</th>
 </tr>
 <tr class="odd">
 <th class="index_name level0" data-quarto-table-cell-role="th">observation</th>
@@ -471,19 +471,19 @@ Comparers:
 </thead>
 <tbody>
 <tr class="odd">
-<td id="T_da970_level0_row0" class="row_heading level0 row0" data-quarto-table-cell-role="th">HKNA</td>
-<td id="T_da970_row0_col0" class="data row0 col0">386</td>
-<td id="T_da970_row0_col1" class="data row0 col1">0.229</td>
+<td id="T_559ba_level0_row0" class="row_heading level0 row0" data-quarto-table-cell-role="th">HKNA</td>
+<td id="T_559ba_row0_col0" class="data row0 col0">386</td>
+<td id="T_559ba_row0_col1" class="data row0 col1">0.229</td>
 </tr>
 <tr class="even">
-<td id="T_da970_level0_row1" class="row_heading level0 row1" data-quarto-table-cell-role="th">EPL</td>
-<td id="T_da970_row1_col0" class="data row1 col0">67</td>
-<td id="T_da970_row1_col1" class="data row1 col1">0.130</td>
+<td id="T_559ba_level0_row1" class="row_heading level0 row1" data-quarto-table-cell-role="th">EPL</td>
+<td id="T_559ba_row1_col0" class="data row1 col0">67</td>
+<td id="T_559ba_row1_col1" class="data row1 col1">0.130</td>
 </tr>
 <tr class="odd">
-<td id="T_da970_level0_row2" class="row_heading level0 row2" data-quarto-table-cell-role="th">c2</td>
-<td id="T_da970_row2_col0" class="data row2 col0">113</td>
-<td id="T_da970_row2_col1" class="data row2 col1">0.150</td>
+<td id="T_559ba_level0_row2" class="row_heading level0 row2" data-quarto-table-cell-role="th">c2</td>
+<td id="T_559ba_row2_col0" class="data row2 col0">113</td>
+<td id="T_559ba_row2_col1" class="data row2 col1">0.150</td>
 </tr>
 </tbody>
 </table>
@@ -492,7 +492,7 @@ Comparers:
 <section id="custom-display-name" class="level2">
 <h2 class="anchored" data-anchor-id="custom-display-name">Custom display name</h2>
 <p>Sometimes you like to modify the display name of the metrics. This can be done by passing a dictionary with the metric name as key and the display name as value to the <code>display_name</code> parameter.</p>
-<div id="d9170a33" class="cell" data-execution_count="6">
+<div id="b34362bc" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">@ms.metrics.metric</span>(display_name<span class="op">=</span><span class="st">"MEAN$_</span><span class="sc">{Model}</span><span class="st">$"</span>, has_units<span class="op">=</span><span class="st">"m"</span>)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mean_mod(obs, mod):</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> mod.mean()</span>
@@ -518,7 +518,7 @@ Comparers:
 <section id="custom-format" class="level2">
 <h2 class="anchored" data-anchor-id="custom-format">Custom format</h2>
 <p>In this example we modify <code>bias</code> to also add the perentage of the bias relative to the mean of the reference series.</p>
-<div id="898dad06" class="cell" data-execution_count="7">
+<div id="15592b54" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> modelskill.metrics <span class="im">import</span> bias <span class="im">as</span> mybias</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> bias(obs, mod):</span>
