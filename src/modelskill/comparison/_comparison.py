@@ -83,6 +83,9 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
         match data[v].attrs.get("kind"):
             case None | "auxiliary":
                 data[v].attrs["kind"] = VariableKind.AUXILIARY.value
+            case k if k not in (VariableKind.OBSERVATION.value, VariableKind.MODEL.value, VariableKind.AUXILIARY.value):
+                valid = [e.value for e in VariableKind]
+                raise ValueError(f"Invalid kind '{k}' for variable '{v}'. Must be one of {valid}")
 
     n_mod = sum([_is_model(da) for da in data.data_vars.values()])
     n_obs = sum([_is_observation(da) for da in data.data_vars.values()])

@@ -349,6 +349,29 @@ def test_minimal_matched_data(pt_df):
     assert cmp.n_models == 2
 
 
+def test_kind_must_be_observation_model_or_aux(pt_df):
+    """The kind attribute must be 'observation', 'model', or 'aux'."""
+    data = xr.Dataset(pt_df)
+    data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "aux"
+    data.attrs["name"] = "valid"
+
+    cmp = Comparer.from_matched_data(data=data)
+    assert cmp.mod_names == ["m1"]
+    assert cmp.aux_names == ["m2"]
+
+    # 'auxiliary' is normalized to 'aux' for backwards compatibility
+    data["m2"].attrs["kind"] = "auxiliary"
+    cmp = Comparer.from_matched_data(data=data)
+    assert cmp.data["m2"].attrs["kind"] == "aux"
+
+    # invalid kind values are rejected
+    data["m2"].attrs["kind"] = "invalid"
+    with pytest.raises(ValueError, match="Invalid kind 'invalid'.*Must be one of"):
+        Comparer.from_matched_data(data=data)
+
+
 def test_from_compared_data_doesnt_accept_missing_values_in_obs():
     df = pd.DataFrame(
         {
