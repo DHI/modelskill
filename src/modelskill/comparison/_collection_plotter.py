@@ -464,7 +464,7 @@ class ComparerCollectionPlotter:
         marker: str = "o",
         marker_size: float = 6.0,
         title: str = "Taylor diagram",
-    ) -> Optional[Figure]:
+    ) -> Figure:
         """Taylor diagram for model skill comparison.
 
         Taylor diagram showing model std and correlation to observation
@@ -510,10 +510,6 @@ class ComparerCollectionPlotter:
         sk = skill_func(
             metrics=[mtr._std_obs, mtr._std_mod, mtr.cc],  # type: ignore
         )
-        if sk is None:
-            # TODO when does this make sense?
-            return
-
         # TODO reduce duplication of code in the ComparerPlotter/ComparerCollectionPlotter
         df = sk.to_dataframe()
         ref_std = 1.0 if normalize_std else df.iloc[0]["_std_obs"]

@@ -734,9 +734,6 @@ class ComparerPlotter:
         ]
 
         sk = cmp.skill(metrics=metrics)
-
-        if sk is None:  # TODO
-            return
         df = sk.to_dataframe().reset_index()
         if "model" not in df.columns:
             # doesn't make sense to make a taylor plot...
