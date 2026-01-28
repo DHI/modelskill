@@ -175,6 +175,18 @@ Plots support both matplotlib (static) and plotly (interactive) backends.
 - `regression/` - Regression test data
 - `testdata/` - Sample data files (symlinked from docs/data)
 
+## Git Workflow
+
+**IMPORTANT: Never commit directly to the main branch.**
+
+Always create a feature branch and submit a pull request:
+```bash
+git checkout -b feature/descriptive-name
+# Make changes and commit
+git push -u origin feature/descriptive-name
+gh pr create  # Create pull request
+```
+
 ## Important Notes
 
 - The package depends on MIKE IO (`mikeio`) for reading MIKE file formats (dfs0, dfs2, dfsu)

@@ -746,7 +746,14 @@ class ComparerPlotter:
         df = df.rename(columns={"_std_obs": "obs_std", "_std_mod": "std"})
 
         pts = [
-            TaylorPoint(name=r.model, obs_std=r.obs_std, std=r.std, cc=r.cc, marker=marker, marker_size=marker_size)
+            TaylorPoint(
+                name=r.model,
+                obs_std=r.obs_std,
+                std=r.std,
+                cc=r.cc,
+                marker=marker,
+                marker_size=marker_size,
+            )
             for r in df.itertuples()
         ]
 
