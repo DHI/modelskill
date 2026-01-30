@@ -372,6 +372,29 @@ def test_kind_must_be_observation_model_or_aux(pt_df):
         Comparer.from_matched_data(data=data)
 
 
+def test_gtype_must_be_point_or_track(pt_df):
+    """The gtype attribute must be 'point' or 'track'."""
+    data = xr.Dataset(pt_df)
+    data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "valid"
+
+    # valid gtype values are accepted
+    data.attrs["gtype"] = "point"
+    cmp = Comparer.from_matched_data(data=data)
+    assert cmp.gtype == "point"
+
+    data.attrs["gtype"] = "track"
+    cmp = Comparer.from_matched_data(data=data)
+    assert cmp.gtype == "track"
+
+    # invalid gtype values are rejected
+    data.attrs["gtype"] = "grid"
+    with pytest.raises(ValueError, match="Invalid gtype 'grid'.*Must be one of"):
+        Comparer.from_matched_data(data=data)
+
+
 def test_from_compared_data_doesnt_accept_missing_values_in_obs():
     df = pd.DataFrame(
         {

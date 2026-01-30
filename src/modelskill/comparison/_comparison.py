@@ -100,14 +100,12 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
             "dataset must have at least one model array (marked by the kind attribute)"
         )
 
-    # Validate attrs
+    # Validate gtype attribute
     if "gtype" not in data.attrs:
         data.attrs["gtype"] = str(GeometryType.POINT)
-    # assert "gtype" in data.attrs, "data must have a gtype attribute"
-    # assert data.attrs["gtype"] in [
-    #     str(GeometryType.POINT),
-    #     str(GeometryType.TRACK),
-    # ], f"data attribute 'gtype' must be one of {GeometryType.POINT} or {GeometryType.TRACK}"
+    elif data.attrs["gtype"] not in (str(GeometryType.POINT), str(GeometryType.TRACK)):
+        valid = [str(GeometryType.POINT), str(GeometryType.TRACK)]
+        raise ValueError(f"Invalid gtype '{data.attrs['gtype']}'. Must be one of {valid}")
 
     if "color" not in data["Observation"].attrs:
         data["Observation"].attrs["color"] = "black"
