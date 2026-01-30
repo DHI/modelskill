@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Iterable, Tuple, TYPE_CHECKING
+from typing import Optional, Iterable, Protocol, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -8,12 +8,26 @@ if TYPE_CHECKING:
 
 from ..model.point import PointModelResult
 from ..model.track import TrackModelResult
-from ..obs import Observation, PointObservation, TrackObservation
 from ._misc import _get_ax
 
 
+class SpatialOverviewItem(Protocol):
+    """Protocol for items that can be plotted in spatial_overview."""
+
+    @property
+    def gtype(self) -> str: ...
+    @property
+    def x(self): ...
+    @property
+    def y(self): ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def n_points(self) -> int: ...
+
+
 def spatial_overview(
-    obs: Observation | Iterable[Observation],
+    obs: SpatialOverviewItem | Iterable[SpatialOverviewItem],
     mod: Optional[
         DfsuModelResult
         | GeometryFM2D
@@ -82,9 +96,9 @@ def spatial_overview(
         g.plot.outline(ax=ax)  # type: ignore
 
     for o in obs:
-        if isinstance(o, PointObservation):
+        if o.gtype == "point":
             ax.scatter(x=o.x, y=o.y, marker="x")
-        elif isinstance(o, TrackObservation):
+        elif o.gtype == "track":
             if o.n_points < 10000:
                 ax.scatter(x=o.x, y=o.y, marker=".")
             else:
@@ -92,14 +106,14 @@ def spatial_overview(
                 # TODO: group by lonlat bin or sample randomly
         else:
             raise ValueError(
-                f"Could not show observation {o}. Only PointObservation and TrackObservation supported."
+                f"Could not show {o}. Only point and track geometry types supported."
             )
 
     xlim = ax.get_xlim()
     offset_x = 0.02 * (xlim[1] - xlim[0])
 
     for o in obs:
-        if isinstance(o, PointObservation):
+        if o.gtype == "point":
             # TODO adjust xlim to accomodate text
             ax.annotate(o.name, (o.x + offset_x, o.y))  # type: ignore
 
