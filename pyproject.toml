@@ -11,7 +11,7 @@ name = "modelskill"
 version = "1.4.dev0"
 dependencies = [
     "numpy  > 1.24.4",
-    "pandas >= 1.4",
+    "pandas >= 1.4, < 3.0", # TODO remove upper limit
     "mikeio >= 1.2",
     "matplotlib",
     "xarray",

@@ -22,18 +22,28 @@ def _add_spatial_grid_to_df(
             bins_y = bins
     else:
         # bins from binsize
-        x_ptp = np.ptp(df.x.values)  # type: ignore
-        y_ptp = np.ptp(df.y.values)  # type: ignore
-        nx = int(np.ceil(x_ptp / binsize))
-        ny = int(np.ceil(y_ptp / binsize))
+        # Ensure bins cover the full data range from min to max
+        x_min, x_max = df.x.min(), df.x.max()
+        y_min, y_max = df.y.min(), df.y.max()
+
+        # Align bin edges to multiples of binsize relative to rounded mean
+        # This maintains consistency while ensuring full data coverage
         x_mean = np.round(df.x.mean())
         y_mean = np.round(df.y.mean())
-        bins_x = np.arange(
-            x_mean - nx / 2 * binsize, x_mean + (nx / 2 + 1) * binsize, binsize
-        )
-        bins_y = np.arange(
-            y_mean - ny / 2 * binsize, y_mean + (ny / 2 + 1) * binsize, binsize
-        )
+
+        # Calculate starting edge: largest multiple of binsize (relative to mean)
+        # that is less than or equal to the minimum data value
+        x_start = x_mean + np.floor((x_min - x_mean) / binsize) * binsize
+        y_start = y_mean + np.floor((y_min - y_mean) / binsize) * binsize
+
+        # Calculate ending edge: smallest multiple of binsize (relative to mean)
+        # that is greater than or equal to the maximum data value
+        x_end = x_mean + np.ceil((x_max - x_mean) / binsize) * binsize
+        y_end = y_mean + np.ceil((y_max - y_mean) / binsize) * binsize
+
+        # Create bin edges from start to end with specified binsize
+        bins_x = np.arange(x_start, x_end + binsize / 2, binsize)
+        bins_y = np.arange(y_start, y_end + binsize / 2, binsize)
     # cut and get bin centre
     df["xBin"] = pd.cut(df.x, bins=bins_x)
     df["xBin"] = df["xBin"].apply(lambda x: x.mid if pd.notna(x) else x)

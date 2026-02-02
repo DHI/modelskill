@@ -31,7 +31,7 @@ def obs_tiny(obs_tiny_df):
 
 
 @pytest.fixture
-def mod_tiny3():
+def mod_tiny3() -> ms.TrackModelResult:
     time = pd.DatetimeIndex(
         [
             "2017-10-27 13:00:02",
@@ -280,7 +280,7 @@ def test_gridded_skill_bins(comparer):
 
     # binsize (overwrites bins)
     ds = comparer.gridded_skill(metrics=["bias"], binsize=2.5, bins=100)
-    assert len(ds.x) == 4
+    assert len(ds.x) == 5  # One more bin needed to cover full data range
     assert len(ds.y) == 3
     assert ds.x[0] == -0.75
 
@@ -299,6 +299,12 @@ def test_gridded_skill_misc(comparer):
     assert df.loc[df.n < 20, ["bias", "rmse"]].isna().all().all()
 
 
+def test_gridded_skill_binsize_no_data_loss(comparer):
+    """Test that all data points are included when using binsize parameter."""
+    gs = comparer.gridded_skill(metrics=["bias"], binsize=2.5)
+    assert int(gs.n.data.sum().values) == comparer.n_points
+
+
 def test_hist(comparer):
     cmp = comparer
 
@@ -315,8 +321,7 @@ def test_residual_hist(comparer):
     cmp.plot.residual_hist(bins=10, title="new_title", color="blue")
 
 
-def test_df_input(obs_tiny_df, mod_tiny3):
-    """A dataframe is a valid input to ms.match, without explicitly creating a TrackObservation"""
+def test_df_input(obs_tiny_df, mod_tiny3: ms.TrackModelResult):
     # excerpt from obs_tiny_df
     # time                | value
     # --------------------------
@@ -327,7 +332,7 @@ def test_df_input(obs_tiny_df, mod_tiny3):
     assert len(obs_tiny_df["2017-10-27 13:00:02":"2017-10-27 13:00:02"]) == 2
 
     with pytest.warns(UserWarning, match="Removed 2 duplicate timestamps"):
-        cmp = ms.match(obs_tiny_df, mod_tiny3, gtype="track")
+        cmp = ms.match(ms.TrackObservation(obs_tiny_df), mod_tiny3)
 
     assert (
         cmp.data.sel(

@@ -14,16 +14,6 @@ If not, the [`match()`](`modelskill.match`) function can be used to match the ob
 
 If the observations and model results are not in the same data source (e.g. dfs0 file), 
 they will need to be defined and then matched in space and time with the `match()` function. 
-In simple cases, observations and model results can be defined directly in the `match()` function: 
-
-```{python}
-import modelskill as ms
-cmp = ms.match("../data/obs.dfs0", "../data/model.dfs0",
-               obs_item="obs_WL", mod_item="WL",
-               gtype='point')
-```
-
-But in most cases, the observations and model results will need to be defined separately first.
 
 
 ### Define observations

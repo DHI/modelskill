@@ -350,10 +350,12 @@ def _matched_data_to_xarray(
                 f"Model data: {m} is of type {df[m].dtype}, it must be numeric"
             )
 
-    df = df[items.all]
-    df.index.name = "time"
-    df = df.rename(columns={items.obs: "Observation"})
-    ds = df.to_xarray()
+    ds = (
+        df.loc[:, items.all]
+        .rename_axis("time")
+        .rename(columns={items.obs: "Observation"})
+        .to_xarray()
+    )
     assert isinstance(ds, xr.Dataset)
 
     ds.attrs["name"] = name if name is not None else items.obs
