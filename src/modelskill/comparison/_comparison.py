@@ -58,7 +58,10 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     # Normalize datetime precision to avoid xarray interp issues with pandas 3.0
     # Different data sources may have different precisions (datetime64[s], datetime64[us], etc.)
     # Use nanoseconds (ns) for backward compatibility with pandas 2.x
-    if data.time.dtype.kind == "M":  # M = datetime
+    # Note: The dtype.kind == "M" check is required because some datasets use
+    # non-datetime indexes (e.g., RangeIndex in tests). Only DatetimeIndex has
+    # the .as_unit() method, so we must skip normalization for other index types.
+    if data.time.dtype.kind == "M":  # M = datetime64
         time_pd = data.time.to_index()  # Preserves freq attribute
         if time_pd.dtype != "datetime64[ns]":
             time_index = time_pd.as_unit("ns")
@@ -456,14 +459,16 @@ class Comparer:
         raw_mod_data: dict[str, PointModelResult | TrackModelResult] | None = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
-        if raw_mod_data is not None:
-            self.raw_mod_data = raw_mod_data
-        else:
-            self.raw_mod_data = {
+        self.raw_mod_data = (
+            raw_mod_data
+            if raw_mod_data is not None
+            else {
+                # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
                 str(key): PointModelResult(self.data[[str(key)]], name=str(key))
-                for key, value in self.data.data_vars.items()
+                for key, value in matched_data.data_vars.items()
                 if value.attrs["kind"] == "model"
             }
+        )
 
         self.plot = Comparer.plotter(self)
         """Plot using the [](`~modelskill.comparison.ComparerPlotter`)"""
@@ -771,9 +776,7 @@ class Comparer:
         if isinstance(other, Comparer) and (self.name == other.name):
             raw_mod_data = self.raw_mod_data.copy()
             raw_mod_data.update(other.raw_mod_data)  # TODO!
-            matched = self.data.merge(
-                other.data, compat="no_conflicts", join="outer"
-            ).dropna(dim="time")
+            matched = self.data.merge(other.data).dropna(dim="time")
             cmp = Comparer(matched_data=matched, raw_mod_data=raw_mod_data)
 
             return cmp

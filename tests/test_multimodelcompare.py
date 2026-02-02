@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
+from matplotlib.table import Table
 
 import modelskill as ms
 import modelskill.metrics as mtr

@@ -1,5 +1,6 @@
 import pytest
 import pandas as pd
+import xarray as xr
 
 import modelskill as ms
 

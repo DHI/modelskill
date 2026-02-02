@@ -1,5 +1,4 @@
 """Test consitency across input formats and classes"""
-
 from functools import partial
 import pytest
 import mikeio
