@@ -456,18 +456,14 @@ class Comparer:
         raw_mod_data: dict[str, PointModelResult | TrackModelResult] | None = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
-        self.raw_mod_data = (
-            raw_mod_data
-            if raw_mod_data is not None
-            else {
-                # key: ModelResult(value, gtype=self.data.gtype, name=key, x=self.x, y=self.y)
+        if raw_mod_data is not None:
+            self.raw_mod_data = raw_mod_data
+        else:
+            self.raw_mod_data = {
                 str(key): PointModelResult(self.data[[str(key)]], name=str(key))
                 for key, value in self.data.data_vars.items()
-                # Use .get("kind") instead of ["kind"] to avoid KeyError
-                # Auxiliary variables (e.g., "leadtime", "wind") may not have "kind" attribute
-                if value.attrs.get("kind") == "model"
+                if value.attrs["kind"] == "model"
             }
-        )
 
         self.plot = Comparer.plotter(self)
         """Plot using the [](`~modelskill.comparison.ComparerPlotter`)"""
