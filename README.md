@@ -93,7 +93,8 @@ ms.plotting.spatial_overview([HKNA, EPL, c2], mr, figsize=(7,7))
 ### Scatter plot
 
 ```python
-cc.plot.scatter()
+>>> ms.load_style('MOOD')  # optional
+>>> cc.plot.scatter()
 ```
 
 ![scatter](https://raw.githubusercontent.com/DHI/modelskill/main/images/scatter.png)
