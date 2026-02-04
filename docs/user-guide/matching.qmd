@@ -21,15 +21,15 @@ Temporal matching is done by interpolating the model result data to the observat
 
 If observation and model result are of the same geometry, the matching is done *one* observation at a time. Several model results can be matched to the same observation. The result of the matching process is a [](`~modelskill.Comparer`) object which contains the matched data. 
 
-In the most simple cases, one observation to one model result, the [](`~modelskill.match`) function can be used directly, without creating Observation and ModelResult objects first:
+In the simplest cases, Observation and ModelResult objects can be created using the factory functions [](`~modelskill.observation`) and [](`~modelskill.model_result`):
 
 ```{python}
 import modelskill as ms
-cmp = ms.match("../data/SW/HKNA_Hm0.dfs0", "../data/SW/HKNA_Hm0_Model.dfs0", gtype='point')
+o1 = ms.observation("../data/SW/HKNA_Hm0.dfs0", item=0, x=4.2420, y=52.6887, name="HKNA")
+mr = ms.model_result("../data/SW/HKNA_Hm0_Model.dfs0", item=0, x=4.2420, y=52.6887, name="Model")
+cmp = ms.match(o1, mr)
 cmp
 ```
-
-In all other cases, the observations and model results needs to be defined first.
 
 ## Matching with dfsu or grid model result
 
