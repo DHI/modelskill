@@ -192,6 +192,8 @@ quartodoc:
             - skill
             - gridded_skill
             - score
+            - merge
+            - copy
             - rename
             - sel
             - where
@@ -208,9 +210,12 @@ quartodoc:
             - mean_skill
             - gridded_skill
             - score
+            - merge
+            - copy
             - rename
             - sel
             - query
+            - filter_by_attrs
             - save
             - load
         - name: comparison.ComparerCollectionPlotter
