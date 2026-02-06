@@ -285,7 +285,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <p>The <a href="../api/Comparer.html#modelskill.Comparer"><code>Comparer</code></a> and <a href="../api/ComparerCollection.html#modelskill.ComparerCollection"><code>ComparerCollection</code></a> objects in ModelSkill allow for detailed performance evaluation of models through skill metrics. These metrics are organized in a <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object, which can be further filtered, analyzed, and visualized to gain insights into model accuracy and reliability.</p>
-<div id="0fd91f37" class="cell" data-execution_count="1">
+<div id="aef1f600" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Construct comparer from observation and model data</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
@@ -303,7 +303,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                      name<span class="op">=</span><span class="st">"m2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="b889b772" class="cell" data-execution_count="2">
+<div id="d128b14c" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match([o1, o2], [m1, m2])</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>cc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="2">
@@ -354,7 +354,7 @@ Comparers:
 </tbody>
 </table>
 <p><strong>Example 1: Generating a SkillTable</strong></p>
-<div id="707ec248" class="cell" data-execution_count="3">
+<div id="0c780df4" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>sk <span class="op">=</span> cc.skill(metrics<span class="op">=</span>[<span class="st">"bias"</span>, <span class="st">"rmse"</span>, <span class="st">"si"</span>])</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sk</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
@@ -419,7 +419,7 @@ Comparers:
 </div>
 <p>This generates a <code>SkillTable</code> containing metrics for all observations and models.</p>
 <p><strong>Example 2: Grouping skill scores</strong></p>
-<div id="28b2e6d0" class="cell" data-execution_count="4">
+<div id="e6c066ae" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>sk_by6hr <span class="op">=</span> cc.skill(by<span class="op">=</span>[<span class="st">'model'</span>,<span class="st">'freq:6h'</span>], </span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                    metrics<span class="op">=</span>[<span class="st">"bias"</span>, <span class="st">"mae"</span>]</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                    )</span>
@@ -508,7 +508,7 @@ Comparers:
 <h2 class="anchored" data-anchor-id="filtering-a-skilltable">Filtering a SkillTable</h2>
 <p>The <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> object supports several methods for filtering and refining data. The <code>sel()</code> method allows selection of specific models or observations, while the <code>query()</code> method enables flexible condition-based filtering.</p>
 <p><strong>Example 3: Selecting a specific model</strong></p>
-<div id="d4591554" class="cell" data-execution_count="5">
+<div id="dbdc5389" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sk_m1 <span class="op">=</span> sk.sel(model<span class="op">=</span><span class="st">'m1'</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>sk_m1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="5">
@@ -563,7 +563,7 @@ Comparers:
 <h2 class="anchored" data-anchor-id="sorting-a-skilltable">Sorting a SkillTable</h2>
 <p>The <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> supports sorting by index or values, and swapping levels in a MultiIndex to reorganize the data.</p>
 <p><strong>Example 4: Sorting by index</strong></p>
-<div id="f551b3bc" class="cell" data-execution_count="6">
+<div id="d0e36ec6" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sk_sorted <span class="op">=</span> sk.sort_index()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>sk_sorted</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="6">
@@ -628,7 +628,7 @@ Comparers:
 </div>
 <p>This sorts the <code>SkillTable</code> by its index levels.</p>
 <p><strong>Example 5: Sorting by a specific index level</strong></p>
-<div id="69aae336" class="cell" data-execution_count="7">
+<div id="29d1d263" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>sk_sorted_obs <span class="op">=</span> sk.sort_index(level<span class="op">=</span><span class="st">"observation"</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>sk_sorted_obs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="7">
@@ -695,7 +695,7 @@ Comparers:
 </div>
 <p>Here, the table is sorted specifically by the <code>observation</code> level in the index.</p>
 <p><strong>Example 6: Sorting by values</strong></p>
-<div id="00b143f2" class="cell" data-execution_count="8">
+<div id="25b09609" class="cell" data-execution_count="8">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>sk_sorted_values <span class="op">=</span> sk.sort_values(<span class="st">"rmse"</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>sk_sorted_values</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="8">
@@ -760,7 +760,7 @@ Comparers:
 </div>
 <p>This sorts the table by the <code>rmse</code> column in ascending order.</p>
 <p><strong>Example 7: Sorting by multiple values</strong></p>
-<div id="0dff4874" class="cell" data-execution_count="9">
+<div id="d8099c98" class="cell" data-execution_count="9">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>sk_sorted_multi <span class="op">=</span> sk.sort_values([<span class="st">"n"</span>, <span class="st">"rmse"</span>], ascending<span class="op">=</span>[<span class="va">True</span>, <span class="va">False</span>])</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>sk_sorted_multi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
@@ -827,7 +827,7 @@ Comparers:
 </div>
 <p>Here, the table is sorted first by column <code>n</code> (ascending) and then by <code>rmse</code> (descending).</p>
 <p><strong>Example 8: Swapping index levels</strong></p>
-<div id="c1a2686f" class="cell" data-execution_count="10">
+<div id="bb671d0c" class="cell" data-execution_count="10">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>sk_swapped <span class="op">=</span> sk.swaplevel(<span class="st">"model"</span>, <span class="st">"observation"</span>).sort_index()</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>sk_swapped</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="10">
@@ -896,7 +896,7 @@ Comparers:
 <h2 class="anchored" data-anchor-id="rounding-and-formatting">Rounding and Formatting</h2>
 <p>The <code>round()</code> method can be used to round all skill values to a specified number of decimal places, making the table more readable.</p>
 <p><strong>Example 9: Rounding skill values</strong></p>
-<div id="6f0e21b4" class="cell" data-execution_count="11">
+<div id="7ea4cafb" class="cell" data-execution_count="11">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sk.<span class="bu">round</span>(decimals<span class="op">=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="11">
 <div>
@@ -964,67 +964,67 @@ Comparers:
 <h2 class="anchored" data-anchor-id="visualizing-skill-metrics">Visualizing Skill Metrics</h2>
 <p>The <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> integrates table styling and plotting capabilities, allowing you to quickly visualize skill metrics.</p>
 <p><strong>Example 10: Styling the SkillTable</strong></p>
-<div id="5f4adb56" class="cell" data-execution_count="12">
+<div id="46718c4e" class="cell" data-execution_count="12">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>sk.style()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="12">
 <style type="text/css">
-#T_43121_row0_col1 {
+#T_508c3_row0_col1 {
   background-color: #c9d7f0;
   color: #000000;
   text-decoration: underline;
   font-style: italic;
   font-weight: bold;
 }
-#T_43121_row0_col2, #T_43121_row1_col3 {
+#T_508c3_row0_col2, #T_508c3_row1_col3 {
   background-color: #fff7ec;
   color: #000000;
   text-decoration: underline;
   font-style: italic;
   font-weight: bold;
 }
-#T_43121_row0_col3 {
+#T_508c3_row0_col3 {
   background-color: #fdc089;
   color: #000000;
 }
-#T_43121_row1_col1 {
+#T_508c3_row1_col1 {
   background-color: #a5c3fe;
   color: #000000;
 }
-#T_43121_row1_col2 {
+#T_508c3_row1_col2 {
   background-color: #feecd1;
   color: #000000;
 }
-#T_43121_row2_col1 {
+#T_508c3_row2_col1 {
   background-color: #3b4cc0;
   color: #f1f1f1;
 }
-#T_43121_row2_col2, #T_43121_row2_col3 {
+#T_508c3_row2_col2, #T_508c3_row2_col3 {
   background-color: #7f0000;
   color: #f1f1f1;
 }
-#T_43121_row3_col1 {
+#T_508c3_row3_col1 {
   background-color: #5673e0;
   color: #f1f1f1;
 }
-#T_43121_row3_col2 {
+#T_508c3_row3_col2 {
   background-color: #e24831;
   color: #f1f1f1;
 }
-#T_43121_row3_col3 {
+#T_508c3_row3_col3 {
   background-color: #fc925e;
   color: #000000;
 }
 </style>
 
-<table id="T_43121" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<table id="T_508c3" class="caption-top table table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
 <tr class="header">
 <th class="blank" data-quarto-table-cell-role="th">&nbsp;</th>
 <th class="blank level0" data-quarto-table-cell-role="th">&nbsp;</th>
-<th id="T_43121_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">n</th>
-<th id="T_43121_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">bias</th>
-<th id="T_43121_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">rmse</th>
-<th id="T_43121_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">si</th>
+<th id="T_508c3_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">n</th>
+<th id="T_508c3_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">bias</th>
+<th id="T_508c3_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">rmse</th>
+<th id="T_508c3_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">si</th>
 </tr>
 <tr class="odd">
 <th class="index_name level0" data-quarto-table-cell-role="th">model</th>
@@ -1037,34 +1037,34 @@ Comparers:
 </thead>
 <tbody>
 <tr class="odd">
-<td rowspan="2" id="T_43121_level0_row0" class="row_heading level0 row0" data-quarto-table-cell-role="th">m1</td>
-<td id="T_43121_level1_row0" class="row_heading level1 row0" data-quarto-table-cell-role="th">HKNA</td>
-<td id="T_43121_row0_col0" class="data row0 col0">120</td>
-<td id="T_43121_row0_col1" class="data row0 col1">-0.076</td>
-<td id="T_43121_row0_col2" class="data row0 col2">0.190</td>
-<td id="T_43121_row0_col3" class="data row0 col3">0.060</td>
+<td rowspan="2" id="T_508c3_level0_row0" class="row_heading level0 row0" data-quarto-table-cell-role="th">m1</td>
+<td id="T_508c3_level1_row0" class="row_heading level1 row0" data-quarto-table-cell-role="th">HKNA</td>
+<td id="T_508c3_row0_col0" class="data row0 col0">120</td>
+<td id="T_508c3_row0_col1" class="data row0 col1">-0.076</td>
+<td id="T_508c3_row0_col2" class="data row0 col2">0.190</td>
+<td id="T_508c3_row0_col3" class="data row0 col3">0.060</td>
 </tr>
 <tr class="even">
-<td id="T_43121_level1_row1" class="row_heading level1 row1" data-quarto-table-cell-role="th">EPL</td>
-<td id="T_43121_row1_col0" class="data row1 col0">22</td>
-<td id="T_43121_row1_col1" class="data row1 col1">-0.190</td>
-<td id="T_43121_row1_col2" class="data row1 col2">0.227</td>
-<td id="T_43121_row1_col3" class="data row1 col3">0.050</td>
+<td id="T_508c3_level1_row1" class="row_heading level1 row1" data-quarto-table-cell-role="th">EPL</td>
+<td id="T_508c3_row1_col0" class="data row1 col0">22</td>
+<td id="T_508c3_row1_col1" class="data row1 col1">-0.190</td>
+<td id="T_508c3_row1_col2" class="data row1 col2">0.227</td>
+<td id="T_508c3_row1_col3" class="data row1 col3">0.050</td>
 </tr>
 <tr class="odd">
-<td rowspan="2" id="T_43121_level0_row2" class="row_heading level0 row2" data-quarto-table-cell-role="th">m2</td>
-<td id="T_43121_level1_row2" class="row_heading level1 row2" data-quarto-table-cell-role="th">HKNA</td>
-<td id="T_43121_row2_col0" class="data row2 col0">120</td>
-<td id="T_43121_row2_col1" class="data row2 col1">-0.526</td>
-<td id="T_43121_row2_col2" class="data row2 col2">0.575</td>
-<td id="T_43121_row2_col3" class="data row2 col3">0.080</td>
+<td rowspan="2" id="T_508c3_level0_row2" class="row_heading level0 row2" data-quarto-table-cell-role="th">m2</td>
+<td id="T_508c3_level1_row2" class="row_heading level1 row2" data-quarto-table-cell-role="th">HKNA</td>
+<td id="T_508c3_row2_col0" class="data row2 col0">120</td>
+<td id="T_508c3_row2_col1" class="data row2 col1">-0.526</td>
+<td id="T_508c3_row2_col2" class="data row2 col2">0.575</td>
+<td id="T_508c3_row2_col3" class="data row2 col3">0.080</td>
 </tr>
 <tr class="even">
-<td id="T_43121_level1_row3" class="row_heading level1 row3" data-quarto-table-cell-role="th">EPL</td>
-<td id="T_43121_row3_col0" class="data row3 col0">22</td>
-<td id="T_43121_row3_col1" class="data row3 col1">-0.429</td>
-<td id="T_43121_row3_col2" class="data row3 col2">0.458</td>
-<td id="T_43121_row3_col3" class="data row3 col3">0.064</td>
+<td id="T_508c3_level1_row3" class="row_heading level1 row3" data-quarto-table-cell-role="th">EPL</td>
+<td id="T_508c3_row3_col0" class="data row3 col0">22</td>
+<td id="T_508c3_row3_col1" class="data row3 col1">-0.429</td>
+<td id="T_508c3_row3_col2" class="data row3 col2">0.458</td>
+<td id="T_508c3_row3_col3" class="data row3 col3">0.064</td>
 </tr>
 </tbody>
 </table>
@@ -1073,7 +1073,7 @@ Comparers:
 <p>The <code>style()</code> method applies color-based styling to the table, making it easier to identify high and low values.</p>
 <p>Individual metrics can be accessed as columns and plotted using pandas-style plotting.</p>
 <p><strong>Example 11: Plotting a bar chart for RMSE</strong></p>
-<div id="d720662e" class="cell" data-execution_count="13">
+<div id="8441995d" class="cell" data-execution_count="13">
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>sk.rmse.plot.bar(figsize<span class="op">=</span>(<span class="dv">5</span>,<span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -1085,7 +1085,7 @@ Comparers:
 </div>
 <p>This creates a bar chart showing RMSE values for each model-observation pair.</p>
 <p><strong>Example 12: Line plot</strong></p>
-<div id="d18c7a9b" class="cell" data-execution_count="14">
+<div id="66aaab3b" class="cell" data-execution_count="14">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>sk_by3hr <span class="op">=</span> cc.skill(by<span class="op">=</span>[<span class="st">'model'</span>,<span class="st">'freq:3h'</span>])</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>sk_by3hr.rmse.plot.line(title<span class="op">=</span><span class="st">"RMSE in 3 hour groups"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
@@ -1098,7 +1098,7 @@ Comparers:
 </div>
 <p>This generates a line plot showing RMSE values over the index.</p>
 <p><strong>Example 13: Bar chart</strong></p>
-<div id="e53c28f7" class="cell" data-execution_count="15">
+<div id="275f4b16" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>sk.rmse.plot.bar()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -1110,7 +1110,7 @@ Comparers:
 </div>
 <p>This creates a bar chart showing RMSE values for each model-observation pair.</p>
 <p><strong>Example 14: Horizontal bar chart</strong></p>
-<div id="68eb7f50" class="cell" data-execution_count="16">
+<div id="74f9141a" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>sk.rmse.plot.barh()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -1122,7 +1122,7 @@ Comparers:
 </div>
 <p>This generates a horizontal bar chart for RMSE values.</p>
 <p><strong>Example 15: Colored grid</strong></p>
-<div id="92b9aa03" class="cell" data-execution_count="17">
+<div id="8c391d37" class="cell" data-execution_count="17">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>sk.rmse.plot.grid()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
@@ -1138,7 +1138,7 @@ Comparers:
 <h2 class="anchored" data-anchor-id="exporting-a-skilltable">Exporting a SkillTable</h2>
 <p>For further analysis, the <a href="../api/SkillTable.html#modelskill.SkillTable"><code>SkillTable</code></a> can be converted to a standard <a href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame"><code>pandas.DataFrame</code></a> or a GeoDataFrame for spatial data.</p>
 <p><strong>Example 16: Converting to DataFrame</strong></p>
-<div id="ba8d9d1b" class="cell" data-execution_count="18">
+<div id="05e40ec1" class="cell" data-execution_count="18">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> sk.to_dataframe()</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="18">
