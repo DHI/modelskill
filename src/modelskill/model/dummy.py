@@ -28,7 +28,7 @@ class DummyModelResult:
     --------
     >>> import pandas as pd
     >>> import modelskill as ms
-    >>> df = pd.DataFrame([0.0, 1.0], index=pd.date_range("2000", freq="H", periods=2))
+    >>> df = pd.DataFrame([0.0, 1.0], index=pd.date_range("2000", freq="h", periods=2))
     >>> obs = ms.PointObservation(df, name="foo")
     >>> mr = ms.DummyModelResult(strategy='mean')
     >>> pmr = mr.extract(obs)
