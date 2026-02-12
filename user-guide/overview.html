@@ -294,7 +294,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="define-observations" class="level3">
 <h3 class="anchored" data-anchor-id="define-observations">Define observations</h3>
 <p>The observations can be defined as either a <a href="../api/PointObservation.html#modelskill.PointObservation"><code>PointObservation</code></a> or a <a href="../api/TrackObservation.html#modelskill.TrackObservation"><code>TrackObservation</code></a> (a moving point).</p>
-<div id="53baa464" class="cell" data-execution_count="1">
+<div id="39094568" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelskill <span class="im">as</span> ms</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>o1 <span class="op">=</span> ms.PointObservation(<span class="st">"../data/obs.dfs0"</span>, item<span class="op">=</span><span class="st">"obs_WL"</span>,x<span class="op">=</span><span class="fl">366844.15</span>, y<span class="op">=</span><span class="fl">6154291.6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -309,14 +309,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><a href="../api/GridModelResult.html#modelskill.GridModelResult"><code>GridModelResult</code></a> - a spatial field from a dfs2/nc file or a Xarray Dataset</li>
 <li><a href="../api/DfsuModelResult.html#modelskill.DfsuModelResult"><code>DfsuModelResult</code></a> - a spatial field from a dfsu file</li>
 </ul>
-<div id="3286caf0" class="cell" data-execution_count="2">
+<div id="230492e6" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mr1 <span class="op">=</span> ms.PointModelResult(<span class="st">"../data/model.dfs0"</span>, item<span class="op">=</span><span class="st">"WL"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="match-observations-and-model-results" class="level3">
 <h3 class="anchored" data-anchor-id="match-observations-and-model-results">Match observations and model results</h3>
 <p>The <code>match()</code> function will interpolate the model results to the time (and space) of the observations and return a collection of <code>Comparer</code> objects that can be used for analysis.</p>
-<div id="787e3726" class="cell" data-execution_count="3">
+<div id="d5850588" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>cc <span class="op">=</span> ms.match(o1, mr1)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>cc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
