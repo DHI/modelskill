@@ -53,6 +53,7 @@ dev = [
 docs = [
     "quarto-cli==1.5.57",
     "quartodoc==0.11.1",
+    "griffe<2",
 ]
 
 test = [
