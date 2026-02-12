@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Optional, Iterable, Tuple, TYPE_CHECKING
+from collections.abc import Sequence
+from typing import Optional, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -13,12 +14,12 @@ from ._misc import _get_ax
 
 
 def spatial_overview(
-    obs: Observation | Iterable[Observation],
+    obs: Observation | Sequence[Observation],
     mod: Optional[
         DfsuModelResult
         | GeometryFM2D
-        | Iterable[DfsuModelResult]
-        | Iterable[GeometryFM2D]
+        | Sequence[DfsuModelResult]
+        | Sequence[GeometryFM2D]
     ] = None,
     ax=None,
     figsize: Optional[Tuple] = None,
@@ -61,8 +62,8 @@ def spatial_overview(
     ms.plotting.spatial_overview([o1, o2], mr)
     ```
     """
-    obs = [] if obs is None else list(obs) if isinstance(obs, Iterable) else [obs]  # type: ignore
-    mods = [] if mod is None else list(mod) if isinstance(mod, Iterable) else [mod]  # type: ignore
+    obs = [] if obs is None else list(obs) if isinstance(obs, Sequence) else [obs]
+    mods = [] if mod is None else list(mod) if isinstance(mod, Sequence) else [mod]
 
     ax = _get_ax(ax=ax, figsize=figsize)
 
@@ -79,7 +80,7 @@ def spatial_overview(
             g = m
 
             # TODO this is not supported for all model types
-        g.plot.outline(ax=ax)  # type: ignore
+        g.plot.outline(ax=ax)
 
     for o in obs:
         if isinstance(o, PointObservation):
@@ -101,7 +102,7 @@ def spatial_overview(
     for o in obs:
         if isinstance(o, PointObservation):
             # TODO adjust xlim to accomodate text
-            ax.annotate(o.name, (o.x + offset_x, o.y))  # type: ignore
+            ax.annotate(o.name, (o.x + offset_x, o.y))
 
     if not title:
         title = "Spatial coverage"

@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Callable, Optional, Iterable, List, Tuple, Union
+from collections.abc import Collection
+from typing import Callable, Optional, List, Tuple, Union
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -139,7 +140,7 @@ def _add_dt_to_df(df: pd.DataFrame, by: List[str]) -> Tuple[pd.DataFrame, List[s
 
 
 def _parse_groupby(
-    by: str | Iterable[str] | None, *, n_mod: int, n_qnt: int
+    by: str | Collection[str] | None, *, n_mod: int, n_qnt: int
 ) -> List[str | pd.Grouper]:
     if by is None:
         cols: List[str | pd.Grouper]
@@ -153,7 +154,7 @@ def _parse_groupby(
 
     if isinstance(by, str):
         cols = [by]
-    elif isinstance(by, Iterable):
+    elif isinstance(by, Collection):
         cols = list(by)
 
     res = []
