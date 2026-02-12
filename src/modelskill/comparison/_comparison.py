@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -10,8 +11,6 @@ from typing import (
     Mapping,
     Optional,
     Union,
-    Iterable,
-    Sequence,
     TYPE_CHECKING,
 )
 import warnings
@@ -128,7 +127,7 @@ def _is_model(da: xr.DataArray) -> bool:
     return str(da.attrs["kind"]) == "model"
 
 
-def _validate_metrics(metrics: Iterable[Any]) -> None:
+def _validate_metrics(metrics: Collection[Any]) -> None:
     for m in metrics:
         if isinstance(m, str):
             if not mtr.is_valid_metric(m):
@@ -195,8 +194,8 @@ class ItemSelection:
     def parse(
         items: Sequence[str],
         obs_item: str | int | None = None,
-        mod_items: Optional[Iterable[str | int]] = None,
-        aux_items: Optional[Iterable[str | int]] = None,
+        mod_items: Collection[str | int] | None = None,
+        aux_items: Collection[str | int] | None = None,
         x_item: str | int | None = None,
         y_item: str | int | None = None,
     ) -> ItemSelection:
@@ -284,18 +283,18 @@ def _area_is_polygon(area: Any) -> bool:
 
 
 def _inside_polygon(polygon: Any, xy: np.ndarray) -> np.ndarray:
-    import matplotlib.path as mp  # type: ignore
+    import matplotlib.path as mp
 
     if polygon.ndim == 1:
         polygon = np.column_stack((polygon[0::2], polygon[1::2]))
-    return mp.Path(polygon).contains_points(xy)  # type: ignore
+    return mp.Path(polygon).contains_points(xy)
 
 
 def _matched_data_to_xarray(
     df: pd.DataFrame,
     obs_item: int | str | None = None,
-    mod_items: Optional[Iterable[str | int]] = None,
-    aux_items: Optional[Iterable[str | int]] = None,
+    mod_items: Collection[str | int] | None = None,
+    aux_items: Collection[str | int] | None = None,
     name: Optional[str] = None,
     x: Optional[float] = None,
     y: Optional[float] = None,
@@ -464,10 +463,10 @@ class Comparer:
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[Dict[str, PointModelResult | TrackModelResult]] = None,
+        raw_mod_data: Optional[dict[str, PointModelResult | TrackModelResult]] = None,
         obs_item: str | int | None = None,
-        mod_items: Optional[Iterable[str | int]] = None,
-        aux_items: Optional[Iterable[str | int]] = None,
+        mod_items: Optional[Collection[str | int]] = None,
+        aux_items: Optional[Collection[str | int]] = None,
         name: Optional[str] = None,
         weight: float = 1.0,
         x: Optional[float] = None,
@@ -477,7 +476,41 @@ class Comparer:
         y_item: str | int | None = None,
         quantity: Optional[Quantity] = None,
     ) -> "Comparer":
-        """Initialize from compared data"""
+        """Create a Comparer from data that is already matched (aligned).
+
+        Parameters
+        ----------
+        data : [pd.DataFrame, xr.Dataset]
+            DataFrame (or xarray.Dataset)
+        raw_mod_data : dict of modelskill.PointModelResult, optional
+            Raw model data. If None, observation and modeldata must be provided.
+        obs_item : [str, int], optional
+            Name or index of observation item, by default first item
+        mod_items : Collection of [str, int], optional
+            Names or indicies of model items, if None all remaining columns are model items, by default None
+        aux_items : Collection of [str, int], optional
+            Names or indicies of auxiliary items, by default None
+        name : str, optional
+            Name of the comparer, by default None (will be set to obs_item)
+        x : float, optional
+            x-coordinate of observation, by default None
+        y : float, optional
+            y-coordinate of observation, by default None
+        z : float, optional
+            z-coordinate of observation, by default None
+        x_item: [str, int], optional,
+            Name of x item, only relevant for track data
+        y_item: [str, int], optional
+            Name of y item, only relevant for track data
+        quantity : Quantity, optional
+            Quantity of the observation and model results, by default Quantity(name="Undefined", unit="Undefined")
+
+        Returns
+        -------
+        Comparer
+            A Comparer object with matched observation and model data
+        """
+
         if not isinstance(data, xr.Dataset):
             # TODO: handle raw_mod_data by accessing data.attrs["kind"] and only remove nan after
             data = _matched_data_to_xarray(
@@ -818,7 +851,7 @@ class Comparer:
             raw_mod_data = {m: raw_mod_data[m] for m in mod_names}
         if (start is not None) or (end is not None):
             # TODO: can this be done without to_index? (simplify)
-            d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)  # type: ignore
+            d = d.sel(time=d.time.to_index().to_frame().loc[start:end].index)  # type: ignore[misc]
 
             # Note: if user asks for a specific time, we also filter raw
             raw_mod_data = {
@@ -892,7 +925,7 @@ class Comparer:
         return Comparer.from_matched_data(d, self.raw_mod_data)
 
     def _to_long_dataframe(
-        self, attrs_keys: Iterable[str] | None = None
+        self, attrs_keys: Collection[str] | None = None
     ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
 
@@ -927,8 +960,8 @@ class Comparer:
 
     def skill(
         self,
-        by: str | Iterable[str] | None = None,
-        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        by: str | Collection[str] | None = None,
+        metrics: Sequence[str] | Sequence[Callable] | str | Callable | None = None,
     ) -> SkillTable:
         """Skill assessment of model(s)
 
@@ -1051,8 +1084,8 @@ class Comparer:
         self,
         bins: int = 5,
         binsize: float | None = None,
-        by: str | Iterable[str] | None = None,
-        metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
+        by: str | Collection[str] | None = None,
+        metrics: Sequence[str] | Sequence[Callable] | str | Callable | None = None,
         n_min: int | None = None,
         **kwargs: Any,
     ):
@@ -1176,12 +1209,12 @@ class Comparer:
             for j in range(cmp.n_models):
                 mod_name = cmp.mod_names[j]
                 mod_ts = cmp.raw_mod_data[mod_name]
-                with xr.set_options(keep_attrs=True):  # type: ignore
+                with xr.set_options(keep_attrs=True):
                     mod_ts.data[mod_name].values = mod_ts.values - bias[j]
                     cmp.data[mod_name].values = cmp.data[mod_name].values - bias[j]
         elif correct == "Observation":
             # what if multiple models?
-            with xr.set_options(keep_attrs=True):  # type: ignore
+            with xr.set_options(keep_attrs=True):
                 cmp.data[cmp._obs_str].values = cmp.data[cmp._obs_str].values + bias
         else:
             raise ValueError(
