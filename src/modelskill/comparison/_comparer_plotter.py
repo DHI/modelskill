@@ -62,7 +62,6 @@ class ComparerPlotter:
         ax=None,
         figsize: Tuple[float, float] | None = None,
         backend: str = "matplotlib",
-        **kwargs,
     ):
         """Timeseries plot showing compared data: observation vs modelled
 
@@ -79,8 +78,6 @@ class ComparerPlotter:
         backend : str, optional
             use "plotly" (interactive) or "matplotlib" backend,
             by default "matplotlib"
-        **kwargs
-            other keyword arguments to fig.update_layout (plotly backend)
 
         Returns
         -------
@@ -143,7 +140,7 @@ class ComparerPlotter:
                 ]
             )
 
-            fig.update_layout(title=title, yaxis_title=cmp._unit_text, **kwargs)
+            fig.update_layout(title=title, yaxis_title=cmp._unit_text)
             fig.update_yaxes(range=ylim)
 
             return fig
