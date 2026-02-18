@@ -13,7 +13,7 @@ from ..types import GeometryType, PointType
 from ..quantity import Quantity
 from ..utils import _get_name
 from ._timeseries import _validate_data_var_name
-from ._coords import XYZCoords
+from ._coords import XYZCoords, NetworkCoords
 
 
 @dataclass
@@ -144,7 +144,7 @@ def _convert_to_dataset(
 def _include_coords(
     ds: xr.Dataset,
     *,
-    coords: Optional[XYZCoords] = None,
+    coords: Optional[XYZCoords | NetworkCoords] = None,
 ) -> xr.Dataset:
     ds = ds.copy()
     if coords is not None:
@@ -237,7 +237,7 @@ def _parse_point_input(
     quantity: Optional[Quantity],
     aux_items: Optional[Sequence[int | str]],
     *,
-    coords: XYZCoords,
+    coords: XYZCoords | NetworkCoords,
 ) -> xr.Dataset:
     """Convert accepted input data to an xr.Dataset"""
 
@@ -263,5 +263,18 @@ def _parse_xyz_point_input(
     aux_items: Optional[Sequence[int | str]],
 ) -> xr.Dataset:
     coords = XYZCoords(x, y, z)
+    ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
+    return ds
+
+
+def _parse_network_node_input(
+    data: PointType,
+    name: Optional[str],
+    item: str | int | None,
+    quantity: Optional[Quantity],
+    node: Optional[int],
+    aux_items: Optional[Sequence[int | str]],
+) -> xr.Dataset:
+    coords = NetworkCoords(node=node)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds
