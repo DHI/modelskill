@@ -27,8 +27,9 @@ from .comparison import Comparer, ComparerCollection
 from .model.dfsu import DfsuModelResult
 from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
+from .model.network import NetworkModelResult, NodeModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation
+from .obs import Observation, PointObservation, TrackObservation, NodeObservation
 from .timeseries import TimeSeries
 from .types import Period
 
@@ -40,6 +41,7 @@ MRTypes = Union[
     GridModelResult,
     DfsuModelResult,
     TrackModelResult,
+    NetworkModelResult,
     DummyModelResult,
 ]
 MRInputType = Union[
@@ -56,7 +58,7 @@ MRInputType = Union[
     TimeSeries,
     MRTypes,
 ]
-ObsTypes = Union[PointObservation, TrackObservation]
+ObsTypes = Union[PointObservation, TrackObservation, NodeObservation]
 ObsInputType = Union[
     str,
     Path,
@@ -267,7 +269,15 @@ def match(
 
     if len(obs) > 1 and isinstance(mod, Collection) and len(mod) > 1:
         if not all(
-            isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
+            isinstance(
+                m,
+                (
+                    DfsuModelResult,
+                    GridModelResult,
+                    NetworkModelResult,
+                    DummyModelResult,
+                ),
+            )
             for m in mod
         ):
             raise ValueError(
@@ -320,7 +330,15 @@ def _match_single_obs(
     raw_mod_data = {
         m.name: (
             m.extract(obs, spatial_method=spatial_method)
-            if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult))
+            if isinstance(
+                m,
+                (
+                    DfsuModelResult,
+                    GridModelResult,
+                    NetworkModelResult,
+                    DummyModelResult,
+                ),
+            )
             else m
         )
         for m in models
@@ -351,7 +369,7 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def _match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult],
+    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult | NodeModelResult],
     max_model_gap: float | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],
@@ -375,6 +393,9 @@ def _match_space_time(
                 )
             case PointModelResult() as pmr, PointObservation():
                 aligned = pmr.align(observation, max_gap=max_model_gap)
+            case NodeModelResult() as nmr, NodeObservation():
+                # mr is the extracted NodeModelResult 
+                aligned = nmr.align(observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
