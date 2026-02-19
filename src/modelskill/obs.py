@@ -1,10 +1,11 @@
 """
 # Observations
 
-ModelSkill supports two types of observations:
+ModelSkill supports three types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
+* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
@@ -22,6 +23,7 @@ from .timeseries import (
     TimeSeries,
     _parse_xyz_point_input,
     _parse_track_input,
+    _parse_network_node_input,
 )
 
 # NetCDF attributes can only be str, int, float https://unidata.github.io/netcdf4-python/#attributes-in-a-netcdf-file
@@ -31,9 +33,9 @@ Serializable = Union[str, int, float]
 def observation(
     data: DataInputType,
     *,
-    gtype: Optional[Literal["point", "track"]] = None,
+    gtype: Optional[Literal["point", "track", "node"]] = None,
     **kwargs,
-) -> PointObservation | TrackObservation:
+) -> PointObservation | TrackObservation | NodeObservation:
     """Create an appropriate observation object.
 
     A factory function for creating an appropriate observation object
@@ -41,19 +43,20 @@ def observation(
 
     If 'x' or 'y' is given, a PointObservation is created.
     If 'x_item' or 'y_item' is given, a TrackObservation is created.
+    If 'node' is given, a NodeObservation is created.
 
     Parameters
     ----------
     data : DataInputType
         The data to be used for creating the Observation object.
-    gtype : Optional[Literal["point", "track"]]
+    gtype : Optional[Literal["point", "track", "node"]]
         The geometry type of the data. If not specified, it will be guessed from the data.
     **kwargs
         Additional keyword arguments to be passed to the Observation constructor.
 
     Returns
     -------
-    PointObservation or TrackObservation
+    PointObservation or TrackObservation or NodeObservation
         An observation object of the appropriate type
 
     Examples
@@ -61,6 +64,7 @@ def observation(
     >>> import modelskill as ms
     >>> o_pt = ms.observation(df, item=0, x=366844, y=6154291, name="Klagshamn")
     >>> o_tr = ms.observation("lon_after_lat.dfs0", item="wl", x_item=1, y_item=0)
+    >>> o_node = ms.observation(df, item="Water Level", node=123, name="Node_123")
     """
     if gtype is None:
         geometry = _guess_gtype(**kwargs)
@@ -80,9 +84,11 @@ def _guess_gtype(**kwargs) -> GeometryType:
         return GeometryType.POINT
     elif "x_item" in kwargs or "y_item" in kwargs:
         return GeometryType.TRACK
+    elif "node" in kwargs:
+        return GeometryType.NETWORK
     else:
         warnings.warn(
-            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation or TrackObservation to be explicit."
+            "Could not guess geometry type from data or args, assuming POINT geometry. Use PointObservation, TrackObservation, or NodeObservation to be explicit."
         )
         return GeometryType.POINT
 
@@ -340,6 +346,73 @@ class TrackObservation(Observation):
         super().__init__(data=data, weight=weight, attrs=attrs)
 
 
+class NodeObservation(Observation):
+    """Class for observations at network nodes
+
+    Create a NodeObservation from a DataFrame or other data source.
+    The node ID is specified as an integer.
+
+    Parameters
+    ----------
+    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
+        data source with time series for the node
+    item : (int, str), optional
+        index or name of the wanted item/column, by default None
+        if data contains more than one item, item must be given
+    node : int, optional
+        node ID (integer), by default None
+    name : str, optional
+        user-defined name for easy identification in plots etc, by default derived from data
+    weight : float, optional
+        weighting factor for skill scores, by default 1.0
+    quantity : Quantity, optional
+        The quantity of the observation, for validation with model results
+    aux_items : list, optional
+        list of names or indices of auxiliary items, by default None
+    attrs : dict, optional
+        additional attributes to be added to the data, by default None
+
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> o1 = ms.NodeObservation(data, node=123, name="Node_123")
+    >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
+    """
+
+    def __init__(
+        self,
+        data: PointType,
+        *,
+        item: Optional[int | str] = None,
+        node: Optional[int] = None,
+        name: Optional[str] = None,
+        weight: float = 1.0,
+        quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
+        attrs: Optional[dict] = None,
+    ) -> None:
+        if not self._is_input_validated(data):
+            data = _parse_network_node_input(
+                data,
+                name=name,
+                item=item,
+                quantity=quantity,
+                node=node,
+                aux_items=aux_items,
+            )
+
+        assert isinstance(data, xr.Dataset)
+        super().__init__(data=data, weight=weight, attrs=attrs)
+
+    @property
+    def node(self) -> int:
+        """Node ID of observation"""
+        node_val = self.data.coords.get("node")
+        if node_val is not None:
+            return int(node_val.item())
+        return None
+
+
 def unit_display_name(name: str) -> str:
     """Display name
 
@@ -364,4 +437,5 @@ def unit_display_name(name: str) -> str:
 _obs_class_lookup = {
     GeometryType.POINT: PointObservation,
     GeometryType.TRACK: TrackObservation,
+    GeometryType.NETWORK: NodeObservation,
 }

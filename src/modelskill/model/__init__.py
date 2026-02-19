@@ -6,6 +6,7 @@ A model result can either be a simple point/track, or spatial field (e.g. 2d dfs
 * Timeseries
     - [`PointModelResult`](`modelskill.PointModelResult`) - a point result from a dfs0/nc file or a DataFrame
     - [`TrackModelResult`](`modelskill.TrackModelResult`) - a track (moving point) result from a dfs0/nc file or a DataFrame
+    - [`NodeModelResult`](`modelskill.NodeModelResult`) - a network node result for specific node IDs
 * SpatialField (extractable)
     - [`GridModelResult`](`modelskill.GridModelResult`) - a spatial field from a dfs2/nc file or a Xarray Dataset
     - [`DfsuModelResult`](`modelskill.DfsuModelResult`) - a spatial field from a dfsu file
@@ -22,6 +23,7 @@ from .track import TrackModelResult
 from .dfsu import DfsuModelResult
 from .grid import GridModelResult
 from .network import NetworkModelResult
+from .network import NodeModelResult
 from .dummy import DummyModelResult
 
 __all__ = [
@@ -30,6 +32,7 @@ __all__ = [
     "DfsuModelResult",
     "GridModelResult",
     "NetworkModelResult",
+    "NodeModelResult",
     "model_result",
     "DummyModelResult",
 ]

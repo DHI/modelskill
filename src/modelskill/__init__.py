@@ -38,12 +38,14 @@ from .model import (
     TrackModelResult,
     GridModelResult,
     DfsuModelResult,
+    NetworkModelResult,
     DummyModelResult,
 )
 from .obs import (
     observation,
     PointObservation,
     TrackObservation,
+    NodeObservation,
 )
 from .matching import from_matched, match
 from .configuration import from_config
@@ -94,9 +96,11 @@ __all__ = [
     "GridModelResult",
     "DfsuModelResult",
     "DummyModelResult",
+    "NetworkModelResult",
     "observation",
     "PointObservation",
     "TrackObservation",
+    "NodeObservation",
     "TimeSeries",
     "match",
     "from_matched",

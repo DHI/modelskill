@@ -20,6 +20,8 @@ import pandas as pd
 import xarray as xr
 from copy import deepcopy
 
+from ..model.network import NodeModelResult
+
 
 from .. import metrics as mtr
 from .. import Quantity
@@ -444,7 +446,11 @@ class Comparer:
     def __init__(
         self,
         matched_data: xr.Dataset,
-        raw_mod_data: dict[str, PointModelResult | TrackModelResult | NetworkModelResult] | None = None,
+        raw_mod_data: dict[
+            str,
+            PointModelResult | TrackModelResult | NetworkModelResult | NodeModelResult,
+        ]
+        | None = None,
     ) -> None:
         self.data = _parse_dataset(matched_data)
         self.raw_mod_data = (
@@ -464,7 +470,15 @@ class Comparer:
     @staticmethod
     def from_matched_data(
         data: xr.Dataset | pd.DataFrame,
-        raw_mod_data: Optional[Dict[str, PointModelResult | TrackModelResult | NetworkModelResult]] = None,
+        raw_mod_data: Optional[
+            Dict[
+                str,
+                PointModelResult
+                | TrackModelResult
+                | NetworkModelResult
+                | NodeModelResult,
+            ]
+        ] = None,
         obs_item: str | int | None = None,
         mod_items: Optional[Iterable[str | int]] = None,
         aux_items: Optional[Iterable[str | int]] = None,
@@ -1258,7 +1272,9 @@ class Comparer:
             return Comparer(matched_data=data)
 
         if data.gtype == "point":
-            raw_mod_data: Dict[str, PointModelResult | TrackModelResult | NetworkModelResult] = {}
+            raw_mod_data: Dict[
+                str, PointModelResult | TrackModelResult | NetworkModelResult
+            ] = {}
 
             for var in data.data_vars:
                 var_name = str(var)
