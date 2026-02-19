@@ -87,12 +87,11 @@ class NetworkModelResult(SpatialField):
 
     @property
     def time(self) -> pd.DatetimeIndex:
-        return pd.DatetimeIndex(self.data.time)
+        return self.data.time
 
     def extract(
         self,
         observation: PointObservation,
-        spatial_method: Optional[str] = None,
     ) -> PointModelResult:
         """Extract ModelResult at exact node locations
 
@@ -103,8 +102,6 @@ class NetworkModelResult(SpatialField):
         ----------
         observation : <PointObservation>
             observation where x-coordinate specifies the node ID (as integer)
-        spatial_method : Optional[str], optional
-            Not used for network extraction (exact node selection)
 
         Returns
         -------
@@ -113,15 +110,13 @@ class NetworkModelResult(SpatialField):
         """
         _validate_overlap_in_time(self.time, observation)
         if isinstance(observation, PointObservation):
-            return self._extract_point(observation, spatial_method)
+            return self._extract_point(observation)
         else:
             raise NotImplementedError(
                 f"NetworkModelResult only supports PointObservation extraction, not {type(observation).__name__}."
             )
 
-    def _extract_point(
-        self, observation: PointObservation, spatial_method: Optional[str] = None
-    ) -> PointModelResult:
+    def _extract_point(self, observation: PointObservation) -> PointModelResult:
         """Extract point from network data using exact node ID.
 
         The observation's x-coordinate should specify the node ID (as integer).
