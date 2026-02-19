@@ -27,6 +27,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
+        # necessary to build pyogrio from source
+      - name: Install system dependencies (GDAL + tools)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin libgdal-dev pkg-config
+
       - name: Install dependencies
         run: uv sync --group test --no-dev
 
