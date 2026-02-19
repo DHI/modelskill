@@ -300,3 +300,49 @@ class NetworkModelResult(SpatialField):
             quantity=self.quantity,
             aux_items=self.sel_items.aux,
         )
+
+    def extract_multiple(
+        self,
+        observations: Sequence[NodeObservation],
+    ) -> list[NodeModelResult]:
+        """Extract ModelResult for multiple node observations
+
+        This method allows efficient extraction of data for multiple nodes at once,
+        which is useful when comparing multiple observation points against the same network model.
+
+        Parameters
+        ----------
+        observations : Sequence[NodeObservation]
+            Sequence of node observations with node IDs
+
+        Returns
+        -------
+        list[NodeModelResult]
+            List of extracted model results, one per observation
+
+        Examples
+        --------
+        >>> import modelskill as ms
+        >>> obs1 = ms.NodeObservation(data1, node=123)
+        >>> obs2 = ms.NodeObservation(data2, node=456)
+        >>> network_model = ms.NetworkModelResult(network_data)
+        >>> results = network_model.extract_multiple([obs1, obs2])
+        """
+        if not observations:
+            raise ValueError("observations sequence cannot be empty")
+
+        results = []
+        for obs in observations:
+            if not isinstance(obs, NodeObservation):
+                raise TypeError(
+                    f"All observations must be NodeObservation instances, got {type(obs).__name__}"
+                )
+            try:
+                result = self._extract_node(obs)
+                results.append(result)
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to extract data for observation '{obs.name}' at node {obs.node}: {str(e)}"
+                )
+
+        return results

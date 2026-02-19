@@ -63,13 +63,17 @@ def _validate_dataset(ds: xr.Dataset) -> xr.Dataset:
     ), "time must be increasing (please check for duplicate times))"
 
     # Validate coordinates
-    if "x" not in ds.coords:
-        raise ValueError("data must have an x-coordinate")
-    if "y" not in ds.coords:
-        raise ValueError("data must have a y-coordinate")
-    if "z" not in ds.coords:
-        ds.coords["z"] = np.nan
-    # assert "z" in ds.coords, "data must have a z-coordinate"
+    # Check for either traditional x,y coordinates OR node-based coordinates
+    has_spatial_coords = "x" in ds.coords and "y" in ds.coords
+    has_node_coord = "node" in ds.coords
+
+    if not has_spatial_coords and not has_node_coord:
+        raise ValueError("data must have either x,y coordinates or a node coordinate")
+
+    if has_spatial_coords:
+        # Traditional spatial data - ensure z coordinate exists
+        if "z" not in ds.coords:
+            ds.coords["z"] = np.nan
 
     # Validate data
     vars = [v for v in ds.data_vars]
@@ -207,6 +211,8 @@ class TimeSeries:
     @property
     def x(self) -> Any:  # TODO should this be a float?
         """x-coordinate"""
+        if "x" not in self.data.coords:
+            return None  # Node-based data doesn't have x coordinate
         return self._coordinate_values("x")
 
     @x.setter
@@ -216,6 +222,8 @@ class TimeSeries:
     @property
     def y(self) -> Any:
         """y-coordinate"""
+        if "y" not in self.data.coords:
+            return None  # Node-based data doesn't have y coordinate
         return self._coordinate_values("y")
 
     @y.setter
@@ -248,7 +256,12 @@ class TimeSeries:
         res = []
         res.append(f"<{self.__class__.__name__}>: {self.name}")
         if self.gtype == str(GeometryType.POINT):
-            res.append(f"Location: {self.x}, {self.y}")
+            # Show location based on available coordinates
+            if "node" in self.data.coords:
+                node_id = self.data.coords["node"].item()
+                res.append(f"Node: {node_id}")
+            elif self.x is not None and self.y is not None:
+                res.append(f"Location: {self.x}, {self.y}")
         res.append(f"Time: {self.time[0]} - {self.time[-1]}")
         res.append(f"Quantity: {self.quantity}")
         if len(self._aux_vars) > 0:
@@ -298,11 +311,18 @@ class TimeSeries:
         if self.gtype == str(GeometryType.POINT):
             # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
-            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+            # Only drop coordinates that exist
+            coords_to_drop = []
+            for coord in ["x", "y", "z"]:
+                if coord in self.data.coords:
+                    coords_to_drop.append(coord)
+            return self.data.drop_vars(coords_to_drop).to_dataframe()
         elif self.gtype == str(GeometryType.TRACK):
-            df = self.data.drop_vars(["z"]).to_dataframe()
-            # make sure that x, y cols are first
-            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            coords_to_drop = ["z"] if "z" in self.data.coords else []
+            df = self.data.drop_vars(coords_to_drop).to_dataframe()
+            # makes sure that x comes first, then y, then other columns alphabetically
+            priority = {"x": 0, "y": 1}
+            cols = sorted(df.columns, key=lambda col: (priority.get(col, 999), col))
             return df[cols]
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
