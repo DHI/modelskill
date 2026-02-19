@@ -1,146 +1,178 @@
 from __future__ import annotations
-from typing import Optional, Sequence, Any
+from typing import Optional, Sequence
 import numpy as np
 
 import xarray as xr
 import pandas as pd
 
-from ..obs import Observation
-from ..types import PointType
+from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
+from ..obs import PointObservation
 from ..quantity import Quantity
-from ..timeseries import TimeSeries, _parse_network_input
+from .point import PointModelResult
 
 
-class NetworkModelResult(TimeSeries):
-    """Model result for a single point location.
+class NetworkModelResult(SpatialField):
+    """Model result for network data with time and node dimensions.
 
-    Construct a PointModelResult from a 0d data source:
-    dfs0 file, mikeio.Dataset/DataArray, pandas.DataFrame/Series
-    or xarray.Dataset/DataArray
+    Construct a NetworkModelResult from an xarray.Dataset with time and node coordinates
+    and arbitrary number of data variables. Users must provide exact node IDs (integers)
+    when creating observations - no spatial interpolation is performed.
 
     Parameters
     ----------
-    data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
-        filename (.dfs0 or .nc) or object with the data
+    data : xr.Dataset
+        xarray.Dataset with time and node coordinates
     name : Optional[str], optional
         The name of the model result,
-        by default None (will be set to file name or item name)
-    x : float, optional
-        first coordinate of point position, inferred from data if not given, else None
-    y : float, optional
-        second coordinate of point position, inferred from data if not given, else None
-    z : float, optional
-        third coordinate of point position, inferred from data if not given, else None
+        by default None (will be set to first data variable name)
     item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
     quantity : Quantity, optional
-        Model quantity, for MIKE files this is inferred from the EUM information
+        Model quantity
     aux_items : Optional[list[int | str]], optional
         Auxiliary items, by default None
+
+    Notes
+    -----
+    For point observations, specify the node ID as the x-coordinate (integer).
+    No spatial interpolation between nodes is performed.
     """
 
     def __init__(
         self,
-        data: PointType,
+        data: xr.Dataset,
         *,
         name: Optional[str] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[Sequence[int | str]] = None,
     ) -> None:
-        if not self._is_input_validated(data):
-            data = _parse_network_input(
-                data,
-                name=name,
-                item=item,
-                quantity=quantity,
-                aux_items=aux_items,
-            )
+        assert isinstance(
+            data, xr.Dataset
+        ), "NetworkModelResult requires xarray.Dataset"
+        assert "time" in data.dims, "Dataset must have time dimension"
+        assert "node" in data.dims, "Dataset must have node dimension"
+        assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
 
-        assert isinstance(data, xr.Dataset)
+        sel_items = SelectedItems.parse(
+            list(data.data_vars), item=item, aux_items=aux_items
+        )
+        name = name or sel_items.values
 
-        data_var = str(list(data.data_vars)[0])
-        data[data_var].attrs["kind"] = "model"
-        super().__init__(data=data)
+        self.data: xr.Dataset = data[sel_items.all]
+        self.name = name
+        self.sel_items = sel_items
 
-    def interp_time(
-        self, observation: Observation, **kwargs: Any
-    ) -> NetworkModelResult:
-        """
-        Interpolate model result to the time of the observation
+        # use long_name and units from data if not provided
+        if quantity is None:
+            da = self.data[sel_items.values]
+            quantity = Quantity.from_cf_attrs(da.attrs)
 
-        wrapper around xarray.Dataset.interp()
+        self.quantity = quantity
+
+        # Mark data variables as model data
+        data_var = sel_items.values
+        self.data[data_var].attrs["kind"] = "model"
+
+    def __repr__(self) -> str:
+        res = []
+        res.append(f"<{self.__class__.__name__}>: {self.name}")
+        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
+        res.append(f"Nodes: {len(self.data.node)} nodes")
+        res.append(f"Quantity: {self.quantity}")
+        if len(self.sel_items.aux) > 0:
+            res.append(f"Auxiliary variables: {', '.join(self.sel_items.aux)}")
+        return "\n".join(res)
+
+    @property
+    def time(self) -> pd.DatetimeIndex:
+        return pd.DatetimeIndex(self.data.time)
+
+    def extract(
+        self,
+        observation: PointObservation,
+        spatial_method: Optional[str] = None,
+    ) -> PointModelResult:
+        """Extract ModelResult at exact node locations
+
+        Note: this method is typically not called directly, but through the match() method.
+        The observation's x-coordinate must specify the exact node ID (integer).
 
         Parameters
         ----------
-        observation : Observation
-            The observation to interpolate to
-        **kwargs
-
-            Additional keyword arguments passed to xarray.interp
+        observation : <PointObservation>
+            observation where x-coordinate specifies the node ID (as integer)
+        spatial_method : Optional[str], optional
+            Not used for network extraction (exact node selection)
 
         Returns
         -------
         PointModelResult
-            Interpolated model result
+            extracted modelresult
         """
-        ds = self.align(observation, **kwargs)
-        return NetworkModelResult(ds)
+        _validate_overlap_in_time(self.time, observation)
+        if isinstance(observation, PointObservation):
+            return self._extract_point(observation, spatial_method)
+        else:
+            raise NotImplementedError(
+                f"NetworkModelResult only supports PointObservation extraction, not {type(observation).__name__}."
+            )
 
-    def align(
-        self,
-        observation: Observation,
-        *,
-        max_gap: float | None = None,
-        **kwargs: Any,
-    ) -> xr.Dataset:
-        new_time = observation.time
+    def _extract_point(
+        self, observation: PointObservation, spatial_method: Optional[str] = None
+    ) -> PointModelResult:
+        """Extract point from network data using exact node ID.
 
-        dati = self.data.dropna("time").interp(
-            time=new_time, assume_sorted=True, **kwargs
+        The observation's x-coordinate should specify the node ID (as integer).
+        No spatial interpolation is performed - the exact node is selected.
+        """
+        node_id = observation.x
+        if node_id is None:
+            raise ValueError(
+                f"PointObservation '{observation.name}' must specify node ID in x-coordinate."
+            )
+
+        # Convert to integer node ID
+        try:
+            node_id = int(node_id)
+        except (ValueError, TypeError):
+            raise ValueError(
+                f"Node ID (x-coordinate) must be an integer, got {node_id} for observation '{observation.name}'"
+            )
+
+        # Check if node exists in the network
+        if node_id not in self.data.node.values:
+            available_nodes = list(self.data.node.values)
+            raise ValueError(
+                f"Node ID {node_id} not found in network. Available nodes: {available_nodes[:10]}{'...' if len(available_nodes) > 10 else ''}"
+            )
+
+        # Extract data at the specified node
+        ds = self.data.sel(node=node_id)
+
+        # Convert to dataframe and create PointModelResult
+        df = ds.to_dataframe().dropna()
+        if len(df) == 0:
+            raise ValueError(
+                f"No data available for node {node_id} in NetworkModelResult '{self.name}'"
+            )
+        df = df.rename(columns={self.sel_items.values: self.name})
+
+        # Use observation coordinates or extract from data if available
+        x_coord = observation.x if observation.x is not None else node_id
+        y_coord = (
+            observation.y
+            if observation.y is not None
+            else (float(ds.y.item()) if hasattr(ds, "y") and ds.y.size == 1 else np.nan)
         )
 
-        pmr = NetworkModelResult(dati)
-        if max_gap is not None:
-            pmr = pmr._remove_model_gaps(mod_index=self.time, max_gap=max_gap)
-        return pmr.data
-
-    def _remove_model_gaps(
-        self,
-        mod_index: pd.DatetimeIndex,
-        max_gap: float | None = None,
-    ) -> NetworkModelResult:
-        """Remove model gaps longer than max_gap from TimeSeries"""
-        max_gap_delta = pd.Timedelta(max_gap, "s")
-        valid_times = self._get_valid_times(mod_index, max_gap_delta)
-        ds = self.data.sel(time=valid_times)
-        return NetworkModelResult(ds)
-
-    def _get_valid_times(
-        self, mod_index: pd.DatetimeIndex, max_gap: pd.Timedelta
-    ) -> pd.DatetimeIndex:
-        """Used only by _remove_model_gaps"""
-        obs_index = self.time
-        # init dataframe of available timesteps and their index
-        df = pd.DataFrame(index=mod_index)
-        df["idx"] = range(len(df))
-
-        # for query times get available left and right index of source times
-        df = (
-            df.reindex(df.index.union(obs_index))
-            .interpolate(method="time", limit_area="inside")
-            .reindex(obs_index)
-            .dropna()
+        return PointModelResult(
+            data=df,
+            x=x_coord,
+            y=y_coord,
+            item=self.name,
+            name=self.name,
+            quantity=self.quantity,
+            aux_items=self.sel_items.aux,
         )
-        df["idxa"] = np.floor(df.idx).astype(int)
-        df["idxb"] = np.ceil(df.idx).astype(int)
-
-        # time of left and right source times and time delta
-        df["ta"] = mod_index[df.idxa]
-        df["tb"] = mod_index[df.idxb]
-        df["dt"] = df.tb - df.ta
-
-        # valid query times where time delta is less than max_gap
-        valid_idx = df.dt <= max_gap
-        return df[valid_idx].index

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import get_args, Optional, Sequence
+from typing import Optional, Sequence
 import xarray as xr
 
 from ..types import GeometryType, NetworkType
@@ -14,12 +14,8 @@ def _parse_network_input(
     aux_items: Optional[Sequence[int | str]] = None,
 ) -> xr.Dataset:
     assert isinstance(
-        data, get_args(NetworkType)
+        data, NetworkType
     ), "Could not construct NetworkModelResult from provided data."
-
-    data.index.name = "time"
-    data = data.reorder_levels(["quantity", "node"], axis=1).stack()
-    data = data.reset_index().set_index("time")
 
     # parse items
     valid_items = list(data.columns)

@@ -90,7 +90,7 @@ PointType = Union[
     xr.DataArray,
 ]
 TrackType = Union[str, Path, pd.DataFrame, mikeio.Dfs0, mikeio.Dataset, xr.Dataset]
-NetworkType = Union[pd.DataFrame]
+NetworkType = pd.DataFrame
 
 
 @dataclass(frozen=True)
