@@ -46,6 +46,7 @@ from .obs import (
     PointObservation,
     TrackObservation,
     NodeObservation,
+    NetworkObservation,
 )
 from .matching import from_matched, match
 from .configuration import from_config
@@ -101,6 +102,7 @@ __all__ = [
     "PointObservation",
     "TrackObservation",
     "NodeObservation",
+    "NetworkObservation",
     "TimeSeries",
     "match",
     "from_matched",

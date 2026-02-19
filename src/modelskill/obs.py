@@ -413,6 +413,107 @@ class NodeObservation(Observation):
         return None
 
 
+class NetworkObservation:
+    """Collection of node observations for network analysis.
+
+    Create multiple NodeObservation objects from a DataFrame where each
+    column represents observations at a different network node.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        DataFrame with columns representing observations at different nodes
+    nodes : list[int]
+        List of node IDs corresponding to each column in the DataFrame
+    item : str, optional
+        Name of the observed quantity (e.g., "WaterLevel"), by default None
+        (will use column names)
+    names : list[str], optional
+        Custom names for each observation, by default None
+        (will use "Node_{node_id}" format)
+    quantity : Quantity, optional
+        Quantity object describing the observed variable, by default None
+    weight : float, optional
+        Weight for observations in skill assessment, by default 1.0
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> import modelskill as ms
+    >>> df = pd.DataFrame({
+    ...     'site1': [1.1, 2.1, 3.1],
+    ...     'site2': [1.2, 2.2, 3.2],
+    ...     'site3': [1.3, 2.3, 3.3]
+    ... }, index=pd.date_range('2010-01-01', periods=3))
+    >>> obs_collection = ms.NetworkObservation(df, nodes=[101, 203, 405])
+    >>> len(obs_collection)
+    3
+    """
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        nodes: list[int],
+        *,
+        item: Optional[str] = None,
+        names: Optional[list[str]] = None,
+        quantity: Optional[Quantity] = None,
+        weight: float = 1.0,
+    ) -> None:
+        if not isinstance(data, pd.DataFrame):
+            raise TypeError("data must be a pandas DataFrame")
+
+        if len(nodes) != len(data.columns):
+            raise ValueError(
+                f"Number of nodes ({len(nodes)}) must match number of DataFrame columns ({len(data.columns)})"
+            )
+
+        if names is not None and len(names) != len(nodes):
+            raise ValueError(
+                f"Number of names ({len(names)}) must match number of nodes ({len(nodes)})"
+            )
+
+        self.observations: list[NodeObservation] = []
+
+        for i, (col, node_id) in enumerate(zip(data.columns, nodes)):
+            obs_name = names[i] if names is not None else f"Node_{node_id}"
+
+            # Extract single column as DataFrame
+            single_col_df = data[[col]].copy()
+            if item is not None:
+                single_col_df = single_col_df.rename(columns={col: item})
+
+            # Create NodeObservation for this node
+            node_obs = NodeObservation(
+                data=single_col_df,
+                node=node_id,
+                item=item or col,
+                name=obs_name,
+                quantity=quantity,
+                weight=weight,
+            )
+            self.observations.append(node_obs)
+
+    def __len__(self) -> int:
+        return len(self.observations)
+
+    def __getitem__(self, index: int) -> NodeObservation:
+        return self.observations[index]
+
+    def __iter__(self):
+        return iter(self.observations)
+
+    @property
+    def nodes(self) -> list[int]:
+        """List of node IDs for all observations"""
+        return [obs.node for obs in self.observations]
+
+    @property
+    def names(self) -> list[str]:
+        """List of observation names"""
+        return [obs.name for obs in self.observations]
+
+
 def unit_display_name(name: str) -> str:
     """Display name
 

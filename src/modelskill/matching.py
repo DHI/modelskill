@@ -29,7 +29,13 @@ from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.network import NetworkModelResult, NodeModelResult
 from .model.track import TrackModelResult
-from .obs import Observation, PointObservation, TrackObservation, NodeObservation
+from .obs import (
+    Observation,
+    PointObservation,
+    TrackObservation,
+    NodeObservation,
+    NetworkObservation,
+)
 from .timeseries import TimeSeries
 from .types import Period
 
@@ -68,6 +74,7 @@ ObsInputType = Union[
     pd.DataFrame,
     pd.Series,
     ObsTypes,
+    NetworkObservation,
 ]
 
 T = TypeVar("T", bound="TimeSeries")
@@ -250,7 +257,14 @@ def match(
     --------
     from_matched - Create a Comparer from observation and model results that are already matched
     """
-    if isinstance(obs, get_args(ObsInputType)):
+    # Handle NetworkObservation by expanding to individual NodeObservations
+    if isinstance(obs, NetworkObservation):
+        obs = list(obs)
+
+    # Single observation case (but not NetworkObservation which was expanded above)
+    if isinstance(obs, get_args(ObsInputType)) and not isinstance(
+        obs, NetworkObservation
+    ):
         return _match_single_obs(
             obs,
             mod,
@@ -261,6 +275,15 @@ def match(
         )
 
     if isinstance(obs, Collection):
+        # Handle NetworkObservation objects within collections
+        expanded_obs = []
+        for o in obs:
+            if isinstance(o, NetworkObservation):
+                expanded_obs.extend(list(o))
+            else:
+                expanded_obs.append(o)
+        obs = expanded_obs
+
         assert all(isinstance(o, get_args(ObsInputType)) for o in obs)
     else:
         raise TypeError(
@@ -327,21 +350,19 @@ def _match_single_obs(
     if len(names) != len(set(names)):
         raise ValueError(f"Duplicate model names found: {names}")
 
-    raw_mod_data = {
-        m.name: (
-            m.extract(obs, spatial_method=spatial_method)
-            if isinstance(
-                m,
-                (
-                    DfsuModelResult,
-                    GridModelResult,
-                    DummyModelResult,
-                ),
-            )
-            else m.extract(obs) if isinstance(m, NetworkModelResult) else m
-        )
-        for m in models
-    }
+    raw_mod_data = {}
+    for m in models:
+        if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult)):
+            # These model types support spatial interpolation
+            extracted = m.extract(obs, spatial_method=spatial_method)
+        elif isinstance(m, NetworkModelResult):
+            # Network models use exact node selection (no spatial interpolation)
+            extracted = m.extract(obs)
+        else:
+            # Other model types (e.g., already extracted TimeSeries)
+            extracted = m
+        
+        raw_mod_data[m.name] = extracted
 
     matched_data = _match_space_time(
         observation=obs,
@@ -393,7 +414,7 @@ def _match_space_time(
             case PointModelResult() as pmr, PointObservation():
                 aligned = pmr.align(observation, max_gap=max_model_gap)
             case NodeModelResult() as nmr, NodeObservation():
-                # mr is the extracted NodeModelResult 
+                # mr is the extracted NodeModelResult
                 aligned = nmr.align(observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(
