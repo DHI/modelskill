@@ -335,11 +335,10 @@ def _match_single_obs(
                 (
                     DfsuModelResult,
                     GridModelResult,
-                    NetworkModelResult,
                     DummyModelResult,
                 ),
             )
-            else m
+            else m.extract(obs) if isinstance(m, NetworkModelResult) else m
         )
         for m in models
     }
