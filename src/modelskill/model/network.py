@@ -8,7 +8,7 @@ import pandas as pd
 from modelskill.obs import Observation
 from modelskill.timeseries import TimeSeries, _parse_network_node_input
 
-from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
+from ._base import _validate_overlap_in_time, SelectedItems
 from ..obs import NodeObservation
 from ..quantity import Quantity
 from ..types import PointType
@@ -74,6 +74,8 @@ class NodeModelResult(TimeSeries):
     def node(self) -> int:
         """Node ID of model result"""
         node_val = self.data.coords.get("node")
+        if node_val is None:
+            raise ValueError("No node coordinate found in data")
         return int(node_val.item())
 
     def interp_time(self, observation: Observation, **kwargs: Any) -> NodeModelResult:
@@ -155,7 +157,7 @@ class NodeModelResult(TimeSeries):
         return df[valid_idx].index
 
 
-class NetworkModelResult(SpatialField):
+class NetworkModelResult:
     """Model result for network data with time and node dimensions.
 
     Construct a NetworkModelResult from an xarray.Dataset with time and node coordinates

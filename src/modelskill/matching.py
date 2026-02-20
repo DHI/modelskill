@@ -11,6 +11,7 @@ from typing import (
     Sequence,
     TypeVar,
     Union,
+    cast,
     get_args,
     overload,
 )
@@ -350,17 +351,20 @@ def _match_single_obs(
     if len(names) != len(set(names)):
         raise ValueError(f"Duplicate model names found: {names}")
 
-    raw_mod_data = {}
+    raw_mod_data: dict[str, PointModelResult | TrackModelResult | NodeModelResult] = {}
     for m in models:
         if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult)):
             # These model types support spatial interpolation
-            extracted = m.extract(obs, spatial_method=spatial_method)
+            extracted: PointModelResult | TrackModelResult | NodeModelResult = m.extract(
+                cast(PointObservation | TrackObservation, obs),
+                spatial_method=spatial_method,
+            )
         elif isinstance(m, NetworkModelResult):
             # Network models use exact node selection (no spatial interpolation)
-            extracted = m.extract(obs)
+            extracted = m.extract(cast(NodeObservation, obs))
         else:
-            # Other model types (e.g., already extracted TimeSeries)
-            extracted = m
+            # Other model types (already point/track timeseries - no extraction needed)
+            extracted = cast(PointModelResult | TrackModelResult, m)
         
         raw_mod_data[m.name] = extracted
 

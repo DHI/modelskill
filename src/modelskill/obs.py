@@ -408,7 +408,7 @@ class NodeObservation(Observation):
         super().__init__(data=data, weight=weight, attrs=attrs)
 
     @property
-    def node(self) -> int:
+    def node(self) -> Optional[int]:
         """Node ID of observation"""
         node_val = self.data.coords.get("node")
         if node_val is not None:
@@ -509,7 +509,7 @@ class NetworkObservation:
     @property
     def nodes(self) -> list[int]:
         """List of node IDs for all observations"""
-        return [obs.node for obs in self.observations]
+        return [obs.node for obs in self.observations if obs.node is not None]
 
     @property
     def names(self) -> list[str]:
