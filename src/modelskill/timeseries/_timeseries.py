@@ -212,8 +212,6 @@ class TimeSeries:
     @property
     def x(self) -> Any:  # TODO should this be a float?
         """x-coordinate"""
-        if "x" not in self.data.coords:
-            return None  # Node-based data doesn't have x coordinate
         return self._coordinate_values("x")
 
     @x.setter
@@ -223,15 +221,20 @@ class TimeSeries:
     @property
     def y(self) -> Any:
         """y-coordinate"""
-        if "y" not in self.data.coords:
-            return None  # Node-based data doesn't have y coordinate
         return self._coordinate_values("y")
 
     @y.setter
     def y(self, value: Any) -> None:
         self.data["y"] = value
 
-    def _coordinate_values(self, coord: str) -> float | np.ndarray:
+    @property
+    def node(self) -> Any:
+        """node-coordinate"""
+        return self._coordinate_values("node")
+
+    def _coordinate_values(self, coord: str) -> None | float | np.ndarray:
+        if coord not in self.data.coords:
+            return None  # Node-based data doesn't have y coordinate
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 

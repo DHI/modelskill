@@ -29,6 +29,7 @@ from .model.dummy import DummyModelResult
 from .model.grid import GridModelResult
 from .model.network import NetworkModelResult, NodeModelResult
 from .model.track import TrackModelResult
+from .model.point import align_data
 from .obs import (
     Observation,
     PointObservation,
@@ -350,9 +351,7 @@ def _match_single_obs(
     if len(names) != len(set(names)):
         raise ValueError(f"Duplicate model names found: {names}")
 
-    raw_mod_data: dict[
-        str, PointModelResult | TrackModelResult | NetworkModelResult | NodeModelResult
-    ] = {}
+    raw_mod_data: dict[str, PointModelResult | TrackModelResult | NodeModelResult] = {}
     for m in models:
         if isinstance(m, NetworkModelResult):
             # Network models use exact node selection (no spatial interpolation)
@@ -424,10 +423,10 @@ def _match_space_time(
                     observation, spatial_tolerance=spatial_tolerance
                 )
             case PointModelResult() as pmr, PointObservation():
-                aligned = pmr.align(observation, max_gap=max_model_gap)
+                aligned = align_data(pmr.data, observation, max_gap=max_model_gap)
             case NodeModelResult() as nmr, NodeObservation():
                 # mr is the extracted NodeModelResult
-                aligned = nmr.align(observation, max_gap=max_model_gap)
+                aligned = align_data(nmr.data, observation, max_gap=max_model_gap)
             case _:
                 raise TypeError(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"

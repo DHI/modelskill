@@ -6,7 +6,7 @@ import warnings
 
 from modelskill.timeseries import TimeSeries, _parse_network_node_input
 
-from ._base import SpatialField, SelectedItems
+from ._base import Network1D, SelectedItems
 from ..obs import NodeObservation
 from ..quantity import Quantity
 from ..types import PointType
@@ -76,7 +76,7 @@ class NodeModelResult(TimeSeries):
         return int(node_val.item())
 
 
-class NetworkModelResult(SpatialField):
+class NetworkModelResult(Network1D):
     """Model result for network data with time and node dimensions.
 
     Construct a NetworkModelResult from an xarray.Dataset with time and node coordinates

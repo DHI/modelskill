@@ -27,7 +27,7 @@ from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
 from ..obs import PointObservation, TrackObservation, NodeObservation
-from ..model import PointModelResult, TrackModelResult, NetworkModelResult
+from ..model import PointModelResult, TrackModelResult
 from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
 from ..metrics import _parse_metric
@@ -461,7 +461,7 @@ class Comparer:
         matched_data: xr.Dataset,
         raw_mod_data: dict[
             str,
-            PointModelResult | TrackModelResult | NetworkModelResult | NodeModelResult,
+            PointModelResult | TrackModelResult | NodeModelResult,
         ]
         | None = None,
     ) -> None:
@@ -486,10 +486,7 @@ class Comparer:
         raw_mod_data: Optional[
             Dict[
                 str,
-                PointModelResult
-                | TrackModelResult
-                | NetworkModelResult
-                | NodeModelResult,
+                PointModelResult | TrackModelResult | NodeModelResult,
             ]
         ] = None,
         obs_item: str | int | None = None,
@@ -782,9 +779,7 @@ class Comparer:
 
     def _to_model(
         self,
-    ) -> list[
-        PointModelResult | TrackModelResult | NetworkModelResult | NodeModelResult
-    ]:
+    ) -> list[PointModelResult | TrackModelResult | NodeModelResult]:
         mods = list(self.raw_mod_data.values())
         return mods
 
@@ -1315,10 +1310,7 @@ class Comparer:
         if data.gtype == "point":
             raw_mod_data: Dict[
                 str,
-                PointModelResult
-                | TrackModelResult
-                | NetworkModelResult
-                | NodeModelResult,
+                PointModelResult | TrackModelResult | NodeModelResult,
             ] = {}
 
             for var in data.data_vars:
