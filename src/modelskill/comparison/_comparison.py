@@ -51,6 +51,12 @@ if TYPE_CHECKING:
 Serializable = Union[str, int, float]
 
 
+def _drop_scalar_coords(data: xr.Dataset) -> xr.Dataset:
+    """Drop scalar coordinate variables that shouldn't appear as columns in dataframes"""
+    coords_to_drop = ["x", "y", "z", "node"]
+    return data.drop_vars(coords_to_drop, errors="ignore")
+
+
 def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
     if not isinstance(data, xr.Dataset):
         raise ValueError("matched_data must be an xarray.Dataset")
@@ -739,7 +745,7 @@ class Comparer:
     def _to_observation(self) -> PointObservation | TrackObservation | NodeObservation:
         """Convert to Observation"""
         if self.gtype == "point":
-            df = self.data.drop_vars(["x", "y", "z"], errors="ignore")[
+            df = _drop_scalar_coords(self.data)[
                 self._obs_str
             ].to_dataframe()
             return PointObservation(
@@ -765,7 +771,7 @@ class Comparer:
                 # TODO: add attrs
             )
         elif self.gtype == "network":
-            df = self.data.drop_vars(["node"], errors="ignore")[
+            df = _drop_scalar_coords(self.data)[
                 self._obs_str
             ].to_dataframe()
             return NodeObservation(
@@ -940,9 +946,9 @@ class Comparer:
     ) -> pd.DataFrame:
         """Return a copy of the data as a long-format pandas DataFrame (for groupby operations)"""
 
-        data = self.data.drop_vars("z", errors="ignore")
+        data = self.data.drop_vars(["z", "node"], errors="ignore")
 
-        # this step is necessary since we keep arbitrary derived data in the dataset, but not z
+        # this step is necessary since we keep arbitrary derived data in the dataset, but not z/node
         # i.e. using a hardcoded whitelist of variables to keep is less flexible
         id_vars = [v for v in data.variables if v not in self.mod_names]
 
@@ -1182,7 +1188,7 @@ class Comparer:
 
     @property
     def _residual(self) -> np.ndarray:
-        df = self.data.drop_vars(["node"], errors="ignore").to_dataframe()
+        df = _drop_scalar_coords(self.data).to_dataframe()
         obs = df[self._obs_str].values
         mod = df[self.mod_names].values
         return mod - np.vstack(obs)
@@ -1246,7 +1252,7 @@ class Comparer:
         if self.gtype == str(GeometryType.POINT):
             # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
-            return self.data.drop_vars(["x", "y", "z"], errors="ignore").to_dataframe()
+            return _drop_scalar_coords(self.data).to_dataframe()
         elif self.gtype == str(GeometryType.TRACK):
             df = self.data.drop_vars(["z"], errors="ignore").to_dataframe()
             # make sure that x, y cols are first if they exist
@@ -1256,7 +1262,7 @@ class Comparer:
             return df[cols]
         elif self.gtype == str(GeometryType.NETWORK):
             # For network data, drop node coordinate like other geometries drop their coordinates
-            return self.data.drop_vars(["node"], errors="ignore").to_dataframe()
+            return _drop_scalar_coords(self.data).to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
