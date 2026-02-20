@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Sequence, get_args, List, Optional, Tuple, Union, Any
 import pandas as pd
 import xarray as xr
-import numpy as np
 
 import mikeio
 
@@ -153,7 +152,9 @@ def _include_coords(
         coords_to_add = {}
         for k, v in coords.as_dict.items():
             # Add if coordinate doesn't exist, or if user provided a non-null value
-            if k not in ds.coords or (v is not None and not np.isnan(v)):
+            # - pd.isna(v) returns True for NaN, False otherwise
+            #   - for string values: pd.isna(v) returns False (strings are never considered "NA" unless specifically None)
+            if k not in ds.coords or (v is not None and not pd.isna(v)):
                 coords_to_add[k] = v
         ds.coords.update(coords_to_add)
 

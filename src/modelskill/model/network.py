@@ -74,9 +74,7 @@ class NodeModelResult(TimeSeries):
     def node(self) -> int:
         """Node ID of model result"""
         node_val = self.data.coords.get("node")
-        if node_val is not None:
-            return int(node_val.item())
-        return None
+        return int(node_val.item())
 
     def interp_time(self, observation: Observation, **kwargs: Any) -> NodeModelResult:
         """
