@@ -411,10 +411,7 @@ class NodeObservation(Observation):
     def node(self) -> int:
         """Node ID of observation"""
         node_val = self.data.coords.get("node")
-        if node_val is not None:
-            return int(node_val.item())
-        return None
-
+        return int(node_val.item())
 
 class NetworkObservation:
     """Collection of node observations for network analysis.
