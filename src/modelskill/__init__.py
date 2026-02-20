@@ -41,12 +41,7 @@ from .model import (
     NetworkModelResult,
     DummyModelResult,
 )
-from .obs import (
-    observation,
-    PointObservation,
-    TrackObservation,
-    NetworkObservation,
-)
+from .obs import observation, PointObservation, TrackObservation, NodeObservation
 from .matching import from_matched, match
 from .configuration import from_config
 from .settings import options, get_option, set_option, reset_option, load_style
@@ -100,7 +95,7 @@ __all__ = [
     "observation",
     "PointObservation",
     "TrackObservation",
-    "NetworkObservation",
+    "NodeObservation",
     "TimeSeries",
     "match",
     "from_matched",

@@ -35,7 +35,6 @@ from .obs import (
     PointObservation,
     TrackObservation,
     NodeObservation,
-    NetworkObservation,
 )
 from .timeseries import TimeSeries
 from .types import Period
@@ -75,9 +74,7 @@ ObsInputType = Union[
     pd.DataFrame,
     pd.Series,
     ObsTypes,
-    NetworkObservation,
 ]
-
 T = TypeVar("T", bound="TimeSeries")
 
 
@@ -258,14 +255,8 @@ def match(
     --------
     from_matched - Create a Comparer from observation and model results that are already matched
     """
-    # Handle NetworkObservation by expanding to individual NodeObservations
-    if isinstance(obs, NetworkObservation):
-        obs = list(obs)
 
-    # Single observation case (but not NetworkObservation which was expanded above)
-    if isinstance(obs, get_args(ObsInputType)) and not isinstance(
-        obs, NetworkObservation
-    ):
+    if isinstance(obs, get_args(ObsInputType)):
         return _match_single_obs(
             obs,
             mod,
@@ -276,15 +267,6 @@ def match(
         )
 
     if isinstance(obs, Collection):
-        # Handle NetworkObservation objects within collections
-        expanded_obs = []
-        for o in obs:
-            if isinstance(o, NetworkObservation):
-                expanded_obs.extend(list(o))
-            else:
-                expanded_obs.append(o)
-        obs = expanded_obs
-
         assert all(isinstance(o, get_args(ObsInputType)) for o in obs)
     else:
         raise TypeError(
