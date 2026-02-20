@@ -28,7 +28,7 @@ def _parse_network_input(
     data = data[relevant_items]
 
     ds = data.to_xarray()
-    ds = ds.dropna(dim="time", subset=["node"])
+    ds = ds.dropna(dim="time")  # Drop NaNs from all data variables
     ds[name].attrs["long_name"] = model_quantity.name
     ds[name].attrs["units"] = model_quantity.unit
 

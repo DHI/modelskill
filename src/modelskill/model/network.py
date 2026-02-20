@@ -231,7 +231,8 @@ class NetworkModelResult(SpatialField):
 
     @property
     def time(self) -> pd.DatetimeIndex:
-        return self.data.time
+        """Return the time coordinate as a pandas.DatetimeIndex."""
+        return pd.DatetimeIndex(self.data.time.to_index())
 
     def extract(
         self,
