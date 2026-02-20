@@ -50,6 +50,10 @@ MRTypes = Union[
     NetworkModelResult,
     DummyModelResult,
 ]
+Fieldypes = Union[
+    GridModelResult,
+    DfsuModelResult,
+]
 MRInputType = Union[
     str,
     Path,
@@ -335,25 +339,17 @@ def _match_single_obs(
 
     raw_mod_data: dict[str, PointModelResult | TrackModelResult | NodeModelResult] = {}
     for m in models:
-        if isinstance(m, NetworkModelResult):
-            # Network models use exact node selection (no spatial interpolation)
-            if not isinstance(obs, NodeObservation):
-                raise TypeError(
-                    f"NetworkModelResult '{m.name}' can only be matched with "
-                    f"NodeObservation, got {type(obs).__name__} instead."
-                )
-            raw_mod_data[m.name] = m.extract(obs)
-        elif isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult)):
-            # These model types support spatial interpolation, but not for NodeObservation
-            if isinstance(obs, NodeObservation):
-                raise TypeError(
-                    f"{type(m).__name__} '{m.name}' does not support NodeObservation. "
-                    "Use a compatible observation type when matching with this model."
-                )
-            raw_mod_data[m.name] = m.extract(obs, spatial_method=spatial_method)
+        is_field = isinstance(m, (GridModelResult, DfsuModelResult))
+        is_dummy = isinstance(m, DummyModelResult)
+        is_network = isinstance(m, NetworkModelResult)
+        if is_field or is_dummy:
+            matching_obs = m.extract(obs, spatial_method=spatial_method)
+        elif is_network:
+            matching_obs = m.extract(obs)
         else:
-            # Other model types (e.g., already extracted TimeSeries)
-            raw_mod_data[m.name] = m
+            matching_obs = m
+
+        raw_mod_data[m.name] = matching_obs
 
     matched_data = _match_space_time(
         observation=obs,
