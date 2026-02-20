@@ -26,7 +26,7 @@ from ..model.network import NodeModelResult
 from .. import metrics as mtr
 from .. import Quantity
 from ..types import GeometryType
-from ..obs import PointObservation, TrackObservation
+from ..obs import PointObservation, TrackObservation, NodeObservation
 from ..model import PointModelResult, TrackModelResult, NetworkModelResult
 from ..timeseries._timeseries import _validate_data_var_name
 from ._comparer_plotter import ComparerPlotter
@@ -62,12 +62,15 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
         raise ValueError("Observation data must not contain missing values.")
 
     # coordinates
-    if "x" not in data.coords:
-        data.coords["x"] = np.nan
-    if "y" not in data.coords:
-        data.coords["y"] = np.nan
-    if "z" not in data.coords:
-        data.coords["z"] = np.nan
+    # Only add x, y, z coordinates if they don't exist and we don't have node coordinates
+    has_node_coords = "node" in data.coords
+    if not has_node_coords:
+        if "x" not in data.coords:
+            data.coords["x"] = np.nan
+        if "y" not in data.coords:
+            data.coords["y"] = np.nan
+        if "z" not in data.coords:
+            data.coords["z"] = np.nan
 
     # Validate data
     vars = [v for v in data.data_vars]
@@ -99,7 +102,11 @@ def _parse_dataset(data: xr.Dataset) -> xr.Dataset:
 
     # Validate attrs
     if "gtype" not in data.attrs:
-        data.attrs["gtype"] = str(GeometryType.POINT)
+        # Determine gtype based on available coordinates
+        if "node" in data.coords:
+            data.attrs["gtype"] = str(GeometryType.NETWORK)
+        else:
+            data.attrs["gtype"] = str(GeometryType.POINT)
     # assert "gtype" in data.attrs, "data must have a gtype attribute"
     # assert data.attrs["gtype"] in [
     #     str(GeometryType.POINT),
@@ -596,7 +603,15 @@ class Comparer:
         """z-coordinate"""
         return self._coordinate_values("z")
 
-    def _coordinate_values(self, coord: str) -> Any:
+    @property
+    def node(self) -> Any:
+        """node-coordinate"""
+        return self._coordinate_values("node")
+
+    def _coordinate_values(self, coord: str) -> None | Any:
+        """Get coordinate values if they exist, otherwise return None"""
+        if coord not in self.data.coords:
+            return None
         vals = self.data[coord].values
         return np.atleast_1d(vals)[0] if vals.ndim == 0 else vals
 
@@ -721,10 +736,12 @@ class Comparer:
 
         return Comparer(matched_data=data, raw_mod_data=raw_mod_data)
 
-    def _to_observation(self) -> PointObservation | TrackObservation:
+    def _to_observation(self) -> PointObservation | TrackObservation | NodeObservation:
         """Convert to Observation"""
         if self.gtype == "point":
-            df = self.data.drop_vars(["x", "y", "z"])[self._obs_str].to_dataframe()
+            df = self.data.drop_vars(["x", "y", "z"], errors="ignore")[
+                self._obs_str
+            ].to_dataframe()
             return PointObservation(
                 data=df,
                 name=self.name,
@@ -735,13 +752,26 @@ class Comparer:
                 # TODO: add attrs
             )
         elif self.gtype == "track":
-            df = self.data.drop_vars(["z"])[[self._obs_str]].to_dataframe()
+            df = self.data.drop_vars(["z"], errors="ignore")[
+                [self._obs_str]
+            ].to_dataframe()
             return TrackObservation(
                 data=df,
                 item=0,
                 x_item=1,
                 y_item=2,
                 name=self.name,
+                quantity=self.quantity,
+                # TODO: add attrs
+            )
+        elif self.gtype == "network":
+            df = self.data.drop_vars(["node"], errors="ignore")[
+                self._obs_str
+            ].to_dataframe()
+            return NodeObservation(
+                data=df,
+                name=self.name,
+                node=self.node,
                 quantity=self.quantity,
                 # TODO: add attrs
             )
@@ -995,8 +1025,8 @@ class Comparer:
 
         df = cmp._to_long_dataframe()
         res = _groupby_df(df, by=by, metrics=metrics)
-        res["x"] = np.nan if self.gtype == "track" else cmp.x
-        res["y"] = np.nan if self.gtype == "track" else cmp.y
+        res["x"] = np.nan if self.gtype == "track" or cmp.x is None else cmp.x
+        res["y"] = np.nan if self.gtype == "track" or cmp.y is None else cmp.y
         res = self._add_as_col_if_not_in_index(df, skilldf=res)
         return SkillTable(res)
 
@@ -1152,7 +1182,7 @@ class Comparer:
 
     @property
     def _residual(self) -> np.ndarray:
-        df = self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+        df = self.data.drop_vars(["node"], errors="ignore").to_dataframe()
         obs = df[self._obs_str].values
         mod = df[self.mod_names].values
         return mod - np.vstack(obs)
@@ -1216,12 +1246,17 @@ class Comparer:
         if self.gtype == str(GeometryType.POINT):
             # we remove the scalar coordinate variables as they
             # will otherwise be columns in the dataframe
-            return self.data.drop_vars(["x", "y", "z"]).to_dataframe()
+            return self.data.drop_vars(["x", "y", "z"], errors="ignore").to_dataframe()
         elif self.gtype == str(GeometryType.TRACK):
-            df = self.data.drop_vars(["z"]).to_dataframe()
-            # make sure that x, y cols are first
-            cols = ["x", "y"] + [c for c in df.columns if c not in ["x", "y"]]
+            df = self.data.drop_vars(["z"], errors="ignore").to_dataframe()
+            # make sure that x, y cols are first if they exist
+            coord_cols = [c for c in ["x", "y"] if c in df.columns]
+            other_cols = [c for c in df.columns if c not in ["x", "y"]]
+            cols = coord_cols + other_cols
             return df[cols]
+        elif self.gtype == str(GeometryType.NETWORK):
+            # For network data, drop node coordinate like other geometries drop their coordinates
+            return self.data.drop_vars(["node"], errors="ignore").to_dataframe()
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
