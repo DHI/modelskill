@@ -352,16 +352,25 @@ def _match_single_obs(
 
     raw_mod_data = {}
     for m in models:
-        if isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult)):
-            # These model types support spatial interpolation
-            extracted = m.extract(obs, spatial_method=spatial_method)
-        elif isinstance(m, NetworkModelResult):
+        if isinstance(m, NetworkModelResult):
             # Network models use exact node selection (no spatial interpolation)
+            if not isinstance(obs, NodeObservation):
+                raise TypeError(
+                    f"NetworkModelResult '{m.name}' can only be matched with "
+                    f"NodeObservation, got {type(obs).__name__} instead."
+                )
             extracted = m.extract(obs)
+        elif isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult)):
+            # These model types support spatial interpolation, but not for NodeObservation
+            if isinstance(obs, NodeObservation):
+                raise TypeError(
+                    f"{type(m).__name__} '{m.name}' does not support NodeObservation. "
+                    "Use a compatible observation type when matching with this model."
+                )
+            extracted = m.extract(obs, spatial_method=spatial_method)
         else:
             # Other model types (e.g., already extracted TimeSeries)
             extracted = m
-        
         raw_mod_data[m.name] = extracted
 
     matched_data = _match_space_time(
