@@ -5,7 +5,7 @@ ModelSkill supports three types of observations:
 
 * [`PointObservation`](`modelskill.PointObservation`) - a point timeseries from a dfs0/nc file or a DataFrame
 * [`TrackObservation`](`modelskill.TrackObservation`) - a track (moving point) timeseries from a dfs0/nc file or a DataFrame
-* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs
+* [`NodeObservation`](`modelskill.NodeObservation`) - a network node timeseries for specific node IDs. Can create multiple observations by passing lists for `node` and `item` parameters.
 
 An observation can be created by explicitly invoking one of the above classes or using the [`observation()`](`modelskill.observation`) function which will return the appropriate type based on the input data (if possible).
 """
@@ -353,19 +353,23 @@ class NodeObservation(Observation):
     """Class for observations at network nodes
 
     Create a NodeObservation from a DataFrame or other data source.
-    The node ID is specified as an integer.
+    The node ID is specified as an integer. Can also create multiple
+    NodeObservation objects by passing lists for item and node parameters.
 
     Parameters
     ----------
     data : str, Path, mikeio.Dataset, mikeio.DataArray, pd.DataFrame, pd.Series, xr.Dataset or xr.DataArray
         data source with time series for the node
-    item : (int, str), optional
-        index or name of the wanted item/column, by default None
+    item : (int, str, list[int], list[str]), optional
+        index or name of the wanted item/column, or list of indices/names for multiple items, by default None
         if data contains more than one item, item must be given
-    node : int, optional
-        node ID (integer), by default None
-    name : str, optional
-        user-defined name for easy identification in plots etc, by default derived from data
+        if node is a list with length matching number of data columns, item can be omitted (auto-assigned)
+    node : (int, list[int]), optional
+        node ID (integer) or list of node IDs, by default None
+        if list is provided and length matches data columns, item will be auto-assigned to column indices
+    name : (str, list[str]), optional
+        user-defined name(s) for easy identification in plots etc, by default derived from data
+        if list is provided, must match length of item/node lists
     weight : float, optional
         weighting factor for skill scores, by default 1.0
     quantity : Quantity, optional
@@ -375,25 +379,127 @@ class NodeObservation(Observation):
     attrs : dict, optional
         additional attributes to be added to the data, by default None
 
+    Returns
+    -------
+    NodeObservation or list[NodeObservation]
+        Single NodeObservation if item/node are scalars, list of NodeObservations if they are lists
+
     Examples
     --------
     >>> import modelskill as ms
+    >>> # Single node observation
     >>> o1 = ms.NodeObservation(data, node=123, name="Node_123")
     >>> o2 = ms.NodeObservation(df, item="Water Level", node=456)
+    >>> 
+    >>> # Multiple node observations from single DataFrame
+    >>> # Method 1: Explicit item specification
+    >>> obs_list = ms.NodeObservation(df, item=[0, 1, 2], node=[123, 456, 789])
+    >>> # Method 2: Auto-assign items when nodes match column count  
+    >>> obs_list = ms.NodeObservation(df, node=[123, 456, 789])  # items auto-assigned as [0, 1, 2]
     """
+
+    def __new__(
+        cls,
+        data: PointType,
+        *,
+        item: Optional[int | str | list[int] | list[str]] = None,
+        node: Optional[int | list[int]] = None,
+        name: Optional[str | list[str]] = None,
+        weight: float = 1.0,
+        quantity: Optional[Quantity] = None,
+        aux_items: Optional[list[int | str]] = None,
+        attrs: Optional[dict] = None,
+    ):
+        # Check if we're creating multiple observations
+        if isinstance(node, list):
+            # If nodes are provided as list and item is None, auto-assign column indices
+            if item is None:
+                # Determine number of columns in data
+                if hasattr(data, 'columns'):  # pandas DataFrame
+                    n_cols = len(data.columns)
+                elif hasattr(data, 'data_vars'):  # xarray Dataset
+                    n_cols = len(data.data_vars)
+                elif hasattr(data, 'shape') and len(data.shape) > 1:  # numpy array or similar
+                    n_cols = data.shape[1]
+                else:
+                    raise ValueError("Cannot determine number of columns in data for automatic item assignment")
+                
+                # Check if number of nodes matches number of columns
+                if len(node) == n_cols:
+                    item = list(range(n_cols))  # Auto-assign [0, 1, 2, ...]
+                else:
+                    raise ValueError(
+                        f"Number of nodes ({len(node)}) must match number of data columns ({n_cols}) "
+                        f"when item is not specified"
+                    )
+            
+            # Ensure item is now a list
+            if not isinstance(item, list):
+                raise ValueError("If node is a list, item must also be a list or None (for automatic assignment)")
+
+            if len(item) != len(node):
+                raise ValueError(
+                    f"Length of item list ({len(item)}) must match length of node list ({len(node)})"
+                )
+
+            # Handle names list
+            if name is not None:
+                if isinstance(name, str):
+                    names = [f"{name}_{i}" for i in range(len(item))]
+                elif isinstance(name, list):
+                    if len(name) != len(item):
+                        raise ValueError(
+                            f"Length of name list ({len(name)}) must match length of item/node lists ({len(item)})"
+                        )
+                    names = name
+                else:
+                    names = [f"Node_{n}" for n in node]
+            else:
+                names = [f"Node_{n}" for n in node]
+
+            # Create multiple NodeObservation objects
+            observations = []
+            for item_i, node_i, name_i in zip(item, node, names):
+                # Create a single observation by calling the constructor normally
+                obs = super(NodeObservation, cls).__new__(cls)
+                obs.__init__(
+                    data,
+                    item=item_i,
+                    node=node_i,
+                    name=name_i,
+                    weight=weight,
+                    quantity=quantity,
+                    aux_items=aux_items,
+                    attrs=attrs,
+                )
+                observations.append(obs)
+
+            return observations
+        elif isinstance(item, list):
+            # Legacy case: item is list but node is not
+            raise ValueError("If item is a list, node must also be a list")
+
+        # Single observation case - normal behavior
+        return super().__new__(cls)
 
     def __init__(
         self,
         data: PointType,
         *,
-        item: Optional[int | str] = None,
-        node: Optional[int] = None,
-        name: Optional[str] = None,
+        item: Optional[int | str | list[int] | list[str]] = None,
+        node: Optional[int | list[int]] = None,
+        name: Optional[str | list[str]] = None,
         weight: float = 1.0,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[list[int | str]] = None,
         attrs: Optional[dict] = None,
     ) -> None:
+        # For single observation case only - lists handled in __new__
+        if isinstance(item, list) or isinstance(node, list):
+            raise RuntimeError(
+                "Multiple item/node creation should be handled in __new__"
+            )
+
         if not self._is_input_validated(data):
             data = _parse_network_node_input(
                 data,
