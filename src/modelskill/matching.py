@@ -366,7 +366,7 @@ def _match_single_obs(
 
 
 def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
-    assert all([len(x) > 0 for x in idxs])
+    assert all([len(x) > 0 for x in idxs]), "All datetime indices must be non-empty"
 
     starts = [x[0] for x in idxs]
     ends = [x[-1] for x in idxs]
