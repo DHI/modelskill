@@ -10,9 +10,10 @@ import pandas as pd
 if TYPE_CHECKING:
     from .point import PointModelResult
     from .track import TrackModelResult
+    from .network import NodeModelResult
 
 from ..utils import _get_name
-from ..obs import Observation, PointObservation, TrackObservation
+from ..obs import Observation, PointObservation, TrackObservation, NodeObservation
 
 
 @dataclass
@@ -75,9 +76,9 @@ def _validate_overlap_in_time(time: pd.DatetimeIndex, observation: Observation) 
 class SpatialField(Protocol):
     def extract(
         self,
-        observation: PointObservation | TrackObservation,
+        observation: PointObservation | TrackObservation | NodeObservation,
         spatial_method: Optional[str] = None,
-    ) -> PointModelResult | TrackModelResult: ...
+    ) -> PointModelResult | TrackModelResult | NodeModelResult: ...
 
     def _extract_point(
         self, observation: PointObservation, spatial_method: Optional[str] = None
@@ -86,3 +87,7 @@ class SpatialField(Protocol):
     def _extract_track(
         self, observation: TrackObservation, spatial_method: Optional[str] = None
     ) -> TrackModelResult: ...
+
+    def _extract_node(
+        self, observation: NodeObservation, spatial_method: Optional[str] = None
+    ) -> NodeModelResult: ...

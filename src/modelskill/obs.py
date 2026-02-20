@@ -411,6 +411,8 @@ class NodeObservation(Observation):
     def node(self) -> int:
         """Node ID of observation"""
         node_val = self.data.coords.get("node")
+        if node_val is None:
+            raise ValueError("Node coordinate not found in data")
         return int(node_val.item())
 
 class NetworkObservation:

@@ -350,7 +350,9 @@ def _match_single_obs(
     if len(names) != len(set(names)):
         raise ValueError(f"Duplicate model names found: {names}")
 
-    raw_mod_data = {}
+    raw_mod_data: dict[
+        str, PointModelResult | TrackModelResult | NetworkModelResult | NodeModelResult
+    ] = {}
     for m in models:
         if isinstance(m, NetworkModelResult):
             # Network models use exact node selection (no spatial interpolation)
@@ -359,7 +361,7 @@ def _match_single_obs(
                     f"NetworkModelResult '{m.name}' can only be matched with "
                     f"NodeObservation, got {type(obs).__name__} instead."
                 )
-            extracted = m.extract(obs)
+            raw_mod_data[m.name] = m.extract(obs)
         elif isinstance(m, (DfsuModelResult, GridModelResult, DummyModelResult)):
             # These model types support spatial interpolation, but not for NodeObservation
             if isinstance(obs, NodeObservation):
@@ -367,11 +369,10 @@ def _match_single_obs(
                     f"{type(m).__name__} '{m.name}' does not support NodeObservation. "
                     "Use a compatible observation type when matching with this model."
                 )
-            extracted = m.extract(obs, spatial_method=spatial_method)
+            raw_mod_data[m.name] = m.extract(obs, spatial_method=spatial_method)
         else:
             # Other model types (e.g., already extracted TimeSeries)
-            extracted = m
-        raw_mod_data[m.name] = extracted
+            raw_mod_data[m.name] = m
 
     matched_data = _match_space_time(
         observation=obs,
@@ -398,7 +399,9 @@ def _get_global_start_end(idxs: Iterable[pd.DatetimeIndex]) -> Period:
 
 def _match_space_time(
     observation: Observation,
-    raw_mod_data: Mapping[str, PointModelResult | TrackModelResult | NodeModelResult],
+    raw_mod_data: Mapping[
+        str, PointModelResult | TrackModelResult | NetworkModelResult | NodeModelResult
+    ],
     max_model_gap: float | None,
     spatial_tolerance: float,
     obs_no_overlap: Literal["ignore", "error", "warn"],

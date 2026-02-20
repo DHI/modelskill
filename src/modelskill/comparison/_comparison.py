@@ -745,9 +745,7 @@ class Comparer:
     def _to_observation(self) -> PointObservation | TrackObservation | NodeObservation:
         """Convert to Observation"""
         if self.gtype == "point":
-            df = _drop_scalar_coords(self.data)[
-                self._obs_str
-            ].to_dataframe()
+            df = _drop_scalar_coords(self.data)[self._obs_str].to_dataframe()
             return PointObservation(
                 data=df,
                 name=self.name,
@@ -771,9 +769,7 @@ class Comparer:
                 # TODO: add attrs
             )
         elif self.gtype == "network":
-            df = _drop_scalar_coords(self.data)[
-                self._obs_str
-            ].to_dataframe()
+            df = _drop_scalar_coords(self.data)[self._obs_str].to_dataframe()
             return NodeObservation(
                 data=df,
                 name=self.name,
@@ -784,7 +780,11 @@ class Comparer:
         else:
             raise NotImplementedError(f"Unknown gtype: {self.gtype}")
 
-    def _to_model(self) -> list[PointModelResult | TrackModelResult]:
+    def _to_model(
+        self,
+    ) -> list[
+        PointModelResult | TrackModelResult | NetworkModelResult | NodeModelResult
+    ]:
         mods = list(self.raw_mod_data.values())
         return mods
 
@@ -1314,7 +1314,11 @@ class Comparer:
 
         if data.gtype == "point":
             raw_mod_data: Dict[
-                str, PointModelResult | TrackModelResult | NetworkModelResult
+                str,
+                PointModelResult
+                | TrackModelResult
+                | NetworkModelResult
+                | NodeModelResult,
             ] = {}
 
             for var in data.data_vars:

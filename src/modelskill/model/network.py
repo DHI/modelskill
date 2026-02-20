@@ -1,14 +1,12 @@
 from __future__ import annotations
-from typing import Any, Optional, Sequence
-import numpy as np
-
-import xarray as xr
+from typing import Optional, Sequence
 import pandas as pd
+import xarray as xr
+import warnings
 
-from modelskill.obs import Observation
 from modelskill.timeseries import TimeSeries, _parse_network_node_input
 
-from ._base import SpatialField, _validate_overlap_in_time, SelectedItems
+from ._base import SpatialField, SelectedItems
 from ..obs import NodeObservation
 from ..quantity import Quantity
 from ..types import PointType
@@ -65,7 +63,6 @@ class NodeModelResult(TimeSeries):
             )
 
         assert isinstance(data, xr.Dataset)
-
         data_var = str(list(data.data_vars)[0])
         data[data_var].attrs["kind"] = "model"
         super().__init__(data=data)
@@ -74,85 +71,9 @@ class NodeModelResult(TimeSeries):
     def node(self) -> int:
         """Node ID of model result"""
         node_val = self.data.coords.get("node")
+        if node_val is None:
+            raise ValueError("Node coordinate not found in data")
         return int(node_val.item())
-
-    def interp_time(self, observation: Observation, **kwargs: Any) -> NodeModelResult:
-        """
-        Interpolate model result to the time of the observation
-
-        wrapper around xarray.Dataset.interp()
-
-        Parameters
-        ----------
-        observation : Observation
-            The observation to interpolate to
-        **kwargs
-            Additional keyword arguments passed to xarray.interp
-
-        Returns
-        -------
-        NodeModelResult
-            Interpolated model result
-        """
-        ds = self.align(observation, **kwargs)
-        return NodeModelResult(ds)
-
-    def align(
-        self,
-        observation: Observation,
-        *,
-        max_gap: float | None = None,
-        **kwargs: Any,
-    ) -> xr.Dataset:
-        new_time = observation.time
-
-        dati = self.data.dropna("time").interp(
-            time=new_time, assume_sorted=True, **kwargs
-        )
-
-        nmr = NodeModelResult(dati)
-        if max_gap is not None:
-            nmr = nmr._remove_model_gaps(mod_index=self.time, max_gap=max_gap)
-        return nmr.data
-
-    def _remove_model_gaps(
-        self,
-        mod_index: pd.DatetimeIndex,
-        max_gap: float | None = None,
-    ) -> NodeModelResult:
-        """Remove model gaps longer than max_gap from TimeSeries"""
-        max_gap_delta = pd.Timedelta(max_gap, "s")
-        valid_times = self._get_valid_times(mod_index, max_gap_delta)
-        ds = self.data.sel(time=valid_times)
-        return NodeModelResult(ds)
-
-    def _get_valid_times(
-        self, mod_index: pd.DatetimeIndex, max_gap: pd.Timedelta
-    ) -> pd.DatetimeIndex:
-        """Used only by _remove_model_gaps"""
-        obs_index = self.time
-        # init dataframe of available timesteps and their index
-        df = pd.DataFrame(index=mod_index)
-        df["idx"] = range(len(df))
-
-        # for query times get available left and right index of source times
-        df = (
-            df.reindex(df.index.union(obs_index))
-            .interpolate(method="time", limit_area="inside")
-            .reindex(obs_index)
-            .dropna()
-        )
-        df["idxa"] = np.floor(df.idx).astype(int)
-        df["idxb"] = np.ceil(df.idx).astype(int)
-
-        # time of left and right source times and time delta
-        df["ta"] = mod_index[df.idxa]
-        df["tb"] = mod_index[df.idxb]
-        df["dt"] = df.tb - df.ta
-
-        # valid query times where time delta is less than max_gap
-        valid_idx = df.dt <= max_gap
-        return df[valid_idx].index
 
 
 class NetworkModelResult(SpatialField):
@@ -177,10 +98,12 @@ class NetworkModelResult(SpatialField):
     aux_items : Optional[list[int | str]], optional
         Auxiliary items, by default None
 
-    Notes
-    -----
-    For point observations, specify the node ID as the x-coordinate (integer).
-    No spatial interpolation between nodes is performed.
+    Examples
+    --------
+    >>> import modelskill as ms
+    >>> mr = ms.NetworkModelResult(network_data, name="Network_Model")
+    >>> obs = ms.NodeObservation(data, node=123)
+    >>> extracted = mr.extract(obs)
     """
 
     def __init__(
@@ -208,26 +131,16 @@ class NetworkModelResult(SpatialField):
         self.name = name
         self.sel_items = sel_items
 
-        # use long_name and units from data if not provided
         if quantity is None:
             da = self.data[sel_items.values]
             quantity = Quantity.from_cf_attrs(da.attrs)
-
         self.quantity = quantity
 
         # Mark data variables as model data
-        data_var = sel_items.values
-        self.data[data_var].attrs["kind"] = "model"
+        self.data[sel_items.values].attrs["kind"] = "model"
 
     def __repr__(self) -> str:
-        res = []
-        res.append(f"<{self.__class__.__name__}>: {self.name}")
-        res.append(f"Time: {self.time[0]} - {self.time[-1]}")
-        res.append(f"Nodes: {len(self.data.node)} nodes")
-        res.append(f"Quantity: {self.quantity}")
-        if len(self.sel_items.aux) > 0:
-            res.append(f"Auxiliary variables: {', '.join(self.sel_items.aux)}")
-        return "\n".join(res)
+        return f"<{self.__class__.__name__}>: {self.name}"
 
     @property
     def time(self) -> pd.DatetimeIndex:
@@ -237,111 +150,48 @@ class NetworkModelResult(SpatialField):
     def extract(
         self,
         observation: NodeObservation,
+        spatial_method: Optional[str] = None,
     ) -> NodeModelResult:
         """Extract ModelResult at exact node locations
 
-        Note: this method is typically not called directly, but through the match() method.
-        The observation must specify the exact node ID.
-
         Parameters
         ----------
-        observation : <NodeObservation>
-            observation with node ID
+        observation : NodeObservation
+            observation with node ID (only NodeObservation supported)
+        spatial_method : str, optional
+            Ignored for NetworkModelResult (exact node matching only)
 
         Returns
         -------
         NodeModelResult
-            extracted modelresult
+            extracted model result
         """
-        _validate_overlap_in_time(self.time, observation)
-        if isinstance(observation, NodeObservation):
-            return self._extract_node(observation)
-        else:
-            raise NotImplementedError(
-                f"NetworkModelResult only supports NodeObservation extraction, not {type(observation).__name__}."
+        if not isinstance(observation, NodeObservation):
+            raise TypeError(
+                f"NetworkModelResult only supports NodeObservation, got {type(observation).__name__}"
             )
 
-    def _extract_node(self, observation: NodeObservation) -> NodeModelResult:
-        """Extract node data from network.
+        if spatial_method is not None:
+            warnings.warn(
+                "'spatial_method' is not used in network model results and it will be ignored",
+                stacklevel=1,
+            )
 
-        The observation specifies the exact node ID.
-        No spatial interpolation is performed - the exact node is selected.
-        """
         node_id = observation.node
-        if node_id is None:
-            raise ValueError(
-                f"NodeObservation '{observation.name}' must specify a valid node ID."
-            )
-
-        # Check if node exists in the network
         if node_id not in self.data.node.values:
             available_nodes = list(self.data.node.values)
             raise ValueError(
-                f"Node ID {node_id} not found in network. Available nodes: {available_nodes[:10]}{'...' if len(available_nodes) > 10 else ''}"
+                f"Node {node_id} not found. Available: {available_nodes[:5]}..."
             )
 
         # Extract data at the specified node
         ds = self.data.sel(node=node_id)
-
-        # Convert to dataframe and create NodeModelResult
         df = ds.to_dataframe().dropna()
-        if len(df) == 0:
-            raise ValueError(
-                f"No data available for node {node_id} in NetworkModelResult '{self.name}'"
-            )
         df = df.rename(columns={self.sel_items.values: self.name})
 
         return NodeModelResult(
             data=df,
             node=node_id,
-            item=self.name,
             name=self.name,
             quantity=self.quantity,
-            aux_items=self.sel_items.aux,
         )
-
-    def extract_multiple(
-        self,
-        observations: Sequence[NodeObservation],
-    ) -> list[NodeModelResult]:
-        """Extract ModelResult for multiple node observations
-
-        This method allows efficient extraction of data for multiple nodes at once,
-        which is useful when comparing multiple observation points against the same network model.
-
-        Parameters
-        ----------
-        observations : Sequence[NodeObservation]
-            Sequence of node observations with node IDs
-
-        Returns
-        -------
-        list[NodeModelResult]
-            List of extracted model results, one per observation
-
-        Examples
-        --------
-        >>> import modelskill as ms
-        >>> obs1 = ms.NodeObservation(data1, node=123)
-        >>> obs2 = ms.NodeObservation(data2, node=456)
-        >>> network_model = ms.NetworkModelResult(network_data)
-        >>> results = network_model.extract_multiple([obs1, obs2])
-        """
-        if not observations:
-            raise ValueError("observations sequence cannot be empty")
-
-        results = []
-        for obs in observations:
-            if not isinstance(obs, NodeObservation):
-                raise TypeError(
-                    f"All observations must be NodeObservation instances, got {type(obs).__name__}"
-                )
-            try:
-                result = self._extract_node(obs)
-                results.append(result)
-            except Exception as e:
-                raise ValueError(
-                    f"Failed to extract data for observation '{obs.name}' at node {obs.node}: {str(e)}"
-                )
-
-        return results
