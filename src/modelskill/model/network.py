@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Optional, Sequence
 import pandas as pd
 import xarray as xr
-import warnings
 
 from modelskill.timeseries import TimeSeries, _parse_network_node_input
 
@@ -150,7 +149,6 @@ class NetworkModelResult(Network1D):
     def extract(
         self,
         observation: NodeObservation,
-        spatial_method: Optional[str] = None,
     ) -> NodeModelResult:
         """Extract ModelResult at exact node locations
 
@@ -158,8 +156,6 @@ class NetworkModelResult(Network1D):
         ----------
         observation : NodeObservation
             observation with node ID (only NodeObservation supported)
-        spatial_method : str, optional
-            Ignored for NetworkModelResult (exact node matching only)
 
         Returns
         -------
@@ -171,12 +167,6 @@ class NetworkModelResult(Network1D):
                 f"NetworkModelResult only supports NodeObservation, got {type(observation).__name__}"
             )
 
-        if spatial_method is not None:
-            warnings.warn(
-                "'spatial_method' is not used in network model results and it will be ignored",
-                stacklevel=1,
-            )
-
         node_id = observation.node
         if node_id not in self.data.node.values:
             available_nodes = list(self.data.node.values)
@@ -186,12 +176,12 @@ class NetworkModelResult(Network1D):
 
         # Extract data at the specified node
         ds = self.data.sel(node=node_id)
-        df = ds.to_dataframe().dropna()
-        df = df.rename(columns={self.sel_items.values: self.name})
+        df = ds.to_dataframe().dropna().drop(columns="node")
 
         return NodeModelResult(
             data=df,
             node=node_id,
             name=self.name,
+            item=self.sel_items.values,
             quantity=self.quantity,
         )
