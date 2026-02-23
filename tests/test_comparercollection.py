@@ -570,12 +570,31 @@ def test_plot_accepts_figsize(cc_plot_function):
     assert a, b == figsize
 
 
-def test_peak_ratio(cc):
-    """Non existent peak ratio"""
-    cc = cc.sel(model="m1")
-    sk = cc.skill(metrics=["peak_ratio"])
+def test_peak_ratio():
+    """Test peak_ratio with synthetic data containing clear, verifiable peaks"""
+    # Create data with 2 clear peaks:
+    # Peak 1: obs=5.0, model=5.5 → ratio=1.1
+    # Peak 2: obs=6.0, model=6.6 → ratio=1.1
+    # Expected peak_ratio = mean([1.1, 1.1]) = 1.1
+    times = pd.date_range("2020-01-01", periods=100, freq="h")
+    obs_vals = np.zeros(100)
+    mod_vals = np.zeros(100)
 
-    assert sk.loc["fake point obs", "peak_ratio"] == pytest.approx(1.119999999)
+    # Create peak 1 around index 10
+    obs_vals[8:13] = [0, 1, 5, 1, 0]
+    mod_vals[8:13] = [0, 1.1, 5.5, 1.1, 0]
+
+    # Create peak 2 around index 50
+    obs_vals[48:53] = [0, 1, 6, 1, 0]
+    mod_vals[48:53] = [0, 1.1, 6.6, 1.1, 0]
+
+    df = pd.DataFrame({"Observation": obs_vals, "model": mod_vals}, index=times)
+
+    cmp = ms.from_matched(df, obs_item=0, name="synthetic_peaks")
+    sk = cmp.skill(metrics=["peak_ratio"])
+
+    # Model peaks are 1.1x observation peaks
+    assert sk.to_dataframe()["peak_ratio"].values == pytest.approx(1.1, abs=0.01)
 
 
 def test_peak_ratio_2(cc_pr):
