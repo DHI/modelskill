@@ -804,10 +804,9 @@ class ComparerCollectionPlotter:
         """
         from ..plotting import spatial_overview
 
-        obs = [cmp._to_observation() for cmp in self.cc]
         # TODO how to add model domain(s)
 
-        return spatial_overview(obs, ax=ax, figsize=figsize, title=title)
+        return spatial_overview(self.cc, ax=ax, figsize=figsize, title=title)
 
     def temporal_coverage(
         self,
@@ -835,11 +834,10 @@ class ComparerCollectionPlotter:
         """
         from ..plotting import temporal_coverage
 
-        obs = [cmp._to_observation() for cmp in self.cc]
-        mod = self.cc[0]._to_model()
+        mod = list(self.cc[0].raw_mod_data.values())
 
         return temporal_coverage(
-            obs=obs,
+            obs=list(self.cc),
             mod=mod,
             limit_to_model_period=limit_to_model_period,
             marker=marker,
