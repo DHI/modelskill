@@ -468,11 +468,8 @@ class MultiNodeObservation(list):
     def __init__(
         self,
         data: PointType,
-        *,
-        items: Optional[List[int | str]] = None,
         nodes: List[int],
-        names: Optional[List[str]] = None,
-        weight: Optional[List[float]] = None,
+        *,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[List[int | str]] = None,
         attrs: Optional[Dict] = None,
@@ -482,77 +479,28 @@ class MultiNodeObservation(list):
                 "node must be a list. Use NodeObservation() for a single node."
             )
 
-        # Auto-assign items if not provided
-        if items is None:
-            if hasattr(data, "columns"):  # pandas DataFrame
-                n_cols = len(data.columns)
-            elif hasattr(data, "data_vars"):  # xarray Dataset
-                n_cols = len(data.data_vars)
-            elif hasattr(data, "shape") and len(data.shape) > 1:
-                n_cols = data.shape[1]
-            else:
-                raise ValueError(
-                    "Cannot determine number of columns in data for automatic item assignment"
-                )
-
-            if len(nodes) == n_cols:
-                items = list(range(n_cols))
-            else:
-                raise ValueError(
-                    f"Number of nodes ({len(nodes)}) must match number of data columns ({n_cols}) "
-                    f"when item is not specified"
-                )
-
-        if not isinstance(items, list):
-            raise ValueError(
-                "item must be a list (or None for automatic assignment) when node is a list"
-            )
-
-        if len(items) != len(nodes):
-            raise ValueError(
-                f"Length of item list ({len(items)}) must match length of node list ({len(nodes)})"
-            )
-
-        # Resolve names
-        if names is None:
-            names = [str(n) for n in nodes]
-        elif isinstance(names, str):
-            names = [f"{names}_{i}" for i in range(len(items))]
-        elif isinstance(names, list):
-            if len(names) != len(items):
-                raise ValueError(
-                    f"Length of name list ({len(names)}) must match length of item/node lists ({len(items)})"
-                )
-            names = names
+        if isinstance(data, pd.DataFrame):
+            n_cols = len(data.columns)
+        elif isinstance(data, xr.Dataset):
+            n_cols = len(data.data_vars)
         else:
-            names = [str(n) for n in nodes]
+            n_cols = None
 
-        # Resolve weights
-        if weight is None:
-            weights = [1.0] * len(nodes)
-        else:
-            if not isinstance(weight, list) or not all(
-                isinstance(w, (int, float)) for w in weight
-            ):
-                raise ValueError("weight must be a list of floats or None")
-            if len(weight) != len(nodes):
-                raise ValueError(
-                    f"Length of weight list ({len(weight)}) must match length of node list ({len(nodes)})"
-                )
-            weights = weight
+        if n_cols is not None and len(nodes) != n_cols:
+            raise ValueError(
+                f"Length of nodes ({len(nodes)}) must match the number of columns in data ({n_cols})."
+            )
 
         observations = [
             NodeObservation(
                 data,
-                item=item_i,
                 node=node_i,
-                name=name_i,
-                weight=weight_i,
+                item=i,
                 quantity=quantity,
                 aux_items=aux_items,
                 attrs=attrs,
             )
-            for item_i, node_i, name_i, weight_i in zip(items, nodes, names, weights)
+            for i, node_i in enumerate(nodes)
         ]
         super().__init__(observations)
 

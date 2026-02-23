@@ -308,6 +308,8 @@ def _parse_network_node_input(
     node: Optional[int],
     aux_items: Optional[Sequence[int | str]],
 ) -> xr.Dataset:
+    if node is None:
+        raise ValueError("'node' argument cannot be empty.")
     coords = NetworkCoords(node=node)
     ds = _parse_point_input(data, name, item, quantity, aux_items, coords=coords)
     return ds
