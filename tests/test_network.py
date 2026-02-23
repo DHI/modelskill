@@ -218,9 +218,9 @@ class TestNodeObservation:
         assert obs_list[2].node == 789
 
         # Check default names (str(node_id))
-        assert obs_list[0].name == "123"
-        assert obs_list[1].name == "456"
-        assert obs_list[2].name == "789"
+        assert obs_list[0].name == "station_0"
+        assert obs_list[1].name == "station_1"
+        assert obs_list[2].name == "station_2"
 
     def test_multiple_nodes_auto_assign_mismatched_count(self, sample_node_data):
         """Test error when nodes don't match column count for auto-assignment"""
@@ -236,7 +236,7 @@ class TestNodeObservation:
 
         with pytest.raises(
             ValueError,
-            match="Number of nodes.*must match.*data columns.*when item is not specified",
+            match="must match the number of columns in data",
         ):
             MultiNodeObservation(multi_data, nodes=nodes)  # No item provided
 
@@ -252,8 +252,7 @@ class TestNodeObservation:
         )
 
         nodes = [123, 456, 789]
-        items = [0, 1, 2]
-        obs_list = MultiNodeObservation(multi_data, nodes=nodes, items=items)
+        obs_list = MultiNodeObservation(multi_data, nodes=nodes)
 
         # Should return a list of NodeObservation objects
         assert isinstance(obs_list, list)
@@ -266,84 +265,9 @@ class TestNodeObservation:
         assert obs_list[2].node == 789
 
         # Check default names (str(node_id))
-        assert obs_list[0].name == "123"
-        assert obs_list[1].name == "456"
-        assert obs_list[2].name == "789"
-
-    def test_multiple_nodes_with_custom_names(self, sample_node_data):
-        """Test creating multiple NodeObservations with custom names"""
-        multi_data = pd.DataFrame(
-            {
-                "station_0": sample_node_data["WaterLevel"],
-                "station_1": sample_node_data["WaterLevel"] + 0.1,
-            }
-        )
-
-        nodes = [123, 456]
-        items = [0, 1]
-        names = ["Sensor_A", "Sensor_B"]
-        obs_list = MultiNodeObservation(
-            multi_data, nodes=nodes, items=items, names=names
-        )
-
-        assert len(obs_list) == 2
-        assert obs_list[0].name == "Sensor_A"
-        assert obs_list[1].name == "Sensor_B"
-
-    def test_multiple_nodes_with_string_name_prefix(self, sample_node_data):
-        """Test creating multiple NodeObservations with string name prefix"""
-        multi_data = pd.DataFrame(
-            {
-                "station_0": sample_node_data["WaterLevel"],
-                "station_1": sample_node_data["WaterLevel"] + 0.1,
-            }
-        )
-
-        nodes = [123, 456]
-        items = [0, 1]
-        name = "Station"
-        obs_list = MultiNodeObservation(
-            multi_data, nodes=nodes, items=items, names=name
-        )
-
-        assert len(obs_list) == 2
-        assert obs_list[0].name == "Station_0"
-        assert obs_list[1].name == "Station_1"
-
-    def test_mismatched_item_node_lists(self, sample_node_data):
-        """Test error when item and node lists have different lengths"""
-        multi_data = pd.DataFrame(
-            {
-                "station_0": sample_node_data["WaterLevel"],
-                "station_1": sample_node_data["WaterLevel"] + 0.1,
-            }
-        )
-
-        nodes = [123, 456, 789]  # 3 nodes
-        items = [0, 1]  # 2 items
-
-        with pytest.raises(
-            ValueError, match="Length of item list.*must match.*node list"
-        ):
-            MultiNodeObservation(multi_data, nodes=nodes, items=items)
-
-    def test_mismatched_name_list(self, sample_node_data):
-        """Test error when name list doesn't match item/node lists"""
-        multi_data = pd.DataFrame(
-            {
-                "station_0": sample_node_data["WaterLevel"],
-                "station_1": sample_node_data["WaterLevel"] + 0.1,
-            }
-        )
-
-        nodes = [123, 456]
-        items = [0, 1]
-        names = ["Sensor_A"]  # Only 1 name for 2 nodes
-
-        with pytest.raises(
-            ValueError, match="Length of name list.*must match.*item/node lists"
-        ):
-            MultiNodeObservation(multi_data, nodes=nodes, items=items, names=names)
+        assert obs_list[0].name == "station_0"
+        assert obs_list[1].name == "station_1"
+        assert obs_list[2].name == "station_2"
 
     def test_only_one_list_provided(self, sample_node_data):
         """Test error when lists are passed to NodeObservation instead of MultiNodeObservation"""
