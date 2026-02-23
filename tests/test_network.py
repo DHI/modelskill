@@ -354,6 +354,79 @@ class TestNodeObservation:
             NodeObservation(sample_node_data, node=123, item=[0, 1])
 
 
+class TestMultiNodeObservation:
+    """Test MultiNodeObservation class"""
+
+    @pytest.fixture
+    def multi_data(self, sample_node_data):
+        """Multi-column DataFrame with 3 stations"""
+        return pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+                "station_2": sample_node_data["WaterLevel"] + 0.2,
+            }
+        )
+
+    def test_returns_list_of_node_observations(self, multi_data):
+        obs_list = MultiNodeObservation(multi_data, nodes=[123, 456, 789])
+
+        assert isinstance(obs_list, list)
+        assert len(obs_list) == 3
+        assert all(isinstance(o, NodeObservation) for o in obs_list)
+
+    def test_node_ids_are_assigned_correctly(self, multi_data):
+        obs_list = MultiNodeObservation(multi_data, nodes=[123, 456, 789])
+
+        assert obs_list[0].node == 123
+        assert obs_list[1].node == 456
+        assert obs_list[2].node == 789
+
+    def test_names_derived_from_column_names(self, multi_data):
+        obs_list = MultiNodeObservation(multi_data, nodes=[123, 456, 789])
+
+        assert obs_list[0].name == "station_0"
+        assert obs_list[1].name == "station_1"
+        assert obs_list[2].name == "station_2"
+
+    def test_from_xarray_dataset(self, sample_node_data):
+        ds = xr.Dataset(
+            {
+                "station_0": ("time", sample_node_data["WaterLevel"].values),
+                "station_1": ("time", sample_node_data["WaterLevel"].values + 0.1),
+            },
+            coords={"time": sample_node_data.index},
+        )
+        obs_list = MultiNodeObservation(ds, nodes=[123, 456])
+
+        assert len(obs_list) == 2
+        assert obs_list[0].node == 123
+        assert obs_list[1].node == 456
+
+    def test_nodes_must_be_list(self, multi_data):
+        with pytest.raises(ValueError, match="node must be a list"):
+            MultiNodeObservation(multi_data, nodes=123)
+
+    def test_nodes_length_must_match_columns(self, multi_data):
+        with pytest.raises(ValueError, match="Length of nodes"):
+            MultiNodeObservation(multi_data, nodes=[123, 456])  # 2 nodes, 3 columns
+
+    def test_attrs_propagated_to_all_observations(self, multi_data):
+        attrs = {"source": "sensor_array", "version": 2}
+        obs_list = MultiNodeObservation(multi_data, nodes=[1, 2, 3], attrs=attrs)
+
+        for obs in obs_list:
+            assert obs.attrs["source"] == "sensor_array"
+            assert obs.attrs["version"] == 2
+
+    def test_repr(self, multi_data):
+        obs_list = MultiNodeObservation(multi_data, nodes=[1, 2, 3])
+        r = repr(obs_list)
+
+        assert "MultiNodeObservation" in r
+        assert "3" in r
+
+
 class TestNodeModelResult:
     """Test NodeModelResult class"""
 
