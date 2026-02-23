@@ -2,6 +2,7 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 from typing import Literal, Optional, get_args, cast
+from collections.abc import Sequence, Iterable
 
 import mikeio
 import numpy as np
@@ -29,8 +30,6 @@ class DfsuModelResult(SpatialField):
     item : str | int | None, optional
         If multiple items/arrays are present in the input an item
         must be given (as either an index or a string), by default None
-    quantity : Quantity, optional
-        Model quantity, for MIKE files this is inferred from the EUM information
     aux_items : Optional[list[int | str]], optional
         Auxiliary items, by default None
     """
@@ -39,10 +38,9 @@ class DfsuModelResult(SpatialField):
         self,
         data: UnstructuredType,
         *,
-        name: Optional[str] = None,
+        name: str | None = None,
         item: str | int | None = None,
-        quantity: Optional[Quantity] = None,
-        aux_items: Optional[list[int | str]] = None,
+        aux_items: Sequence[int | str] | None = None,
     ) -> None:
         filename = None
 
@@ -73,7 +71,9 @@ class DfsuModelResult(SpatialField):
             item = data.name
             self.sel_items = SelectedItems(values=data.name, aux=[])
             data = mikeio.Dataset({data.name: data})
-        elif isinstance(data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D)):
+        elif isinstance(
+            data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D, mikeio.Dataset)
+        ):
             item_names = [i.name for i in data.items]
             idx = _get_idx(x=item, valid_names=item_names)
             item_info = data.items[idx]
@@ -82,17 +82,14 @@ class DfsuModelResult(SpatialField):
                 item_names, item=item, aux_items=aux_items
             )
             item = self.sel_items.values
-        if isinstance(data, mikeio.Dataset):
-            data = data[self.sel_items.all]
 
         assert isinstance(
             data, (mikeio.dfsu.Dfsu2DH, mikeio.dfsu.Dfsu3D, mikeio.Dataset)
         )
         self.data = data
         self.name = name or str(item)
-        self.quantity = (
-            Quantity.from_mikeio_iteminfo(item_info) if quantity is None else quantity
-        )
+        self.quantity = Quantity.from_mikeio_iteminfo(item_info)
+        
         self.filename = filename  # TODO: remove? backward compatibility
 
     def __repr__(self) -> str:
@@ -143,6 +140,40 @@ class DfsuModelResult(SpatialField):
             raise NotImplementedError(
                 f"Extraction from {type(self.data)} to {type(observation)} is not implemented."
             )
+
+    def extract_points(self, observations: Iterable[PointObservation]) -> DfsuModelResult:
+        """Extract multiple PointObservations at once.
+
+        Parameters
+        ----------
+        observations : Iterable[PointObservation]
+            List of PointObservations to extract.
+
+        Returns
+        -------
+        DfsuModelResult
+            A DfsuModelResult containing the extracted points.
+
+        Notes
+        -----
+        The extracted result will only contain selected elements and is not suitable for interpolation in space.
+        Use `match(..., spatial_method='contained')` to avoid interpolation.
+
+        """
+        x = [obs.x for obs in observations]
+        y = [obs.y for obs in observations]
+        if not isinstance(self.data, mikeio.dfsu.Dfsu2DH):
+            raise NotImplementedError(
+                "extract_points is only implemented for DfsuModelResult with Dfsu2DH data."
+            )
+        elemids = self.data.geometry.find_index(x=x, y=y)
+        ds = self.data.read(elements=elemids, items=self.sel_items.all)
+        return DfsuModelResult(
+            data=ds,
+            name=self.name,
+            item=self.sel_items.values,
+            aux_items=self.sel_items.aux,
+        )
 
     @staticmethod
     def _parse_spatial_method(method: str | None) -> str | None:
