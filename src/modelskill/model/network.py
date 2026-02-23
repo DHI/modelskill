@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Optional, Sequence
+import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import xarray as xr
 
@@ -9,6 +11,12 @@ from ._base import Network1D, SelectedItems
 from ..obs import NodeObservation
 from ..quantity import Quantity
 from ..types import PointType
+
+
+def validate_data_as_network(data: xr.Dataset):
+    assert "time" in data.dims, "Dataset must have time dimension"
+    assert "node" in data.dims, "Dataset must have node dimension"
+    assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
 
 
 class NodeModelResult(TimeSeries):
@@ -117,9 +125,7 @@ class NetworkModelResult(Network1D):
         assert isinstance(
             data, xr.Dataset
         ), "NetworkModelResult requires xarray.Dataset"
-        assert "time" in data.dims, "Dataset must have time dimension"
-        assert "node" in data.dims, "Dataset must have node dimension"
-        assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
+        validate_data_as_network(data)
 
         sel_items = SelectedItems.parse(
             list(data.data_vars), item=item, aux_items=aux_items
@@ -146,6 +152,11 @@ class NetworkModelResult(Network1D):
         """Return the time coordinate as a pandas.DatetimeIndex."""
         return pd.DatetimeIndex(self.data.time.to_index())
 
+    @property
+    def nodes(self) -> npt.NDArray[np.intp]:
+        """Return the node IDs as a numpy array of integers."""
+        return self.data.node.values
+
     def extract(
         self,
         observation: NodeObservation,
@@ -168,8 +179,8 @@ class NetworkModelResult(Network1D):
             )
 
         node_id = observation.node
-        if node_id not in self.data.node.values:
-            available_nodes = list(self.data.node.values)
+        if node_id not in self.nodes:
+            available_nodes = list(self.nodes)
             raise ValueError(
                 f"Node {node_id} not found. Available: {available_nodes[:5]}..."
             )
