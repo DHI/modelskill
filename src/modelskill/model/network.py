@@ -10,13 +10,45 @@ from modelskill.timeseries import TimeSeries, _parse_network_node_input
 from ._base import Network1D, SelectedItems
 from ..obs import NodeObservation
 from ..quantity import Quantity
-from ..types import PointType
+from ..types import PointType, NetworkType
 
 
-def validate_data_as_network(data: xr.Dataset):
-    assert "time" in data.dims, "Dataset must have time dimension"
-    assert "node" in data.dims, "Dataset must have node dimension"
-    assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
+def _to_network_dataset(data: NetworkType) -> xr.Dataset:
+    """Validate and convert a NetworkType input to an xr.Dataset."""
+    if isinstance(data, pd.DataFrame):
+        if not isinstance(data.index, pd.DatetimeIndex):
+            raise TypeError(
+                f"DataFrame index must be a pd.DatetimeIndex, got {type(data.index).__name__!r}"
+            )
+        if not isinstance(data.columns, pd.MultiIndex):
+            raise TypeError(
+                "DataFrame columns must be a pd.MultiIndex with levels 'node' and 'quantity'"
+            )
+        if data.columns.nlevels != 2:
+            raise ValueError(
+                f"DataFrame columns must have exactly 2 levels ('node' and 'quantity'), "
+                f"got {data.columns.nlevels}"
+            )
+        col_level_names = set(data.columns.names)
+        if col_level_names != {"node", "quantity"}:
+            raise ValueError(
+                f"DataFrame column level names must be 'node' and 'quantity', "
+                f"got {sorted(col_level_names)}"
+            )
+        if len(data.columns) == 0:
+            raise ValueError("DataFrame must have at least one column.")
+            # Conversion from DataFrame will be implemented here
+
+    elif isinstance(data, xr.Dataset):
+        assert "time" in data.dims, "Dataset must have time dimension"
+        assert "node" in data.dims, "Dataset must have node dimension"
+        assert len(data.data_vars) > 0, "Dataset must have at least one data variable"
+        return data
+    else:
+        raise TypeError(
+            f"NetworkModelResult expects a pd.DataFrame or xr.Dataset, "
+            f"got {type(data).__name__}"
+        )
 
 
 class NodeModelResult(TimeSeries):
@@ -115,24 +147,21 @@ class NetworkModelResult(Network1D):
 
     def __init__(
         self,
-        data: xr.Dataset,
+        data: NetworkType,
         *,
         name: Optional[str] = None,
         item: str | int | None = None,
         quantity: Optional[Quantity] = None,
         aux_items: Optional[Sequence[int | str]] = None,
     ) -> None:
-        assert isinstance(
-            data, xr.Dataset
-        ), "NetworkModelResult requires xarray.Dataset"
-        validate_data_as_network(data)
+        data = _to_network_dataset(data)
 
         sel_items = SelectedItems.parse(
             list(data.data_vars), item=item, aux_items=aux_items
         )
         name = name or sel_items.values
 
-        self.data: xr.Dataset = data[sel_items.all]
+        self.data = data[sel_items.all]
         self.name = name
         self.sel_items = sel_items
 
