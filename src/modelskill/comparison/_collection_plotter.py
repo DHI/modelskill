@@ -28,6 +28,7 @@ from ..plotting._misc import _get_fig_ax, _xtick_directional, _ytick_directional
 from ..settings import options
 from ..utils import _get_idx
 from ._comparer_plotter import quantiles_xy
+from .._deprecation import _deprecate_positional_args
 
 
 def _default_univarate_title(kind: str, cc: ComparerCollection) -> str:
@@ -780,6 +781,7 @@ class ComparerCollectionPlotter:
 
         return ax
 
+    @_deprecate_positional_args
     def spatial_overview(
         self,
         ax=None,
@@ -809,6 +811,7 @@ class ComparerCollectionPlotter:
 
         return spatial_overview(obs, ax=ax, figsize=figsize, title=title)
 
+    @_deprecate_positional_args
     def temporal_coverage(
         self,
         limit_to_model_period: bool = True,
