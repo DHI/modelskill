@@ -240,7 +240,39 @@ def _parse_point_input(
     *,
     coords: XYZCoords | NetworkCoords,
 ) -> xr.Dataset:
-    """Convert accepted input data to an xr.Dataset"""
+    """Convert accepted input data to an xr.Dataset.
+
+    Handles opening of file paths, selection of the relevant data variable
+    (via ``item``), inference of quantity metadata, and assignment of the
+    output variable name (via ``name``). Spatial coordinates and dataset
+    attributes are attached before returning.
+
+    Parameters
+    ----------
+    data : PointType
+        Input data source; accepts file paths (.dfs0, .nc), mikeio objects,
+        pandas DataFrame/Series, or xarray Dataset/DataArray.
+    name : str, optional
+        Output variable name in the resulting dataset. If None, derived from
+        the filename stem (for file inputs) or falls back to the source
+        column name.
+    item : str or int, optional
+        Selects which variable/column to read from multi-variable input.
+        Must be None for single-variable inputs (Series, DataArray).
+    quantity : Quantity, optional
+        Physical quantity metadata. If None, inferred from the data source
+        where possible (e.g. EUM info from MIKE dfs files).
+    aux_items : sequence of str or int, optional
+        Additional variables to include alongside the main value variable.
+    coords : XYZCoords or NetworkCoords
+        Spatial coordinates to attach to the dataset.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with a single time dimension, the selected variable renamed
+        to ``name``, quantity attributes attached, and spatial coordinates set.
+    """
 
     data, name = _open_and_name(data, name)
     sel_items = _select_items(data, item, aux_items)

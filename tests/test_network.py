@@ -6,7 +6,7 @@ import xarray as xr
 import numpy as np
 import modelskill as ms
 from modelskill.model.network import NetworkModelResult, NodeModelResult
-from modelskill.obs import NodeObservation
+from modelskill.obs import NodeObservation, MultiNodeObservation
 
 
 @pytest.fixture
@@ -195,137 +195,162 @@ class TestNodeObservation:
     def test_multiple_nodes_auto_assign_items(self, sample_node_data):
         """Test auto-assignment of items when nodes match column count"""
         # Create a multi-column DataFrame
-        multi_data = pd.DataFrame({
-            'station_0': sample_node_data['WaterLevel'],
-            'station_1': sample_node_data['WaterLevel'] + 0.1,
-            'station_2': sample_node_data['WaterLevel'] + 0.2,
-        })
-        
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+                "station_2": sample_node_data["WaterLevel"] + 0.2,
+            }
+        )
+
         # Only provide nodes - items should be auto-assigned [0, 1, 2]
         nodes = [123, 456, 789]
-        obs_list = NodeObservation(multi_data, node=nodes)
-        
+        obs_list = MultiNodeObservation(multi_data, nodes=nodes)
+
         # Should return a list of NodeObservation objects
         assert isinstance(obs_list, list)
         assert len(obs_list) == 3
         assert all(isinstance(obs, NodeObservation) for obs in obs_list)
-        
+
         # Check that nodes are assigned correctly
         assert obs_list[0].node == 123
         assert obs_list[1].node == 456
         assert obs_list[2].node == 789
-        
-        # Check default names
-        assert obs_list[0].name == "Node_123"
-        assert obs_list[1].name == "Node_456"
-        assert obs_list[2].name == "Node_789"
-        
+
+        # Check default names (str(node_id))
+        assert obs_list[0].name == "123"
+        assert obs_list[1].name == "456"
+        assert obs_list[2].name == "789"
+
     def test_multiple_nodes_auto_assign_mismatched_count(self, sample_node_data):
         """Test error when nodes don't match column count for auto-assignment"""
-        multi_data = pd.DataFrame({
-            'station_0': sample_node_data['WaterLevel'],
-            'station_1': sample_node_data['WaterLevel'] + 0.1,
-        })
-        
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+            }
+        )
+
         # Provide 3 nodes but only 2 columns - should fail
         nodes = [123, 456, 789]
-        
-        with pytest.raises(ValueError, match="Number of nodes.*must match.*data columns.*when item is not specified"):
-            NodeObservation(multi_data, node=nodes)  # No item provided
-            
+
+        with pytest.raises(
+            ValueError,
+            match="Number of nodes.*must match.*data columns.*when item is not specified",
+        ):
+            MultiNodeObservation(multi_data, nodes=nodes)  # No item provided
+
     def test_multiple_nodes_creation(self, sample_node_data):
         """Test creating multiple NodeObservations with lists"""
         # Create a multi-column DataFrame
-        multi_data = pd.DataFrame({
-            'station_0': sample_node_data['WaterLevel'],
-            'station_1': sample_node_data['WaterLevel'] + 0.1,
-            'station_2': sample_node_data['WaterLevel'] + 0.2,
-        })
-        
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+                "station_2": sample_node_data["WaterLevel"] + 0.2,
+            }
+        )
+
         nodes = [123, 456, 789]
         items = [0, 1, 2]
-        obs_list = NodeObservation(multi_data, node=nodes, item=items)
-        
+        obs_list = MultiNodeObservation(multi_data, nodes=nodes, items=items)
+
         # Should return a list of NodeObservation objects
         assert isinstance(obs_list, list)
         assert len(obs_list) == 3
         assert all(isinstance(obs, NodeObservation) for obs in obs_list)
-        
+
         # Check that nodes are assigned correctly
         assert obs_list[0].node == 123
         assert obs_list[1].node == 456
         assert obs_list[2].node == 789
-        
-        # Check default names
-        assert obs_list[0].name == "Node_123"
-        assert obs_list[1].name == "Node_456"
-        assert obs_list[2].name == "Node_789"
-        
+
+        # Check default names (str(node_id))
+        assert obs_list[0].name == "123"
+        assert obs_list[1].name == "456"
+        assert obs_list[2].name == "789"
+
     def test_multiple_nodes_with_custom_names(self, sample_node_data):
         """Test creating multiple NodeObservations with custom names"""
-        multi_data = pd.DataFrame({
-            'station_0': sample_node_data['WaterLevel'],
-            'station_1': sample_node_data['WaterLevel'] + 0.1,
-        })
-        
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+            }
+        )
+
         nodes = [123, 456]
         items = [0, 1]
         names = ["Sensor_A", "Sensor_B"]
-        obs_list = NodeObservation(multi_data, node=nodes, item=items, name=names)
-        
+        obs_list = MultiNodeObservation(
+            multi_data, nodes=nodes, items=items, names=names
+        )
+
         assert len(obs_list) == 2
         assert obs_list[0].name == "Sensor_A"
         assert obs_list[1].name == "Sensor_B"
-        
+
     def test_multiple_nodes_with_string_name_prefix(self, sample_node_data):
         """Test creating multiple NodeObservations with string name prefix"""
-        multi_data = pd.DataFrame({
-            'station_0': sample_node_data['WaterLevel'],
-            'station_1': sample_node_data['WaterLevel'] + 0.1,
-        })
-        
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+            }
+        )
+
         nodes = [123, 456]
         items = [0, 1]
         name = "Station"
-        obs_list = NodeObservation(multi_data, node=nodes, item=items, name=name)
-        
+        obs_list = MultiNodeObservation(
+            multi_data, nodes=nodes, items=items, names=name
+        )
+
         assert len(obs_list) == 2
         assert obs_list[0].name == "Station_0"
         assert obs_list[1].name == "Station_1"
-        
+
     def test_mismatched_item_node_lists(self, sample_node_data):
         """Test error when item and node lists have different lengths"""
-        multi_data = pd.DataFrame({
-            'station_0': sample_node_data['WaterLevel'],
-            'station_1': sample_node_data['WaterLevel'] + 0.1,
-        })
-        
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+            }
+        )
+
         nodes = [123, 456, 789]  # 3 nodes
         items = [0, 1]  # 2 items
-        
-        with pytest.raises(ValueError, match="Length of item list.*must match.*node list"):
-            NodeObservation(multi_data, node=nodes, item=items)
-            
+
+        with pytest.raises(
+            ValueError, match="Length of item list.*must match.*node list"
+        ):
+            MultiNodeObservation(multi_data, nodes=nodes, items=items)
+
     def test_mismatched_name_list(self, sample_node_data):
         """Test error when name list doesn't match item/node lists"""
-        multi_data = pd.DataFrame({
-            'station_0': sample_node_data['WaterLevel'],
-            'station_1': sample_node_data['WaterLevel'] + 0.1,
-        })
-        
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+            }
+        )
+
         nodes = [123, 456]
         items = [0, 1]
         names = ["Sensor_A"]  # Only 1 name for 2 nodes
-        
-        with pytest.raises(ValueError, match="Length of name list.*must match.*item/node lists"):
-            NodeObservation(multi_data, node=nodes, item=items, name=names)
-            
+
+        with pytest.raises(
+            ValueError, match="Length of name list.*must match.*item/node lists"
+        ):
+            MultiNodeObservation(multi_data, nodes=nodes, items=items, names=names)
+
     def test_only_one_list_provided(self, sample_node_data):
-        """Test error when only one of item or node is a list"""
-        with pytest.raises(ValueError, match="If node is a list, item must also be a list or None"):
+        """Test error when lists are passed to NodeObservation instead of MultiNodeObservation"""
+        with pytest.raises(ValueError, match="Use MultiNodeObservation"):
             NodeObservation(sample_node_data, node=[123, 456], item=0)
-            
-        with pytest.raises(ValueError, match="If item is a list, node must also be a list"):
+
+        with pytest.raises(ValueError, match="Use MultiNodeObservation"):
             NodeObservation(sample_node_data, node=123, item=[0, 1])
 
 
@@ -403,28 +428,32 @@ class TestNetworkIntegration:
         assert "Network_Model" in comparer.mod_names
         assert comparer.n_points > 0
 
-    def test_matching_workflow_multiple_nodes(self, sample_network_data, sample_node_data):
+    def test_matching_workflow_multiple_nodes(
+        self, sample_network_data, sample_node_data
+    ):
         """Test matching workflow with multiple node observations using enhanced NodeObservation"""
         # Create network model result
         nmr = NetworkModelResult(sample_network_data, name="Network_Model")
-        
+
         # Create multi-column observation data
-        multi_data = pd.DataFrame({
-            'station_0': sample_node_data['WaterLevel'],
-            'station_1': sample_node_data['WaterLevel'] + 0.1,
-            'station_2': sample_node_data['WaterLevel'] + 0.2,
-        })
-        
-        # Create multiple NodeObservations using the enhanced NodeObservation (auto-assign items)
+        multi_data = pd.DataFrame(
+            {
+                "station_0": sample_node_data["WaterLevel"],
+                "station_1": sample_node_data["WaterLevel"] + 0.1,
+                "station_2": sample_node_data["WaterLevel"] + 0.2,
+            }
+        )
+
+        # Create multiple NodeObservations using MultiNodeObservation (auto-assign items)
         nodes = [123, 456, 789]
-        obs_list = NodeObservation(multi_data, node=nodes)  # Items auto-assigned
-        
+        obs_list = MultiNodeObservation(multi_data, nodes=nodes)  # Items auto-assigned
+
         # Test that matching works
         comparer_collection = ms.match(obs_list, nmr)
-        
+
         assert comparer_collection is not None
         assert len(comparer_collection) == 3  # Should have 3 comparers
-        
+
         # Check that all model names are correct
         for comparer in comparer_collection:
             assert "Network_Model" in comparer.mod_names
