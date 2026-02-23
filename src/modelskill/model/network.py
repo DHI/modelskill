@@ -195,4 +195,5 @@ class NetworkModelResult(Network1D):
             name=self.name,
             item=self.sel_items.values,
             quantity=self.quantity,
+            aux_items=self.sel_items.aux,
         )
