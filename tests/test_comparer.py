@@ -171,14 +171,14 @@ def test_matched_df_with_aux(pt_df):
     )
     assert cmp.mod_names == ["m1", "m2"]
     assert cmp.n_points == 6
-    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+    assert cmp.data["wind"].attrs["kind"] == "aux"
     assert "not_relevant" not in cmp.data.data_vars
 
     # if aux_items is a string, it is automatically converted to a list
     cmp = Comparer.from_matched_data(
         data=pt_df, mod_items=["m1", "m2"], aux_items="wind"
     )
-    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+    assert cmp.data["wind"].attrs["kind"] == "aux"
 
     # if models are specified, it is NOT automatically considered an aux variable
     cmp = Comparer.from_matched_data(data=pt_df, mod_items=["m1", "m2"])
@@ -191,7 +191,7 @@ def test_aux_can_str_(pt_df):
     pt_df["area"] = ["a", "b", "c", "d", "e", "f"]
 
     cmp = Comparer.from_matched_data(pt_df, aux_items="area")
-    assert cmp.data["area"].attrs["kind"] == "auxiliary"
+    assert cmp.data["area"].attrs["kind"] == "aux"
 
 
 def test_mod_and_obs_must_be_numeric():
@@ -349,6 +349,52 @@ def test_minimal_matched_data(pt_df):
     assert cmp.n_models == 2
 
 
+def test_kind_must_be_observation_model_or_aux(pt_df):
+    """The kind attribute must be 'observation', 'model', or 'aux'."""
+    data = xr.Dataset(pt_df)
+    data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "aux"
+    data.attrs["name"] = "valid"
+
+    cmp = Comparer.from_matched_data(data=data)
+    assert cmp.mod_names == ["m1"]
+    assert cmp.aux_names == ["m2"]
+
+    # 'auxiliary' is normalized to 'aux' for backwards compatibility
+    data["m2"].attrs["kind"] = "auxiliary"
+    cmp = Comparer.from_matched_data(data=data)
+    assert cmp.data["m2"].attrs["kind"] == "aux"
+
+    # invalid kind values are rejected
+    data["m2"].attrs["kind"] = "invalid"
+    with pytest.raises(ValueError, match="Invalid kind 'invalid'.*Must be one of"):
+        Comparer.from_matched_data(data=data)
+
+
+def test_gtype_must_be_point_or_track(pt_df):
+    """The gtype attribute must be 'point' or 'track'."""
+    data = xr.Dataset(pt_df)
+    data["Observation"].attrs["kind"] = "observation"
+    data["m1"].attrs["kind"] = "model"
+    data["m2"].attrs["kind"] = "model"
+    data.attrs["name"] = "valid"
+
+    # valid gtype values are accepted
+    data.attrs["gtype"] = "point"
+    cmp = Comparer.from_matched_data(data=data)
+    assert cmp.gtype == "point"
+
+    data.attrs["gtype"] = "track"
+    cmp = Comparer.from_matched_data(data=data)
+    assert cmp.gtype == "track"
+
+    # invalid gtype values are rejected
+    data.attrs["gtype"] = "grid"
+    with pytest.raises(ValueError, match="Invalid gtype 'grid'.*Must be one of"):
+        Comparer.from_matched_data(data=data)
+
+
 def test_from_compared_data_doesnt_accept_missing_values_in_obs():
     df = pd.DataFrame(
         {
@@ -386,7 +432,7 @@ def test_multiple_forecasts_matched_data():
     cmp = Comparer.from_matched_data(data=data)  # no additional raw_mod_data
     assert len(cmp.raw_mod_data["m1"]) == 5
     assert cmp.mod_names == ["m1"]
-    assert cmp.data["leadtime"].attrs["kind"] == "auxiliary"
+    assert cmp.data["leadtime"].attrs["kind"] == "aux"
     analysis = cmp.where(cmp.data["leadtime"] == 0)
     analysis.score()
     assert len(analysis.raw_mod_data["m1"]) == 5
@@ -407,7 +453,7 @@ def test_matched_aux_variables(pt_df):
     data["m2"].attrs["kind"] = "model"
     cmp = Comparer.from_matched_data(data=data)
     assert "wind" not in cmp.mod_names
-    assert cmp.data["wind"].attrs["kind"] == "auxiliary"
+    assert cmp.data["wind"].attrs["kind"] == "aux"
 
 
 def test_pc_properties(pc):

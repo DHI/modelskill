@@ -16,7 +16,7 @@ import warnings
 import pandas as pd
 import xarray as xr
 
-from .types import PointType, TrackType, GeometryType, DataInputType
+from .types import PointType, TrackType, GeometryType, DataInputType, VariableKind
 from . import Quantity
 from .timeseries import (
     TimeSeries,
@@ -114,7 +114,7 @@ class Observation(TimeSeries):
         assert isinstance(data, xr.Dataset)
 
         data_var = str(list(data.data_vars)[0])
-        data[data_var].attrs["kind"] = "observation"
+        data[data_var].attrs["kind"] = VariableKind.OBSERVATION.value
 
         # check that user-defined attrs don't overwrite existing attrs!
         _validate_attrs(data.attrs, attrs)

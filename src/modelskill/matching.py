@@ -30,7 +30,7 @@ from .model.grid import GridModelResult
 from .model.track import TrackModelResult
 from .obs import Observation, PointObservation, TrackObservation
 from .timeseries import TimeSeries
-from .types import Period
+from .types import Period, VariableKind
 
 TimeDeltaTypes = Union[float, int, np.timedelta64, pd.Timedelta, timedelta]
 IdxOrNameTypes = Optional[Union[int, str]]
@@ -380,8 +380,8 @@ def _match_space_time(
                     f"Matching not implemented for model type {type(mr)} and observation type {type(observation)}"
                 )
 
-        if overlapping := set(aligned.filter_by_attrs(kind="aux").data_vars) & set(
-            observation.data.filter_by_attrs(kind="aux").data_vars
+        if overlapping := set(aligned.filter_by_attrs(kind=VariableKind.AUXILIARY.value).data_vars) & set(
+            observation.data.filter_by_attrs(kind=VariableKind.AUXILIARY.value).data_vars
         ):
             raise ValueError(
                 f"Aux variables are not allowed to have identical names. Choose either aux from obs or model. Overlapping: {overlapping}"
@@ -392,7 +392,7 @@ def _match_space_time(
 
     # drop NaNs in model and observation columns (but allow NaNs in aux columns)
     def mo_kind(k: str) -> bool:
-        return k in ["model", "observation"]
+        return k in [VariableKind.MODEL.value, VariableKind.OBSERVATION.value]
 
     # TODO mo_cols vs non_aux_cols?
     mo_cols = data.filter_by_attrs(kind=mo_kind).data_vars
