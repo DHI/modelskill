@@ -32,7 +32,7 @@ def vistula() -> ComparerCollection:
     -------
     ComparerCollection
     """
-    fn = str(files("modelskill.data") / "vistula.msk")
+    fn = str(files("modelskill.data") / "vistula.nc")
     return ComparerCollection.load(fn)
 
 
@@ -48,5 +48,5 @@ def oresund() -> ComparerCollection:
     -------
     ComparerCollection
     """
-    fn = str(files("modelskill.data") / "oresund.msk")
-    return ComparerCollection.load(fn)
+    fn = str(files("modelskill.data") / "oresund.nc")
+    return ms.load(fn)

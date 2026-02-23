@@ -130,9 +130,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# ignore data except for .msk files
 data/*
-!data/*.msk
 tests/testdata/tmp
 /tmp/
 
@@ -148,6 +146,7 @@ streamlit_app.py
 notes.md
 
 notebooks/Untitled.ipynb
+.envrc
 
 docs/_site/
 docs/_extensions/

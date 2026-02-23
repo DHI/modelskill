@@ -14,7 +14,7 @@ dependencies = [
     "pandas >= 1.4, < 3.0", # TODO remove upper limit
     "mikeio >= 1.2",
     "matplotlib",
-    "xarray",
+    "xarray>=2024.10.0",
     "netCDF4",
     "scipy",
     "jinja2", # used for skill.style
