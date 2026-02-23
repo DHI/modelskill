@@ -428,13 +428,13 @@ def _scatter_plotly(
     x_trend,
     show_density,
     show_points,
-    norm,  # TODO not used by plotly, remove or keep for consistency?
+    _norm,  # Not used by plotly, kept for API consistency
     show_hist,
     nbins_hist,
     reg_method,
     xlabel,
     ylabel,
-    figsize,  # TODO not used by plotly, remove or keep for consistency?
+    _figsize,  # Not used by plotly, kept for API consistency
     xlim,
     ylim,
     title,

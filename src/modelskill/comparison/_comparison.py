@@ -1054,7 +1054,7 @@ class Comparer:
         by: str | Iterable[str] | None = None,
         metrics: Iterable[str] | Iterable[Callable] | str | Callable | None = None,
         n_min: int | None = None,
-        **kwargs: Any,
+        **_kwargs: Any,
     ):
         """Aggregated spatial skill assessment of model(s) on a regular spatial grid.
 
