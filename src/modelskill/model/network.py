@@ -127,7 +127,7 @@ class NetworkModelResult(Network1D):
             raise ValueError("Dataset must have at least one data variable")
 
         for coord in ["time", "node"]:
-            if coord not in data.dims:
+            if coord not in data.coords:
                 raise ValueError(f"Dataset must have '{coord}' as coordinate.")
 
         sel_items = SelectedItems.parse(
@@ -177,18 +177,13 @@ class NetworkModelResult(Network1D):
             )
 
         node_id = observation.node
-        if node_id not in self.data.node.values:
-            available_nodes = list(self.data.node.values)
+        if node_id not in self.data.node:
             raise ValueError(
-                f"Node {node_id} not found. Available: {available_nodes[:5]}..."
+                f"Node {node_id} not found. Available: {list(self.data.node.values[:5])}..."
             )
 
-        # Extract data at the specified node
-        ds = self.data.sel(node=node_id)
-        df = ds.to_dataframe().dropna().drop(columns="node")
-
         return NodeModelResult(
-            data=df,
+            data=self.data.sel(node=node_id).drop_vars("node"),
             node=node_id,
             name=self.name,
             item=self.sel_items.values,

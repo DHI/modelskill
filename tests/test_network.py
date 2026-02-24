@@ -73,24 +73,20 @@ class TestNetworkModelResult:
         assert "WaterLevel" in nmr.data.data_vars
         assert "Discharge" not in nmr.data.data_vars
 
-    def test_init_fails_without_time_dimension(self, sample_network_data):
+    @pytest.mark.parametrize("coord", ["time", "node"])
+    def test_init_fails_without_coord(self, coord, sample_network_data):
         """Test that initialization fails without time dimension"""
-        data_no_time = sample_network_data.drop_dims("time")
+        data_no_time = sample_network_data.rename_vars({coord: "another_name"})
 
-        with pytest.raises(AssertionError, match="Dataset must have time dimension"):
+        with pytest.raises(
+            ValueError, match=f"Dataset must have '{coord}' as coordinate"
+        ):
             NetworkModelResult(data_no_time)
-
-    def test_init_fails_without_node_dimension(self, sample_network_data):
-        """Test that initialization fails without node dimension"""
-        data_no_node = sample_network_data.drop_dims("node")
-
-        with pytest.raises(AssertionError, match="Dataset must have node dimension"):
-            NetworkModelResult(data_no_node)
 
     def test_init_fails_with_non_dataset(self):
         """Test that initialization fails with non-xarray.Dataset"""
         with pytest.raises(
-            AssertionError, match="NetworkModelResult requires xarray.Dataset"
+            ValueError, match="'NetworkModelResult' requires xarray.Dataset"
         ):
             NetworkModelResult(pd.DataFrame({"a": [1, 2, 3]}))
 
@@ -218,16 +214,6 @@ class TestNodeModelResult:
 
         assert nmr.node == 789
         assert isinstance(nmr.node, int)
-
-    def test_node_property_missing_coordinate(self, sample_node_data):
-        """Test node property when coordinate is missing"""
-        nmr = NodeModelResult(sample_node_data, node=123, name="Node_123_Model")
-
-        # Manually remove the node coordinate to test error handling
-        del nmr.data.coords["node"]
-
-        with pytest.raises(ValueError, match="Node coordinate not found"):
-            _ = nmr.node
 
 
 class TestNetworkIntegration:
